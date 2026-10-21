@@ -28086,6 +28086,65271 @@ mov ebp, DWORD PTR [edi+4]
 mov esi, DWORD PTR [edi+8]
 mov edi, DWORD PTR [edi+12]
 ret
+.globl proto_fixed
+.p2align 6
+proto_fixed:
+mov eax, DWORD PTR [esp+44]
+mov DWORD PTR [eax], ebx
+mov DWORD PTR [eax+4], ebp
+mov DWORD PTR [eax+8], esi
+mov DWORD PTR [eax+12], edi
+mov edi, eax
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+movzx eax, BYTE PTR [esi]
+mov ebx, esi
+add ebx, ecx
+sub ebx, 1
+movzx edx, BYTE PTR [ebx]
+mov ebx, eax
+sub ebx, 1
+shr ebx, 31
+mov ebp, ecx
+sub ebp, 64
+ror ebp, 24
+add ebp, eax
+sub ebp, 128
+shr ebp, 31
+and edx, 1
+xor edx, 1
+or ebx, edx
+or ebx, ebp
+cmp ebx, 0
+je 20f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+22:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 22b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+23:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 23b
+mov eax, 0
+jmp 21f
+20:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov ecx, 0
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+mov eax, 0
+24:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 24b
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+25:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 25b
+mov esi, DWORD PTR [esp+28]
+mov ecx, DWORD PTR [esp+32]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+26:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 26b
+mov esi, DWORD PTR [esp+36]
+mov ecx, DWORD PTR [esp+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+27:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 27b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov ecx, -2147483648
+mov DWORD PTR [eax], ecx
+mov esi, DWORD PTR [esp+32]
+add esi, esi
+add esi, esi
+add esi, esi
+28:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+29:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 29b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+210:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 210b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+211:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 211b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+212:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 212b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+213:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 213b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+214:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 214b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+215:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 215b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+216:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 216b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+217:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 217b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+218:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 218b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 28b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+or ecx, 1
+xor ecx, 1
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+219:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 219b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, DWORD PTR [edi+40]
+and eax, ebx
+cmp eax, 1
+je 220f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+222:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 222b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+223:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 223b
+mov eax, 0
+jmp 221f
+220:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+224:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 224b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+225:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 225b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+226:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 226b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+227:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 227b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ebx, DWORD PTR [eax]
+mov ecx, ebx
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, 0
+sub eax, ecx
+mov DWORD PTR [edi+64], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+228:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 228b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+sub esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, esi
+229:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+230:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 230b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+231:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 231b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+232:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 232b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+233:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 233b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 229b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+234:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 234b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+235:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 235b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+236:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 236b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, 0
+mov DWORD PTR [edi+24], eax
+237:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+238:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 238b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+239:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 239b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+240:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 240b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, edx
+sub edx, eax
+mov DWORD PTR [edi+56], edx
+241:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+242:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 242b
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 241b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+243:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 243b
+mov edi, DWORD PTR [esp+44]
+mov eax, 1
+mov DWORD PTR [edi+32], eax
+mov eax, 0
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov DWORD PTR [edi+56], eax
+244:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov eax, DWORD PTR [eax]
+shr eax, 28
+mov DWORD PTR [edi+68], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+245:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 245b
+mov eax, DWORD PTR [edi+68]
+shr eax, 3
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+246:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 246b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+247:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 247b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+248:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 248b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+249:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 249b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+250:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 250b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+251:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 251b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+252:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+253:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 253b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+254:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 254b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+255:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 255b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+256:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 256b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+257:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 257b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+258:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 258b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+259:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 259b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+260:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 260b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+261:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 261b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+262:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 262b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 252b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+263:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 263b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+264:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 264b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+265:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 265b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+shr eax, 2
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+266:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 266b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+267:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 267b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+268:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 268b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+269:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 269b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+270:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 270b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+271:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 271b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+272:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+273:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 273b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+274:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 274b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+275:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 275b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+276:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 276b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+277:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 277b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+278:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 278b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+279:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 279b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+280:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 280b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+281:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 281b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+282:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 282b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 272b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+283:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 283b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+284:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 284b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+285:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 285b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+shr eax, 1
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+286:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 286b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+287:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 287b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+288:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 288b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+289:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 289b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+290:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 290b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+291:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 291b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+292:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+293:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 293b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+294:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 294b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+295:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 295b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+296:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 296b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+297:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 297b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+298:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 298b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+299:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 299b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2100:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2100b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2101:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2101b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2102:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2102b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 292b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2103:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2103b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2104:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2104b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2105:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2105b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2106:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2106b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2107:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2107b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2108:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2108b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2109:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2109b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2110:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2110b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2111:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2111b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+2112:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2113:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2113b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2114:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2114b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2115:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2115b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2116:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2116b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2117:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2117b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2118:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2118b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2119:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2119b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2120:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2120b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2121:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2121b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2122:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2122b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 2112b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2123:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2123b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2124:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2124b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2125:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2125b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 244b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2126:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2126b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+24]
+add eax, 1
+mov DWORD PTR [edi+24], eax
+sub eax, 100
+shr eax, 31
+mov edx, DWORD PTR [edi+36]
+xor edx, 1
+and eax, edx
+cmp eax, 0
+jne 237b
+mov eax, DWORD PTR [edi+36]
+mov DWORD PTR [edi+132], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2127:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2127b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2128:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2128b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2129:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2129b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2130:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2130b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2131:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2131b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2132:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2132b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2133:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2133b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2134:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2134b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2135:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2136:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2136b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2137:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2137b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2138:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2138b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2139:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2139b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2140:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2140b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2141:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2141b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2142:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2142b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2143:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2143b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2144:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2144b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2145:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2145b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2146:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2146b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2147:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2147b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2148:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2148b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2149:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2149b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2150:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2150b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2151:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2151b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2152:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2152b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2153:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2153b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2154:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2154b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2155:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2155b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2156:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2156b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2157:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2157b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2158:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2158b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2159:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2159b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2160:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2160b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2161:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2161b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2162:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2162b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2163:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2163b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2164:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2164b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2165:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2165b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2166:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2166b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2167:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2167b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2168:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2168b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2169:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2169b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2170:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2170b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2171:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2171b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 2135b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2172:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2172b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2173:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2173b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 8
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov ecx, DWORD PTR [esp+24]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, 8
+add ecx, 4
+mov eax, 0
+2174:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 2174b
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2175:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2176:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2176b
+mov edi, DWORD PTR [esp+44]
+mov eax, ecx
+and eax, 1
+mov DWORD PTR [edi+136], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2177:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2177b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+136]
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2178:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2178b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+xor ebx, -1
+and ebx, 1
+xor ecx, -1
+mov DWORD PTR [edi+140], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+add edi, 4
+2179:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2179b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+140]
+mov DWORD PTR [eax], ecx
+sub esi, 1
+cmp esi, 0
+jne 2175b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2180:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2180b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+60], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2181:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2181b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2182:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2182b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2183:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2183b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2184:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2184b
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2185:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2185b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2186:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2186b
+mov eax, DWORD PTR [edi+132]
+221:
+21:
+mov ebx, DWORD PTR [edi]
+mov ebp, DWORD PTR [edi+4]
+mov esi, DWORD PTR [edi+8]
+mov edi, DWORD PTR [edi+12]
+ret
+.globl proto_fixed_late
+.p2align 6
+proto_fixed_late:
+mov eax, DWORD PTR [esp+44]
+mov DWORD PTR [eax], ebx
+mov DWORD PTR [eax+4], ebp
+mov DWORD PTR [eax+8], esi
+mov DWORD PTR [eax+12], edi
+mov edi, eax
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+movzx eax, BYTE PTR [esi]
+mov ebx, esi
+add ebx, ecx
+sub ebx, 1
+movzx edx, BYTE PTR [ebx]
+mov ebx, eax
+sub ebx, 1
+shr ebx, 31
+mov ebp, ecx
+sub ebp, 64
+ror ebp, 24
+add ebp, eax
+sub ebp, 128
+shr ebp, 31
+and edx, 1
+xor edx, 1
+or ebx, edx
+or ebx, ebp
+cmp ebx, 0
+je 20f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+22:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 22b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+23:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 23b
+mov eax, 0
+jmp 21f
+20:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov ecx, 0
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+mov eax, 0
+24:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 24b
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+25:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 25b
+mov esi, DWORD PTR [esp+28]
+mov ecx, DWORD PTR [esp+32]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+26:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 26b
+mov esi, DWORD PTR [esp+36]
+mov ecx, DWORD PTR [esp+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+27:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 27b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov ecx, -2147483648
+mov DWORD PTR [eax], ecx
+mov esi, DWORD PTR [esp+32]
+add esi, esi
+add esi, esi
+add esi, esi
+28:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+29:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 29b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+210:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 210b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+211:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 211b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+212:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 212b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+213:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 213b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+214:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 214b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+215:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 215b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+216:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 216b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+217:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 217b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+218:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 218b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 28b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+or ecx, 1
+xor ecx, 1
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+219:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 219b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, DWORD PTR [edi+40]
+and eax, ebx
+cmp eax, 1
+je 220f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+222:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 222b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+223:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 223b
+mov eax, 0
+jmp 221f
+220:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+224:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 224b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+225:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 225b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+226:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 226b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+227:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 227b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ebx, DWORD PTR [eax]
+mov ecx, ebx
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, 0
+sub eax, ecx
+mov DWORD PTR [edi+64], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+228:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 228b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+sub esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, esi
+229:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+230:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 230b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+231:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 231b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+232:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 232b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+233:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 233b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 229b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+234:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 234b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+235:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 235b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+236:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 236b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, 63
+mov DWORD PTR [edi+24], eax
+237:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+238:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 238b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+239:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 239b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+240:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 240b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, edx
+sub edx, eax
+mov DWORD PTR [edi+56], edx
+241:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+242:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 242b
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 241b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+243:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 243b
+mov edi, DWORD PTR [esp+44]
+mov eax, 1
+mov DWORD PTR [edi+32], eax
+mov eax, 0
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov DWORD PTR [edi+56], eax
+244:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov eax, DWORD PTR [eax]
+shr eax, 28
+mov DWORD PTR [edi+68], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+245:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 245b
+mov eax, DWORD PTR [edi+68]
+shr eax, 3
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+246:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 246b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+247:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 247b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+248:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 248b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+249:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 249b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+250:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 250b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+251:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 251b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+252:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+253:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 253b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+254:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 254b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+255:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 255b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+256:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 256b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+257:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 257b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+258:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 258b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+259:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 259b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+260:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 260b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+261:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 261b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+262:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 262b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 252b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+263:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 263b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+264:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 264b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+265:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 265b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+shr eax, 2
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+266:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 266b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+267:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 267b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+268:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 268b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+269:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 269b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+270:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 270b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+271:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 271b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+272:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+273:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 273b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+274:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 274b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+275:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 275b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+276:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 276b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+277:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 277b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+278:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 278b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+279:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 279b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+280:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 280b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+281:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 281b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+282:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 282b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 272b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+283:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 283b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+284:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 284b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+285:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 285b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+shr eax, 1
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+286:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 286b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+287:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 287b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+288:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 288b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+289:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 289b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+290:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 290b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+291:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 291b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+292:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+293:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 293b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+294:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 294b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+295:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 295b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+296:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 296b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+297:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 297b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+298:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 298b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+299:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 299b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2100:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2100b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2101:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2101b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2102:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2102b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 292b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2103:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2103b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2104:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2104b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2105:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2105b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2106:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2106b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2107:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2107b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2108:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2108b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2109:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2109b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2110:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2110b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2111:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2111b
+mov edi, DWORD PTR [esp+44]
+mov esi, 7
+2112:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2113:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2113b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2114:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2114b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2115:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2115b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2116:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2116b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2117:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2117b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2118:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2118b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2119:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2119b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2120:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2120b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2121:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2121b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2122:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2122b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 2112b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2123:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2123b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2124:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2124b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2125:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 2125b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 244b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2126:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2126b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+24]
+add eax, 1
+mov DWORD PTR [edi+24], eax
+sub eax, 100
+shr eax, 31
+mov edx, DWORD PTR [edi+36]
+xor edx, 1
+and eax, edx
+cmp eax, 0
+jne 237b
+mov eax, DWORD PTR [edi+36]
+mov DWORD PTR [edi+132], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2127:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2127b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2128:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2128b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2129:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2129b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2130:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2130b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2131:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2131b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2132:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2132b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2133:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2133b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2134:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2134b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2135:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2136:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2136b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2137:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2137b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2138:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2138b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2139:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2139b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2140:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2140b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2141:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2141b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2142:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2142b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2143:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2143b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2144:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2144b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2145:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2145b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2146:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2146b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2147:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2147b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2148:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2148b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2149:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2149b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2150:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2150b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2151:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2151b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2152:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2152b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2153:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2153b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2154:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2154b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2155:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2155b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2156:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2156b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2157:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2157b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2158:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2158b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2159:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2159b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2160:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2160b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2161:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2161b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2162:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2162b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2163:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2163b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2164:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2164b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2165:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2165b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2166:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2166b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2167:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2167b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2168:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2168b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2169:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2169b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2170:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2170b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2171:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2171b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 2135b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2172:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2172b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2173:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2173b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 8
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov ecx, DWORD PTR [esp+24]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, 8
+add ecx, 4
+mov eax, 0
+2174:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 2174b
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2175:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2176:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2176b
+mov edi, DWORD PTR [esp+44]
+mov eax, ecx
+and eax, 1
+mov DWORD PTR [edi+136], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2177:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2177b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+136]
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2178:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2178b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+xor ebx, -1
+and ebx, 1
+xor ecx, -1
+mov DWORD PTR [edi+140], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+add edi, 4
+2179:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2179b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+140]
+mov DWORD PTR [eax], ecx
+sub esi, 1
+cmp esi, 0
+jne 2175b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2180:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2180b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+60], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2181:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2181b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2182:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2182b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2183:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2183b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2184:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2184b
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2185:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2185b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2186:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2186b
+mov eax, DWORD PTR [edi+132]
+221:
+21:
+mov ebx, DWORD PTR [edi]
+mov ebp, DWORD PTR [edi+4]
+mov esi, DWORD PTR [edi+8]
+mov edi, DWORD PTR [edi+12]
+ret
+.globl proto_recover_late
+.p2align 6
+proto_recover_late:
+mov eax, DWORD PTR [esp+44]
+mov DWORD PTR [eax], ebx
+mov DWORD PTR [eax+4], ebp
+mov DWORD PTR [eax+8], esi
+mov DWORD PTR [eax+12], edi
+mov edi, eax
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+movzx eax, BYTE PTR [esi]
+mov ebx, esi
+add ebx, ecx
+sub ebx, 1
+movzx edx, BYTE PTR [ebx]
+mov ebx, eax
+sub ebx, 1
+shr ebx, 31
+mov ebp, ecx
+sub ebp, 64
+ror ebp, 24
+add ebp, eax
+sub ebp, 128
+shr ebp, 31
+and edx, 1
+xor edx, 1
+or ebx, edx
+or ebx, ebp
+cmp ebx, 0
+je 20f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+22:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 22b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+23:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 23b
+mov eax, 0
+jmp 21f
+20:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov ecx, 0
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+mov eax, 0
+24:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 24b
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+25:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 25b
+mov esi, DWORD PTR [esp+28]
+mov ecx, DWORD PTR [esp+32]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+26:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 26b
+mov esi, DWORD PTR [esp+36]
+mov ecx, DWORD PTR [esp+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+27:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 27b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov ecx, -2147483648
+mov DWORD PTR [eax], ecx
+mov esi, DWORD PTR [esp+32]
+add esi, esi
+add esi, esi
+add esi, esi
+28:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+29:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 29b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+210:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 210b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+211:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 211b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+212:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 212b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+213:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 213b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+214:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 214b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+215:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 215b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+216:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 216b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+217:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 217b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+218:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 218b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 28b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+or ecx, 1
+xor ecx, 1
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+219:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 219b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, DWORD PTR [edi+40]
+and eax, ebx
+cmp eax, 1
+je 220f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+222:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 222b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+223:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 223b
+mov eax, 0
+jmp 221f
+220:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+224:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 224b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+225:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 225b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+226:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 226b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+227:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 227b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ebx, DWORD PTR [eax]
+mov ecx, ebx
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, 0
+sub eax, ecx
+mov DWORD PTR [edi+64], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+228:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 228b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+sub esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, esi
+229:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+230:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 230b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+231:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 231b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+232:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 232b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+233:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 233b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 229b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+234:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 234b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+235:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 235b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+236:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 236b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, 63
+mov DWORD PTR [edi+24], eax
+237:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+238:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 238b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+239:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 239b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+240:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 240b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, edx
+sub edx, eax
+mov DWORD PTR [edi+56], edx
+241:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+242:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 242b
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 241b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+243:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 243b
+mov edi, DWORD PTR [esp+44]
+mov eax, 1
+mov DWORD PTR [edi+32], eax
+mov eax, 0
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov DWORD PTR [edi+56], eax
+244:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov eax, DWORD PTR [eax]
+shr eax, 28
+mov DWORD PTR [edi+68], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+245:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 245b
+mov eax, DWORD PTR [edi+68]
+shr eax, 3
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+246:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 246b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+247:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 247b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+248:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 248b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+249:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 249b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [edi+24]
+add esi, 1
+250:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+251:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 251b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+252:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 252b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+253:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 253b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+254:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 254b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 250b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+255:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 255b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+256:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 256b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+257:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 257b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+shr eax, 2
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+258:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 258b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+259:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 259b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+260:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 260b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+261:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 261b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [edi+24]
+add esi, 1
+262:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+263:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 263b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+264:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 264b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+265:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 265b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+266:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 266b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 262b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+267:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 267b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+268:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 268b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+269:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 269b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+shr eax, 1
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+270:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 270b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+271:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 271b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+272:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 272b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+273:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 273b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [edi+24]
+add esi, 1
+274:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+275:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 275b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+276:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 276b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+277:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 277b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+278:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 278b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 274b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+279:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 279b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+280:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 280b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+281:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 281b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+68]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+282:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 282b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+283:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 283b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+32]
+xor eax, 1
+and eax, DWORD PTR [edi+48]
+mov ecx, DWORD PTR [edi+40]
+xor ecx, 1
+and eax, ecx
+mov DWORD PTR [edi+44], eax
+or eax, DWORD PTR [edi+36]
+and eax, ecx
+mov DWORD PTR [edi+36], eax
+mov eax, DWORD PTR [edi+32]
+or eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, ecx
+mov DWORD PTR [edi+32], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+284:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 284b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+285:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 285b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [edi+24]
+add esi, 1
+286:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+287:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 287b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+288:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 288b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+289:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 289b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+290:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 290b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 286b
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+291:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 291b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+292:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 292b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+293:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 293b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+and eax, DWORD PTR [edi+40]
+or eax, DWORD PTR [edi+32]
+mov DWORD PTR [edi+32], eax
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 244b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+294:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 294b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+24]
+add eax, 1
+mov DWORD PTR [edi+24], eax
+sub eax, 100
+shr eax, 31
+mov edx, DWORD PTR [edi+36]
+xor edx, 1
+and eax, edx
+cmp eax, 0
+jne 237b
+mov eax, DWORD PTR [edi+36]
+mov DWORD PTR [edi+132], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+295:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 295b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+296:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 296b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+297:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 297b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+298:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 298b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+299:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 299b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2100:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2100b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2101:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2101b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2102:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2102b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2103:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2104:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2104b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2105:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2105b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2106:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2106b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2107:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2107b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2108:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2108b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2109:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2109b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2110:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2110b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2111:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2111b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2112:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2112b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2113:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2113b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2114:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2114b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2115:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2115b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2116:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2116b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2117:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2117b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2118:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2118b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2119:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2119b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2120:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2120b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2121:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2121b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2122:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2122b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2123:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2123b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2124:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2124b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2125:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2125b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2126:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2126b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2127:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2127b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2128:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2128b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2129:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2129b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2130:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2130b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2131:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2131b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2132:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2132b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2133:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2133b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2134:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2134b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2135:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2135b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2136:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2136b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2137:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2137b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2138:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2138b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2139:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2139b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 2103b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2140:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2140b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2141:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2141b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 8
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov ecx, DWORD PTR [esp+24]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, 8
+add ecx, 4
+mov eax, 0
+2142:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 2142b
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2143:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2144:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2144b
+mov edi, DWORD PTR [esp+44]
+mov eax, ecx
+and eax, 1
+mov DWORD PTR [edi+136], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2145:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2145b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+136]
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2146:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2146b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+xor ebx, -1
+and ebx, 1
+xor ecx, -1
+mov DWORD PTR [edi+140], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+add edi, 4
+2147:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2147b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+140]
+mov DWORD PTR [eax], ecx
+sub esi, 1
+cmp esi, 0
+jne 2143b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2148:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2148b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+60], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2149:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2149b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2150:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2150b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2151:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2151b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2152:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2152b
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2153:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2153b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2154:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2154b
+mov eax, DWORD PTR [edi+132]
+221:
+21:
+mov ebx, DWORD PTR [edi]
+mov ebp, DWORD PTR [edi+4]
+mov esi, DWORD PTR [edi+8]
+mov edi, DWORD PTR [edi+12]
+ret
+.globl proto_baseline_late
+.p2align 6
+proto_baseline_late:
+mov eax, DWORD PTR [esp+44]
+mov DWORD PTR [eax], ebx
+mov DWORD PTR [eax+4], ebp
+mov DWORD PTR [eax+8], esi
+mov DWORD PTR [eax+12], edi
+mov edi, eax
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+movzx eax, BYTE PTR [esi]
+mov ebx, esi
+add ebx, ecx
+sub ebx, 1
+movzx edx, BYTE PTR [ebx]
+mov ebx, eax
+sub ebx, 1
+shr ebx, 31
+mov ebp, ecx
+sub ebp, 64
+ror ebp, 24
+add ebp, eax
+sub ebp, 128
+shr ebp, 31
+and edx, 1
+xor edx, 1
+or ebx, edx
+or ebx, ebp
+cmp ebx, 0
+je 20f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+22:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 22b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+23:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 23b
+mov eax, 0
+jmp 21f
+20:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov ecx, 0
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+add ecx, edx
+mov eax, 0
+24:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 24b
+mov esi, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [esp+24]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+25:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 25b
+mov esi, DWORD PTR [esp+28]
+mov ecx, DWORD PTR [esp+32]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+26:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 26b
+mov esi, DWORD PTR [esp+36]
+mov ecx, DWORD PTR [esp+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add esi, ecx
+sub esi, 1
+27:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 27b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov ecx, -2147483648
+mov DWORD PTR [eax], ecx
+mov esi, DWORD PTR [esp+32]
+add esi, esi
+add esi, esi
+add esi, esi
+28:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+29:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 29b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+210:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 210b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+211:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 211b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+212:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 212b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+213:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 213b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+214:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 214b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+215:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 215b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+216:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 216b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+217:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 217b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+218:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 218b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 28b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+or ecx, 1
+xor ecx, 1
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+219:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 219b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, DWORD PTR [edi+40]
+and eax, ebx
+cmp eax, 1
+je 220f
+mov esi, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov eax, 0
+222:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 222b
+mov esi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov eax, 0
+223:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 223b
+mov eax, 0
+jmp 221f
+220:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+224:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 224b
+mov edi, DWORD PTR [esp+44]
+mov eax, 0
+mov DWORD PTR [edi+20], eax
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+add eax, eax
+add eax, eax
+mov DWORD PTR [edi+56], eax
+225:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+226:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 226b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+227:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 227b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+40], eax
+mov eax, DWORD PTR [edi+40]
+xor eax, 1
+mov DWORD PTR [edi+40], eax
+mov edx, DWORD PTR [edi+20]
+add edx, eax
+mov DWORD PTR [edi+20], edx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+40]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+228:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 228b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 225b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+229:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 229b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+230:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 230b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+231:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 231b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ebx, DWORD PTR [eax]
+mov ecx, ebx
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, ebx
+mul ecx
+mov ebp, 2
+sub ebp, eax
+mov eax, ecx
+mul ebp
+mov ecx, eax
+mov eax, 0
+sub eax, ecx
+mov DWORD PTR [edi+64], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+232:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 232b
+mov edi, DWORD PTR [esp+44]
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+sub esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, esi
+233:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+234:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 234b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+235:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 235b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+236:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 236b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+108], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+237:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 237b
+mov edi, DWORD PTR [esp+44]
+sub esi, 1
+cmp esi, 0
+jne 233b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+238:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 238b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+239:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 239b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+240:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 240b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov eax, 63
+mov DWORD PTR [edi+24], eax
+241:
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+242:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 242b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+24]
+add ecx, 2
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+243:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 243b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 24
+244:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 244b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, edx
+sub edx, eax
+mov DWORD PTR [edi+56], edx
+245:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+246:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 246b
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 245b
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+247:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 247b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+248:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 248b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+249:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 249b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+250:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 250b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+251:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 251b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+252:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 252b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+253:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 253b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+254:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 254b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+255:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 255b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+256:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 256b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+257:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 257b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+258:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 258b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+259:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 259b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+260:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 260b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+261:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 261b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+262:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 262b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+263:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 263b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+mov DWORD PTR [edi+56], eax
+264:
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 12
+mov eax, DWORD PTR [eax]
+shr eax, 28
+mov DWORD PTR [edi+68], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 24
+mov ecx, 0
+265:
+mov eax, DWORD PTR [ebp]
+mov ebx, eax
+shr ebx, 28
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, ecx
+mov DWORD PTR [ebp], eax
+mov ecx, ebx
+add ebp, 4
+sub edx, 4
+jne 265b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+266:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 266b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 1
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+267:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 267b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 2
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+268:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 268b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 3
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+269:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 269b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 4
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+270:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 270b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 5
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+271:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 271b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 6
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+272:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 272b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 7
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+273:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 273b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 8
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+274:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 274b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 9
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+275:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 275b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 10
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+276:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 276b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 11
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+277:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 277b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 12
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+278:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 278b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 13
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+279:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 279b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 14
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+280:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 280b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+68]
+xor eax, 15
+sub eax, 1
+shr eax, 31
+mov DWORD PTR [edi+72], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+72]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+281:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 281b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 264b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+282:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 282b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+283:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 283b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+48]
+or eax, DWORD PTR [edi+52]
+mov DWORD PTR [edi+32], eax
+mov eax, 0
+mov DWORD PTR [edi+36], eax
+mov DWORD PTR [edi+28], eax
+mov eax, DWORD PTR [esp+32]
+add eax, DWORD PTR [esp+40]
+add eax, eax
+add eax, eax
+add eax, eax
+mov DWORD PTR [edi+56], eax
+284:
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+285:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 285b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+48], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+286:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+or ecx, eax
+add ebp, 4
+add ebx, 4
+sub edx, 4
+jne 286b
+mov eax, 0
+sub eax, ecx
+or eax, ecx
+shr eax, 31
+xor eax, 1
+mov DWORD PTR [edi+52], eax
+mov eax, DWORD PTR [edi+28]
+mov edx, DWORD PTR [edi+20]
+mov ebx, eax
+sub ebx, edx
+shr ebx, 31
+mov ecx, DWORD PTR [edi+32]
+mov ebp, ecx
+xor ebp, 1
+and ebx, ebp
+add eax, 1
+xor eax, edx
+sub eax, 1
+shr eax, 31
+or eax, DWORD PTR [edi+52]
+mov edx, DWORD PTR [edi+48]
+mov ebp, ebx
+and ebp, edx
+or ebp, DWORD PTR [edi+36]
+mov DWORD PTR [edi+36], ebp
+mov ebp, edx
+or ebp, eax
+and ebp, ebx
+or ecx, ebp
+mov DWORD PTR [edi+32], ecx
+xor ebp, 1
+and ebp, ebx
+mov DWORD PTR [edi+44], ebp
+mov ecx, 0
+sub ecx, DWORD PTR [edi+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+287:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 287b
+mov edi, DWORD PTR [esp+44]
+mov eax, DWORD PTR [edi+28]
+add eax, 1
+mov DWORD PTR [edi+28], eax
+mov eax, DWORD PTR [edi+56]
+sub eax, 1
+mov DWORD PTR [edi+56], eax
+jne 284b
+mov eax, DWORD PTR [edi+24]
+add eax, 1
+mov DWORD PTR [edi+24], eax
+sub eax, 100
+shr eax, 31
+mov edx, DWORD PTR [edi+36]
+xor edx, 1
+and eax, edx
+cmp eax, 0
+jne 241b
+mov eax, DWORD PTR [edi+36]
+mov DWORD PTR [edi+132], eax
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+288:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 288b
+mov edi, DWORD PTR [esp+44]
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+60]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov eax, DWORD PTR [esp+84]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+sub eax, 8
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+add edx, 8
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+12], eax
+mov eax, 64
+mov DWORD PTR [esp+16], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call proto_mont
+lea esp, [esp+36]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 16
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov DWORD PTR [eax+4], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+289:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 289b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+290:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 290b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+291:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 291b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+292:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 292b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+mov ecx, 1
+mov DWORD PTR [eax], ecx
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+293:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 293b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+294:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 294b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+295:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 295b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+296:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+297:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 297b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+298:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 298b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+299:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 299b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2100:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2100b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2101:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2101b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2102:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2102b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2103:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2103b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2104:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2104b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2105:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2105b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2106:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2106b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2107:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2107b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2108:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2108b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2109:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2109b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2110:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2110b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2111:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2111b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2112:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2112b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2113:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2113b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2114:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2114b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+100], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2115:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2115b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov eax, DWORD PTR [edi+100]
+and eax, DWORD PTR [edi+104]
+mov DWORD PTR [edi+108], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2116:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2116b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2117:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2117b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2118:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2118b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2119:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2119b
+mov edi, DWORD PTR [esp+44]
+mov ebx, 0
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2120:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2120b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2121:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2121b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2122:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2122b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2123:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2123b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2124:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2124b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+104], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2125:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2125b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2126:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2126b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2127:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2127b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+108]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2128:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2128b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+100]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2129:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2129b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov eax, DWORD PTR [eax]
+and eax, 1
+mov DWORD PTR [edi+104], eax
+mov ecx, 0
+sub ecx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2130:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2130b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2131:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2131b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+xor ebx, DWORD PTR [edi+104]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add ebp, edx
+mov DWORD PTR [ebp], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2132:
+mov eax, DWORD PTR [ebp+4]
+and eax, 1
+ror eax, 1
+mov ecx, DWORD PTR [ebp]
+shr ecx, 1
+add ecx, eax
+mov DWORD PTR [ebp], ecx
+add ebp, 4
+sub edx, 4
+jne 2132b
+mov eax, DWORD PTR [ebp]
+shr eax, 1
+mov DWORD PTR [ebp], eax
+sub esi, 1
+cmp esi, 0
+jne 296b
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2133:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2133b
+mov edi, DWORD PTR [esp+44]
+mov ecx, -1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2134:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2134b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+sub eax, 8
+mov ecx, 0
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov ecx, DWORD PTR [esp+24]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, 8
+add ecx, 4
+mov eax, 0
+2135:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub ecx, 4
+jne 2135b
+mov esi, DWORD PTR [esp+24]
+add esi, 7
+shr esi, 3
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 8
+add esi, esi
+add esi, esi
+add esi, esi
+2136:
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2137:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2137b
+mov edi, DWORD PTR [esp+44]
+mov eax, ecx
+and eax, 1
+mov DWORD PTR [edi+136], eax
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2138:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+adc eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2138b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+136]
+mov DWORD PTR [eax], ecx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 4
+mov ecx, 0
+2139:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2139b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+xor ebx, -1
+and ebx, 1
+xor ecx, -1
+mov DWORD PTR [edi+140], ebx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+add edi, 4
+2140:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2140b
+mov edi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov eax, edi
+add eax, 160
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov ecx, DWORD PTR [eax]
+add ecx, DWORD PTR [edi+140]
+mov DWORD PTR [eax], ecx
+sub esi, 1
+cmp esi, 0
+jne 2136b
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+mov ecx, 0
+2141:
+mov eax, DWORD PTR [ebp]
+add ecx, ecx
+sbb eax, DWORD PTR [ebx]
+mov DWORD PTR [edi], eax
+sbb ecx, ecx
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2141b
+mov edi, DWORD PTR [esp+44]
+mov ebx, ecx
+and ebx, 1
+mov DWORD PTR [edi+60], ebx
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2142:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2142b
+mov edi, DWORD PTR [esp+44]
+mov ecx, 0
+sub ecx, DWORD PTR [edi+60]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov edi, edi
+add edi, 160
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+add edi, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+2143:
+mov eax, DWORD PTR [ebp]
+xor eax, DWORD PTR [ebx]
+and eax, ecx
+xor eax, DWORD PTR [ebp]
+mov DWORD PTR [edi], eax
+add ebp, 4
+add ebx, 4
+add edi, 4
+sub edx, 4
+jne 2143b
+mov edi, DWORD PTR [esp+44]
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2144:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2144b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2145:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2145b
+mov ecx, DWORD PTR [edi+132]
+sub ecx, 1
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebp, edi
+add ebp, 160
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+add ebp, edx
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov ebx, edi
+add ebx, 160
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+add ebx, edx
+mov edi, DWORD PTR [esp+24]
+add edi, 7
+shr edi, 3
+add edi, edi
+add edi, edi
+add edi, edi
+add edi, 8
+2146:
+mov eax, DWORD PTR [ebx]
+mov edx, DWORD PTR [ebp]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [ebx], eax
+add ebp, 4
+add ebx, 4
+sub edi, 4
+jne 2146b
+mov edi, DWORD PTR [esp+44]
+mov ebx, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, DWORD PTR [esp+24]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add edx, 8
+add edx, 8
+mov esi, edi
+add esi, 160
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, edx
+add esi, ecx
+sub esi, 1
+2147:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [ebx], al
+add ebx, 1
+sub esi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2147b
+mov eax, DWORD PTR [edi+132]
+221:
+21:
+mov ebx, DWORD PTR [edi]
+mov ebp, DWORD PTR [edi+4]
+mov esi, DWORD PTR [edi+8]
+mov edi, DWORD PTR [edi+12]
+ret
 .globl proto_fast_mont
 .p2align 6
 proto_fast_mont:

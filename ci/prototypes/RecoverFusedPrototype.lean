@@ -47,6 +47,36 @@ def body : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4))
     (.ite .e (.seq numbers (.ite .e rest failure)) failure))
 def code : Prog isa := seqs [.block entry, body, .block VG.Impl.Bignum.X86.PublicFn.restore]
 
+def smallFixed : Prog isa := seqs [copy nar mG aZ,
+  .block ([.mov .ecx (.mem (sc sCand)), .alu .add .ecx (.imm 2)] ++
+    VG.Impl.Rsa.X86.KeyRt.arrPtr nar .eax mG .edx ++ [.store (at_ .eax 0) .ecx]),
+  copy nar mY mX, copy nar mXm aZ, .block [.mov .esi (.imm 7)],
+  VG.Impl.Rsa.X86.KeyRt.mulMod nar aZ mG mY mXm aN mAcc]
+
+def fixedBit (k : Nat) : Prog isa := seqs [
+  .block (bitHead k), mmul mX mY mY, eqAt sE1 mX aO, eqAt sE2 mX aNg,
+  .block hit, sel nar 0 0 mY sLive,
+  smallFixed, sel nar mY mX mXm sBit,
+  eqAt sE1 mY aO, eqAt sE2 mY aNg, .block tail]
+
+def fixedWindow : Prog isa := seqs [.block windowTop, shiftUp,
+  fixedBit 3, fixedBit 2, fixedBit 1, fixedBit 0, .block cntNext]
+
+def fixedCand : Prog isa := seqs [alignStart, .loop alignBody .ne,
+  copy nar 0 aZ, .block [.mov .eax (.imm 1), .store (sc sDone) .eax,
+    .mov .eax (.imm 0), .store (sc sOk) .eax],
+  .block windowCount, .loop fixedWindow .ne, copy nar mY 0, .block candNext]
+
+def loopWith (c : Prog isa) (first : Nat) : Prog isa := .seq
+  (.block [.mov .eax (.imm (BitVec.ofNat 32 first)), .store (sc sCand) .eax]) (.loop c .ne)
+
+def restWith (c : Prog isa) (first : Nat) : Prog isa :=
+  seqs [copy wid wR wM, mont, loopWith c first, fin]
+
+def codeWith (r : Prog isa) : Prog isa := seqs [.block entry,
+  .block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4), .block VG.Impl.Bignum.X86.modulusCheck,
+  .ite .e (.seq numbers (.ite .e r failure)) failure, .block VG.Impl.Bignum.X86.PublicFn.restore]
+
 def fastMac (d : Nat) : List Instr := [
   .mov .eax (.mem (at_ .ecx d)), .mul .edi,
   .alu .add .eax (.mem (at_ .ebp d)), .alu .adc .edx (.imm 0),
@@ -83,6 +113,11 @@ def main : IO Unit := do
     ".intel_syntax noprefix\n.text\n" ++
     Prototype.printFn "proto_recover" Prototype.code ++
     Prototype.printFn "proto_fast" Prototype.code "proto_fast_mont" ++
+    Prototype.printFn "proto_fixed" (Prototype.codeWith (Prototype.restWith Prototype.fixedCand 0)) ++
+    Prototype.printFn "proto_fixed_late" (Prototype.codeWith (Prototype.restWith Prototype.fixedCand 63)) ++
+    Prototype.printFn "proto_recover_late" (Prototype.codeWith (Prototype.restWith Prototype.cand 63)) ++
+    Prototype.printFn "proto_baseline_late" (Prototype.codeWith (seqs [halving,mont,
+      Prototype.loopWith VG.Impl.Rsa.X86.RecoverRt.candBody 63,fin])) ++
     Prototype.printFn "proto_fast_mont" Prototype.fastMont ++
     Prototype.printFn "proto_baseline" VG.Impl.Rsa.X86.RecoverRt.code ++
     Prototype.printFn "proto_mont" VG.Impl.Mont.X86.Rt.body ++
