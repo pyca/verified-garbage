@@ -4,7 +4,6 @@ import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.CallEntry
 import VerifiedGarbage.Proof.Mont.X86.ArgFar
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
-import VerifiedGarbage.Proof.MillerRabin.X86.Context
 
 /-! # Load the length before pushing Montgomery's cdecl arguments -/
 

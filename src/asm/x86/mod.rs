@@ -287,6 +287,9 @@ pub(crate) mod idea_ofb;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod miller_rabin;
+
+#[rustfmt::skip]
 pub(crate) mod mldsa;
 
 #[rustfmt::skip]
@@ -366,6 +369,9 @@ pub(crate) mod rc4;
 
 #[rustfmt::skip]
 pub(crate) mod rsa;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_keygen;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_mont;

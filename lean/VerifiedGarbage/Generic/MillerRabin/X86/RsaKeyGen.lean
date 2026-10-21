@@ -1,9 +1,14 @@
 module
 
+public import VerifiedGarbage.TCB.X86.Isa
+
+public import VerifiedGarbage.TCB.Artifact
+
+public import Init.Prelude
+
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateVerified
-public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSafety
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSafety -- shake: keep (the public artifact body uses `code_all`)
 public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
