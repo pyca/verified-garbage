@@ -256,3 +256,27 @@ The shared runtime RSA helper is the smallest candidate, but is 1.0% slower
 than OpenSSL at 1024 bits, so it does not meet the all-width acceptance target.
 The proofs should share the existing arithmetic lemmas and comb mathematics;
 there is no reason to promote unrelated parameter/window experiments.
+
+## Scratch-memory masks
+
+Run: https://github.com/pyca/verified-garbage/actions/runs/39530128608
+Commit: `1468edcf7`. Native i686, AMD EPYC 7763, normal OpenSSL capabilities.
+Three alternating-order rounds, 25 samples per workload. Keygen/DSA correctness,
+dense comb arithmetic, retained-context reuse and ABI checks all passed.
+
+| Candidate | 1024/160 ms | 2048/160 ms | 2048/224 ms | 2048/256 ms | 3072/256 ms | Total DSA symbol bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| OpenSSL | 0.6274 | 2.3938 | 3.2018 | 3.6381 | 8.1450 | — |
+| `mfk` stack masks | 0.6113 | 2.2480 | 2.9860 | 3.4037 | 7.4713 | 603264 |
+| `mfko` workspace masks | 0.6057 | 2.2340 | 2.9818 | 3.3828 | 7.4752 | 603904 |
+| `mfkscvru4` stack masks | 0.5094 | 1.8829 | 2.5056 | 2.8329 | 6.2141 | 617408 |
+| `mfkscvruo4` workspace masks | 0.5091 | 1.8794 | 2.5053 | 2.8369 | 6.2222 | 618048 |
+
+Use workspace masks for promotion. They remove the 128-byte stack frame by
+reusing Montgomery temporary slot 1, which is dead during selection. The
+fastest candidate changes by at most 0.2% and remains 18.9–23.6% faster than
+OpenSSL. Total symbol size grows by 640 bytes (0.1%). This small cost removes
+stack allocation/release from the private core and allows the existing taint
+checker to verify its entire constant-time control flow in one proof. These
+are still unproven prototype timings; production acceptance must measure the
+exact emitted, fully verified implementation.
