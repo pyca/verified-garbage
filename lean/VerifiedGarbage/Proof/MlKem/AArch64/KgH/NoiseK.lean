@@ -129,7 +129,7 @@ theorem kgOut_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (h : KB 
       (Region.sub_prefix (by decide : 512 ≤ 1024))) pv
     (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head cv))
       (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head (Covers.tail cv))) Covers.nil))
-    (tv.forward.ready cv)) fun t ⟨kt, pt⟩ st => ?_
+    (tv.fast.ready cv)) fun t ⟨kt, pt⟩ st => ?_
   have kt' : Kept [R (kA s₀) 3 T 1024, R (kA s₀) 3 KG.NS 1024] v t := kt.sub fun x hx => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl
@@ -259,7 +259,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
   have fN : KG.NS + 1024 ≤ kL P 3 := by kl
   have cvs {o l : Nat} (h : o + l ≤ P.scl) := Noise.coversScratch hc h
   have rdy (m : Nat) (hm : m < 2 * P.k) :=
-    H.tt.forward.ready (Noise.coversTwo (cvs (Noise.outOff_fits hw hr true hm)) (cvs (o := KG.NS) (l := 1024) (by omega_using [fN, kl3])))
+    H.tt.fast.ready (Noise.coversTwo (cvs (Noise.outOff_fits hw hr true hm)) (cvs (o := KG.NS) (l := 1024) (by omega_using [fN, kl3])))
   -- Every region apart from the pair's working space, `NS` and both outputs misses its writes.
   have away {r : Region} (h1 : r.Disjoint (R (kA s₀) 3 KG.SS 2048)) (h2 : r.Disjoint (R (kA s₀) 3 KG.NS 1024))
       (h3 : r.Disjoint (R (kA s₀) 3 (Noise.outOff P true n) 1024))
@@ -270,6 +270,9 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
       ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (Region.mk (t.syms sym) 512).Disjoint q :=
     away (tt.apart (cov_w hp kb (b := 3) (by decide) fS)) (tt.apart (cov_w hp kb (b := 3) (by decide) fN))
       (tt.apart (cov_w hp kb (b := 3) (by decide) fO)) (tt.apart (cov_w hp kb (b := 3) (by decide) fO'))
+  have ffar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (NttR.fastRegion t).Disjoint q :=
+    away (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fS)) (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fN))
+      (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fO)) (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fO'))
   have sc (o l : Nat) (hf : o + l ≤ kL P 3) (hs : o + l ≤ KG.SS) :
       ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (R (kA s₀) 3 o l).Disjoint q :=
     away (sdisjK hp hf fS (.inl hs)) (sdisjK hp hf fN (.inl (by omega_using [hs, lim])))
@@ -281,7 +284,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
     away (sdisjK hp hf fS (.inr (by omega_using [h1, lim]))) (sdisjK hp hf fN (.inr h1))
       (sdisjK hp hf fO h2) (sdisjK hp hf fO' h3)
   refine WP.mono_syms (Noise.readonly_noisePair_layout (B := kA s₀ 3) hw hr true hn kb.x28 hc
-    (rdy n (by omega)) (rdy (n + 1) hn) (tfar _ _ H.tt.forward)) fun u ⟨ku, pu, qu⟩ sy => ?_
+    (rdy n (by omega)) (rdy (n + 1) hn) ffar) fun u ⟨ku, pu, qu⟩ sy => ?_
   have sv : SV P = TP P + 2048 := rfl
   have tp : TP P = SH P + 1024 * P.k + 1024 := rfl
   have sh : SH P = AH + 1024 * (P.k * P.k) := rfl
@@ -305,7 +308,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
     ?_, ?_, fun N hN => ?_, fun N hN => ?_⟩
   · rw [sy]; exact H.syms
   · exact H.tt.frameFar sy ku.rd ku.wr ku.sp ku.frame fun r hr' =>
-      ⟨tfar _ _ H.tt.forward r hr', tfar _ _ H.tt.inverse r hr'⟩
+      ⟨tfar _ _ H.tt.forward r hr', tfar _ _ H.tt.inverse r hr', ffar r hr'⟩
   · rw [bytesAt_frame ku.frame (hi (TP P + 168 * N) 128 (by omega_using [hsv, sv, hN]) (by omega_using [tp, sh, cst])
       (by omega_using [oB, oH, sv, tp, hN]) (by omega_using [oB', oH', sv, tp, hN])) (by decide)]
     exact H.buf N hN

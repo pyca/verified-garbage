@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyOut
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.PairTail
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.OutWith
@@ -28,9 +29,9 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     (hw : s.gpr .x28+BitVec.ofNat 64 ns=w)
     (hs : TailSetup s p f g w)
     (hpair : PairAt s.mem p (seedState initial.mem a n) (seedState initial.mem a (n+1)))
-    (ht0 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves f w)
-    (ht1 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves g w)
-    (hfar : ∀r∈pairWrites p f g w,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
+    (ht0 : NttR.FastReady s f w)
+    (ht1 : NttR.FastReady s g w)
+    (hfar : ∀r∈pairWrites p f g w,(NttR.fastRegion s).Disjoint r) :
     WP isa (seqs [Impl.MlKem.AArch64.Noise.squeezePair,outCodeWith Ntt16.Readonly.nttAtWithW off0 ns 400 tr0,outCodeWith Ntt16.Readonly.nttAtWithW off1 ns 528 tr1,
       .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]) s fun t =>
       Kept (pairWrites p f g w) initial t ∧
@@ -77,7 +78,7 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     (Proof.MlKem.bytesAt_frame kv.frame hs.next (by decide)).trans r1
   have tab1v := tab1.frame vuSym kv.rd kv.wr kv.frame (by
     intro r hr
-    rw [su]
+    rw [NttR.fastRegion, su]
     exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
   refine WP.seq (WP.mono (readonly_out_okW tr1 h1 hns (by decide)
     (by rw [kv.cs .x19 (by decide) (by decide),ku.gpr .x19 (by decide),hp]; rfl)

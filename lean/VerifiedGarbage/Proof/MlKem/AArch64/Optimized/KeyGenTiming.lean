@@ -16,9 +16,10 @@ theorem entry_symbols {base : Contract isa} {s u : State} (h : (entryContract ba
   refine ⟨h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inl rfl),?_⟩
   intro name hn
   simp only [restSymbols,List.mem_cons,List.not_mem_nil,or_false] at hn
-  rcases hn with rfl|rfl|rfl
+  rcases hn with rfl|rfl|rfl|rfl
   · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inl rfl))
   · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inr (Or.inl rfl)))
   · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inl rfl))))
+  · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
 
 end VG.Proof.MlKem.AArch64.Optimized

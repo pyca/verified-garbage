@@ -400,6 +400,21 @@ def St.vop (R : Rules) (σ : St) : VOp → Option St
     let x := σ.vreg n
     let y := σ.vreg m
     some (σ.setV d (Y.ofFn fun e => subT R (a.get e) (mulT (x.get e) (y.get e))))
+  | .mulHE .mul d n m i =>
+    let x := σ.vreg n
+    let z := (σ.vreg m).get i
+    if i < 8 ∧ m.index < 16 then some (σ.setV d (Y.ofFn fun e => mulT (x.get e) z)) else none
+  | .mulHE .sqrdmulh d n m i =>
+    let x := σ.vreg n
+    let z := (σ.vreg m).get i
+    if i < 8 ∧ m.index < 16 ∧ qdOk z then some (σ.setV d (Y.ofFn fun e => qdT (x.get e) z)) else none
+  | .mulHE .mls d n m i =>
+    let a := σ.vreg d
+    let x := σ.vreg n
+    let z := (σ.vreg m).get i
+    if i < 8 ∧ m.index < 16 then some (σ.setV d (Y.ofFn fun e => subT R (a.get e) (mulT (x.get e) z)))
+    else none
+  | .ins .d2 d i _ => if i < 2 then some (σ.setV d 0) else none
   | .add .h8 d n m =>
     let x := σ.vreg n
     let y := σ.vreg m
@@ -433,6 +448,7 @@ def St.step (R : Rules) (rs : List Rg) (σ : St) : Instr → Option St
   | .subImm .x d n imm => if imm < 4096 then some (σ.setG d (subG rs (σ.greg n) imm)) else none
   | .movz .x d imm hw => if hw < 4 then some (σ.setG d (.num (imm.toNat * 2 ^ (16 * hw)))) else none
   | .adrSym d name => some (σ.setG d (symRegion rs name))
+  | .umov .x d _ i => if i < 2 then some (σ.setG d .junk) else none
   | .ldrq t n off =>
     if off % 16 = 0 ∧ off < 65536 then (chunkAt rs (σ.greg n) off).map fun (k, j) => σ.setV t (σ.chunk k j)
     else none

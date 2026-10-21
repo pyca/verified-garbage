@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.OutWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
@@ -20,7 +21,7 @@ theorem readonly_out_okW {s : State} {off ns buf : Nat} {b f w : Addr} (transfor
  (hbf : (Region.mk b 128).Disjoint ⟨f,1024⟩) (hfw : (polyRegion f).Disjoint (polyRegion w))
  (hc : Covers [⟨b,128⟩,⟨f,1024⟩] (s.rd++s.wr))
  (hcw : Covers [⟨f,1024⟩,⟨w,1024⟩] s.wr)
- (ht : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves f w) :
+ (ht : NttR.FastReady s f w) :
  WP isa (outCodeWith Ntt16.Readonly.nttAtWithW off ns buf transform) s fun t=>
    Kept [⟨f,1024⟩,⟨w,1024⟩] s t ∧
    PolyIsW (cw true) t.mem f (if transform then ntt (samplePolyCBD 2 (bytesAt s.mem b 128))

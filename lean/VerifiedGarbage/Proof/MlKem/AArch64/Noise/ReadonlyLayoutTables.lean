@@ -15,7 +15,7 @@ theorem allWrites_tables_far {s : State} {L : KemLay} (wf : L.Wf) (room : Room L
  {B : Addr} (hc : Covers [⟨B,L.scl⟩] s.wr) (ht : Optimized.TransformTables s) :
  ∀r∈allWrites L kg B,
    (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r ∧
-   (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint r := by
+   (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint r ∧ (NttR.fastRegion s).Disjoint r := by
  have lim := layout_limits wf kg
  have cw {o l : Nat} (ho : o+l≤L.scl) := coversScratch hc ho
  have far {symbol H} (h : Optimized.TransformTable s symbol H) :
@@ -24,7 +24,12 @@ theorem allWrites_tables_far {s : State} {L : KemLay} (wf : L.Wf) (room : Room L
    · exact h.apart (cw (by omega))
    · exact h.apart (cw lim.2.2.1)
    · intro j hj; exact h.apart (cw (outOff_fits wf room kg hj))
- exact fun r hr=>⟨far ht.forward r hr,far ht.inverse r hr⟩
+ have farF : ∀r∈allWrites L kg B,(NttR.fastRegion s).Disjoint r := by
+   apply allWrites_apart
+   · exact ht.fast.apart (cw (by omega))
+   · exact ht.fast.apart (cw lim.2.2.1)
+   · intro j hj; exact ht.fast.apart (cw (outOff_fits wf room kg hj))
+ exact fun r hr=>⟨far ht.forward r hr,far ht.inverse r hr,farF r hr⟩
 
 theorem readonly_noiseAll_tables {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
  {B : Addr} (hB : s.gpr .x28=B) (hc : Covers [⟨B,L.scl⟩] s.wr)
@@ -36,9 +41,9 @@ theorem readonly_noiseAll_tables {s : State} {L : KemLay} (wf : L.Wf) (room : Ro
  have cw {o l : Nat} (ho : o+l≤L.scl) := coversScratch hc ho
  apply readonly_noiseAll_layout wf room kg hB hc
  · intro j hj
-   exact ht.forward.ready (coversTwo (cw (outOff_fits wf room kg hj)) (cw lim.2.2.1))
+   exact ht.fast.ready (coversTwo (cw (outOff_fits wf room kg hj)) (cw lim.2.2.1))
  · apply allWrites_apart
-   · exact ht.forward.apart (cw (by omega))
-   · exact ht.forward.apart (cw lim.2.2.1)
-   · intro j hj; exact ht.forward.apart (cw (outOff_fits wf room kg hj))
+   · exact ht.fast.apart (cw (by omega))
+   · exact ht.fast.apart (cw lim.2.2.1)
+   · intro j hj; exact ht.fast.apart (cw (outOff_fits wf room kg hj))
 end VG.Proof.MlKem.AArch64.Noise

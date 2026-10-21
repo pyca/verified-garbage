@@ -124,7 +124,7 @@ theorem outBuf_ok {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : 
         (Region.sub_prefix (by decide : 512 ≤ 1024))) pv
       (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head cv))
         (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head (Covers.tail cv))) Covers.nil))
-      (tv.forward.ready cv)) fun t ⟨kt, pt⟩ st => ?_
+      (tv.fast.ready cv)) fun t ⟨kt, pt⟩ st => ?_
     have kt' : Kept [R (kA s₀) L.sc T 1024, R (kA s₀) L.sc NS 1024] v t := kt.sub fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl

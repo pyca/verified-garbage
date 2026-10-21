@@ -146,7 +146,7 @@ theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
     · rfl
     · intro r hr
       rw [constants_regions] at hr
-      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
       all_goals first
        | contradiction
        | (refine ⟨by decide, ?_, ?_⟩
@@ -221,7 +221,7 @@ theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
     · rfl
     · intro r hr
       rw [constants_regions] at hr
-      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
       all_goals first
        | contradiction
        | (refine ⟨by decide, ?_, ?_⟩

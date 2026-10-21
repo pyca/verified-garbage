@@ -295,6 +295,17 @@ theorem Hd.ofVHalves {y : Nat} {f : Nat → BitVec 16} (h : ∀ e < 8, Hd L O (Y
     ∀ e < 8, Hd L O (Y.get y e) (vhalf (ofVHalves f) e) := fun e he => by
   rw [vhalf_ofVHalves _ he]; exact h e he
 
+theorem eval_mulHE {s : State} {op : VMulHOp} {d n m : VReg} {i : Nat} (hi : i < 8) (hm : m.index < 16)
+    (h : ∀ e < 8, (op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) i)).isSome) :
+    VOp.eval s (.mulHE op d n m i) =
+      some (d, ofVHalves fun e => (op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) i)).getD 0) := by
+  simp only [VOp.eval]
+  rw [ite_eq_left ⟨hi, hm, by
+    rw [show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl]
+    simp only [List.all_cons, List.all_nil, h 0 (by decide), h 1 (by decide), h 2 (by decide),
+      h 3 (by decide), h 4 (by decide), h 5 (by decide), h 6 (by decide), h 7 (by decide),
+      Bool.and_self]⟩]
+
 theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel rs s₀ L O σ s) {o : VOp}
     (hs : σ.vop R o = some σ') : ∃ s', exec (.vop o) s = some s' ∧ Rel rs s₀ L O σ' s' := by
   cases o with
@@ -315,6 +326,15 @@ theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel
     · cases hs
   | ins a d i n =>
     cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    case d2 =>
+      split at hs
+      · rename_i hi
+        simp only [Option.some.injEq] at hs; subst hs
+        refine ⟨_, exec_vop (x := setLane (s.v d) 64 i (s.gpr n)) (by simp only [VOp.eval, hi, ite_true]),
+          h.setV (Nat.two_pow_pos _) fun e _ => ?_⟩
+        rw [show Y.get 0 e = junkT by show slot tw 0 e = 0; rw [slot_zero]]
+        exact Hd.junk _
+      · cases hs
     split at hs
     · rename_i v hv
       split at hs
@@ -365,6 +385,32 @@ theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel
         refine ⟨_, exec_vop (eval_mulH fun e he => qdOk_some (h.v m e he) (hok e he) _), h.setV (ofFn_lt _)
           (Hd.ofVHalves (Hd.ofFn (fun e _ => qdT_lt _ _) fun e he => ?_))⟩
         exact qdT_ok (h.v n e he) (h.v m e he)
+      · cases hs
+  | mulHE op d n m i =>
+    cases op <;> simp only [St.vop, reduceCtorEq] at hs
+    · -- mul
+      split at hs
+      · rename_i hc
+        simp only [Option.some.injEq] at hs; subst hs
+        refine ⟨_, exec_vop (eval_mulHE hc.1 hc.2 fun _ _ => rfl), h.setV (ofFn_lt _)
+          (Hd.ofVHalves (Hd.ofFn (fun e _ => mulT_lt _ _) fun e he => ?_))⟩
+        exact mulT_ok (h.v n e he) (h.v m i hc.1)
+      · cases hs
+    · -- mls
+      split at hs
+      · rename_i hc
+        simp only [Option.some.injEq] at hs; subst hs
+        refine ⟨_, exec_vop (eval_mulHE hc.1 hc.2 fun _ _ => rfl), h.setV (ofFn_lt _)
+          (Hd.ofVHalves (Hd.ofFn (fun e _ => subT_lt _ _ _) fun e he => ?_))⟩
+        exact subT_ok hM (h.v d e he) (mulT_ok (h.v n e he) (h.v m i hc.1))
+      · cases hs
+    · -- sqrdmulh
+      split at hs
+      · rename_i hc
+        simp only [Option.some.injEq] at hs; subst hs
+        refine ⟨_, exec_vop (eval_mulHE hc.1 hc.2.1 fun e he => qdOk_some (h.v m i hc.1) hc.2.2 _),
+          h.setV (ofFn_lt _) (Hd.ofVHalves (Hd.ofFn (fun e _ => qdT_lt _ _) fun e he => ?_))⟩
+        exact qdT_ok (h.v n e he) (h.v m i hc.1)
       · cases hs
   | add a d n m =>
     cases a <;> simp only [St.vop, reduceCtorEq] at hs
@@ -565,6 +611,13 @@ theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} 
       obtain ⟨e, hp⟩ := movz_val imm hw4
       refine ⟨_, by simp only [exec, show 16 * hw < Size.bits .x by simp [Size.bits]; omega, ite_true],
         h.setG (g := .num _) ⟨hp, e⟩⟩
+    · cases hs
+  case umov sz d n i =>
+    cases sz <;> simp only [St.step, reduceCtorEq] at hs
+    split at hs
+    · rename_i hi
+      simp only [Option.some.injEq] at hs; subst hs
+      exact ⟨_, by simp only [exec, Size.bits, show i * 64 < 128 by omega, ite_true]; rfl, h.setG (g := .junk) trivial⟩
     · cases hs
   case adrSym d name =>
     simp only [St.step, Option.some.injEq] at hs; subst hs

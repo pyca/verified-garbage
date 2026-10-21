@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPairTail
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
@@ -33,9 +34,9 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (has : (Region.mk a 32).Disjoint (savedR p))
     (hap : (Region.mk a 32).Disjoint (pairR p))
     (hs : TailSetup s p f g w)
-    (ht0 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves f w)
-    (ht1 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves g w)
-    (hfar : ∀r∈pairWrites p f g w,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
+    (ht0 : NttR.FastReady s f w)
+    (ht1 : NttR.FastReady s g w)
+    (hfar : ∀r∈pairWrites p f g w,(NttR.fastRegion s).Disjoint r) :
     WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites p f g w) s t ∧
       PolyIsW (cw true) t.mem f (sampled s.mem a n (transformed L kg n)) ∧
@@ -60,6 +61,6 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (by rw [ku.gpr .x28 (by decide)]; exact hf)
     (by rw [ku.gpr .x28 (by decide)]; exact hg)
     (by rw [ku.gpr .x28 (by decide)]; exact hw)
-    (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [us] using hfar)
+    (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [NttR.fastRegion, us] using hfar)
 
 end VG.Proof.MlKem.AArch64.Noise
