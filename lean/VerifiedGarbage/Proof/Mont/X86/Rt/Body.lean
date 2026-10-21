@@ -24,12 +24,12 @@ theorem select_mod {Tl D top X M : Nat} {c : Bool} (hX : M < X) (hD : D < X) (hV
   rw [← csub_arith hX hD hV he]
   by_cases h : top < c.toNat <;> simp [h]
 
-theorem body_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw : Ws s W L) (ha : Args s W L A)
+theorem scalarBody_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw : Ws s W L) (ha : Args s W L A)
     {N S mo inv o a b : Nat} (V : ArgVals A W N S mo inv o a b) (hL : Lay L N S mo inv a b)
     (hN : 0 < N) (hN32 : 4 * N < 2 ^ 32) (ho : o + 4 * N ≤ L) (hso : o + 4 * N ≤ S ∨ S + 12 * N + 56 ≤ o)
     (hinv : (val32 s.mem W mo N * w32 s.mem W inv + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem W b N < val32 s.mem W mo N) :
-    WP isa Rt.body s fun t =>
+    WP isa Rt.scalarBody s fun t =>
       Outs W [(S, 12 * N + 56), (o, 4 * N)] s.mem t.mem ∧
       val32 t.mem W o N < val32 s.mem W mo N ∧
       val32 t.mem W o N * 2 ^ (32 * N) % val32 s.mem W mo N =
@@ -41,7 +41,7 @@ theorem body_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw : W
   have hmo := hL.mo_le
   have hsmo := hL.smo
   have eacc := accOff_eq
-  unfold Rt.body
+  unfold Rt.scalarBody
   refine WP.assoc (WP.assoc (WP.seq (WP.mono (WP.assoc' (front_ok hw ha V hL hN hN32 hinv hB))
     fun u ⟨Fu, svu, ebpu, ltu, ⟨U, hU⟩, espu, rdu, wru⟩ => ?_)))
   have hwu : Ws u W L := hw.of_wr wru
