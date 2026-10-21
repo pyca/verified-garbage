@@ -46,8 +46,8 @@ def single (L : KemLay) : Bool := L.k * L.k % 2 = 1
 def placed (L : KemLay) (hp : Nat) : Nat :=
   min (prfs L) (3 * (pairs L - hp) + if single L then 3 else 0)
 
-/-- Buffer `N`: 168 bytes from `TP` on. -/
-def bufOff (L : KemLay) (N : Nat) : Nat := TP L + 168 * N
+/-- Buffer `N`: 168 bytes from `bt` on (`TP` here, `KG.TP` in key generation). -/
+def bufOff (bt N : Nat) : Nat := bt + 168 * N
 
 /-- Where `CBD(PRF₂(r, N))` goes: `ŷ[N]`, `e₁[N - k]`, or `e₂` at `EP`. -/
 def target (L : KemLay) (N : Nat) : Nat :=
@@ -56,42 +56,43 @@ def target (L : KemLay) (N : Nat) : Nat :=
 /-! ## A PRF in the third state -/
 
 /-- Word `k` of `PRF₂(r, N)`'s padded block (`Noise.seedState`) to `dst + off k`,
-through `x9`: word `k` of `r` from `RB`, `N` and the suffix `0x1f`, the final
-bit `0x80` of byte 135, or zero. -/
-def prfWord (dst : Reg) (off : Nat → Nat) (N k : Nat) : List Instr :=
-  if k < 4 then [.ldr .x .x9 .x28 (RB + 8 * k), .str .x .x9 dst (off k)]
+through `x9`: word `k` of `r` from `sd` (`RB` here, `σ` at `KG.SG` in key
+generation), `N` and the suffix `0x1f`, the final bit `0x80` of byte 135, or zero. -/
+def prfWord (sd : Nat) (dst : Reg) (off : Nat → Nat) (N k : Nat) : List Instr :=
+  if k < 4 then [.ldr .x .x9 .x28 (sd + 8 * k), .str .x .x9 dst (off k)]
   else if k = 4 then [.movz .x .x9 (BitVec.ofNat 16 (N + 0x1f00)) 0, .str .x .x9 dst (off k)]
   else if k = 16 then [.movz .x .x9 0x8000 3, .str .x .x9 dst (off k)]
   else [.movz .x .x9 0 0, .str .x .x9 dst (off k)]
 
 /-- The 25 words of `PRF₂(r, N)`'s padded block to `dst + off 0`, …. -/
-def prfWords (dst : Reg) (off : Nat → Nat) (N : Nat) : List Instr :=
-  (List.range 25).flatMap (prfWord dst off N)
+def prfWords (sd : Nat) (dst : Reg) (off : Nat → Nat) (N : Nat) : List Instr :=
+  (List.range 25).flatMap (prfWord sd dst off N)
 
 /-- `PRF₂(r, N)`'s padded block into the third state at `ST`. -/
-def prfBlock (N : Nat) : List Instr := prfWords .x28 (fun k => KEM.ST + 8 * k) N
+def prfBlock (sd N : Nat) : List Instr := prfWords sd .x28 (fun k => KEM.ST + 8 * k) N
 
 /-- The first 128 bytes of the third state to buffer `N`, through `x2`. -/
-def prfOut (L : KemLay) (N : Nat) : List Instr :=
-  ptrTo .x2 .x28 (bufOff L N) ++
+def prfOut (bt N : Nat) : List Instr :=
+  ptrTo .x2 .x28 (bufOff bt N) ++
     (List.range 16).flatMap fun k => [.ldr .x .x9 .x28 (KEM.ST + 8 * k), .str .x .x9 .x2 (8 * k)]
 
 /-- A main squeeze computing `PRF₂(r, N)` in the third state. -/
-def slotPrf (L : KemLay) (N : Nat) : Prog isa :=
-  .seq (.block (prfBlock N)) (.seq Hybrid.x3call (.block (Hybrid.squeezeTail ++ prfOut L N)))
+def slotPrf (sd bt N : Nat) : Prog isa :=
+  .seq (.block (prfBlock sd N)) (.seq Hybrid.x3call (.block (Hybrid.squeezeTail ++ prfOut bt N)))
 
 /-- Main squeeze `k` of a pair whose first `m` squeezes compute `PRF₂(r, N₀)`, …. -/
-def stepP (L : KemLay) (N₀ m k : Nat) : Prog isa :=
-  if k < m then slotPrf L (N₀ + k) else Hybrid.plainStep
+def stepP (sd bt N₀ m k : Nat) : Prog isa :=
+  if k < m then slotPrf sd bt (N₀ + k) else Hybrid.plainStep
 
-/-- A pair (`Paired.pair`) whose first `m` main squeezes compute `PRF₂(r, N₀)`, …. -/
-def pairP (L : KemLay) (a N₀ m : Nat) : Prog isa :=
-  seqs [.block (Paired.init SB SS a (a+1) L.k),
-    .seq (stepP L N₀ m 0) (.seq (stepP L N₀ m 1) (stepP L N₀ m 2)),
+/-- A pair (`Paired.pair`, its seed at `sb`, its working space at `ss` and its
+entries at `off`) whose first `m` main squeezes compute `PRF₂(r, N₀)`, …. -/
+def pairP (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
+  seqs [.block (Paired.init sb ss a (a+1) L.k),
+    .seq (stepP sd bt N₀ m 0) (.seq (stepP sd bt N₀ m 1) (stepP sd bt N₀ m 2)),
     .block Rej8.rejConsts,
-    Paired.reject 400 (AH+1024*a) .x22 true,
+    Paired.reject 400 (off+1024*a) .x22 true,
     .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-    Paired.reject 904 (AH+1024*(a+1)) .x23 true,
+    Paired.reject 904 (off+1024*(a+1)) .x23 true,
     .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
     .ite (.zero .x .x6) (Paired.extraPair true) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
@@ -99,18 +100,18 @@ def pairP (L : KemLay) (a N₀ m : Nat) : Prog isa :=
 /-! ## PRFs in the singleton's second state -/
 
 /-- The second state of the pair at `x19` set to `PRF₂(r, N)`'s padded block. -/
-def reinitB (N : Nat) : List Instr := prfWords .x19 (fun w => 8 + 16 * w) N
+def reinitB (sd N : Nat) : List Instr := prfWords sd .x19 (fun w => 8 + 16 * w) N
 
 /-- A main squeeze of the singleton, whose second state computes `PRF₂(r, N)`
 into the buffer at `x21`. -/
-def stepB (N : Nat) : Prog isa := .seq (.block (reinitB N)) Hybrid.plainStep
+def stepB (sd N : Nat) : Prog isa := .seq (.block (reinitB sd N)) Hybrid.plainStep
 
 /-- The singleton (`Paired.lastSample`), its second state computing
 `PRF₂(r, N₀)`, `PRF₂(r, N₀ + 1)` and `PRF₂(r, N₀ + 2)` into buffers `N₀`, …. -/
 def lastP (L : KemLay) (N₀ : Nat) : Prog isa :=
   let a := L.k*L.k-1
-  seqs [.block (Paired.init SB SS a a L.k ++ ptrTo .x21 .x28 (bufOff L N₀)),
-    .seq (stepB N₀) (.seq (stepB (N₀ + 1)) (stepB (N₀ + 2))),
+  seqs [.block (Paired.init SB SS a a L.k ++ ptrTo .x21 .x28 (bufOff (TP L) N₀)),
+    .seq (stepB RB N₀) (.seq (stepB RB (N₀ + 1)) (stepB RB (N₀ + 2))),
     .block Rej8.rejConsts,
     Paired.reject 400 (AH+1024*a) .x22 true,
     .ite (.zero .x .x22) (Paired.fullSample L false (L.k*L.k-1) true) (.block []),
@@ -129,7 +130,7 @@ def matrixP (L : KemLay) (S : Hybrid.HSrc) (between : Prog isa) : Prog isa :=
   seqs (((List.range (pairs L)).filter (· < hp)).map (fun i => Hybrid.pair3 L S (2*i) i true) ++
     [between] ++
     ((List.range (pairs L)).filter (hp ≤ ·)).map (fun i =>
-      if pairCount L hp i = 0 then Paired.pair L false (2*i) true else pairP L (2*i) (3*(i-hp)) (pairCount L hp i)) ++
+      if pairCount L hp i = 0 then Paired.pair L false (2*i) true else pairP SB SS AH RB (TP L) L (2*i) (3*(i-hp)) (pairCount L hp i)) ++
     (if single L then
       [if placed L hp ≥ 3 * (pairs L - hp) + 3 then lastP L (3 * (pairs L - hp)) else Paired.lastSample L false true]
       else []))
@@ -138,7 +139,7 @@ def matrixP (L : KemLay) (S : Hybrid.HSrc) (between : Prog isa) : Prog isa :=
 
 /-- `SamplePolyCBD₂` of buffer `N` into its polynomial, transformed for `ŷ`. -/
 def outBuf (L : KemLay) (N : Nat) : Prog isa :=
-  seqs [.block (ptrTo .x0 .x28 (bufOff L N) ++ ptrTo .x1 .x28 (target L N)), Noise.cbdCall,
+  seqs [.block (ptrTo .x0 .x28 (bufOff (TP L) N) ++ ptrTo .x1 .x28 (target L N)), Noise.cbdCall,
     if N < L.k then nttAtWithW (target L N) NS else .block []]
 
 /-- The noise: the buffers of the `n` PRF outputs the matrix computed, then

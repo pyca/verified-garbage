@@ -65,19 +65,19 @@ theorem outBuf_ok {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : 
       Frame [R (kA s₀) L.sc (Impl.MlKem.AArch64.Kem16P.target P N) 1024, R (kA s₀) L.sc NS 1024]
         s.mem t.mem ∧ t.gpr .x24 = s.gpr .x24 ∧ t.syms = s.syms ∧
       PolyIsW 16 t.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.target P N))
-        (if N < P.k then ntt (samplePolyCBD 2 (bytesAt s.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N)) 128))
-          else samplePolyCBD 2 (bytesAt s.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N)) 128)) := by
+        (if N < P.k then ntt (samplePolyCBD 2 (bytesAt s.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) 128))
+          else samplePolyCBD 2 (bytesAt s.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) 128)) := by
   have hw := hp.wf
   obtain ⟨tN, tS, t64, tB, tY⟩ := target_ok hw hr hN
   generalize ht : Impl.MlKem.AArch64.Kem16P.target P N = T at tN tS t64 tB tY
   have hN9 : N ≤ 8 := by have := hw.facts; omega
-  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff P N < 65536 := by
+  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
   have hfs : T + 1024 ≤ L.len L.sc := by rw [hp.scl]; exact tS
   -- The buffer, its polynomial and the working space.
-  have bR : ∀ {l : Nat}, l ≤ 504 → Region.mk (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N)) l =
+  have bR : ∀ {l : Nat}, l ≤ 504 → Region.mk (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) l =
       R (kA s₀) L.sc (TP P + 168 * N) l := fun _ => rfl
-  have dBT : (Region.mk (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N)) 128).Disjoint
+  have dBT : (Region.mk (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) 128).Disjoint
       (Region.mk (sA L s₀ T) 1024) := by
     rw [bR (by decide)]
     exact hp.args.rdisj hp.scb hp.scb (hp.fs (by lom)) hfs (.inl rfl) (.inr (by
@@ -98,11 +98,11 @@ theorem outBuf_ok {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : 
   rw [ht]
   simp only [seqs]
   -- The pointers and `SamplePolyCBD₂`.
-  have sample : WP isa (.seq (.block (Impl.MlKem.AArch64.ptrTo .x0 .x28 (Impl.MlKem.AArch64.Kem16P.bufOff P N) ++
+  have sample : WP isa (.seq (.block (Impl.MlKem.AArch64.ptrTo .x0 .x28 (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N) ++
       Impl.MlKem.AArch64.ptrTo .x1 .x28 T)) Impl.MlKem.AArch64.Noise.cbdCall) s fun v =>
       Kept [R (kA s₀) L.sc T 1024] s v ∧
       PolyIsW (cw true) v.mem (sA L s₀ T)
-        (samplePolyCBD 2 (bytesAt s.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N)) 128)) := by
+        (samplePolyCBD 2 (bytesAt s.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) 128)) := by
     refine WP.seq (wp_ptrTo (by decide) hbo fun a ha ea => wp_ptrTo' (by decide) t64 fun u hu eu => ?_)
     have ou : Only [.x0, .x1] s u := (ha.trans hu).mono (by simp)
     have ku : Kept [R (kA s₀) L.sc T 1024] s u := Kept.of_keep ou.keep ou.mem (by decide)
@@ -221,8 +221,8 @@ theorem noiseP_ok {prf : Nat → Nat → Prog isa} {s₀ s : State} (hp : Pre P 
     · exact target_sub hw hr hjk
     · exact ⟨_, by simp, fun _ h => h⟩
   -- The buffer is as the matrix left it.
-  have hb : bytesAt t.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P j)) 128 = VG.Spec.MlKem.prf 2 rv (BitVec.ofNat 8 j) := by
-    rw [show sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P j) = sA L s₀ (TP P + 168 * j) from rfl,
+  have hb : bytesAt t.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) j)) 128 = VG.Spec.MlKem.prf 2 rv (BitVec.ofNat 8 j) := by
+    rw [show sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) j) = sA L s₀ (TP P + 168 * j) from rfl,
       bytesAt_frame ht.fr (noiseW_far hp hr (o := TP P + 168 * j) (l := 128) (by lom) (.inr (.inr (by lom))))
         (by decide), ← hrv]
     exact Noise.output_prf (by have := hw.facts; omega) (hprf j hj)

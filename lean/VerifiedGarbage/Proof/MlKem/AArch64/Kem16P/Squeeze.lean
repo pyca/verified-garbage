@@ -202,14 +202,14 @@ theorem plainP_ok {s : State} {p st R B₀ : Addr} {A B : Spec.Sha3.State} {k : 
   · rw [e2, h1.get .x21 (by decide), kv.gpr .x21 (by decide), h21]; rfl
 
 /-- One of the three main squeezes. -/
-theorem pstep_ok (L : Impl.MlKem.AArch64.KemLay) {initial s : State} {p st R B₀ : Addr}
+theorem pstep_ok (sd bt : Nat) {initial s : State} {p st R B₀ : Addr}
     {A B : Spec.Sha3.State} {N₀ m k : Nat} (hk : k < 3) (hN : N₀ + 2 < 256)
-    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + 2) < 65536)
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + 2) < 65536)
     (hl : SqLayP p st R B₀ initial) (h28 : initial.gpr .x28 = st)
-    (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀)
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (h : SInvP initial p st R B₀ A B N₀ m k s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m k) s (SInvP initial p st R B₀ A B N₀ m (k + 1)) := by
+    WP isa (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m k) s (SInvP initial p st R B₀ A B N₀ m (k + 1)) := by
   have hls : SqLayP p st R B₀ s := hl.frame h.keep.rd h.keep.wr h.keep.sp
   have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
     fun h => Offset.sub_base p h
@@ -288,15 +288,15 @@ theorem pstep_ok (L : Impl.MlKem.AArch64.KemLay) {initial s : State} {p st R B�
   unfold Impl.MlKem.AArch64.Kem16P.stepP
   split
   · rename_i hkm
-    have hbk : Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + k) < 65536 := by
+    have hbk : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + k) < 65536 := by
       simp only [Impl.MlKem.AArch64.Kem16P.bufOff] at hbo ⊢; omega
-    have hBk : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + k)) = bufAt B₀ k := by
+    have hBk : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + k)) = bufAt B₀ k := by
       rw [← hB, bufAt, BitVec.add_assoc, ← BitVec.ofNat_add]
       simp only [Impl.MlKem.AArch64.Kem16P.bufOff]
-      rw [show Impl.MlKem.AArch64.KEM.TP L + 168 * N₀ + 168 * k = Impl.MlKem.AArch64.KEM.TP L + 168 * (N₀ + k) by
+      rw [show bt + 168 * N₀ + 168 * k = bt + 168 * (N₀ + k) by
         rw [Nat.mul_add, Nat.add_assoc]]
-    refine WP.mono (slotPrf_ok L (N := N₀ + k) (by omega) hbk h.ptr h.pa h.pb
-      (by rw [h.keep.get .x28, h28]) hR hBk h.pair (hls.slotLay hk))
+    refine WP.mono (slotPrf_ok sd bt (N := N₀ + k) (by omega) hbk h.ptr h.pa h.pb
+      (by rw [h.keep.get .x28, h28]) hR hsd hsd' hBk h.pair (hls.slotLay hk))
       fun t ⟨kt, ft, pt, at', bt, t20, t21, rt⟩ =>
         next [rateR (bufAt B₀ k)] (fun r hr => List.mem_singleton.mp hr) kt ft pt at' bt t20 t21 fun _ => ?_
     rw [seedState_frame h.frame (fun r hr => ?_)] at rt
@@ -317,40 +317,40 @@ theorem pstep_ok (L : Impl.MlKem.AArch64.KemLay) {initial s : State} {p st R B�
         fun hkm' => absurd hkm' hkm
 
 /-- **The three main squeezes** of a pair, the first `m` computing PRF outputs from `N₀`. -/
-theorem squeezeP_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p st R B₀ : Addr}
+theorem squeezeP_ok (sd bt : Nat) {s : State} {p st R B₀ : Addr}
     {A B : Spec.Sha3.State} {N₀ m : Nat} (hN : N₀ + 2 < 256)
-    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + 2) < 65536)
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + 2) < 65536)
     (hl : SqLayP p st R B₀ s) (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = p + 400)
     (h21 : s.gpr .x21 = p + 904) (h28 : s.gpr .x28 = st)
-    (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀)
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (pair : PairAt s.mem p A B) :
-    WP isa (.seq (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 0)
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 2))) s
+    WP isa (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2))) s
       (SInvP s p st R B₀ A B N₀ m 3) := by
   have h0 : SInvP s p st R B₀ A B N₀ m 0 s :=
     ⟨Keep.refl _ _, pair, h19, by rw [h20]; exact (BitVec.add_zero _).symm,
       by rw [h21]; exact (BitVec.add_zero _).symm, Frame.refl _ _,
       fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _),
       fun j hj => absurd hj (by simp)⟩
-  refine WP.seq (WP.mono (pstep_ok L (k := 0) (by decide) hN hbo hl h28 hR hB h0) fun t ht => ?_)
-  refine WP.seq (WP.mono (pstep_ok L (k := 1) (by decide) hN hbo hl h28 hR hB ht) fun u hu => ?_)
-  exact pstep_ok L (k := 2) (by decide) hN hbo hl h28 hR hB hu
+  refine WP.seq (WP.mono (pstep_ok sd bt (k := 0) (by decide) hN hbo hl h28 hR hsd hsd' hB h0) fun t ht => ?_)
+  refine WP.seq (WP.mono (pstep_ok sd bt (k := 1) (by decide) hN hbo hl h28 hR hsd hsd' hB ht) fun u hu => ?_)
+  exact pstep_ok sd bt (k := 2) (by decide) hN hbo hl h28 hR hsd hsd' hB hu
 
 /-- **A PRF pair's initialization and main squeezes** (as `Hybrid.startM_ok`). -/
-theorem startP_ok (L : Impl.MlKem.AArch64.KemLay) {s : State}
+theorem startP_ok (L : Impl.MlKem.AArch64.KemLay) (sd bt : Nat) {s : State}
     {p seed st R B₀ : Addr} {sb ss a b N₀ m : Nat} (hN : N₀ + 2 < 256)
-    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + 2) < 65536)
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + 2) < 65536)
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0)
     (hp : s.gpr .x28 + BitVec.ofNat 64 ss = p) (ha : s.gpr .x28 + BitVec.ofNat 64 sb = seed)
     (hin : ∀ j < 4, InRegions (s.rd ++ s.wr) (seed + BitVec.ofNat 64 (8 * j)) 8)
     (hsep : (Region.mk seed 32).Disjoint ⟨p, 2048⟩)
     (hl : SqLayP p st R B₀ s) (h28 : s.gpr .x28 = st)
-    (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀) :
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀) :
     WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 0)
-        (.seq (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 2)))) s
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
+        (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2)))) s
       fun t =>
       Keep startRegs3 s t ∧ Frame (startWritesP p st s.sp B₀) s.mem t.mem ∧ Noise.Saved p s t.mem ∧
       t.gpr .x19 = p ∧
@@ -372,8 +372,8 @@ theorem startP_ok (L : Impl.MlKem.AArch64.KemLay) {s : State}
     rcases hr with rfl | rfl
     · exact ⟨⟨p, 2048⟩, by simp, Offset.sub_base p (by decide)⟩
     · exact ⟨⟨p, 2048⟩, by simp, Region.sub_prefix (by decide : 400 ≤ 2048)⟩)
-  refine WP.mono (squeezeP_ok L hN hbo (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
-    (by rw [ku.get .x28]; exact h28) hR hB pair) fun t ht => ?_
+  refine WP.mono (squeezeP_ok sd bt hN hbo (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
+    (by rw [ku.get .x28]; exact h28) hR hsd hsd' hB pair) fun t ht => ?_
   have hsR : ∀ {N : Nat}, Noise.seedState u.mem R N = Noise.seedState s.mem R N := fun {_} =>
     seedState_frame fi (fun r hr => by rw [List.mem_singleton.mp hr]; exact hl.dPR.symm)
   refine ⟨ku.trans ht.keep, ?_, ?_, ht.ptr, ht.pair, ht.oa, ht.ob, fun k hk => ?_⟩
