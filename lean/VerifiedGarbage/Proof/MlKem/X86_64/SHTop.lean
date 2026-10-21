@@ -91,9 +91,17 @@ section
 variable {σ : State} (hp : PreW w16 σ)
 include hp
 
+/-- The return value and the first three polynomials of `Sample4.sampleH`'s contracts. -/
+def Post3 (w16 : Bool) (s s' : State) : Prop :=
+  (s'.gpr .rax).setWidth 32 =
+      (if (List.range 3).all fun k => (sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k)).isSome
+        then 1 else 0) ∧
+    ∀ k < 3, ∀ f, sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k) = some f →
+      PolyIsW (cw w16) s'.mem (poly4W w16 (s.gpr .rsi) k) f
+
 /-- The return value, and the callee-saved registers restored. -/
-theorem end3_ok {m : Nat} {s : State} (h : Done3 w16 σ (hst σ m) s) :
-    WP isa (.block epi) s fun s' => (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' := by
+theorem end3G_ok {H : Mem → Prop} {s : State} (h : Done3 w16 σ H s) :
+    WP isa (.block epi) s fun s' => Post3 w16 σ s' ∧ H s'.mem ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
     in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
   rw [epi_eq]
@@ -109,11 +117,10 @@ theorem end3_ok {m : Nat} {s : State} (h : Done3 w16 σ (hst σ m) s) :
       xrun [h0, h1, h2, h3, h4, h.env.rbx]
       exact ⟨rfl, rfl, rfl, rfl, rfl⟩)
     (by decide)) fun s' ⟨⟨hm, hax, h14, h13, h12, hbp, hbx⟩, k⟩ => ?_
-  refine ⟨⟨?_, fun k hk f e => ?_, ?_⟩, fun r hr => ?_, ?_⟩
+  refine ⟨⟨?_, fun k hk f e => ?_⟩, by rw [hm]; exact h.hs, fun r hr => ?_, ?_⟩
   · rw [hax, h.r14, okN]
     split <;> rfl
   · rw [hm]; exact polyIs_of (h.st k hk) f e
-  · rw [hm]; exact h.hs
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [hbx]; exact h.env.saved 0 (by decide)
@@ -128,19 +135,26 @@ theorem end3_ok {m : Nat} {s : State} (h : Done3 w16 σ (hst σ m) s) :
       simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
       (by decide)
 
-/-- After the squeezes, with the sponge's state stored back. -/
-theorem run3_ok {fast : Bool} {m : Nat} {Y : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s)
-    (hs : HS σ (hst σ m) s.mem) :
+/-- The runs after the squeezes, keeping `H`. -/
+theorem run3G_ok {fast : Bool} {Y : Spec.Sha3.State} {H : Mem → Prop} {s : State} (h : SqY w16 σ Y 0 3 s)
+    (hs : H s.mem) (hH : Stab σ H) :
     WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
-      (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (tabY_ok h hs) fun _ p₀ => ?_)
+      Post3 w16 σ s' ∧ H s'.mem ∧ gprPreserved σ s' := by
+  refine WP.seq (WP.mono (tabY_ok h hs hH) fun _ p₀ => ?_)
   refine WP.seq (WP.mono (run1Y_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₂) fun _ p₃ => ?_)))
   unfold tail3
   refine WP.seq (WP.mono (check3_ok hp p₃) fun _ c => WP.seq (WP.mono (branch3_ok hp c) fun s₅ d => ?_))
-  exact WP.block_append (WP.mono (vz_ok s₅) fun _ ⟨hm, hk⟩ => end3_ok hp
+  exact WP.block_append (WP.mono (vz_ok s₅) fun _ ⟨hm, hk⟩ => end3G_ok hp
     ⟨d.env.keep hm hk (by decide), by rw [hk.gpr (by decide), d.r14], by rw [hm]; exact d.st,
-      by unfold HS; rw [hm]; exact d.hs⟩)
+      by rw [hm]; exact d.hs⟩)
+
+/-- After the squeezes, with the sponge's state stored back. -/
+theorem run3_ok {fast : Bool} {m : Nat} {Y : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s)
+    (hs : HS σ (hst σ m) s.mem) :
+    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
+      (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' :=
+  WP.mono (run3G_ok (fast := fast) hp h hs (HS.stab σ _)) fun _ ⟨⟨a, b⟩, c, d⟩ => ⟨⟨a, b, c⟩, d⟩
 
 end
 

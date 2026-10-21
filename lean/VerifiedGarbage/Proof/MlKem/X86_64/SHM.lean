@@ -43,7 +43,7 @@ theorem squeezesHM_ok {fast : Bool} {m : Nat} (hm : m ≤ 3) {σ : State} (hp : 
   · subst h3; rw [ite_eq_left rfl]; exact WP.block_nil ⟨q₂, e₂⟩
   · rw [ite_eq_right h3]
     refine WP.mono (sqYs_ok (fast := fast) hp (n := 3 - m) (by omega) (by omega) q₂) fun s' ⟨q', f'⟩ => ?_
-    refine ⟨by rwa [show m + (3 - m) = 3 by omega] at q', HS.frame e₂ f' fun r hr => ?_⟩
+    refine ⟨by rwa [show m + (3 - m) = 3 by omega] at q', HS.stab σ _ e₂ f' fun r hr => ?_⟩
     rw [List.mem_singleton.mp hr]; exact (low_hs σ).symm
 
 theorem correctHM {fast : Bool} {m : Nat} (hm : m ≤ 3) (σ : State) (hs : (sampleHMKW true m).pre σ) :
@@ -72,7 +72,7 @@ theorem ctHM {fast : Bool} {m : Nat} (hm : m ≤ 3) :
     ConstantTime isa (sampleHMKW true m).pre (sampleHMKW true m).pub (sampleHM fast m) := by
   refine relStart (Q := fun _ _ => True) (RelCT.seq startH_ct (RelCT.seq hload_ct
     (RelCT.seq (squeezesHM_ct (fast := fast) hm)
-      (RelCT.seq (tabY_ct (Y := fun σ => iterF (3 - m) (hst σ m)) (Hf := fun σ => hst σ m)) ?_))))
+      (RelCT.seq (tabY_ct (Y := fun σ => iterF (3 - m) (hst σ m)) (H := fun σ => HS σ (hst σ m)) fun σ => HS.stab σ _) ?_))))
   refine RelCT.seq (run1Y_ct (K := 0) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run1Y_ct (K := 1) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run1Y_ct (K := 2) (by decide) (by taint_decide)) ?_
