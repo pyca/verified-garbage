@@ -3,12 +3,14 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Prepare
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareHeader
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsFrame
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareHeader
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Frame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Constants
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentReady
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentReady
 import VerifiedGarbage.Proof.Mont.RangeCover
 
 /-! # Complete candidate preparation reuses all expensive state across witnesses -/
@@ -19,13 +21,17 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 
-theorem code_ok {mont : Prog isa} {name : String}
+def ranges (g : Geometry) : List (Nat × Nat) :=
+  PrepareHeader.ranges ++ PreparedR2.ranges g ++ Constants.ranges g ++ Exponent.preparedRanges g
+
+theorem code_full_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) s fun t =>
-      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t := by
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t ∧
+      WorkspaceFrame g (ranges g) s.mem t.mem := by
   unfold VG.Impl.RsaKeyGen.X86.Prepare.code
   rw [Prepared.slot_eq, Prepared.slot_eq, Prepared.slot_eq]
   refine WP.seq (WP.mono (PrepareHeader.code_ok v I.scratch I.caller length I.candidate I.odd)
@@ -73,7 +79,14 @@ theorem code_ok {mont : Prog isa} {name : String}
       rcases mem with rfl | rfl | rfl <;>
         simp only [VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega)).mono
       (fun r mem => List.mem_append_left _ mem)
-  refine ⟨⟨T, ?_, ?_, ?_, exponentT, markerT, ?_⟩, ((Fa.trans Fb).trans Fd).trans Ft, ?_⟩
+  have Wa : WorkspaceFrame g PrepareHeader.ranges s.mem a.mem := WorkspaceFrame.of_outs I.scratch.nowrap Oa
+  have Wt : WorkspaceFrame g (Exponent.preparedRanges g) d.mem t.mem := WorkspaceFrame.of_outs I.scratch.nowrap Ot
+  have allWrites : WorkspaceFrame g (ranges g) s.mem t.mem :=
+    (((Wa.mono (fun _ mem => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ mem)))).trans
+      (Wb.mono (fun _ mem => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ mem))))).trans
+      (Wd.mono (fun _ mem => List.mem_append_left _ (List.mem_append_right _ mem)))).trans
+      (Wt.mono (fun _ mem => List.mem_append_right _ mem))
+  refine ⟨⟨T, ?_, ?_, ?_, exponentT, markerT, ?_⟩, ((Fa.trans Fb).trans Fd).trans Ft, ?_, allWrites⟩
   · exact (Exponent.prepared_preserve v Ot (j := 4) (Or.inl rfl)).trans r2D
   · exact (Exponent.prepared_preserve v Ot (j := 9) (Or.inr (Or.inr (Or.inl rfl)))).trans oneD
   · exact (Exponent.prepared_preserve v Ot (j := 10) (Or.inr (Or.inr (Or.inr rfl)))).trans minusD
@@ -85,5 +98,14 @@ theorem code_ok {mont : Prog isa} {name : String}
       · left; have := v.arrayHeader 27; omega) (by decide)]
     exact strideD
   · exact (((Ka.mono (by unfold clob PrepareHeader.clob; decide)).widen Kb).widen Kd).widen Kt
+
+theorem code_ok {mont : Prog isa} {name : String}
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
+    WP isa (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) s fun t =>
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t :=
+  WP.mono (code_full_ok verified noSp stack v bound length I) fun _ ⟨D, F, K, _⟩ => ⟨D, F, K⟩
 
 end VG.Proof.RsaKeyGen.X86.Prepare
