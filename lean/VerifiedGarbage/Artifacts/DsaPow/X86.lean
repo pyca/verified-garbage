@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame -- shake: keep (exposed registrations name body_spSafe directly)
+
 import VerifiedGarbage.Proof.Dsa.X86.PowVerified
 import VerifiedGarbage.Proof.Dsa.X86.PowCall
 public import VerifiedGarbage.Proof.Framework.Registration

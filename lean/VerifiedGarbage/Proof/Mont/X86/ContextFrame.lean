@@ -61,20 +61,34 @@ theorem Context.keep {n size m o : Nat} {base : Addr} {s t : State}
       simpa only [val32, Nat.mul_zero, Nat.add_zero] using hv
     rw [he]; exact h.inverse
 
+/-- Preserve the arithmetic context across writes to any collection of
+ranges disjoint from its modulus and inverse. -/
+theorem Context.outs_keep {n size m : Nat} {base : Addr} {s t : State}
+    (h : Context n m base size s) {regs : List Reg} {ranges : List (Nat × Nat)}
+    (K : Keeps regs s t) (hdi : .edi ∉ regs) (hsp : .esp ∉ regs)
+    (O : Outs base ranges s.mem t.mem)
+    (hm : ∀ r ∈ ranges, slot n 0 + 8*n ≤ r.1 ∨ r.1+r.2 ≤ slot n 0)
+    (hi : ∀ r ∈ ranges, 4 ≤ r.1) : Context n m base size t := by
+  refine ⟨h.scr.of_keeps K hdi hsp, h.size_le, ?_, h.gt_one, ?_⟩
+  · refine ⟨h.modulus.n0, h.modulus.mo, h.modulus.tmp, h.modulus.sep, ?_⟩
+    change wordsVal t.mem base (slot n 0) n = m
+    rw [wordsVal_eq_val32, O.val32 (fun r hr => by have := hm r hr; omega)
+      (by have := h.scr.nowrap; have := h.modulus.mo; change slot n 0 + 8*n ≤ size at this; omega),
+      ← wordsVal_eq_val32]
+    exact h.modulus.val
+  · have same := O.val32 (d := 0) (k := 1) (fun r hr => Or.inl (by have := hi r hr; omega)) (by decide)
+    have word : w32 t.mem base 0 = w32 s.mem base 0 := by
+      simpa only [val32, Nat.mul_zero, Nat.add_zero] using same
+    rw [word]; exact h.inverse
+
 theorem Context.outside_keep {n size m d len : Nat} {base : Addr} {s t : State}
     (h : Context n m base size s) {rs : List Reg} (K : Keeps rs s t) (hdi : .edi ∉ rs) (hsp : .esp ∉ rs)
     (O : Outside base d len s.mem t.mem)
     (hm : slot n 0 + 8 * n ≤ d ∨ d + len ≤ slot n 0)
     (hi : 4 ≤ d) : Context n m base size t := by
-  refine ⟨h.scr.of_keeps K hdi hsp, h.size_le, ?_, h.gt_one, ?_⟩
-  · refine ⟨h.modulus.n0, h.modulus.mo, h.modulus.tmp, h.modulus.sep, ?_⟩
-    change wordsVal t.mem base (slot n 0) n = m
-    rw [wordsVal_eq_val32, O.val32 (by omega)
-      (by have := h.scr.nowrap; have := h.modulus.mo; change slot n 0 + 8 * n ≤ size at this; omega),
-      ← wordsVal_eq_val32]
-    exact h.modulus.val
-  · rw [O.w32 (by omega) (by decide)]
-    exact h.inverse
+  exact h.outs_keep K hdi hsp (ranges := [(d, len)]) (Outs.of_outside O (by simp))
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hm)
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hi)
 
 theorem context_slot_val32 {n size m o i k : Nat} {base : Addr} {s t : State}
     (h : Context n m base size s) (hi : i < 9) (hk : k ≤ 2 * n)

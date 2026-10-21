@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Spec.Rsa
 
 /-! Canonical Montgomery products add arbitrary fixed-base exponents. -/
@@ -25,7 +23,7 @@ theorem mont_product_encoded {g E F R M a b c : Nat}
   rw [Nat.mul_assoc (g^(E+F)%M) R R, Nat.mod_mul_mod]
   congr 1
   rw [Nat.pow_add]
-  ring
+  ac_rfl
 
 theorem mont_square_encoded {g E R M a c : Nat}
     (coprime : Nat.Coprime R M) (canonical : c < M)

@@ -39,6 +39,11 @@ def store (len output : Nat) : Prog isa :=
   .seq (.block (pointer (.local output) ++ [.mov .ecx (.imm (BitVec.allOnes 32))]))
     (storeComponent len (slot ((len + 7) / 8) 6))
 
+/-- Common byte input staging for ordinary and retained-context exponentiation. -/
+def loadPower (n len expLen : Nat) (modulus : Field) (a e : Pointer) : Prog isa :=
+  .seq (load n len (slot n 0) (.input modulus))
+    (.seq (load n len (slot n 5) a) (load n expLen (slot n 8) e))
+
 def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
   .seq (load n len (slot n 0) (.input modulus))

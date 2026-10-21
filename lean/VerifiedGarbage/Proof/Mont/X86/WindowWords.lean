@@ -22,26 +22,40 @@ theorem shr28_toNat (x : BitVec 32) : (x >>> 28).toNat = x.toNat / 2 ^ 28 := by
 
 /-- `(V + P w) · 16 mod P 2³²`, for `V < P`: the low part times 16 mod `P`, and
 the top word times 16 mod 2³² with the four bits carried up from below. -/
-theorem shift_top {V P w : Nat} (hP : 0 < P) (hV : V < P) :
-    (V + P * w) * 16 % (P * 2 ^ 32) = V * 16 % P + P * (w * 16 % 2 ^ 32 + V * 16 / P) := by
-  have hq : V * 16 / P < 16 := (Nat.div_lt_iff_lt_mul hP).2 (by omega)
-  have split : V * 16 = V * 16 % P + P * (V * 16 / P) := (Nat.mod_add_div _ _).symm
-  have hx : V * 16 % P < P := Nat.mod_lt _ hP
-  generalize V * 16 % P = x at split hx ⊢
-  generalize V * 16 / P = q at split hq ⊢
-  have e' : ∀ r d, r + 2 ^ 32 * d = q + w * 16 → (V + P * w) * 16 = x + P * r + P * 2 ^ 32 * d := by
+theorem shift_top_scale {V P w c : Nat} (hc : 0<c) (divides : c ∣ 2^32) (hP : 0 < P) (hV : V < P) :
+    (V + P * w) * c % (P * 2 ^ 32) = V * c % P + P * (w * c % 2 ^ 32 + V * c / P) := by
+  have hq : V * c / P < c := (Nat.div_lt_iff_lt_mul hP).2 (by simpa only [Nat.mul_comm P c] using Nat.mul_lt_mul_of_pos_right hV hc)
+  have split : V * c = V * c % P + P * (V * c / P) := (Nat.mod_add_div _ _).symm
+  have hx : V * c % P < P := Nat.mod_lt _ hP
+  generalize V * c % P = x at split hx ⊢
+  generalize V * c / P = q at split hq ⊢
+  have e' : ∀ r d, r + 2 ^ 32 * d = q + w * c → (V + P * w) * c = x + P * r + P * 2 ^ 32 * d := by
     intro r d hd
-    rw [Nat.add_mul, split, Nat.mul_assoc P w 16, Nat.add_assoc, ← Nat.mul_add, ← hd, Nat.mul_add,
+    rw [Nat.add_mul, split, Nat.mul_assoc P w c, Nat.add_assoc, ← Nat.mul_add, ← hd, Nat.mul_add,
       Nat.mul_assoc P (2 ^ 32), Nat.add_assoc]
-  have e := e' _ _ (Nat.mod_add_div (q + w * 16) (2 ^ 32))
-  have lt : x + P * ((q + w * 16) % 2 ^ 32) < P * 2 ^ 32 := by
-    have hm : (q + w * 16) % 2 ^ 32 + 1 ≤ 2 ^ 32 := Nat.mod_lt _ (by decide)
+  have e := e' _ _ (Nat.mod_add_div (q + w * c) (2 ^ 32))
+  have lt : x + P * ((q + w * c) % 2 ^ 32) < P * 2 ^ 32 := by
+    have hm : (q + w * c) % 2 ^ 32 + 1 ≤ 2 ^ 32 := Nat.mod_lt _ (by decide)
     have := Nat.mul_le_mul_left P hm
     rw [Nat.mul_add, Nat.mul_one] at this
     omega
   rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt lt]
   congr 2
-  omega
+  obtain ⟨k,hk⟩ := divides
+  have kp : 0<k := by
+    by_contra hn
+    have : k=0 := by omega
+    simp [this] at hk
+  have rem : w*c%2^32 = c*(w%k) := by rw [hk,Nat.mul_comm w c,Nat.mul_mod_mul_left]
+  have limit : w*c%2^32+q < 2^32 := by
+    have h := Nat.mul_le_mul_left c (show w%k+1 ≤ k from Nat.mod_lt w kp)
+    rw [Nat.mul_add,Nat.mul_one,←hk] at h
+    rw [rem]; omega
+  rw [Nat.add_mod,Nat.mod_eq_of_lt (show q<2^32 by omega),Nat.add_comm q,Nat.mod_eq_of_lt limit]
+
+theorem shift_top {V P w : Nat} (hP : 0 < P) (hV : V < P) :
+    (V + P * w) * 16 % (P * 2 ^ 32) = V * 16 % P + P * (w * 16 % 2 ^ 32 + V * 16 / P) :=
+  shift_top_scale (by decide) (by decide) hP hV
 
 theorem val32_top_bits (m : Mem) (base : Addr) (d j : Nat) :
     val32 m base d (j + 1) * 16 / 2 ^ (32 * (j + 1)) = w32 m base (d + 4 * j) / 2 ^ 28 := by

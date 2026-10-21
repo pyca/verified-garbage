@@ -11,12 +11,12 @@ namespace VG.Proof.Mont.X86.Dynamic
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont
 open VG.Proof.Mont.X86
 
-theorem window_mask_small : ∀ a < 16, ∀ j < 16,
+theorem window_mask_small : ∀ a < 32, ∀ j < 32,
     0 - ((BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 j) - 1) >>> 31 =
       if a = j then BitVec.allOnes 32 else 0 := by
   decide
 
-theorem window_mask (x : BitVec 32) (hx : x.toNat < 16) {j : Nat} (hj : j < 16) :
+theorem window_mask (x : BitVec 32) (hx : x.toNat < 32) {j : Nat} (hj : j < 32) :
     0 - ((x ^^^ BitVec.ofNat 32 j) - 1) >>> 31 = if x.toNat = j then BitVec.allOnes 32 else 0 := by
   have e : x = BitVec.ofNat 32 x.toNat :=
     BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt x.isLt])
@@ -24,7 +24,7 @@ theorem window_mask (x : BitVec 32) (hx : x.toNat < 16) {j : Nat} (hj : j < 16) 
 
 /-- ECX all ones exactly when the window word is `j`. -/
 theorem windowMask_ok {s : State} {base : Addr} {size j : Nat} (hs : Scr s base size)
-    (hsz : 8 ≤ size) (hw : w32 s.mem base 4 < 16) (hj : j < 16) :
+    (hsz : 8 ≤ size) (hw : w32 s.mem base 4 < 32) (hj : j < 32) :
     WP isa (.block (VG.Impl.Mont.X86.Dynamic.windowMask j)) s fun t =>
       t.mem = s.mem ∧
       t.gpr .ecx = (if w32 s.mem base 4 = j then BitVec.allOnes 32 else 0) ∧
@@ -105,7 +105,7 @@ theorem selectEntries_ok {s : State} {base : Addr} {size n tab dst : Nat}
     refine WP.seq (WP.mono (selectEntries_ok hs L hw k (by omega)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
     have win : w32 s₁.mem base 4 = w32 s.mem base 4 := O₁.w32 (by omega) (by omega)
-    refine WP.seq (WP.mono (windowMask_ok hs₁ (by omega) (win ▸ hw) hk) fun s₂ ⟨M₂, C₂, K₂⟩ => ?_)
+    refine WP.seq (WP.mono (windowMask_ok hs₁ (by omega) (by rw [win]; omega) (by omega)) fun s₂ ⟨M₂, C₂, K₂⟩ => ?_)
     have hs₂ := hs₁.of_keeps K₂ (by decide)
     obtain ⟨eb, esep, etab, etop⟩ := L.entry (j := k + 1) hk
     refine WP.mono (selectsW_ok hs₂ (decide (w32 s.mem base 4 = k + 1))

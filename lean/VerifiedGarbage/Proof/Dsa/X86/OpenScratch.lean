@@ -16,17 +16,17 @@ import VerifiedGarbage.Spec.Weierstrass
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.X86.Wp VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.X86
 
-theorem openScratch_ok {s : State} {base : Addr} {size arg : Nat} {ptr : BitVec 32}
+theorem openScratch_precise {s : State} {base : Addr} {size arg : Nat} {ptr : BitVec 32}
     (read : readSrc s (.mem (Entry.argument arg)) = some ptr)
     (hb : ptr.setWidth 64 = base) (hf : ptr.toNat + size ≤ 2 ^ 32) (hz : 8272 ≤ size)
     (hw : (⟨base, size⟩ : Region) ∈ s.wr) (stk : StkOk (s.gpr .esp) base size) :
     WP isa (.block (Entry.openScratch arg)) s fun t =>
       Scr t base size ∧ Saved t.mem (off base) s.gpr Entry.savedRegisters ∧
-      Keeps [.eax, .edi] s t ∧ Outside base 0 size s.mem t.mem := by
+      Keeps [.eax, .edi] s t ∧ Outside base 0 8272 s.mem t.mem := by
   unfold Entry.openScratch
   simp only [List.singleton_append]
   refine wp_movS read fun u U _ => ?_
-  refine WP.block_append (WP.mono (entrySave_ok (base := base) (size := size) (by rw [U.gpr]; exact hb)
+  refine WP.block_append (WP.mono (entrySave_precise (base := base) (size := size) (by rw [U.gpr]; exact hb)
     (by rw [U.gpr]; exact hf) hz (by rw [U.wr]; exact hw)) fun v ⟨G, Rd, Wr, S, F⟩ => ?_)
   refine wp_movS rfl fun t T _ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · refine ⟨?_, ?_, ?_, ?_⟩
@@ -50,10 +50,20 @@ theorem openScratch_ok {s : State} {base : Addr} {size arg : Nat} {ptr : BitVec 
     · rw [T.wr, Wr, U.wr]
   · intro a ha
     rw [T.mem]
-    have H : ¬ InRegions [⟨base, size⟩] a 1 := by
+    have H : ¬ InRegions [⟨base, 8272⟩] a 1 := by
       simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
-      change ¬ (ofs base a + 1 ≤ size)
+      change ¬ (ofs base a + 1 ≤ 8272)
       omega
     exact (F a (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem a)
+
+theorem openScratch_ok {s : State} {base : Addr} {size arg : Nat} {ptr : BitVec 32}
+    (read : readSrc s (.mem (Entry.argument arg)) = some ptr)
+    (hb : ptr.setWidth 64 = base) (hf : ptr.toNat + size ≤ 2 ^ 32) (hz : 8272 ≤ size)
+    (hw : (⟨base, size⟩ : Region) ∈ s.wr) (stk : StkOk (s.gpr .esp) base size) :
+    WP isa (.block (Entry.openScratch arg)) s fun t =>
+      Scr t base size ∧ Saved t.mem (off base) s.gpr Entry.savedRegisters ∧
+      Keeps [.eax, .edi] s t ∧ Outside base 0 size s.mem t.mem :=
+  WP.mono (openScratch_precise read hb hf hz hw stk) fun _ ⟨S,V,K,O⟩ =>
+    ⟨S,V,K,O.mono (Nat.le_refl _) (by omega)⟩
 
 end VG.Proof.Dsa.X86

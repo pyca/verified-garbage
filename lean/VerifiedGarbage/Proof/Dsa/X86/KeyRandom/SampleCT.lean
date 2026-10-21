@@ -1,0 +1,152 @@
+module
+public meta import VerifiedGarbage.Impl.Dsa.X86.KeyRandom
+public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.DrawCT
+import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Sample
+import VerifiedGarbage.Proof.Mont.X86.Instr
+
+/-!
+# Sampling leaks only its public trace (x86)
+
+The specification's trace of a sampling (`Spec.Dsa.Random.Sample.trace`)
+records each draw's decision. Two runs with the same public data, tape
+offset and trace accept or reject each draw alike (`sample_trace_head`), so
+they take the same branches; after a rejection the rest of the trace is the
+next draw's.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86.KeyRandom
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
+open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom
+
+/-- The width of q's significant bytes. -/
+def Pub.width (a : Pub) : Nat := (VG.Proof.Dsa.significant a.qBytes).1
+
+theorem pub_width {s₀ : State} {a : Pub} (e : pubOf s₀ = a) : a.width = rWidth s₀ := by
+  rw [← e]; rfl
+
+/-- What two runs share before a draw of the sampling loop. -/
+structure LoopPub where
+  pub : Pub
+  used : Nat
+  draws : Nat
+  tr : List Nat
+
+/-- Before a draw of the sampling loop, whose trace is `tr`. -/
+structure LoopAt (a : LoopPub) (s₀ t : State) : Prop where
+  smp : Smp s₀ a.used a.draws t
+  status : slot t.mem (rBase s₀) oStatus = 4
+  pos : 1 ≤ a.draws
+  le : a.draws ≤ 128
+  q : 1 < rq s₀
+  tr : (spl s₀ a.draws a.used).trace = a.tr
+
+/-- Whether the loop draws again: a rejection, and draws left. -/
+def LoopPub.cont (a : LoopPub) : Bool := (a.tr.head? == some 0) && decide (2 ≤ a.draws)
+
+def LoopPub.next (a : LoopPub) : LoopPub := ⟨a.pub, a.used + a.pub.width, a.draws - 1, a.tr.tail⟩
+
+/-- The draw's decision is the trace's. -/
+theorem LoopAt.drawPre {a : LoopPub} {s₀ t : State} (L : LoopAt a s₀ t) :
+    DrawPre ⟨a.pub, a.used, a.draws, a.tr.head? == some 1⟩ s₀ t := by
+  refine ⟨L.smp, L.pos, L.le, L.q, fun hfull => ?_⟩
+  dsimp only at hfull
+  obtain ⟨d', hd'⟩ : ∃ d', a.draws = d' + 1 := ⟨a.draws - 1, by have := L.pos; omega⟩
+  have hdw : Spec.Dsa.Random.drawBytes (rq s₀) = rWidth s₀ := rWidth_eq s₀
+  have hdl : (drawBytes s₀ a.used).length = rWidth s₀ := by
+    simp only [drawBytes, List.length_take, List.length_drop]; omega
+  have htr := L.tr
+  rw [hd'] at htr
+  show accepts s₀ (drawCand s₀ a.used) = (a.tr.head? == some 1)
+  rw [accepts_candidate s₀ hdl (width_pos L.q), ← htr, spl,
+    VG.Proof.Dsa.Random.sample_trace_head _ _ _ L.q (by rw [hdw, List.length_drop]; omega), hdw]
+
+def sampleBody : Prog isa := .seq draw (.block [.mov .eax (.mem (sp oStatus)), .alu .cmp .eax (.imm 4)])
+
+/-- After a draw and the loop's test. -/
+def StepPost (a : LoopPub) (s₀ t : State) : Prop :=
+  Ready s₀ t ∧ t.zf = some a.cont ∧ (a.cont = true → LoopAt a.next s₀ t)
+
+theorem sub_four_ne {x : BitVec 32} (h : x ≠ 4) : (x - 4 == 0) = false := by
+  simp only [beq_eq_false_iff_ne, ne_eq]
+  intro h'
+  apply h
+  calc x = x - 4 + 4 := (BitVec.sub_add_cancel x 4).symm
+    _ = 4 := by rw [h']; rfl
+
+theorem step_ok {a : LoopPub} {s₀ t : State} (A : KeyABI s₀) (e : pubOf s₀ = a.pub) (L : LoopAt a s₀ t) :
+    WP isa sampleBody t (StepPost a s₀) := by
+  unfold sampleBody
+  refine WP.seq (WP.mono (draw_ok A L.smp L.pos L.le L.q L.status) fun v ⟨hv, _, _, hcase⟩ => ?_)
+  refine wp_movS (v := slot v.mem (rBase s₀) oStatus) (hv.rf.readSlot (by decide)) fun v₁ uv₁ _ =>
+    wp_cmpi fun v₂ fv₂ _ zv₂ => WP.block_nil ?_
+  have hv₂ : Ready s₀ v₂ := (hv.upd uv₁ (by decide)).fupd fv₂
+  have mv₂ : v₂.mem = v.mem := by rw [fv₂.mem, uv₁.mem]
+  have htr := L.tr
+  rcases hcase with ⟨stv, h2, Sv, _, hspl⟩ | ⟨stv, _, hh⟩
+  · have hc : a.cont = true := by
+      simp only [LoopPub.cont, ← htr, hspl, List.head?_cons, beq_self_eq_true, Bool.true_and,
+        decide_eq_true_eq]
+      exact h2
+    refine ⟨hv₂, by rw [zv₂, uv₁.gpr, stv, hc]; rfl, fun _ => ⟨?_, by rw [mv₂]; exact stv,
+      by show 1 ≤ a.draws - 1; omega, by show a.draws - 1 ≤ 128; have := L.le; omega, L.q, ?_⟩⟩
+    · show Smp s₀ (a.used + a.pub.width) (a.draws - 1) v₂
+      rw [pub_width e]; exact Sv.mem A hv₂ mv₂
+    · show (spl s₀ (a.draws - 1) (a.used + a.pub.width)).trace = a.tr.tail
+      rw [pub_width e, ← htr, hspl]; rfl
+  · have hc : a.cont = false := by
+      simp only [LoopPub.cont, ← htr, Bool.and_eq_false_iff, beq_eq_false_iff_ne, decide_eq_false_iff_not]
+      rcases hh with hh | hh
+      · exact .inl hh
+      · exact .inr (by omega)
+    refine ⟨hv₂, by rw [zv₂, uv₁.gpr, sub_four_ne stv, hc], fun h => by rw [hc] at h; cases h⟩
+
+theorem sampleLoop_ct (n : Nat) :
+    RelCT isa (Two fun a t => a.draws = n ∧ At (LoopAt a) a.pub t) (.loop sampleBody .e)
+      (Two fun (a : Pub) => At (fun s₀ t => Ready s₀ t) a) := by
+  refine RelCT.loop (M := isa) (fun n => Two fun a t => a.draws = n ∧ At (LoopAt a) a.pub t) (fun n => ?_) n
+  have hct : RelCT isa (Two fun a t => a.draws = n ∧ At (LoopAt a) a.pub t) sampleBody fun _ _ => True := by
+    unfold sampleBody
+    refine RelCT.seq (two_post (Ψ := fun a => At (fun s₀ t => Ready s₀ t) a.pub)
+      (two_map (fun a => (⟨a.pub, a.used, a.draws, a.tr.head? == some 1⟩ : DrawPub))
+        (fun a t ⟨_, s₀, A, e, L⟩ => ⟨s₀, A, e, L.drawPre⟩) draw_ct)
+      (fun a t ⟨_, s₀, A, e, L⟩ => WP.mono (draw_ok A L.smp L.pos L.le L.q L.status)
+        fun u h => ⟨s₀, A, e, h.1⟩)) ?_
+    exact two_taint [.esp] (pins_at (P := fun _ s₀ t => Ready s₀ t) LoopPub.pub fun _ _ _ h => h)
+      (by taint_decide)
+  have hp := two_post (Ψ := fun a t => a.draws = n ∧ At (StepPost a) a.pub t) hct
+    fun a t ⟨hn, s₀, A, e, L⟩ => WP.mono (step_ok A e L) fun u h => ⟨hn, s₀, A, e, h⟩
+  refine hp.mono (fun _ _ h => h) ?_
+  rintro t₁ t₂ ⟨a, ⟨hn, s₁, A₁, e₁, r₁, z₁, c₁⟩, ⟨_, s₂, A₂, e₂, r₂, z₂, c₂⟩⟩
+  refine ⟨by simp only [eval, z₁, z₂], fun _ => ⟨a.pub, ⟨s₁, A₁, e₁, r₁⟩, ⟨s₂, A₂, e₂, r₂⟩⟩, fun hc => ?_⟩
+  have hc' : a.cont = true := by simpa only [eval, z₁, Option.some.injEq] using hc
+  have h2 : 2 ≤ a.draws := by
+    simp only [LoopPub.cont, Bool.and_eq_true, decide_eq_true_eq] at hc'; exact hc'.2
+  exact ⟨n - 1, by omega, a.next, ⟨by show a.draws - 1 = n - 1; omega, s₁, A₁, e₁, c₁ hc'⟩,
+    ⟨by show a.draws - 1 = n - 1; omega, s₂, A₂, e₂, c₂ hc'⟩⟩
+
+/-- What two runs of the sampler share. -/
+structure SmpPub where
+  pub : Pub
+  used : Nat
+  tr : List Nat
+
+/-- The sampler's entry. -/
+def SamplePre (a : SmpPub) (s₀ t : State) : Prop :=
+  (∃ d, Smp s₀ a.used d t) ∧ 1 < rq s₀ ∧ (spl s₀ 128 a.used).trace = a.tr
+
+theorem sample_ct : RelCT isa (Two fun a => At (SamplePre a) a.pub) sample fun _ _ => True := by
+  unfold sample
+  refine RelCT.seq (two_piece (Ψ := fun a => At (LoopAt ⟨a.pub, a.used, 128, a.tr⟩) a.pub) [.esp]
+    (pins_at SmpPub.pub fun _ _ _ h => h.1.choose_spec.ready) (by taint_decide)
+    fun a t ⟨s₀, A, e, ⟨d, S⟩, hq, htr⟩ => WP.mono (sampleInit_ok A S)
+      fun u ⟨S', st, _, _⟩ => ⟨s₀, A, e, S', st, (by decide : 1 ≤ 128), (by decide : 128 ≤ 128), hq, htr⟩) ?_
+  refine RelCT.seq (two_map (fun a => (⟨a.pub, a.used, 128, a.tr⟩ : LoopPub)) (fun _ _ h => ⟨rfl, h⟩)
+    (sampleLoop_ct 128)) ?_
+  exact two_taint [.esp] (pins_at (P := fun _ s₀ t => Ready s₀ t) id fun _ _ _ h => h) (by taint_decide)
+
+end VG.Proof.Dsa.X86.KeyRandom
