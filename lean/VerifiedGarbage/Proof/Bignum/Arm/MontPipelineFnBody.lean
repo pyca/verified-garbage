@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBody
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBody
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontCore
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 
 /-! Lift any native scanning round through the existing Montgomery pipeline. -/
 

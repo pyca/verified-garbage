@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
+import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import Init.Prelude
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! Extend the quotient prefix using the two independent carry chains. -/
 

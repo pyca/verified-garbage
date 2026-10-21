@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCore
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCore
 public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
 import VerifiedGarbage.Proof.Bignum.Arm.MontCore
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 
 /-! Lift any native scanning round through the existing Montgomery pipeline. -/
 

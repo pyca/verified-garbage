@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

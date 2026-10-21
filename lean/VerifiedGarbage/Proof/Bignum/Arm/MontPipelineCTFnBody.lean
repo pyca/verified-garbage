@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTBody
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTBody
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
+meta import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 
 /-! The callable arithmetic body retains the native public layout and index schedule. -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Lift any native scanning round through the existing Montgomery pipeline. -/

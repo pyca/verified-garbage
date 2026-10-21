@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTCore
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTCore
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 
 /-! Reuse the original public initialization for any scanning-round implementation. -/
 

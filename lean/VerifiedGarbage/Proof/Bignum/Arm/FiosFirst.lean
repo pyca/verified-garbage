@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
+import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The first integrated product determines a scalar which cancels its low word. -/
 

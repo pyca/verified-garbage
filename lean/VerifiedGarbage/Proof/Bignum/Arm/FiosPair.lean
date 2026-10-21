@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosLoads
+import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
+import VerifiedGarbage.Proof.Bignum.Arm.FiosLoads
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-! Two product limbs are issued before their independent cancellation chain. -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCoreCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 
 /-! Canonical subtraction composes with every verified constant-time scanning loop. -/
 

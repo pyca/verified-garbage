@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
+import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! A fused step scans each old accumulator word once and writes the quotient below it. -/
 

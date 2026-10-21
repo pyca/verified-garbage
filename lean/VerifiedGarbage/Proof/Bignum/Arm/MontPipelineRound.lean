@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
+public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Bignum.Arm.MontState
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Framework.PlainSimp

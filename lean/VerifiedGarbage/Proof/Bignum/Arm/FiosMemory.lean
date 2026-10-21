@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Mem
+public import Init.Prelude
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! Two adjacent quotient stores extend a previously written prefix. -/
 

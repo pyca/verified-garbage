@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios
-import VerifiedGarbage.Proof.Bignum.Arm.FiosPair
 import VerifiedGarbage.Proof.Bignum.Arm.FiosAdvanceInv
 import VerifiedGarbage.Proof.Bignum.Arm.FiosValue
 import VerifiedGarbage.Proof.Bignum.Arm.FiosMemory

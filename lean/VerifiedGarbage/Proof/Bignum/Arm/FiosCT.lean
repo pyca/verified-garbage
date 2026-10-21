@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
 import VerifiedGarbage.Proof.Bignum.Arm.FiosArgs
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.FiosTaint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

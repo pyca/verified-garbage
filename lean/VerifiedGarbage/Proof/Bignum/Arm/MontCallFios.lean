@@ -1,14 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCallFios
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithLaw
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithFn
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithContract
 public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmeticCaller
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! A fused scanning round supplies the existing shared callable Montgomery backend. -/
 
