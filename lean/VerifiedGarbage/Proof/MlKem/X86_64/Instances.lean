@@ -30,7 +30,7 @@ namespace VG.Proof.MlKem.X86_64
 
 theorem keyGen_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.keyGen v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  keyGenHSel_sp v (fun b B => by kgh_sp v b B kgRows768)
+  keyGenHSel_sp v (fun b p B P => by kgh_sp v b p B P kgRows768)
     (keyGenSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v))
 
 theorem encapsH_spSafe (v : Sample4Impl) :
