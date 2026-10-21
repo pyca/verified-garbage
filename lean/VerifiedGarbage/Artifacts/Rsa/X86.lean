@@ -17,9 +17,11 @@ namespace VG.Artifacts.Rsa.X86
 def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
-      multiplication calls `vg_rsa_mont_mul_at`. The candidates' search ends after the attempt that \
-      recovers the factors, so the number of attempts is public; the rest of each attempt selects no \
-      branch. Callee-saved registers reside in scratch."]
+      multiplication calls `vg_rsa_mont_mul_at`. At 2048 bits and above a fixed-width binary pass \
+      fuses exponentiation and root search; smaller moduli use the windowed schedule. The public \
+      candidate index selects repeated addition or a bounded seven-bit multiplication. The search \
+      ends after the attempt that recovers the factors, so the attempt count is public. Private \
+      values select no branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.RecoverRt.code
     verified := Proof.Rsa.X86.Recover.verified
     stack := 40 },

@@ -4,13 +4,14 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
+import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedDispatch
 import VerifiedGarbage.Proof.Rsa.X86.RvSized
 import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
 import VerifiedGarbage.Proof.Rsa.X86.RvPublicFacts
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Rsa.X86.RvTimePrepare
 
 /-! # Both branches after the modulus check leak only the declared attempt count
 
@@ -92,7 +93,7 @@ theorem sized_relCT (g : CallGeometry) (len : Lengths g) :
         | iteT condT et =>
           have goS : GoOn (product g s.mem) := of_decide_eq_true (Option.some.inj (zs.symm.trans condS))
           have goT : GoOn (product g t.mem) := of_decide_eq_true (Option.some.inj (zt.symm.trans condT))
-          have eq2 := (rest_relCT g pg s t hs ht goS goT bs bt os ot gs gt
+          have eq2 := (selectedRest_relCT g pg s t hs ht goS goT bs bt os ot gs gt
             modulus tries _ _ _ _ _ _ ⟨cs, ct⟩ es et).1
           exact ⟨by rw [eq1, eq2], trivial⟩
         | iteF condT _ => rw [flag, condT] at condS; cases condS

@@ -14,10 +14,10 @@ arrays are `KeyRt`'s, of the modulus's bytes `B` and two words more
 (`narrow`, the numbers modulo `n`), or of `2 B + 24` bytes (`wide`, the
 product `e d` and its halvings), two narrow arrays each; every Montgomery
 multiplication calls `vg_rsa_mont_mul_at`, with the narrow arrays' offsets,
-in its own range of the narrow arrays 16 to 19; and the candidate's table is
-built by fourteen fixed steps. Only the public lengths choose loop counts,
-and only whether to try candidates and when one succeeds choose branches, as
-`Recover`'s do.
+in its own range of the narrow arrays 16 to 19; and small moduli retain the four-bit window table. At 2048 bits and
+above, one fixed-width binary pass fuses exponentiation with root search.
+Public lengths and candidate indices choose loop counts; the search ends
+after the declared number of attempts. Private values select no branch.
 -/
 
 @[expose] public section
@@ -231,9 +231,94 @@ def factors : Prog isa := seqs [gcdSet, inverse nar, divSet, div nar aQ aRm aDv 
 
 def fin : Prog isa := seqs [finY, factors, stores]
 
+/-! ## Fused exponentiation and root search -/
+
+/-- Boolean header operations, with zero or one in each input slot. -/
+def flagNot (d a : Nat) : Prog isa := .block [
+  .mov .eax (.mem (sc a)), .alu .xor .eax (.imm 1), .store (sc d) .eax]
+
+def flagBin (op : AluOp) (d a b : Nat) : Prog isa := .block [
+  .mov .eax (.mem (sc a)), .alu op .eax (.mem (sc b)), .store (sc d) .eax]
+
+/-- The square times the public candidate. Only the attempt index chooses
+this loop's count; all arithmetic remains independent of private values. -/
+def fusedSmallStep : Prog isa := .seq
+  (seqs (VG.Impl.Rsa.X86.KeyRt.addMod nar mXm mXm mX aN aZ mAcc))
+  (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
+
+def fusedSmall : Prog isa := seqs [copy nar mXm mX,
+  .block [.mov .esi (.mem (sc sCand)), .alu .add .esi (.imm 1)],
+  .loop fusedSmallStep .ne]
+
+/-- Candidate setup without changing the exponent stream. -/
+def fusedSetG : Prog isa := .seq (copy nar mG aZ) (.block (
+  [.mov .ecx (.mem (sc sCand)), .alu .add .ecx (.imm 2)] ++
+    arrPtr nar .eax mG .edx ++ [.store (at_ .eax 0) .ecx]))
+
+/-- A bounded multiplication for later candidates: seven bits suffice for
+all candidates through 101. Slots 37..40 are dead until factor extraction. -/
+def fusedSmall7 : Prog isa := seqs [fusedSetG,
+  copy nar mY mX, copy nar mXm aZ, .block [.mov .esi (.imm 7)],
+  mulMod nar aZ mG mY mXm aN aW]
+
+def fusedMultiply : Prog isa := .seq
+  (.block [.mov .eax (.mem (sc sCand)), .alu .sub .eax (.imm 14)])
+  (.iteCold .ae fusedSmall7 fusedSmall)
+
+def fusedBitHead (k : Nat) : List Instr := [.mov .eax (.mem (sc sWin))] ++
+  (if k = 0 then [] else [.shift .shr .eax k]) ++
+  [.alu .and .eax (.imm 1), .store (sc sBit) .eax]
+
+/-- Save a root only on a zero bit before the current chain has stopped;
+a set bit discards the old chain's flags. -/
+def fusedHit : Prog isa := seqs [
+  flagNot sLive sDone, flagBin .and sLive sLive sE1,
+  flagNot sMask sBit, flagBin .and sLive sLive sMask,
+  flagBin .or sOk sOk sLive, flagBin .and sOk sOk sMask,
+  flagBin .or sDone sDone sE1, flagBin .or sDone sDone sE2,
+  flagBin .and sDone sDone sMask]
+
+def fusedTail : Prog isa := seqs [flagBin .or sE1 sE1 sE2,
+  flagBin .and sE1 sE1 sBit, flagBin .or sDone sDone sE1]
+
+def fusedBit (k : Nat) : Prog isa := seqs [
+  .block (fusedBitHead k), mmul mX mY mY, eqAt sE1 mX aO, eqAt sE2 mX aNg,
+  fusedHit, sel nar 0 0 mY sLive, fusedMultiply, sel nar mY mX mXm sBit,
+  eqAt sE1 mY aO, eqAt sE2 mY aNg, fusedTail]
+
+def fusedBits : Prog isa := seqs [fusedBit 3, fusedBit 2, fusedBit 1, fusedBit 0]
+
+def fusedWindow : Prog isa := seqs [.block windowTop, shiftUp, fusedBits, .block cntNext]
+
+def fusedInit : Prog isa := .seq (copy nar 0 aZ) (.block [
+  .mov .eax (.imm 1), .store (sc sDone) .eax,
+  .mov .eax (.imm 0), .store (sc sOk) .eax, .store (sc sWin) .eax])
+
+def fusedFinish : Prog isa := .seq (copy nar mY 0)
+  (.block [.mov .eax (.imm 0), .store (sc sK) .eax])
+
+def fusedCand : Prog isa := seqs [alignStart, .loop alignBody .ne,
+  fusedInit, .block windowCount, .loop fusedWindow .ne, fusedFinish, .block candNext]
+
+def fusedLoop : Prog isa := .seq
+  (.block [.mov .eax (.imm 0), .store (sc sCand) .eax]) (.loop fusedCand .ne)
+
+/-- Keep the full exponent; the fused pass needs no factor-of-two extraction. -/
+def fusedPrepare : Prog isa := seqs [copy wid wR wM,
+  .block [.mov .eax (.imm 0), .store (sc sTc) .eax, .store (sc sCnt) .eax]]
+
+def fusedRest : Prog isa := seqs [fusedPrepare, mont, fusedLoop, fin]
+
 def rest : Prog isa := seqs [halving, mont, candLoop, fin]
 
-def sized : Prog isa := .seq numbers (.ite .e rest VG.Impl.Rsa.X86.Recover.failure)
+/-- The fixed seven-bit fallback costs more at small widths. The public
+modulus length selects the existing schedule below 2048 bits. -/
+def recoveryChoice : List Instr := [
+  .mov .eax (.mem (PublicFn.argument 5)), .alu .sub .eax (.imm 256)]
+
+def selectedRest : Prog isa := .seq (.block recoveryChoice) (.iteCold .b rest fusedRest)
+
+def sized : Prog isa := .seq numbers (.ite .e selectedRest VG.Impl.Rsa.X86.Recover.failure)
 
 def body : Prog isa := .seq
   (.block (CrtValues.inputArgs 4)) (.seq (.block modulusCheck) (.ite .e sized VG.Impl.Rsa.X86.Recover.failure))

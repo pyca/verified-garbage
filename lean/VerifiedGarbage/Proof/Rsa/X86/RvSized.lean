@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedDispatch
 import VerifiedGarbage.Proof.Rsa.X86.RvFailure
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
@@ -62,7 +63,7 @@ theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   refine WP.ite (decide (GoOn (product g s.mem))) (by exact zt) ?_ ?_
   · intro yes
     have go : GoOn (product g s.mem) := of_decide_eq_true yes
-    refine WP.mono (rest_ok h len hu go bound odd large) fun t result => ?_
+    refine WP.mono (selectedRest_ok h len hu go bound odd large) fun t result => ?_
     have written := written_rest result valid pLen qLen
     obtain ⟨_, _, _, ⟨ht, _, _, _, frame, rest⟩, _, _, _⟩ := result
     exact ⟨ht, written, frame, rest⟩
