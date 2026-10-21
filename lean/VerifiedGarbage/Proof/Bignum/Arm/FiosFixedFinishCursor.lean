@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosFixedState
-public import VerifiedGarbage.Impl.Bignum.Arm.FiosFixed
+public import VerifiedGarbage.Impl.Bignum.Arm.FiosPipelined
 import VerifiedGarbage.Proof.Bignum.Arm.FiosFixedAdvance
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -17,7 +17,7 @@ theorem finishCursor_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n 
     (ctx : Fios.Ctx s0 base size acc b mod n) (h : Inv s0 x q base acc b mod n start i s)
     (h4 : encodable (BitVec.ofNat 32 (4*(i-start)))=true)
     (h1 : encodable (BitVec.ofNat 32 (i-start))=true) :
-    WP isa (.block (VG.Impl.Bignum.Arm.FiosFixed.advance (i-start))) s
+    WP isa (.block (VG.Impl.Bignum.Arm.FiosPipelined.advance (i-start))) s
       (Fios.Inv s0 x q base acc b mod n i) := by
   refine WP.mono (advance_ok s (i-start) h4 h1) ?_
   rintro t ⟨p0,p12,p4,count,_,mem,rt⟩

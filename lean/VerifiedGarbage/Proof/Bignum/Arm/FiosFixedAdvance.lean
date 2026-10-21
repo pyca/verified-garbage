@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-public import VerifiedGarbage.Impl.Bignum.Arm.FiosFixed
+public import VerifiedGarbage.Impl.Bignum.Arm.FiosPipelined
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! One encodable update advances the public cursors after a fixed scan. -/
@@ -13,14 +13,14 @@ open VG.Proof.X25519.Arm (Rest wp_dp wp_subs op2_imm dpVal)
 
 theorem advance_ok (s : State) (k : Nat) (h4 : encodable (BitVec.ofNat 32 (4*k))=true)
     (h1 : encodable (BitVec.ofNat 32 k)=true) :
-    WP isa (.block (VG.Impl.Bignum.Arm.FiosFixed.advance k)) s fun t =>
+    WP isa (.block (VG.Impl.Bignum.Arm.FiosPipelined.advance k)) s fun t =>
       t.gpr .r0=s.gpr .r0+BitVec.ofNat 32 (4*k) ∧
       t.gpr .r12=s.gpr .r12+BitVec.ofNat 32 (4*k) ∧
       t.gpr .r4=s.gpr .r4+BitVec.ofNat 32 (4*k) ∧
       t.gpr .lr=s.gpr .lr-BitVec.ofNat 32 k ∧
       t.z=(s.gpr .lr-BitVec.ofNat 32 k==0) ∧
       t.mem=s.mem ∧ Rest [.r0,.r12,.r4,.lr] s t := by
-  unfold VG.Impl.Bignum.Arm.FiosFixed.advance
+  unfold VG.Impl.Bignum.Arm.FiosPipelined.advance
   refine wp_dp (op2_imm h4) fun a ha => ?_
   refine wp_dp (op2_imm h4) fun b hb => ?_
   refine wp_dp (op2_imm h4) fun c hc => ?_

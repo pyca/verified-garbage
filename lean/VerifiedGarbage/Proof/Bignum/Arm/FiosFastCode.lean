@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosFastChoice
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 import VerifiedGarbage.Proof.Bignum.Arm.FiosCode
-import VerifiedGarbage.Proof.Bignum.Arm.FiosFixedCode
+import VerifiedGarbage.Proof.Bignum.Arm.FiosPipelinedCode
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -29,8 +29,8 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   have ws (u : State) (r : Rest [] s u) : Fios.Ctx u base size acc b mod n :=
     ⟨ctx.workspace.congr r.wr,ctx.accFits,ctx.bFits,ctx.mFits,ctx.accB,ctx.accM⟩
   have fixed (u : State) (r : Rest [] s u) (mem : u.mem=s.mem) (special : n=16 ∨ n=32) :
-      WP isa (VG.Impl.Bignum.Arm.FiosFixed.code n) u (Post s base acc b mod n) := by
-    refine WP.mono (FiosFixed.code_ok u (ws u r) positive even
+      WP isa (VG.Impl.Bignum.Arm.FiosPipelined.code n) u (Post s base acc b mod n) := by
+    refine WP.mono (FiosPipelined.code_ok u (ws u r) positive even
       (by rcases special with rfl|rfl <;> decide)
       (by rcases special with rfl|rfl <;> decide)
       (by rcases special with rfl|rfl <;> decide)
