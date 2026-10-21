@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
+import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
 meta import VerifiedGarbage.Spec.Ed25519.ExpandedSign
+meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -27,30 +29,7 @@ open VG.Impl.Ed25519.X86_64 (stk)
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Ed25519.X86_64.PublicKey (ea_stk ea_base add_add)
 open VG.Proof.Sha512.X86_64 (Compress)
-
-/-- Byte `i` of a little-endian 64-bit word. -/
-theorem readW_byte64 (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
-    m (a + BitVec.ofNat 64 i) = (m.readW a 64).extractLsb' (8 * i) 8 := by
-  rw [← Mem.extractLsb'_read m a (n := 8) hi]
-  simp only [Mem.readW]
-  rfl
-
-/-- 64 bytes from their eight little-endian words. -/
-theorem bytesAt_of_words {m m' : Mem} {p p' : Addr}
-    (h : ∀ k < 8, m'.readW (p' + BitVec.ofNat 64 (8 * k)) 64 = m.readW (p + BitVec.ofNat 64 (8 * k)) 64) :
-    Spec.Sha512.bytesAt m' p' 64 = Spec.Ed25519.bytesAt m p 64 := by
-  simp only [Spec.Sha512.bytesAt, Spec.Ed25519.bytesAt]
-  apply List.map_congr_left
-  intro i hi
-  have hi' := List.mem_range.mp hi
-  have ha : ∀ q : Addr, q + BitVec.ofNat 64 i = q + BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
-    intro q
-    have e : i = 8 * (i / 8) + i % 8 := by omega
-    conv_lhs => rw [e]
-    rw [BitVec.ofNat_add, BitVec.add_assoc]
-  have hk : i / 8 < 8 := by omega
-  have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
-  rw [ha p', ha p, readW_byte64 m' _ hj, readW_byte64 m _ hj, h _ hk]
+open VG.Proof.Ed25519 (bytesAt_of_words sign_of_sha512_eq sha512_length)
 
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 
@@ -144,14 +123,6 @@ theorem copy_ok (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g mx 
   exact hwd k hk
 
 /-! ## The expanded-key entry point -/
-
-/-- A signature depends on the seed only through its SHA-512 digest. -/
-theorem sign_of_sha512_eq {a b : List Byte} (h : Spec.Sha512.sha512 a = Spec.Sha512.sha512 b)
-    (m : List Byte) : Spec.Ed25519.sign a m = Spec.Ed25519.sign b m := by
-  simp only [Spec.Ed25519.sign, Spec.Ed25519.expandSecret, h]
-
-theorem sha512_length (m : List Byte) : (Spec.Sha512.sha512 m).length = 64 := by
-  simp [Spec.Sha512.sha512, Spec.Sha512.finalHash, Spec.Sha512.wordBytes, List.map_const']
 
 /-- Signing with the seed's digest at `rsi` and its public key at `rdx`. -/
 def signLocalE : Contract isa := signLocalWith 64

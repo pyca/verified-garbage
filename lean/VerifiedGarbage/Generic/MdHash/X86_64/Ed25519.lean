@@ -18,13 +18,14 @@ public import VerifiedGarbage.Proof.Framework.Registration
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
 
-Complete key derivation, signing with the cached SHA-512 digest of the seed and public key,
-and verification are emitted
-for every SHA-512 compression backend carried by `MdHash.sha512`, and for
+Signing with the cached SHA-512 digest of the seed and public key, and verification, are
+emitted for every SHA-512 compression backend carried by `MdHash.sha512`, and for
 each field multiplication of the Ed25519 functions they call (the baseline's,
 and BMI2's and ADX's, `_adx`), and with AVX512_IFMA (`_ifma`): verification for
-its windows, key derivation and signing for its comb (`vg_ed25519_scalar_base_ifma`). Each operation includes its streaming hash calls and
-carries the backend's suffix and CPU features, then the field's.
+its windows, signing for its comb (`vg_ed25519_scalar_base_ifma`). Each operation includes
+its streaming hash calls and carries the backend's suffix and CPU features, then the field's.
+Key derivation, which hashes no more than the seed, takes its digest
+(`Artifacts/Ed25519PublicKeyExpanded/X86_64.lean`).
 Other hash families emit no Ed25519 artifacts.
 -/
 
@@ -54,25 +55,6 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     spSafe := Proof.Ed25519.X86_64.VerifyMessage.spSafe hq c
     features := c.features ++ ff.filter (!c.features.contains ·) }
 
-/-- Key derivation with the SHA-512 implementation `c`, calling the base-point multiplication
-`bs`, `vg_ed25519_scalar_base` with the suffix `fs`, which needs the CPU features `ff`. -/
-def publicKeyWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
-    [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
-  Spec.Ed25519.publicKeyApi.artifact X86_64.target {
-    suffix := c.suffix ++ fs
-    notes := ["Hashes the seed with `vg_sha512_init`, \
-      `vg_sha512_update_scratch" ++ c.suffix ++ "` and `vg_sha512_finalize_scratch" ++ c.suffix ++ "`, keeping \
-      the state and the digest in `scratch`, and encodes `[s]B` with \
-      `vg_ed25519_scalar_base" ++ fs ++ "`. The pruned scalar `s` is kept in a \
-      56-byte stack frame with the pointers and cleared before the frame is popped; the calls \
-      use the 16 bytes below it."]
-    consts := Impl.Ed25519.X86_64.combConsts
-    code := Impl.Ed25519.X86_64.publicKey bs fs c.callee c.suffix
-    stack := 72
-    verified := Proof.Ed25519.X86_64.PublicKey.publicKey_verified c
-    spSafe := Proof.Ed25519.X86_64.PublicKey.publicKey_spSafe c
-    features := c.features ++ ff.filter (!c.features.contains ·) }
-
 /-- Signing with the seed's cached SHA-512 digest and public key, with the SHA-512
 implementation `c`, calling the base-point multiplication `bs` (`vg_ed25519_scalar_base` with
 the suffix `fs`), which needs the CPU features `ff`. -/
@@ -93,23 +75,22 @@ def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     spSafe := Proof.Ed25519.X86_64.SignCached.spSafeE c
     features := c.features ++ ff.filter (!c.features.contains ·) }
 
-/-- The three operations with the SHA-512 implementation `c` and the field
+/-- Verification and signing with the SHA-512 implementation `c` and the field
 multiplications `fld` (verification's doublings too), those of the Ed25519
-functions with the suffix `fs`, which need the CPU features `ff`; key derivation and signing
-call the base-point multiplication `bs`, which needs `bf`. -/
+functions with the suffix `fs`, which need the CPU features `ff`; signing
+calls the base-point multiplication `bs`, which needs `bf`. -/
 def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arith)
     [Proof.Ed25519.X86_64.EdArith fld] (fs : String) (ff : List String)
     (bs : Prog X86_64.isa) [Proof.Ed25519.X86_64.EdBase bs] (bf : List String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode fld (Impl.Ed25519.X86_64.windows fld)) :
     List Artifact :=
-  [publicKeyWith c bs fs bf,
-    verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs ff hq,
+  [verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs ff hq,
     signExpandedWith c bs fs bf]
 
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and
 each field multiplication of the Ed25519 functions: the baseline's, and
 BMI2's and ADX's (`_adx`, whose comb also selects its entries with AVX2); and with AVX512_IFMA
-(`_ifma`), verification with its windows, and key derivation and signing with its comb. -/
+(`_ifma`), verification with its windows, and signing with its comb. -/
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   match v.sha512 with
   | none => []
@@ -123,8 +104,6 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
         Impl.Ed25519.X86_64.Ifma.windows "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
         Proof.Ed25519.X86_64.VerifyCode.ifma_eq,
-        publicKeyWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
-          ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],
         signExpandedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]]
 
