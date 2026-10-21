@@ -36,6 +36,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
@@ -97,13 +99,13 @@ theorem allocatedMid_ok (hI : InvSounds) (hT : InvToM p256.C.n)
     allocatedInverse_bound (allocatedInverse_ok hI hT) hf h
 
 theorem allocatedPrefix_ok (hI : InvSounds) (hT : InvToM p256.C.n)
-    {s : State} (hp : VPre p256 s) :
+    {s : State} (hp : VPreG s) :
     WP isa allocatedPrefix s fun t => ∃ g,Mid p256 s (s.gpr .x3) g t := by
-  exact front_ok (p256_ok hI) hp fun g _ _ hf =>
+  exact front_ok (p256_ok hI) hp.front fun g _ _ hf =>
     allocatedMid_ok hI hT hf fun _ hm => WP.block_nil ⟨g,hm⟩
 
 theorem allocatedInverse_relCT (hI : InvSounds) (hT : InvToM p256.C.n)
-    (s₀ t₀ : State) (hp : JacPublic p256 s₀ t₀) :
+    (s₀ t₀ : State) (hp : JacPublicG s₀ t₀) :
     RelCT isa (InversePair s₀ t₀) P256Allocated.inverse
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   intro s t ts tt s' t' ⟨hs,ht,hsp⟩ es et
@@ -131,8 +133,8 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 returning to the unchanged verifier stages. -/
 theorem allocatedVerify_restored (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hTInv : InvToM p256.C.n)
-    (hTcomb : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    {s t : State} {tr : List Leak} (hp : VPre p256 s)
+    (hTcomb : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
+    {s t : State} {tr : List Leak} (hp : VPreG s)
     (he : Exec isa P256Allocated.verify s tr t) : ∀ r∈untouched,t.gpr r=s.gpr r := by
   refine allocatedVerify_extra_preserved (p256_ok hI)
     (fun _ h => allocatedPrefix_ok hI hTInv h) ?_
@@ -155,8 +157,8 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 
 theorem allocatedVerify_ok (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hN : InvToM p256.C.n)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    {s : State} (h : VPre p256 s) :
+    (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
+    {s : State} (h : VPreG s) :
     WP isa P256Allocated.verify s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256 s t := by
   apply verify_of_joint_inverse (p256_ok hI) hL P256Allocated.inverse P256Allocated.points
@@ -168,20 +170,20 @@ theorem allocatedVerify_ok (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256
 /-- The allocated verifier satisfies the existing correctness, ABI and public-input contract. -/
 theorem allocatedVerify_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hN : InvToM p256.C.n)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start) :
     Verified AArch64.target P256Allocated.verify
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)) := by
-  refine ⟨fun s hs => ?_,?_,implies.sat⟩
+      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)) := by
+  refine ⟨fun s hs => ?_,?_,impliesG.sat⟩
   · obtain ⟨tr,t,he,ha,hp⟩ := allocatedVerify_a64_of_wp
       (fun _ hp => allocatedVerify_ok hL hO hI hN hT hp)
-      (fun hp he => allocatedVerify_restored hL hO hI hN hT hp he) s (implies.pre _ hs)
-    exact ⟨tr,t,he,ha,implies.post s t hs hp⟩
+      (fun hp he => allocatedVerify_restored hL hO hI hN hT hp he) s (impliesG.pre _ hs)
+    exact ⟨tr,t,he,ha,impliesG.post s t hs hp⟩
   · intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
     exact allocatedVerify_ct_of_points (fun _ hp => allocatedPrefix_ok hI hN hp)
       (allocatedPrefix_ct (p256_ok hI) (allocatedInverse_relCT hI hN) allocatedUv_ct)
       (fun _ _ ps pt => Allocated.allocatedPoints_relCT Allocated.raw_correct (p256_ok hI) hL hO hT ps pt)
-      jointTail_ct _ _ _ _ _ _ (jacPre_of (implies.pre _ pre₁)) (jacPre_of (implies.pre _ pre₂))
-      (jacPublic_of_spec pub) e₁ e₂
+      jointTail_ct _ _ _ _ _ _ (vpreG_of (impliesG.pre _ pre₁)) (vpreG_of (impliesG.pre _ pre₂))
+      (jacPublicG_of_spec pub) e₁ e₂
 
 end VG.Proof.Ecdsa.Verify.AArch64
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+public import VerifiedGarbage.Proof.P256.GTable9
 public import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
@@ -285,8 +286,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       square. The key is checked without branches, and multiplication uses the key's point \
       if valid, else `G`. The scalar inverse uses nine batches of 59 divsteps, with a tenth \
       batch when the public input requires it. `[u]G + [v]Q` uses one \
-      joint Jacobian accumulator with width-7 and width-5 sparse signed digits, respectively. \
-      Generator digits reuse the odd multiples in the first row of `VG_P256_COMB`. The eight \
+      joint Jacobian accumulator with width-9 and width-5 sparse signed digits, respectively. \
+      Generator digits, stored as sixteen-bit words, index the affine multiples `[m]G`, \
+      `m = 1 … 256`, in the static `VG_P256_GTAB` (16 KB). The eight \
       odd multiples of `Q` are built with co-Z arithmetic (ECDH's DBLU and ZADDU, adding `2Q` \
       at a shared `Z`), which also yields the `Z²` and `Z³` values they cache. The joint loop doubles \
       its accumulator in place with five squares and three products, each linear combination \
@@ -297,8 +299,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       lookups, skipped zero digits and exceptional-point branches depend on the public key, \
       digest and signature already declared public by the contract. The result combines \
       the key and scalar checks, rejection of infinity, and `x ≡ r` modulo `n` into a mask."]
-    consts := Impl.Ecdsa.AArch64.p256.combConsts
+    consts := Impl.Ecdsa.Verify.AArch64.P256Joint.p256v.combConsts
     code := Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerify_verified h.law h.prime h.inv h.invToM (Proof.P256.combOk7 h.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerify_verified h.law h.prime h.inv h.invToM (Proof.P256.gtabOk9 h.law) }]
 
 end VG.Generic.P256.AArch64.EcdsaP256
