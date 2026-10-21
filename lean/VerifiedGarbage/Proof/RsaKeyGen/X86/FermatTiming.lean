@@ -35,4 +35,10 @@ theorem code_trace {g : Geometry} (v : g.Valid) :
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
   RelCT.seq init_trace (RelCT.seq (divisor_trace v) (checkedBlockInvariant rfl rfl))
 
+theorem code_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+    (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) :
+    RelCT isa (fun s t => ReadControl g 0 s ∧ ReadControl g 0 t) (code 4)
+      (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
+  RelCT.seq init_trace (RelCT.seq (divisor_trace_bounded positive widthBound candidateFit) (checkedBlockInvariant rfl rfl))
+
 end VG.Proof.RsaKeyGen.X86.FermatExponent

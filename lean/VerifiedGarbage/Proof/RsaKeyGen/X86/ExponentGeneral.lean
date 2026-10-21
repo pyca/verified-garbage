@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentFilter
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRanges
+public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
+import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Framed
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Preserve
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentClass
@@ -30,7 +34,8 @@ theorem general_ok {s : State} {base : Addr} {size w candidate exponent : Nat}
       t.gpr .eax = BitVec.ofNat 32 (decide (Nat.gcd (candidate - 1) exponent = 1)).toNat ∧
       val32 t.mem base (slot w 0) (2 * w) = candidate ∧
       Frame [⟨base, size⟩, below (s.gpr .esp) 20] s.mem t.mem ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
+      WorkspaceFrame ⟨base, size, w⟩ (ranges w) s.mem t.mem := by
   have sizeBound : 400 ≤ size := by simp only [slot, stride, VG.Impl.Bignum.hdrBytes] at space; omega
   have savedLo : 400 ≤ slot w 5 := by simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega
   have dstLo : 256 ≤ slot w 0 := by simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega
@@ -41,7 +46,15 @@ theorem general_ok {s : State} {base : Addr} {size w candidate exponent : Nat}
   refine WP.mono (Gcd64.preserving_ok Sa sizeBound (by omega) (by decide) (by rw [eA]; exact eOdd)
     (by omega) (by omega) (by omega) dstLo savedLo sep (by rw [savedA]; omega))
     fun t ⟨result, restored, O, K⟩ => ?_
-  refine ⟨?_, ?_, ?_, (Ka.mono (by decide)).trans (K.mono (by decide))⟩
+  rw [show 4 * (2 * w) = 8 * w by omega] at O
+  have far : (⟨base, size⟩ : Region).Disjoint (below (s.gpr .esp) 20) :=
+    FilterStack.allocated_apart (by omega) S.nowrap
+      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega))
+  have Wa : WorkspaceFrame ⟨base, size, w⟩ [] s.mem a.mem :=
+    workspace_of_frame Fa S.nowrap (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact far)
+  have Wb : WorkspaceFrame ⟨base, size, w⟩ (ranges w) a.mem t.mem := WorkspaceFrame.of_outs S.nowrap O
+  refine ⟨?_, ?_, ?_, (Ka.mono (by decide)).trans (K.mono (by decide)),
+    (Wa.mono (by intro r mem; nomatch mem)).trans Wb⟩
   · rw [remainder, eA] at result
     have gcdEq : Nat.gcd ((candidate - 1) % exponent) exponent = Nat.gcd (candidate - 1) exponent :=
       (Nat.gcd_rec exponent (candidate - 1)).symm.trans (Nat.gcd_comm _ _)

@@ -27,12 +27,12 @@ theorem nontrivial_ok {s : State} {base : Addr} {size w candidate exponent : Nat
     refine WP.mono (fast_candidate_ok A.scratch A.width A.widthBound A.space A.saved A.fit A.separate)
       fun t ⟨result, F, Kt⟩ => ?_
     apply Output.prepend (s := s) (a := a) _ M K
-    refine ⟨?_, A.stackFrameValue F, F.mono (fun _ mem => List.mem_cons_of_mem _ mem), Kt⟩
+    refine ⟨?_, A.stackFrameValue F, F.mono (fun _ mem => List.mem_cons_of_mem _ mem), Kt, A.stackWorkspaceFrame F⟩
     simpa only [common] using result
   · refine WP.ite false (by change a.zf = _; rw [Z, decide_eq_false common]) (fun impossible => nomatch impossible) (fun _ => ?_)
     refine WP.mono (general_ok A.scratch A.width A.space A.saved A.large A.odd A.exponentEq odd A.fit A.separate)
-      fun t ⟨result, original, F, Kt⟩ => ?_
-    exact (show Output base size w candidate exponent a t from ⟨result, original, F, Kt⟩).prepend M K
+      fun t ⟨result, original, F, Kt, W⟩ => ?_
+    exact (show Output base size w candidate exponent a t from ⟨result, original, F, Kt, W⟩).prepend M K
 
 theorem odd_ok {s : State} {base : Addr} {size w candidate exponent : Nat}
     (S : Input base size w candidate exponent s) (odd : exponent % 2 = 1) :

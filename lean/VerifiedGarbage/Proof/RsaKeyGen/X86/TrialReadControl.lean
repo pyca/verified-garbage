@@ -31,12 +31,13 @@ theorem StateAt.readControl {g : Geometry} {c i q : Nat} {s : State}
   refine ⟨S.context.stack, S.context.candidateRead, S.ending, ?_⟩
   simpa only [Nat.mul_zero, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.add_zero] using pointer
 
-theorem ReadControl.step {g : Geometry} (v : g.Valid) {j : Nat} {s : State}
+theorem ReadControl.step_bounded {g : Geometry} (widthBound : g.w ≤ 64)
+    (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) {j : Nat} {s : State}
     (S : ReadControl g j s) (index : j < 2 * g.w) :
     WP isa (.block (VG.Impl.RsaKeyGen.X86.Trial.wordStep 4)) s fun t =>
       ReadControl g (j + 1) t ∧ t.zf = some (decide (j + 1 = 2 * g.w)) := by
   have read : InRegions (s.rd ++ s.wr) (addr (s.gpr .edi) 0) 4 := by
-    rw [S.pointer, Trial.word_address g.candidate (by have := v.candidateFit; omega) index]
+    rw [S.pointer, Trial.word_address g.candidate (by omega) index]
     exact S.candidateRead j index
   have ending : s.mem.readW (addr (s.gpr .esp) 4) 32 = g.ending := by
     change s.mem.readW (s.ea (VG.Impl.RsaKeyGen.X86.Sieve.slot 4)) 32 = _
@@ -62,6 +63,12 @@ theorem ReadControl.step {g : Geometry} (v : g.Valid) {j : Nat} {s : State}
       congr 2 <;> omega
     rw [pointer]
     rw [Geometry.ending, show 8 * g.w = 4 * (2 * g.w) by omega]
-    rw [Trial.pointer_zf g.candidate (by have := v.widthBound; omega) index]
+    rw [Trial.pointer_zf g.candidate (by omega) index]
+
+theorem ReadControl.step {g : Geometry} (v : g.Valid) {j : Nat} {s : State}
+    (S : ReadControl g j s) (index : j < 2 * g.w) :
+    WP isa (.block (VG.Impl.RsaKeyGen.X86.Trial.wordStep 4)) s fun t =>
+      ReadControl g (j + 1) t ∧ t.zf = some (decide (j + 1 = 2 * g.w)) :=
+  S.step_bounded v.widthBound v.candidateFit index
 
 end VG.Proof.RsaKeyGen.X86.Sieve

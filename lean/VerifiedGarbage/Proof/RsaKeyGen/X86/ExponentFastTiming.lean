@@ -52,17 +52,26 @@ theorem fastArgs_trace {g : Sieve.Geometry} {workspace : BitVec 32}
   exact ⟨(raw _ _ _ _ _ _ A E G).1,
     wp_result (fastArgs_control pointer S) E, wp_result (fastArgs_control pointer T) G⟩
 
-theorem fast_body_trace {g : Sieve.Geometry} (v : g.Valid) {workspace : BitVec 32}
+theorem fast_body_trace_bounded {g : Sieve.Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+    (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) {workspace : BitVec 32}
     (pointer : workspace + BitVec.ofNat 32 (slot g.w 5) = g.candidate) :
     RelCT isa (fun s t => FastInitial g workspace s ∧ FastInitial g workspace t)
       (.seq (.block (.store (at_ .esp 0) .edi :: fastArgs g.w))
         (.seq (VG.Impl.RsaKeyGen.X86.FermatExponent.code 4) (.block [.mov .edi (.mem (at_ .esp 0))])))
       (fun _ _ => True) := by
-  refine RelCT.seq (fastArgs_trace pointer) (RelCT.seq (FermatExponent.code_trace v) ?_)
+  refine RelCT.seq (fastArgs_trace pointer) (RelCT.seq (FermatExponent.code_trace_bounded positive widthBound candidateFit) ?_)
   have restore : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
       (.block [.mov .edi (.mem (at_ .esp 0))]) (VG.X86.Taint.Agree (τr [.esp])) :=
     erased_relCT _ _ (.block []) rfl rfl rfl (by decide +kernel)
   exact restore.mono (fun _ _ H => H) (fun _ _ _ => trivial)
+
+theorem fast_body_trace {g : Sieve.Geometry} (v : g.Valid) {workspace : BitVec 32}
+    (pointer : workspace + BitVec.ofNat 32 (slot g.w 5) = g.candidate) :
+    RelCT isa (fun s t => FastInitial g workspace s ∧ FastInitial g workspace t)
+      (.seq (.block (.store (at_ .esp 0) .edi :: fastArgs g.w))
+        (.seq (VG.Impl.RsaKeyGen.X86.FermatExponent.code 4) (.block [.mov .edi (.mem (at_ .esp 0))])))
+      (fun _ _ => True) :=
+  fast_body_trace_bounded v.positive v.widthBound v.candidateFit pointer
 
 structure FastEntry (g : Sieve.Geometry) (workspace : BitVec 32) (s : State) : Prop where
   fit : 20 ≤ (s.gpr .esp).toNat
@@ -82,14 +91,21 @@ theorem FastEntry.initial {g : Sieve.Geometry} {workspace : BitVec 32} {s : Stat
     · exact List.mem_append_left _ mem
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ mem)
 
-theorem fast_trace {g : Sieve.Geometry} (v : g.Valid) {workspace : BitVec 32}
+theorem fast_trace_bounded {g : Sieve.Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+    (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) {workspace : BitVec 32}
     (pointer : workspace + BitVec.ofNat 32 (slot g.w 5) = g.candidate) :
     RelCT isa (fun s t => FastEntry g workspace s ∧ FastEntry g workspace t)
       (fast g.w) (fun _ _ => True) := by
   unfold fast
   apply RelCT.frameAlloc
-  refine (fast_body_trace v pointer).mono ?_ (fun _ _ _ => trivial)
+  refine (fast_body_trace_bounded positive widthBound candidateFit pointer).mono ?_ (fun _ _ _ => trivial)
   rintro _ _ ⟨s, t, ⟨S, T⟩, rfl, rfl⟩
   exact ⟨S.initial, T.initial⟩
+
+theorem fast_trace {g : Sieve.Geometry} (v : g.Valid) {workspace : BitVec 32}
+    (pointer : workspace + BitVec.ofNat 32 (slot g.w 5) = g.candidate) :
+    RelCT isa (fun s t => FastEntry g workspace s ∧ FastEntry g workspace t)
+      (fast g.w) (fun _ _ => True) :=
+  fast_trace_bounded v.positive v.widthBound v.candidateFit pointer
 
 end VG.Proof.RsaKeyGen.X86.ExponentFilter
