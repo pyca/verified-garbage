@@ -206,9 +206,24 @@ fn rsa_shared_key_leases() {
         .into_iter()
         .filter(|&b| harness::rsa_bits_tested(b))
     {
-        let name = format!("rsa_pkcs1_{bits}_test.json");
-        let file = harness::load::<Pkcs1Group, MsgCase>(&name);
-        harness::par_each(&file.test_groups, |group| {
+        shared_key_leases(bits, usize::MAX, 4);
+    }
+}
+
+/// Concurrent callers with one vector key, for emulated backends; the full
+/// stress test remains on native and SKX jobs.
+#[test]
+fn rsa_shared_key_leases_smoke() {
+    require_vectors!();
+    shared_key_leases(2048, 1, 1);
+}
+
+fn shared_key_leases(bits: usize, groups: usize, repetitions: usize) {
+    let name = format!("rsa_pkcs1_{bits}_test.json");
+    let file = harness::load::<Pkcs1Group, MsgCase>(&name);
+    harness::par_each(
+        &file.test_groups[..groups.min(file.test_groups.len())],
+        |group| {
             let (private, public) = keys(&name, &group.params.private_key);
             // Signature verification and OAEP encryption lease the same key's
             // buffer, with different workspace lengths. Alternate them, including
@@ -228,7 +243,7 @@ fn rsa_shared_key_leases() {
                     let (public, d, sig, pss) = (&public, &d, &sig, &pss);
                     let private = &private;
                     scope.spawn(move || {
-                        for _ in 0..4 {
+                        for _ in 0..repetitions {
                             assert!(rsa_pkcs1_sig::verify(
                                 public,
                                 sig,
@@ -284,6 +299,6 @@ fn rsa_shared_key_leases() {
                     });
                 }
             });
-        });
-    }
+        },
+    );
 }

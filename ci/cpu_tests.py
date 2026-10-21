@@ -21,6 +21,9 @@ group, until the code it tests is built for them: `ecdsa`'s unit tests are
 x86-64's for now, and run on the other CPUs' `ecdsa` lines when they are
 built there too.
 
+  cpu_tests.py emulated-rsa CPU
+      of the runs on stdin, focused RSA groups for ICX/DMR; use only after
+      detecting SDE on a host without AVX512_IFMA
   cpu_tests.py select BINARY LIB TESTS GROUP...
       the tests of the groups in BINARY (`lib` or `tests`), one per line,
       of the tests listed (`--list --format terse`) in the files LIB and
@@ -257,6 +260,41 @@ GROUPS = {
             "wycheproof::rsa_public",
         ],
     },
+    # IFMA's vectors once, without repeating ADX prime generation (SKX and
+    # native run it). Keep a key-generation dispatch check, every signing
+    # hash, large private-key operands and concurrent use of a shared key.
+    # The per-hash backend_features tests enumerate synthetic feature sets,
+    # without executing those instructions: native/SKX's full groups cover
+    # them. Keep the unit tests that execute RSA here.
+    "rsa_ifma": {
+        "lib": ["rsa", "rsa_keygen::tests::generate_small_d", "rsa_oaep::tests", "rsa_pkcs1_enc",
+                "rsa_pkcs1_sig", "rsa_pss::tests"],
+        "tests": [
+            "rsa_guidance::rsa_pkcs1_appendix_b",
+            "rsa_guidance::rsa_pkcs1_bad_keys",
+            "rsa_guidance::rsa_crt_truncated_factors",
+            "rsa_guidance::rsa_pkcs1_lengths",
+            "wycheproof::rsa",
+            "wycheproof::rsa_keys",
+            "wycheproof::rsa_public",
+            "wycheproof::rsa_pkcs1_enc",
+            "wycheproof::rsa_pkcs1_sig",
+            "wycheproof::rsa_pss::rsa_pss_test",
+            "wycheproof::rsa_pss::rsa_pss_every_hash",
+            "wycheproof::rsa_pss::rsa_pss_large_keys",
+            "wycheproof::rsa_oaep::rsa_oaep_test",
+            "wycheproof::rsa_oaep::rsa_oaep_every_pair",
+            "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke",
+        ],
+    },
+    # Extra SHA-256 implementations with the same RSA arithmetic: every
+    # known-answer implicit-rejection case with the two smaller keys.
+    "rsa_pkcs1_hashes": {
+        "lib": [],
+        "tests": [
+            "rsa_guidance::rsa_pkcs1_appendix_b_small",
+        ],
+    },
     "rsa_oaep": {
         "lib": ["rsa_oaep"],
         "tests": ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_oaep"],
@@ -282,6 +320,10 @@ GROUPS = {
     "rsa_pss": {
         "lib": ["rsa_pss"],
         "tests": ["wycheproof::rsa_pss"],
+    },
+    "rsa_pss_hashes": {
+        "lib": [],
+        "tests": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
     },
     "scrypt": {
         "lib": ["scrypt"],
@@ -419,6 +461,35 @@ GROUPS = {
     },
 }
 
+# Optional groups: these are used only when SDE runs ICX/DMR on a host
+# without IFMA. A run whose hosts all have IFMA legitimately uses none.
+EMULATED_RSA_GROUPS = {
+    "rsa": "rsa_ifma",
+    "rsa_pkcs1": "rsa_pkcs1_hashes",
+    "rsa_pss": "rsa_pss_hashes",
+    "rsa_oaep": "rsa_oaep_pairs",
+}
+
+
+def emulated_rsa_runs(cpu, runs):
+    """Focused RSA groups for ICX/DMR; call only after host detection.
+
+    Preserve every feature line and its order: shards must agree about
+    ownership even when their hosts have different instruction sets.
+    """
+    if cpu.split()[0] not in ("icx", "dmr"):
+        return runs
+    lines = []
+    for raw in runs.splitlines():
+        features, sep, tests = raw.partition("|")
+        if not sep:
+            lines.append(raw)
+            continue
+        groups = [EMULATED_RSA_GROUPS.get(g, g) for g in tests.split()]
+        lines.append(f"{features.strip()} | {' '.join(groups)}")
+    return "\n".join(lines)
+
+
 PATH = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)*")
 
 
@@ -465,6 +536,11 @@ def runs_groups(runs):
 def check(records):
     """The errors of the records of every CPU."""
     used = {name for r in records for name in r["groups"]}
+    # A full host's groups can use these substitutions on a host without
+    # IFMA. Check their reachability even when this run got only full hosts.
+    for record in records:
+        if record["cpu"].split()[0] in ("icx", "dmr"):
+            used.update(EMULATED_RSA_GROUPS[g] for g in record["groups"] if g in EMULATED_RSA_GROUPS)
     errors = [f"group {name} is used by no CPU's runs" for name in GROUPS if name not in used]
     for name, group in GROUPS.items():
         for b in BINARIES:
@@ -504,6 +580,8 @@ def main(argv):
         listed = {"lib": parse_list(read(argv[2])), "tests": parse_list(read(argv[3]))}
         for t in select(argv[1], listed, argv[4:]):
             print(t)
+    elif argv[:1] == ["emulated-rsa"] and len(argv) == 2:
+        print(emulated_rsa_runs(argv[1], sys.stdin.read()))
     elif argv[:1] == ["record"] and len(argv) == 5:
         tests = {"lib": parse_list(read(argv[3])), "tests": parse_list(read(argv[4]))}
         cpu = " ".join(argv[1].split())

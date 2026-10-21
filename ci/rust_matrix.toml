@@ -213,12 +213,10 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # vg_rsa_private_checked_ifma and each hash function's
 # implementations (and RSAES-OAEP decryption with SHA-1's SHA
 # extensions and SHA-512's baseline code).
-# Two shards: its RSA lines each run Wycheproof's RSA tests under
-# SDE, which take minutes on a runner without AVX-512, and longer
-# sharing a runner's cores. There, only the line without
-# VG_CPU_FEATURES signs with 3072- and 4096-bit keys
-# (tests/wycheproof/harness.rs), about half of each line's time, so
-# the other two RSA lines take about as long together as it alone.
+# Full suites run when the host has AVX512_IFMA. On SDE hosts without it,
+# ci/cpu_tests.py substitutes focused RSA groups at run time. Feature lines
+# stay identical so shards on different host CPUs agree on their split.
+# Two shards retain separate runners for the vectors and hash checks.
 [[cpu]]
 chip = "icx"
 shards = 2

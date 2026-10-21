@@ -1,10 +1,12 @@
 """The groups of tests that `rust-cpu-features`' lines run (cpu_tests.py)."""
 
 from pathlib import Path
+import tomllib
 import unittest
 from unittest import mock
 
 import cpu_tests
+from cpu_shards import parse_runs
 
 CI = Path(__file__).resolve().parent
 MATRIX = CI / "rust_matrix.toml"
@@ -96,6 +98,72 @@ class LintTests(unittest.TestCase):
     def test_a_repeated_value_of_vg_cpu_features_is_an_error(self):
         text = MATRIX.read_text().replace("\nnone | all\n", "\nnone | all\nnone | cpu\n", 1)
         self.assertEqual(cpu_tests.lint(text), ["native: VG_CPU_FEATURES=none twice"])
+
+
+class RsaEmulationTests(unittest.TestCase):
+    def selected(self, chip, binary, listed, emulated=False):
+        cpu = next(c for c in tomllib.loads(MATRIX.read_text())["cpu"] if c["chip"] == chip)
+        runs = cpu_tests.emulated_rsa_runs(chip, cpu["runs"]) if emulated else cpu["runs"]
+        return [set(cpu_tests.select(binary, listed, groups.split()))
+                for _, groups in parse_runs(runs)]
+
+    def test_icx_keeps_ifma_vectors_without_repeating_prime_generation_or_stress(self):
+        # Include a test for every path, so select also checks that no group
+        # silently selects nothing. Add expensive native checks to ensure
+        # broad module paths do not bring them back into the emulated run.
+        listed = {b: sorted({p + "::test" for g in cpu_tests.GROUPS.values() for p in g[b]})
+                  for b in cpu_tests.BINARIES}
+        # Exact test paths must be represented by themselves, too.
+        for b in cpu_tests.BINARIES:
+            listed[b] += [p for g in cpu_tests.GROUPS.values() for p in g[b]]
+        expensive = {"wycheproof::rsa_keygen::rsa_keygen_primes",
+                     "wycheproof::rsa_keygen::rsa_keygen_composites",
+                     "wycheproof::rsa_pss::rsa_pss_sign_test",
+                     "wycheproof::rsa_oaep::rsa_shared_key_leases"}
+        listed["tests"] += list(expensive)
+        selectors = {"rsa_pss::sha256::tests::backend_features",
+                     "rsa_oaep::sha256::tests::backend_features"}
+        listed["lib"] += list(selectors)
+        runs = self.selected("icx", "tests", listed, emulated=True)
+        self.assertFalse(set.union(*runs) & expensive)
+        for path in ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_pkcs1_enc::rsa_pkcs1_test",
+                     "wycheproof::rsa_pss::rsa_pss_large_keys",
+                     "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke"]:
+            listed["tests"].append(path)
+            self.assertEqual(sum(path in r for r in self.selected("icx", "tests", listed, emulated=True)), 1, path)
+        lib = set.union(*self.selected("icx", "lib", listed, emulated=True))
+        self.assertIn("rsa_keygen::tests::generate_small_d", lib)
+        self.assertNotIn("rsa_keygen::test", lib)
+        self.assertFalse(lib & selectors)
+        # The full suites still belong to native and SKX runs.
+        for chip in ("native", "skx", "icx"):
+            self.assertTrue(expensive <= set.union(*self.selected(chip, "tests", listed)))
+            self.assertTrue(selectors <= set.union(*self.selected(chip, "lib", listed)))
+
+    def test_full_hosts_may_leave_optional_emulation_groups_unused(self):
+        listed = {b: [p for g in cpu_tests.GROUPS.values() for p in g[b]]
+                  for b in cpu_tests.BINARIES}
+        records = [{"cpu": c["chip"], "groups": cpu_tests.runs_groups(c["runs"]), "tests": listed}
+                   for c in tomllib.loads(MATRIX.read_text())["cpu"]]
+        self.assertEqual(cpu_tests.check(records), [])
+
+    def test_reduction_preserves_feature_lines_and_other_cpus(self):
+        for cpu in tomllib.loads(MATRIX.read_text())["cpu"]:
+            runs = cpu["runs"]
+            reduced = cpu_tests.emulated_rsa_runs(cpu["chip"], runs)
+            self.assertEqual([f for f, _ in parse_runs(runs)],
+                             [f for f, _ in parse_runs(reduced)])
+            if cpu["chip"] not in ("icx", "dmr"):
+                self.assertEqual(reduced, runs)
+
+    def test_hash_only_runs_keep_pss_and_oaep_combinations(self):
+        for group, paths in {
+            "rsa_pkcs1_hashes": ["rsa_guidance::rsa_pkcs1_appendix_b_small"],
+            "rsa_oaep_pairs": ["wycheproof::rsa_oaep::rsa_oaep_every_pair"],
+            "rsa_pss_hashes": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
+        }.items():
+            listed = {"lib": [], "tests": paths + ["wycheproof::rsa_pss::rsa_pss_sign_test"]}
+            self.assertEqual(cpu_tests.select("tests", listed, [group]), paths)
 
 
 if __name__ == "__main__":

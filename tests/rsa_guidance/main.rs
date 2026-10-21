@@ -175,9 +175,20 @@ fn keys() -> Vec<(PrivateKey, PublicKey, Vec<Vector>)> {
 
 #[test]
 fn rsa_pkcs1_appendix_b() {
+    check_appendix_b(4);
+}
+
+/// All padding cases with the 2048- and 2049-bit keys, for additional hash
+/// implementations under SDE. The full vector run retains the larger keys.
+#[test]
+fn rsa_pkcs1_appendix_b_small() {
+    check_appendix_b(2);
+}
+
+fn check_appendix_b(key_count: usize) {
     let keys = keys();
     assert_eq!(keys.len(), 4);
-    for (private, public, vectors) in &keys {
+    for (private, public, vectors) in keys.iter().take(key_count) {
         assert_eq!(vectors.len(), 12);
         for v in vectors {
             assert_eq!(v.ct.len(), private.modulus_len(), "{}", v.title);
