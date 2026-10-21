@@ -2,6 +2,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.InvChoice
+import VerifiedGarbage.Proof.Rsa.X86.InvGuard
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
 
@@ -19,27 +22,22 @@ open VG.Impl.Rsa.X86.CrtValuesRt (lay)
     (dl : desired<2^32) (widthChoice : kw desired=w)
     (other : ∀ u,InvInput args base size len P Q u → WP isa fallback u (InvPost base size len P Q u)) :
     WP isa (VG.Impl.Rsa.X86.InvBatch.choose desired w n fallback) s (InvPost base size len P Q s) := by
-  obtain ⟨a,al,aw,arg⟩ := h.ws.lenArg
-  change kw a=kw len at aw
   unfold VG.Impl.Rsa.X86.InvBatch.choose
-  refine WP.seq (WP.mono (invCompare_ok h arg dl) fun u ⟨hu,ku,mu,zu,cu⟩ => ?_)
-  refine WP.mono (Q:=InvPost base size len P Q u) (WP.ite (decide (BitVec.ofNat 32 a=BitVec.ofNat 32 desired)) zu ?_ ?_)
-    fun t post => post.pre_rest ku (by decide) mu
+  refine WP.seq (WP.mono (guard_ok h dl nl) fun u g => ?_)
+  refine WP.mono (Q:=InvPost base size len P Q u)
+    (WP.ite (decide (Eligible args desired n)) g.cf ?_ ?_)
+    fun t post => post.pre_rest g.keeps (by decide) g.mem
   · intro yes
-    have e := congrArg BitVec.toNat (of_decide_eq_true yes)
-    rw [BitVec.toNat_ofNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega),Nat.mod_eq_of_lt dl] at e
-    have width : kw len=w := by rw [←aw,e,widthChoice]
-    refine WP.seq (WP.mono (invCompare_ok hu hu.gate.pArg (by omega : 4*n+1<2^32)) fun v ⟨hv,kv,mv,zv,cv⟩ => ?_)
-    refine WP.mono (Q:=InvPost base size len P Q v) (WP.ite (decide ((args 9).toNat<4*n+1)) cv ?_ ?_) fun t post => post.pre_rest kv (by decide) mv
-    · intro py
-      have pb : (args 9).toNat≤4*n := by have := of_decide_eq_true py; omega
-      refine WP.seq (WP.mono (invCompare_ok hv hv.gate.qArg (by omega : 4*n+1<2^32)) fun z ⟨hz,kz,mz,zz,cz⟩ => ?_)
-      refine WP.mono (Q:=InvPost base size len P Q z) (WP.ite (decide ((args 11).toNat<4*n+1)) cz ?_ ?_) fun t post => post.pre_rest kz (by decide) mz
-      · intro qy
-        exact inverseBody_ok hz hn nl hw he width pb (by have := of_decide_eq_true qy; omega)
-      · intro _; exact other z hz
-    · intro _; exact other v hv
-  · intro _; exact other u hu
+    obtain ⟨length,pb,qb⟩ := of_decide_eq_true yes
+    obtain ⟨a,al,aw,arg⟩ := g.input.ws.lenArg
+    change kw a=kw len at aw
+    have eq : BitVec.ofNat 32 a=BitVec.ofNat 32 desired :=
+      (Option.some.inj (arg.readSrc.symm.trans g.input.gate.nArg.readSrc)).trans length
+    have ae := congrArg BitVec.toNat eq
+    rw [BitVec.toNat_ofNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega),Nat.mod_eq_of_lt dl] at ae
+    have width : kw len=w := by rw [←aw,ae,widthChoice]
+    exact inverseBody_ok g.input hn nl hw he width (by omega) (by omega)
+  · intro _; exact other u g.input
 
  theorem inverseDispatch_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
     (h : InvInput args base size len P Q s) :

@@ -98,11 +98,17 @@ def body (w n : Nat) : Prog isa := seqs [
  .loop (.block (twice w n ++ [decCounter,testCounter])) .ne,
  .block (finish w n)]
 
-def choose (len w n : Nat) (fallback : Prog isa) : Prog isa :=
+/-- A rejected public guard clears CF; the inverse fallback is emitted once. -/
+def reject : Prog isa := .block [.alu .cmp .eax (.reg .eax)]
+
+def guard (len n : Nat) : Prog isa :=
  .seq (.block [.mov .eax (.mem (argOp 7)),.alu .cmp .eax (.imm (BitVec.ofNat 32 len))])
  (.ite .e (.seq (.block [.mov .eax (.mem (argOp 9)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))])
-   (.ite .b (.seq (.block [.mov .eax (.mem (argOp 11)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))])
-     (.ite .b (body w n) fallback)) fallback)) fallback)
+   (.ite .b (.block [.mov .eax (.mem (argOp 11)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))]) reject)) reject)
+
+def choose (len w n : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (guard len n) (.ite .b (body w n) fallback)
+
 def dispatch (fallback : Prog isa) : Prog isa :=
  choose 256 64 32 (choose 384 96 48 (choose 512 128 64 fallback))
 end VG.Impl.Rsa.X86.InvBatch
