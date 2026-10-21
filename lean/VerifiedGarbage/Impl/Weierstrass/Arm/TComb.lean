@@ -87,12 +87,19 @@ def signMask : Prog isa :=
   .seq (.block K.lastTest) (.ite .eq (.block [.movw .r10 0xffff,.movt .r10 0xffff]) (.block K.signRead))
  else .block K.signRead
 
-def step : Prog isa :=
- .seq (.block [decCounter]) <| .seq K.digit <| .seq K.select <|
+/-- A selected signed table entry; arithmetic is shared with the ladder. -/
+def entry : Prog isa :=
+ .seq K.digit <| .seq K.select <|
  .seq (Mont.subCall K.F K.neg K.zero K.Q.y) <|
- .seq K.signMask <|
- .seq (.block (sel (2*K.L.M.n) K.Q.y K.Q.y K.neg ++ copyPt K.L.M.n K.P K.L.R)) <|
- .seq (ptCall K.F false) (.block (copyPt K.L.M.n K.L.R K.O ++ [testCounter]))
+ .seq K.signMask (.block (sel (2*K.L.M.n) K.Q.y K.Q.y K.neg))
+
+/-- Add the selected entry through the existing point function. -/
+def add : Prog isa :=
+ .seq (.block (copyPt K.L.M.n K.P K.L.R)) <|
+ .seq (ptCall K.F false) (.block (copyPt K.L.M.n K.L.R K.O))
+
+def step : Prog isa :=
+ .seq (.block [decCounter]) <| .seq K.entry <| .seq K.add (.block [testCounter])
 
 def comb : Prog isa :=
  .seq (.block (ladderSetup K.L ++

@@ -48,8 +48,19 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]
   coreN := Spec.Ecdsa.P192.signApi.name
   coreC := Impl.Ecdsa.Arm.signP192
-  coreX := Proof.Ecdsa.Arm.P192.sign_arm hL
-  coreCT := Proof.Ecdsa.Arm.P192.sign_ct
+  coreConsts := []
+  coreX := by
+    intro s hs
+    have pre : Proof.Ecdsa.Arm.P192.signArm.pre s := by
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p192,Spec.P192.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.P192.signArm] using hs
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.P192.sign_arm hL s pre
+    refine ⟨tr,t,exec,abi,?_⟩
+    change Proof.Ecdsa.Arm.P192.signArm.post s t
+    exact post
+  coreCT := by
+    simpa only [coreK,coreSigOf,Spec.P192.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p192,Proof.Ecdsa.Arm.P192.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+      Proof.Ecdsa.Arm.P192.signArm] using Proof.Ecdsa.Arm.P192.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 

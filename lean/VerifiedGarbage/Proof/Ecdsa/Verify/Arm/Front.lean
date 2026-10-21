@@ -39,8 +39,8 @@ variable {c : Cfg}
 /-- The arguments: `public` (`1 + 2 len` bytes), `digest` (`len` bytes),
 `sig` (`2 len` bytes) and `scratch`, readable and writable as the contract
 says and apart from `scratch`. -/
-structure VPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s .r0, 1 + 2 * c.C.len⟩, ⟨ptr s .r1, c.C.len⟩, ⟨ptr s .r2, 2 * c.C.len⟩]
+structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨ptr s .r0, 1 + 2 * c.C.len⟩, ⟨ptr s .r1, c.C.len⟩, ⟨ptr s .r2, 2 * c.C.len⟩] ++ extra
   wr : s.wr = [⟨ptr s .r3, 8192⟩]
   pk_sc : Region.Disjoint ⟨ptr s .r0, 1 + 2 * c.C.len⟩ ⟨ptr s .r3, 8192⟩
   dg_sc : Region.Disjoint ⟨ptr s .r1, c.C.len⟩ ⟨ptr s .r3, 8192⟩
@@ -90,7 +90,7 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   /-- Memory outside `scratch` is unchanged. -/
   unch : Unch base [(0, 8192)] s₀.mem s.mem
 
-theorem VPre.setup {s : State} (hp : VPre c s) : SetupPre c Args.verify s where
+theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : SetupPre c Args.verify s where
   shift := .inr (.inl rfl)
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
@@ -121,7 +121,7 @@ theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.loadS c =
     .dp .add .r6 .r2 (.imm (BitVec.ofNat 32 c.C.len)) :: loadBytes c.C.len c.n (c.sl PT) .r6 := rfl
 
 /-- The setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, Front c s₀ (ptr s₀ .r3) s → WP isa rest s Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.Arm.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) (.seq (Impl.Ecdh.Arm.Cfg.validate c) rest)))) s₀ Q := by

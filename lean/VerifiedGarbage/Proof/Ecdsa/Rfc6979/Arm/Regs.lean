@@ -64,8 +64,8 @@ theorem scrAt_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs
       (∀ r, r ≠ d → r ≠ .r12 → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
     WP isa (.block (scrAt d o ++ is)) t Q := by
   simp only [scrAt, List.cons_append, List.nil_append]
-  refine wp_movw fun t₁ u₁ => ?_
-  refine wp_dp (op2_reg _ _) fun t₂ u₂ => ?_
+  refine wp_movwS fun t₁ u₁ => ?_
+  refine wp_dpS (op2_reg _ _) fun t₂ u₂ => ?_
   have c₁ := hc.upd u₁ (by decide)
   refine k t₂ (c₁.upd u₂ hd) (by rw [u₂.mem, u₁.mem]) ?_ fun r h1 h2 => by rw [u₂.other _ h1, u₁.other _ h2]
   rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), hc.r11, movw_val ho]
@@ -77,7 +77,7 @@ theorem fpAdd_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = L.fp + BitVec.ofNat 32 o →
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
     WP isa (.block (.dp .add d .r8 (.imm (BitVec.ofNat 32 o)) :: is)) t Q :=
-  wp_dp (op2_imm ho) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, dpVal, hc.r8]) u₁.other
+  wp_dpS (op2_imm ho) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, dpVal, hc.r8]) u₁.other
 
 /-- `d ← v`, a register set to a 16-bit constant. -/
 theorem movw_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {v : Nat} (hv : v < 2 ^ 16)
@@ -85,7 +85,7 @@ theorem movw_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs)
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = BitVec.ofNat 32 v →
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
     WP isa (.block (.movw d (BitVec.ofNat 16 v) :: is)) t Q :=
-  wp_movw fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, movw_val hv]) u₁.other
+  wp_movwS fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, movw_val hv]) u₁.other
 
 /-- `d ← 0`. -/
 theorem mov0_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
@@ -93,7 +93,7 @@ theorem mov0_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs)
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = 0 →
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
     WP isa (.block (.mov d (.imm 0) :: is)) t Q :=
-  wp_mov (op2_imm (by decide)) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+  wp_movS (op2_imm (by decide)) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
 
 /-- `d ← s`, a copy of a register. -/
 theorem movr_ok {t : State} (hc : Ctx L g m₀ t) {d r : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
@@ -101,6 +101,6 @@ theorem movr_ok {t : State} (hc : Ctx L g m₀ t) {d r : Reg} (hd : d ∉ ptrReg
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = t.gpr r →
       (∀ q, q ≠ d → t'.gpr q = t.gpr q) → WP isa (.block is) t' Q) :
     WP isa (.block (.mov d (.reg r) :: is)) t Q :=
-  wp_mov (op2_reg _ _) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+  wp_movS (op2_reg _ _) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

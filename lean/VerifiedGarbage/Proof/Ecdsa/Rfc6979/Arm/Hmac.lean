@@ -1,7 +1,8 @@
 module
+
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
-
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -58,25 +59,25 @@ theorem ptr_preserved : ∀ r ∈ ptrRegs, r ∈ preserved ∧ r ≠ .lr := by d
 /-- What a call leaves keeps `Ctx`, if it writes only safe regions and the
 24 bytes below the frame. -/
 theorem Ctx.after (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region} (ha : After u ws u')
-    (hs : ∀ r ∈ ws, Safe L r) : Ctx L g m₀ u' :=
+    (hs : ∀ r ∈ ws, Safe L r) (sy : u'.syms=u.syms) : Ctx L g m₀ u' :=
   hc.keep hL ha.rd ha.wr ha.sp (fun r hr => ha.cs r (ptr_preserved r hr).1 (ptr_preserved r hr).2) ha.frame
-    fun r hr => by
+    (fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact hs r hr
       · simp only [List.mem_singleton] at hr; subst hr
         rw [hc.stk_eq hL]
-        exact .inr (.inr (.inl (Region.sub_prefix (by omega))))
+        exact .inr (.inr (.inl (Region.sub_prefix (by omega))))) sy
 
 /-- The same, for `update`, which may use the 16 bytes below the stack pointer. -/
 theorem Ctx.afterU (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region}
-    (ha : Pbkdf2.Stream.Arm.After u ws u') (hs : ∀ r ∈ ws, Safe L r) : Ctx L g m₀ u' :=
+    (ha : Pbkdf2.Stream.Arm.After u ws u') (hs : ∀ r ∈ ws, Safe L r) (sy : u'.syms=u.syms) : Ctx L g m₀ u' :=
   hc.keep hL ha.rd ha.wr ha.sp (fun r hr => ha.cs r (ptr_preserved r hr).1 (ptr_preserved r hr).2) ha.frame
-    fun r hr => by
+    (fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact hs r hr
       · simp only [List.mem_singleton] at hr; subst hr
         rw [hc.below_eq hL]
-        exact safe_low L (by omega)
+        exact safe_low L (by omega)) sy
 
 /-! ## Addresses -/
 
@@ -212,14 +213,15 @@ theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.seq (.block (Cfg.hmacArgs₁ P.F.H.D))
       (.frame (.push [.r12, .lr]) (.call P.F.hiN P.F.hiC) (.pop .r12 8))) t (Inited P L g m₀ t) := by
   refine WP.seq (WP.mono (initArgs_ok hc (D := P.F.H.D) (by anums)) fun u ⟨hcu, hmu, h0, h1, h2, h3, h12, h9⟩ => ?_)
-  refine hi_frame P.ok.hi P.ok.hiSt (initA hL hcu h0 h1 h2 h3 h12) fun u' ha hi ho => ?_
+  apply WP.of_syms
+  refine hi_frame P.ok.hi P.ok.hiSt (initA hL hcu h0 h1 h2 h3 h12) fun u' ha hi ho sy => ?_
   have ek : Spec.Sha256.bytesAt u.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
     rw [hL.fpA (by omega), hmu]
   have hws : ∀ r ∈ HiArgs.wr P.ok.hH.SH P.ok.Wi (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
       (L.scr + BitVec.ofNat 32 384), Region.Sub r (WK L) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_wk hL (by decide) (by anums)
-  exact ⟨hcu.after hL ha fun r hr => wk_safe (hws r hr), by rw [ha.cs .r9 (by decide) (by decide), h9],
+  exact ⟨hcu.after hL ha (fun r hr => wk_safe (hws r hr)) sy, by rw [ha.cs .r9 (by decide) (by decide), h9],
     hmu ▸ after_frame hL hcu ha hws,
     by rw [← ek]; exact hi, by rw [← ek]; exact ho⟩
 
@@ -370,7 +372,8 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
       (Updated P L g m₀ t da len) := by
   refine WP.seq (WP.mono (updArgs_ok hu.ctx hdA (B := P.F.H.B) (by anums) (len := len) (by omega))
     fun w ⟨hcw, hmw, h0, h1, h2, h3, h7, h10, h9⟩ => ?_)
-  refine upd_frame P.ok.hH (updA hL hcw hd hlen h0 h1 h7 h10) fun w' af hr => ?_
+  apply WP.of_syms
+  refine upd_frame P.ok.hH (updA hL hcw hd hlen h0 h1 h7 h10) fun w' af hr sy => ?_
   have hws : ∀ r ∈ [(⟨State.addr (L.scr + BitVec.ofNat 32 0), P.F.H.S⟩ : Region),
       ⟨State.addr (L.scr + BitVec.ofNat 32 384), P.ok.hH.Wb⟩], Region.Sub r (WK L) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -386,7 +389,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
       (Spec.Hmac.xorPad (Spec.Hmac.blockKey P.ok.hH.SH.H (keyOf P L t.mem)) Spec.Hmac.ipad).length := by
     rw [Pbkdf2.Stream.Arm.count, h2, h3, xorPad_length, blockKey_length (keyOf_length _)]
     exact append_zero (by anums)
-  refine ⟨hcw.afterU hL af fun r hr => wk_safe (hws r hr), by rw [af.cs .r9 (by decide) (by decide), h9, hu.r9],
+  refine ⟨hcw.afterU hL af (fun r hr => wk_safe (hws r hr)) sy, by rw [af.cs .r9 (by decide) (by decide), h9, hu.r9],
     hu.frame.trans (hmw ▸ after_frameU hL hcw af hws),
     ?_, ?_⟩
   · rw [← hdata]
@@ -490,7 +493,8 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu 
       (.frame (.push [.r10, .r12]) (.call P.F.hfN P.F.hfC) (.pop .r12 8))) u (Done P L g m₀ t da len dst) := by
   refine WP.seq (WP.mono (finArgs_ok hu.ctx (B := P.F.H.B) (len := len) (by anums) he)
     fun w ⟨hcw, hmw, h0, h1, h2, h3, h10, h12, h9⟩ => ?_)
-  refine hf_frame reprOK (by anums) P.ok.hf P.ok.hfSt (finA hL hcw hdst h0 h1 h10 h12) fun w' ha hpost => ?_
+  apply WP.of_syms
+  refine hf_frame reprOK (by anums) P.ok.hf P.ok.hfSt (finA hL hcw hdst h0 h1 h10 h12) fun w' ha hpost sy => ?_
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
   have eo := hL.fpA (o := dst) (by omega)
   have hk := blockKey_length (P := P) (keyOf_length (L := L) t.mem)
@@ -509,7 +513,7 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu 
     · exact ⟨WK L, by simp, scr_wk hL (by decide) (by anums)⟩
     · exact ⟨⟨L.B, 24⟩, by simp, sub_refl _⟩
   refine ⟨hcw.keep hL ha.rd ha.wr ha.sp (fun r hr => ha.cs r (ptr_preserved r hr).1 (ptr_preserved r hr).2)
-      ha.frame fun r hr => ?_, by rw [ha.cs .r9 (by decide) (by decide), h9, hu.r9],
+      ha.frame (fun r hr => ?_) sy, by rw [ha.cs .r9 (by decide) (by decide), h9, hu.r9],
     (hu.frame.sub fun r hr => ⟨r, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h],
       sub_refl _⟩).trans (hmw ▸ ha.frame.sub hws), hm⟩

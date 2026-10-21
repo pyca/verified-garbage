@@ -51,8 +51,19 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
   sh_eq := Proof.Ecdsa.Arm.BrainpoolP512r1.brainpoolp512r1_sh
   coreN := Spec.Ecdsa.BrainpoolP512r1.signApi.name
   coreC := Impl.Ecdsa.Arm.signBrainpoolP512r1
-  coreX := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_arm hL
-  coreCT := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_ct
+  coreConsts := []
+  coreX := by
+    intro s hs
+    have pre : Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.pre s := by
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp512r1,Spec.BrainpoolP512r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using hs
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_arm hL s pre
+    refine ⟨tr,t,exec,abi,?_⟩
+    change Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.post s t
+    exact post
+  coreCT := by
+    simpa only [coreK,coreSigOf,Spec.BrainpoolP512r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp512r1,Proof.Ecdsa.Arm.BrainpoolP512r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+      Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP512r1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 

@@ -48,8 +48,19 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 0; rw [brainpoolp256r1_nBits]
   coreN := Spec.Ecdsa.BrainpoolP256r1.signApi.name
   coreC := Impl.Ecdsa.Arm.signBrainpoolP256r1
-  coreX := Proof.Ecdsa.Arm.BrainpoolP256r1.sign_arm hL
-  coreCT := Proof.Ecdsa.Arm.BrainpoolP256r1.sign_ct
+  coreConsts := []
+  coreX := by
+    intro s hs
+    have pre : Proof.Ecdsa.Arm.BrainpoolP256r1.signArm.pre s := by
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp256r1,Spec.BrainpoolP256r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP256r1.signArm] using hs
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP256r1.sign_arm hL s pre
+    refine ⟨tr,t,exec,abi,?_⟩
+    change Proof.Ecdsa.Arm.BrainpoolP256r1.signArm.post s t
+    exact post
+  coreCT := by
+    simpa only [coreK,coreSigOf,Spec.BrainpoolP256r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp256r1,Proof.Ecdsa.Arm.BrainpoolP256r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+      Proof.Ecdsa.Arm.BrainpoolP256r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP256r1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 

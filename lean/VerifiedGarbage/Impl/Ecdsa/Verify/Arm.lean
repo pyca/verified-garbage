@@ -128,20 +128,24 @@ def final : Prog isa :=
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++ finish c)]
 
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
-def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (Point.ladderP c.ladderCfg c.SP) <|
+def pointsWith (generator : Prog isa) : Prog isa :=
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq generator <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (sum c)
 
 /-- Everything after the checks of the key. -/
-def back : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN c.SN) <| .seq (uv c) <| .seq (points c) <|
+def backWith (generator : Prog isa) : Prog isa :=
+  .seq (scalars c) <| .seq (pow c.powN c.SN) <| .seq (uv c) <| .seq (pointsWith c generator) <|
   .seq (pow c.powP c.SP) (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
-def verify : Prog isa :=
+def verifyWith (generator : Prog isa) : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) <| .seq (Impl.Ecdh.Arm.Cfg.validate c) (back c)
+  .seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) <| .seq (Impl.Ecdh.Arm.Cfg.validate c) (backWith c generator)
+
+def points : Prog isa := pointsWith c (Point.ladderP c.ladderCfg c.SP)
+def back : Prog isa := backWith c (Point.ladderP c.ladderCfg c.SP)
+def verify : Prog isa := verifyWith c (Point.ladderP c.ladderCfg c.SP)
 
 end Cfg
 

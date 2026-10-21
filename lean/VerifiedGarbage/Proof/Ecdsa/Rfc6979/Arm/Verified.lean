@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -22,8 +22,8 @@ open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 
 variable (P : RfcHash)
 
-theorem sign_arm (s : State) (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
-    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcArm P.I (240 + 4 * P.e)).post s s' :=
+theorem sign_arm (s : State) (h : (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).pre s) :
+    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).post s s' :=
   sign_ok (P := P) h
 
 /-- The notes on the implementation, for the documentation of the function
@@ -52,8 +52,8 @@ def signNotesWide (hiN updN hfN : String) (q nb D : Nat) (core : String) : Strin
   only on that. `K`, `V`, `h`, our caller's registers, the candidate and the shifted digest are kept in a \
   360-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it."
 
-theorem sign_verified (himp : (rfcArm P.I (240 + 4 * P.e)).Implies (P.I.signContract Arm.abi (240 + 4 * P.e))) :
-    Verified Arm.target (cfgOf P).sign (P.I.signContract Arm.abi (240 + 4 * P.e)) :=
+theorem sign_verified (himp : (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).Implies (P.I.signContract (Arm.abi.withConsts P.R.coreConsts) (240 + 4 * P.e))) :
+    Verified Arm.target (cfgOf P).sign (P.I.signContract (Arm.abi.withConsts P.R.coreConsts) (240 + 4 * P.e)) :=
   Verified.of_correct (sign_arm P) sign_ct himp
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

@@ -83,8 +83,8 @@ end
 
 /-- The arguments, readable and writable as the contract says and apart from
 each other as it says. -/
-structure Pre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [dR c s, digestR c s, kR c s, argsR s]
+structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [dR c s, digestR c s, kR c s, argsR s] ++ extra
   wr : s.wr = [outR c s, scR s]
   out_sc : (outR c s).Disjoint (scR s)
   d_sc : (dR c s).Disjoint (scR s)
@@ -148,7 +148,7 @@ theorem stackArgAddr0 (s : State) : stackArgAddr s 0 = State.addr s.sp := by
 /-- The working space, the first `size` bytes of `scratch`. -/
 theorem sc_sub (s : State) : Region.Sub ⟨scPtr s, size⟩ (scR s) := Region.sub_prefix (by decide)
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c .sign s where
+theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c .sign s where
   shift := .inr (.inr rfl)
   args := by unfold argsOk; decide
   sc_in := fun _ => by rw [stackArgAddr0]; exact ⟨argsR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩

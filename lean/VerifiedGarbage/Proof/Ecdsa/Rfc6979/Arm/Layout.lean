@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.Arm
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.SymsInstr
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -53,6 +54,8 @@ structure Lay (dn : Nat) where
   /-- The words at the frame's top. -/
   e : Nat
   ew : e = extra wide hHigh
+  cs : List (String × List (BitVec 64)) := []
+  sy : String → BitVec 32 := fun _ => 0
 
 theorem Lay.he {dn : Nat} (L : Lay dn) : L.e ≤ 36 := by
   rw [L.ew, extra]; split <;> (try split) <;> omega
@@ -70,6 +73,7 @@ abbrev OUT : Region := ⟨State.addr L.out, 2 * L.q⟩
 abbrev D : Region := ⟨State.addr L.d, L.q⟩
 abbrev DG : Region := ⟨State.addr L.dg, dn⟩
 abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
+abbrev TBLs : List Region := Abi.constRegions (fun n => State.addr (L.sy n)) L.cs
 /-- The stack used. -/
 abbrev STK : Region := ⟨L.B, 240 + 4 * L.e⟩
 /-- The frame. -/
@@ -96,6 +100,7 @@ structure Ok : Prop where
   ng : L.dg.toNat + dn ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
   nB : 240 + 4 * L.e ≤ L.sp.toNat
+  tables : ∀ r∈L.TBLs,r.base.toNat+r.len≤2^32 ∧ ∀ w∈[L.OUT,L.SCR,L.STK],r.Disjoint w
 
 end Lay
 
@@ -226,7 +231,7 @@ abbrev ptrRegs : List Reg := [.r4, .r5, .r6, .r8, .r11]
 /-- The state between the frame's allocation and its release: `g` are the
 registers on entry, `m₀` the memory. -/
 structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = [L.D, L.DG]
+  rd : t.rd = [L.D, L.DG] ++ L.TBLs
   wr : t.wr = [L.FR, L.OUT, L.SCR]
   sp : t.sp = L.fp
   r4 : t.gpr .r4 = L.out
@@ -236,6 +241,8 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : 
   r11 : t.gpr .r11 = L.scr
   saved : ∀ p ∈ Impl.Ecdsa.Rfc6979.Arm.saved, t.mem.readW (L.B + BitVec.ofNat 64 (24 + p.2)) 32 = g p.1
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
+  sy : ∀ c∈L.cs,t.syms c.1=L.sy c.1
+  held : Abi.constsHeld m₀ (fun n => State.addr (L.sy n)) L.cs
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -255,23 +262,24 @@ variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} {t t' : St
 pointers, and writes only safe regions. -/
 theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
     (hsp : t'.sp = t.sp) (hp : ∀ r ∈ ptrRegs, t'.gpr r = t.gpr r)
-    {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r) : Ctx L g m₀ t' := by
+    {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r) (hsy : t'.syms=t.syms) : Ctx L g m₀ t' := by
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hp _ (by decide)).trans hc.r4,
     (hp _ (by decide)).trans hc.r5, (hp _ (by decide)).trans hc.r6, (hp _ (by decide)).trans hc.r8,
-    (hp _ (by decide)).trans hc.r11, fun p hp' => ?_, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame)⟩
+    (hp _ (by decide)).trans hc.r11, fun p hp' => ?_, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame),
+    fun c hc' => by rw [hsy]; exact hc.sy c hc',hc.held⟩
   have ho := saved_off p hp'
   rw [hf.readW (r := ⟨L.B + BitVec.ofNat 64 204, 36⟩) (Offset.contains _ (by omega) (by omega) (by omega))
     (fun r hr => hL.saved_safe (hs r hr)) (by decide)]
   exact hc.saved p hp'
 
 /-- An update of one register, not one that holds a pointer. -/
-theorem upd (hc : Ctx L g m₀ t) {d : Reg} {v : BitVec 32} (u : Upd t t' d v) (hd : d ∉ ptrRegs) :
+theorem upd (hc : Ctx L g m₀ t) {d : Reg} {v : BitVec 32} (u : UpdS t t' d v) (hd : d ∉ ptrRegs) :
     Ctx L g m₀ t' :=
   ⟨u.rd.trans hc.rd, u.wr.trans hc.wr, u.sp.trans hc.sp,
     (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r4, (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r5,
     (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r6, (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r8,
     (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r11, fun p hp => by rw [u.mem]; exact hc.saved p hp,
-    by rw [u.mem]; exact hc.frame⟩
+    by rw [u.mem]; exact hc.frame,fun c hc' => by rw [u.syms]; exact hc.sy c hc',hc.held⟩
 
 /-- A byte of `d`, as on entry. -/
 theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.q) :
@@ -345,13 +353,30 @@ end Ctx
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
 `q`, two `V`s making a candidate if `wide`, and `h` at the frame's top if
 `hHigh`. -/
-def lay (dn q : Nat) (wide hHigh : Bool) (s : State) : Lay dn :=
-  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, s.sp, q, wide, hHigh, _, rfl⟩
+def lay (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)) := []) : Lay dn :=
+  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, s.sp, q, wide, hHigh, _, rfl,cs,fun n => if n∈cs.map Prod.fst then s.syms n else 0⟩
+
+theorem lay_sy (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)))
+    {c : String × List (BitVec 64)} (hc : c∈cs) : (lay dn q wide hHigh s cs).sy c.1=s.syms c.1 := by
+  simp only [lay,List.mem_map_of_mem hc,↓reduceIte]
+
+theorem lay_tbls (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64))) :
+    (lay dn q wide hHigh s cs).TBLs=Abi.constRegions (fun n => State.addr (s.syms n)) cs := by
+  apply List.map_congr_left
+  intro c hc
+  simp only [lay_sy dn q wide hHigh s cs hc]
 
 theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State}
-    (h : (rfcArm I (240 + 4 * extra wide hHigh)).pre s) :
-    (lay I.hashLen I.ecdsa.curve.len wide hHigh s).Ok := by
-  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩ := h
-  exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩
+    {cs : List (String × List (BitVec 64))}
+    (h : (rfcArm I (240 + 4 * extra wide hHigh) cs).pre s) :
+    (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).Ok := by
+  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp,tables⟩ := h
+  refine ⟨od,og,oc,dc,gc,ko,kd,kg,kc,no,nd,ng,nc,hsp,?_⟩
+  intro r hr
+  rw [lay_tbls] at hr
+  obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
+  have tc := tables c hc
+  refine ⟨?_,tc.2.2⟩
+  simpa only [toNat_addr] using tc.2.1
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
