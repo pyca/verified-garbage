@@ -149,11 +149,13 @@ fn sample() -> (PrivateKey, Vec<u8>, Vec<u8>) {
     )
 }
 
-#[test]
-fn cavp_signatures() {
+// Interleave four batches so libtest can distribute independent vectors across cores.
+fn cavp_signatures_batch(batch: usize) {
     for (i, v) in vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true)
         .iter()
         .enumerate()
+        .skip(batch)
+        .step_by(4)
     {
         let p = hex(&v["P"], 0);
         let q = hex(&v["Q"], 0);
@@ -187,6 +189,26 @@ fn cavp_signatures() {
             .unwrap();
         assert_eq!(randomized, expected, "random tape vector {i}");
     }
+}
+
+#[test]
+fn cavp_signatures_0() {
+    cavp_signatures_batch(0);
+}
+
+#[test]
+fn cavp_signatures_1() {
+    cavp_signatures_batch(1);
+}
+
+#[test]
+fn cavp_signatures_2() {
+    cavp_signatures_batch(2);
+}
+
+#[test]
+fn cavp_signatures_3() {
+    cavp_signatures_batch(3);
 }
 
 #[test]

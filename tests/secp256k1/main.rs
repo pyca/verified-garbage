@@ -35,12 +35,12 @@ fn hex<const N: usize>(s: &str) -> [u8; N] {
     core::array::from_fn(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).unwrap())
 }
 
-#[test]
-fn deterministic_sha256() {
+// Interleave four batches so libtest can distribute independent vectors across cores.
+fn deterministic_sha256_batch(batch: usize) {
     let cases = vectors();
     let mut order = hex::<32>(&cases[1].d);
     order[31] += 1; // The published second key is n - 1.
-    for case in cases {
+    for case in cases.iter().skip(batch).step_by(4) {
         let key = SigningKey::<Secp256k1>::from_bytes(&hex(&case.d));
         let digest = hex(&case.m);
         let signature = hex::<64>(&case.signature);
@@ -62,6 +62,26 @@ fn deterministic_sha256() {
             Ok(())
         );
     }
+}
+
+#[test]
+fn deterministic_sha256_0() {
+    deterministic_sha256_batch(0);
+}
+
+#[test]
+fn deterministic_sha256_1() {
+    deterministic_sha256_batch(1);
+}
+
+#[test]
+fn deterministic_sha256_2() {
+    deterministic_sha256_batch(2);
+}
+
+#[test]
+fn deterministic_sha256_3() {
+    deterministic_sha256_batch(3);
 }
 
 #[test]
