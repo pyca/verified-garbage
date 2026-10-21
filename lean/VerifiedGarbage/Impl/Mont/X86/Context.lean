@@ -48,13 +48,17 @@ def exponentStep (n expWords : Nat) : Prog isa :=
   .seq (exponentBody n expWords)
     (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
 
+/-- Encode ordinary one and the input base using the shared R-squared. -/
+def encodeBase (n : Nat) : Prog isa :=
+  .seq (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3))
+    (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4))
+
 /-- Input base and exponent occupy slots five and eight. The result replaces
 slot six. The exponent is consumed using a fixed public number of iterations. -/
 def exponentiate (n expWords : Nat) : Prog isa :=
-  .seq (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3))
-  (.seq (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4))
+  .seq (encodeBase n)
   (.seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * expWords)))])
   (.seq (.loop (exponentStep n expWords) .ne)
-    (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)))))
+    (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3))))
 
 end VG.Impl.Mont.X86.Dynamic

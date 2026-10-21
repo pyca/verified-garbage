@@ -61,10 +61,9 @@ theorem exponentStep_check (n expWords : Nat) :
   exact exponent_check_seq taint (exponentBody_check n expWords) (by rfl) (by rfl)
 
 def exponentiateHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint false) (mulHint false)
-    (.seq (workspaceTaint false) (mulHint false)
-      (.seq (workspaceTaint true) (.block [])
-        (.seq (workspaceTaint false) (.loop (workspaceTaint true) stepHint) (mulHint false))))
+  .seq (workspaceTaint false) (.seq (workspaceTaint false) (mulHint false) (mulHint false))
+    (.seq (workspaceTaint true) (.block [])
+      (.seq (workspaceTaint false) (.loop (workspaceTaint true) stepHint) (mulHint false)))
 
 theorem exponentiate_check (n expWords : Nat) :
     VG.Taint.check taint (workspaceTaint false) (exponentiate n expWords) exponentiateHint = some (rowTaint false) := by
@@ -76,9 +75,10 @@ theorem exponentiate_check (n expWords : Nat) :
       else none) = _
     rw [exponentStep_check n expWords]
     rfl
-  unfold exponentiate exponentiateHint
-  refine exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) ?_
-  refine exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) ?_
+  unfold exponentiate exponentiateHint encodeBase
+  refine exponent_check_seq taint
+    (exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) (mul_check false _ _ _ _ _ _))
+    (by rfl) ?_
   refine exponent_check_seq taint (u := workspaceTaint true) (by rfl) (by rfl) ?_
   exact exponent_check_seq taint loop (by rfl) (mul_check false _ _ _ _ _ _)
 

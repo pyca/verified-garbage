@@ -57,27 +57,39 @@ def wordSelect (n tab dst : Nat) : Prog isa :=
 def copyToComb (n tab src : Nat) : Prog isa :=
   .seq (copySetup n tab (.reg .esi)) (copyLoop (at_ .ebp src) (at_ .ecx 0))
 
-def combBuild (n e context : Nat) : Prog isa :=
-  let d := VG.Spec.Rsa.FixedBaseComb.rows (32*e)
+def buildStart (n context : Nat) : Prog isa :=
   let tab := context + 16*n
   seq [copyWords n (slot n 0) context, copyWords n (slot n 4) (context+8*n),
-    Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3),
-    Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4),
-    copyWords n (slot n 6) tab, copyWords n (slot n 5) (entry n tab 1),
-    .block [.mov .eax (imm 1), .store (sc 28) .eax],
-    .loop (seq [
-      repeatSquares n 5 d,
-      .block [.mov .esi (.mem (sc 28)), .alu .add .esi (.reg .esi), .store (sc 28) .esi],
-      copyToComb n tab (slot n 5), .block [.alu .cmp .esi (imm 16)]]) .ne,
-    .block [.mov .esi (imm 1)],
-    .loop (seq [
-      .block [.mov .eax (imm 0), .alu .sub .eax (.reg .esi), .alu .and .eax (.reg .esi),
-        .store (sc 28) .eax, .mov .edx (.reg .esi), .alu .sub .edx (.reg .eax), .store (sc windowOffset) .edx],
-      publicSelect n tab (slot n 6),
-      .block [.mov .eax (.mem (sc 28)), .store (sc windowOffset) .eax],
-      publicSelect n tab (slot n 5),
-      Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 6) (slot n 5),
-      copyToComb n tab (slot n 7), .block [.alu .add .esi (imm 1), .alu .cmp .esi (imm 32)]]) .ne]
+    encodeBase n, copyWords n (slot n 6) tab, copyWords n (slot n 5) (entry n tab 1)]
 
+def columnAdvance : Prog isa :=
+  .block [.mov .esi (.mem (sc 28)), .alu .add .esi (.reg .esi), .store (sc 28) .esi]
+
+def columnStep (n d tab : Nat) : Prog isa :=
+  seq [repeatSquares n 5 d, columnAdvance,
+    copyToComb n tab (slot n 5), .block [.alu .cmp .esi (imm 16)]]
+
+def buildColumns (n e context : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (imm 1), .store (sc 28) .eax])
+    (.loop (columnStep n (VG.Spec.Rsa.FixedBaseComb.rows (32*e)) (context+16*n)) .ne)
+
+def subsetIndices : Prog isa :=
+  .block [.mov .eax (imm 0), .alu .sub .eax (.reg .esi), .alu .and .eax (.reg .esi),
+    .store (sc 28) .eax, .mov .edx (.reg .esi), .alu .sub .edx (.reg .eax), .store (sc windowOffset) .edx]
+
+def subsetLow : Prog isa :=
+  .block [.mov .eax (.mem (sc 28)), .store (sc windowOffset) .eax]
+
+def subsetStep (n tab : Nat) : Prog isa :=
+  seq [subsetIndices, publicSelect n tab (slot n 6), subsetLow,
+    publicSelect n tab (slot n 5),
+    Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 6) (slot n 5),
+    copyToComb n tab (slot n 7), .block [.alu .add .esi (imm 1), .alu .cmp .esi (imm 32)]]
+
+def buildSubsets (n context : Nat) : Prog isa :=
+  .seq (.block [.mov .esi (imm 1)]) (.loop (subsetStep n (context+16*n)) .ne)
+
+def combBuild (n e context : Nat) : Prog isa :=
+  seq [buildStart n context, buildColumns n e context, buildSubsets n context]
 
 end VG.Impl.Mont.X86.Comb
