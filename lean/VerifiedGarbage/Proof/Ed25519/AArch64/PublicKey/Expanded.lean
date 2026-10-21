@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
+import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
 public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
 meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
@@ -18,6 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Ed25519 public-key derivation from the seed's cached SHA-512 digest (AArch64)
 

@@ -37,10 +37,10 @@ use crate::arch::ed25519::{
     vg_ed25519_verify_avx2_adx, vg_ed25519_verify_avx2_ifma, vg_ed25519_verify_ifma,
     vg_ed25519_verify_shani, vg_ed25519_verify_shani_adx, vg_ed25519_verify_shani_ifma,
 };
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-use crate::arch::ed25519::{vg_ed25519_public_key_expanded, vg_ed25519_sign_expanded};
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::ed25519::{vg_ed25519_public_key, vg_ed25519_sign_cached};
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+use crate::arch::ed25519::{vg_ed25519_public_key_expanded, vg_ed25519_sign_expanded};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ed25519::{vg_ed25519_sign_expanded_sha3, vg_ed25519_verify_sha3};
 use crate::cpu::{Features, detected};
@@ -376,7 +376,9 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
 #[cfg(all(test, target_arch = "aarch64"))]
 mod tests {
     use super::Sha512Backend;
-    use crate::arch::ed25519::{VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES, VG_ED25519_VERIFY_SHA3_FEATURES};
+    use crate::arch::ed25519::{
+        VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES, VG_ED25519_VERIFY_SHA3_FEATURES,
+    };
     use crate::cpu::{Features, NAMES};
 
     /// Every feature set selecting SHA-512's optimized backend also supports
