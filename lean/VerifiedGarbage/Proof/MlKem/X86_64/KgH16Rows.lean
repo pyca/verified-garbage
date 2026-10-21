@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Base
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
@@ -457,6 +458,49 @@ theorem tail_ok {s : State} (h : KH K σ 3 9 s) (ho : allOk K.L.k (rhoK K.L σ) 
     rw [hdk]
 
 end
+
+section
+variable {K : Kem16} (W : KgH16Wf K) {σ : State} (hp : (keyGenK K.L).pre σ)
+include W hp
+
+/-- The rows, and the tail if every `SampleNTT` succeeded. -/
+theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b)
+    {s : State} (h : KH K σ 0 0 s) : WP isa (rows K b) s (KEnd K.L σ) := by
+  unfold rows
+  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 0) (by decide) h) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (rowIf_ok W hp hK (i := 0) (by decide) h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 1) (by decide) h₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (rowIf_ok W hp hK (i := 1) (by decide) h₃) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 2) (by decide) h₄) fun s₅ (h₅ : KH K σ 2 9 s₅) => ?_)
+  have k3 := W.k3
+  have hf := W.flg 2 (by decide)
+  simp only [Bool.and_eq_true] at hf
+  obtain ⟨hkc, hr⟩ := keepAll_spec hf.1
+  have e9 : K.L.k * K.L.k = 9 := by rw [k3]
+  refine ifOk_ok (fun s₆ hP hne => ?_) fun s₆ hP he => ?_
+  · have ho := r15_ok h₅.mat.r15 hne
+    have h₆ := h₅.keep W hp hP.b (hP.cs .r15 (by decide)) hkc hr fun _ => hf.2
+    refine WP.seq (WP.mono (row_ok W hp hK (i := 2) (by decide) h₆ ho) fun s₇ h₇ => ?_)
+    refine WP.mono (tail_ok W hp h₇ ho) fun s' hf' => ⟨hf'.kc, by rw [hf'.r15, e9, ifp ho], fun _ => hf'⟩
+  · have h₆ := h₅.keep W hp hP.b (hP.cs .r15 (by decide)) hkc hr fun _ => hf.2
+    have ho := r15_no h₅.mat.r15 he
+    exact ⟨h₆.kc, by rw [e9]; exact h₆.mat.r15, fun h => absurd (by rwa [e9] at h) ho⟩
+
+end
+
+theorem kemKeyGenH16_correct {K : Kem16} (hK : KgRowsOk K.L) (v : Sample4Impl) (W : KgH16Wf K)
+    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) (hctl : ctlOk (kemKeyGenH16 K v.callee b) = true)
+    (σ : State) (hp : (keyGenK K.L).pre σ) :
+    ∃ t s', Exec isa (kemKeyGenH16 K v.callee b) σ t s' ∧ abiPreserved σ s' ∧ (keyGenK K.L).post σ s' := by
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W.toKgWfB hp) fun s₁ ⟨h₁, h15⟩ =>
+    WP.seq (WP.mono (gRho_ok W.toKgWfB hp h₁ h15) fun s₂ ⟨h₂, h15'⟩ =>
+      WP.seq (WP.mono (noise_ok W hp v h₂ h15') fun s₃ h₃ =>
+        WP.seq (WP.mono (ntt_ok W hp hK h₃) fun s₄ h₄ =>
+          WP.seq (WP.mono (hz_ok W hp h₄) fun s₅ h₅ =>
+            WP.seq (WP.mono (rows_ok W hp hK v hb h₅) fun s₆ h₆ =>
+              WP.mono (topEpi_ok h₆.kc.top (h₆.hin W.toKgWfB hp)) fun s₇ ⟨hr, hg, hm⟩ =>
+                (⟨hg, post_of W.toKgWfB h₆ hr hm⟩ : gprPreserved σ s₇ ∧ (keyGenK K.L).post σ s₇)))))))
+  exact ⟨t, s', he, abiPreserved_of_ctl hctl he hF.1, hF.2⟩
 
 end KeyGenH
 
