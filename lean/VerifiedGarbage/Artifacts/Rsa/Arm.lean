@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CkVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVerified
+public import VerifiedGarbage.Proof.Rsa.Arm.RecoverUmaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on ARMv7 -/
@@ -121,6 +122,14 @@ def artifacts : List Artifact := [
         whether a candidate gave them, and zeros otherwise."]
     code := Impl.Rsa.Arm.Recover.code
     stack := 56
-    verified := Proof.Rsa.Arm.Recover.recover_primes_verified }]
+    verified := Proof.Rsa.Arm.Recover.recover_primes_verified },
+  Spec.Rsa.recoverPrimesApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["The baseline prime recovery with the shared UMAAL row transformation used \
+        by private RSA, retaining the same arithmetic, checks and timing contract."]
+    code := Impl.Bignum.Arm.umaalArithmetic Impl.Rsa.Arm.Recover.code
+    stack := 56
+    verified := Proof.Rsa.Arm.Recover.recover_primes_umaal_verified
+    features := ["umaal"] }]
 
 end VG.Artifacts.Rsa.Arm
