@@ -171,22 +171,24 @@ theorem jointFixedDigit_relCT (certs : Forward.Arithmetic.Cases)
       s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j)
       (Joint.fixedDigit c (Joint.mixedAdd c.K c.K.R c.K.E c.K.D))
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
-  have hbytes : c.gBits+j<size := by
-    have := hL.layout.stableBounds (c.gBits,257) (by simp [jointStableRanges]); dsimp only at this; omega
+  have hgl := hL.layout.stableBounds (c.gBits,jointGLen c) (by simp [jointStableRanges])
   have digit : RelCT isa (fun s t =>
       FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       JointCore c C base size Q u v (JointGenerator c C base size G T) A s ∧
       JointCore c C base size Q u v (JointGenerator c C base size G T) A t ∧
       s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j)
-      (.block (Naf.digitRead c.G))
+      (.block (Joint.fixedRead c))
       (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       JointCore c C base size Q u v (JointGenerator c C base size G T) A s ∧
       JointCore c C base size Q u v (JointGenerator c C base size G T) A t ∧
       s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j ∧
-      s.gpr .x2=(FastNaf.byte 7 u j).setWidth 64 ∧ t.gpr .x2=(FastNaf.byte 7 u j).setWidth 64) := by
+      s.gpr .x2=jointGCell c u j ∧ t.gpr .x2=jointGCell c u j ∧
+      s.gpr .x16=off base (jointGPos c j) ∧ t.gpr .x16=off base (jointGPos c j)) := by
     intro s t ts tt s' t' ⟨hp,cs,ct,ps,pt⟩ es et
-    obtain ⟨_,_,xs,vs,ks⟩ := nafRead_ok (K:=c.G) hp.left.scr hL.gBits hbytes ps (cs.stable.generator j hj) .x2
-    obtain ⟨_,_,xt,vt,kt⟩ := nafRead_ok (K:=c.G) hp.right.scr hL.gBits hbytes pt (ct.stable.generator j hj) .x2
+    obtain ⟨_,_,xs,vs,v16s,ks⟩ := jointFixedRead_ok hp.left.scr (by have := hL.gBits; omega) hj hgl ps
+      cs.stable.generator
+    obtain ⟨_,_,xt,vt,v16t,kt⟩ := jointFixedRead_ok hp.right.scr (by have := hL.gBits; omega) hj hgl pt
+      ct.stable.generator
     obtain ⟨_,rfl⟩ := Exec.det es xs
     obtain ⟨_,rfl⟩ := Exec.det et xt
     have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by
@@ -203,23 +205,23 @@ theorem jointFixedDigit_relCT (certs : Forward.Arithmetic.Cases)
       ⟨hp.left.of_keeps ks (by decide),hp.right.of_keeps kt (by decide),ks.sp.trans (hp.sp.trans kt.sp.symm)⟩,
       cs.of_keeps ks (by decide) (cs.external.keep (frame ks) (Exec.syms es) (by simp) cs.field.mod.tmp),
       ct.of_keeps kt (by decide) (ct.external.keep (frame kt) (Exec.syms et) (by simp) ct.field.mod.tmp),
-      (ks.gpr _ (by decide)).trans ps,(kt.gpr _ (by decide)).trans pt,vs,vt⟩
+      (ks.gpr _ (by decide)).trans ps,(kt.gpr _ (by decide)).trans pt,vs,vt,v16s,v16t⟩
   rw [Joint.fixedDigit]
   apply RelCT.seq digit
   apply RelCT.ite
-  · intro s t ⟨_,_,_,_,_,s2,t2⟩
+  · intro s t ⟨_,_,_,_,_,s2,t2,_,_⟩
     change some (s.read .x .x2 != 0)=some (t.read .x .x2 != 0)
     rw [read_x,read_x,s2,t2]
-  · intro s t ts tt s' t' ⟨⟨hp,cs,ct,s19,t19,s2,t2⟩,hn⟩ es et
-    have anz : FastNaf.magnitude 7 u j≠0 := by
+  · intro s t ts tt s' t' ⟨⟨hp,cs,ct,s19,t19,s2,t2,s16,t16⟩,hn⟩ es et
+    have anz : FastNaf.magnitude c.gw u j≠0 := by
       intro hz
-      have hb : FastNaf.byte 7 u j=0 := (FastNaf.byte_zero_iff 7 u j).mpr hz
+      have hb : jointGCell c u j=0 := (jointGCell_zero_iff hL.layout.gw u j).mpr hz
       change some (s.read .x .x2 != 0)=some true at hn
       rw [read_x,s2,hb] at hn
       contradiction
     have entry := jointEntry_relCT (base:=base) (T:=T) (G:=G) (Q:=Q) (A:=A) (E:=E) (v:=v) hL hC hm hj anz hc
     have sum := fun E' => jointFixedSum_relCT certs (base:=base) (E:=E') hL hm hsize hOne hc
-    exact (RelCT.seq entry (RelCT.exists_ sum)) _ _ _ _ _ _ ⟨hp,cs,ct,s19,t19,s2,t2⟩ es et
+    exact (RelCT.seq entry (RelCT.exists_ sum)) _ _ _ _ _ _ ⟨hp,cs,ct,s19,t19,s2,t2,s16,t16⟩ es et
   · exact RelCT.block_nil (fun _ _ h => ⟨_,h.1.1⟩)
 
 end VG.Proof.Weierstrass.AArch64

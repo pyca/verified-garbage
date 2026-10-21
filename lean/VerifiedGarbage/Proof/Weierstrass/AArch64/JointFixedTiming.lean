@@ -11,13 +11,13 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64
 
 structure JointFixedChecks (c : Joint.Cfg) : Prop where
-  lookup : ConstantTime isa (fun _ => True) (AArch64.Taint.AgreeS [c.tsym] (Taint.ofRegs [.x0,.x2]))
-    (.block (Naf.digitIndex++Joint.fixedLoad c))
+  lookup : ConstantTime isa (fun _ => True) (AArch64.Taint.AgreeS [c.tsym] (Taint.ofRegs [.x0,.x2,.x16]))
+    (.block (Joint.fixedIndex c++Joint.fixedLoad c))
   sign : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]))
-    (.block (Naf.signRead c.G))
+    (.block (Joint.signRead c))
   neg : FieldCT (.block (VG.Impl.Mont.AArch64.sub c.K.M c.K.E.y c.K.zero c.K.E.y))
   read : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]))
-    (.block (Naf.digitRead c.G))
+    (.block (Joint.fixedRead c))
   mixed : JointMixedChecks c.K c.K.R c.K.E c.K.D
   copy : FieldCT (.block (copyPt 4 c.K.R c.K.D))
 

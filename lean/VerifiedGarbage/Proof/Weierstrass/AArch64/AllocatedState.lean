@@ -43,7 +43,7 @@ theorem JointStable.allocatedKeep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q :
   have hf (x : Nat) (hx : x∈jointStableFields c) :
       tmv C c.K.M.n base t x=tmv C c.K.M.n base s x := by
     unfold tmv; rw [hw x hx]
-  have hbits (d : Nat) (ho : (d,257)∈jointStableRanges c) (j : Nat) (hj : j<257) :
+  have hbits (d l : Nat) (ho : (d,l)∈jointStableRanges c) (j : Nat) (hj : j<l) :
       t.mem (off base (d+j))=s.mem (off base (d+j)) := by
     apply hk.byte
     · intro w hw
@@ -58,10 +58,10 @@ theorem JointStable.allocatedKeep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q :
       hf _ (jointStable_table c ha (by omega) (by simp))]
     exact h.peer.table a ha hb
   · intro j hj
-    rw [hbits c.K.bits (by simp [jointStableRanges]) j hj]
+    rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
     exact h.peer.bits j hj
   · intro j hj
-    rw [hbits c.gBits (by simp [jointStableRanges]) j hj]
+    rw [hbits c.gBits _ (by simp [jointStableRanges]) j hj]
     exact h.generator j hj
   · rw [hf c.onep (by simp [jointStableFields]),h.one]
   · intro i hi
@@ -77,7 +77,7 @@ theorem JointGenerator.allocatedKeep {c : Joint.Cfg} {C : Curve} {base T : Addr}
     (hk : AllocatedFrame rs base W s t) (hsym : t.syms=s.syms)
     (hw : ∀ w∈W,w.1+w.2≤size) :
     JointGenerator c C base size G T t := by
-  have wordeq (a i : Nat) (ha : 1≤a) (ha32 : a≤32) (hi : i<8) :
+  have wordeq (a i : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (hi : i<8) :
       word t.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i)=
       word s.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i) := by
     apply Mem.readW_congr
@@ -87,7 +87,7 @@ theorem JointGenerator.allocatedKeep {c : Joint.Cfg} {C : Curve} {base T : Addr}
     intro w hm
     have := hw w hm
     dsimp only [off]; exact Or.inr (by omega)
-  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤32) (ho : o=0 ∨ o=32) :
+  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (ho : o=0 ∨ o=32) :
       wordsVal t.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4=
       wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4 := by
     apply wordsVal_of_words₂

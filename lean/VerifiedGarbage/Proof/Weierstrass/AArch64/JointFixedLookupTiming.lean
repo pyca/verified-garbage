@@ -48,32 +48,33 @@ theorem jointFieldWrite_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 
 theorem jointLookup_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
     {G Q A : Point C} {E : Nat → Fe C} (hL : JointFixedLayout c size) (hC : Law C)
-    (hm0 : FastNaf.magnitude 7 u j≠0) (hc : JointFixedChecks c) :
+    (hj : j<257) (hm0 : FastNaf.magnitude c.gw u j≠0) (hc : JointFixedChecks c) :
     RelCT isa (fun s t =>
       FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       (JointCore c C base size Q u v (JointGenerator c C base size G T) A s ∧
-        s.gpr .x2=(FastNaf.byte 7 u j).setWidth 64) ∧
+        s.gpr .x2=jointGCell c u j ∧ s.gpr .x16=off base (jointGPos c j)) ∧
       (JointCore c C base size Q u v (JointGenerator c C base size G T) A t ∧
-        t.gpr .x2=(FastNaf.byte 7 u j).setWidth 64))
-      (.block (Naf.digitIndex++Joint.fixedLoad c))
+        t.gpr .x2=jointGCell c u j ∧ t.gpr .x16=off base (jointGPos c j)))
+      (.block (Joint.fixedIndex c++Joint.fixedLoad c))
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c)
         ([c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c) E' s t) := by
-  let P := mul (FastNaf.magnitude 7 u j) G
+  let P := mul (FastNaf.magnitude c.gw u j) G
   let F := fun x => if x=c.K.E.x then (jointAffineCoords P).1 else
     if x=c.K.E.y then (jointAffineCoords P).2 else 1
   apply jointFieldWrite_relCT (F:=F) hL.layout.lay hc.lookup
   · intro s t hp ps pt
     refine ⟨⟨hp.sp,fun r hr => ?_⟩,?_⟩
     · simp only [Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact hp.left.scr.x0.trans hp.right.scr.x0.symm
-      · exact ps.2.trans pt.2.symm
+      · exact ps.2.1.trans pt.2.1.symm
+      · exact ps.2.2.trans pt.2.2.symm
     · intro n hn; rw [List.mem_singleton.mp hn]
       exact ps.1.external.symbol.trans pt.1.external.symbol.symm
   · exact jointEntry_slots c
   · intro x hx; exact List.mem_append.mp hx
   · intro s _ hs
-    refine WP.mono (jointLookup_generator_ok hL hs.1 hs.2 hm0) fun t ⟨kt,_,it,jt,zt⟩ => ⟨_,kt,it,?_⟩
+    refine WP.mono (jointLookup_generator_ok hL hs.1 hj hs.2.1 hs.2.2 hm0) fun t ⟨kt,_,it,jt,zt⟩ => ⟨_,kt,it,?_⟩
     rw [zt] at jt
     have he := jointAffine_unique hC jt
     have hex := congrArg Prod.fst he

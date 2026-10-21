@@ -12,7 +12,7 @@ namespace VG.Impl.Ecdsa.Verify.AArch64.P256Joint
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdh.AArch64
 
-def cfg : Joint.Cfg := ⟨Cfg.jacWinCfg p256,bitsAt 4 0,p256.sl ONEP,p256.combCfg.tsym⟩
+def cfg : Joint.Cfg := ⟨Cfg.jacWinCfg p256,bitsAt 4 0,p256.sl ONEP,p256.combCfg.tsym,7⟩
 
 def cachedOps : CachedJac.Ops where
   head := VG.Impl.P256.VerifyArithmetic.program cfg.K.M
