@@ -70,7 +70,7 @@ theorem spre_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h9
   have hq : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * q ≤ n s * 16 := by omega
   have pd : Region.Sub ⟨D s, 16 * q⟩ (dR s) := Region.sub_prefix hqn
-  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)
+  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1344⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)
   have hws := hp.w_s
   have ts : (S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))).toNat = (S s).toNat + AlignedScratch.offset aligned (S s) := by
     have ho := AlignedScratch.offset_bounds aligned (S s)
@@ -105,7 +105,7 @@ theorem spreM_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h
   have hq : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * q ≤ n s * 16 := by omega
   have pd : Region.Sub ⟨D s, 16 * q⟩ (dR s) := Region.sub_prefix hqn
-  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)
+  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1344⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)
   have ek : s₃.gpr .rdi = K s := hg _ (by simp [argRegs])
   refine ⟨spre_of hp h16 hqn' h9 hg h11 hrd hwr, ?_, ?_, ?_, ?_, ?_⟩ <;>
   simp only [Gcm.X86_64.Stitch.kp, Gcm.X86_64.Stitch.kMR, Gcm.X86_64.Stitch.dR, Gcm.X86_64.Stitch.pR,
@@ -123,7 +123,7 @@ theorem kR'_disj' : (⟨K s + 240, 16⟩ : Region).Disjoint (kR' s) :=
 /-- The data from block `q` on, apart from the first `q` blocks and from the
 other regions written. -/
 theorem rest_disj {q : Nat} (hq : q ≤ n s) :
-    ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ : Region)],
+    ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1344⟩ : Region)],
       (⟨dq s q, 16 * (n s - q)⟩ : Region).Disjoint r := by
   have hsub : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := Offset.sub_base _ (by omega)
   intro r hr
@@ -178,9 +178,9 @@ theorem mid_of_post {s₃ s₄ : State} {q k : Nat} (hqn : q ≤ n s) (h9 : s₃
   rw [eK, eC, eD] at data
   rw [eC] at ctr
   have y' := y (block_kR' hf₃ (kR'_disj' hp)) (block_kR' hf₃ (kR'_disj hp _ (by simp)).symm) eD data
-  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ :=
+  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1344⟩ :=
     Offset.base_disjoint _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := hp.w_s; have := AlignedScratch.offset_bounds aligned (S s); omega)
-  have fk : ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ : Region)],
+  have fk : ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1344⟩ : Region)],
       (kR' s).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

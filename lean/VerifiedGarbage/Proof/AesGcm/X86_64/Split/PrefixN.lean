@@ -352,7 +352,7 @@ theorem nLoop (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC 
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 448) (by decide)]; have := L.ww; omega
   have cW : Region.Sub (cbR W) ⟨W, 2560⟩ := fun a hc => st_w a (cb_sub a hc)
   have yW : Region.Sub (yR W) ⟨W, 2560⟩ := fun a hc => st_w a (y_sub a hc)
-  have pW : Region.Sub ⟨W + BitVec.ofNat 64 448, 1024⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
+  have pW : Region.Sub ⟨W + BitVec.ofNat 64 448, 1344⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
   have sC : Region.Sub ⟨S, 16 * (16 * C)⟩ ⟨S, sl⟩ := Region.sub_prefix (by omega)
   have dC : Region.Sub ⟨D, 16 * (16 * C)⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
   have dG : Region.Sub ⟨D, 16 * (16 * G)⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
@@ -364,7 +364,7 @@ theorem nLoop (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC 
   have hnb : (t.gpr .r9).toNat = 16 * C := by rw [r9₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hR : (t.gpr .rsi).toNat = R := by
     rw [hN.rsi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rcases h.rounds.2 with h | h | h <;> subst h <;> decide)]
-  have pB : Region.Sub ⟨W + BitVec.ofNat 64 448, 1024⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
+  have pB : Region.Sub ⟨W + BitVec.ofNat 64 448, 1344⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
     Offset.sub _ (by decide) (by decide)
   refine ⟨?_, ?_, by show (t.gpr .r9).toNat % 16 = 0; rw [hnb]; omega⟩
   · refine { rounds := by
@@ -430,12 +430,12 @@ theorem nE_ok (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t₃ s₄ : State} (
   simp only [cOf, hCd] at dR₂ fr₂
   have cW : Region.Sub (cbR W) ⟨W, 2560⟩ := fun a hc => st_w a (cb_sub a hc)
   have yW : Region.Sub (yR W) ⟨W, 2560⟩ := fun a hc => st_w a (y_sub a hc)
-  have pW : Region.Sub ⟨W + BitVec.ofNat 64 448, 1024⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
-  have pS : Region.Sub ⟨W + BitVec.ofNat 64 448, 1024⟩ (scR W) := Offset.sub _ (by decide) (by decide)
+  have pW : Region.Sub ⟨W + BitVec.ofNat 64 448, 1344⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
+  have pS : Region.Sub ⟨W + BitVec.ofNat 64 448, 1344⟩ (scR W) := Offset.sub _ (by decide) (by decide)
   have dG : Region.Sub ⟨D, 16 * (16 * G)⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
   have kD : (⟨Ctx, CtxMode.prepared.len⟩ : Region).Disjoint ⟨D, n⟩ := h.ext.cd
   -- What the loop writes: the counter block, `Y`, the first `256 G` bytes at `dst` and the powers.
-  have f₄ : Frame [cbR W, yR W, ⟨D, 16 * (16 * G)⟩, ⟨W + BitVec.ofNat 64 448, 1024⟩] (nMemC D S sl s) s₄.mem := by
+  have f₄ : Frame [cbR W, yR W, ⟨D, 16 * (16 * G)⟩, ⟨W + BitVec.ofNat 64 448, 1344⟩] (nMemC D S sl s) s₄.mem := by
     have := hP.frame
     simp only [Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.pR, Gcm.X86_64.StitchR.nR,
       Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.op, Gcm.X86_64.Stitch.pp, hN.rdx, hN.rcx, hN.r10,

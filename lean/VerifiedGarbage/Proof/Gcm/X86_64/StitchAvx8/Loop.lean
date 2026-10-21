@@ -39,8 +39,8 @@ theorem finish_complete {s₀ s : State} {ix : Bool} {P : Nat → Block} (hp : S
       (by decide)).trans hE.saved
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hp.p_c.sub_left (Offset.sub_base (pp s₀) (d := 816) (n := 8) (k := 1024) (by decide))
-    · exact hp.p_y.sub_left (Offset.sub_base (pp s₀) (d := 816) (n := 8) (k := 1024) (by decide))
+    · exact hp.p_c.sub_left (Offset.sub_base (pp s₀) (d := 816) (n := 8) (k := 1344) (by decide))
+    · exact hp.p_y.sub_left (Offset.sub_base (pp s₀) (d := 816) (n := 8) (k := 1344) (by decide))
   have hd : DataInv s₀ ix (nb s₀) t.mem := hD.frame ht.frame (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

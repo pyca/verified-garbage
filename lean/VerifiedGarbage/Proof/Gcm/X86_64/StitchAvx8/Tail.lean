@@ -257,7 +257,7 @@ theorem Env.dataWrite {s₀ s t : State} {P : Nat → Block} (hp : SPre s₀) (h
     fun d w hd hn => hf.readW (r := ⟨pp s₀ + BitVec.ofNat 64 d, w / 8⟩) (Region.contains_self _ _)
       (fun r hr' => by
         simp only [List.mem_singleton] at hr'; subst r
-        exact (hp.d_p.symm.sub_left (Offset.sub_base _ hd)).sub_right hR) hn
+        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right hR) hn
   refine ⟨by rw [hg _ (by decide) (by decide) (by decide) (by decide)]; exact h.rdi,
     by rw [hg _ (by decide) (by decide) (by decide) (by decide)]; exact h.rsi,
     by rw [hg _ (by decide) (by decide) (by decide) (by decide)]; exact h.rcx,
@@ -479,7 +479,7 @@ theorem tail_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {g : Nat} (hp :
     (by rw [wr₆, cwr, hI₅.wr]; exact f₄.wr.trans (bwr.trans awr))
   have hD₂ : DataInv s₀ ix (g + 16) s₂.mem := (f₁.mem ▸ h.data).frameP hp hS hF₂ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst r
-    exact Offset.sub_base (pp s₀) (d := 832) (n := 128) (k := 1024) (by decide))
+    exact Offset.sub_base (pp s₀) (d := 832) (n := 128) (k := 1344) (by decide))
   have hX : ∀ j < t, E.X j = ctb s₀ (g + 16 + j) := fun j hj => by
     show blockAt s₄.mem (srcBlk s₀ ix (g + 16) + BitVec.ofNat 64 (16 * j)) ^^^
       blockAt s₄.mem (pp s₀ + BitVec.ofNat 64 64 + BitVec.ofNat 64 (768 + 16 * j)) = _

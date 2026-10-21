@@ -355,7 +355,7 @@ theorem setupWith_ok {s₀ : State} (hp : SPre s₀) {g : List Instr} (hg : WP i
     (hsG _ (by decide) (by decide)).trans hvN, (hsX _ _).trans hvY,
     hvF.trans (hsF.sub fun r hr => ?_), (hsX _ _).trans hv0, by rw [hsX]; exact hvC⟩, hP⟩
   simp only [List.mem_singleton] at hr; subst r
-  exact ⟨pR s₀, List.mem_singleton_self _, Offset.sub_base (pp s₀) (d := 640) (n := 128) (k := 1024) (by decide)⟩
+  exact ⟨pR s₀, List.mem_singleton_self _, Offset.sub_base (pp s₀) (d := 640) (n := 128) (k := 1344) (by decide)⟩
 
 
 theorem setup_ok {s₀ : State} (hp : SPre s₀) :
@@ -770,7 +770,7 @@ theorem Start.pp_eq : pp t = pp s₀ := h.gpr _ (by decide) (by decide)
 omit h in
 /-- The 8 bytes at `scratch + 816`, where `rbx` is kept. -/
 theorem Start.slotR : Region.Sub ⟨pp s₀ + BitVec.ofNat 64 816, 8⟩ (pR s₀) :=
-  Offset.sub_base (pp s₀) (d := 816) (n := 8) (k := 1024) (by decide)
+  Offset.sub_base (pp s₀) (d := 816) (n := 8) (k := 1344) (by decide)
 
 theorem Start.frame : Frame [⟨pp s₀ + BitVec.ofNat 64 816, 8⟩] s₀.mem t.mem := by
   rw [h.mem]
@@ -849,7 +849,7 @@ theorem Start.srcOk : SrcOk (view t) true where
   p k hk := by
     rw [h.srcBlk_eq]
     have hn : k < nb s₀ := by rw [← h.nb_eq]; exact hk
-    show Region.Disjoint _ ⟨t.gpr .r11, 1024⟩
+    show Region.Disjoint _ ⟨t.gpr .r11, 1344⟩
     rw [h.gpr .r11 (by decide) (by decide)]
     exact h.pre.s_p.sub_left (Offset.sub_base (sp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega))
 
@@ -872,7 +872,7 @@ theorem Start.env {P : Nat → Block} {u : State} (hE : Env t P u) : Env (view t
     hE.saved.trans ((view_frame t).readW (r := ⟨pp t + BitVec.ofNat 64 816, 8⟩) (Region.contains_self _ _)
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst r
-        exact hp.d_p.symm.sub_left (Offset.sub_base (pp t) (d := 816) (n := 8) (k := 1024) (by decide)))
+        exact hp.d_p.symm.sub_left (Offset.sub_base (pp t) (d := 816) (n := 8) (k := 1344) (by decide)))
       (by decide)), hE.rd, hE.wr⟩
 
 theorem Start.readyC {P : Nat → Block} {u : State} (hR : Ready t P u) : ReadyC (view t) P u :=

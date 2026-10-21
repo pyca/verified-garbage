@@ -48,6 +48,12 @@ theorem in_sub {rs : List Region} {b : Addr} {L off n : Nat} (h : InRegions rs b
   have := ofNat_toNat_le off
   omega
 
+/-- The first `n ≤ L` bytes of an accessible run of `L` bytes are accessible. -/
+theorem in_pre {rs : List Region} {b : Addr} {L n : Nat} (h : InRegions rs b L) (hn : n ≤ L) :
+    InRegions rs b n := by
+  have := in_sub (off := 0) h (by omega : 0 + n ≤ L)
+  simpa using this
+
 theorem in_sub_int {rs : List Region} {b : Addr} {L off n : Nat} (h : InRegions rs b L)
     (ho : off + n ≤ L) : InRegions rs (b + BitVec.ofInt 64 (off : Int)) n := by
   rw [show BitVec.ofInt 64 (off : Int) = BitVec.ofNat 64 off from BitVec.ofInt_natCast ..]

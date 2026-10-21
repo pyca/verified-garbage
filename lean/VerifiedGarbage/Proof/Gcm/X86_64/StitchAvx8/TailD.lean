@@ -223,7 +223,7 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
     (by rw [wr₆, hI₅.wr]; exact f₄.wr.trans awr)
   have hD₂ : DataInv s₀ false (g + 8) s₂.mem := (m₁ ▸ h.data).frameP hp (SrcOk.inplace hp) hF₂ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst r
-    exact Offset.sub_base (pp s₀) (d := 832) (n := 128) (k := 1024) (by decide))
+    exact Offset.sub_base (pp s₀) (d := 832) (n := 128) (k := 1344) (by decide))
   have hB : ∀ j < t, E.H j = blk s₀ (g + 8 + j) := fun j hj => by
     show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) = _
     rw [m₄, bAddr_add, ← srcBlk_false, (hD₂ _ (by omega)).2 (by omega)]

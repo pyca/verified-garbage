@@ -66,10 +66,10 @@ theorem QG48.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} 
     simp only [prod, State.zproj_xmm, hlane .xmm8 (by decide) (by decide) l hl,
       hlane .xmm9 (by decide) (by decide) l hl, hlane .xmm10 (by decide) (by decide) l hl]
   have kpw : ∀ o, o + 16 ≤ 1024 → t'.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 = t.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 :=
-    fun o ho => hf.readW (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    fun o ho => hf.readW (r := pR s₀) (Offset.contains_base _ (by omega_arith) (by omega_arith))
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega_arith))) (by decide)
+        exact hp.d_p.symm.sub_right (Offset.sub_base (d := 16 * c) (n := 256) _ (by omega_arith))) (by decide)
   refine ⟨⟨by rw [hgpr]; exact hE.rdx, by rw [hgpr]; exact hE.r11, fun i hi hi' => ?_,
     fun g' hg' k hk l hl => by rw [kpw _ (by simp only [tab]; omega_arith)]; exact hE.pv g' hg' k hk l hl,
     fun l hl => by rw [kpw _ (by omega_arith)]; exact hE.pm l hl,
@@ -400,12 +400,14 @@ theorem powSetup_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} 
       (∀ l < 4, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
         s'.zlane r l = s.zlane r l) := by
-  refine WP.mono (pow48_ok s (by rw [hr11, hA.wr]; exact hp.p_in) h1)
+  refine WP.mono (pow48_ok s (by rw [hr11, hA.wr]; exact Stitch.in_pre hp.p_in (by decide)) h1)
     fun s' ⟨t0, t1, t2, tm, fr, g, rd, wr, x⟩ => ?_
   rw [hr11] at t0 t1 t2 tm fr
   have pw : ∀ k < 4, ∀ l < 4, pw16 s k l = P k l := fun k hk l hl => by
     show s.mem.readW (s.gpr .r11 + _) 128 = _; rw [hr11]; exact hpw k hk l hl
-  refine ⟨hA.pow hp fr g rd wr x, fun g' hg' k hk l hl => ?_, tm, g, x⟩
+  refine ⟨hA.pow hp (fr.sub fun r hr => ⟨pR s₀, List.mem_singleton_self _, by
+    simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩) g rd wr x,
+    fun g' hg' k hk l hl => ?_, tm, g, x⟩
   rcases (by omega_arith : g' = 0 ∨ g' = 1 ∨ g' = 2) with rfl | rfl | rfl
   · rw [show tab 0 + 64 * k + 16 * l = 512 + 64 * k + 16 * l from rfl, t2 k hk l hl, pw k hk l hl,
       pw 0 (by decide) 0 (by decide)]

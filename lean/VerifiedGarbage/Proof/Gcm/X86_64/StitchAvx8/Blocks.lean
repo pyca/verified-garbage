@@ -337,7 +337,7 @@ theorem batchL_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
   have hEu := ht.env.writeData hp hg hrd hwr hmD
   have hTu : Templates s₀ (c + 8) 0 u.mem := ht.templates.next.frame hm (by
     intro r hr'; simp only [List.mem_singleton] at hr'; subst r
-    exact hsep.symm.sub_left (Offset.sub_base (pp s₀) (d := 640) (n := 128) (k := 1024) (by decide)))
+    exact hsep.symm.sub_left (Offset.sub_base (pp s₀) (d := 640) (n := 128) (k := 1344) (by decide)))
   have hDu : ∀ k < 8, blockAt u.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
       blockAt s.mem (srcAddr s ix (16 * (j + k))) ^^^
         ciph s₀ (Nat.repeat inc32 (c + k) (cb s₀)) := by

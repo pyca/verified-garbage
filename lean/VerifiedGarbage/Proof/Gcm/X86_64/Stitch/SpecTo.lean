@@ -42,7 +42,7 @@ structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
   y_in : InRegions s₀.wr (yp s₀) 16
   s_in : InRegions (s₀.rd ++ s₀.wr) (sp s₀) (16 * nb s₀)
   o_in : InRegions s₀.wr (op s₀) (16 * nb s₀)
-  p_in : InRegions s₀.wr (pp s₀) 1024
+  p_in : InRegions s₀.wr (pp s₀) 1344
   /-- What is written is disjoint from what is read, and each from the others. -/
   k_c : (⟨kp s₀, M.len⟩ : Region).Disjoint (cR s₀)
   k_y : (⟨kp s₀, M.len⟩ : Region).Disjoint (yR s₀)
@@ -61,7 +61,7 @@ structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
   wrap_s : (sp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrap_o : (op s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrap_k : (kp s₀).toNat + M.len ≤ 2 ^ 64
-  wrap_p : (pp s₀).toNat + 1024 ≤ 2 ^ 64
+  wrap_p : (pp s₀).toNat + 1344 ≤ 2 ^ 64
   /-- What the key context holds, as its kind says. -/
   ok : M.ok s₀.mem (kp s₀)
 

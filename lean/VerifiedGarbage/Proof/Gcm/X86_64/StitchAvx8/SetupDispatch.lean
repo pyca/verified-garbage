@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Counter
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -228,7 +229,7 @@ theorem finish_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (hE : En
     rw [hE.wr, hE.rsi]; exact in_sub hp.c_in (off := 12) (by decide)) (by
     rw [hE.rd, hE.wr, hE.r11]; exact in_rdwr (in_sub hp.p_in (off := 768) (by decide))) (by
     rw [hE.r11, hE.rsi]
-    exact (hp.p_c.sub_left (Offset.sub_base (pp s₀) (d := 768) (n := 16) (k := 1024) (by decide))).sub_right
+    exact (hp.p_c.sub_left (Offset.sub_base (pp s₀) (d := 768) (n := 16) (k := 1344) (by decide))).sub_right
       (Offset.sub_base (cp s₀) (d := 12) (n := 4) (k := 16) (by decide)) |>.sep
       (Region.contains_self _ _) (Region.contains_self _ _)))
     fun t ⟨htM, ht0, htG, htX, htR, htW⟩ => ?_
@@ -268,7 +269,7 @@ theorem finish_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (hE : En
     · exact hp.p_y
   have saved : ∀ d, d + 8 ≤ 1024 → u.mem.readW (pp s₀ + BitVec.ofNat 64 d) 64 =
       s.mem.readW (pp s₀ + BitVec.ofNat 64 d) 64 := fun d hd =>
-    fu.readW (r := pR s₀) (Offset.contains_base _ hd (by omega)) py (by decide)
+    fu.readW (r := pR s₀) (Offset.contains_base _ (by omega) (by omega)) py (by decide)
   have ur11 : u.gpr .r11 = pp s₀ := by rw [huG, htG _ (by decide) (by decide), hE.r11]
   rw [WP.block_append_iff, WP.block_cons_iff]
   refine ⟨VOp.exec .vzeroupper u, rfl, ?_⟩
@@ -355,7 +356,7 @@ theorem setupPrefix_ok {s₀ : State} (hp : SPre s₀) (s : State) (P : Nat → 
   have fmv : Frame [pR s₀] s₀.mem v.mem := hmu0.trans (fm.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst r
     exact ⟨pR s₀, List.mem_singleton_self _, by
-      simpa only [metaR, gu11] using (Offset.sub_base (pp s₀) (d := 768) (n := 48) (k := 1024) (by decide))⟩)
+      simpa only [metaR, gu11] using (Offset.sub_base (pp s₀) (d := 768) (n := 48) (k := 1344) (by decide))⟩)
   have gvax : v.gpr .rax = cp s₀ := by rw [hgv]; exact guax
   have vcb : blockAt v.mem (cp s₀) = cb s₀ := blockAt_frame fmv (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hp.p_c.symm)

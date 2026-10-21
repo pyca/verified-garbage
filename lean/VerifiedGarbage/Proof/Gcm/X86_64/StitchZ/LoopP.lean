@@ -181,7 +181,7 @@ theorem frame_sub {p : Addr} {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n ≤ 
 theorem frame_pR {s₀ : State} {e k : Nat} (h : e + k ≤ 1024) {m m' : Mem}
     (f : Frame [⟨pp s₀ + BitVec.ofNat 64 e, k⟩] m m') : Frame [pR s₀] m m' :=
   f.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ h⟩
+    simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega)⟩
 
 /-- The first `n` pairs of table `g`. -/
 theorem powRun_ok {s₀ : State} (hp : SPreP s₀) {g : Nat} (hg : g < 2) :
