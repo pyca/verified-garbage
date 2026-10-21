@@ -21,7 +21,7 @@ the data:
 
 `sealMain` and `openMain` are `sealMainWith` and `openMainWith` (the
 one-time key from the scalar block function) with `cryptPad`. They take the
-lengths above `threshold` up to 511 (`route`): `ShortRest.lean`'s code, whose
+lengths above `threshold` up to 511 (`sealRoute`, `openRoute`): `ShortRest.lean`'s code, whose
 pass of five blocks computes the key and 256 bytes of keystream together, is
 faster below it. The branch is on the length only, and the addresses are the
 context and the data plus constants: only the pointers and the lengths can
@@ -35,11 +35,18 @@ namespace VG.Impl.ChaCha20Poly1305.AArch64.Pad
 open VG.AArch64
 open VG.Impl.ChaCha20.AArch64 (XorCallee)
 
-/-- The longest data `ShortRest.lean`'s code takes. -/
-def threshold : Nat := 256
+/-- The longest data `ShortRest.lean`'s code takes: 320 bytes with SVE2
+(`sve`), 448 without. This file's code takes the same time from 320 to 511
+bytes, while `ShortRest.lean`'s stream gets slower with each block after the
+first 256 bytes, and a partial last block costs it a step more. With SVE2 this
+file's is the faster from 384 bytes; without, `ShortRest.lean`'s is faster at
+384 and at 448 bytes, whole blocks after 256 (by 0.5-1.6%), and slower at 449
+and 480 (by 12-14%). -/
+def threshold (sve : Bool) : Nat := if sve then 320 else 448
 
-/-- `x9 = 0` iff `len ≤ threshold`: `(len + 511 - threshold) >> 9`. -/
-def split : List Instr := [.addImm .x .x9 .x5 (511 - threshold), .lsr .x .x9 .x9 9]
+/-- `x9 = 0` iff `len ≤ threshold sve`: `(len + 511 - threshold sve) >> 9`.
+Both instances are two instructions. -/
+def split (sve : Bool) : List Instr := [.addImm .x .x9 .x5 (511 - threshold sve), .lsr .x .x9 .x9 9]
 
 /-- `ctx[768, 1280)` zeroed, through `v0`. -/
 def zero : List Instr :=
@@ -65,9 +72,9 @@ def openMain (c : XorCallee) : Prog isa := openMainWith (cryptPad c)
 /-- From `lo` to 511 bytes: `ShortRest.lean`'s code up to `threshold`, then
 this file's. -/
 def sealRoute (c : XorCallee) : Prog isa :=
-  .seq (.block split) (.ite (.zero .x .x9) (ShortRest.sealMain c) (sealMain c))
+  .seq (.block (split c.sve)) (.ite (.zero .x .x9) (ShortRest.sealMain c) (sealMain c))
 
 def openRoute (c : XorCallee) : Prog isa :=
-  .seq (.block split) (.ite (.zero .x .x9) (ShortRest.openMain c) (openMain c))
+  .seq (.block (split c.sve)) (.ite (.zero .x .x9) (ShortRest.openMain c) (openMain c))
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Pad

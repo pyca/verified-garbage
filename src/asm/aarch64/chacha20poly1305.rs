@@ -3476,7 +3476,7 @@ movz x2, #1, lsl #0
 bl {vg_poly1305_blocks}
 b 21f
 20:
-add x9, x5, #255
+add x9, x5, #63
 lsr x9, x9, #9
 cbz x9, 228f
 str x22, [x7, #584]
@@ -8191,7 +8191,7 @@ add x3, x21, #632
 bl {vg_poly1305_finalize_scratch}
 b 21f
 20:
-add x9, x5, #255
+add x9, x5, #63
 lsr x9, x9, #9
 cbz x9, 213f
 str x22, [x7, #584]
@@ -11481,7 +11481,7 @@ movz x2, #1, lsl #0
 bl {vg_poly1305_blocks}
 b 21f
 20:
-add x9, x5, #255
+add x9, x5, #63
 lsr x9, x9, #9
 cbz x9, 28f
 str x22, [x7, #584]
@@ -14648,7 +14648,7 @@ add x3, x21, #632
 bl {vg_poly1305_finalize_scratch}
 b 21f
 20:
-add x9, x5, #255
+add x9, x5, #63
 lsr x9, x9, #9
 cbz x9, 28f
 str x22, [x7, #584]
@@ -20932,7 +20932,7 @@ movz x2, #1, lsl #0
 bl {vg_poly1305_blocks}
 b 21f
 20:
-add x9, x5, #255
+add x9, x5, #191
 lsr x9, x9, #9
 cbz x9, 228f
 str x22, [x7, #584]
@@ -25029,7 +25029,7 @@ add x3, x21, #632
 bl {vg_poly1305_finalize_scratch}
 b 21f
 20:
-add x9, x5, #255
+add x9, x5, #191
 lsr x9, x9, #9
 cbz x9, 213f
 str x22, [x7, #584]

@@ -189,23 +189,23 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
 /-! ## The branch on the length -/
 
 /-- The value `split` leaves in `x9`. -/
-abbrev splitVal (x : BitVec 64) : BitVec 64 := (x + BitVec.ofNat 64 (511 - threshold)) >>> 9
+abbrev splitVal (sve : Bool) (x : BitVec 64) : BitVec 64 := (x + BitVec.ofNat 64 (511 - threshold sve)) >>> 9
 
 /-- `x9`, zero iff `len ≤ threshold`. -/
-theorem split_ok (s₀ : State) :
-    WP isa (.block split) s₀ fun s₁ => Short.Agree s₀ s₁ ∧ s₁.gpr .x9 = splitVal (s₀.gpr .x5) := by
-  have h : WP isa (.block split) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = splitVal (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
-    wp_addImm (by decide) fun s₁ u₁ => VG.Proof.ChaCha20.AArch64.Xor.wp_lsr (by decide) fun s₂ u₂ =>
+theorem split_ok (sve : Bool) (s₀ : State) :
+    WP isa (.block (split sve)) s₀ fun s₁ => Short.Agree s₀ s₁ ∧ s₁.gpr .x9 = splitVal sve (s₀.gpr .x5) := by
+  have h : WP isa (.block (split sve)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
+      s₁.gpr .x9 = splitVal sve (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
+    wp_addImm (by cases sve <;> decide) fun s₁ u₁ => VG.Proof.ChaCha20.AArch64.Xor.wp_lsr (by decide) fun s₂ u₂ =>
       WP.block_nil
       ⟨fun r h9 _ => by rw [u₂.other r h9, u₁.other r h9],
         by rw [u₂.gpr, u₁.gpr],
         by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
-  exact WP.mono (WP.preservedV (WP.withSp h) (by lit_decide))
+  exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> lit_decide))
     fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
-theorem splitVal_eq {L : Nat} (h : L ≤ 511) :
-    (splitVal (BitVec.ofNat 64 L) == 0) = decide (L ≤ threshold) := by
+theorem splitVal_eq (sve : Bool) {L : Nat} (h : L ≤ 511) :
+    (splitVal sve (BitVec.ofNat 64 L) == 0) = decide (L ≤ threshold sve) := by
   have hz : ∀ x : BitVec 64, (x == 0) = decide (x.toNat = 0) := fun x => by
     by_cases hx : x = 0
     · subst hx; simp
@@ -215,38 +215,42 @@ theorem splitVal_eq {L : Nat} (h : L ≤ 511) :
   rw [hz]
   congr 1
   apply propext
+  cases sve <;>
   simp only [splitVal, threshold, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat,
-    Nat.shiftRight_eq_div_pow]
+    Nat.shiftRight_eq_div_pow, Bool.false_eq_true, ite_true, ite_false] <;>
   omega
 
-/-- The branch: to `ShortRest.lean`'s code iff `len ≤ threshold` (for `len ≤ 511`, where the
-addition does not wrap around). -/
-theorem split_eval {s₀ s₁ : State} (h511 : L s₀ ≤ 511) (h : s₁.gpr .x9 = splitVal (s₀.gpr .x5)) :
-    isa.eval (.zero .x .x9) s₁ = some (decide (L s₀ ≤ threshold)) := by
+/-- The branch: to `ShortRest.lean`'s code iff `len ≤ threshold sve` (for `len ≤ 511`, where
+the addition does not wrap around). -/
+theorem split_eval {sve : Bool} {s₀ s₁ : State} (h511 : L s₀ ≤ 511)
+    (h : s₁.gpr .x9 = splitVal sve (s₀.gpr .x5)) :
+    isa.eval (.zero .x .x9) s₁ = some (decide (L s₀ ≤ threshold sve)) := by
   have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) :=
     VG.Proof.ChaCha20.AArch64.Xor.eval_zero s₁ .x9
-  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, splitVal_eq h511]
+  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, splitVal_eq sve h511]
 
-theorem threshold_lt : threshold < 512 := by decide
+theorem threshold_lt (sve : Bool) : threshold sve < 512 := by cases sve <;> decide
 
 theorem sealRoute_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀)
     (hlo : 1 ≤ L s₀) (h511 : L s₀ ≤ 511) : WP isa (sealRoute v.callee) s₀ (MainS s₀) := by
   unfold sealRoute
-  refine WP.seq (WP.mono (split_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
+  refine WP.seq (WP.mono (split_ok v.callee.sve s₀) fun s₁ ⟨ag, x9⟩ => ?_)
   have hp₁ := Short.APre.agree ag hp
   have hL₁ : L s₁ = L s₀ := by rw [L, L, ag.gpr .x5 (by decide) (by decide)]
-  refine WP.ite (decide (L s₀ ≤ threshold)) (split_eval h511 x9) (fun _ => ?_) (fun _ => ?_)
+  refine WP.ite (decide (L s₀ ≤ threshold v.callee.sve)) (split_eval h511 x9) (fun _ => ?_) (fun _ => ?_)
   · exact WP.mono (ShortRest.sealMain_ok v hp₁ (by omega)) fun _ h => Short.MainS.agree ag h
-  · exact WP.mono (sealMain_ok v hp₁ (by omega)) fun _ h => Short.MainS.agree ag h
+  · have := threshold_lt v.callee.sve
+    exact WP.mono (sealMain_ok v hp₁ (by omega)) fun _ h => Short.MainS.agree ag h
 
 theorem openRoute_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀)
     (hlo : 1 ≤ L s₀) (h511 : L s₀ ≤ 511) : WP isa (openRoute v.callee) s₀ (MainO s₀) := by
   unfold openRoute
-  refine WP.seq (WP.mono (split_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
+  refine WP.seq (WP.mono (split_ok v.callee.sve s₀) fun s₁ ⟨ag, x9⟩ => ?_)
   have hp₁ := Short.APre.agree ag hp
   have hL₁ : L s₁ = L s₀ := by rw [L, L, ag.gpr .x5 (by decide) (by decide)]
-  refine WP.ite (decide (L s₀ ≤ threshold)) (split_eval h511 x9) (fun _ => ?_) (fun _ => ?_)
+  refine WP.ite (decide (L s₀ ≤ threshold v.callee.sve)) (split_eval h511 x9) (fun _ => ?_) (fun _ => ?_)
   · exact WP.mono (ShortRest.openMain_ok v hp₁ (by omega)) fun _ h => Short.MainO.agree ag h
-  · exact WP.mono (openMain_ok v hp₁ (by omega)) fun _ h => Short.MainO.agree ag h
+  · have := threshold_lt v.callee.sve
+    exact WP.mono (openMain_ok v hp₁ (by omega)) fun _ h => Short.MainO.agree ag h
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Pad
