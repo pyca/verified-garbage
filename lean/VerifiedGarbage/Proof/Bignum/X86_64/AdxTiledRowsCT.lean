@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
-public import VerifiedGarbage.Proof.Bignum.X86_64.Fill
+import VerifiedGarbage.Proof.Bignum.X86_64.Fill
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
@@ -12,6 +12,10 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Fill
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Bignum.X86_64.Fill
+meta import VerifiedGarbage.Impl.Bignum.X86_64.Fill
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-! ## AdxTiledRowCT -/
 

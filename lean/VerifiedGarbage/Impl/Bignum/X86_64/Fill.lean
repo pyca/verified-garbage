@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Padding that keeps code after a changed loop at its former offsets. -/
 
