@@ -1,141 +1,31 @@
-name: Benchmarks
-
-# Compares the performance of a branch with an earlier commit, on runners of
-# each architecture, and fails if a benchmark slowed down by more than
-# ci/bench_compare.py's threshold; or, with no commit, measures the branch
-# alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary.
-# It runs only by hand (Actions > Benchmarks > Run workflow): runners are
-# shared with CI, and a run of every benchmark takes dozens of jobs. Scope
-# each run to the architectures, `VG_CPU_FEATURES` configurations and library
-# modules a change affects: `git diff --name-only BASE HEAD | python3
-# ci/bench_arches.py --base BASE` prints them, and `python3 ci/bench_arches.py
-# --choices` lists the values each takes. E.g. from the command line:
-#
-#   gh workflow run bench.yml --ref BRANCH -f base_commit=SHA \
-#     -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
+name: Unproven compact i686 Montgomery screening
 on:
   workflow_dispatch:
-    inputs:
-      base_commit:
-        description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
-        required: false
-      arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or aarch64-apple, which only a run by hand measures; empty for all but aarch64-apple)
-        required: false
-      cpu_features:
-        description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
-        required: false
-      modules:
-        description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
-        required: false
-      openssl:
-        description: Also run OpenSSL and aws-lc-rs, for reference, in a comparison with a commit (a run without one always does)
-        type: boolean
-        default: false
-
 permissions:
   contents: read
-
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  arches:
-    name: Choose architectures
+  screen:
     runs-on: ubuntu-26.04
-    timeout-minutes: 5
-    outputs:
-      matrix: ${{ steps.arches.outputs.matrix }}
-      base: ${{ steps.arches.outputs.base }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - id: arches
-        env:
-          BASE_COMMIT: ${{ inputs.base_commit }}
-          ARCHES: ${{ inputs.arches }}
-          CPU_FEATURES: ${{ inputs.cpu_features }}
-          MODULES: ${{ inputs.modules }}
-        run: |
-          matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
-          echo "$matrix"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "base=$BASE_COMMIT" >> "$GITHUB_OUTPUT"
-
-  compare:
-    needs: arches
-    if: ${{ needs.arches.outputs.matrix != '[]' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.arches.outputs.matrix) }}
-    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }}${{ matrix.shard && format(', shard {0}', matrix.shard) || '' }})
-    runs-on: ${{ matrix.os }}
-    # Running every benchmark took 25-30 minutes on every runner with 3
-    # rounds; with 2, about 20-25, until the x86-64 configurations outgrew
-    # the timeout. One round with a shorter warm-up and measurement, and no
-    # OpenSSL or aws-lc-rs reference in comparisons (bench_compare.py), take
-    # about half, until running P-521's groups from fresh copies took some
-    # x86-64 configurations past it again, and AES-GCM's from copies did once
-    # more: BENCHMARKS_PER_JOB (ci/bench_arches.py) splits a run of every
-    # benchmark into shards.
-    timeout-minutes: 30
-    # With an empty image the job runs directly on the runner.
+    timeout-minutes: 10
     container:
-      image: ${{ matrix.image || '' }}
-      options: ${{ matrix.options || '' }}
-    env:
-      # Selects the toolchain without `rustup default`, which refuses 32-bit
-      # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: stable
-      # Restricts the CPU features the library uses, to benchmark other
-      # implementations (see ci/bench_arches.py); empty restricts nothing.
-      VG_CPU_FEATURES: ${{ matrix.cpu-features }}
+      image: ghcr.io/pyca/verified-garbage-runner:i686
+      options: --platform linux/386 --security-opt seccomp=unconfined
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          path: head
           persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ needs.arches.outputs.base }}
-        with:
-          ref: ${{ needs.arches.outputs.base }}
-          path: base
-          persist-credentials: false
-      - name: Record CPU and OpenSSL capabilities
+      - name: Compare compact loops with 3027 and OpenSSL
+        shell: bash
         run: |
+          gcc --version
           openssl version -a
-          if [ -r /proc/cpuinfo ]; then
-            python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
-          else
-            sysctl -n machdep.cpu.brand_string hw.optional.arm
-          fi
-      - name: Install Rust
-        # ci.yml's `rust` job lints the benchmarks, once per architecture.
-        run: rustup toolchain install stable --profile minimal
-      # The dependencies (aws-lc-sys, criterion, ...) are the same for every
-      # configuration and shard of an architecture, and about a third of the
-      # job; ci.yml's `rust` job saves them on main whenever the key changes.
-      - id: cache-key
-        run: echo "key=$(sh head/ci/bench_cache_key.sh head/bench)" >> "$GITHUB_OUTPUT"
-      - name: Restore the dependencies' build
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+          python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
+          gcc -O3 -Wall -Wextra -DOPENSSL_REF ci/prototypes/compact-screen.c ci/prototypes/compact-mont.S -lcrypto -o compact-screen
+          nm -n compact-screen | sed -n '/compact_mont/p'
+          ./compact-screen | tee compact-results.txt
+          cat compact-results.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: ./.github/actions/upload-artifact
+        if: always()
         with:
-          path: bench-target
-          key: ${{ steps.cache-key.outputs.key }}
-      - name: Benchmark base and head
-        env:
-          MODULES: ${{ matrix.modules }}
-          SHARD: ${{ matrix.shard }}
-          ARCH: ${{ matrix.arch }}
-          # Interleaved runs of each side (ci/bench_arches.py's platforms say
-          # how many; one but on a shared VM).
-          ROUNDS: ${{ matrix.rounds || 1 }}
-          # OpenSSL's and aws-lc-rs's times are only a reference: a comparison
-          # runs them when asked (a run without a base always does).
-          OPENSSL: ${{ inputs.openssl && '--openssl' || '' }}
-        run: |
-          # The `openssl` crate needs Homebrew's OpenSSL on macOS.
-          if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+          name: compact-montgomery-screen
+          path: compact-results.txt
