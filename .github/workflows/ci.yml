@@ -458,7 +458,9 @@ jobs:
       - run: rustc -vV
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time
+      # Hide durations that round to zero at libtest's millisecond precision.
+      - shell: bash
+        run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
         env:
           RUSTC_BOOTSTRAP: "1"
       - name: Export coverage
@@ -470,12 +472,13 @@ jobs:
       # its features (src/cpu.rs), which the build above, without `std`,
       # does not, and `rust-cpu-features` does only with `VG_CPU_FEATURES`.
       - name: Test CPU feature detection with std
+        shell: bash
         if: ${{ env.TESTS == 'true' && matrix.os == 'ubuntu-26.04-arm' }}
         env:
           LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
           RUSTC_BOOTSTRAP: "1"
         run: |
-          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time
+          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
@@ -534,7 +537,9 @@ jobs:
         run: cargo clippy --all-targets --locked
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time
+      # Hide durations that round to zero at libtest's millisecond precision.
+      - shell: bash
+        run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
         env:
           RUSTC_BOOTSTRAP: "1"
       # That the tests ran T32: the symbol of Thumb code has an odd address
@@ -730,7 +735,7 @@ jobs:
           failed=()
           for i in "${!names[@]}"; do
             echo "::group::${names[$i]}"
-            cat "$logs/$i"
+            sed 's/ <0\.000s>//g' "$logs/$i"
             echo "::endgroup::"
             echo "${names[$i]}: $(cat "$logs/$i.time") s of CPU (user, system)"
             printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
