@@ -3,8 +3,9 @@
 them would save: no builds.
 
 CI's Lean build is split into shards (`lean_shards.py`): each shard builds
-the modules that nothing imports ("sinks") it is given, and so everything
-they import. A module two shards need is built twice, so an import that
+its targets at the edge of the rebuild, and everything they import. In a
+full rebuild these are the modules that nothing imports ("sinks").
+A module two shards need is built twice, so an import that
 drags a large subtree into a sink costs the build in every shard that gets
 that sink, unless the shard builds the subtree anyway. Whether a change to
 the imports helps is therefore a question about the plan, not about any one
@@ -262,13 +263,22 @@ def full_plan(imps, times, count=None):
     cost = costs(imps, times)
     plan = {
         "shards": len(loads),
-        "slowest": max(loads, default=0.0),
-        "twice": sum(cost[m] for s in built for m in s) - work,
+        "slowest": max(loads) if loads else shards.build_time(imps, cost),
+        "twice": sum(cost[m] for s in built for m in s) - work if built else 0.0,
     }
-    if count:
+    if count is not None:
+        if count == len(loads):
+            plan["slowest_at"] = plan["slowest"]
+            return plan
+        if not count:
+            plan["slowest_at"] = shards.build_time(imps, cost)
+            return plan
         total = {s: sum(cost[m] for m in closure[s]) for s in sinks_of(imps)}
         order = sorted(total, key=lambda s: (-total[s], s))
-        plan["slowest_at"] = max(shards.pack(count, order, closure, cost, path)[0])
+        _, targets, built = shards.pack(count, order, closure, cost, path)
+        estimates = [shards.build_time(imps, {m: cost[m] for m in part}) for part in built]
+        estimates, _, _ = shards.refine(imps, closure, cost, path, (estimates, targets, built), max(estimates))
+        plan["slowest_at"] = max(estimates)
     return plan
 
 
@@ -278,12 +288,15 @@ def run_plan(imps, times, changed, vis=None):
     passes on what it imports)."""
     closure = shards.closures(imps)
     stale = shards.stale_of(changed, shards.reads(imps, closure, vis or {}))
-    work, path, (loads, _, _) = shards.schedule(imps, closure, stale, times)
-    longest = max((path[m] for m in stale), default=0.0)
+    _, _, (loads, _, _) = shards.schedule(imps, closure, stale, times)
     if loads:
         time = max(loads) + shards.SHARD_OVERHEAD
     else:
-        time = shards.estimate(work, longest)
+        targets = shards.rebuild_targets(stale, closure)
+        needed = set().union(*(closure[m] for m in targets))
+        default = sorted(times.values())[len(times) // 2] if times else shards.DEFAULT_TIME
+        cost = {m: times.get(m, default) if m in stale else shards.UP_TO_DATE for m in needed}
+        time = shards.build_time(imps, cost)
     return {"stale": len(stale), "shards": len(loads), "time": time}
 
 
