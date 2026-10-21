@@ -215,18 +215,18 @@ theorem map_range_sub {f : Nat → VReg} {k : Nat} {ws : List VReg} (h : ∀ i <
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hm
   exact h i (List.mem_range.mp hi)
 
-/-- Pair `i` from byte `o` of entry `m` of the table at `x16`, of `n` words a
-coordinate. -/
-abbrev ldE (n o : Nat) (s : State) (m i : Nat) : BitVec 128 :=
-  s.mem.read (s.gpr .x16 + BitVec.ofNat 64 (16 * n * (m - 1) + o + 16 * i)) 16
+/-- Pair `i` from byte `o` of entry `m` of the table at `tb` (`x16`), of `n`
+words a coordinate. -/
+abbrev ldE (n o : Nat) (s : State) (m i : Nat) (tb : Reg := .x16) : BitVec 128 :=
+  s.mem.read (s.gpr tb + BitVec.ofNat 64 (16 * n * (m - 1) + o + 16 * i)) 16
 
 /-- The loads of `k` pairs at `o + 16 i`. -/
-theorem ldsV_ok (n : Nat) {G : SelGroup} (hG : GOk G n) {s : State} {o : Nat}
+theorem ldsV_ok (n : Nat) {tb : Reg} {G : SelGroup} (hG : GOk G n) {s : State} {o : Nat}
     (ho : o + 16 * n ≤ 65536) (ho16 : o % 16 = 0)
-    (hr : ∀ i < n, InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (o + 16 * i)) 16) :
-    ∀ k ≤ n, WP isa (.block ((List.range k).map fun i => Instr.ldrq (G.ld.getD i .v20) .x16 (o + 16 * i)))
+    (hr : ∀ i < n, InRegions (s.rd ++ s.wr) (s.gpr tb + BitVec.ofNat 64 (o + 16 * i)) 16) :
+    ∀ k ≤ n, WP isa (.block ((List.range k).map fun i => Instr.ldrq (G.ld.getD i .v20) tb (o + 16 * i)))
       s fun t =>
-      (∀ i < k, t.v (G.ld.getD i .v20) = s.mem.read (s.gpr .x16 + BitVec.ofNat 64 (o + 16 * i)) 16) ∧
+      (∀ i < k, t.v (G.ld.getD i .v20) = s.mem.read (s.gpr tb + BitVec.ofNat 64 (o + 16 * i)) 16) ∧
       VKeep [] ((List.range k).map fun i => G.ld.getD i .v20) s t
   | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), VKeep.refl _ _ _⟩
   | k + 1, hk => by
@@ -270,17 +270,17 @@ theorem bselsV_ok (n : Nat) {G : SelGroup} (hG : GOk G n) {s : State} :
 
 /-- Entry `m` into a group: its index `m`, and each accumulator entry `m`'s
 pair if `m` is the magnitude `a` in `v19`, else what it held. -/
-theorem selEntryV_ok (K : TCombCfg) {o c : Nat} {G : SelGroup} (hG : GOk G c) {s : State}
+theorem selEntryV_ok (K : TCombCfg) {tb : Reg} {o c : Nat} {G : SelGroup} (hG : GOk G c) {s : State}
     {a m : Nat} {c0 : BitVec 64} (ha : a < 2 ^ 64) (hm : m < 2 ^ 64) (hidx : s.v G.idx = dup2 c0)
     (hc0 : c0 + 2 = BitVec.ofNat 64 m) (h18 : s.v .v18 = dup2 2)
     (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a)) (ho : 16 * K.M.n * (m - 1) + o + 16 * c ≤ 65536)
     (ho16 : o % 16 = 0)
     (hr : ∀ i < c, InRegions (s.rd ++ s.wr)
-      (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + o + 16 * i)) 16) :
-    WP isa (.block (K.selEntry o c G m)) s fun t =>
+      (s.gpr tb + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + o + 16 * i)) 16) :
+    WP isa (.block (K.selEntry o c G m tb)) s fun t =>
       t.v G.idx = dup2 (BitVec.ofNat 64 m) ∧
       (∀ i < c, t.v (G.acc.getD i .v0) =
-        if a = m then ldE K.M.n o s m i else s.v (G.acc.getD i .v0)) ∧
+        if a = m then ldE K.M.n o s m i tb else s.v (G.acc.getD i .v0)) ∧
       VKeep [] G.wr s t := by
   have hi19 : VReg.v19 ≠ G.idx := fun e => hG.idx (by rw [← e]; simp)
   have hmi : G.mask ≠ G.idx := fun e => hG.idx (by rw [e]; simp)
@@ -421,8 +421,8 @@ theorem orr_par {a H : Nat} (ha : a ≤ H) (L : BitVec 128) :
   · simp (disch := omega_using [hp, h]) only [ite_f]; simp
 
 /-- A word of a loaded pair. -/
-theorem vdword_ldE (n o : Nat) (s : State) (a i : Nat) {e : Nat} (he : e < 2) :
-    vdword (ldE n o s a i) e = word s.mem (s.gpr .x16) (16 * n * (a - 1) + o + 16 * i + 8 * e) := by
+theorem vdword_ldE {tb : Reg} (n o : Nat) (s : State) (a i : Nat) {e : Nat} (he : e < 2) :
+    vdword (ldE n o s a i tb) e = word s.mem (s.gpr tb) (16 * n * (a - 1) + o + 16 * i + 8 * e) := by
   rw [ldE, vdword_read16 _ _ he, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 theorem zero_eq_iff {a : Nat} (ha : a < 2 ^ 64) : ((0 : BitVec 64) = BitVec.ofNat 64 a) ↔ a = 0 :=
@@ -444,7 +444,7 @@ theorem wordsVal_of_words₂ {m m' : Mem} {b b' : Addr} : ∀ (o o' k : Nat),
 
 /-- The pairs of entries `1 … 2q`: the odd ones into `A`, the even ones into
 `B`, `c` pairs from byte `o` each. -/
-theorem pairsV_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c ≤ 16 * K.M.n)
+theorem pairsV_ok (K : TCombCfg) {tb : Reg} {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c ≤ 16 * K.M.n)
     (ho16 : o % 16 = 0) {a : Nat} (ha : a < 2 ^ 64) {s : State}
     (h18 : s.v .v18 = dup2 2) (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a))
     {c0 : BitVec 64} (h17 : s.v .v17 = dup2 c0) (hc0 : c0 + 2 = BitVec.ofNat 64 1)
@@ -453,16 +453,16 @@ theorem pairsV_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c �
     (hB : ∀ i < c, s.v ((selB c).acc.getD i .v0) = 0) :
     ∀ q, 2 * q < 2 ^ 64 → 16 * K.M.n * (2 * q) ≤ 65536 →
       (∀ e < 2 * q, ∀ i < c, InRegions (s.rd ++ s.wr)
-        (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * e + o + 16 * i)) 16) →
+        (s.gpr tb + BitVec.ofNat 64 (16 * K.M.n * e + o + 16 * i)) 16) →
       WP isa (.block ((List.range q).flatMap fun m =>
-        K.selEntry o c (selA c) (2 * m + 1) ++ K.selEntry o c (selB c) (2 * m + 2))) s fun t =>
+        K.selEntry o c (selA c) (2 * m + 1) tb ++ K.selEntry o c (selB c) (2 * m + 2) tb)) s fun t =>
         t.v .v18 = dup2 2 ∧ t.v .v19 = dup2 (BitVec.ofNat 64 a) ∧
         (∃ c', t.v .v17 = dup2 c' ∧ c' + 2 = BitVec.ofNat 64 (2 * q + 1)) ∧
         t.v .v30 = dup2 (BitVec.ofNat 64 (2 * q)) ∧
         (∀ i < c, t.v ((selA c).acc.getD i .v0) =
-          if 1 ≤ a ∧ a ≤ 2 * q ∧ a % 2 = 1 then ldE K.M.n o s a i else 0) ∧
+          if 1 ≤ a ∧ a ≤ 2 * q ∧ a % 2 = 1 then ldE K.M.n o s a i tb else 0) ∧
         (∀ i < c, t.v ((selB c).acc.getD i .v0) =
-          if 1 ≤ a ∧ a ≤ 2 * q ∧ a % 2 = 0 then ldE K.M.n o s a i else 0) ∧
+          if 1 ≤ a ∧ a ≤ 2 * q ∧ a % 2 = 0 then ldE K.M.n o s a i tb else 0) ∧
         VKeep [] ((selA c).wr ++ (selB c).wr) s t
   | 0, _, _, _ => WP.block_nil ⟨h18, h19, ⟨c0, h17, hc0⟩, h30,
       fun i hi => by rw [hA i hi]; simp (disch := omega_using []) only [ite_f],
@@ -493,7 +493,7 @@ theorem pairsV_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c �
         rw [k₂.rd, k₂.wr, k₂.gpr _ List.not_mem_nil, k₁.rd, k₁.wr, k₁.gpr _ List.not_mem_nil,
           show 2 * q + 2 - 1 = 2 * q + 1 by omega_using []]
         exact hr (2 * q + 1) (by omega_using []) i hi) fun t ⟨i₃, v₃, k₃⟩ => ?_
-    have hld : ∀ m i, ldE K.M.n o s₂ m i = ldE K.M.n o s m i ∧ ldE K.M.n o s₁ m i = ldE K.M.n o s m i :=
+    have hld : ∀ m i, ldE K.M.n o s₂ m i tb = ldE K.M.n o s m i tb ∧ ldE K.M.n o s₁ m i tb = ldE K.M.n o s m i tb :=
       fun m i => by
         refine ⟨?_, ?_⟩ <;>
           simp only [ldE, k₂.mem, k₂.gpr _ List.not_mem_nil, k₁.mem, k₁.gpr _ List.not_mem_nil]
@@ -545,14 +545,14 @@ theorem regs_not_acc : ∀ c ≤ 4, ∀ r ∈ [VReg.v16, .v17, .v18, .v19, .v20,
 
 /-- A pass: `A`'s `c` accumulators hold entry `a`'s pairs from byte `o` if
 `1 ≤ a ≤ H`, else zeros. -/
-theorem passV_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c ≤ 16 * K.M.n)
+theorem passV_ok (K : TCombCfg) {tb : Reg} {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c ≤ 16 * K.M.n)
     (ho16 : o % 16 = 0) {a : Nat} (ha : a ≤ K.H) (hH2 : K.H % 2 = 0) (hH : 16 * K.M.n * K.H ≤ 65536)
     (hHlt : K.H < 2 ^ 64) {s : State}
     (h18 : s.v .v18 = dup2 2) (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a)) (h28 : s.v .v28 = dup2 1)
     (hr : ∀ e < K.H, ∀ i < c, InRegions (s.rd ++ s.wr)
-      (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * e + o + 16 * i)) 16) :
-    WP isa (.block (K.selPass o c)) s fun t =>
-      (∀ i < c, t.v ((selA c).acc.getD i .v0) = if 1 ≤ a then ldE K.M.n o s a i else 0) ∧
+      (s.gpr tb + BitVec.ofNat 64 (16 * K.M.n * e + o + 16 * i)) 16) :
+    WP isa (.block (K.selPass o c tb)) s fun t =>
+      (∀ i < c, t.v ((selA c).acc.getD i .v0) = if 1 ≤ a then ldE K.M.n o s a i tb else 0) ∧
       t.v .v18 = s.v .v18 ∧ t.v .v19 = s.v .v19 ∧ t.v .v28 = s.v .v28 ∧
       VKeep [] ((selA c).wr ++ (selB c).wr) s t := by
   have hA := selA_ok hc
@@ -595,7 +595,7 @@ theorem passV_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 4) (hoc : o + 16 * c ≤
       exact hr e (by omega_using [he]) i hi) fun s₃ ⟨p18, p19, _, _, pA, pB, k₃⟩ => ?_
   rw [h2H] at pA pB
   refine WP.mono (orrsV_ok c hc (s := s₃) c (Nat.le_refl _)) fun t ⟨o₄, k₄⟩ => ?_
-  have hld : ∀ i, ldE K.M.n o s₂ a i = ldE K.M.n o s a i := fun i => by
+  have hld : ∀ i, ldE K.M.n o s₂ a i tb = ldE K.M.n o s a i tb := fun i => by
     simp only [ldE, k₂.mem, k₂.gpr _ List.not_mem_nil, k₁.mem, k₁.gpr _ List.not_mem_nil]
   have nacc : ∀ r ∈ [VReg.v18, .v19, .v28], r ∉ (List.range c).map fun i => (selA c).acc.getD i .v0 :=
     fun r hr => not_mem_map_range fun i hi e => selA_o _ hc i hi (by
