@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.EcKey.P256
 public import VerifiedGarbage.Spec.Ecdsa.P256
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJP
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
 import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
@@ -19,15 +19,23 @@ namespace VG.Proof.Ecdsa.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 
+/-- The pipelined comb's code: its addition scalar code storing within the
+working space, apart from the tables its selection reads. -/
+theorem booth_checks : JPChecks Impl.P256.CombArithmetic.K 8192 Impl.P256.Booth.mixed := by
+  refine ⟨by decide, by decide, by decide, ?_, by decide +kernel, ?_, by decide +kernel, by decide +kernel⟩
+  · rw [Impl.P256.Booth.mixed_lit]; decide +kernel
+  · rw [Impl.P256.Booth.mixed_lit]; decide +kernel
+
 /-- The measured secret comb satisfies the existing scalar-multiplication interface. -/
 theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     CombCorrect p256 Impl.P256.Booth.comb := by
   intro base k T s hs hm hf
   have hc := p256_ok hI
-  exact WP.mono (tcombJWith_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
+  exact WP.mono (tcombJP_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
     (Forward.CombArithmetic.compiler_correct (by decide)) (by decide) hL hc.am3 hc.onG
-    (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt hs hm hf)
+    (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt
+    Impl.P256.Booth.program_mixed booth_checks hs hm hf)
     fun _ ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩
 
 theorem booth_sign_verified (hL : Law Spec.P256.curve) (hI : InvSounds)

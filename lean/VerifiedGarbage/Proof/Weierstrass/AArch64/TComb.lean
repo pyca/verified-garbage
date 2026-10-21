@@ -121,12 +121,13 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
 
-/-- The registers the comb from tables changes: the comb's and the rest of the
-entry's. -/
-def tcombClob (n : Nat) : List Reg := entryRegs n ++ combClob n
+/-- The registers the comb from tables changes: the comb's, the rest of the
+entry's, and `x21`, the address of the table of the next window's entry the
+pipelined comb selects (`TCombCfg.combJP`). -/
+def tcombClob (n : Nat) : List Reg := entryRegs n ++ combClob n ++ [.x21]
 
 theorem combClob_tcombClob {n : Nat} : ∀ r ∈ combClob n, r ∈ tcombClob n := fun _ hr =>
-  List.mem_append_right _ hr
+  List.mem_append_left _ (List.mem_append_right _ hr)
 
 /-- What the comb needs of its tables `tbl` (affine points, below `p`, whose
 Montgomery forms `tcombWords` are in memory) and constants: `J` tables of `H`

@@ -84,6 +84,8 @@ def VOp.fp : VOp → Option Fp
   | .rax1 d n m | .xar d n m _ => some (vecFp (vbit n ||| vbit m) (vbit d))
   | .aese d n | .aesd d n => some (vecFp (vbit d ||| vbit n) (vbit d))
   | .aesmc d n | .aesimc d n | .rev _ d n => some (vecFp (vbit n) (vbit d))
+  | .cmeq _ d n m => some (vecFp (vbit n ||| vbit m) (vbit d))
+  | .bsel _ d n m => some (vecFp (vbit d ||| vbit n ||| vbit m) (vbit d))
   | _ => none
 
 /-- The footprint of an instruction of the class (memory at `[xb, #off]`), `none` for any other. -/

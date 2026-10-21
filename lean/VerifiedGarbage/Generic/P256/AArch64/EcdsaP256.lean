@@ -265,7 +265,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
     notes := ["The function saves `x19`–`x25` in its 8 KB \
       scratch buffer. Field elements and scalars are four 64-bit Montgomery words. `[k]G` \
       uses 37 width-7 Booth digits in `[-64,64]`, with no initial correction point. Each \
-      affine entry is selected by scanning all 64 entries of its row in `VG_P256_COMB`; \
+      affine entry is selected by scanning all 64 entries of its row in `VG_P256_COMB`, \
+      with vector loads interleaved with the previous window's scalar mixed addition; \
       sign correction uses a mask. From the lowest window upward, a Jacobian accumulator \
       uses mixed additions (8 products and 3 squares), specialized P-256 squaring, and \
       register forwarding between field operations. The Booth partial-sum and generator-order \

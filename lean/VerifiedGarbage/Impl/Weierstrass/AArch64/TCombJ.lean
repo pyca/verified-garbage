@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Weave
 
 /-!
 # Fixed-base Booth comb with Jacobian mixed additions
@@ -73,6 +74,15 @@ def stepJWith (arithmetic : Mod → List FOp → Prog isa) : Prog isa :=
 /-- The baseline field compiler includes the specialized P-256 squaring path. -/
 def stepJ : Prog isa := K.stepJWith fprogB
 
+/-- After a window's addition (`stepJWith`'s last two blocks): `D = E` where
+`A` is `O`, `A = D` unless the digit is zero, and the next window, with
+`x4 = x19 - J`. -/
+def fixJ : Prog isa :=
+  .seq (.block (nzMask K.M.n K.A.z ++ selPt K.M.n K.D K.E K.D)) <|
+  .block (K.bdigit true ++ [zero7,.movz .x .x5 1 0,.subs .x .x16 .x2 .x5,
+    .sbc .x .x3 .x7 .x7] ++ selPt K.M.n K.A K.D K.A ++
+    [.addImm .x .x19 .x19 1,.subImm .x .x4 .x19 K.J])
+
 /-- Normalize infinity's ordinate to Montgomery one, retaining finite ordinates. -/
 def outFix : List Instr :=
   nzMask K.M.n K.A.z ++ sel K.M.n K.A.y K.zero K.A.y ++
@@ -93,6 +103,56 @@ def combJWith (arithmetic : Mod → List FOp → Prog isa) : Prog isa :=
 
 /-- Secret-scalar fixed-base multiplication with Booth digits. -/
 def combJ : Prog isa := K.combJWith fprogB
+
+/-! ### The pipelined comb
+
+Each window's entry is selected by loading every entry of its table into
+vector registers, about as long as the addition, but independent of it; the
+addition's field operations, scalar code, mostly wait on each other's. So
+the entry of window `j + 1` is selected while window `j`'s addition runs:
+its pass (`selPass`, from the table at `x21`) is woven into the addition's
+code (`Impl.Weave.weave`), and its accumulators, which no scalar
+instruction touches, are stored to `E` after window `j`'s corrections, which
+read `E`. Window `1`'s entry is selected before the loop, and the last
+window's addition selects none. For an entry of at most eight words (one
+pass). -/
+
+/-- `x21` = table `x19 + 1`'s address, from the static `tsym`'s, through `x5`
+and `x17`. -/
+def selSetupNext : List Instr :=
+  [.adrSym .x21 K.tsym, .movz .x .x17 (BitVec.ofNat 16 K.tblBytes) 0, .addImm .x .x5 .x19 1,
+    .mul .x .x17 .x5 .x17, .add .x .x21 .x21 .x17]
+
+/-- Before window `j = x19`'s addition: digit `j + 1`'s magnitude in `x2`,
+its table's address in `x21`, and the broadcasts (`v19`, `v28`, `v18`). -/
+def prepNext : List Instr :=
+  [.addImm .x .x19 .x19 1] ++ K.bdigit true ++ [.subImm .x .x19 .x19 1] ++ K.selSetupNext ++
+    [.movz .x .x5 1 0] ++ selBcast
+
+/-- After window `j`'s corrections (`x19 = j + 1`): digit `j + 1`'s
+magnitude again, `y = R` for a zero one, the entry stored to `E`, and `Z`. -/
+def finNext : List Instr :=
+  K.bdigit true ++ [zero7, .movz .x .x5 1 0] ++ selOne K.one K.M.n (K.M.n / 2) (K.M.n / 2) ++
+    selStore K.M.n 0 (K.M.n / 2) K.E.x ++ selStore K.M.n (K.M.n / 2) (K.M.n / 2) K.E.y ++ K.selZ
+
+/-- Window `j = x19` (`1 ≤ j < J - 1`), its addition `mc` woven with window
+`j + 1`'s selection: then `x19 = j + 1`, its entry in `E` (negated), and
+`x4 = j + 1 - (J - 1)`. -/
+def stepJP (mc : List Instr) : Prog isa :=
+  .seq (.block K.prepNext) <|
+  .seq (.block (Impl.Weave.weave mc (K.selPass 0 K.M.n .x21))) <|
+  .seq K.fixJ <|
+  .seq (.block K.finNext) <|
+  .block (K.bnegY ++ [.subImm .x .x4 .x19 (K.J - 1)])
+
+/-- The comb with Booth digits, pipelined, its addition `mc` (the code of
+`arithmetic`'s `maddJ`). -/
+def combJP (arithmetic : Mod → List FOp → Prog isa) (mc : List Instr) : Prog isa :=
+  .seq K.first <|
+  .seq (.block (K.bdigit true ++ K.select)) <| .seq (.block K.bnegY) <|
+  .seq (.loop (K.stepJP mc) (.nonzero .x .x4)) <|
+  .seq (.seq (.block mc) K.fixJ) <|
+    .seq (.block K.outFix) (arithmetic K.M K.outOps)
 
 end TCombCfg
 end VG.Impl.Weierstrass.AArch64

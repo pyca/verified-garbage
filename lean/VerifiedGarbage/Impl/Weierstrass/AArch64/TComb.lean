@@ -127,23 +127,23 @@ def H : Nat := 2 ^ (K.w - 1)
 /-- The bytes of a table. -/
 def tblBytes : Nat := 16 * K.M.n * K.H
 
-/-- Entry `m` (from 1) of the table at `x16` into group `G`: its index `+= 2`
+/-- Entry `m` (from 1) of the table at `tb` (`x16`) into group `G`: its index `+= 2`
 (`v18`), its mask all ones exactly if the index is the magnitude (`v19`),
 and its `c` pairs of words from byte `o` inserted under it. -/
-def selEntry (o c : Nat) (G : SelGroup) (m : Nat) : List Instr :=
+def selEntry (o c : Nat) (G : SelGroup) (m : Nat) (tb : Reg := .x16) : List Instr :=
   [.vop (.add .d2 G.idx G.idx .v18), .vop (.cmeq .d2 G.mask G.idx .v19)] ++
-    (List.range c).map (fun i => .ldrq (G.ld.getD i .v20) .x16 (16 * K.M.n * (m - 1) + o + 16 * i)) ++
+    (List.range c).map (fun i => .ldrq (G.ld.getD i .v20) tb (16 * K.M.n * (m - 1) + o + 16 * i)) ++
     (List.range c).map fun i => .vop (.bsel .bit (G.acc.getD i .v0) (G.ld.getD i .v20) G.mask)
 
-/-- Every entry's `c` pairs from byte `o` into `selA c`'s accumulators: the
-odd entries into `A`, the even ones into `B` (their indices from `-1` and
-`0`), then both combined. -/
-def selPass (o c : Nat) : List Instr :=
+/-- Every entry's `c` pairs from byte `o` of the table at `tb` (`x16`) into
+`selA c`'s accumulators: the odd entries into `A`, the even ones into `B`
+(their indices from `-1` and `0`), then both combined. -/
+def selPass (o c : Nat) (tb : Reg := .x16) : List Instr :=
   ([.vop (.movi0 (selA c).idx), .vop (.sub .d2 (selA c).idx (selA c).idx .v28),
     .vop (.movi0 (selB c).idx)] : List Instr) ++
   (((selA c).acc ++ (selB c).acc).map (fun v => .vop (.movi0 v)) : List Instr) ++
   ((List.range (K.H / 2)).flatMap (fun m =>
-    K.selEntry o c (selA c) (2 * m + 1) ++ K.selEntry o c (selB c) (2 * m + 2)) : List Instr) ++
+    K.selEntry o c (selA c) (2 * m + 1) tb ++ K.selEntry o c (selB c) (2 * m + 2) tb) : List Instr) ++
   ((List.range c).map fun i =>
     .vop (.logic .orr ((selA c).acc.getD i .v0) ((selA c).acc.getD i .v0) ((selB c).acc.getD i .v0)) : List Instr)
 
