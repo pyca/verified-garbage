@@ -25,7 +25,7 @@ namespace VG.Impl.Rsa.X86.RecoverRt
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.Keys (aM aNM aZero hdr seqs)
 open VG.Impl.Rsa.X86.KeyRt (Lay Shape arrPtr bytesB sub3 copy sel half bitOf setOne clrLow eqSFast zeroArrays
-  mulMod inverse div load restoreEdi)
+  mulMod gcd div load restoreEdi)
 open VG.Impl.Rsa.X86.Recover (sTc sCand sK sDone sOk sBit sLive sE1 sE2 sCnt sLt sInv sMask sWin sEq mAcc
   mBase mY mR2 mG mXm mX aN aOne aZ aO aNg aW aQ aRm aDv aDt nArr wZ wE wD wM wMod wT wH wR wRc
   entry skipTest cntBits cntNext sqInit sqMasks sqNext candNext prodCount windowCount)
@@ -227,7 +227,7 @@ def store (arg j : Nat) : Prog isa := seqs [
 
 def stores : Prog isa := seqs [store 0 5, store 2 6, .block [.mov .eax (.mem (sc sMask))]]
 
-def factors : Prog isa := seqs [gcdSet, inverse nar, divSet, div nar aQ aRm aDv aDt, order]
+def factors : Prog isa := seqs [gcdSet, gcd nar, divSet, div nar aQ aRm aDv aDt, order]
 
 def fin : Prog isa := seqs [finY, factors, stores]
 
