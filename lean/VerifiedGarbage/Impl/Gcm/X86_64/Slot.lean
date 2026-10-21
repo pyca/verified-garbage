@@ -16,9 +16,10 @@ and never change. That takes the counters' byte reversal and additions off
 the vector ports, which the loop is bound by, onto the scalar ones; nothing
 depends on the counter but the values written, so it stays secret.
 
-The counter in `ecx` is the 32 bits `inc₃₂` increments of the block of the
-group the slot holds (its first). `rcx` holds the address of `Y` on entry to
-the loops, so they keep it at `scratch + ySave` meanwhile.
+The counter is the 32 bits `inc₃₂` increments of the slot's first block,
+read back from it for each group. `rcx` holds the address of `Y` throughout
+the loops, so they keep it at `scratch + ySave`, and reload it after each use
+of `ecx`.
 -/
 
 @[expose] public section
@@ -44,10 +45,15 @@ def puts : Nat → List Instr
   | 0 => []
   | n + 1 => puts n ++ put n
 
-/-- The sixteen counter blocks after the first `d`, written over the slot:
-`ecx` advanced by `d` (to the counter of the group they make). -/
+/-- The address of `Y` back in `rcx`. -/
+def restoreY : List Instr := [.mov .rcx (.mem (at_ .r11 ySave))]
+
+/-- The sixteen counter blocks after the first `d`, written over the slot,
+from the counter of its first block (its last four bytes, byte-reversed),
+through `ecx`; then the address of `Y` back in `rcx`. -/
 def refill (d : Nat) : List Instr :=
-  (.alu32 .add .rcx (.imm (BitVec.ofNat 32 d)) :: puts 16) ++ ([.alu32 .sub .rcx (.imm 16)] : List Instr)
+  ([.mov32 .rcx (.mem (at_ .r11 (slot + 12))), .bswap32 .rcx, .alu32 .add .rcx (.imm (BitVec.ofNat 32 d))] :
+    List Instr) ++ puts 16 ++ restoreY
 
 /-- The counter blocks of the registers `rs`, from the `k`-th four of the slot. -/
 def loads : List XReg → Nat → List Instr
@@ -58,17 +64,20 @@ def loads : List XReg → Nat → List Instr
 group's in the slot. -/
 def ctrsM (rs : List XReg) : List Instr := loads rs 0 ++ refill (4 * rs.length)
 
-/-- The first counter block at `rax` copied into the sixteen of the slot
-(through `zmm13`), the address of `Y` kept, and `ecx` its counter, before
-the sixteen counters are written: the slot then holds the first group. -/
-def init : List Instr :=
-  [.vbroadcasti32x4 .xmm13 (at_ .rax 0), .vmovdqu32Store (at_ .r11 slot) .xmm13,
-   .vmovdqu32Store (at_ .r11 (slot + 64)) .xmm13, .vmovdqu32Store (at_ .r11 (slot + 128)) .xmm13,
-   .vmovdqu32Store (at_ .r11 (slot + 192)) .xmm13, .store (at_ .r11 ySave) .rcx,
-   .mov32 .rcx (.mem (at_ .rax 12)), .bswap32 .rcx] ++ puts 16 ++ ([.alu32 .sub .rcx (.imm 16)] : List Instr)
+/-- `zmm13` (four copies of the first counter block) stored over the first
+`n` fours of the slot. -/
+def copies : Nat → List Instr
+  | 0 => []
+  | n + 1 => copies n ++ ([.vmovdqu32Store (at_ .r11 (slot + 64 * n)) .xmm13] : List Instr)
 
-/-- The address of `Y` back in `rcx`. -/
-def restoreY : List Instr := [.mov .rcx (.mem (at_ .r11 ySave))]
+/-- The first counter block at `rax` copied into the sixteen of the slot
+(through `zmm13`), and the address of `Y` kept, before the sixteen counters
+are written from its counter through `ecx`: the slot then holds the first
+group, and `rcx` the address of `Y` again. -/
+def init : List Instr :=
+  ([.vbroadcasti32x4 .xmm13 (at_ .rax 0)] : List Instr) ++ copies 4 ++
+  ([.store (at_ .r11 ySave) .rcx, .mov32 .rcx (.mem (at_ .rax 12)), .bswap32 .rcx] : List Instr) ++
+  puts 16 ++ restoreY
 
 /-- The counter of the slot's first block stored to `rax`. -/
 def storeCtr : List Instr :=
@@ -76,7 +85,7 @@ def storeCtr : List Instr :=
 
 /-- The counter `r10` blocks after the slot's first stored to `rax`. -/
 def storeCtrAt : List Instr :=
-  storeCtr ++ [.alu32 .add .rcx (.reg .r10), .bswap32 .rcx, .store32 (at_ .rax 12) .rcx, .bswap32 .rcx,
-    .alu32 .sub .rcx (.reg .r10)]
+  storeCtr ++ ([.mov32 .rcx (.mem (at_ .r11 (slot + 12))), .bswap32 .rcx, .alu32 .add .rcx (.reg .r10),
+    .bswap32 .rcx, .store32 (at_ .rax 12) .rcx] : List Instr) ++ restoreY
 
 end VG.Impl.Gcm.X86_64.Slot
