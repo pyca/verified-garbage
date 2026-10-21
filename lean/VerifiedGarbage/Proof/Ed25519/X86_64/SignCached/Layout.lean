@@ -26,11 +26,13 @@ structure Lay where
   B : Addr
   /-- The comb's tables (the static `combSym`). -/
   T : Addr
+  /-- The bytes read at `seed`: the seed (32), or its cached SHA-512 digest (64). -/
+  seedLen : Nat
 
 namespace Lay
 variable (L : Lay)
 abbrev OUT : Region := ⟨L.out, 64⟩
-abbrev SEED : Region := ⟨L.seed, 32⟩
+abbrev SEED : Region := ⟨L.seed, L.seedLen⟩
 abbrev PK : Region := ⟨L.pk, 32⟩
 abbrev MSG : Region := ⟨L.msg, L.len.toNat⟩
 abbrev SCR : Region := ⟨L.scr, 8192⟩
@@ -39,7 +41,7 @@ abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 248⟩
 abbrev DATA : Region := ⟨L.B + BitVec.ofNat 64 16, 192⟩
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 264, 8⟩
 abbrev TBL : Region := combRegion L.T
-/-- The regions only read: the seed, the public key, the message and the comb's tables. -/
+/-- The regions only read: the seed (or its digest), the public key, the message and the comb's tables. -/
 def inputs : List Region := [L.SEED, L.PK, L.MSG, L.TBL]
 structure Ok : Prop where
   os : ∀ r ∈ L.inputs, L.OUT.Disjoint r
@@ -54,9 +56,10 @@ structure Ok : Prop where
   rc : L.RET.Disjoint L.SCR
   np : L.pk.toNat + 32 ≤ 2 ^ 64
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 64
-  ns : L.seed.toNat + 32 ≤ 2 ^ 64
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
   nt : L.T.toNat + 8 * combWordCount ≤ 2 ^ 64
+  sl : 32 ≤ L.seedLen
 end Lay
 
 namespace Lay.Ok

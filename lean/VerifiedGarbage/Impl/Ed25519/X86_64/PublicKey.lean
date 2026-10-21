@@ -104,15 +104,38 @@ def pkHash (f : Callee) (suffix : String) : Prog isa :=
 `_ifma`, or none). -/
 def scalarBaseName (fs : String) : String := "vg_ed25519_scalar_base" ++ fs
 
-/-- The frame's body, calling the base-point multiplication `bs`. -/
-def pkBody (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  .seq (pkHash f suffix)
+/-- The frame's body after `hash`, which leaves the seed's SHA-512 digest at
+`scratch + 1568`, calling the base-point multiplication `bs`. -/
+def pkBodyFrom (hash : Prog isa) (bs : Prog isa) (fs : String) : Prog isa :=
+  .seq hash
     (.seq (.block pkBaseArgs) (.seq (.block pkPrune)
     (.seq (.call (scalarBaseName fs) bs) (.block pkWipe))))
+
+/-- The frame's body, calling the base-point multiplication `bs`. -/
+def pkBody (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
+  pkBodyFrom (pkHash f suffix) bs fs
 
 /-- `vg_ed25519_public_key` (with `suffix`), calling the base-point multiplication `bs`,
 `vg_ed25519_scalar_base` with the suffix `fs`. -/
 def publicKey (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
   .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax]) (pkBody bs fs f suffix) (.pop .rax 7)
+
+/-- The pointers of `vg_ed25519_public_key_expanded`'s copy: the digest (its second
+argument, saved at `fSeed`) in `rax`, `scratch` in `rcx`. -/
+def pkCopyPtrs : List Instr := [.mov .rax (.mem (stk fSeed)), .mov .rcx (.mem (stk fScratch))]
+
+/-- The eight words at `rax` copied to `rcx + 1568`, where `pkHash` leaves the digest. -/
+def pkCopyWords : List Instr :=
+  (List.range 8).flatMap fun i =>
+    [.mov .rdx (.mem { base := .rax, disp := ((8 * i : Nat) : Int) }),
+      .store { base := .rcx, disp := ((digestAt + 8 * i : Nat) : Int) } .rdx]
+
+/-- The seed's cached digest copied to `scratch + 1568`. -/
+def pkCopyExpanded : Prog isa := .seq (.block pkCopyPtrs) (.block pkCopyWords)
+
+/-- `vg_ed25519_public_key_expanded`: `publicKey` from the seed's SHA-512 digest
+(`publicKeyExpandedContract`), copied rather than computed. -/
+def publicKeyExpanded (bs : Prog isa) (fs : String) : Prog isa :=
+  .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax]) (pkBodyFrom pkCopyExpanded bs fs) (.pop .rax 7)
 
 end VG.Impl.Ed25519.X86_64

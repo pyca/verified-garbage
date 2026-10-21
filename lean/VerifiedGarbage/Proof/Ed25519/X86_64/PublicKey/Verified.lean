@@ -90,11 +90,16 @@ theorem hash_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) 
   WP.seq (WP.mono (init_step hL hc) fun _ ⟨hc₁, hr₁⟩ =>
     WP.seq (WP.mono (upd_step v hL hc₁ hr₁) fun _ ⟨hc₂, hr₂⟩ => fin_step v hL hc₂ hr₂))
 
-/-- The public key of the seed in `out`. -/
-theorem body_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa (pkBody bs fs v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧
-      Spec.Ed25519.bytesAt t'.mem L.out 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
-  refine WP.seq (WP.mono (hash_ok v hL hc) fun t₁ ⟨hc₁, hh₁⟩ => ?_)
+/-- The public key of `seed` in `out`, after any `hash` that leaves its digest `E` at
+`scratch + 1568`. -/
+theorem bodyFrom_ok (hL : L.Ok) {hash : Prog isa} {t : State} {E seed : List Byte}
+    (hh : WP isa hash t fun t' => Ctx L g mx m₀ t' ∧
+      Spec.Sha512.bytesAt t'.mem (L.scr + BitVec.ofNat 64 1568) 64 = E)
+    (hE : E = Spec.Sha512.sha512 seed) :
+    WP isa (pkBodyFrom hash bs fs) t fun t' => Ctx L g mx m₀ t' ∧
+      Spec.Ed25519.bytesAt t'.mem L.out 32 = Spec.Ed25519.publicKey seed := by
+  subst hE
+  refine WP.seq (WP.mono hh fun t₁ ⟨hc₁, hh₁⟩ => ?_)
   refine WP.seq (WP.mono (baseArgs_ok hc₁) fun t₂ ⟨hc₂, hm₂, ha₂⟩ => ?_)
   refine WP.seq (WP.mono (prune_ok hc₂ ha₂ (hm₂ ▸ hh₁)) fun t₃ ⟨hc₃, _, ha₃, hs⟩ => ?_)
   refine WP.seq (WP.mono (base_ok hL hc₃ ha₃ hs) fun t₃ ⟨hc₃, ho₃⟩ => ?_)
@@ -107,13 +112,19 @@ theorem body_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) 
     exact (hL.stk_OUT (d := 16) (n := 32) (by omega)).symm) (by show (32 : Nat) ≤ 2 ^ 64; decide)
     (List.mem_range.mp hi)
 
+/-- The public key of the seed in `out`. -/
+theorem body_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (pkBody bs fs v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧
+      Spec.Ed25519.bytesAt t'.mem L.out 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32) :=
+  bodyFrom_ok hL (hash_ok v hL hc) rfl
+
 theorem pop_rsp (B : Addr) : B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (8 * 7) = B + BitVec.ofNat 64 72 := by
   rw [add_add]
 
 /-- `vg_ed25519_public_key` meets `pkLocal` and the ABI. -/
 theorem publicKey_ok (v : Compress) {s : State} (h : pkLocal.pre s) :
     WP isa (publicKey bs fs v.callee v.suffix) s fun s' => abiPreserved s s' ∧ pkLocal.post s s' := by
-  have hL := lay_ok h
+  have hL := lay_ok h (Nat.le_refl _)
   have hc := push_ctx h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega)
     (WP.mono (body_ok v hL hc) fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
@@ -124,7 +135,7 @@ theorem publicKey_ok (v : Compress) {s : State} (h : pkLocal.pre s) :
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
     · rw [popped_mem]
-      refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
+      refine hu.frame.readW (r := (lay 32 s).RET) ?_ ?_ (by decide)
       · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
       · intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -132,7 +143,7 @@ theorem publicKey_ok (v : Compress) {s : State} (h : pkLocal.pre s) :
         · exact hL.ro
         · exact hL.rc
         · exact Offset.disjoint_base _ (by omega) (by omega)
-  · show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay s).out 32 = _
+  · show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay 32 s).out 32 = _
     rw [popped_mem, ho]
     rfl
 
@@ -214,13 +225,14 @@ theorem two_call {n : String} {c : Prog isa} {k : Contract isa} {Φ : Lay → St
       k.pre (t.callEntry.withRegions (rd L) (wr L)))
     (hpub : ∀ L t₁ t₂ g₁ g₂ mx₁ mx₂ m₁ m₂, Ctx L g₁ mx₁ m₁ t₁ → Ctx L g₂ mx₂ m₂ t₂ → Φ L t₁ → Φ L t₂ →
       k.pub (t₁.callEntry.withRegions (rd L) (wr L)) (t₂.callEntry.withRegions (rd L) (wr L)))
-    (hsub : ∀ L, ∀ r ∈ rd L ++ wr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R)
+    (hsub : ∀ L, L.Ok → ∀ r ∈ rd L ++ wr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R)
     (hwsub : ∀ L, ∀ r ∈ wr L, Within r L.OUT ∨ Within r L.SCR) :
     RelCT isa (Two Φ) (.call n c) fun _ _ => True :=
   RelCT.callEx hv hct fun _ _ ⟨⟨L, _⟩, hL, c₁, c₂, f₁, f₂⟩ =>
     ⟨rd L, wr L, rd L, wr L, hpre _ _ _ _ _ hL c₁ f₁, hpre _ _ _ _ _ hL c₂ f₂,
-      hpub _ _ _ _ _ _ _ _ _ c₁ c₂ f₁ f₂, (covers c₁ (hsub L) (hwsub L)).1, (covers c₁ (hsub L) (hwsub L)).2,
-      (covers c₂ (hsub L) (hwsub L)).1, (covers c₂ (hsub L) (hwsub L)).2, rsp_two c₁ c₂⟩
+      hpub _ _ _ _ _ _ _ _ _ c₁ c₂ f₁ f₂, (covers c₁ (hsub L hL) (hwsub L)).1,
+      (covers c₁ (hsub L hL) (hwsub L)).2, (covers c₂ (hsub L hL) (hwsub L)).1,
+      (covers c₂ (hsub L hL) (hwsub L)).2, rsp_two c₁ c₂⟩
 
 /-- A block, with what it establishes. -/
 theorem two_blk {is : List Instr} {Φ Ψ : Lay → State → Prop} (rs : List Reg)
@@ -240,11 +252,11 @@ theorem two_callP {n : String} {c : Prog isa} {k : Contract isa} {Φ : Lay → S
       k.pre (t.callEntry.withRegions (rd L) (wr L)))
     (hpub : ∀ L t₁ t₂ g₁ g₂ mx₁ mx₂ m₁ m₂, Ctx L g₁ mx₁ m₁ t₁ → Ctx L g₂ mx₂ m₂ t₂ → Φ L t₁ → Φ L t₂ →
       k.pub (t₁.callEntry.withRegions (rd L) (wr L)) (t₂.callEntry.withRegions (rd L) (wr L)))
-    (hsub : ∀ L, ∀ r ∈ rd L ++ wr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R)
+    (hsub : ∀ L, L.Ok → ∀ r ∈ rd L ++ wr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R)
     (hwsub : ∀ L, ∀ r ∈ wr L, Within r L.OUT ∨ Within r L.SCR) :
     RelCT isa (Two Φ) (.call n c) (Two fun _ _ => True) :=
   two_wp (two_call hv hct rd wr hpre hpub hsub hwsub) fun L _ _ _ _ hL hc hf =>
-    call_ok hL hv hsp hd hc (hpre _ _ _ _ _ hL hc hf) (hsub L) (hwsub L) fun _ hc' _ _ _ => ⟨hc', trivial⟩
+    call_ok hL hv hsp hd hc (hpre _ _ _ _ _ hL hc hf) (hsub L hL) (hwsub L) fun _ hc' _ _ _ => ⟨hc', trivial⟩
 
 theorem rspOnly {Φ : Lay → State → Prop} : ∀ (L : Lay) (t₁ t₂ : State) g₁ g₂ mx₁ mx₂ m₁ m₂,
     Ctx L g₁ mx₁ m₁ t₁ → Ctx L g₂ mx₂ m₂ t₂ → Φ L t₁ → Φ L t₂ → ∀ r ∈ [Reg.rsp], t₁.gpr r = t₂.gpr r := by
@@ -252,9 +264,9 @@ theorem rspOnly {Φ : Lay → State → Prop} : ∀ (L : Lay) (t₁ t₂ : State
   simp only [List.mem_singleton] at hr; subst hr
   exact rsp_two c₁ c₂
 
-/-- The frame's body, for any implementation `v` of the compression function. -/
-theorem body_ct (v : Compress) :
-    RelCT isa (Two fun _ _ => True) (pkBody bs fs v.callee v.suffix) fun _ _ => True := by
+/-- The hash of the seed, for any implementation `v` of the compression function. -/
+theorem hash_ct (v : Compress) :
+    RelCT isa (Two fun _ _ => True) (pkHash v.callee v.suffix) (Two fun _ _ => True) := by
   -- `init`
   have i₁ : RelCT isa (Two fun _ _ => True) (.block pkInitArgs) (Two InitArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
@@ -265,7 +277,7 @@ theorem body_ct (v : Compress) :
     (fun L t₁ t₂ _ _ _ _ _ _ _ _ a₁ a₂ =>
       ((gpr_ce t₁ initRd (initWr L) (by decide)).trans a₁).trans
         ((gpr_ce t₂ initRd (initWr L) (by decide)).trans a₂).symm)
-    (fun _ => init_sub) (fun _ => init_wsub)
+    (fun _ _ => init_sub) (fun _ => init_wsub)
   -- `update`
   have u₁ : RelCT isa (Two fun _ _ => True) (.block pkUpdateArgs) (Two UpdArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
@@ -278,7 +290,7 @@ theorem body_ct (v : Compress) :
       obtain ⟨d₂, s₂, x₂, c₂', r₂⟩ := upd_regs a₂ (updRd L) (updWr L)
       exact ⟨d₁.trans d₂.symm, s₁.trans s₂.symm, x₁.trans x₂.symm, c₁'.trans c₂'.symm,
         r₁.trans r₂.symm, by rw [rsp_ce, rsp_ce, rsp_two c₁ c₂]⟩)
-    (fun _ => upd_sub) (fun _ => upd_wsub)
+    (fun _ hL => upd_sub hL) (fun _ => upd_wsub)
   -- `finalize`
   have f₁ : RelCT isa (Two fun _ _ => True) (.block pkFinalizeArgs) (Two FinArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
@@ -291,7 +303,13 @@ theorem body_ct (v : Compress) :
       obtain ⟨d₂, s₂, x₂, c₂'⟩ := fin_regs a₂ finRd (finWr L)
       exact ⟨d₁.trans d₂.symm, s₁.trans s₂.symm, x₁.trans x₂.symm, c₁'.trans c₂'.symm,
         by rw [rsp_ce, rsp_ce, rsp_two c₁ c₂]⟩)
-    (fun _ => fin_sub) (fun _ => fin_wsub)
+    (fun _ _ => fin_sub) (fun _ => fin_wsub)
+  exact (i₁.seq i₂).seq ((u₁.seq u₂).seq (f₁.seq f₂))
+
+/-- The frame's body after any `hash` whose runs are related. -/
+theorem bodyFrom_ct {Φ : Lay → State → Prop} {hash : Prog isa}
+    (hh : RelCT isa (Two Φ) hash (Two fun _ _ => True)) :
+    RelCT isa (Two Φ) (pkBodyFrom hash bs fs) fun _ _ => True := by
   -- the scalar and the base point
   have b₁ : RelCT isa (Two fun _ _ => True) (.block pkBaseArgs) (Two BaseArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
@@ -311,10 +329,15 @@ theorem body_ct (v : Compress) :
       obtain ⟨d₂, s₂, x₂⟩ := base_regs a₂ (baseRd L) (baseWr L)
       exact ⟨by rw [rsp_ce, rsp_ce, rsp_two c₁ c₂], d₁.trans d₂.symm, s₁.trans s₂.symm, x₁.trans x₂.symm,
         c₁.sym.trans c₂.sym.symm⟩)
-    (fun _ => base_sub) (fun _ => base_wsub)
+    (fun _ _ => base_sub) (fun _ => base_wsub)
   have w : RelCT isa (Two fun _ _ => True) (.block pkWipe) fun _ _ => True :=
     two_block [.rsp] rspOnly (by taint_decide)
-  exact ((i₁.seq i₂).seq ((u₁.seq u₂).seq (f₁.seq f₂))).seq (b₁.seq (b₂.seq (b₃.seq w)))
+  exact hh.seq (b₁.seq (b₂.seq (b₃.seq w)))
+
+/-- The frame's body, for any implementation `v` of the compression function. -/
+theorem body_ct (v : Compress) :
+    RelCT isa (Two fun _ _ => True) (pkBody bs fs v.callee v.suffix) fun _ _ => True :=
+  bodyFrom_ct (hash_ct v)
 
 end VG.Proof.Ed25519.X86_64.PublicKey
 end
@@ -334,13 +357,23 @@ variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 open VG.Proof.Sha512.X86_64 (Compress)
 
-theorem publicKey_ct (v : Compress) :
-    ConstantTime isa pkLocal.pre pkLocal.pub (publicKey bs fs v.callee v.suffix) := by
-  refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1) (RelCT.mono (body_ct v) ?_ fun _ _ _ => trivial))
+variable {n : Nat} {key : State → Prop} {post : State → State → Prop} in
+/-- Derivation after any `hash` whose runs are related, from the frame's push. -/
+theorem bodyFrom_pk_ct (hn : 32 ≤ n) {Φ : Lay → State → Prop} {hash : Prog isa}
+    (hh : RelCT isa (Two Φ) hash (Two fun _ _ => True))
+    (hΦ : ∀ s, (pkLocalWith n key post).pre s → Φ (lay n s) (pushed pushRs s)) :
+    ConstantTime isa (pkLocalWith n key post).pre (pkLocalWith n key post).pub
+      (.frame (.push pushRs) (pkBodyFrom hash bs fs) (.pop .rax 7)) := by
+  refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1)
+    (RelCT.mono (bodyFrom_ct hh) ?_ fun _ _ _ => trivial))
   rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hsp, hdi, hsi, hdx, hsy⟩, rfl, rfl⟩
-  have e : lay s₂ = lay s₁ := by simp only [lay, hsp, hdi, hsi, hdx, hsy]
-  exact ⟨⟨lay s₁, s₁.gpr, s₂.gpr, s₁.mxcsr, s₂.mxcsr, s₁.mem, s₂.mem⟩, lay_ok h₁, push_ctx h₁,
-    e ▸ push_ctx h₂, trivial, trivial⟩
+  have e : lay n s₂ = lay n s₁ := by simp only [lay, hsp, hdi, hsi, hdx, hsy]
+  exact ⟨⟨lay n s₁, s₁.gpr, s₂.gpr, s₁.mxcsr, s₂.mxcsr, s₁.mem, s₂.mem⟩, lay_ok h₁ hn, push_ctx h₁,
+    e ▸ push_ctx h₂, hΦ _ h₁, e ▸ hΦ _ h₂⟩
+
+theorem publicKey_ct (v : Compress) :
+    ConstantTime isa pkLocal.pre pkLocal.pub (publicKey bs fs v.callee v.suffix) :=
+  bodyFrom_pk_ct (Nat.le_refl _) (hash_ct v) fun _ _ => trivial
 
 /-- The shared contract's precondition, from its facts. -/
 theorem pk_spec_pre {s : State} (h72 : 72 ≤ (s.gpr .rsp).toNat)
@@ -386,7 +419,7 @@ theorem implies :
       X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts, Abi.constRegions,
       Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
     obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2⟩ := h
-    refine ⟨h72, ?_, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, hheld, hfit, fun r hr => ?_⟩
+    refine ⟨h72, ?_, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, trivial, hheld, hfit, fun r hr => ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -397,7 +430,8 @@ theorem implies :
   post := by
     intro s s' _ h
     sig_post [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig, Spec.Ed25519.scratchWords,
-      X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts, pkLocal]
+      X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts, pkLocal,
+      pkLocalWith]
     exact h
   pub s₁ s₂ _ _ h := by
     sig_pub [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig, Spec.Ed25519.scratchWords,
@@ -419,7 +453,8 @@ theorem publicKey_spSafe (v : Compress) :
   have hb : bs.all (fun i => !isa.writesSp i) = true := base_spSafe
   have hi : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !isa.writesSp i) = true := by
     decide +kernel
-  simp only [publicKey, pkBody, pkHash, callWith, Code.all, hu, hf, hb, hi, Bool.and_true, Bool.true_and]
+  simp only [publicKey, pkBody, pkBodyFrom, pkHash, callWith, Code.all, hu, hf, hb, hi, Bool.and_true,
+    Bool.true_and]
   decide
 
 end VG.Proof.Ed25519.X86_64.PublicKey
