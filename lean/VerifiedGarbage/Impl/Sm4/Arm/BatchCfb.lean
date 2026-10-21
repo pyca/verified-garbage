@@ -31,7 +31,10 @@ def steps (j : Nat) : Nat → Prog isa
   | n + 1 => .seq (.block [.cmp .r11 (.imm (BitVec.ofNat 32 (j + 1)))])
       (.ite .eq (.block (saveLast j)) (.seq (.block (nextLane j)) (steps (j + 1) n)))
 
-def fill : Prog isa := .seq (.block first) (steps 0 8)
+/-- A self move pads instruction placement in the Thumb hot path. -/
+def pad : List Instr := [movR .r9 .r9]
+
+def fill : Prog isa := .seq (.block pad) (.seq (.block first) (steps 0 8))
 def batch : Prog isa := .seq fill (.seq BatchCtr.crypt BatchCtr.xorGroup)
 def group : Prog isa := .seq BatchCtr.count (.seq batch (.block [.subs .r7 .r7 (.reg .r11)]))
 def dataLoop : Prog isa := .ite .eq (.block []) (.loop group .ne)
