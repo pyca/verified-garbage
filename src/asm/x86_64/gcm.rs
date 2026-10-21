@@ -71004,21 +71004,163 @@ add r10, r10
 add r10, rdi
 mov rax, rdx
 mov rdx, r8
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -71225,14 +71367,83 @@ vpshufd zmm9, zmm9, 78
 vpternlogd zmm10, zmm9, zmm11, 150
 vmovdqu32 ZMMWORD PTR [r11+704], zmm10
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -71330,14 +71541,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -71436,14 +71716,83 @@ vmovdqu32 zmm13, ZMMWORD PTR [rdx+704]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
 216:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -71578,14 +71927,83 @@ vmovdqu32 ZMMWORD PTR [rdx+896], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+960]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+960], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -71719,14 +72137,83 @@ vmovdqu32 ZMMWORD PTR [rdx+1152], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+1216]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+1216], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -71984,14 +72471,83 @@ jmp 27f
 cmp r9, 32
 jb 229f
 231:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -72145,7 +72701,7 @@ jae 231b
 jmp 230f
 229:
 230:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+64]
@@ -72524,13 +73080,86 @@ add r10, r10
 add r10, rdi
 mov rax, rdx
 mov rdx, r8
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 cmp r9, 256
 jb 22f
 vbroadcasti32x4 zmm12, XMMWORD PTR [r11]
@@ -72641,14 +73270,83 @@ vpternlogd zmm10, zmm9, zmm11, 150
 vmovdqu32 ZMMWORD PTR [r11+704], zmm10
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
 24:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -72783,14 +73481,83 @@ vmovdqu32 ZMMWORD PTR [rdx+128], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+192]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+192], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -72924,14 +73691,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -73087,14 +73923,83 @@ jmp 23f
 cmp r9, 16
 jb 217f
 219:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -73248,7 +74153,7 @@ jae 219b
 jmp 218f
 217:
 218:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vpshufb xmm2, xmm2, xmm0
 vmovdqu XMMWORD PTR [rcx], xmm2
@@ -77348,21 +78253,163 @@ add r10, r10
 add r10, r10
 add r10, r10
 add r10, rdi
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -77569,14 +78616,83 @@ vpshufd zmm9, zmm9, 78
 vpternlogd zmm10, zmm9, zmm11, 150
 vmovdqu32 ZMMWORD PTR [r11+704], zmm10
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -77674,14 +78790,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -77780,14 +78965,83 @@ vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+704]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
 216:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -77922,14 +79176,83 @@ vmovdqu32 ZMMWORD PTR [rdx+896], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+960]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+960], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -78063,14 +79386,83 @@ vmovdqu32 ZMMWORD PTR [rdx+1152], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+1216]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+1216], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -78328,14 +79720,83 @@ jmp 27f
 cmp r9, 32
 jb 229f
 231:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
 vpxord zmm3, zmm3, zmm13
 vpxord zmm4, zmm4, zmm13
@@ -78489,7 +79950,7 @@ jae 231b
 jmp 230f
 229:
 230:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+64]
@@ -80983,13 +82444,86 @@ add r10, r10
 add r10, r10
 add r10, r10
 add r10, rdi
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm16, XMMWORD PTR [rdi]
 vbroadcasti32x4 zmm17, XMMWORD PTR [rdi+16]
 vbroadcasti32x4 zmm18, XMMWORD PTR [rdi+32]
@@ -81015,14 +82549,83 @@ jmp 234f
 233:
 234:
 vbroadcasti32x4 zmm31, XMMWORD PTR [r10]
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81140,14 +82743,83 @@ vmovdqu YMMWORD PTR [r11+704], ymm12
 vmovdqu ymm12, YMMWORD PTR [rdi+768]
 vmovdqu YMMWORD PTR [r11+736], ymm12
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81230,14 +82902,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81321,14 +83062,83 @@ vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+704]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
 251:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81448,14 +83258,83 @@ vmovdqu32 ZMMWORD PTR [rdx+896], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+960]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+960], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81574,14 +83453,83 @@ vmovdqu32 ZMMWORD PTR [rdx+1152], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+1216]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+1216], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81824,14 +83772,83 @@ jmp 242f
 cmp r9, 32
 jb 264f
 266:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -81975,14 +83992,83 @@ add r9, rbp
 cmp r9, 32
 jb 271f
 273:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -82121,7 +84207,7 @@ jae 273b
 jmp 272f
 271:
 272:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+64]
@@ -84023,13 +86109,86 @@ add r10, r10
 add r10, rdi
 mov rax, rdx
 mov rdx, r8
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm16, XMMWORD PTR [rdi]
 vbroadcasti32x4 zmm17, XMMWORD PTR [rdi+16]
 vbroadcasti32x4 zmm18, XMMWORD PTR [rdi+32]
@@ -84055,14 +86214,83 @@ jmp 23f
 22:
 23:
 vbroadcasti32x4 zmm31, XMMWORD PTR [r10]
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -84180,14 +86408,83 @@ vmovdqu YMMWORD PTR [r11+704], ymm12
 vmovdqu ymm12, YMMWORD PTR [rdi+768]
 vmovdqu YMMWORD PTR [r11+736], ymm12
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -84270,14 +86567,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -84361,14 +86727,83 @@ vmovdqu32 zmm13, ZMMWORD PTR [rdx+704]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
 220:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -84488,14 +86923,83 @@ vmovdqu32 ZMMWORD PTR [rdx+896], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+960]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+960], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -84614,14 +87118,83 @@ vmovdqu32 ZMMWORD PTR [rdx+1152], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+1216]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+1216], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -84864,14 +87437,83 @@ jmp 211f
 cmp r9, 32
 jb 233f
 235:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -85012,12 +87654,16 @@ jmp 234f
 234:
 cmp r9, 16
 je 240f
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
+vmovdqu XMMWORD PTR [rax], xmm13
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, r9d
+sub r10d, 16
+bswap r10d
+mov DWORD PTR [rax+12], r10d
 mov r10, r9
 sub r10, 16
-vmovq xmm13, r10
-vpaddd xmm13, xmm14, xmm13
-vpshufb xmm13, xmm13, xmm0
-vmovdqu XMMWORD PTR [rax], xmm13
 add r10, r10
 add r10, r10
 add r10, r10
@@ -85031,14 +87677,10 @@ cmp r10, 129
 jb 244f
 cmp r10, 193
 jb 246f
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -85240,12 +87882,9 @@ vextracti128 xmm11, ymm10, 1
 vpxor xmm2, xmm10, xmm11
 jmp 247f
 246:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -85421,10 +88060,8 @@ vpxor xmm2, xmm10, xmm11
 247:
 jmp 245f
 244:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vaesenc zmm3, zmm3, zmm17
@@ -85573,8 +88210,7 @@ vpxor xmm2, xmm10, xmm11
 245:
 jmp 243f
 242:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
 vpxord zmm3, zmm3, zmm16
 vaesenc zmm3, zmm3, zmm17
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
@@ -85699,7 +88335,7 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 jmp 241f
 240:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+64]
@@ -85877,13 +88513,86 @@ add r10, r10
 add r10, rdi
 mov rax, rdx
 mov rdx, r8
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm16, XMMWORD PTR [rdi]
 vbroadcasti32x4 zmm17, XMMWORD PTR [rdi+16]
 vbroadcasti32x4 zmm18, XMMWORD PTR [rdi+32]
@@ -85945,14 +88654,83 @@ vmovdqu ymm12, YMMWORD PTR [rdi+768]
 vmovdqu YMMWORD PTR [r11+736], ymm12
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
 28:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -86072,14 +88850,83 @@ vmovdqu32 ZMMWORD PTR [rdx+128], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+192]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+192], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -86198,14 +89045,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -86346,14 +89262,83 @@ jmp 27f
 cmp r9, 16
 jb 221f
 223:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -86495,12 +89480,16 @@ jmp 222f
 test r9, r9
 je 228f
 add r9, 16
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
+vmovdqu XMMWORD PTR [rax], xmm13
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, r9d
+sub r10d, 16
+bswap r10d
+mov DWORD PTR [rax+12], r10d
 mov r10, r9
 sub r10, 16
-vmovq xmm13, r10
-vpaddd xmm13, xmm14, xmm13
-vpshufb xmm13, xmm13, xmm0
-vmovdqu XMMWORD PTR [rax], xmm13
 add r10, r10
 add r10, r10
 add r10, r10
@@ -86533,14 +89522,10 @@ jmp 241f
 mov r10d, 255
 241:
 237:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -86697,12 +89682,9 @@ jmp 251f
 mov r10d, 255
 251:
 247:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -86832,10 +89814,8 @@ jmp 261f
 mov r10d, 255
 261:
 257:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vaesenc zmm3, zmm3, zmm17
@@ -86937,8 +89917,7 @@ jmp 271f
 mov r10d, 255
 271:
 267:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
 vpxord zmm3, zmm3, zmm16
 vaesenc zmm3, zmm3, zmm17
 kmovw k1, r10d
@@ -86996,7 +89975,7 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 jmp 229f
 228:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vpshufb xmm2, xmm2, xmm0
 vmovdqu XMMWORD PTR [rcx], xmm2
@@ -90804,13 +93783,86 @@ add r10, r10
 add r10, r10
 add r10, r10
 add r10, rdi
-vpaddd ymm13, ymm14, ymm15
-vshufi32x4 zmm14, zmm14, zmm13, 68
-vpaddd ymm15, ymm15, ymm15
-vshufi32x4 zmm15, zmm15, zmm15, 68
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vshufi32x4 zmm1, zmm1, zmm1, 68
 vmovdqa xmm2, xmm2
+vbroadcasti32x4 zmm13, XMMWORD PTR [rax]
+vmovdqu32 ZMMWORD PTR [r11+1024], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1088], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1152], zmm13
+vmovdqu32 ZMMWORD PTR [r11+1216], zmm13
+mov r10d, DWORD PTR [rax+12]
+bswap r10d
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vbroadcasti32x4 zmm16, XMMWORD PTR [rdi]
 vbroadcasti32x4 zmm17, XMMWORD PTR [rdi+16]
 vbroadcasti32x4 zmm18, XMMWORD PTR [rdi+32]
@@ -90836,14 +93888,83 @@ jmp 23f
 22:
 23:
 vbroadcasti32x4 zmm31, XMMWORD PTR [r10]
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -90961,14 +94082,83 @@ vmovdqu YMMWORD PTR [r11+704], ymm12
 vmovdqu ymm12, YMMWORD PTR [rdi+768]
 vmovdqu YMMWORD PTR [r11+736], ymm12
 vmovdqu32 ZMMWORD PTR [r11+832], zmm1
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -91051,14 +94241,83 @@ vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+448]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -91142,14 +94401,83 @@ vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+704]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
 220:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -91269,14 +94597,83 @@ vmovdqu32 ZMMWORD PTR [rdx+896], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+960]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+960], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -91395,14 +94792,83 @@ vmovdqu32 ZMMWORD PTR [rdx+1152], zmm5
 vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+1216]
 vpxord zmm6, zmm6, zmm13
 vmovdqu32 ZMMWORD PTR [rdx+1216], zmm6
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -91645,14 +95111,83 @@ jmp 211f
 cmp r9, 32
 jb 233f
 235:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, 16
+bswap r10d
+mov DWORD PTR [r11+1036], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1052], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1068], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1084], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1100], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1116], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1132], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1148], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1164], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1180], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1196], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1212], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1228], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1244], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1260], r10d
+bswap r10d
+add r10d, 1
+bswap r10d
+mov DWORD PTR [r11+1276], r10d
+bswap r10d
+add r10d, 1
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -91793,12 +95328,16 @@ jmp 234f
 234:
 cmp r9, 16
 je 240f
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
+vmovdqu XMMWORD PTR [rax], xmm13
+mov r10d, DWORD PTR [r11+1036]
+bswap r10d
+add r10d, r9d
+sub r10d, 16
+bswap r10d
+mov DWORD PTR [rax+12], r10d
 mov r10, r9
 sub r10, 16
-vmovq xmm13, r10
-vpaddd xmm13, xmm14, xmm13
-vpshufb xmm13, xmm13, xmm0
-vmovdqu XMMWORD PTR [rax], xmm13
 add r10, r10
 add r10, r10
 add r10, r10
@@ -91812,14 +95351,10 @@ cmp r10, 129
 jb 244f
 cmp r10, 193
 jb 246f
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm6, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
+vmovdqu32 zmm6, ZMMWORD PTR [r11+1216]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -92022,12 +95557,9 @@ vextracti128 xmm11, ymm10, 1
 vpxor xmm2, xmm10, xmm11
 jmp 247f
 246:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm5, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
+vmovdqu32 zmm5, ZMMWORD PTR [r11+1152]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vpxord zmm5, zmm5, zmm16
@@ -92204,10 +95736,8 @@ vpxor xmm2, xmm10, xmm11
 247:
 jmp 245f
 244:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
-vpshufb zmm4, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
+vmovdqu32 zmm4, ZMMWORD PTR [r11+1088]
 vpxord zmm3, zmm3, zmm16
 vpxord zmm4, zmm4, zmm16
 vaesenc zmm3, zmm3, zmm17
@@ -92357,8 +95887,7 @@ vpxor xmm2, xmm10, xmm11
 245:
 jmp 243f
 242:
-vpshufb zmm3, zmm14, zmm0
-vpaddd zmm14, zmm14, zmm15
+vmovdqu32 zmm3, ZMMWORD PTR [r11+1024]
 vpxord zmm3, zmm3, zmm16
 vaesenc zmm3, zmm3, zmm17
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
@@ -92484,7 +96013,7 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 jmp 241f
 240:
-vpshufb xmm13, xmm14, xmm0
+vmovdqu xmm13, XMMWORD PTR [r11+1024]
 vmovdqu XMMWORD PTR [rax], xmm13
 vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+64]
