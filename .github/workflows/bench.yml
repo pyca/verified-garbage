@@ -138,4 +138,21 @@ jobs:
         run: |
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+          mkdir -p results
+          openssl version -a > results/machine.txt
+          cat /proc/cpuinfo >> results/machine.txt
+          for target in armv7-unknown-linux-gnueabihf thumbv7neon-unknown-linux-gnueabihf; do
+            export CARGO_BUILD_TARGET="$target"
+            export PKG_CONFIG_LIBDIR_thumbv7neon_unknown_linux_gnueabihf=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig
+            rustup target add "$target"
+            cargo test --manifest-path head/Cargo.toml --release --test tests 'secp256k1::' > "results/$target-tests.txt" 2>&1
+            python3 head/ci/bench_compare.py base head --modules "$MODULES" --arch arm --rounds 1 --warm-up-time 0.5 --measurement-time 1 --work-dir "bench-$target" --summary "results/$target.md" --openssl
+            cat "results/$target.md" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Save results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comb-screen-results
+          path: results/
+          retention-days: 7
