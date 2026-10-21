@@ -3,13 +3,10 @@ module
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedInit
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedFinish
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateNext
-import VerifiedGarbage.Proof.Rsa.X86.RvWindowExp
 public import VerifiedGarbage.Proof.Rsa.RecoverFused
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedWindow
-import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
-import VerifiedGarbage.Proof.Rsa.X86.RvFusedWindow
 
 /-! One complete fused recovery candidate. -/
 @[expose] public section

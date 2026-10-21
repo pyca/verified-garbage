@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck
+import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Cold
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
+meta import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+meta import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+public import Mathlib.Data.Int.ModEq
 
 /-! Multiplication's loop count and dispatch depend only on the candidate index. -/
 @[expose] public section

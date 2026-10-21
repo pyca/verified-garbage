@@ -3,11 +3,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedSearch
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedRest
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 
-import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 public import VerifiedGarbage.Proof.Rsa.X86.RvLoads
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 
 /-! # Arithmetic preparation supplies the candidate search's public context -/
 

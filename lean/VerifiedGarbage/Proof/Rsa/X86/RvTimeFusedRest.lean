@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSearch
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimePrepare
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedRest
 

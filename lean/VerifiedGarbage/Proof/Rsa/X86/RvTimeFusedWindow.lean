@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedBit
 
 /-! Fused exponent windows have a fixed public count. -/
 @[expose] public section

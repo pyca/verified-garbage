@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedFinish
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedInit
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck
 
 /-! A fused candidate's trace is independent of the exponent and saved root. -/

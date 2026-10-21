@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvRest
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedSearch
-import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 

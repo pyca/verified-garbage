@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontPower
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
+import VerifiedGarbage.Proof.Rsa.X86.RvMontPower
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 
 /-! Multiplication by the public recovery candidate, using modular additions. -/
 @[expose] public section

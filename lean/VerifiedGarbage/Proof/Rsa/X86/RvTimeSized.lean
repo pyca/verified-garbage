@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvPublicFacts
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.TCB.Mem
-import VerifiedGarbage.Proof.Rsa.X86.RvTimePrepare
 
 /-! # Both branches after the modulus check leak only the declared attempt count
 

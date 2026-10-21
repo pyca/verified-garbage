@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 public import VerifiedGarbage.Proof.Rsa.RecoverFused
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.X86.RvMont
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! State tracked by the fused pass. The saved root may be stale when the
 success flag is clear; it is always a bounded Montgomery representation. -/

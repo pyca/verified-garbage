@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Tactic.Conv
 import Mathlib.Data.Nat.Basic
+public import Init.Data.Int.Order
+public import Init.Omega.Constraint
+public import Init.Omega.Int
+public import Init.Omega.LinearCombo
+public import VerifiedGarbage.Spec.Rsa
+public import Aesop.BuiltinRules
+public import Mathlib.Logic.Function.Iterate
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Single-pass binary exponentiation and root detection. A set bit starts
 another possible trailing-zero chain, discarding the previous result. -/

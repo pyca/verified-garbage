@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedScalar
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedScalar
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedMultiply
 import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedMasks
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 
 /-! One binary exponentiation bit and its masked root-search transition. -/
 @[expose] public section

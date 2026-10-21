@@ -1,9 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedMasks
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedMasks
 import VerifiedGarbage.Proof.Rsa.KeyBits32
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+public import Aesop.BuiltinRules
+public import Mathlib.Logic.Function.Iterate
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! Reading a bit of a four-bit window, and restarting the root-search flag. -/
 @[expose] public section

@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Cold
+public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! Bounded multiplication by later public candidates. -/
 @[expose] public section

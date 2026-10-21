@@ -1,13 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedSmall
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedBit
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedBit
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
 import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedMasks
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedMultiply
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedScalar
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck -- shake: keep (public statements name the reducible fusedBefore/fusedAfter aliases)
 
 /-! A fused bit has one constant-time Montgomery square and public candidate arithmetic. -/
 @[expose] public section

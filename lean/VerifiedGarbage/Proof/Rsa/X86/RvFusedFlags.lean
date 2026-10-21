@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! Boolean header operations for the fused recovery pass. -/
 @[expose] public section

@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedMultiply
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedMultiply
 public import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! Taint checks for the call-free pieces of fused recovery. -/
 @[expose] public section

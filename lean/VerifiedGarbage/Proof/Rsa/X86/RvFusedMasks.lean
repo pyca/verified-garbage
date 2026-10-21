@@ -1,7 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import Aesop.BuiltinRules
+public import Mathlib.Logic.Function.Iterate
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! Root detection flags in the fused pass. -/
 @[expose] public section
