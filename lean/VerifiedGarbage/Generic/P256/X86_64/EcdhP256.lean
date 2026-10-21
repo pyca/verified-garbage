@@ -176,7 +176,9 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       doublings in Jacobian coordinates for `a = -3` (with a halving modulo `p` in place of \
       multiplications by small constants) and the addition of the digit's entry, selected in \
       constant time by loading all sixteen entries, " ++
-      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time") ++
+      (if adx then "32 bytes at a time with AVX2, during the previous digit's addition (the loads \
+        spread between its field operations, whose multiplications' latency they fill, and the entry \
+        stored after its masks)" else "16 bytes at a time") ++
       ", and keeping (by masks) the one of the digit's magnitude, its `y` negated by a mask of its \
       sign, by Jacobian addition with the entry's `Z²` and `Z³`, whose exceptional cases (equal \
       or opposite points) do not arise for `d < n`; the sum is kept, by masks, unless the digit \

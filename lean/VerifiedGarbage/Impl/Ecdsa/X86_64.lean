@@ -159,6 +159,10 @@ structure Cfg where
   public lookups (`u` is public) and compares `x mod n` with `r` in
   projective coordinates, without inverting `Z` (which needs `n < p ≤ 2n`). -/
   pubVerify : Bool := false
+  /-- Whether the Jacobian window method of the key exchange selects each
+  digit's entry during the iteration before, where it may
+  (`JacWinCfg.pipeOk`). -/
+  winPipe : Bool := false
   /-- Whether the loops that run the most products modulo `p`, the comb's
   and the joint verifier's, write them out (`Mod.inl`, `MH`) where the
   others call the function computing them. -/

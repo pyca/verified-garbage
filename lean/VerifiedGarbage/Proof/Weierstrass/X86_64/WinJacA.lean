@@ -174,7 +174,7 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   rw [← mul_one_pt Q] at R₁
   refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, U₂⟩ => ?_)
   have O₂ : JTblOne K base s₂ := (show JTblOne K base s₁ from fun m h1 h16 => by
-    rw [m₁]; exact hO1 m h1 h16).loopW hL U₂ hn
+    rw [m₁]; exact hO1 m h1 h16).loopW hL (U₂.mono jwDblW_loopW) hn
   refine WP.seq (WP.mono (jentryA_ok hL hF hpn hone_lt (j := j - 1) (by omega_arith) R₂.fr R₂.tbl O₂ b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.

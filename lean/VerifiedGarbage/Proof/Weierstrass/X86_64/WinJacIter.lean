@@ -5,11 +5,14 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The Jacobian window method on x86-64: an iteration
@@ -44,6 +47,18 @@ structure JInv (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point
     (k < C.n → Q = mul (Window5.winE (k + 16 * Window5.geom K.J) K.J j) P) ∧
     RSt K C base size P s₀ Q s
   rbx : s.gpr .rbx = BitVec.ofNat 64 j
+
+/-- The invariant survives code that keeps the memory and the registers but the
+flags. -/
+theorem JInv.keeps (hL : JacWinLay K size) {C : Curve} {base : Addr} {P : Point C} {s₀ : State} {k j : Nat}
+    {s t : State} (h : JInv K C base size P s₀ k j s) (hk : Keeps [] s t) : JInv K C base size P s₀ k j t := by
+  obtain ⟨Q, hQ, hQe, R⟩ := h.st
+  have m : t.mem = s.mem := hk.2.1
+  have e : ∀ x, tmv C K.M.n base t x = tmv C K.M.n base s x := fun x => by
+    show toM _ _ _ = toM _ _ _; rw [m]
+  refine ⟨⟨Q, hQ, hQe, R.fr.next hL (R.fr.scr.of_keeps hk (by decide)) ((Keeps.regs hk).mono (by simp)) (W := [])
+    (by rw [m]; exact Unch.refl _ _ _) (by simp), fun i h1 hi => (R.tbl i h1 hi).congr fun c _ => by rw [m],
+    fun x hx => by rw [m]; exact R.lt x hx, by rw [e, e, e]; exact R.rep⟩, by rw [hk.1 _ (by simp)]; exact h.rbx⟩
 
 /-- `R`'s and `T`'s slots are apart from what `D = R + T` writes. -/
 theorem cadd_apart (hL : JacWinLay K size) :
@@ -107,27 +122,18 @@ theorem tmv_sel {m0 : Prop} [Decidable m0] {n : Nat} {wz a b c : Nat}
     · have hZ : ¬ Z = 0 := fun e => h (hz.mpr e)
       simp [h0, h, hZ, hc]
 
-/-- An iteration, `1 ≤ j ≤ J`: `R = 32 R + [d_{j-1}]P`. -/
-theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
-    (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
-    (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n)
-    {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
-    (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInv K C base size P s₀ k j s) :
-    WP isa (K.step dbl).inline s fun s' => JInv K C base size P s₀ k (j - 1) s' ∧
-      s'.zf = some (decide (j - 1 = 0)) := by
-  obtain ⟨Q, hQ, hQe, R₀⟩ := hI.st
-  have hn := R₀.fr.scr.nowrap
-  have hJ := hL.J
+/-- What `D = R + T` reads after digit `j - 1`'s entry: `R` and `T`, with `T`'s
+cached powers. -/
+theorem jaddIn (hL : JacWinLay K size) {P : Point C} {base : Addr} {s₀ : State} {k j : Nat} {Q : Point C}
+    {s₂ s₄ : State} (R₂ : RSt K C base size P s₀ (mul 32 Q) s₂)
+    (E₄ : JEnt K C base size P s₀ (k + JacWinCfg.offset K.J) (j - 1) s₂ s₄) :
+    Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
+      K.z2 + 8 * K.M.n] (tmv C K.M.n base s₄) s₄ ∧
+    tmv C K.M.n base s₄ K.z2 = tmv C K.M.n base s₄ K.E.z * tmv C K.M.n base s₄ K.E.z ∧
+    tmv C K.M.n base s₄ (K.z2 + 8 * K.M.n) = tmv C K.M.n base s₄ K.z2 * tmv C K.M.n base s₄ K.E.z := by
+  have hn := R₂.fr.scr.nowrap
   obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
-  rw [JacWinCfg.step]
-  simp only [Code.inline]
-  refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
-  have R₁ := R₀.rbxKeeps hL k₁
-  rw [← mul_one_pt Q] at R₁
-  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
-  refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
-    WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
   have hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
     intro x hx
@@ -165,7 +171,65 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     ⟨E₄.fr.scr, E₄.fr.mod, fun x hx => (V₄ x hx).1, fun x hx => (V₄ x hx).2, fun _ _ => rfl⟩
   have h2 := E₄.z2; have h3 := E₄.z3
   rw [t2, tz] at h2; rw [t3, t2, tz] at h3
-  refine WP.seq (WP.mono (cadd_ok hL hp I₄ (fun x hx => hx) h2 h3) fun s₅ ⟨k₅, E₅, I₅, v₅⟩ => ?_)
+  exact ⟨I₄, h2, h3⟩
+
+/-- After `D = R + T` (by any code that computes it and writes only `D` and the
+temporaries): the masks, from which `R` is a triple of `[winE k' J (j - 1)]P`. -/
+theorem jmaskTail_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
+    (hO : PrimeOrder C) {P : Point C}
+    (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n)
+    {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
+    (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {Q : Point C} (hQ : onCurve C Q = true)
+    (hQe : k < C.n → Q = mul (Window5.winE (k + 16 * Window5.geom K.J) K.J j) P) {s₂ s₄ : State}
+    (R₂ : RSt K C base size P s₀ (mul 32 Q) s₂) (b₂ : s₂.gpr .rbx = BitVec.ofNat 64 (j - 1))
+    (E₄ : JEnt K C base size P s₀ (k + JacWinCfg.offset K.J) (j - 1) s₂ s₄) {s₅ : State}
+    (k₅ : ProgKeep K.M base (rcbW K.S K.D) s₄ s₅) {E₅ : Nat → Fe C}
+    (I₅ : Inv K.M base size C.p (· ∈ jwSlots K) ([K.D.x, K.D.y, K.D.z] ++ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z,
+      K.z2, K.z2 + 8 * K.M.n]) E₅ s₅)
+    (v₅ : (E₅ K.D.x, E₅ K.D.y, E₅ K.D.z) = jacAddF (tmv C K.M.n base s₄ K.R.x) (tmv C K.M.n base s₄ K.R.y)
+      (tmv C K.M.n base s₄ K.R.z) (tmv C K.M.n base s₄ K.E.x) (tmv C K.M.n base s₄ K.E.y)
+      (tmv C K.M.n base s₄ K.E.z)) :
+    WP isa (.block K.masks) s₅ fun s₆ => JInv K C base size P s₀ k (j - 1) s₆ ∧
+      Unch base (jwLoopW K) s₅.mem s₆.mem := by
+  have hn := R₂.fr.scr.nowrap
+  have hJ := hL.J
+  obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
+  obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
+  -- `R` is not written by the entry.
+  have hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
+    intro x hx
+    have hxo : x ∈ jwOther K := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
+    refine E₄.unch.wordsVal (fun w hw => ?_) (by have := hL.le (other_mem hxo); omega)
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
+      exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl
+        · exact hL.ap_oth (i := 0) (j := 6) (by decide) (by decide) (by decide)
+        · exact hL.ap_oth (i := 1) (j := 6) (by decide) (by decide) (by decide)
+        · exact hL.ap_oth (i := 2) (j := 6) (by decide) (by decide) (by decide)
+      · exact hL.lay.tmp x (other_mem hxo)
+  have U₄ : Unch base (jwLoopW K) s₂.mem s₄.mem := E₄.unch.mono (jent_loopW K)
+  -- `D = R + T`.
+  have V₄ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n],
+      x ∈ jwSlots K ∧ wordsVal s₄.mem base x K.M.n < C.p := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ⟨by jw_mem, by rw [hRe _ (by simp)]; exact R₂.lt _ (by simp)⟩
+    · exact ⟨by jw_mem, by rw [hRe _ (by simp)]; exact R₂.lt _ (by simp)⟩
+    · exact ⟨by jw_mem, by rw [hRe _ (by simp)]; exact R₂.lt _ (by simp)⟩
+    · exact ⟨mx, by rw [← tx]; exact E₄.lt 0 (by decide)⟩
+    · exact ⟨my, by rw [← ty]; exact E₄.lt 1 (by decide)⟩
+    · exact ⟨mz, by rw [← tz]; exact E₄.lt 2 (by decide)⟩
+    · exact ⟨m2, by rw [← t2]; exact E₄.lt 3 (by decide)⟩
+    · exact ⟨m3, by rw [← t3]; exact E₄.lt 4 (by decide)⟩
+  have _I₄ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
+      K.z2 + 8 * K.M.n] (tmv C K.M.n base s₄) s₄ :=
+    ⟨E₄.fr.scr, E₄.fr.mod, fun x hx => (V₄ x hx).1, fun x hx => (V₄ x hx).2, fun _ _ => rfl⟩
   have U₅ : Unch base (jwLoopW K) s₄.mem s₅.mem := k₅.loopW (rcbW_loopW (by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> exact other_loopW (by jw_mem)))
@@ -184,7 +248,7 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
       exact cadd_apart hL x hx y hy
     · rw [List.mem_singleton.mp hw]; exact hL.lay.tmp x (V₄ x hv).1
-  refine WP.mono (jmask_ok hL hF (i := j - 1) (by omega) F₅ hb₅) fun s₆ ⟨F₆, U₆, b₆, z₆, w₆⟩ => ?_
+  refine WP.mono (jmask0_ok hL hF (i := j - 1) (by omega) F₅ hb₅) fun s₆ ⟨F₆, U₆, b₆, w₆⟩ => ?_
   rw [offset_eq] at w₆
   have ent := E₄.ent
   rw [offset_eq] at ent
@@ -244,7 +308,7 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
       exact ⟨j1, j2⟩)
   obtain ⟨Q', hQ', hQe', hR⟩ := hR
   refine ⟨⟨⟨Q', hQ', hQe', F₆, ((R₂.tbl.loopW hL U₄ hn (by decide)).loopW hL U₅ hn (by decide)).loopW hL U₆ hn (by decide),
-    fun x hx => ?_, ?_⟩, b₆⟩, z₆⟩
+    fun x hx => ?_, ?_⟩, b₆⟩, U₆⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
     · have w : wordsVal s₆.mem base K.R.x K.M.n = _ := w₆ 0 (by decide)
@@ -267,5 +331,37 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
         · exact (Dv _ (by simp)).2
   · rw [ex, ey, ez]
     exact hR
+
+
+/-- An iteration, `1 ≤ j ≤ J`: `R = 32 R + [d_{j-1}]P`. -/
+theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
+    (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
+    (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n)
+    {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
+    (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInv K C base size P s₀ k j s) :
+    WP isa (K.step dbl).inline s fun s' => JInv K C base size P s₀ k (j - 1) s' ∧
+      s'.zf = some (decide (j - 1 = 0)) := by
+  obtain ⟨Q, hQ, hQe, R₀⟩ := hI.st
+  have hn := R₀.fr.scr.nowrap
+  have hJ := hL.J
+  obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
+  obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
+  rw [JacWinCfg.step]
+  simp only [Code.inline]
+  refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  have R₁ := R₀.rbxKeeps hL k₁
+  rw [← mul_one_pt Q] at R₁
+  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
+    WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
+  have hI₄ := jaddIn hL R₂ E₄
+  refine WP.seq (WP.mono (cadd_ok hL hp hI₄.1 (fun x hx => hx) hI₄.2.1 hI₄.2.2) fun s₅ ⟨k₅, E₅, I₅, v₅⟩ => ?_)
+  rw [show nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
+      selPt K.M.n K.R K.D K.R ++ ([.alu .test .rbx (.reg .rbx)] : List Instr) =
+      K.masks ++ [.alu .test .rbx (.reg .rbx)] by simp only [JacWinCfg.masks, List.append_assoc],
+    WP.block_append_iff]
+  refine WP.mono (jmaskTail_ok hL hp hC hM3 hO hP hP0 hn17 hn64 hF hj1 hjJ hQ hQe R₂ b₂ E₄ k₅ I₅ v₅)
+    fun s₆ ⟨I₆, _⟩ => ?_
+  refine WP.mono (testRbx_ok s₆ (by omega) I₆.rbx) fun t ⟨z₇, k₇⟩ => ⟨I₆.keeps hL k₇, z₇⟩
 
 end VG.Proof.Weierstrass.X86_64

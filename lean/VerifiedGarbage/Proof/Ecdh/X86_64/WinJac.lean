@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacP
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb

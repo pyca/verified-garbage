@@ -205,6 +205,7 @@ def jwinCfg : JacWinCfg where
   J := jwinJ c
   one := c.mont 1
   avx2 := c.MP'.adx
+  pipe := c.winPipe
 
 /-- `d + offset J` and its bits, from the slot of `d`. -/
 def jwinPrep : Prog isa :=

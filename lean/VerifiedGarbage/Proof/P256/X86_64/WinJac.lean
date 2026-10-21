@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacP
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
 import VerifiedGarbage.Spec.Weierstrass.Point
 

@@ -128,14 +128,13 @@ theorem jstep_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (h
 
 /-! ## The masks -/
 
-/-- `D = T` where `R`'s `Z` is zero, and `R = D` unless digit `i` is zero. -/
-theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
+/-- `D = T` where `R`'s `Z` is zero, and `R = D` unless digit `i` is zero
+(`JacWinCfg.masks`). -/
+theorem jmask0_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
     (hF : JacWinFixed K C base s₀ P k) {s : State} {i : Nat} (hi : i < K.J)
     (hf : JFrame K C base size s₀ s) (hb : s.gpr .rbx = BitVec.ofNat 64 i) :
-    WP isa (.block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
-      selPt K.M.n K.R K.D K.R ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))) s fun t =>
+    WP isa (.block K.masks) s fun t =>
       JFrame K C base size s₀ t ∧ Unch base (jwLoopW K) s.mem t.mem ∧ t.gpr .rbx = BitVec.ofNat 64 i ∧
-      t.zf = some (decide (i = 0)) ∧
       ∀ c < 3, wordsVal t.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n =
         if magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0 then
           wordsVal s.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n
@@ -189,7 +188,7 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
     · exact hL.le mx
     · exact hL.le my
     · exact hL.le mz
-  simp only [List.append_assoc]
+  simp only [JacWinCfg.masks, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (nzMask_ok hs hnn (hL.le (by jw_mem : K.R.z ∈ jwSlots K))) fun s₁ ⟨c₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
@@ -219,7 +218,6 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   rw [WP.block_append_iff]
   refine WP.mono (eqMask_ok s₃ (v := 0) (by decide) (by omega) r₃) fun s₄ ⟨c₄, k₄, _⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
-  rw [WP.block_append_iff]
   refine WP.mono (selPtKeep_ok hs₄ (decide (magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0))
     (by rw [c₄]) (o := K.R) (a := K.D) le rr hRD) fun s₅ ⟨rx, ry, rz, k₅, O₅⟩ => ?_
   have m₄ : s₄.mem = s₂.mem := by rw [k₄.2.1, k₃.2.1]
@@ -227,14 +225,11 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   have hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 i := by
     rw [k₅.gpr _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide), hb₂]
-  refine WP.mono (testRbx_ok s₅ (by omega) hb₅) fun t ⟨z₆, k₆⟩ => ?_
-  have m₆ : t.mem = s₅.mem := k₆.2.1
-  have UR : Unch base [(K.R.x, 8 * K.M.n), (K.R.y, 8 * K.M.n), (K.R.z, 8 * K.M.n)] s₂.mem t.mem := by
-    rw [m₆]; exact fun x hx => O₅ x (hx (K.R.x, 8 * K.M.n) (by simp)) (hx (K.R.y, 8 * K.M.n) (by simp))
+  have UR : Unch base [(K.R.x, 8 * K.M.n), (K.R.y, 8 * K.M.n), (K.R.z, 8 * K.M.n)] s₂.mem s₅.mem := by
+    exact fun x hx => O₅ x (hx (K.R.x, 8 * K.M.n) (by simp)) (hx (K.R.y, 8 * K.M.n) (by simp))
       (hx (K.R.z, 8 * K.M.n) (by simp))
-  have F₆ := F₂.next hL (hs₅.of_keeps k₆ (by decide)) (((((Keeps.regs k₃).mono (sub_powClob (by decide))).trans
-    ((Keeps.regs k₄).mono (sub_powClob (by decide)))).trans (k₅.mono (sub_powClob (by decide)))).trans
-    ((Keeps.regs k₆).mono (by simp))) UR (by
+  have F₆ := F₂.next hL hs₅ ((((Keeps.regs k₃).mono (sub_powClob (by decide))).trans
+    ((Keeps.regs k₄).mono (sub_powClob (by decide)))).trans (k₅.mono (sub_powClob (by decide)))) UR (by
       intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl <;> exact mem_jwW_ws (other_ws (by jw_mem)))
   have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
@@ -261,22 +256,48 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
       · exact b64 _ mx
       · exact b64 _ my
       · exact b64 _ mz
-  refine ⟨F₆, (UD.trans UR).mono fun w hw => ?_, by rw [k₆.1 _ (by simp), hb₅], z₆, fun c hc => ?_⟩
+  refine ⟨F₆, (UD.trans UR).mono fun w hw => ?_, hb₅, fun c hc => ?_⟩
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with (rfl | rfl | rfl) | (rfl | rfl | rfl) <;> exact other_loopW (by jw_mem)
   · have : c = 0 ∨ c = 1 ∨ c = 2 := by omega
     rcases this with rfl | rfl | rfl
-    · show wordsVal t.mem base K.R.x K.M.n = _
-      rw [m₆, rx, dx, kR K.R.x (by simp)]
+    · show wordsVal s₅.mem base K.R.x K.M.n = _
+      rw [rx, dx, kR K.R.x (by simp)]
       by_cases h0 : magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0 <;>
         by_cases hz : wordsVal s.mem base K.R.z K.M.n = 0 <;> simp [h0, hz]
-    · show wordsVal t.mem base K.R.y K.M.n = _
-      rw [m₆, ry, dy, kR K.R.y (by simp)]
+    · show wordsVal s₅.mem base K.R.y K.M.n = _
+      rw [ry, dy, kR K.R.y (by simp)]
       by_cases h0 : magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0 <;>
         by_cases hz : wordsVal s.mem base K.R.z K.M.n = 0 <;> simp [h0, hz]
-    · show wordsVal t.mem base K.R.z K.M.n = _
-      rw [m₆, rz, dz, kR K.R.z (by simp)]
+    · show wordsVal s₅.mem base K.R.z K.M.n = _
+      rw [rz, dz, kR K.R.z (by simp)]
       by_cases h0 : magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0 <;>
         by_cases hz : wordsVal s.mem base K.R.z K.M.n = 0 <;> simp [h0, hz]
+
+/-- `jmask0_ok`, then `ZF` for `i = 0` (`JacWinCfg.step`'s last block). -/
+theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
+    (hF : JacWinFixed K C base s₀ P k) {s : State} {i : Nat} (hi : i < K.J)
+    (hf : JFrame K C base size s₀ s) (hb : s.gpr .rbx = BitVec.ofNat 64 i) :
+    WP isa (.block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
+      selPt K.M.n K.R K.D K.R ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))) s fun t =>
+      JFrame K C base size s₀ t ∧ Unch base (jwLoopW K) s.mem t.mem ∧ t.gpr .rbx = BitVec.ofNat 64 i ∧
+      t.zf = some (decide (i = 0)) ∧
+      ∀ c < 3, wordsVal t.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n =
+        if magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0 then
+          wordsVal s.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n
+        else if wordsVal s.mem base K.R.z K.M.n = 0 then
+          wordsVal s.mem base ([K.E.x, K.E.y, K.E.z].getD c 0) K.M.n
+        else wordsVal s.mem base ([K.D.x, K.D.y, K.D.z].getD c 0) K.M.n := by
+  have hJ := hL.J
+  rw [show nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
+      selPt K.M.n K.R K.D K.R ++ ([.alu .test .rbx (.reg .rbx)] : List Instr) =
+      K.masks ++ [.alu .test .rbx (.reg .rbx)] by simp only [JacWinCfg.masks, List.append_assoc],
+    WP.block_append_iff]
+  refine WP.mono (jmask0_ok hL hF hi hf hb) fun s₅ ⟨F₅, U₅, b₅, w₅⟩ => ?_
+  refine WP.mono (testRbx_ok s₅ (by omega) b₅) fun t ⟨z₆, k₆⟩ => ?_
+  have m₆ : t.mem = s₅.mem := k₆.2.1
+  refine ⟨F₅.next hL (F₅.scr.of_keeps k₆ (by decide)) ((Keeps.regs k₆).mono (by simp)) (W := [])
+      (by rw [m₆]; exact Unch.refl _ _ _) (by simp), by rw [m₆]; exact U₅, by rw [k₆.1 _ (by simp), b₅], z₆,
+    fun c hc => by rw [m₆]; exact w₅ c hc⟩
 
 end VG.Proof.Weierstrass.X86_64

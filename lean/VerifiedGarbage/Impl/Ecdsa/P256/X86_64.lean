@@ -18,6 +18,7 @@ def p256 : Cfg where
   comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true, true⟩
   fastN := true
   pubVerify := true
+  winPipe := true
   inverse := some Spec.Weierstrass.Inverse.p256
   checkPoint := some Spec.Weierstrass.CheckPoint.p256
 

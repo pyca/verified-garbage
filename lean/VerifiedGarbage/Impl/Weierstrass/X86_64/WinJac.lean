@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
+public import VerifiedGarbage.Impl.X86_64Scal
 
 /-!
 # Short Weierstrass curves on x86-64: scalar multiplication by 5-bit windows in Jacobian coordinates
@@ -42,6 +43,16 @@ nonzero `R` and digit (the proof's exception argument, for each curve).
 At the end `R = (XZ : Y : Z³)` in projective coordinates, with `Y = 1` where
 `Z = 0` (`TCombCfg.outFix`, `outOps`). Every address and branch depends only
 on `rdi` and the public counter `rbx`.
+
+Where the selection loads 32 bytes at a time and the addition's field
+operations and the masks are scalar code (`pipeOk`), the iterations select
+the next digit's entry while they add (`windowP`): the entry of digit
+`j - 1` is kept in the accumulators, under the mask of its magnitude, in
+parts spread between the field operations of digit `j`'s addition
+(`selChunk`, by `fprogBI` without forwarding), then stored to `T` and its
+`Y` negated after the masks (`finNext`), for the next iteration's addition
+after its doublings, which do not write `T`. The addition's
+multiplications wait on each other; the selection's loads fill their gaps.
 -/
 
 @[expose] public section
@@ -71,6 +82,9 @@ structure JacWinCfg where
   J : Nat
   one : Nat
   avx2 : Bool
+  /-- Whether the iterations select the next digit's entry while they add,
+  where `pipeOk` allows it. -/
+  pipe : Bool := false
 
 namespace JacWinCfg
 
@@ -211,10 +225,94 @@ def first : List Instr :=
     copyPt K.M.n K.R K.E
 
 /-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
-`k + offset J` at `K.bits`. -/
-def window (dbl : Pt → Prog isa) : Prog isa :=
+`k + offset J` at `K.bits`, each iteration selecting its own entry. -/
+def window0 (dbl : Pt → Prog isa) : Prog isa :=
   .seq K.build <| .seq (.block K.first) <| .seq (.loop (K.step dbl) .ne) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
+
+/-! ## Selecting the next digit's entry during the addition -/
+
+/-- The addition's field operations. -/
+def nOps : Nat := K.addOps.length
+
+/-- The entries selected after the addition's operations before `i`. -/
+def chunkLo (i : Nat) : Nat := 16 * i / K.nOps
+
+/-- `rdx = rdi + tbl`, the table's address. -/
+def tblAddr : List Instr := [.mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl))]
+
+/-- Entries `lo + 1 … hi` kept in the accumulators under the mask of the
+magnitude (`selEntryY`). -/
+def selRange (lo hi : Nat) : List Instr :=
+  (List.range (hi - lo)).flatMap fun e => selEntryY K.st K.np32 (qY K.np16) (lo + e + 1)
+
+/-- After the addition's operation `i`: the table's address in `rdx` (the
+operations keep nothing in registers, so each part computes it again), and
+entries `chunkLo i + 1 … chunkLo (i + 1)` into the accumulators. -/
+def selChunk (i : Nat) : List Instr :=
+  if K.chunkLo (i + 1) = K.chunkLo i then [] else K.tblAddr ++ K.selRange (K.chunkLo i) (K.chunkLo (i + 1))
+
+/-- Before digit `j = rbx`'s addition: the magnitude of digit `j - 1`
+(`rbx` decremented around it) broadcast to `ymm13`, one to `ymm12` and the
+counter `ymm14`, and the accumulators cleared (`selPassY`'s start). -/
+def prepNext : List Instr :=
+  [.alu .sub .rbx (.imm 1)] ++ K.tc.digit ++ [.alu .add .rbx (.imm 1)] ++
+  [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
+    .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
+  ((List.range K.np32).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) : List Instr)
+
+/-- The accumulators stored to `T` (`selPassY`'s end). -/
+def storeT : List Instr :=
+  ((List.range K.np32).map (fun c => .vmovdquStore .l256 (sc (K.T + 16 * qY K.np16 c)) (selAcc c)) :
+    List Instr) ++ [.vop .vzeroupper]
+
+/-- After digit `j = rbx`'s masks: digit `j - 1`'s entry, selected into the
+accumulators, stored to `T` and its `Y` negated for a negative digit (`rbx`
+decremented around them); `ZF` for `j = 1`. -/
+def finNext : List Instr :=
+  [.alu .sub .rbx (.imm 1)] ++ (K.storeT ++ K.tc.digit) ++ K.tc.negY ++
+    [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 1)]
+
+/-- `D = T` where `R` is `O`, and `R = D` unless digit `rbx` is zero. -/
+def masks : List Instr :=
+  nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++ selPt K.M.n K.R K.D K.R
+
+/-- Iteration `j = rbx - 1` (`1 ≤ j ≤ J - 2`), digit `j`'s entry in `T`:
+`R = 32 R + [d_j]P`, selecting digit `j - 1`'s entry during the addition
+into `T`; `ZF` for `j = 1`. -/
+def stepP (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <|
+  .seq (K.dbls dbl) <|
+  .seq (.block K.prepNext) <|
+  .seq (fprogBI K.M K.addOps K.selChunk 0) <|
+  .block (K.masks ++ K.finNext)
+
+/-- The last iteration, `j = 0`, its entry in `T`. -/
+def stepLast (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <|
+  .seq (K.dbls dbl) <|
+  .seq (ForwardField.programB K.M K.addOps) <|
+  .block K.masks
+
+/-- `first`, then digit `J - 2`'s entry into `T`, `rbx = J - 1`. -/
+def firstP : List Instr :=
+  K.first ++ [.alu .sub .rbx (.imm 1)] ++ K.tc.digit ++ K.select ++ K.tc.negY ++ [.alu .add .rbx (.imm 1)]
+
+/-- `window0`, selecting each entry during the iteration before. -/
+def windowP (dbl : Pt → Prog isa) : Prog isa :=
+  .seq K.build <| .seq (.block K.firstP) <| .seq (.loop (K.stepP dbl) .ne) <| .seq (K.stepLast dbl) <|
+  .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
+
+/-- Where the iterations may select the next entry while they add: with
+AVX2, three digits or more, and the addition's field operations and the
+masks scalar code. -/
+def pipeOk : Bool :=
+  K.pipe && K.avx2 && decide (3 ≤ K.J) && K.masks.all scalarI && K.addOps.all fun op => scalCode (opProg K.M op)
+
+/-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
+`k + offset J` at `K.bits`. -/
+def window (dbl : Pt → Prog isa) : Prog isa :=
+  if K.pipeOk then K.windowP dbl else K.window0 dbl
 
 end JacWinCfg
 

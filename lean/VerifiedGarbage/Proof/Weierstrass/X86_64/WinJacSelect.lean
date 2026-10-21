@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
@@ -71,6 +72,46 @@ theorem np16_eq {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) :
     (K.np16 = 10 ∨ K.np16 = 15) ∧ K.st = 16 * K.np16 ∧ 2 * K.np16 = 5 * K.M.n := by
   unfold JacWinCfg.np16 JacWinCfg.st
   rcases hL.n46 with h | h <;> rw [h] <;> decide
+
+/-- After a selection's pass into `T`: its five coordinates are entry `a`'s
+of the table at `rdi + tbl` in `s₁`, or zero for `a = 0`. -/
+theorem jsel_post {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s₁ t : State} {base : Addr}
+    (hs₁ : Scr s₁ base size) {a : Nat} (ha : a ≤ 16)
+    (a₂ : ∀ c < K.np16, t.mem.readW (off base (K.T + 16 * c)) 128 =
+      accVal s₁.mem (base + BitVec.ofNat 64 K.tbl) (16 * K.np16) (16 * ·) a 16 c)
+    (O₂ : Outside base K.T (16 * K.np16) s₁.mem t.mem) :
+    (∀ c < 5, wordsVal t.mem base (jg K (80 + c)) K.M.n =
+      if 1 ≤ a then wordsVal s₁.mem base (jg K (5 * (a - 1) + c)) K.M.n else 0) ∧
+    Outside base (jg K 80) (40 * K.M.n) s₁.mem t.mem := by
+  have hn := hs₁.nowrap
+  have hg := hL.grid_le
+  have h6 := hL.n6
+  obtain ⟨hnp, hst, h2n⟩ := np16_eq hL
+  have hT : K.T = jg K 80 := hL.T80
+  refine ⟨fun c hc => ?_, by rw [← hT, show 40 * K.M.n = 16 * K.np16 by omega_arith]; exact O₂⟩
+  have hw := accVal_word (mem := s₁.mem) (mem' := t.mem) (base := base) (n := K.np16) (o := K.T) a₂
+  have hX : ∀ d, word s₁.mem (base + BitVec.ofNat 64 K.tbl) d = word s₁.mem base (K.tbl + d) := fun d => by
+    rw [Mont.word, Mont.word, off, off, Offset.add_add]
+  have hcn := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega_arith)
+  rw [Nat.mul_succ] at hcn
+  have eT : ∀ i, jg K (80 + c) + 8 * i = K.T + 8 * (K.M.n * c + i) := fun i => by
+    rw [hT]; unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega_arith
+  by_cases h1 : 1 ≤ a
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+    refine wordsVal_congr₂ _ _ _ fun i hi => ?_
+    have e := hw (K.M.n * c + i) (by omega_arith)
+    rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩), hX] at e
+    rw [eT, e, ← hst]
+    congr 1; unfold jg JacWinCfg.st
+    rw [show 40 * K.M.n * (a - 1) = 8 * K.M.n * (5 * (a - 1)) by
+      rw [Nat.mul_assoc, Nat.mul_assoc, show 40 = 8 * 5 from rfl, Nat.mul_assoc, Nat.mul_left_comm 5],
+      Nat.mul_add (8 * K.M.n), Nat.mul_assoc 8 K.M.n c]
+    omega_arith
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+    refine wordsVal_zeros fun i hi => ?_
+    have e := hw (K.M.n * c + i) (by omega_arith)
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))] at e
+    rw [eT, e]
 
 /-- The selection: `T`'s five coordinates are entry `a`'s, or zero for `a = 0`. -/
 theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : State} {base : Addr}
@@ -163,33 +204,11 @@ theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : Sta
                 rw [Nat.mul_succ] at this; omega_arith), hst]
             · rfl
         · refine (O₂.mono (Nat.le_refl _) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith))
-  refine WP.mono hpass fun t ⟨a₂, O₂, k₂⟩ => ⟨fun c hc => ?_, ?_, ?_⟩
-  · have hw := accVal_word (mem := s₁.mem) (mem' := t.mem) (base := base) (n := K.np16) (o := K.T) a₂
-    have hX : ∀ d, word s₁.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
-      rw [k₁.2.1, Mont.word, Mont.word, off, off, Offset.add_add]
-    have hcn := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega_arith)
-    rw [Nat.mul_succ] at hcn
-    have eT : ∀ i, jg K (80 + c) + 8 * i = K.T + 8 * (K.M.n * c + i) := fun i => by
-      rw [hT]; unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega_arith
-    by_cases h1 : 1 ≤ a
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
-      refine wordsVal_congr₂ _ _ _ fun i hi => ?_
-      have e := hw (K.M.n * c + i) (by omega_arith)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩), hX] at e
-      rw [eT, e, ← hst]
-      congr 1; unfold jg JacWinCfg.st
-      rw [show 40 * K.M.n * (a - 1) = 8 * K.M.n * (5 * (a - 1)) by
-        rw [Nat.mul_assoc, Nat.mul_assoc, show 40 = 8 * 5 from rfl, Nat.mul_assoc, Nat.mul_left_comm 5],
-        Nat.mul_add (8 * K.M.n), Nat.mul_assoc 8 K.M.n c]
-      omega_arith
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      refine wordsVal_zeros fun i hi => ?_
-      have e := hw (K.M.n * c + i) (by omega_arith)
-      rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))] at e
-      rw [eT, e]
-  · refine ⟨fun r hr => ?_, by rw [k₂.rd, k₁.2.2.1], by rw [k₂.wr, k₁.2.2.2]⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [k₂.gpr r (by simp [hr.1]), k₁.1 r (by simp [hr.2])]
-  · rw [← hT, show 40 * K.M.n = 16 * K.np16 by omega_arith, ← k₁.2.1]; exact O₂
+  refine WP.mono hpass fun t ⟨a₂, O₂, k₂⟩ => ?_
+  obtain ⟨e, O⟩ := jsel_post hL hs₁ ha a₂ O₂
+  refine ⟨fun c hc => by rw [e c hc, k₁.2.1], ?_, by rw [← k₁.2.1]; exact O⟩
+  refine ⟨fun r hr => ?_, by rw [k₂.rd, k₁.2.2.1], by rw [k₂.wr, k₁.2.2.2]⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  rw [k₂.gpr r (by simp [hr.1]), k₁.1 r (by simp [hr.2])]
 
 end VG.Proof.Weierstrass.X86_64

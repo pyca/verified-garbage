@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Framework.Block
 /-!
 # Scalar multiplication by 5-bit windows in Jacobian coordinates on x86-64
 
-`JacWinCfg.window K dbl` (`Impl/Weierstrass/X86_64/WinJac.lean`) leaves `R`
-representing `[k]P` in projective coordinates (`winJac_ok`), for `k < n` on a
+`JacWinCfg.window0 K dbl` (`Impl/Weierstrass/X86_64/WinJac.lean`) leaves `R`
+representing `[k]P` in projective coordinates (`winJac0_ok`), for `k < n` on a
 curve of prime order `n ≡ 17 (mod 32)` (as P-256's), whose bits plus the
 recoding's offset are the table at `K.bits`, with any doubling `dbl` that
 doubles a Jacobian triple in place (`DblOk`): the table `[1 … 16]P` by co-Z
@@ -120,37 +120,21 @@ theorem jfirst_ok (hL : JacWinLay K size) (hC : Law C) {base : Addr} {P : Point 
       exact J
   · rw [k₄.gpr _ (by decide), E₃.keep.gpr _ (rbx_not_clob _), b₁]
 
-/-- `[k]P` into `R`, in projective coordinates, for `k` whose bits plus
-`offset J` are the table at `K.bits`, if `k < n`; only `powClob` and `jwW`
-change. -/
-theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
-    (hM3 : AM3 C) (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
+/-- After the iterations, `R = [k]P` (for `k < n`) in projective coordinates:
+`Y = 1` where `Z = 0`, then `(XZ : Y : Z³)`. -/
+theorem jout_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
-    (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n) {P : Point C} (hP : onCurve C P = true) {k : Nat}
-    (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixed K C base s P k) :
-    WP isa (K.window dbl).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
+    {P : Point C} {k : Nat} {base : Addr} {s s₃ : State} (hF : JacWinFixed K C base s P k)
+    (I₃ : JInv K C base size P s k 0 s₃) :
+    WP isa (.seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps).inline) s₃ fun s' =>
+      KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       (k < C.n → Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y)
         (tmv C K.M.n base s' K.R.z) (mul k P)) := by
-  have hn := hs.nowrap
-  have hJ := hL.J
-  have hP0 : P ≠ .infinity := by
-    intro h
-    have := hF.pt
-    rw [h, hF.pz] at this
-    exact hC.one_ne_zero this.2.2
-  rw [JacWinCfg.window]
-  simp only [Code.inline]
-  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF) fun s₁ ⟨F₁, T₁⟩ => ?_)
-  refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ F₁ T₁) fun s₂ ⟨I₂, _⟩ => ?_)
-  refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
-    (Inv := fun j t => JInv K C base size P s k j t) (n := K.J - 1)
-    (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF h1 (by omega) hi)
-    (fun _ h => h) (by omega) I₂) fun s₃ I₃ => ?_)
   obtain ⟨Q, -, hQe, R₃⟩ := I₃.st
   rw [Window5.winE_zero'] at hQe
+  have hn := R₃.fr.scr.nowrap
   -- `Y = 1` where `Z = 0`.
   have hs₃ := R₃.fr.scr
   have hz₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by rw [R₃.fr.ro hL (by jw_mem)]; exact hF.zero
@@ -233,4 +217,35 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   rw [hy, ex, ez, ← hQe hk]
   exact InvJ.out hC R₃.rep
 
+
+/-- `[k]P` into `R`, in projective coordinates, for `k` whose bits plus
+`offset J` are the table at `K.bits`, if `k < n`; only `powClob` and `jwW`
+change: each iteration selecting its own entry (`window0`). -/
+theorem winJac0_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
+    (hM3 : AM3 C) (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
+    (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
+    (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n) {P : Point C} (hP : onCurve C P = true) {k : Nat}
+    (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixed K C base s P k) :
+    WP isa (K.window0 dbl).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
+      Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
+      (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
+      (k < C.n → Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y)
+        (tmv C K.M.n base s' K.R.z) (mul k P)) := by
+  have hn := hs.nowrap
+  have hJ := hL.J
+  have hP0 : P ≠ .infinity := by
+    intro h
+    have := hF.pt
+    rw [h, hF.pz] at this
+    exact hC.one_ne_zero this.2.2
+  rw [JacWinCfg.window0]
+  simp only [Code.inline]
+  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF) fun s₁ ⟨F₁, T₁⟩ => ?_)
+  refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ F₁ T₁) fun s₂ ⟨I₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
+    (Inv := fun j t => JInv K C base size P s k j t) (n := K.J - 1)
+    (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF h1 (by omega) hi)
+    (fun _ h => h) (by omega) I₂) fun s₃ I₃ => ?_)
+  exact jout_ok hL hp hC hpn hone_lt hone hF I₃
 end VG.Proof.Weierstrass.X86_64
