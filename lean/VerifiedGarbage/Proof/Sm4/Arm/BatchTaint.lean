@@ -54,4 +54,15 @@ theorem prepare_check : ∃ h, (taint.check (Taint.ofRegs [.r4, .r8]) BatchCtr.p
 theorem crypt_check : ∃ h, (taint.check (Taint.ofRegs [.r8]) BatchCtr.crypt h).isSome = true :=
   ⟨_, by taint_decide⟩
 
+theorem groupHead_check : ∃ h, (taint.check (Taint.ofRegs [.r7, .r8])
+    (.seq BatchCtr.count (.seq BatchCtr.fill BatchCtr.crypt)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem groupTail_check : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8, .r11])
+    (.seq BatchCtr.xorGroup (.block [.subs .r7 .r7 (.reg .r11)])) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem proHead_check : ∃ h, (taint.check (argTaint [.r0, .r1, .r2, .r3] 4)
+    (.seq (.block BatchCtr.entry) BatchCtr.prepare) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem nil_check : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome = true := ⟨_, by taint_decide⟩
+
 end VG.Proof.Sm4.Arm.BatchTaint

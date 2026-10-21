@@ -11,8 +11,8 @@
 //! replaces with the counter block to continue from, in constant time: its
 //! timing depends on none of the key, the counter block and the data. It
 //! uses bitsliced SM4 in general-purpose registers, with no table lookups:
-//! sixteen counter blocks at a time on 64-bit targets, and one on 32-bit
-//! targets. This module holds the key schedule and
+//! sixteen counter blocks at a time on 64-bit targets, eight on ARMv7,
+//! and one on x86. This module holds the key schedule and
 //! handles a partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the
 //! last bytes padded to a block XORs them with the first bytes of the next
 //! output block.
