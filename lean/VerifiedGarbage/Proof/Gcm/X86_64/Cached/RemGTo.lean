@@ -40,11 +40,11 @@ open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeY)
 open VG.Impl.Gcm.X86_64.Slot (storeCtr)
 open VG.Impl.Gcm.X86_64.StitchZ (gq lastG)
-open VG.Impl.Gcm.X86_64.StitchZH (ksSelG remSetup tailR)
+open VG.Impl.Gcm.X86_64.StitchZH (ksSelG remSetupM tailR)
 open VG.Impl.Gcm.X86_64.StitchZHTo (remTo)
 open VG.Proof.Gcm.X86_64.StitchZ (GEnv QG gq_ok FinOk yNew)
 open VG.Proof.Gcm.X86_64.StitchZTo (EInvTo dst dst_gpr_ne dst_mem sAddr oAddr ctbT blocks_ctr32To finalTo_ok)
-open VG.Proof.Gcm.X86_64.StitchZH (RemOkG laneAccG laneAccG_congr ksSelG_ok remSetup_ok keys_of cmp16_ok)
+open VG.Proof.Gcm.X86_64.StitchZH (RemOkG laneAccG laneAccG_congr ksSelG_ok remSetupM_ok keys_of cmp16_ok)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame Keys)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
@@ -87,26 +87,27 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
   have hr9 : s.gpr .r9 = BitVec.ofNat 64 (16 + r) := by rw [hI.r9]; congr 1; omega_using [h1e, hr_def, hr1]
   have hrax : s.gpr .rax = cp s₀ := hI.rax
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
-  rw [show remTo = .seq (.block remSetup) (.seq (ksSelG [.alu .add .r8 (.reg .rdx)] .r8) (.block storeY)) from rfl]
+  rw [show remTo = .seq (.block remSetupM) (.seq (ksSelG [.alu .add .r8 (.reg .rdx)] .r8) (.block storeY)) from rfl]
   -- The counter after all the blocks, and the powers of the `r` blocks.
-  refine WP.seq (WP.mono (WP.hkeep (by decide) (remSetup_ok s hr1 hr15 hr9
-    (by rw [← State.zlane_lt2 _ _ (by decide)]; exact hI.a.msk 0 (by decide))
-    (by rw [hrax, hI.a.wr]; exact in_sub_int hp.c_in (by omega_using []))))
-    fun s₁ ⟨⟨m₁, a10₁, ax₁, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
-  have e0 : cp s₀ + BitVec.ofInt 64 ((0 : Nat) : Int) = cp s₀ := by
-    rw [BitVec.ofInt_natCast]; exact BitVec.add_zero _
-  rw [hrax, e0] at m₁
+  refine WP.seq (WP.mono (WP.hkeep (by decide) (remSetupM_ok s (C := cb s₀) (c := 16 * e) hr1 hr15 hr9
+    (by rw [hr11]; exact hI.a.slot)
+    (by rw [hr11, hI.a.rd, hI.a.wr]; exact in_rdwr (in_sub hp.p_in (by decide)))
+    (by rw [hrax, hI.a.wr]; exact hp.c_in)
+    (by rw [hrax, hr11]; exact hp.p_c.symm.sub_right (Gcm.X86_64.StitchZ.slot_sub s₀))))
+    fun s₁ ⟨⟨b₁, fc₁, a10₁, ax₁, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
+  rw [hrax] at b₁ fc₁
+  have fcR : ∀ {R : Region}, Region.Disjoint R (cR s₀) → ∀ r ∈ [(⟨cp s₀, 16⟩ : Region)], Region.Disjoint R r :=
+    fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h
+  have fc₁' : Frame [cR s₀] s.mem s₁.mem := fc₁
   rw [hr11] at ax₁
   have gk₁ : ∀ q, q ≠ .r10 → q ≠ .rax → s₁.gpr q = s.gpr q := g₁
-  have cw : (cR s₀).Contains (cp s₀) (128 / 8) := Region.contains_self _ _
-  have hfr₁ : Frame [oR s₀, pR s₀, cR s₀] s₀.mem s₁.mem := by
-    rw [m₁]
-    exact (hI.a.frame.sub fun r hr => by
+  have hfr₁ : Frame [oR s₀, pR s₀, cR s₀] s₀.mem s₁.mem :=
+    (hI.a.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩).writeW
-      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)) _ cw
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩).trans
+      (fc₁'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)
   have hrdi₁ : s₁.gpr .rdi = kp s₀ := by rw [gk₁ _ (by decide) (by decide)]; exact hI.a.rdi
   have hCache₁ := hCache.keep hh₁ (keys_of hd hrdi₁ (by rw [rd₁]; exact hI.a.rd) (by rw [wr₁]; exact hI.a.wr) hfr₁)
   -- The last group of the output, hashed while the `r` blocks are encrypted.
@@ -118,13 +119,12 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
     { rdx := by rw [gk₁ _ (by decide) (by decide)]
       r11 := by rw [gk₁ _ (by decide) (by decide), hr11, epp]
       xs := fun i _ hi => by
-        rw [show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_using [ha]), m₁,
-          show cp s₀ = (cR s₀).base from rfl,
-          blockAt_writeW_sep' (hp.o_c.sub_left (Offset.sub_base _ (by omega_using [h1e, hle, hi]))) rfl,
+        rw [show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_using [ha]),
+          blockAt_frame fc₁ (fcR (hp.o_c.sub_left (Offset.sub_base _ (by omega_using [h1e, hle, hi])))),
           hI.a.blocks _ (by omega_using [h1e, hi])]
       pv := fun k hk l hl => by
-        rw [epp, m₁, Mem.readW_writeW_sep ((hp.p_c.sub_left (Offset.sub_base _ (by omega_using [hk, hl]))).sep
-          (Region.contains_self _ _) cw) (by decide)]
+        rw [epp, fc₁.readW (Region.contains_self _ _) (fcR (hp.p_c.sub_left (Offset.sub_base _ (by omega_using [hk, hl]))))
+          (by decide)]
         exact hI.pw k hk l hl
       ina := fun k hk => by
         rw [rd₁, wr₁, hI.a.rd, hI.a.wr, BitVec.ofInt_natCast,
@@ -180,9 +180,9 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
            show s.gpr .r8 + (a + 256) = S
            rw [hA]; exact hS,
         fun q h1 h2 => g' q h1 h2, l', m', rd', wr'⟩)
-    hQ10 a10₁ (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.ctr l hl)
-    (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.msk l hl)
-    (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.inc l hl) hrdi₁
+    hQ10 a10₁ (by rw [epp, ecb]; exact hI.a.slot.frame fc₁ (fcR (hp.p_c.sub_left (Gcm.X86_64.StitchZ.slot_sub s₀))))
+    (by rw [gk₁ _ (by decide) (by decide), hr11, epp])
+    (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.msk l hl) hrdi₁
     (by rw [gk₁ _ (by decide) (by decide), dst_gpr_ne s₀ (by decide)]; exact hI.a.rsi)
     (by rw [rd₁]; exact hI.a.rd) (by rw [wr₁]; exact hI.a.wr) hfr₁ hCache₁ hQ₁
     (by rw [gk₁ _ (by decide) (by decide)]; exact hr9) ax₁ (fun _ _ => rfl) (fun _ _ => rfl)
@@ -224,7 +224,7 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
   have hnb : nb s₀ = 16 * e + r := by omega_using [hr_def, hr1]
   -- What the setup keeps of the memory before it.
   have toS : ∀ p : Addr, Region.Disjoint ⟨p, 16⟩ (cR s₀) → blockAt s₁.mem p = blockAt s.mem p := fun p hc => by
-    rw [m₁, show cp s₀ = (cR s₀).base from rfl, blockAt_writeW_sep' hc rfl]
+    exact blockAt_frame fc₁ (fcR hc)
   have cO : ∀ k, k < nb s₀ → Region.Disjoint ⟨oAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
     hp.o_c.sub_left (Offset.sub_base _ (by omega_using [hk]))
   have cS : ∀ k, k < nb s₀ → Region.Disjoint ⟨sAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
@@ -249,8 +249,8 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
     fun j hj => by
       have hm : 16 - r + j < 16 := by omega_using [hr15, hj]
       rw [Offset.add_add, show 256 - 16 * r + 16 * j = 64 * ((16 - r + j) / 4) + 16 * ((16 - r + j) % 4) by omega_using [],
-        m₁, Mem.readW_writeW_sep ((hp.p_c.sub_left (Offset.sub_base _ (by omega_using [hm]))).sep
-            (Region.contains_self _ _) cw) (by decide)]
+        fc₁.readW (Region.contains_self _ _) (fcR (hp.p_c.sub_left (Offset.sub_base _ (by omega_using [hm]))))
+          (by decide)]
       exact hI.pw _ (by omega_using [hm]) _ (by omega_using [])
   have yO : ∀ k < nb s₀, Region.Disjoint ⟨oAddr s₀ k, 16⟩ (yR s₀) := fun k hk =>
     hp.o_y.sub_left (Offset.sub_base _ (by omega_using [hk]))
@@ -262,8 +262,7 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
       blockAt_frame f₂ (fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
         exact hp.o_c.symm.sub_right (Offset.sub_base _ (by show 16 * (16 * e) + 16 * r ≤ 16 * nb s₀; omega_using [hnb]))),
-      m₁, VG.Proof.Gcm.X86_64.blockAt_store, ← State.zlane_lt2 _ _ (by decide), hI.a.ctr 0 (by decide),
-      Nat.add_zero, VG.Proof.Aes.X86_64.AesNi.rep_add, hnb]
+      b₁, hnb]
   · show blockAt s₆.mem (yp s₀) = ghashFrom (hk s₀) (y₀ s₀) (blocksAt s₆.mem (op s₀) (nb s₀))
     have hbl : blocksAt s₆.mem (op s₀) (nb s₀) = (List.range (nb s₀)).map (ctbT s₀) := by
       simp only [blocksAt]
@@ -283,7 +282,7 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
     have F1 : Frame [cR s₀, yR s₀, oR s₀, pR s₀] s.mem s₁.mem := by
-      rw [m₁]; exact (Frame.refl _ _).writeW (by simp) _ cw
+      exact fc₁'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp
     have F2 : Frame [cR s₀, yR s₀, oR s₀, pR s₀] s₁.mem s₂.mem := f₂.sub fun r' hr' => by
       simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨oR s₀, by simp, Offset.sub_base _ (by show 16 * (16 * e) + 16 * r ≤ 16 * nb s₀; omega_using [hnb])⟩
