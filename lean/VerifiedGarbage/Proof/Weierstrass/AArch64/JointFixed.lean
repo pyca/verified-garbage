@@ -42,7 +42,8 @@ theorem jointEntry_work (c : Joint.Cfg) : ∀ x∈[c.K.E.x,c.K.E.y,c.K.E.z],x∈
 theorem jointLookup_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
     {G Q A : Point C} {s : State} (hL : JointFixedLayout c size)
     (h : JointCore c C base size Q u v (JointGenerator c C base size G T) A s)
-    (hj : j<257) (h2 : s.gpr .x2=jointGCell c u j) (h16 : s.gpr .x16=off base (jointGPos c j))
+    (h2 : s.gpr .x2=jointGCell c u j)
+    (h3 : c.gw=9 → s.gpr .x3=(FastNaf.wbyte u (2*j+1)).setWidth 64)
     (hm0 : FastNaf.magnitude c.gw u j≠0) :
     WP isa (.block (Joint.fixedIndex c++Joint.fixedLoad c)) s fun t =>
       ProgKeep c.K.M base [c.K.E.x,c.K.E.y,c.K.E.z] s t ∧
@@ -63,7 +64,6 @@ theorem jointLookup_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {si
   have ha : 1≤a := by dsimp [a]; omega
   have ha32 : a≤jointGRows c := by dsimp [a]; omega
   have he : 2*a-1=FastNaf.magnitude c.gw u j := by dsimp [a]; omega
-  have hgl := hL.layout.stableBounds (c.gBits,jointGLen c) (by simp [jointStableRanges])
   have hnodup := hL.entryNodup
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,or_false,not_or] at hnodup
   have hnot := hL.oneApart
@@ -71,8 +71,7 @@ theorem jointLookup_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {si
   have hout {W : List Nat} (hw : ∀ x∈W,x∈jointSlots c) : ∀ x∈W,x+8*c.K.M.n≤size :=
     fun x hx => hL.layout.lay.le x (hw x hx)
   rw [WP.block_append_iff]
-  refine WP.mono_syms (jointFixedIndex_ok h.field.scr hL.layout.gw hL.gBits hj hgl h2 h16
-    h.stable.generator) fun b ⟨b2,kb⟩ sb => ?_
+  refine WP.mono_syms (jointFixedIndex_ok hL.layout.gw h2 h3) fun b ⟨b2,kb⟩ sb => ?_
   have kpb : ProgKeep c.K.M base [] s b := keeps_prog kb (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [clob])
@@ -93,7 +92,8 @@ theorem jointEntry_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {siz
     {G Q A : Point C} {s : State} (hL : JointFixedLayout c size)
     (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (h : JointCore c C base size Q u v (JointGenerator c C base size G T) A s)
-    (hj : j<257) (h2 : s.gpr .x2=jointGCell c u j) (h16 : s.gpr .x16=off base (jointGPos c j))
+    (hj : j<257) (h2 : s.gpr .x2=jointGCell c u j)
+    (h3 : c.gw=9 → s.gpr .x3=(FastNaf.wbyte u (2*j+1)).setWidth 64)
     (h19 : s.gpr .x19=BitVec.ofNat 64 j)
     (hm0 : FastNaf.magnitude c.gw u j≠0) :
     WP isa (Joint.fixedEntry c) s fun t =>
@@ -111,7 +111,7 @@ theorem jointEntry_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {siz
   have hgl := hL.layout.stableBounds (c.gBits,jointGLen c) (by simp [jointStableRanges])
   rw [Joint.fixedEntry]
   apply WP.seq
-  refine WP.mono_syms (jointLookup_generator_ok hL h hj h2 h16 hm0) fun d ⟨kd,cd,id,jd,zd⟩ sd => ?_
+  refine WP.mono_syms (jointLookup_generator_ok hL h h2 h3 hm0) fun d ⟨kd,cd,id,jd,zd⟩ sd => ?_
   have d19 : d.gpr .x19=BitVec.ofNat 64 j := by
     rw [kd.gpr _ (x19_not_clob _),h19]
   have hzero : tmv C c.K.M.n base d c.K.zero=0 := by

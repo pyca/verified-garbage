@@ -114,11 +114,12 @@ theorem buildStage_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.
       have := this w hw
       change 1824+j+1≤w.1 ∨ w.1+w.2≤1824+j
       omega
-  · rw [un.byte (fun w hw => ?_) (by change 1504+j<2^64; omega)]
+  · change j<514 at hj
+    rw [un.byte (fun w hw => ?_) (by change 2112+j<2^64; omega)]
     · exact h.generator j hj
-    · have : ∀ w∈Proof.P256.VerifyTable.buildW,1768≤w.1 ∨ w.1+w.2≤1504 := by decide
+    · have : ∀ w∈Proof.P256.VerifyTable.buildW,2632≤w.1 ∨ w.1+w.2≤2112 := by decide
       have := this w hw
-      change 1504+j+1≤w.1 ∨ w.1+w.2≤1504+j
+      change 2112+j+1≤w.1 ∨ w.1+w.2≤2112+j
       omega
   · change toM _ _ (wordsVal t.mem base P256Joint.cfg.onep 4)=1
     rw [keep _ (by decide) (by decide)]

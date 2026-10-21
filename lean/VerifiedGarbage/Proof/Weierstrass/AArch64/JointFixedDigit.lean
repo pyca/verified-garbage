@@ -64,11 +64,11 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
   have workBound : ∀ x∈jointWork c,x+8*c.K.M.n≤size := fun x hx => hL.layout.lay.le x (wsl x hx)
   rw [Joint.fixedDigit]
   apply WP.seq
-  refine WP.mono_syms (jointFixedRead_ok h.field.scr (by have := hL.gBits; omega) hj hgl h19
-    h.stable.generator) fun a ⟨a2,a16,ka⟩ sa => ?_
+  refine WP.mono_syms (jointFixedRead_ok h.field.scr hL.gBits hj hgl h19
+    h.stable.generator) fun a ⟨a2,_,a3,ka⟩ sa => ?_
   have kp : ProgKeep c.K.M base (jointWork c) s a := keeps_prog ka (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl <;> simp [clob])
+    rcases hr with rfl | rfl | rfl <;> simp [clob])
   have ea := h.external.keep kp sa workBound h.field.mod.tmp
   have ca := h.of_keeps ka (by decide) ea
   have a19 := (ka.gpr .x19 (by decide)).trans h19
@@ -82,7 +82,7 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
     · rw [bne_iff_ne.mpr (fun he => h0 (hz.mp he)),decide_eq_true h0])
     (fun hn => ?_) (fun hz => ?_)
   · apply WP.seq
-    refine WP.mono (jointEntry_generator_ok hL hm ca hj a2 a16 a19 (of_decide_eq_true hn))
+    refine WP.mono (jointEntry_generator_ok hL hm ca hj a2 a3 a19 (of_decide_eq_true hn))
       fun b ⟨kb,cb,ib,jb,zb⟩ => ?_
     apply WP.seq
     have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by

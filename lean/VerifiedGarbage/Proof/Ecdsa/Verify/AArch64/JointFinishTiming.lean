@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
@@ -57,7 +58,7 @@ theorem jointMixed_checks : JointMixedChecks P256Joint.cfg.K P256Joint.cfg.K.R
   infinity := by jac_field_ct
 
 theorem jointFixed_checks : JointFixedChecks P256Joint.cfg where
-  lookup := VG.Taint.constantTime (A:=taintS [P256Joint.cfg.tsym]) (Taint.ofRegs [.x0,.x2])
+  lookup := VG.Taint.constantTime (A:=taintS [P256Joint.cfg.tsym]) (Taint.ofRegs [.x0,.x2,.x3])
     (fun _ _ _ _ h => h) (by taint_decide)
   sign := by jac_reg_ct [.x0,.x19]
   neg := by jac_field_ct
@@ -65,7 +66,7 @@ theorem jointFixed_checks : JointFixedChecks P256Joint.cfg where
   mixed := jointMixed_checks
   copy := by jac_field_ct
 
-theorem jointGPrep_checks : FastPrepChecks P256Joint.cfg.G (p256.sl U) 7 where
+theorem jointGPrep_checks : FastPrep9Checks P256Joint.cfg.G (p256.sl U) where
   init := by jac_reg_ct [.x0]
   step := by jac_reg_ct [.x0,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x20]
 

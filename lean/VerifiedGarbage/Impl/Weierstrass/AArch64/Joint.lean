@@ -36,16 +36,17 @@ def fixedLoad (c : Cfg) : List Instr :=
   loadWords c.K.E.x 8 ++
   copy 4 c.K.E.z c.onep
 
-/-- The generator's digit `x19`'s byte (its low byte for width nine) in `x2`, `x16` at its digits. -/
+/-- The generator's digit `x19`'s byte in `x2`; for width nine its low byte, and its high byte
+(`0` or `255`, its sign) in `x3`. -/
 def fixedRead (c : Cfg) : List Instr :=
-  if c.gw=9 then [.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19,.ldrb .x2 .x16 c.gBits]
+  if c.gw=9 then
+    [.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19,.ldrb .x2 .x16 c.gBits,.ldrb .x3 .x16 (c.gBits+1)]
   else Naf.digitRead c.G
 
 /-- `x2 = (a + 1) / 2` for the digit's magnitude `a`: for width nine, from its low byte in `x2`
-and its sign in its high byte. -/
+and its high byte in `x3`. -/
 def fixedIndex (c : Cfg) : List Instr :=
-  if c.gw=9 then [.ldrb .x3 .x16 (c.gBits+1),.lsr .x .x3 .x3 7] ++ Naf.digitIndex.drop 1
-  else Naf.digitIndex
+  if c.gw=9 then .lsr .x .x3 .x3 7 :: Naf.digitIndex.drop 1 else Naf.digitIndex
 
 /-- `x3` = the generator's digit `x19`'s sign. -/
 def signRead (c : Cfg) : List Instr :=
