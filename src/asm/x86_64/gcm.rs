@@ -66856,8 +66856,8 @@ vzeroupper
 23:
 jmp 21f
 20:
-test r9, r9
-je 263f
+cmp r9, 2
+jb 263f
 add r11, 127
 and r11, -64
 lea rax, [rip + {VG_GCM_CONSTS}]
@@ -69702,8 +69702,8 @@ vzeroupper
 23:
 jmp 21f
 20:
-test r9, r9
-je 253f
+cmp r9, 2
+jb 253f
 add r11, 127
 and r11, -64
 lea rax, [rip + {VG_GCM_CONSTS}]
