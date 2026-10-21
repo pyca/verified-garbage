@@ -7,6 +7,11 @@ public import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.WordsFrame
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Dsa.X86.PowABI
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Precomputed public RSA at a run-time width, from the values to the result
 
@@ -19,7 +24,7 @@ values `pre` holds (`Post`).
 
 namespace VG.Proof.Bignum.X86.PrecomputedRt
 
-open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt
 open VG.Impl.Bignum.X86.PrecomputedRt VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 open VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.PublicRt VG.Proof.Bignum.X86.PublicContext
 

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Double
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
@@ -20,7 +21,7 @@ precondition (`callee_abi`, `callee_pre`).
 
 namespace VG.Proof.Bignum.X86.PublicRt
 
-open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Spec.Rsa.MontMul (Apart scratchBytes)
 

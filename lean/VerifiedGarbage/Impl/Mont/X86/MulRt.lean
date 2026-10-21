@@ -15,11 +15,14 @@ inverse and the length `8 n` of a number in bytes (`ctl*`), then the
 callee-saved registers, then the accumulator of `2 N + 1` words
 (`N = 2 n` 32-bit words) and the subtraction's temporary of `N` words.
 
-The arithmetic is `Dynamic.mul`'s: coarsely integrated operand scanning,
+Equal public input offsets select a symmetric column square: each off-diagonal
+input product is computed once and doubled, with scalar multiplication and
+SSE2 64-bit accumulators. Unequal offsets use `Dynamic.mul`'s coarsely
+integrated operand scanning,
 row `i` adding `a_i B` and then `q_i M` to the accumulator from word `i` on,
 with `q_i` from `-M⁻¹`, and the conditional subtraction of `M` from the high
 half, selected into the result by a mask. Every address is a pointer that
-moves by a public step, and every branch is on a pointer reaching its end,
+moves by a public step, and every branch depends only on public offsets or loop indices,
 so the timing does not depend on the numbers.
 -/
 
@@ -173,12 +176,106 @@ def select : Prog isa :=
 def restoreRegs : List Instr :=
   ptr .edi argS .eax ++ saveSlots.map fun (r, d) => .mov r (.mem (sc d))
 
-def body : Prog isa :=
+def scalarBody : Prog isa :=
   .seq (.block save) <|
   .seq zeroAcc <|
   .seq rows <|
   .seq subM <|
   .seq (.block mask) <|
   .seq select (.block restoreRegs)
+
+end VG.Impl.Mont.X86.Rt
+
+namespace VG.Impl.Mont.X86.Rt.Square
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Rt
+
+def seqs : List (Prog isa) → Prog isa
+  | [] => .block []
+  | [c] => c
+  | c :: cs => .seq c (seqs cs)
+
+/-! The low and high halves of each scalar product enter independent 64-bit sums.
+The input square uses symmetry; Montgomery reduction scans the same columns. -/
+def accum : List Instr := [
+  .xop (.movd .xmm2 .eax), .xop (.bin .paddq .xmm0 (.xmm2)),
+  .xop (.movd .xmm2 .edx), .xop (.bin .paddq .xmm1 (.xmm2))]
+def prod : List Instr := [.mov .eax (.mem (at_ .ecx 0)),
+  .mov .edx (.mem (at_ .ebp 0)), .mul .edx] ++ accum
+
+def pairLoop : Prog isa := .loop (.block (prod ++ [
+  .alu .add .ecx (.imm 4), .alu .sub .ebp (.imm 4), .alu .cmp .ecx (.reg .ebp)])) .b
+
+def crossBody : Prog isa := seqs [
+  .block (lenTimes .eax 0 ++ [.mov .edx (.reg .esi), .alu .add .edx (.imm 4), .alu .sub .edx (.reg .eax)]),
+  .ite .b (.block [.mov .edx (.imm 0)]) (.block []),
+  .block [.mov .ecx (.mem argWs), .mov .eax (.mem argA), .alu .add .ecx (.reg .eax),
+    .mov .ebp (.reg .ecx), .alu .add .ecx (.reg .edx),
+    .alu .add .ebp (.reg .esi), .alu .sub .ebp (.reg .edx), .alu .cmp .ecx (.reg .ebp)],
+  .ite .b pairLoop (.block []),
+  .block [.xop (.shift .psllq .xmm0 1), .xop (.shift .psllq .xmm1 1),
+    .mov .eax (.reg .esi), .alu .and .eax (.imm 4)],
+  .ite .e (.block ([.mov .eax (.reg .esi), .shift .shr .eax 1,
+    .mov .edx (.mem argWs), .alu .add .eax (.reg .edx), .mov .edx (.mem argA),
+    .alu .add .eax (.reg .edx), .mov .eax (.mem (at_ .eax 0)), .mul .eax] ++ accum)) (.block [])]
+
+def cross : Prog isa := .seq
+  (.block (lenTimes .eax 1 ++ [.alu .sub .eax (.imm 4), .alu .cmp .esi (.reg .eax)]))
+  (.ite .b crossBody (.block []))
+
+def carryIn : List Instr := [
+  .xop (.bin .movdqa .xmm2 (.xmm3)), .xop (.bin .pand .xmm2 (.xmm7)),
+  .xop (.bin .paddq .xmm0 (.xmm2)), .xop (.shift .psrlq .xmm3 32),
+  .xop (.bin .paddq .xmm1 (.xmm3))]
+
+def redLoop : Prog isa := .loop (.block (prod ++ [
+  .alu .add .ecx (.imm 4), .alu .sub .ebp (.imm 4), .alu .cmp .ecx (.reg .ebx)])) .b
+
+def reduction : Prog isa := seqs [
+  .block (lenTimes .ebx 0 ++ [.mov .edx (.reg .esi), .alu .add .edx (.imm 4), .alu .sub .edx (.reg .ebx)]),
+  .ite .b (.block [.mov .edx (.imm 0)]) (.block []),
+  .block [.mov .ecx (.reg .edi), .alu .add .ecx (.imm 52), .alu .add .ecx (.reg .edx),
+    .mov .ebp (.mem argWs), .mov .eax (.mem argM), .alu .add .ebp (.reg .eax),
+    .alu .add .ebp (.reg .esi), .alu .sub .ebp (.reg .edx),
+    .alu .cmp .esi (.reg .ebx)],
+  .ite .b (.block [.mov .ebx (.reg .esi)]) (.block []),
+  .block [.alu .add .ebx (.reg .edi), .alu .add .ebx (.imm 52), .alu .cmp .ecx (.reg .ebx)],
+  .ite .b redLoop (.block []),
+  .block ([.movqStore (sc 20) .xmm0] ++ lenTimes .eax 0 ++ [.alu .cmp .esi (.reg .eax)]),
+  .ite .b
+    (.block (ptr .edx argInv .eax ++ [.mov .edx (.mem (at_ .edx 0)),
+      .mov .eax (.mem (sc 20)), .mul .edx,
+      .mov .ecx (.reg .edi), .alu .add .ecx (.imm 52), .alu .add .ecx (.reg .esi),
+      .store (at_ .ecx 0) .eax, .mov .ebx (.reg .eax)] ++ ptr .ebp argM .edx ++
+      [.mov .eax (.mem (at_ .ebp 0)), .mul .ebx] ++ accum))
+    (.block [.mov .eax (.mem (sc 20)), .mov .ecx (.reg .edi),
+      .alu .add .ecx (.imm 52), .alu .add .ecx (.reg .esi), .store (at_ .ecx 0) .eax])]
+
+def column : Prog isa := seqs [
+  .block [.xop (.bin .pxor .xmm0 (.xmm0)), .xop (.bin .pxor .xmm1 (.xmm1))],
+  cross, .block carryIn, reduction,
+  .block ([.xop (.bin .movdqa .xmm3 (.xmm0)), .xop (.shift .psrlq .xmm3 32),
+    .xop (.bin .paddq .xmm3 (.xmm1)), .alu .add .esi (.imm 4)] ++
+    lenTimes .eax 1 ++ [.alu .cmp .esi (.reg .eax)])]
+
+def columns : Prog isa := seqs [
+  .block [.mov .esi (.imm 0), .xop (.bin .pxor .xmm3 (.xmm3)),
+    .mov .eax (.imm (-1)), .xop (.movd .xmm7 .eax)],
+  .loop column .ne,
+  .block ([.mov .ebp (.reg .edi), .alu .add .ebp (.imm 52), .alu .add .ebp (.reg .esi),
+    .movqStore (at_ .ebp 0) .xmm3] ++ lenTimes .eax 0 ++ [.alu .sub .ebp (.reg .eax)])]
+
+def square : Prog isa := seqs [.block save, columns,
+  subM, .block mask, select, .block restoreRegs]
+
+def dispatch : Prog isa := .seq (.block [.mov .eax (.mem argA), .mov .edx (.mem argB), .alu .cmp .eax (.reg .edx)])
+  (.ite .e square VG.Impl.Mont.X86.Rt.scalarBody)
+
+
+end VG.Impl.Mont.X86.Rt.Square
+
+namespace VG.Impl.Mont.X86.Rt
+
+/-- Equal public input offsets use the symmetric column square. -/
+def body : Prog VG.X86.isa := Square.dispatch
 
 end VG.Impl.Mont.X86.Rt

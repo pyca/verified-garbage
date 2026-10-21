@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -20,7 +21,7 @@ run-time width state their multiplications from it.
 
 namespace VG.Proof.Bignum.X86.RtCall
 
-open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Mont
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (calleeOf setWidth_toNat callee_frame rtPre_of ofs_in ofs_out ofs_eq
   rtBody_noSp rtBody_stackUse)

@@ -13,8 +13,9 @@ namespace VG.Artifacts.RsaMont.X86
 
 def runtime : Artifact :=
   Spec.Rsa.MontMul.mulApi.artifact X86.target {
-    notes := ["Coarsely integrated operand scanning on 32-bit words through pointers into the working \
-      space, each loop counting its bytes down in a register: every public value is in a register or \
+    notes := ["Equal public input offsets select a symmetric product-scanning square with scalar MUL and \
+      SSE2 low/high sums; other products use coarsely integrated operand scanning. Pointers address the working \
+      space; byte counts and pointer comparisons control the loops. Every public value is in a register or \
       computed from the arguments, which are read-only. The callee-saved registers, the rows' multiplier, \
       the product and the subtraction's temporary are in the function's range; the result is selected \
       into `o` by a mask."]
