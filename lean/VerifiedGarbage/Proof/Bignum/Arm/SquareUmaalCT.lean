@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SquareUmaalLoopCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.SquareUmaal
 
-/-! UMAAL diagonal arithmetic is silent and keeps the square's public schedule. -/
+/-! Fused UMAAL diagonal arithmetic keeps a public schedule. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
@@ -19,7 +19,7 @@ section
 variable {base : BitVec 32} {size out a mod M n : Nat} {sp0 : BitVec 32}
 
 theorem sqDiagU_ct :
-    RelCT isa (fun s t => DblReady base size out a mod M n sp0 s ∧ DblReady base size out a mod M n sp0 t) sqDiagU
+    RelCT isa (fun s t => CrossReady base size out a mod M n sp0 (n - 1) s ∧ CrossReady base size out a mod M n sp0 (n - 1) t) sqDiagU
       (fun s t => ProdReady base size out a mod M n sp0 s ∧ ProdReady base size out a mod M n sp0 t) := by
   by_cases valid : 0 < n ∧ n < 2 ^ 32
   ·
@@ -27,12 +27,14 @@ theorem sqDiagU_ct :
       WP.mono (sqDiagPhaseU_ok s h) fun t ⟨ht, rt⟩ => ⟨rt.sp.trans sp, m0, inv, ht⟩
     let P2 := fun s : State => s.gpr .r12 = base + BitVec.ofNat 32 a ∧ s.gpr .lr = BitVec.ofNat 32 n ∧
       s.gpr .r0 = base + BitVec.ofNat 32 (M + 24)
-    have A := sqAnchor_ct (P := DblReady base size out a mod M n sp0)
+    have A := sqAnchor_ct (P := CrossReady base size out a mod M n sp0 (n - 1))
       (fun s ⟨sp, m0, inv, h⟩ => ⟨sp, m0, inv, h.env⟩)
       (fun s t ⟨sp, m0, inv, h⟩ mem rest => ⟨rest.sp.trans sp, m0, inv,
-        ⟨h.env.of_mem mem rest, by rw [mem]; exact h.md, by rw [mem]; exact h.value, by rw [mem]; exact h.top⟩⟩)
-    have B : RelCT isa (fun s t => (DblReady base size out a mod M n sp0 s ∧ s.gpr .r0 = base + BitVec.ofNat 32 M) ∧
-        (DblReady base size out a mod M n sp0 t ∧ t.gpr .r0 = base + BitVec.ofNat 32 M)) (.block sqDiagArgs)
+        ⟨h.env.of_mem mem rest, h.index, by rw [mem]; exact h.md,
+          by rw [mem]; exact h.next, by rw [mem]; exact h.cnt, by rw [mem]; exact h.tptr,
+          by rw [mem]; exact h.value, by rw [mem]; exact h.top⟩⟩)
+    have B : RelCT isa (fun s t => (CrossReady base size out a mod M n sp0 (n - 1) s ∧ s.gpr .r0 = base + BitVec.ofNat 32 M) ∧
+        (CrossReady base size out a mod M n sp0 (n - 1) t ∧ t.gpr .r0 = base + BitVec.ofNat 32 M)) (.block sqDiagArgs)
         (fun s t => P2 s ∧ P2 t) := by
       refine seg sqDiagArgs_cert (fun s t hs ht r hr => ?_) (fun s hs => ?_)
       · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.trans ht.2.symm
@@ -58,7 +60,7 @@ theorem sqBodyU_ct :
     RelCT isa (fun s t => SqStart base size out a mod M n sp0 s ∧ SqStart base size out a mod M n sp0 t)
       sqBodyU (fun _ _ => True) := by
   unfold sqBodyU
-  exact sqInit_ct.seq (crossRows_ct.seq (sqDouble_ct.seq (sqDiagU_ct.seq (sqReduce_ct.seq sqFinish_ct))))
+  exact sqInit_ct.seq (crossRows_ct.seq (sqDiagU_ct.seq (sqReduce_ct.seq sqFinish_ct)))
 
 end
 

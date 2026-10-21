@@ -38,6 +38,12 @@ private theorem keepPublic {code : Prog isa}
   rw [keepRegs keep noCalls e1 r hr, keepRegs keep noCalls e2 r hr]
   exact h r hr
 
+private theorem squareMacU_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block squareMacU) := by
+  refine ConstantTime.of_silent fun s tr t _ h => ?_
+  rw [Exec.block_iff] at h
+  cases h
+  rfl
+
 private theorem diagStepU_public : RelCT isa DiagPublic diagStepU DiagPublic := by
   unfold diagStepU
   apply RelCT.seq
@@ -48,7 +54,7 @@ private theorem diagStepU_public : RelCT isa DiagPublic diagStepU DiagPublic := 
   apply RelCT.seq
   · apply keepPublic (by decide +kernel) rfl
     intro s t tr1 tr2 u v _ e1 e2
-    exact ⟨macU_ct s t tr1 tr2 u v trivial trivial trivial e1 e2, trivial⟩
+    exact ⟨squareMacU_ct s t tr1 tr2 u v trivial trivial trivial e1 e2, trivial⟩
   · apply keepPublic (by decide +kernel) rfl
     apply RelCT.taint (A := taint) (Taint.ofRegs pubRegs) _ (by taint_decide)
     intro s t h

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
 import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
 import VerifiedGarbage.Proof.Framework.Block
 
-/-! The specialized UMAAL diagonal preserves the shared square invariant. -/
+/-! The fused UMAAL diagonal establishes the shared square product invariant. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
@@ -34,17 +34,14 @@ theorem sqBodyU_ok (s : State) (h : SqEnv s.mem base size out a mod M n inv s)
   refine WP.mono (crossRows_ok s1 h1) ?_
   rintro s2 ⟨h2, r2⟩
   rw [WP.seq_iff]
-  refine WP.mono (sqDouble_ok s2 h2) ?_
-  rintro s3 ⟨h3, r3⟩
-  rw [WP.seq_iff]
-  refine WP.mono (sqDiagPhaseU_ok s3 h3) ?_
+  refine WP.mono (sqDiagPhaseU_ok s2 h2) ?_
   rintro s4 ⟨h4, r4⟩
   rw [WP.seq_iff]
   refine WP.mono (sqReduce_ok s4 h4) ?_
   rintro s5 ⟨h5, r5⟩
   refine WP.mono (sqFinish_ok s5 h5) ?_
   rintro t ⟨lt, value, outs, r6⟩
-  refine ⟨lt, value, ?_, r1.trans (r2.trans (r3.trans (r4.trans (r5.trans r6))))⟩
+  refine ⟨lt, value, ?_, r1.trans (r2.trans (r4.trans (r5.trans r6)))⟩
   exact (h5.env.frame.mono (by simp)).trans outs
 
 end

@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareDiag
 public import VerifiedGarbage.Impl.Bignum.Arm.SquareUmaal
-import VerifiedGarbage.Proof.Bignum.Arm.MacUmaal
+import VerifiedGarbage.Proof.Bignum.Arm.SquareFusedStep
 import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
-/-! # UMAAL diagonal products preserve the existing squaring invariant -/
+/-! # Fused doubling and UMAAL diagonal products -/
 
 @[expose] public section
 
@@ -17,108 +17,25 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_str wp_dp wp_mov wp_subs op2_imm op2_reg dpVal ofNat_beq_zero)
 
-theorem diagStepU_ok (s : State) {base : BitVec 32} {size A T : Nat} (ws : Workspace s base size)
-    (fitA : A + 4 ≤ size) (fitT : T + 8 ≤ size)
-    (p12 : s.gpr .r12 = base + BitVec.ofNat 32 A) (p0 : s.gpr .r0 = base + BitVec.ofNat 32 T) :
-    WP isa diagStepU s fun t =>
-      w32 t.mem (State.addr base) T + 2 ^ 32 * w32 t.mem (State.addr base) (T + 4) +
-          2 ^ 64 * (t.gpr .r11).toNat =
-        w32 s.mem (State.addr base) A * w32 s.mem (State.addr base) A + w32 s.mem (State.addr base) T +
-          2 ^ 32 * w32 s.mem (State.addr base) (T + 4) + (s.gpr .r11).toNat ∧
-      Outside (State.addr base) T 8 s.mem t.mem ∧ t.gpr .r0 = s.gpr .r0 ∧ t.gpr .r12 = s.gpr .r12 ∧
-      t.gpr .lr = s.gpr .lr ∧ Rest roundClobbers s t := by
-  have nowrap := ws.nowrap
-  rw [diagStepU, WP.seq_iff]
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p12 (imm := 0) (by omega))
-    (ws.read fitA) fun s1 u1 => ?_
-  refine wp_mov (op2_reg _ _) fun s2 u2 => ?_
-  refine wp_ldr (a := off (State.addr base) T) (by decide) (by
-      rw [u2.other .r0 (by decide), u1.other .r0 (by decide)]
-      simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega))
-    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega)) fun s3 u3 => WP.block_nil ?_
-  rw [WP.seq_iff]
-  refine WP.mono (macU_ok s3) ?_
-  rintro s4 ⟨mac4, f4⟩
-  have q0 : s4.gpr .r0 = s.gpr .r0 := by
-    rw [f4.regs .r0 (by simp [clobbers]), u3.other .r0 (by decide), u2.other .r0 (by decide),
-      u1.other .r0 (by decide)]
-  have mem4 : s4.mem = s.mem := by rw [f4.mem, u3.mem, u2.mem, u1.mem]
-  have wr4 : s4.wr = s.wr := by rw [f4.wr, u3.wr, u2.wr, u1.wr]
-  have rd4 : s4.rd = s.rd := by rw [f4.rd, u3.rd, u2.rd, u1.rd]
-  have ea0 : State.addr (s4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr base) T := by
-    rw [q0]; simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega)
-  have ea4 {u : State} (hu : u.gpr .r0 = s.gpr .r0) :
-      State.addr (u.gpr .r0 + BitVec.ofNat 32 4) = off (State.addr base) (T + 4) := by
-    rw [hu]; exact sq_ea nowrap p0 (by omega)
-  refine wp_str (by decide) ea0 (by rw [wr4]; exact ws.write (by omega)) fun s5 u5 => ?_
-  refine wp_ldr (by decide) (ea4 (by rw [u5.gpr, q0])) (by rw [u5.rd, u5.wr, rd4, wr4]; exact ws.read (by omega))
-    fun s6 u6 => ?_
-  refine wp_adds (op2_reg _ _) fun s7 u7 c7 => ?_
-  refine wp_mov_c (op2_imm (by decide)) fun s8 u8 c8 => ?_
-  refine wp_adc (op2_imm (by decide)) fun s9 u9 _ => ?_
-  refine wp_str (by decide) (ea4 (by rw [u9.other .r0 (by decide), u8.other .r0 (by decide),
-      u7.other .r0 (by decide), u6.other .r0 (by decide), u5.gpr, q0]))
-    (by rw [u9.wr, u8.wr, u7.wr, u6.wr, u5.wr, wr4]; exact ws.write (by omega)) fun t u10 => WP.block_nil ?_
-  -- Values.
-  have x : s3.gpr .r10 = s.mem.readW (off (State.addr base) T) 32 := by rw [u3.gpr, u2.mem, u1.mem]
-  have w1 : s3.gpr .r1 = s.mem.readW (off (State.addr base) A) 32 := by
-    rw [u3.other .r1 (by decide), u2.other .r1 (by decide), u1.gpr]
-  have w2 : s3.gpr .r2 = s.mem.readW (off (State.addr base) A) 32 := by
-    rw [u3.other .r2 (by decide), u2.gpr, u1.gpr]
-  have y : s6.gpr .r10 = s.mem.readW (off (State.addr base) (T + 4)) 32 := by
-    rw [u6.gpr, u5.mem, mem4, rd_other _ (by omega) (by omega) (by omega)]
-  have lo : s9.gpr .r3 = s4.gpr .r3 := by
-    rw [u9.other .r3 (by decide), u8.other .r3 (by decide), u7.other .r3 (by decide),
-      u6.other .r3 (by decide), u5.gpr]
-  have hi : s9.gpr .r4 = s4.gpr .r4 + s.mem.readW (off (State.addr base) (T + 4)) 32 := by
-    rw [u9.other .r4 (by decide), u8.other .r4 (by decide), u7.gpr, u6.other .r4 (by decide), u5.gpr, y]
-  have c1 : (s9.gpr .r11).toNat = (if 2 ^ 32 ≤ (s4.gpr .r4).toNat +
-      (s.mem.readW (off (State.addr base) (T + 4)) 32).toNat then 1 else 0) := by
-    rw [u9.gpr, c8, c7, u8.gpr, u6.other .r4 (by decide), u5.gpr, y]
-    by_cases hc : 2 ^ 32 ≤ (s4.gpr .r4).toNat + (s.mem.readW (off (State.addr base) (T + 4)) 32).toNat <;>
-      simp only [hc, decide_true, decide_false, ↓reduceIte] <;> rfl
-  have memT : t.mem = (s.mem.writeW (off (State.addr base) T) (s4.gpr .r3)).writeW
-      (off (State.addr base) (T + 4)) (s4.gpr .r4 + s.mem.readW (off (State.addr base) (T + 4)) 32) := by
-    rw [u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, mem4, hi]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [w32]
-    rw [u10.gpr, c1, memT, rd_other (d := T + 4) (e := T) _ (by omega) (by omega) (by omega), rd_self, rd_self]
-    have ac := add_carry (s4.gpr .r4) (s.mem.readW (off (State.addr base) (T + 4)) 32)
-    rw [x, w1, w2] at mac4
-    change _ = (s.mem.readW (off (State.addr base) A) 32).toNat * (s.mem.readW (off (State.addr base) A) 32).toNat +
-      (s.mem.readW (off (State.addr base) T) 32).toNat + 2 ^ 32 * (s.mem.readW (off (State.addr base) (T + 4)) 32).toNat +
-      (s.gpr .r11).toNat
-    rw [u3.other .r11 (by decide), u2.other .r11 (by decide), u1.other .r11 (by decide)] at mac4
-    generalize (s4.gpr .r4 + s.mem.readW (off (State.addr base) (T + 4)) 32).toNat = h4 at *
-    generalize (if 2 ^ 32 ≤ (s4.gpr .r4).toNat + (s.mem.readW (off (State.addr base) (T + 4)) 32).toNat
-      then 1 else 0) = cc at *
-    omega
-  · rw [memT]
-    exact ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
-  · rw [u10.gpr, u9.other .r0 (by decide), u8.other .r0 (by decide), u7.other .r0 (by decide),
-      u6.other .r0 (by decide), u5.gpr, q0]
-  · rw [u10.gpr, u9.other .r12 (by decide), u8.other .r12 (by decide), u7.other .r12 (by decide),
-      u6.other .r12 (by decide), u5.gpr, f4.regs .r12 (by simp [clobbers]), u3.other .r12 (by decide),
-      u2.other .r12 (by decide), u1.other .r12 (by decide)]
-  · rw [u10.gpr, u9.other .lr (by decide), u8.other .lr (by decide), u7.other .lr (by decide),
-      u6.other .lr (by decide), u5.gpr, f4.regs .lr (by simp [clobbers]), u3.other .lr (by decide),
-      u2.other .lr (by decide), u1.other .lr (by decide)]
-  · have k4 : Rest roundClobbers s3 s4 := ⟨fun r hr => f4.regs r (by intro h; apply hr; cases r <;> simp_all [clobbers]),
-      f4.rd, f4.wr, f4.sp⟩
-    exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (k4.trans
-      ((u5.rest _).trans ((u6.rest (by simp)).trans ((u7.rest (by simp)).trans ((u8.rest (by simp)).trans
-      ((u9.rest (by simp)).trans (u10.rest _)))))))))
+structure FusedDiagLoopInv (s0 : State) (base : BitVec 32) (T A n i : Nat) (s : State) : Prop where
+  index : i ≤ n
+  ptr : s.gpr .r0 = base + BitVec.ofNat 32 (T + 8 * i)
+  aptr : s.gpr .r12 = base + BitVec.ofNat 32 (A + 4 * i)
+  count : s.gpr .lr = BitVec.ofNat 32 (n - i)
+  outside : Outside (State.addr base) T (8 * i) s0.mem s.mem
+  value : val32 s.mem (State.addr base) T (2 * i) + 2 ^ (64 * i) * (s.gpr .r11).toNat =
+    2 * val32 s0.mem (State.addr base) T (2 * i) + diagSum s0.mem (State.addr base) A i + (s0.gpr .r11).toNat
+  rest : Rest roundClobbers s0 s
 
 theorem diagLoopBodyU_ok {s0 s : State} {base : BitVec 32} {size T A n i : Nat}
-    (ctx : DiagCtx s0 base size T A n) (inv : DiagLoopInv s0 base T A n i s) (hi : i < n) :
-    WP isa (.seq diagStepU (.block diagAdvance)) s fun t => DiagLoopInv s0 base T A n (i + 1) t ∧
+    (ctx : DiagCtx s0 base size T A n) (inv : FusedDiagLoopInv s0 base T A n i s) (hi : i < n) :
+    WP isa (.seq diagStepU (.block diagAdvance)) s fun t => FusedDiagLoopInv s0 base T A n (i + 1) t ∧
       t.z = decide (i + 1 = n) := by
   have nowrap := ctx.workspace.nowrap
   have := ctx.tFits; have := ctx.aFits; have := ctx.sep
   have ws := ctx.workspace.congr inv.rest.wr
   rw [WP.seq_iff]
-  refine WP.mono (diagStepU_ok s (A := A + 4 * i) (T := T + 8 * i) ws (by omega) (by omega) inv.aptr inv.ptr) ?_
+  refine WP.mono (fusedDiagStep_ok s (A := A + 4 * i) (T := T + 8 * i) ws (by omega) (by omega) inv.aptr inv.ptr) ?_
   rintro s1 ⟨v1, o1, p0, p12, plr, r1⟩
   refine WP.mono (diagAdvance_ok s1) ?_
   rintro t ⟨q0, q12, qlr, z, mem, r2⟩
@@ -162,8 +79,8 @@ theorem diagLoopU_ok (s : State) {base : BitVec 32} {size T A n : Nat}
     (ctx : DiagCtx s base size T A n) (hn : 0 < n)
     (p0 : s.gpr .r0 = base + BitVec.ofNat 32 T) (p12 : s.gpr .r12 = base + BitVec.ofNat 32 A)
     (plr : s.gpr .lr = BitVec.ofNat 32 n) :
-    WP isa diagLoopU s (DiagLoopInv s base T A n n) := by
-  let loopInv := fun k t => ∃ i, i + k = n ∧ 0 < k ∧ DiagLoopInv s base T A n i t
+    WP isa diagLoopU s (FusedDiagLoopInv s base T A n n) := by
+  let loopInv := fun k t => ∃ i, i + k = n ∧ 0 < k ∧ FusedDiagLoopInv s base T A n i t
   unfold diagLoopU
   refine WP.loop (M := isa) loopInv ?_ n s ?_
   · intro k t h
@@ -189,11 +106,21 @@ theorem diagLoopU_ok (s : State) {base : BitVec 32} {size T A n : Nat}
 section
 variable {m0 : Mem} {base : BitVec 32} {size out a mod M n : Nat} {inv : BitVec 32}
 
-theorem sqDiagPhaseU_ok (s : State) (h : DblInv m0 base size out a mod M n inv s) :
+theorem sqDiagPhaseU_ok (s : State) (h : CrossInv m0 base size out a mod M n inv (n - 1) s) :
     WP isa sqDiagU s fun t => ProdInv m0 base size out a mod M n inv t ∧ Rest roundClobbers s t := by
   have env := h.env
   have nowrap := env.nowrap
   have := env.fits; have := env.count; have := env.header; have := env.sepA; have := env.aFits
+  have topS : val32 s.mem (State.addr base) (M + 24 + 8 * n) 2 = 0 := by
+    have z := h.top
+    rw [show n - 1 + n = 2 * n - 1 by omega, show n + 2 - (n - 1) = 1 + 2 by omega] at z
+    have z' := val32_zero_tail z
+    rwa [show M + 24 + 4 * (2 * n - 1) + 4 * 1 = M + 24 + 8 * n by omega] at z'
+  have lowS : val32 s.mem (State.addr base) (M + 24) (2 * n) = sqCross m0 (State.addr base) a n (n - 1) := by
+    have v := h.value
+    rw [val32_append s.mem (State.addr base) (M + 24) (2 * n) 2,
+      show M + 24 + 4 * (2 * n) = M + 24 + 8 * n by omega, topS, Nat.mul_zero, Nat.add_zero] at v
+    exact v
   rw [sqDiagU, WP.seq_iff]
   refine WP.mono (sqAnchor_ok s env) ?_
   rintro s1 ⟨p1, m1, r1⟩
@@ -212,7 +139,7 @@ theorem sqDiagPhaseU_ok (s : State) (h : DblInv m0 base size out a mod M n inv s
   have dg : diagSum s2.mem (State.addr base) a n = diagSum m0 (State.addr base) a n :=
     sqDiag_congr fun j hj => e2.aWord hj
   have v := di.value
-  rw [p11, dg, ms, h.value] at v
+  rw [p11, dg, ms, lowS] at v
   rw [show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero] at v
   have sq := sq_eq m0 (State.addr base) a n
   rw [sqCross_last m0 (State.addr base) a n (by omega)] at sq
@@ -231,7 +158,7 @@ theorem sqDiagPhaseU_ok (s : State) (h : DblInv m0 base size out a mod M n inv s
   · rw [c0, Nat.mul_zero, Nat.add_zero] at v
     rw [show 2 * n = 2 * n from rfl, v]
     omega
-  · rw [di.outside.val32 (by omega) (by omega), ms]; exact h.top
+  · rw [di.outside.val32 (by omega) (by omega), ms]; exact topS
   · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans di.rest)
 
 end
