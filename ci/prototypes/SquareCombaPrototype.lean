@@ -13,7 +13,7 @@ def prod : List Instr := [.mov .eax (.mem (at_ .ecx 0)),
 def pairLoop : Prog isa := .loop (.block (prod ++ [
   .alu .add .ecx (.imm 4), .alu .sub .ebp (.imm 4), .alu .cmp .ecx (.reg .ebp)])) .b
 
-def cross : Prog isa := seqs [
+def crossBody : Prog isa := seqs [
   .block (lenTimes .eax 0 ++ [.mov .edx (.reg .esi), .alu .add .edx (.imm 4), .alu .sub .edx (.reg .eax)]),
   .ite .b (.block [.mov .edx (.imm 0)]) (.block []),
   .block [.mov .ecx (.mem argWs), .mov .eax (.mem argA), .alu .add .ecx (.reg .eax),
@@ -25,6 +25,10 @@ def cross : Prog isa := seqs [
   .ite .e (.block ([.mov .eax (.reg .esi), .shift .shr .eax 1,
     .mov .edx (.mem argWs), .alu .add .eax (.reg .edx), .mov .edx (.mem argA),
     .alu .add .eax (.reg .edx), .mov .eax (.mem (at_ .eax 0)), .mul .eax] ++ accum)) (.block [])]
+
+def cross : Prog isa := .seq
+  (.block (lenTimes .eax 1 ++ [.alu .sub .eax (.imm 4), .alu .cmp .esi (.reg .eax)]))
+  (.ite .b crossBody (.block []))
 
 def carryIn : List Instr := [
   .mop (.movq .mm2 (.reg .mm3)), .mop (.bin .pand .mm2 (.reg .mm7)),
@@ -91,7 +95,7 @@ def prod : List Instr := [.mov .eax (.mem (at_ .ecx 0)),
 def pairLoop : Prog isa := .loop (.block (prod ++ [
   .alu .add .ecx (.imm 4), .alu .sub .ebp (.imm 4), .alu .cmp .ecx (.reg .ebp)])) .b
 
-def cross : Prog isa := seqs [
+def crossBody : Prog isa := seqs [
   .block (lenTimes .eax 0 ++ [.mov .edx (.reg .esi), .alu .add .edx (.imm 4), .alu .sub .edx (.reg .eax)]),
   .ite .b (.block [.mov .edx (.imm 0)]) (.block []),
   .block [.mov .ecx (.mem argWs), .mov .eax (.mem argA), .alu .add .ecx (.reg .eax),
@@ -103,6 +107,10 @@ def cross : Prog isa := seqs [
   .ite .e (.block ([.mov .eax (.reg .esi), .shift .shr .eax 1,
     .mov .edx (.mem argWs), .alu .add .eax (.reg .edx), .mov .edx (.mem argA),
     .alu .add .eax (.reg .edx), .mov .eax (.mem (at_ .eax 0)), .mul .eax] ++ accum)) (.block [])]
+
+def cross : Prog isa := .seq
+  (.block (lenTimes .eax 1 ++ [.alu .sub .eax (.imm 4), .alu .cmp .esi (.reg .eax)]))
+  (.ite .b crossBody (.block []))
 
 def carryIn : List Instr := [
   .xop (.bin .movdqa .xmm2 (.xmm3)), .xop (.bin .pand .xmm2 (.xmm7)),
