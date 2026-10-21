@@ -79,4 +79,14 @@ def kgRow : Prog isa :=
 
 end KpkeKgRows
 
+/-- `vg_mlkem*_kpke_keygen_ntt(dk, s, e, se, scratch)`. -/
+def Kem.kgNttAt (L : Kem) (dk s e se z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi dk ++ lea .rsi s ++ lea .rdx e ++ lea .rcx se ++ lea .r8 z))
+    (.call (L.p.fn "kpke_keygen_ntt") (KpkeKgRows.kgNtt L .avx2))
+
+/-- `vg_mlkem*_kpke_keygen_row(ek, a, s, e, scratch)`. -/
+def Kem.kgRowAt (L : Kem) (ek a s e z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi ek ++ lea .rsi a ++ lea .rdx s ++ lea .rcx e ++ lea .r8 z))
+    (.call (L.p.fn "kpke_keygen_row") (KpkeKgRows.kgRow L .avx2))
+
 end VG.Impl.MlKem.X86_64
