@@ -160,7 +160,7 @@ theorem tcombJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg
     hM.unch (U₃.trans U₄ |>.mono fun w hw => by rcases List.mem_append.mp hw with h | h <;> exact h)
       hmoW hn, fun x hx => (hval x hx).2, ?_⟩
   · have hc : ∀ r∈clob K.M.n,r∈tcombClob K.M.n := fun r hr =>
-      List.mem_append_right _ (by simp only [combClob,List.mem_cons,List.mem_append]; exact Or.inr hr)
+      combClob_tcombClob r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hr)))
     exact (I₂.keep.trans (k₃.mono fun r hr => tcombClob_sub _ hL.n8 r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp))).trans
