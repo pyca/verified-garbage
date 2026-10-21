@@ -50,16 +50,11 @@ def oEH : Nat := 23552
 def oZK : Nat := 26624
 
 /-- `vg_mlkem768_kpke_keygen_ntt(dk, SH, EH, R, ZK)`. -/
-def nttAt : Prog isa :=
-  .seq (.block (lea .rdi (.r13, 0) ++ lea .rsi (sc oSH) ++ lea .rdx (sc oEH) ++ lea .rcx (sc K.oR) ++
-      lea .r8 (sc oZK)))
-    (.call (K.L.p.fn "kpke_keygen_ntt") (KpkeKgRows.kgNtt K.L .avx2))
+def nttAt : Prog isa := K.L.kgNttAt (.r13, 0) (sc oSH) (sc oEH) (sc K.oR) (sc oZK)
 
 /-- `vg_mlkem768_kpke_keygen_row(ek + 384 i, Â[i], SH, EH + 1024 i, ZK)`. -/
 def rowAt (i : Nat) : Prog isa :=
-  .seq (.block (lea .rdi (.r12, 384 * i) ++ lea .rsi (Top16.aP K (K.L.k * i)) ++ lea .rdx (sc oSH) ++
-      lea .rcx (sc (oEH + 1024 * i)) ++ lea .r8 (sc oZK)))
-    (.call (K.L.p.fn "kpke_keygen_row") (KpkeKgRows.kgRow K.L .avx2))
+  K.L.kgRowAt (.r12, 384 * i) (Top16.aP K (K.L.k * i)) (sc oSH) (sc (oEH + 1024 * i)) (sc oZK)
 
 /-- How many blocks of `pad(ek)` the fragment of row `i` absorbs, and the first. -/
 def hm : Nat → Nat × Nat
