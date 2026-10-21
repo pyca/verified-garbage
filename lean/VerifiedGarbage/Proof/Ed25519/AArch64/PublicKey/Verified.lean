@@ -47,7 +47,7 @@ def init_ready (hs : Slots L initValues t) :
   have hw := Whole.init_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   exact ⟨[], Whole.initWr L.scr, Whole.init_pre h0, Whole.covers_writes hw, hw⟩
 
-def update_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L updateValues t) :
+def update_ready (hL : L.Ok) (h32 : L.seedLen = 32) (hsp : t.sp = L.E) (hs : Slots L updateValues t) :
     Whole.CallReady Proof.Sha512.updateAArch64 L.E L.inputs L.outputs t := by
   have h0 := hs (.x0, .caller 2 0) (by decide)
   have h2 := hs (.x2, .caller 1 0) (by decide)
@@ -55,14 +55,14 @@ def update_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L updateValues t) :
   have h4 := hs (.x4, .caller 2 192) (by decide)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h2 h3 h4
   have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
-  refine ⟨Whole.updateRd L.seed 32, Whole.hashWr L.scr, Whole.update_pre h0 h2 h3 h4 hL.sc
-    (by rw [hsp]; exact hL.e16) (by rw [hsp]; exact hL.cc) (by rw [hsp]; exact hL.cs), ?_, hw⟩
+  refine ⟨Whole.updateRd L.seed 32, Whole.hashWr L.scr, Whole.update_pre h0 h2 h3 h4 (hL.sc32 h32)
+    (by rw [hsp]; exact hL.e16) (by rw [hsp]; exact hL.cc) (by rw [hsp]; exact hL.cs32 h32), ?_, hw⟩
   intro a n hin
   obtain ⟨r, hr, hh⟩ := hin
   rcases List.mem_append.mp hr with hr | hr
   · simp only [Whole.updateRd, List.mem_singleton] at hr
     subst r
-    exact ⟨L.SEED, List.mem_append_left _ (by simp [Lay.inputs]), hh⟩
+    exact ⟨L.SEED, List.mem_append_left _ (by simp [Lay.inputs]), by change Region.Contains ⟨L.seed, L.seedLen⟩ a n; rw [h32]; exact hh⟩
   · exact Whole.covers_writes hw a n ⟨r, hr, hh⟩
 
 def finalize_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L finalizeValues t) :
@@ -105,12 +105,13 @@ theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : Re
     exact ⟨hg (.x0, .caller 2 0) (by decide), hsp⟩
   · simp [initValues, linkRegs]
 
-theorem update_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem update_ct (v : Whole.Backend) (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁)
+    (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L updateValues))
       (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) v.update)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb v.update_verified.1 v.update_verified.2.1 (Whole.update_depth v)
-    (fun _ hsp _ _ h => update_ready hL hsp h)
+    (fun _ hsp _ _ h => update_ready hL h32 hsp h)
   · intro a b ar aw br bw hsp _ hg
     exact ⟨hg (.x0, .caller 2 0) (by decide), hg (.x1, .const 0) (by decide),
       hg (.x2, .caller 1 0) (by decide), hg (.x3, .const 32) (by decide),
@@ -154,7 +155,21 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun
   · intro t ⟨hc, hy, _⟩; exact WP.mono_syms (wipe_step hc hL) fun _ ⟨hu, _⟩ sy => ⟨hu, sy ▸ hy, trivial⟩
   · intro t ⟨hc, hy, _⟩; exact WP.mono_syms (wipe_step hc hL) fun _ ⟨hu, _⟩ sy => ⟨hu, sy ▸ hy, trivial⟩
 
-theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+/-- The public key after a first step related to itself, as `hash` and the copy of a cached
+digest are. -/
+theorem bodyFrom_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {first : Prog isa}
+    (hfirst : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) first
+      (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True))
+    (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (bodyFrom first)
+      (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
+  have b := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb baseValues
+    (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
+    (by decide) (by taint_decide)
+  exact hfirst.seq (prune_ct.seq ((b.seq (base_ct hL ha hb)).seq (wipe_ct hL)))
+
+theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hL : L.Ok) (h32 : L.seedLen = 32)
+    (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body v.code v.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have i := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb initValues
@@ -166,30 +181,27 @@ theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hL
   have f := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb finalizeValues
     (by decide) (by simp [finalizeValues, Whole.valid]) (by simp [finalizeValues])
     (by decide) (by taint_decide)
-  have b := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb baseValues
-    (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
-    (by decide) (by taint_decide)
-  exact ((i.seq (init_ct hL ha hb)).seq ((u.seq (update_ct v hL ha hb)).seq
-    (f.seq (finalize_ct v hL ha hb)))).seq (prune_ct.seq ((b.seq (base_ct hL ha hb)).seq (wipe_ct hL)))
+  exact bodyFrom_ct ((i.seq (init_ct hL ha hb)).seq ((u.seq (update_ct v hL h32 ha hb)).seq
+    (f.seq (finalize_ct v hL ha hb)))) hL ha hb
 
-theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
+theorem lay_eq {n : Nat} {s t : State} (hp : pkLocal.pub s t) : lay n s = lay n t := by
   obtain ⟨sp, h0, h1, h2, hsy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, hsy]
 
 theorem publicKey_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) : ConstantTime isa pkLocal.pre pkLocal.pub (code v.code v.suffix) := by
   refine Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
-    exact WP.mono (body_ok v (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_syms hp))
+    exact WP.mono (body_ok v (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_syms hp) rfl)
       fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
-    have he := lay_eq hp
-    have hq : Ctx (lay s) t.gpr t.v q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
+    have he := lay_eq (n := 32) hp
+    have hq : Ctx (lay 32 s) t.gpr t.v q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
-    have hqa : Arguments (lay s) q.mem := he ▸ entry_args ht hqb
+    have hqa : Arguments (lay 32 s) q.mem := he ▸ entry_args ht hqb
     have hqs : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms Impl.Ed25519.AArch64.combSym =
-        (lay s).T := he ▸ entry_syms hqb
-    exact ⟨(body_ct v (lay_ok hs) (entry_args hs hpa) hqa _ _ _ _ _ _
+        (lay 32 s).T := he ▸ entry_syms hqb
+    exact ⟨(body_ct v (lay_ok hs) rfl (entry_args hs hpa) hqa _ _ _ _ _ _
       ⟨⟨entry_ctx hs hpa, entry_syms hpa, trivial⟩, ⟨hq, hqs, trivial⟩⟩ ea eb).1, trivial⟩
 
 end VG.Proof.Ed25519.AArch64.PublicKey
