@@ -23,6 +23,11 @@ which nothing uses until the rows of `u`. After the matrix, `noiseP` samples
 `SamplePolyCBD₂` of each buffer into its polynomial (and transforms `ŷ`), and
 `PRF₂` with its own permutation computes the outputs no lane took; `v` takes
 `e₂` from `EP` when a lane computed it.
+
+Key generation (`keyGen`) computes `PRF₂(σ, N)` for the first six noise
+polynomials the same way, in the third state of the matrix's first two pairs,
+which absorb no block of `ek` (`Kem16.hashedBy`): its noise (`kgPre`) then
+runs after them, from their buffers in `KG.TP`, before the first row of `t̂`.
 -/
 
 @[expose] public section
@@ -187,5 +192,46 @@ PRF outputs, then the re-encryption and the selection. -/
 def decaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
   .seq (FixedHashDecaps.deStartUsing hash L) (.seq (.block (startJ L))
     (.seq (matrixP L (jSrc L) (.block tailJ)) (deRestP prf L (placed L (Hybrid.hashPairs (jSrc L))))))
+
+/-! ## Key generation -/
+
+/-- Where `CBD(PRF₂(σ, N))` goes in key generation: `ŝ[N]` or `e[N - k]`. -/
+def kgTarget (L : KemLay) (N : Nat) : Nat := if N < L.k then KG.sOff L N else noiseOff L (N - L.k)
+
+/-- `SamplePolyCBD₂` of buffer `N` (from `KG.TP`) into its polynomial, transformed. -/
+def kgOut (L : KemLay) (N : Nat) : Prog isa :=
+  seqs [.block (ptrTo .x0 .x28 (bufOff (KG.TP L) N) ++ ptrTo .x1 .x28 (kgTarget L N)), Noise.cbdCall,
+    nttAtWithW (kgTarget L N) KG.NS]
+
+/-- Pair `p` of key generation's matrix (`Kem16.kgPair`, which absorbs no block of
+`ek` for `p < 2`), its main squeezes computing `PRF₂(σ, 3p)`, `PRF₂(σ, 3p + 1)`
+and `PRF₂(σ, 3p + 2)` instead. -/
+def kgPairP (L : KemLay) (p : Nat) : Prog isa :=
+  pairP KG.SB KG.SS KG.AH KG.SG (KG.TP L) L (2 * p) (3 * p) 3
+
+/-- The noise from the six PRF outputs of the first two pairs, then paired
+`PRF₂` for the rest (`e[2]` and `e[3]` of ML-KEM-1024), `ŝ` into `dk`, and the
+all-zero third state (`Kem16.kgPre`). -/
+def kgPre (L : KemLay) : Prog isa :=
+  seqs (((List.range 6).map (kgOut L)) ++
+    ((List.range (L.k - 3)).map fun i => Noise.noisePairWith nttAtWithW L true (6 + 2 * i)) ++
+    ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
+    [.block (zeroState .x28 KG.ST)])
+
+/-- The matrix after its first two pairs, each row of `t̂` as soon as its
+entries are sampled (`Kem16.kgMatrixRows`). -/
+def kgMatrixRows (L : KemLay) : List (Prog isa) :=
+  kgRows L 0 (rowsBy L 2) ++
+    ((List.range (pairs L - 2)).flatMap fun q =>
+      kgPair L (q + 2) :: kgRows L (rowsBy L (q + 2)) (rowsBy L (q + 3))) ++
+    (if single L then Paired.lastSample L true true :: kgRows L (rowsBy L (pairs L)) L.k else [])
+
+/-- The key generation: `G`, the first two pairs of the matrix computing the
+first six PRF outputs, the noise, `ŝ` into `dk` and the all-zero third state
+(`kgPre`), the rest of the matrix with the rows of `t̂` (`kgMatrixRows`), and
+the rest of `H(ek)` (`Kem16.kgTail`). -/
+def keyGen (hash : FixedHashCallers.HashFn) (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
+  seqs [FixedHashCallers.kgAUsing hash L, kgPairP L 0, kgPairP L 1, kgPre L, seqs (kgMatrixRows L),
+    kgTail c L]
 
 end VG.Impl.MlKem.AArch64.Kem16P

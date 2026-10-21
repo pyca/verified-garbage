@@ -23,7 +23,7 @@ the matrix:
 4. noise, `u`, `v` and the epilogue.
 
 Only the public lengths decide which blocks are absorbed when; the third
-state's pointer is `scratch`'s. Key generation (`Kem16.keyGenH`) uses the same
+state's pointer is `scratch`'s. Key generation (`Kem16P.keyGen`) uses the same
 pairs (`pairM`), each absorbing up to three blocks of the part of `ek` its
 rows have encoded so far.
 -/

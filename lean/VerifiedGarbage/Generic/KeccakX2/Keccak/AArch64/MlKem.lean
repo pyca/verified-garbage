@@ -76,8 +76,13 @@ def prfNote : String :=
 def hybridKgNote : String :=
   "Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main \
   squeeze of the matrix's pairs once the rows of `t̂` before them have encoded it; the noise and `ŝ` \
-  come before the matrix, each row of `t̂` right after its entries, and the blocks left after the \
-  last row are absorbed with the single-state permutation."
+  come after the first two pairs, each row of `t̂` right after its entries, and the blocks left after \
+  the last row are absorbed with the single-state permutation."
+
+def prfKgNote : String :=
+  "Computes `PRF₂(σ, N)` for the first six noise polynomials in the third state of the matrix's first \
+  two pairs, which absorb no block of `ek`, one per main squeeze, while the vector unit runs their \
+  SHAKE128 states."
 
 def hybridJNote : String :=
   "Computes `J(z ‖ c)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of a copy of `z ‖ c` \
@@ -96,11 +101,11 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridKgNote]
+    notes := [hybridKgNote, prfKgNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
-    code := Impl.MlKem.AArch64.Kem16.keyGenH (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768
+    code := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768
     stack := 128
-    verified := Proof.MlKem.AArch64.KeyGen.keyGenH768_verified v },
+    verified := Proof.MlKem.AArch64.KeyGen.keyGenP768_verified v },
   Spec.MlKem.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
@@ -120,11 +125,11 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridKgNote]
+    notes := [hybridKgNote, prfKgNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
-    code := Impl.MlKem.AArch64.Kem16.keyGenH (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024
+    code := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024
     stack := 128
-    verified := Proof.MlKem.AArch64.KeyGen.keyGenH1024_verified v },
+    verified := Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified v },
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v

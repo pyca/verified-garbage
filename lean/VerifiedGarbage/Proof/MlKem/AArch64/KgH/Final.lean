@@ -32,10 +32,10 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 
 /-! # `vg_mlkem768_keygen` and `vg_mlkem1024_keygen` hashing `ek` during the matrix
 
-`Kem16.keyGenH` meets `Spec.MlKem.keyGenContract` with 128 bytes of stack, for
+`Kem16P.keyGen` meets `Spec.MlKem.keyGenContract` with 128 bytes of stack, for
 the `x3` calls: the contract (as `Hybrid/Final.lean` for encapsulation), the
 taint analyses of its pieces, decided on each parameter set, and `Verified`
-(`keyGenH768_verified`, `keyGenH1024_verified`). -/
+(`keyGenP768_verified`, `keyGenP1024_verified`). -/
 
 @[expose] public section
 
@@ -60,10 +60,10 @@ theorem habsK1024 : ∀ blk, 136 * blk < (Kem16.kgSrc Impl.MlKem1024.AArch64.lay
   habs_of _ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
 
 theorem kgPre768_taint : ∃ h, ((VectorSymbols.analysis restSymbols).check
-    (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgPre lay768) h).isSome = true := ⟨_, by taint_decide⟩
+    (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16P.kgPre lay768) h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem kgPre1024_taint : ∃ h, ((VectorSymbols.analysis restSymbols).check
-    (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgPre Impl.MlKem1024.AArch64.lay1024) h).isSome = true :=
+    (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16P.kgPre Impl.MlKem1024.AArch64.lay1024) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
 theorem kgRow768_taint : ∀ i < lay768.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
@@ -95,8 +95,8 @@ theorem kgTail1024_taint (c : Impl.Sha3.AArch64.Callee)
       (Kem16.kgTail c Impl.MlKem1024.AArch64.lay1024) h).isSome = true := by
   taint_decide_generic c := hole using hS
 
-theorem kgPre768_depth : (Kem16.kgPre lay768).aarch64Depth ≤ 1 := by decide
-theorem kgPre1024_depth : (Kem16.kgPre Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 1 := by decide
+theorem kgPre768_depth : (Kem16P.kgPre lay768).aarch64Depth ≤ 1 := by decide
+theorem kgPre1024_depth : (Kem16P.kgPre Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 1 := by decide
 
 /-! ## ML-KEM-768 -/
 
@@ -159,17 +159,17 @@ theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
 
-theorem keyGenH768_verified (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Kem16.keyGenH (fixedHash v.callee) v.callee lay768) keyGenH768Contract := by
+theorem keyGenP768_verified (v : Proof.Sha3.AArch64.Permutation) :
+    Verified AArch64.target (Kem16P.keyGen (fixedHash v.callee) v.callee lay768) keyGenH768Contract := by
   refine Verified.of_correct (T := AArch64.target) (k := entryContractS (keyGenAArch64S lay768)) ?_
-    (keyGenH_ct v (fixedHash v.callee) (FixedHash.kgG768_correct v) VG.Proof.MlKem.AArch64.KeyGen.wf768 Noise.room768 (FixedHash.kgA768_depth v) kgPre768_depth
+    (keyGenP_ct v (fixedHash v.callee) (FixedHash.kgG768_correct v) VG.Proof.MlKem.AArch64.KeyGen.wf768 Noise.room768 (by decide) (FixedHash.kgA768_depth v) kgPre768_depth
       (FixedHash.kgA768_taint v.callee v.callerSums) kgPre768_taint kgRow768_taint habsK768
       (kgTail768_taint v.callee (symSums v))) ?_
   · intro s h
     have ss := preKS h.1
     have ts := entryS_tables h
-    exact using_correctH v (fixedHash v.callee) (FixedHash.kgG768_correct v) (keygen_unstrip (pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1))
-      ⟨ss.2.1, ss.2.2⟩ Noise.room768 ts.1 ts.2 (FixedHash.kgA768_depth v) kgPre768_depth
+    exact using_correctP v (fixedHash v.callee) (FixedHash.kgG768_correct v) (keygen_unstrip (pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1))
+      ⟨ss.2.1, ss.2.2⟩ Noise.room768 (by decide) ts.1 ts.2 (FixedHash.kgA768_depth v) kgPre768_depth
   · exact ⟨fun _ h => keyGenH768_entry h, fun _ _ h hp => keyGenH768_post h hp,
       fun _ _ hs ht hp => keyGenH768_pub hs ht hp, keyGenH768_sat⟩
 
@@ -234,17 +234,17 @@ theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
 
-theorem keyGenH1024_verified (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Kem16.keyGenH (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024) keyGenH1024Contract := by
+theorem keyGenP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
+    Verified AArch64.target (Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024) keyGenH1024Contract := by
   refine Verified.of_correct (T := AArch64.target) (k := entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_
-    (keyGenH_ct v (fixedHash v.callee) (FixedHash.kgG1024_correct v) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 Noise.room1024 (FixedHash.kgA1024_depth v) kgPre1024_depth
+    (keyGenP_ct v (fixedHash v.callee) (FixedHash.kgG1024_correct v) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 Noise.room1024 (by decide) (FixedHash.kgA1024_depth v) kgPre1024_depth
       (FixedHash.kgA1024_taint v.callee v.callerSums) kgPre1024_taint kgRow1024_taint habsK1024
       (kgTail1024_taint v.callee (symSums v))) ?_
   · intro s h
     have ss := preKS h.1
     have ts := entryS_tables h
-    exact using_correctH v (fixedHash v.callee) (FixedHash.kgG1024_correct v) (keygen_unstrip (pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1))
-      ⟨ss.2.1, ss.2.2⟩ Noise.room1024 ts.1 ts.2 (FixedHash.kgA1024_depth v) kgPre1024_depth
+    exact using_correctP v (fixedHash v.callee) (FixedHash.kgG1024_correct v) (keygen_unstrip (pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1))
+      ⟨ss.2.1, ss.2.2⟩ Noise.room1024 (by decide) ts.1 ts.2 (FixedHash.kgA1024_depth v) kgPre1024_depth
   · exact ⟨fun _ h => keyGenH1024_entry h, fun _ _ h hp => keyGenH1024_post h hp,
       fun _ _ hs ht hp => keyGenH1024_pub hs ht hp, keyGenH1024_sat⟩
 
