@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # The inverse and persistent banks reuse the runtime RSA clear proof -/
 

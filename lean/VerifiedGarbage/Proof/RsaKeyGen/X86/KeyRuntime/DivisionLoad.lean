@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ClearTop
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ClearTop
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Load the shared division bank at the public runtime width -/
 

@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.PrepareTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyReady
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Prepare
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 
 /-! # Two secret factor pairs reach the retry comparison with the same public state -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
-open VG.Proof.Mont.X86.Dynamic VG.Proof.Dsa.X86
+open VG.Proof.Dsa.X86
 open VG.Impl.RsaKeyGen.X86.Key (aPa aQa aD aE kEv kOk)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime
 open VG.Proof.RsaKeyGen.X86.Key (KeyReady)

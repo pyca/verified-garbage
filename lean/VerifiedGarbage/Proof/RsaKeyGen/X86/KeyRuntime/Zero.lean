@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # A runtime-sized key array is cleared by the existing zero loop -/
 

@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
+meta import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
 
 /-! # The unchanged scalar failure and retry paths preserve public arguments -/
 

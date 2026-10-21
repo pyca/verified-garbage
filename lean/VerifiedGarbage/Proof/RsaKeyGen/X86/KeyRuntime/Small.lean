@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 
 /-! # Small constants need one store after a shared runtime zero loop -/
 

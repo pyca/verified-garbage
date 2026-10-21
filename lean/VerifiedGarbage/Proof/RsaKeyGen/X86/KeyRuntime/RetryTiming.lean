@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DSelectTiming
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
-open VG.Proof.Mont.X86.Dynamic VG.Proof.Dsa.X86
+open VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.RsaKeyGen.X86.Key (aPa aQa aD aE kEv kOk)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime

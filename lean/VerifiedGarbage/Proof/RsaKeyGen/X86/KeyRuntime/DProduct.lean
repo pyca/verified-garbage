@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Product
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Assemble the private exponent from a quotient and a two-word scalar -/
 

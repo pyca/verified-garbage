@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Widening between banks reuses the shared clear and copy operations -/
 

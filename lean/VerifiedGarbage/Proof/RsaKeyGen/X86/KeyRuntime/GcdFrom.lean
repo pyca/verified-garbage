@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGcdFrom
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Prime-width GCD computation preserves the full RSA workspace
 

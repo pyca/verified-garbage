@@ -2,14 +2,12 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.BodyTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFrameTiming
-import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import Init.Core
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
-import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 
 /-! # The outer native key frame preserves trace equivalence -/
 

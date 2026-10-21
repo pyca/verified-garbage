@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
-import Mathlib.Tactic.Ring
 
 /-! # The quotient-based private exponent with an exact small correction
 
@@ -39,14 +38,14 @@ theorem oddQuotient_inverse {e L Q R x : Nat} (positive : 3 ≤ e) (large : 2 �
   have identity : (x : Int) * L - 1 = (e : Int) * ((x : Int) * Q) + ((x : Int) * R - 1) := by
     rw [division]
     push_cast
-    ring
+    rw [Int.mul_add, Int.mul_left_comm (x : Int) (e : Int) (Q : Int), Int.add_sub_assoc]
   have inverseL : (e : Int) ∣ (x : Int) * L - 1 := by
     rw [identity]
     exact Int.dvd_add (Int.dvd_mul_right _ _) inverse
   have result := (inverse_odd_exact positive large inverseL bound).2
   have numerator : L * (e - x) + 1 = e * (Q * (e - x)) + (R * (e - x) + 1) := by
     rw [division]
-    ring
+    rw [Nat.add_mul, Nat.mul_assoc, Nat.add_assoc]
   rw [numerator, Nat.mul_add_div (by omega)] at result
   exact result
 

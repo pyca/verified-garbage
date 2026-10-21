@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEven
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Form the inverse-modulus validity bit through a public runtime pointer -/
 

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyQinv

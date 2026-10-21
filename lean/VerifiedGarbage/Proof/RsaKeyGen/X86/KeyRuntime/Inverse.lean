@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseLoad
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseBank
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseLoad
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseBank
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # All key-generation inversions reuse the shared runtime inverse proof -/
 

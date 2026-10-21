@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Clear
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Clear
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Load a prime, exponent or full-width inverse bank without specializing code -/
 

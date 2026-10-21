@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ProductGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DispatchIO
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ProductCorrect
 import VerifiedGarbage.Proof.Rsa.WordRanges
-import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Shared key arithmetic reuses the established paired product kernels -/
 

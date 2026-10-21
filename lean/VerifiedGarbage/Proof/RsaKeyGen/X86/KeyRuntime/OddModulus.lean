@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddFlag
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Safe inverse moduli at the shared runtime width -/
 

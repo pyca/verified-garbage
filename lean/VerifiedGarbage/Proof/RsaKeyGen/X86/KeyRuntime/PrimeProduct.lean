@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Product
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Product
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
 /-! # Prime products use the shared paired native multiplication loop -/
 

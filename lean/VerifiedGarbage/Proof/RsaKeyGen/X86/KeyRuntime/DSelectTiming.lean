@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DOddPublic
@@ -9,7 +11,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
 
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 /-! # Public exponent branches compose with secret native arithmetic -/
 

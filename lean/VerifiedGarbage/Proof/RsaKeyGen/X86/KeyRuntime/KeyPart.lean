@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Crt
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.FinalMask
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.PrimeProduct
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.FinalMask
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
 
 /-! # Complete native arithmetic after the small-private-exponent check -/

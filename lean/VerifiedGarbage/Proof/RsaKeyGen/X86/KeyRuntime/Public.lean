@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
-public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! # Shared arithmetic reads the public cdecl widths without exposing the factors -/
 

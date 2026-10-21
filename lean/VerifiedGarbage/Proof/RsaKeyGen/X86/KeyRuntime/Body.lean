@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextWorkspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEntry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Front
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry

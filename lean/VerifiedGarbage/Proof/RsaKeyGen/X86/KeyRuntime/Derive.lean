@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Prepare
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPartResult
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SmallMask
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.KeyPart
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPartOutcome
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 
 /-! # Complete native numeric RSA derivation, including all failure cases -/
 

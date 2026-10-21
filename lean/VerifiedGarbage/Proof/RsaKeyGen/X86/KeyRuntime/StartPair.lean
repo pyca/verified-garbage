@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CoreReadonlyTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CoreReadonlyTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SelectTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePortTiming
 
 /-! # Width comparisons preserve the shared core's input snapshots and argument records -/
 

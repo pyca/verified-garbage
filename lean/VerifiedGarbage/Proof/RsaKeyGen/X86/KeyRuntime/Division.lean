@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionLoad
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionStore
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Divide
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionLoad
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionStore
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Divide
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionStore
 
 /-! # Quotient and remainder share the runtime RSA division kernel
 

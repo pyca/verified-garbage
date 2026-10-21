@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOddPrepared
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
@@ -10,7 +12,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.GcdIsOne
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LAtLeastTwo
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 

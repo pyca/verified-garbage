@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Safety
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StartPair
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StartPair
 
 /-! # The shared body retains exactly the declared exponent and retry observations -/
 

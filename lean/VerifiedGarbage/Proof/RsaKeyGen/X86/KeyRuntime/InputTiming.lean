@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StartPair
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LoadInputs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Frame
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CoreReadonlyTiming
 
 /-! # Established input traces supply the shared core's read-only argument view -/
 

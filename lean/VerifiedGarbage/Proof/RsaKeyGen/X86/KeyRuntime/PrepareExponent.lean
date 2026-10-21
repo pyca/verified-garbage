@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Primes
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LcmFrame
 public import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyLcm
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
