@@ -61,12 +61,9 @@ fn ecdh_secp224r1_ecpoint_test() {
             let last = one.len() - 1;
             one[last] = 1;
             let reference = PrivateKey::<P224>::from_bytes(&one);
-            assert_eq!(
-                P224::validate_public_key(&public),
-                reference.diffie_hellman(&public).is_ok(),
-                "point check, tcId {}",
-                test.tc_id,
-            );
+            let valid = P224::validate_public_key(&public);
+            let expected = reference.diffie_hellman(&public).is_ok();
+            assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
         match test.result {
             Expectation::Valid => {

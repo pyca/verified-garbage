@@ -81,12 +81,9 @@ fn ecdh_brainpoolp384r1_test() {
             let last = one.len() - 1;
             one[last] = 1;
             let reference = PrivateKey::<BrainpoolP384r1>::from_bytes(&one);
-            assert_eq!(
-                BrainpoolP384r1::validate_public_key(&public),
-                reference.diffie_hellman(&public).is_ok(),
-                "point check, tcId {}",
-                test.tc_id,
-            );
+            let valid = BrainpoolP384r1::validate_public_key(&public);
+            let expected = reference.diffie_hellman(&public).is_ok();
+            assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
         let result = key.diffie_hellman(&public).map(|z| z.to_vec());
         let shared = Ok(test.case.shared.0.clone());

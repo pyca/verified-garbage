@@ -79,12 +79,9 @@ fn ecdh_secp256k1_webcrypto_test() {
             let mut one = [0; 32];
             one[31] = 1;
             let reference = PrivateKey::<Secp256k1>::from_bytes(&one);
-            assert_eq!(
-                Secp256k1::validate_public_key(&peer),
-                reference.diffie_hellman(&peer).is_ok(),
-                "point check, tcId {}",
-                test.tc_id,
-            );
+            let valid = Secp256k1::validate_public_key(&peer);
+            let expected = reference.diffie_hellman(&peer).is_ok();
+            assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
         let result = key.diffie_hellman(&peer);
         match test.result {
