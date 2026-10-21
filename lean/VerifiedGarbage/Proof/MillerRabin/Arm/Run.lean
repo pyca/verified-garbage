@@ -41,14 +41,14 @@ theorem roundPre.savedE (h : roundPre s) : Spill.Saved (pcPushed s).mem (State.a
   pc_push_callee_saved s h.2.2.2.1
 
 /-- A call's result. -/
-theorem round_ok (h : roundPre s) : WP isa code s fun t => abiPreserved s t ∧ roundPost s t := by
+theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios := fios)) s fun t => abiPreserved s t ∧ roundPost s t := by
   have spLo := h.2.2.2.1
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   have pre := in_x h
   unfold code
   refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
-  obtain ⟨tr, v, run, done⟩ := body_vp.wp (bodyIn s) (bodyIn s) ⟨rfl, pre, rfl⟩
+  obtain ⟨tr, v, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn s) (bodyIn s) ⟨rfl, pre, rfl⟩
   have cov := h.xCovers
   have run' := Exec.widen (rd := (pcPushed s).rd) (wr := (pcPushed s).wr) run
     (Covers.append (Covers.refl _) cov) cov
@@ -142,10 +142,10 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide {s : State} (h : roundPre s) :
-    ∃ tr v, Exec isa body (bodyIn s) tr v ∧
-      Exec isa body (pcPushed s) tr (v.withRegions (pcPushed s).rd (pcPushed s).wr) := by
-  obtain ⟨tr, v, run, _⟩ := body_vp.wp (bodyIn s) (bodyIn s) ⟨rfl, in_x h, rfl⟩
+theorem body_wide {s : State} (h : roundPre s) (fios : Bool := false) :
+    ∃ tr v, Exec isa (body (fios := fios)) (bodyIn s) tr v ∧
+      Exec isa (body (fios := fios)) (pcPushed s) tr (v.withRegions (pcPushed s).rd (pcPushed s).wr) := by
+  obtain ⟨tr, v, run, _⟩ := (body_vp (fios := fios)).wp (bodyIn s) (bodyIn s) ⟨rfl, in_x h, rfl⟩
   have cov := h.xCovers
   have run' := Exec.widen (rd := (pcPushed s).rd) (wr := (pcPushed s).wr) run
     (Covers.append (Covers.refl _) cov) cov
@@ -153,7 +153,7 @@ theorem body_wide {s : State} (h : roundPre s) :
   exact ⟨tr, v, run, run'⟩
 
 /-- Two calls with the same public parameters leak the same. -/
-theorem round_ct : RelCT isa (fun s t => roundPre s ∧ roundPre t ∧ s.sp = t.sp ∧ mkP s = mkP t) code
+theorem round_ct (fios : Bool := false) : RelCT isa (fun s t => roundPre s ∧ roundPre t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code (fios := fios))
     (fun _ _ => True) := by
   unfold code
   apply RelCT.frame (fun _ _ h => h.2.2.1)
@@ -170,22 +170,22 @@ theorem round_ct : RelCT isa (fun s t => roundPre s ∧ roundPre t ∧ s.sp = t.
   | seq body1 rest1 =>
     cases e2 with
     | seq body2 rest2 =>
-      obtain ⟨trB1, w1, runB1, wide1⟩ := body_wide hs
-      obtain ⟨trB2, w2, runB2, wide2⟩ := body_wide ht
+      obtain ⟨trB1, w1, runB1, wide1⟩ := body_wide (fios := fios) hs
+      obtain ⟨trB2, w2, runB2, wide2⟩ := body_wide (fios := fios) ht
       obtain ⟨rfl, rfl⟩ := Exec.det body1 wide1
       obtain ⟨rfl, rfl⟩ := Exec.det body2 wide2
       have pre1 := in_x hs
       have pre2 := in_x ht
       rw [← hP] at pre2
-      have trB := ((body_vp (P := mkP s0)).ct _ _ _ _ _ _
+      have trB := ((body_vp (fios := fios) (P := mkP s0)).ct _ _ _ _ _ _
         ⟨_, _, ⟨rfl, pre1, rfl⟩, ⟨rfl, pre2, by show t0.gpr .r0 = (mkP s0).ws; rw [hP]; rfl⟩⟩ runB1 runB2).1
       have w1sp : w1.sp = s0.sp - BitVec.ofNat 32 56 := by
-        obtain ⟨_, _, run, done⟩ := body_vp.wp (bodyIn s0) (bodyIn s0) ⟨rfl, pre1, rfl⟩
+        obtain ⟨_, _, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn s0) (bodyIn s0) ⟨rfl, pre1, rfl⟩
         obtain ⟨-, rfl⟩ := Exec.det runB1 run
         obtain ⟨⟨_, _, _, _, ks⟩, _⟩ := done
         exact ks.sp.trans pre1.sp
       have w2sp : w2.sp = t0.sp - BitVec.ofNat 32 56 := by
-        obtain ⟨_, _, run, done⟩ := body_vp.wp (bodyIn t0) (bodyIn t0) ⟨rfl, in_x ht, rfl⟩
+        obtain ⟨_, _, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn t0) (bodyIn t0) ⟨rfl, in_x ht, rfl⟩
         obtain ⟨-, rfl⟩ := Exec.det runB2 run
         obtain ⟨⟨_, _, _, _, ks⟩, _⟩ := done
         exact ks.sp.trans (in_x ht).sp

@@ -116,7 +116,6 @@ impl Parameters {
     /// generator 2 or 5. The result omits q, as PKCS #3/OpenSSL does.
     /// Miller–Rabin uses 64 independent uniform witnesses through 2048 bits
     /// and 128 above. There is no primality certificate.
-    #[cfg(not(target_arch = "arm"))]
     pub fn generate(bits: usize, generator: u32) -> Result<Self, Error> {
         generation::parameters(bits, generator, getrandom::fill)
     }

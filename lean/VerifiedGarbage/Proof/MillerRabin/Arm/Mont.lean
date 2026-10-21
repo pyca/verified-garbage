@@ -4,7 +4,7 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
-import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -111,8 +111,8 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
 /-- `mulY b`: `[aY] := T`, the number below `c` with `T R ≡ [aY] [b]`. -/
 theorem KS.mulY_ok {b Y : Nat} (h : KS P σ A live V ls s) (hb : b = aY ∨ b = aX) (hYl : aY ∉ live)
     (hy : num s.mem P.B P.W aY = Y) (h2 : 2 ∉ live) (h3 : 3 ∉ live) (hYv : Y < cOf P σ.mem)
-    (hbv : num s.mem P.B P.W b < cOf P σ.mem) :
-    WP isa (seqs (mulY b)) s fun t => ∃ T, T < cOf P σ.mem ∧
+    (hbv : num s.mem P.B P.W b < cOf P σ.mem) (fios : Bool := false) :
+    WP isa (seqs (mulY (fios := fios) b)) s fun t => ∃ T, T < cOf P σ.mem ∧
       T * P.R % cOf P σ.mem = Y * num s.mem P.B P.W b % cOf P σ.mem ∧
       KS P σ (upd A aY T) (aY :: live) V ls t ∧ Ws t P.B P.Z P.W nArr := by
   have pre := h.pre
@@ -134,7 +134,7 @@ theorem KS.mulY_ok {b Y : Nat} (h : KS P σ A live V ls s) (hb : b = aY ∨ b = 
     rw [this, pre.saved]
   have h1 := h.of_rest (u1.rest (ws := [.r0]) (by simp)) u1.mem
   rw [WP.seq_iff]
-  refine WP.mono (montOp_ok s1 (h1.ready r0) opd.1 opd.1 opd.2 (by decide)
+  refine WP.mono (Arithmetic.product_ok fios s1 (h1.ready r0) opd.1 opd.1 opd.2 (by decide)
     (by rw [u1.mem, eB, show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, ce]; exact hbv))
     fun s2 ⟨ar, m0, lt, v, keeps, frame, rest⟩ => ?_
   have k := keep_of_mont pre keeps frame
