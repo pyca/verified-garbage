@@ -139,14 +139,14 @@ class SplitTests(unittest.TestCase):
         self.assertEqual(self.split_with({"no-avx512f": slow, "avx512f": fast}),
                          self.split_with({"no-avx512f": slow}))
 
-    def test_icx_shards_each_get_an_rsa_line_before_any_time(self):
+    def test_icx_vectors_and_hash_checks_use_different_shards_before_any_time(self):
         runs = matrix_runs("icx")
-        shards = self.shards(3, runs=runs)
-        # The lines running Wycheproof's RSA tests, which take minutes under
-        # SDE (not `rsa_oaep_pairs`'s round trips).
-        heavy = {"rsa", "rsa_pkcs1", "rsa_pss", "rsa_oaep"}
-        rsa = [[f for f, t in s if heavy & set(t.split())] for s in shards]
-        self.assertEqual([len(r) for r in rsa], [1, 1, 1])
+        shards = self.shards(2, runs=runs)
+        vectors = next(i for i, shard in enumerate(shards)
+                       if any("rsa_ifma" in tests.split() for _, tests in shard))
+        scalar_hashes = next(i for i, shard in enumerate(shards)
+                             if any("ed25519 rsa_hashes" in tests for _, tests in shard))
+        self.assertNotEqual(vectors, scalar_hashes)
 
 
 # What the stand-in `cargo` lists, for the library and the test binary.

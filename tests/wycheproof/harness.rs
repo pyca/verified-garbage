@@ -54,10 +54,10 @@ pub const HOST_WITHOUT_IFMA_VAR: &str = "VG_TEST_HOST_WITHOUT_IFMA";
 
 /// Whether to test RSA keys of `bits` bits: every size, but on a CPU with
 /// AVX512_IFMA emulated on a host without it ([`HOST_WITHOUT_IFMA_VAR`]),
-/// where only `rsa_pss::rsa_pss_sign_test` tests the 3072- and 4096-bit keys
-/// (each of the other tests calls the same IFMA code with them), and only
-/// in one configuration ([`rsa_bits_signed`]). A CPU with AVX512_IFMA tests
-/// them all.
+/// where PSS signing alone tests the 3072- and 4096-bit keys (each of the
+/// other tests calls the same IFMA code with them). CI's IFMA vector group
+/// uses `rsa_pss::rsa_pss_large_keys`; the full signing suite uses
+/// [`rsa_bits_signed`]. A CPU with AVX512_IFMA tests them all.
 #[cfg(all(
     any(
         target_arch = "x86_64",

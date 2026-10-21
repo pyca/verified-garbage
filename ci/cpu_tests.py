@@ -257,6 +257,43 @@ GROUPS = {
             "wycheproof::rsa_public",
         ],
     },
+    # IFMA's vectors once, without repeating ADX prime generation (SKX and
+    # native run it). Keep a key-generation dispatch check, every signing
+    # hash, large private-key operands and concurrent use of a shared key.
+    # The per-hash backend_features tests enumerate synthetic feature sets,
+    # without executing those instructions: native/SKX's full groups cover
+    # them. Keep the unit tests that execute RSA here.
+    "rsa_ifma": {
+        "lib": ["rsa", "rsa_keygen::tests::generate_small_d", "rsa_oaep::tests", "rsa_pkcs1_enc",
+                "rsa_pkcs1_sig", "rsa_pss::tests"],
+        "tests": [
+            "rsa_guidance::rsa_pkcs1_appendix_b",
+            "rsa_guidance::rsa_pkcs1_bad_keys",
+            "rsa_guidance::rsa_crt_truncated_factors",
+            "rsa_guidance::rsa_pkcs1_lengths",
+            "wycheproof::rsa",
+            "wycheproof::rsa_keys",
+            "wycheproof::rsa_public",
+            "wycheproof::rsa_pkcs1_enc",
+            "wycheproof::rsa_pkcs1_sig",
+            "wycheproof::rsa_pss::rsa_pss_test",
+            "wycheproof::rsa_pss::rsa_pss_every_hash",
+            "wycheproof::rsa_pss::rsa_pss_large_keys",
+            "wycheproof::rsa_oaep::rsa_oaep_test",
+            "wycheproof::rsa_oaep::rsa_oaep_every_pair",
+            "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke",
+        ],
+    },
+    # Extra hash implementations with the same RSA arithmetic: known-answer
+    # implicit rejection, every PSS hash and every supported OAEP hash pair.
+    "rsa_hashes": {
+        "lib": [],
+        "tests": [
+            "rsa_guidance::rsa_pkcs1_appendix_b_small",
+            "wycheproof::rsa_pss::rsa_pss_every_hash",
+            "wycheproof::rsa_oaep::rsa_oaep_every_pair",
+        ],
+    },
     "rsa_oaep": {
         "lib": ["rsa_oaep"],
         "tests": ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_oaep"],
@@ -282,6 +319,10 @@ GROUPS = {
     "rsa_pss": {
         "lib": ["rsa_pss"],
         "tests": ["wycheproof::rsa_pss"],
+    },
+    "rsa_pss_hashes": {
+        "lib": [],
+        "tests": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
     },
     "scrypt": {
         "lib": ["scrypt"],
