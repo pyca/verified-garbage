@@ -84,7 +84,7 @@ def smChk (i : Nat) : Bool :=
 
 /-- Row `i` of `t̂`. -/
 def rwChk (i : Nat) : Bool :=
-  krChk (kgB K.L) (kgW K.L) 3 (ekP i) (aP K (3 * i)) (shP 0) (ehP i) (sc oZK) &&
+  krChk (kgB K.L) (kgW K.L) 3 (ekP i) (aP K (3 * i)) (sc oSH) (ehP i) (sc oZK) &&
     keepAll K (rowW i) (liveG K (i + 1) i (3 * i + 3) ++ [(hsP K, 200)])
 
 /-- What key generation hashing `ek` in the matrix's fragments needs of the
@@ -104,7 +104,7 @@ structure KgH16Wf : Prop extends KgWfB K.L where
   sd : ∀ i < 3, sdChk K i = true
   sm : ∀ i < 3, smChk K i = true
   rw : ∀ i < 3, rwChk K i = true
-  flg : ∀ i ≤ 3, keepAll K [] (liveR K i (3 * i) ++ ekR i ++ aR K (3 * i + 3) ++ [(hsP K, 200)]) = true
+  flg : ∀ i < 3, (keepAll K [] (liveR K i (3 * i + 3)) && keepB (kgB K.L) [] (hsP K) 200) = true
   -- the tail: the sponge's state kept by the copies of `ρ` and `ek`, copied to
   -- the sponge functions' state, and the rest of `ek` absorbed
   tS : (keepB (kgB K.L) (finW₁ K.L) (hsP K) 200 && keepB (kgB K.L) (finW₂ K.L) (hsP K) 200) = true
@@ -158,6 +158,25 @@ structure KH (K : Kem16) (σ : State) (i e : Nat) (s : State) : Prop where
   ok : allOk K.L.k (rhoK K.L σ) e → (∀ j < i, bytesAt s.mem (pa s (ekP j)) 384 = tRow K.L σ j) ∧
     stateAt s.mem (pa s (hsP K)) = HSponge.hstate (ekK K.L σ) (hAbs (e / 3))
 
+/-- What holds of the regions besides `Â`, `ek` and the sponge, from `ê[i]` on. -/
+structure KS (K : Kem16) (σ : State) (i : Nat) (s : State) : Prop where
+  kc : KC σ s
+  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK K.L σ
+  sb : bytesAt s.mem (pa s (sc oSB)) 32 = rhoK K.L σ
+  sh : ∀ j < 3, PolyIs s.mem (pa s (shP j)) (KPke.kgS K.L.p (kgD σ) j)
+  eh : ∀ j < 3, i ≤ j → PolyIs s.mem (pa s (ehP j)) (KPke.kgE K.L.p (kgD σ) j)
+  dk : bytesAt s.mem (pa s (.r13, 0)) 1152 = KPke.dkPKE K.L.p (kgD σ)
+
+theorem KH.ks {i e : Nat} {σ s : State} (h : KH K σ i e s) : KS K σ i s := ⟨h.kc, h.rho, h.sb, h.sh, h.eh, h.dk⟩
+
+theorem KH.of {i e : Nat} {σ s : State} (h : KS K σ i s) (hm : MatB16 K.L.k K.oA (rhoK K.L σ) e s)
+    (ho : allOk K.L.k (rhoK K.L σ) e → (∀ j < i, bytesAt s.mem (pa s (ekP j)) 384 = tRow K.L σ j) ∧
+      stateAt s.mem (pa s (hsP K)) = HSponge.hstate (ekK K.L σ) (hAbs (e / 3))) : KH K σ i e s :=
+  ⟨h.kc, h.rho, h.sb, h.sh, h.eh, h.dk, hm, ho⟩
+
+/-- `ρ`, `ŝ`, `ê` from `ie` on, and `dk_PKE`. -/
+abbrev statR (ie : Nat) : List (Ptr × Nat) := baseR ++ shR ++ ehR ie ++ dkR
+
 section
 variable (W : KgH16Wf K) {σ : State} (hp : (keyGenK K.L).pre σ)
 include W hp
@@ -165,12 +184,12 @@ include W hp
 /-- A piece that writes `ws`, keeps the regions of `rs` and `r15`, keeps
 the facts about them. -/
 theorem KH.keepG {i i' e : Nat} (hi : i ≤ i') {s s' : State} (h : KH K σ i e s) {ws : List (Ptr × Nat)}
-    (hP : PPostB s s' ws) (h15 : s'.gpr .r15 = s.gpr .r15) (hk : keepAll K ws (liveG K i' i e) = true)
+    (hP : PPostB s s' ws) (h15 : s'.gpr .r15 = s.gpr .r15) (hkc : kcChk K.L ws = true)
+    (hk : ∀ r ∈ liveG K i' i e, keepB (kgB K.L) ws r.1 r.2 = true)
     (hrow : allOk K.L.k (rhoK K.L σ) e → ∀ j, i ≤ j → j < i' → bytesAt s'.mem (pa s' (ekP j)) 384 = tRow K.L σ j)
     (hhs : allOk K.L.k (rhoK K.L σ) e → keepB (kgB K.L) ws (hsP K) 200 = true) : KH K σ i' e s' := by
-  obtain ⟨hkc, hr⟩ := keepAll_spec hk
   have L₀ := h.kc.lay W.toKgWfB hp
-  have m : ∀ r, r ∈ liveG K i' i e → keepB (kgB K.L) ws r.1 r.2 = true := hr
+  have m : ∀ r, r ∈ liveG K i' i e → keepB (kgB K.L) ws r.1 r.2 = true := hk
   have mB : ∀ r ∈ baseR, r ∈ liveG K i' i e := fun r h =>
     List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
       (List.mem_append_left _ h))))
@@ -195,10 +214,24 @@ theorem KH.keepG {i i' e : Nat} (hi : i ≤ i') {s s' : State} (h : KH K σ i e 
     · exact hrow ho j (by omega) hj
   · rw [EkF.stateAt_keep L₀ hP (hhs ho)]; exact (h.ok ho).2
 
+theorem KS.keep {i i' : Nat} (hi : i ≤ i') {s s' : State} (h : KS K σ i s) {ws : List (Ptr × Nat)}
+    (hP : PPostB s s' ws) (hkc : kcChk K.L ws = true)
+    (hk : ∀ r ∈ statR i', keepB (kgB K.L) ws r.1 r.2 = true) : KS K σ i' s' := by
+  have L₀ := h.kc.lay W.toKgWfB hp
+  refine ⟨h.kc.step W.toKgWfB hp hP hkc, ?_, ?_, fun j hj => ?_, fun j hj hij => ?_, ?_⟩
+  · rw [L₀.keepBytes hP (hk (sc oG, 32) (by simp))]; exact h.rho
+  · rw [L₀.keepBytes hP (hk (sc oSB, 32) (by simp))]; exact h.sb
+  · exact L₀.keepPoly hP (hk _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _
+      (List.mem_map.2 ⟨j, List.mem_range.2 hj, rfl⟩))))) (h.sh j hj)
+  · exact L₀.keepPoly hP (hk (ehP j, 1024) (List.mem_append_left _ (List.mem_append_right _
+      (List.mem_map.2 ⟨j - i', List.mem_range.2 (by omega), by rw [Nat.add_sub_cancel' hij]⟩)))) (h.eh j hj (by omega))
+  · rw [L₀.keepBytes hP (hk _ (List.mem_append_right _ (List.mem_singleton_self _)))]; exact h.dk
+
 theorem KH.keep {i e : Nat} {s s' : State} (h : KH K σ i e s) {ws : List (Ptr × Nat)} (hP : PPostB s s' ws)
-    (h15 : s'.gpr .r15 = s.gpr .r15) (hk : keepAll K ws (liveR K i e) = true)
+    (h15 : s'.gpr .r15 = s.gpr .r15) (hkc : kcChk K.L ws = true)
+    (hk : ∀ r ∈ liveR K i e, keepB (kgB K.L) ws r.1 r.2 = true)
     (hhs : allOk K.L.k (rhoK K.L σ) e → keepB (kgB K.L) ws (hsP K) 200 = true) : KH K σ i e s' :=
-  h.keepG W hp (Nat.le_refl _) hP h15 hk (fun _ _ h₁ h₂ => absurd h₂ (by omega)) hhs
+  h.keepG W hp (Nat.le_refl _) hP h15 hkc hk (fun _ _ h₁ h₂ => absurd h₂ (by omega)) hhs
 
 end
 
