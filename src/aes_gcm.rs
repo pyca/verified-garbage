@@ -1059,21 +1059,21 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Every message once the powers are ready (`short_ready`, tested
-        // after the length, so that longer messages pay nothing for it),
-        // called inline on x86-64, where each `_prepared` instance chooses
-        // its path for every length itself (through `seal_prepared`, the
-        // call cost the 256-bit backend 6 ns at 15 bytes on Zen 3). Before,
-        // a message long enough to gain from them counts towards computing
-        // them.
+        // A message long enough to gain from the powers takes them through
+        // `seal_prepared` (and counts towards computing them); once they are
+        // ready, a shorter one takes them too (`short_ready`), called inline
+        // on x86-64, where each `_prepared` instance chooses its path for
+        // every length itself: through `seal_prepared`, the call cost the
+        // 256-bit backend 6 ns at 15 bytes on Zen 3.
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if data.len() >= POWERS_MIN_LEN || self.powers.short_ready() {
-            if let Some((ctx, fns)) = self.powers.ready() {
-                return Ok(self.seal_with(ctx, fns, nonce, aad, data));
-            }
+        if data.len() >= POWERS_MIN_LEN {
             if let Some(tag) = self.seal_prepared(nonce, aad, data) {
                 return Ok(tag);
             }
+        } else if self.powers.short_ready()
+            && let Some((ctx, fns)) = self.powers.ready()
+        {
+            return Ok(self.seal_with(ctx, fns, nonce, aad, data));
         }
         // On AArch64, through `seal_prepared` (inline, the call made a fresh
         // key's seal 1–4% slower on Neoverse N2), for more than `PLAIN_MAX`
