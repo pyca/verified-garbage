@@ -25,8 +25,9 @@ structure JointInitLayout (c : Joint.Cfg) (size : Nat) : Prop where
   tableSmall : c.K.tbl<2^31
   cacheSep : c.cache+128*c.K.M.n≤c.K.tbl ∨ c.K.tbl+216*c.K.M.n≤c.cache
   zeroCache : c.K.zero∉jointCacheSlots c
-  bitsBounds : ∀ d∈[c.K.bits,c.gBits],d+64*c.K.M.n+1≤size
-  bitsSep : ∀ d∈[c.K.bits,c.gBits],∀ w∈jointInitRanges c,d+64*c.K.M.n+1≤w.1 ∨ w.1+w.2≤d
+  bitsBounds : ∀ d∈[(c.K.bits,64*c.K.M.n+1),(c.gBits,jointGLen c)],d.1+d.2≤size
+  bitsSep : ∀ d∈[(c.K.bits,64*c.K.M.n+1),(c.gBits,jointGLen c)],∀ w∈jointInitRanges c,
+    d.1+d.2≤w.1 ∨ w.1+w.2≤d.1
   cacheSmall : c.cache<2^31
   cacheFar : ∀ x∈winRo c.K++winOther c.K,x+8*c.K.M.n≤c.cache ∨ c.cache+128*c.K.M.n≤x
 
@@ -131,7 +132,7 @@ theorem JointInitLayout.cacheLay {c : Joint.Cfg} {size : Nat} (hL : JointInitLay
       constructor <;> omega
 
 theorem JointGenerator.keep_init {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : Nat}
-    {G : Point C} {row : JointGeneratorRow c.K.M.n C G} {s t : State} {rs : List Reg}
+    {G : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} {rs : List Reg}
     (h : JointGenerator c C base T size row s) (hL : JointLayout c size)
     (htmp : c.K.M.tmp+8*c.K.M.n≤size) (hk : KeepRegs rs s t)
     (hu : Unch base (jointInitRanges c) s.mem t.mem) (hs : t.syms=s.syms) :
@@ -148,12 +149,14 @@ theorem JointGenerator.keep_init {c : Joint.Cfg} {C : Curve} {base T : Addr} {si
 
 theorem jointInit_digits {c : Joint.Cfg} {size : Nat} (hL : JointInitLayout c size)
     {base : Addr} {s t : State} (hn : size≤2^64)
-    (hu : Unch base (jointInitRanges c) s.mem t.mem) {d : Nat} (hd : d∈[c.K.bits,c.gBits])
-    {β : Nat → BitVec 8} (hb : ∀ i<64*c.K.M.n+1,s.mem (off base (d+i))=β i) :
-    ∀ i<64*c.K.M.n+1,t.mem (off base (d+i))=β i := by
+    (hu : Unch base (jointInitRanges c) s.mem t.mem) {d l : Nat}
+    (hd : (d,l)∈[(c.K.bits,64*c.K.M.n+1),(c.gBits,jointGLen c)])
+    {β : Nat → BitVec 8} (hb : ∀ i<l,s.mem (off base (d+i))=β i) :
+    ∀ i<l,t.mem (off base (d+i))=β i := by
   intro i hi
-  rw [hu.byte (fun w hw => ?_) (by have := hL.bitsBounds d hd; omega),hb i hi]
-  have := hL.bitsSep d hd w hw
+  rw [hu.byte (fun w hw => ?_) (by have := hL.bitsBounds _ hd; dsimp only at this; omega),hb i hi]
+  have := hL.bitsSep _ hd w hw
+  dsimp only at this
   omega
 
 end VG.Proof.Weierstrass.X86_64

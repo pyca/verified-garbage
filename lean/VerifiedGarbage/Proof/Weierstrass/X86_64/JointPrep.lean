@@ -20,6 +20,11 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont
 def jointPrepRanges (c : Joint.Cfg) : List (Nat×Nat) :=
   [(c.gBits,jointGSpan c),(c.K.bits,64*c.K.M.n+8)]
 
+/-- The recoders call nothing: their inlined code is their code. -/
+theorem jointPrep_inline (c : Joint.Cfg) (u v : Nat) : (Joint.prep c u v).inline=Joint.prep c u v := by
+  unfold Joint.prep
+  split <;> rfl
+
 theorem jointPrep_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u v : Nat}
     (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
     (hs : Scr s base size) (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size)

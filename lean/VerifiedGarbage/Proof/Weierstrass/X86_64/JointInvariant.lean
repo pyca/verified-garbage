@@ -40,6 +40,13 @@ def jointGSpan (c : Joint.Cfg) : Nat := if c.gw=9 then 128*c.K.M.n+8 else 64*c.K
 def jointGByte (c : Joint.Cfg) (u i : Nat) : BitVec 8 :=
   if c.gw=9 then FastNaf.wbyte u i else FastNaf.byte 7 u i
 
+/-- The generator's digit `j` as the code reads it, zero-extended. -/
+def jointGCell (c : Joint.Cfg) (u j : Nat) : BitVec 64 :=
+  if c.gw=9 then (FastNaf.word u j).setWidth 64 else (FastNaf.byte 7 u j).setWidth 64
+
+/-- The largest magnitude of the generator's digits. -/
+def jointGTop (c : Joint.Cfg) : Nat := if c.gw=9 then 255 else 63
+
 theorem jointGLen_lt_span (c : Joint.Cfg) : jointGLen c<jointGSpan c := by
   unfold jointGLen jointGSpan; split <;> omega
 
@@ -156,6 +163,7 @@ structure JointLayout (c : Joint.Cfg) (size : Nat) : Prop where
   stableBounds : ∀ r∈jointStableRanges c,r.1+r.2≤size
   stableSep : ∀ r∈jointStableRanges c,∀ w∈(jointWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)],
     r.1+r.2≤w.1 ∨ w.1+w.2≤r.1
+  gw : c.gw=7 ∨ c.gw=9
 
 theorem jointLive_R (c : Joint.Cfg) : ∀ x∈jacCoords c.K.R,x∈jointLive c := by
   intro x hx

@@ -35,7 +35,7 @@ theorem Inv.of_unch {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     fun x hx => (same x hx) ▸ h.lt x hx,fun x hx => by rw [same x hx]; exact h.val x hx⟩
 
 theorem JointGenerator.keep_prep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
-    {G : Point C} {row : JointGeneratorRow c.K.M.n C G} {s t : State}
+    {G : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State}
     (h : JointGenerator c C base T size row s) (hL : JointPrepLayout c size u v)
     (hk : KeepRegs (nafPrepClobN c.K.M.n) s t) (hu : Unch base (jointPrepRanges c) s.mem t.mem)
     (hs : t.syms=s.syms) : JointGenerator c C base T size row t := by
@@ -50,7 +50,7 @@ theorem JointGenerator.keep_prep {c : Joint.Cfg} {C : Curve} {base T : Addr} {si
   · exact Nat.le_trans hL.peer hz
 
 theorem jointPrepFields_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
-    {G : Point C} {row : JointGeneratorRow c.K.M.n C G} {E : Nat → Fe C} {s : State}
+    {G : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fe C} {s : State}
     (hL : JointPrepLayout c size u v) (hF : Lay c.K.M size (·∈nafSlots c.K))
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
     (he : JointGenerator c C base T size row s) :

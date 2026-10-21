@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
 
@@ -28,7 +28,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64
 open Spec.Weierstrass
 
 theorem jointMulOps_timing {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (hc : JointCachedChecks c) (hf : JointFixedChecks c)
     (hD : JointDoubler c C size double) :
@@ -44,7 +44,7 @@ theorem jointMulOps_timing {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base
     exact jointFixedDigit_relCT hL hm hOne hj hf
 
 theorem jointMulRun_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hC : Law C) (ha : AM3 C) (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
@@ -61,7 +61,7 @@ theorem jointMulRun_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base 
     (fun _ _ hp hi => hD.ok (JointGenerator.workKeep hL.lookup.layout hi.field.mod.tmp) hp hi) hu hv
 
 theorem jointMulWindow_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {E : Nat → Fin C.p}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fin C.p}
     (hL : JointAddLayout c size) (hInit : JointInitLayout c size)
     (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (ha : AM3 C) (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
@@ -112,10 +112,10 @@ theorem jointMulWindow_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {ba
   · exact jointMulRun_relCT hL hm hC ha hD hOne hOneVal hG hQ hc hf hu hv
 
 theorem jointMulPrep_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU srcV u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {E : Nat → Fin C.p}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fin C.p}
     (hL : JointPrepLayout c size srcU srcV) (hF : Lay c.K.M size (·∈nafSlots c.K))
     (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hp1 : E c.K.P.z=1) (hz : E c.K.zero=0)
-    (hcG : FastPrepChecks c.K.M.n srcU c.gBits 7) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
+    (hcG : JointPrepGChecks c srcU) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
       JointGenerator c C base T size row s ∧ JointGenerator c C base T size row t ∧
       wordsVal s.mem base srcU c.K.M.n=u ∧ wordsVal s.mem base srcV c.K.M.n=v ∧
@@ -138,7 +138,7 @@ theorem jointMulPrep_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size src
     (fun _ _ h => h) (fun _ _ ⟨_,ps,pt⟩ => ⟨⟨ps.1,pt.1⟩,ps.2,pt.2⟩)
 
 theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Addr}
-    {size srcU srcV u v : Nat} {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G}
+    {size srcU srcV u v : Nat} {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     {E : Nat → Fin C.p}
     (hL : JointAddLayout c size) (hInit : JointInitLayout c size)
     (hPrep : JointPrepLayout c size srcU srcV)
@@ -153,7 +153,7 @@ theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T :
     (ht : JointTableChecks c) (hcache : ScratchCT (Joint.cacheCode c).inline)
     (hseed : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
     (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]))
-    (hcG : FastPrepChecks c.K.M.n srcU c.gBits 7) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
+    (hcG : JointPrepGChecks c srcU) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
       JointGenerator c C base T size row s ∧ JointGenerator c C base T size row t ∧
       wordsVal s.mem base srcU c.K.M.n=u ∧ wordsVal s.mem base srcV c.K.M.n=v ∧
@@ -161,8 +161,10 @@ theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T :
       (Code.seq (Joint.prep c srcU srcV) (Joint.window c double)).inline
       (JointPair c C base size
         (JointCore c C base size Q u v (JointGenerator c C base T size row))
-        (add (mul u G) (mul v Q)) 0) :=
-  RelCT.seq (jointMulPrep_relCT hPrep hInit.naf.lay hp hp1 hz hcG hcQ)
+        (add (mul u G) (mul v Q)) 0) := by
+  show RelCT isa _ (.seq (Joint.prep c srcU srcV).inline (Joint.window c double).inline) _
+  rw [jointPrep_inline]
+  exact RelCT.seq (jointMulPrep_relCT hPrep hInit.naf.lay hp hp1 hz hcG hcQ)
     (jointMulWindow_relCT hL hInit hm hC ha hD hOne hOneVal hG hQ hZ hc hf ht hcache hseed hctr hu hv)
 
 end VG.Proof.Weierstrass.X86_64

@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
@@ -28,17 +29,17 @@ open Spec.Weierstrass
 /-- The loop's input after both recoders: `Q` in `P`, zero, both tables of
 digits and the generator's row. -/
 structure JointWindowInput (c : Joint.Cfg) (C : Curve) (base T : Addr) (size u v : Nat)
-    {G : Point C} (Q : Point C) (row : JointGeneratorRow c.K.M.n C G) (s : State) : Prop where
+    {G : Point C} (Q : Point C) (row : JointGeneratorRow c.K.M.n C G (jointGTop c)) (s : State) : Prop where
   point : InvJ C (tmv C c.K.M.n base s c.K.P.x)
     (tmv C c.K.M.n base s c.K.P.y) (tmv C c.K.M.n base s c.K.P.z) Q
   affine : tmv C c.K.M.n base s c.K.P.z=1
   zero : tmv C c.K.M.n base s c.K.zero=0
   peer : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i
-  generator : ∀ i<64*c.K.M.n+1,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i
+  generator : ∀ i<jointGLen c,s.mem (off base (c.gBits+i))=jointGByte c u i
   external : JointGenerator c C base T size row s
 
 theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hC : Law C) (ha : AM3 C) (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
@@ -54,7 +55,7 @@ theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T :
     (fun _ _ hp hi => hD.ok (JointGenerator.workKeep hL.lookup.layout hi.field.mod.tmp) hp hi) hu hv h hb
 
 theorem jointMulWindow_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointAddLayout c size) (hInit : JointInitLayout c size)
     (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (ha : AM3 C) (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
@@ -80,7 +81,7 @@ theorem jointMulWindow_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base 
     ((kb.trans kt).mono (fun _ h => List.mem_append_right _ h)),ct,tb⟩
 
 theorem jointMulPrep_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU srcV u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     {E : Nat → Fin C.p} {s : State}
     (hL : JointPrepLayout c size srcU srcV) (hF : Lay c.K.M size (·∈nafSlots c.K))
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
@@ -103,7 +104,7 @@ theorem jointMulPrep_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU s
     (it.val _ (by simp [winRo])).trans hz,dq,dg,gt⟩,hk,ht⟩
 
 theorem jointMul_ok {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Addr}
-    {size srcU srcV u v : Nat} {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G}
+    {size srcU srcV u v : Nat} {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     {E : Nat → Fin C.p}
     (hL : JointAddLayout c size) (hInit : JointInitLayout c size)
     (hPrep : JointPrepLayout c size srcU srcV)
@@ -122,6 +123,7 @@ theorem jointMul_ok {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Ad
       Unch base (jointPrepRanges c++((jointInitWork c++jointWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)]))
         s.mem t.mem := by
   apply WP.seq
+  rw [jointPrep_inline]
   refine WP.mono (jointMulPrep_ok hPrep hInit.naf.lay hi hp hp1 hz he hU hV)
     fun a ⟨ia,pa,ka,ua⟩ => ?_
   refine WP.mono (jointMulWindow_ok hL hInit hm hC ha hD hOne hOneVal hG hQ hZ hu hv

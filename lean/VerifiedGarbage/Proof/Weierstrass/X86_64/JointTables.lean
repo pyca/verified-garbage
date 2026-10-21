@@ -66,7 +66,7 @@ theorem jointCache_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {a 
   · exact nafCacheTable_current_ok hL.layout.lay hm hCL ii
 
 theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p) (hQ : onCurve C Q=true)
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s)
@@ -75,7 +75,7 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n)
     (hz : tmv C c.K.M.n base s c.K.zero=0)
     (hv : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
-    (hu : ∀ i<64*c.K.M.n+1,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i)
+    (hu : ∀ i<jointGLen c,s.mem (off base (c.gBits+i))=jointGByte c u i)
     (he : JointGenerator c C base T size row s) :
     WP isa (Code.seq (Joint.tableCode c) (Joint.cacheCode c)).inline s fun t =>
       JointLoopKeep c.K.M base (jointInitWork c) s t ∧
