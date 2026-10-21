@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
 public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Proof.P256.GTable9
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
@@ -184,7 +185,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
 `rsp` (`hsp`). -/
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.P256.X86_64.p256v.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P256.verifyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
@@ -194,18 +195,22 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       key is replaced with `G` for the point operations and rejected by the final validity flag. \
       Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n" ++
       (if adx then "_adx" else "") ++ "`, then `u = e/s` and `v = r/s`. Both public scalars are \
-      recoded as non-adjacent signed digits, width seven for `u` and width five for `v`. A single \
-      Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. \
-      Generator digits directly index odd multiples in the first row of the existing static \
-      `VG_P256_COMB`; peer digits index eight odd multiples of `Q` in `scratch`, with cached \
-      squares and cubes of their Z coordinates. Complete point operations cover infinity, \
+      recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width \
+      five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, \
+      adding only nonzero digits. Generator digits directly index the affine odd multiples \
+      `[m]G`, `m ≤ 255`, in the static `VG_P256_GTAB` of `[m]G` for `m = 1 … 256` (16 KB, in \
+      Montgomery form); peer digits index eight odd multiples of `Q` in `scratch`, with cached \
+      squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, \
+      Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU \
+      (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the \
+      operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, \
       equal points and opposite points. Doubling uses in-place field operations and modular \
       halving; the ADX backend forwards stored register values between field operations. \
       The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or \
       `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns \
       the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may \
       depend on the public verification inputs, as permitted by the contract."]
-    consts := Impl.Ecdsa.X86_64.p256.combConsts
+    consts := Impl.P256.X86_64.p256v.combConsts
     code
     stack := 8
     verified := hv
@@ -216,10 +221,11 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List
   sign false Impl.Ecdsa.X86_64.signP256
     (Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law) h.inv),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP256
-    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified h.law (Proof.P256.combOk7 h.law) h.inv),
+    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified h.law (Proof.P256.gtabOk9 h.law) h.inv h.prime),
   sign true Impl.Ecdsa.X86_64.signP256Adx
     (Proof.Ecdsa.X86_64.sign_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv),
   verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
-    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv)]
+    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified_adx h.law (Proof.P256.gtabOk9 h.law) h.inv
+      h.prime)]
 
 end VG.Generic.P256.X86_64.EcdsaP256

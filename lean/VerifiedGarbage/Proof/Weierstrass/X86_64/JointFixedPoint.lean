@@ -37,7 +37,7 @@ theorem jointFixedFast_ok {K : WinCfg} {s : State} {base T : Addr} {size x y u j
   have hp := fixedEntryEnv_point (E:=E) (b:=FastNaf.byte 7 u j) (by omega) hy hz hOneVal hPoint
   have ep : (if (FastNaf.byte 7 u j).toNat<128 then mul (FastNaf.magnitude 7 u j) G
       else negPt (mul (FastNaf.magnitude 7 u j) G))=FastNaf.point C G 7 u j := by
-    rw [FastNaf.point,←FastNaf.byte_negative]
+    rw [FastNaf.point,←FastNaf.byte_negative 7 u j]
     by_cases h : (FastNaf.byte 7 u j).toNat<128
     · simp only [h,ite_true,show ¬128≤(FastNaf.byte 7 u j).toNat from by omega,decide_false,ite_false,Bool.false_eq_true]
     · simp only [h,ite_false,show 128≤(FastNaf.byte 7 u j).toNat from by omega,decide_true,ite_true]

@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZTiming
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
@@ -18,14 +19,25 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
+/-- The taint checks of the table: the co-Z table's (`Joint.Cfg.coZ`), or the other's. -/
+def JointTableChecks (c : Joint.Cfg) : Prop :=
+  if c.coZ then NafTableCoZChecks c.K else NafTableChecks c.K
+
 theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (ht : NafTableChecks c.K)
+    (hOne : c.K.one<C.p) (ht : JointTableChecks c)
     (hc : ScratchCT (Joint.cacheCode c).inline) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E)
-      (Code.seq (Naf.table c.K) (Joint.cacheCode c)).inline
+      (Code.seq (Joint.tableCode c) (Joint.cacheCode c)).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
-  apply RelCT.seq (nafTable_relCT hL.naf hL.count hm hL.tableSmall hOne ht)
+  have tbl : RelCT isa (FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E)
+      (Joint.tableCode c).inline (NafTablePair c.K C base size 8) := by
+    by_cases h : c.coZ=true
+    · simp only [Joint.tableCode,JointTableChecks,h,↓reduceIte] at ht ⊢
+      exact nafTableCoZ_relCT hL.naf hL.count hm hL.tableSmall ht
+    · simp only [Joint.tableCode,JointTableChecks,h,↓reduceIte,Bool.false_eq_true] at ht ⊢
+      exact nafTable_relCT hL.naf hL.count hm hL.tableSmall hOne ht
+  apply RelCT.seq tbl
   have cache : ∀ E',RelCT isa
       (FieldPair c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) E')
       (Joint.cacheCode c).inline

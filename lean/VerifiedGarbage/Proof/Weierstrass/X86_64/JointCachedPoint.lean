@@ -55,7 +55,7 @@ theorem jointCachedFast_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst 
     (by rw [he]; exact hPoint)
   have ep : (if (FastNaf.byte 5 u j).toNat<128 then mul (FastNaf.magnitude 5 u j) P
       else negPt (mul (FastNaf.magnitude 5 u j) P))=FastNaf.point C P 5 u j := by
-    rw [FastNaf.point,←FastNaf.byte_negative]
+    rw [FastNaf.point,←FastNaf.byte_negative 5 u j]
     by_cases h : (FastNaf.byte 5 u j).toNat<128
     · simp only [h,ite_true,show ¬128≤(FastNaf.byte 5 u j).toNat from by omega,decide_false,ite_false,Bool.false_eq_true]
     · simp only [h,ite_false,show 128≤(FastNaf.byte 5 u j).toNat from by omega,decide_true,ite_true]

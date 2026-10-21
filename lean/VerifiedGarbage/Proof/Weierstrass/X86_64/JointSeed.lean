@@ -27,7 +27,7 @@ theorem jointCounter_ok (s : State) {n : Nat} (hn : n<2^32) :
   rw [Nat.mod_eq_of_lt hn,Nat.mod_eq_of_lt (by omega)]
 
 theorem jointSeed_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointLayout c size) (hOne : c.K.one<C.p)
     (hi : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base s) s)
     (hs : JointStable c C base Q u v s) (he : JointGenerator c C base T size row s) :

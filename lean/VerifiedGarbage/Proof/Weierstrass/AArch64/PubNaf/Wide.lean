@@ -32,12 +32,15 @@ theorem digit_bounds {w : Nat} (hw : FastNaf.Width w) (k j : Nat) :
  FastNaf.magnitude w k j≤2^(w-1)-1 ∧
  (FastNaf.byte w k j).toInt=FastNaf.digit w k j := by
  refine ⟨FastNaf.magnitude_le hw k j,?_⟩
- have hb:=fastMagnitude_bound w k j
+ have hb : FastNaf.magnitude w k j≤63 := by
+  have h := FastNaf.magnitude_le hw k j
+  rcases hw with rfl|rfl <;> (simp only [Nat.reducePow,Nat.reduceSub] at h; omega)
+ have h9 : w≠9 := by rcases hw with rfl|rfl <;> decide
  have hd:=fastDigit_eq w k j
  have hr : -128≤FastNaf.digit w k j ∧ FastNaf.digit w k j<128 := by
   rw [hd]; split <;> omega
  have he : FastNaf.byte w k j=BitVec.ofInt 8 (FastNaf.digit w k j) := by
-  by_cases h : w=7 <;> simp only [FastNaf.byte,FastNaf.digit,h,ite_true,ite_false,FastNaf7.byte,Naf5.byte]
+  by_cases h : w=7 <;> simp only [FastNaf.byte,FastNaf.digit,h,h9,ite_true,ite_false,FastNaf7.byte,Naf5.byte]
  rw [he]
  exact BitVec.toInt_ofInt_eq_self (by decide) hr.1 hr.2
 /-- Timing certificates depend only on public registers, for either fixed width. -/

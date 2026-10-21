@@ -31,4 +31,11 @@ def fixedEntry (K : WinCfg) (tsym : String) : Prog isa :=
       [.mov32 .rax (.imm 256),.alu .sub .rax (.reg .r8),.mov .r8 (.reg .rax)] ++
       fixedLoad K tsym ++ VG.Impl.Mont.X86_64.sub K.M K.E.y K.zero K.E.y))
 
+/-- `fixedEntry` for a digit of `±1 … ±255` in sixteen bits. -/
+def fixedEntryW (K : WinCfg) (tsym : String) : Prog isa :=
+  .seq (.block [.alu .cmp .r8 (.imm 256)]) <|
+    .ite .b (.block (fixedLoad K tsym)) (.block (
+      [.mov32 .rax (.imm 65536),.alu .sub .rax (.reg .r8),.mov .r8 (.reg .rax)] ++
+      fixedLoad K tsym ++ VG.Impl.Mont.X86_64.sub K.M K.E.y K.zero K.E.y))
+
 end VG.Impl.Weierstrass.X86_64.Joint

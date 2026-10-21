@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
@@ -26,12 +27,11 @@ structure JointPointsPost (c : Cfg) (s₀ sM : State) (g : Reg → BitVec 64) (Q
     (add (mul (sv c (s₀.gpr .rcx) sM U) (G c.C)) (mul (sv c (s₀.gpr .rcx) sM V) Q))
 
 theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog isa}
-    (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hcd : c.comb=some d) (hw : d.w=7) (hsym : j.tsym=d.tsym)
+    (hc : CfgOk c) (hC : Law c.C) {J : Nat} (hG : JointGTable c j d J)
     (hK : j.K=c.winCfg PX PY BP) (ha : AM3 c.C) (hnp : c.C.n≤c.C.p)
     (hL : JointAddLayout j size) (hInit : JointInitLayout j size)
     (hPrep : JointPrepLayout j size (c.sl U) (c.sl V)) (hFrame : JointFrameLayout c j)
-    (hD : JointDoubler j c.C size double)
+    (hD : JointDoubler j c.C size double) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n)
     {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre c s₀) (h : Mid c s₀ (s₀.gpr .rcx) g s)
     {Q : Point c.C} (hQ : onCurve c.C Q=true)
     (hq : Rep c.C (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PX))
@@ -40,7 +40,7 @@ theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog i
   have field := jointMid_field hc hK hnp h
   have point := jointMid_point hc hC hK h hq
   have zero := jointMid_zero hK h
-  have generator := jointMid_generator hc hC hT hcd hw hsym hK hp h
+  have generator := jointMid_generator hc hC hG hK hp h
   have hjn : j.K.M.n=c.n := by rw [hK]; rfl
   have hm : UnitMod c.C.p (2^(64*j.K.M.n)) := unitMod_pow_two hc.p_odd _
   have hone : j.K.one<c.C.p := by
@@ -56,7 +56,7 @@ theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog i
     unfold sv
     rw [hjn]
   refine WP.mono (jointMul_ok hL hInit hPrep hm hC ha hD hone honeval hc.onG hQ
-    point zero (Nat.lt_trans h.u_lt nlt) (Nat.lt_trans h.v_lt nlt) field generator (sv4 U) (sv4 V))
+    point (jointMid_affine hc hK h) zero hZ (Nat.lt_trans h.u_lt nlt) (Nat.lt_trans h.v_lt nlt) field generator (sv4 U) (sv4 V))
     fun t ⟨ct,_,_,_,ut⟩ => ?_
   refine ⟨jointFrame_input hc hK hFrame h ct ut,?_⟩
   have pt := ct.point

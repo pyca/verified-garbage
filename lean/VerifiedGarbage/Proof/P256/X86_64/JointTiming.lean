@@ -35,12 +35,12 @@ theorem joint_adx_cached_checks : JointCachedChecks publicJointAdx := by
       (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_fixed_checks : JointFixedChecks publicJoint := by
-  refine ⟨?_,jointFixedEntry_ct,nafMixedJac_checks,joint_cached_checks.copy⟩
+  refine ⟨?_,jointFixedEntryW_ct,nafMixedJac_checks,joint_cached_checks.copy⟩
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rbx])
     (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_adx_fixed_checks : JointFixedChecks publicJointAdx := by
-  refine ⟨?_,jointFixedEntry_adx_ct,nafMixedJac_adx_checks,joint_adx_cached_checks.copy⟩
+  refine ⟨?_,jointFixedEntryW_adx_ct,nafMixedJac_adx_checks,joint_adx_cached_checks.copy⟩
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rbx])
     (fun _ _ _ _ h => h) (by taint_decide)
 

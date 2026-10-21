@@ -16,17 +16,27 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64
 
-theorem fastMagnitude_bound (w k j : Nat) : FastNaf.magnitude w k j≤63 := by
+theorem fastMagnitude_bound (w k j : Nat) : FastNaf.magnitude w k j≤255 := by
   by_cases h : w=7
-  · simpa only [FastNaf.magnitude,h,ite_true] using FastNaf7.magnitude_le k j
+  · have hb := FastNaf7.magnitude_le k j
+    simp only [FastNaf.magnitude,h,ite_true]
+    omega_arith
+  by_cases h9 : w=9
+  · subst h9
+    simpa only [FastNaf.magnitude,FastNaf.ne_9_7,ite_true,ite_false] using FastNaf9.magnitude_le k j
   · have hb := Naf5.magnitude_le k j
-    simp only [FastNaf.magnitude,h,ite_false]
+    simp only [FastNaf.magnitude,h,h9,ite_false]
     omega_arith
 
 theorem fastDigit_eq (w k j : Nat) : FastNaf.digit w k j=
     if FastNaf.negative w k j then -(FastNaf.magnitude w k j:Int) else (FastNaf.magnitude w k j:Int) := by
-  by_cases h : w=7 <;> simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,h,
-    ite_true,ite_false,FastNaf7.digit,Naf5.digit]
+  by_cases h : w=7
+  · simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,h,ite_true,FastNaf7.digit]
+  by_cases h9 : w=9
+  · subst h9
+    simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,FastNaf.ne_9_7,ite_true,ite_false,
+      FastNaf9.digit]
+  · simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,h,h9,ite_false,Naf5.digit]
 
 theorem fastWord_toNat (w k j : Nat) :
     (BitVec.ofInt 64 (FastNaf.digit w k j)).toNat =
@@ -57,8 +67,8 @@ theorem fastSign_toNat (w k j : Nat) :
 /-- The step's arithmetic at any width `M`: the registers' value after subtracting the digit's
 `M`-bit two's complement. -/
 theorem sub_next_of {M o r m r' : Nat} {neg : Bool}
-    (hs : (o+(if neg then M-m else m))%M=r) (hlt : o<M) (hm : m≤63) (hpos : neg=true → 0<m)
-    (hrM : r+64≤M) (hr : if neg then r+m=2*r' else r=2*r'+m) : o=2*r' := by
+    (hs : (o+(if neg then M-m else m))%M=r) (hlt : o<M) (hm : m≤255) (hpos : neg=true → 0<m)
+    (hrM : r+256≤M) (hr : if neg then r+m=2*r' else r=2*r'+m) : o=2*r' := by
   cases neg
   · simp only [Bool.false_eq_true,ite_false] at hs hr
     by_cases h : o+m<M

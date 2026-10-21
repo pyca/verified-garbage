@@ -58,9 +58,9 @@ theorem fastChoice_eq {w : Nat} (hw : FastNaf.Width w) (x : BitVec 64) (k j : Na
     rw [Nat.and_one_is_mod] at hv
     omega
   rcases hw with rfl | rfl
-  · have h := nafRaw_eq (x:=x) (k:=k) (j:=j) (by simpa only [FastNaf.residual,ite_false,show ¬(5=7) from by decide] using (show x.toNat%32=FastNaf.residual 5 k j%32 from by omega))
+  · have h := nafRaw_eq (x:=x) (k:=k) (j:=j) (by simpa only [FastNaf.residual,ite_false,show ¬(5=7) from by decide,FastNaf.ne_5_9] using (show x.toNat%32=FastNaf.residual 5 k j%32 from by omega))
     simp only [nafRaw,he,ite_false] at h
-    simpa only [BitVec.ofNat_eq_ofNat,BitVec.natCast_eq_ofNat,Nat.reducePow,Nat.reduceSub,ite_false,FastNaf.digit,show ¬(5=7) from by decide] using h
+    simpa only [BitVec.ofNat_eq_ofNat,BitVec.natCast_eq_ofNat,Nat.reducePow,Nat.reduceSub,ite_false,FastNaf.digit,show ¬(5=7) from by decide,FastNaf.ne_5_9] using h
   · have h := fastRaw7_eq (x:=x) (k:=k) (j:=j) (by simpa only [FastNaf.residual,ite_true] using hx)
     simp only [fastRaw7,he,ite_false] at h
     simpa only [BitVec.ofNat_eq_ofNat,BitVec.natCast_eq_ofNat,Nat.reducePow,Nat.reduceSub,FastNaf.digit,ite_true] using h

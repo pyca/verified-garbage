@@ -32,9 +32,9 @@ theorem jointVerify_p521_ok {s : State} (hp : VPre p521 s) :
   have hc := p521_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (p521_tbls hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
-    hp hM hQ hRep
+    (fun h => absurd h (by decide)) hp hM hQ hRep
 
 theorem jointVerify_p521_adx_ok {s : State} (hp : VPre p521x s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521x publicJointAdx
@@ -43,9 +43,9 @@ theorem jointVerify_p521_adx_ok {s : State} (hp : VPre p521x s) :
   have hc := p521x_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (p521x_tbls hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
-    (joint_adx_doubler hc hL) hp hM hQ hRep
+    (joint_adx_doubler hc hL) (fun h => absurd h (by decide)) hp hM hQ hRep
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64.P521
