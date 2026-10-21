@@ -33,10 +33,10 @@ namespace VG.Impl.MlKem.AArch64
 
 open VG.AArch64 KEM
 
-/-- One byte of `c ⊕ c'` ORed into `x10`. -/
+/-- One word of `c ⊕ c'` ORed into `x10`. -/
 def deCmpBody : List Instr :=
-  [.ldrb .x9 .x0 0, .ldrb .x11 .x1 0, .logic .eor .x .x9 .x9 .x11, .logic .orr .x .x10 .x10 .x9,
-    .addImm .x .x0 .x0 1, .addImm .x .x1 .x1 1, .subImm .x .x2 .x2 1]
+  [.ldr .x .x9 .x0 0, .ldr .x .x11 .x1 0, .logic .eor .x .x9 .x9 .x11, .logic .orr .x .x10 .x10 .x9,
+    .addImm .x .x0 .x0 8, .addImm .x .x1 .x1 8, .subImm .x .x2 .x2 1]
 
 /-- Eight bytes of `K'` or `K̄` into `key`, through the mask in `x10`. -/
 def deSelWord (k : Nat) : List Instr :=
@@ -67,13 +67,15 @@ def deAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
       [⟨.x28, KP, 32⟩, ⟨.x28, RB, 32⟩])
     (.block (copy32 .x25 (768 * L.k) .x28 SB))
 
-/-- The OR of the bytes of `c ⊕ c'` into `x10`, then a mask in `x10`: all
-ones if it is 0 (`c = c'`), and 0 otherwise. -/
+/-- The OR of the words of `c ⊕ c'` into `x10`, then a mask in `x10`: all
+ones if it is 0 (`c = c'`), and 0 otherwise (`(x ∨ -x) >> 63` is 1 exactly
+when `x ≠ 0`). -/
 def deCmp : Prog isa :=
   .seq (.block (ptrTo .x0 .x26 0 ++ ptrTo .x1 .x28 (CB L) ++
-      ([.movz .x .x2 (BitVec.ofNat 16 L.ctLen) 0, .movz .x .x10 0 0] : List Instr))) <|
+      ([.movz .x .x2 (BitVec.ofNat 16 (L.ctLen / 8)) 0, .movz .x .x10 0 0] : List Instr))) <|
   .seq (.loop (.block deCmpBody) (.nonzero .x .x2))
-    (.block [.subImm .x .x10 .x10 1, .lsr .x .x10 .x10 63, .movz .x .x11 0 0, .sub .x .x10 .x11 .x10])
+    (.block [.movz .x .x11 0 0, .sub .x .x11 .x11 .x10, .logic .orr .x .x10 .x10 .x11, .lsr .x .x10 .x10 63,
+      .subImm .x .x10 .x10 1])
 
 /-- `c'`, `K̄`, the comparison, the key and the epilogue. -/
 def deCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
