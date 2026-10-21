@@ -13,30 +13,40 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
-        r"movz x9, #3328, lsl #0
-movz x10, #0, lsl #0
-movz x11, #384, lsl #0
-movz x14, #15, lsl #0
+        r"movz x9, #256, lsl #0
+movk x9, #65282, lsl #16
+movk x9, #1027, lsl #32
+movk x9, #65285, lsl #48
+dup v16.2d, x9
+movz x9, #1798, lsl #0
+movk x9, #65288, lsl #16
+movk x9, #2569, lsl #32
+movk x9, #65291, lsl #48
+mov v16.d[1], x9
+movz x9, #4095, lsl #0
+dup v17.4s, w9
+movz x9, #3329, lsl #0
+dup v18.4s, w9
+movi v19.2d, #0
+movz x11, #96, lsl #0
 20:
-ldrb w12, [x0, #0]
-ldrb w13, [x0, #1]
-and x15, x13, x14
-lsl x15, x15, #8
-add x15, x15, x12
-sub x15, x9, x15
-lsr x15, x15, #63
-add x10, x10, x15
-ldrb w12, [x0, #2]
-lsr x13, x13, #4
-lsl x12, x12, #4
-add x13, x13, x12
-sub x13, x9, x13
-lsr x13, x13, #63
-add x10, x10, x13
-add x0, x0, #3
+ldr x9, [x0, #0]
+ldr w10, [x0, #8]
+dup v0.2d, x9
+mov v0.d[1], x10
+tbl v1.16b, {{v0.16b}}, v16.16b
+and v2.16b, v1.16b, v17.16b
+ushr v3.4s, v1.4s, #12
+cmhs v2.4s, v2.4s, v18.4s
+cmhs v3.4s, v3.4s, v18.4s
+orr v19.16b, v19.16b, v2.16b
+orr v19.16b, v19.16b, v3.16b
+add x0, x0, #12
 sub x11, x11, #1
 cbnz x11, 20b
-sub x0, x10, #1
+uaddlv d20, v19.4s
+umov x9, v20.d[0]
+sub x0, x9, #1
 lsr x0, x0, #63
 ret
 .p2align 6",
