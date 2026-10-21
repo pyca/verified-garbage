@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
-
-public import Init.Data.String.Defs
-
-
-public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfVerified
 import VerifiedGarbage.Proof.RsaPss.Arm.VfSat
+public meta import VerifiedGarbage.Proof.RsaPss.Arm.VfSat
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfVerified
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import Init.Data.String.Defs
+public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha256
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgVerified
@@ -42,7 +39,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
       `salt_len` and the public key decide a branch or an address."]
     code := Proof.RsaPss.Arm.Sg.signCode Proof.RsaPss.Arm.sha256 v
     stack := 3624
-    verified := by exact (Proof.RsaPss.Arm.Sg.sign_verified Proof.RsaPss.Arm.sha256 Proof.RsaPss.Arm.Sg.sign_sat_sha256 v)
+    verified := (Proof.RsaPss.Arm.Sg.sign_verified Proof.RsaPss.Arm.sha256 Proof.RsaPss.Arm.Sg.sign_sat_sha256 v)
     features := v.features },
   (Spec.RsaPss.verifyPrecomputedApi Spec.Mgf1.sha256 Spec.Mgf1.sha256).artifact Arm.target {
     suffix := v.suffix
@@ -55,7 +52,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
         mode and the public key decide a branch or an address."]
     code := Proof.RsaPss.Arm.Vf.verifyCode Proof.RsaPss.Arm.sha256 (Proof.Rsa.Arm.pdOfCrt v)
     stack := 240
-    verified := by exact (Proof.RsaPss.Arm.Vf.verify_verified Proof.RsaPss.Arm.sha256 Proof.RsaPss.Arm.Vf.verify_sat_sha256
+    verified := (Proof.RsaPss.Arm.Vf.verify_verified Proof.RsaPss.Arm.sha256 Proof.RsaPss.Arm.Vf.verify_sat_sha256
       (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 

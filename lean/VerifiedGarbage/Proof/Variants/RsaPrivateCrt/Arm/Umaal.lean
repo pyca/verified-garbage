@@ -30,11 +30,11 @@ def variant : Proof.Rsa.Arm.CrtImpl :=
     pcName := Spec.Rsa.publicPrecomputeApi.name ++ "_umaal"
     pc := umaalArithmetic PcFn.code
     pcVerified := Proof.Rsa.Arm.precompute_umaal_verified
-    pcStack := by exact (armStack_umaalArithmetic _).trans Base.variant.pcStack
+    pcStack := Proof.Rsa.Arm.precompute_umaal_stack
     pdName := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_umaal"
     pd := umaalArithmetic PdFn.code
     pdVerified := Proof.Rsa.Arm.public_precomputed_umaal_verified
-    pdStack := by exact (armStack_umaalArithmetic _).trans Base.variant.pdStack
+    pdStack := Proof.Rsa.Arm.public_precomputed_umaal_stack
     suffix := "_umaal"
     features := ["umaal"] }
 

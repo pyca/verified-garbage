@@ -1,14 +1,11 @@
 module
 
+public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcBase
 public import VerifiedGarbage.TCB.Arm.Target
-
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
-
 public import VerifiedGarbage.Proof.Framework.Semantics
-
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
-
-
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
@@ -48,7 +45,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
       2^31, and every byte of `EM` and of the alternative message is read whichever is returned."]
     code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCode v
     stack := 3584
-    verified := by exact (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v)
+    verified := (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v)
     features := v.features },
   Spec.RsaPkcs1Enc.encryptPrecomputedApi.artifact Arm.target {
     suffix := v.suffix
@@ -61,7 +58,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
     code := Impl.RsaPkcs1Enc.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
       (Proof.Rsa.Arm.pdOfCrt v).code
     stack := 1168
-    verified := by exact (Proof.RsaPkcs1Enc.Arm.Pc.code_verified (Proof.Rsa.Arm.pdOfCrt v))
+    verified := (Proof.RsaPkcs1Enc.Arm.Pc.code_verified (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 
 end VG.Generic.RsaPrivateCrt.Arm.RsaPkcs1Enc

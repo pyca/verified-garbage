@@ -1,22 +1,19 @@
 module
 
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
+public meta import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
+public import VerifiedGarbage.Proof.RsaOaep.Arm.EncVerified
 public import VerifiedGarbage.TCB.Arm.Target
-
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
-
 public import Init.Data.String.Defs
-
-
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Spec.Mgf1
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncVerified
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha1
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareArgs
@@ -163,7 +160,6 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.YDig
 public import VerifiedGarbage.Proof.RsaPss.Params
 public import VerifiedGarbage.Proof.RsaPss.SignCases
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecVerified
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecSat
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSat
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
@@ -171,157 +167,6 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfPass
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfY
-import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
-import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
-import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareCT
-import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
-import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBuffer
-import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBit
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitsCT
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByte
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHead
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHeadCT
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteNext
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteSave
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBytes
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBytesCT
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpInit
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhase
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseCT
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRound
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRoundCT
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpStep
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpStepCT
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
-import VerifiedGarbage.Proof.Bignum.Arm.ExpBitTest
-import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
-import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
-import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
-import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
-import VerifiedGarbage.Proof.Bignum.Arm.ExpInit
-import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentByte
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckMath
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentSaturate
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentTest
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentTests
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentWords
-import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
-import VerifiedGarbage.Proof.Bignum.Arm.ExportBEArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ExportBECT
-import VerifiedGarbage.Proof.Bignum.Arm.ExportMasked
-import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
-import VerifiedGarbage.Proof.Bignum.Arm.ImportArray
-import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayCT
-import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayLayout
-import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
-import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
-import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
-import VerifiedGarbage.Proof.Bignum.Arm.InitInverseCT
-import VerifiedGarbage.Proof.Bignum.Arm.InputCompare
-import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
-import VerifiedGarbage.Proof.Bignum.Arm.InputCompareCT
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBECT
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
-import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptance
-import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
-import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
-import VerifiedGarbage.Proof.Bignum.Arm.MontOp
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.PdAccept
-import VerifiedGarbage.Proof.Bignum.Arm.PdAcceptCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdAccepted
-import VerifiedGarbage.Proof.Bignum.Arm.PdApply
-import VerifiedGarbage.Proof.Bignum.Arm.PdApplyCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdBody
-import VerifiedGarbage.Proof.Bignum.Arm.PdBodyCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdCheckFirst
-import VerifiedGarbage.Proof.Bignum.Arm.PdCheckedCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
-import VerifiedGarbage.Proof.Bignum.Arm.PdChecksCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdContract
-import VerifiedGarbage.Proof.Bignum.Arm.PdContractInput
-import VerifiedGarbage.Proof.Bignum.Arm.PdControls
-import VerifiedGarbage.Proof.Bignum.Arm.PdControlsCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdEntry
-import VerifiedGarbage.Proof.Bignum.Arm.PdEntryCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdEntryMemory
-import VerifiedGarbage.Proof.Bignum.Arm.PdEntryReady
-import VerifiedGarbage.Proof.Bignum.Arm.PdFail
-import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdFinish
-import VerifiedGarbage.Proof.Bignum.Arm.PdFinishCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdFn
-import VerifiedGarbage.Proof.Bignum.Arm.PdFnCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdImportCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdImported
-import VerifiedGarbage.Proof.Bignum.Arm.PdImportedCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdInputImport
-import VerifiedGarbage.Proof.Bignum.Arm.PdInputImportCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
-import VerifiedGarbage.Proof.Bignum.Arm.PdOdd
-import VerifiedGarbage.Proof.Bignum.Arm.PdOddCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdOddFinish
-import VerifiedGarbage.Proof.Bignum.Arm.PdOddRead
-import VerifiedGarbage.Proof.Bignum.Arm.PdParity
-import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.PdPrepareCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdPush
-import VerifiedGarbage.Proof.Bignum.Arm.PdWritten
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
-import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
-import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
-import VerifiedGarbage.Proof.Bignum.Arm.PublicEntry
-import VerifiedGarbage.Proof.Bignum.Arm.PublicEntryReady
-import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
-import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
-import VerifiedGarbage.Proof.Bignum.Arm.PublicSaved
-import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
-import VerifiedGarbage.Proof.Bignum.Arm.PublicWritten
-import VerifiedGarbage.Proof.Bignum.Arm.R2CT
-import VerifiedGarbage.Proof.Bignum.Arm.ReadPrefix
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseBuffer
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseBytesCT
-import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
-import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptance
-import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
-import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
-import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
-import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.StoreBE
-import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
-import VerifiedGarbage.Proof.Bignum.Arm.SubRowCT
-import VerifiedGarbage.Proof.Bignum.FoldedPublic
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
-import VerifiedGarbage.Proof.Rsa.Arm.PrivContract
-import VerifiedGarbage.Proof.Rsa.Arm.PrivContractInput
-import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
-import VerifiedGarbage.Proof.Rsa.Arm.PrivFn
-import VerifiedGarbage.Proof.Rsa.Arm.PrivFnCT
-import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
-import VerifiedGarbage.Proof.RsaOaep.Arm.Label
-import VerifiedGarbage.Proof.RsaPss.Arm.VfPass
-import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
-import VerifiedGarbage.Proof.RsaPss.Arm.VfY
-import VerifiedGarbage.Proof.RsaPss.Arm.YDig
-import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaPss.SignCases
 
 /-!
 # RSAES-OAEP decryption with SHA-512 and MGF1 with SHA-1 on ARMv7, for each implementation of the CRT
@@ -351,7 +196,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
       lengths and the public key decide a branch or an address."]
     code := Proof.RsaOaep.Arm.Dec.decCode (.ofPss Proof.RsaPss.Arm.sha512) (.ofPss Proof.RsaPss.Arm.sha1) v
     stack := 3624
-    verified := by exact (Proof.RsaOaep.Arm.Dec.dec_verified (.ofPss Proof.RsaPss.Arm.sha512) (.ofPss Proof.RsaPss.Arm.sha1)
+    verified := (Proof.RsaOaep.Arm.Dec.dec_verified (.ofPss Proof.RsaPss.Arm.sha512) (.ofPss Proof.RsaPss.Arm.sha1)
       (Proof.RsaOaep.Arm.Dec.dec_sat _ _) v)
     features := v.features },
   (Spec.RsaOaep.encryptPrecomputedApi Spec.Mgf1.sha512 Spec.Mgf1.sha1).artifact Arm.target {
@@ -363,7 +208,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
     code := Proof.RsaOaep.Arm.Enc.encryptCode (.ofPss Proof.RsaPss.Arm.sha512) (.ofPss Proof.RsaPss.Arm.sha1)
       (Proof.Rsa.Arm.pdOfCrt v)
     stack := 240
-    verified := by exact (Proof.RsaOaep.Arm.Enc.encrypt_verified (.ofPss Proof.RsaPss.Arm.sha512) (.ofPss Proof.RsaPss.Arm.sha1)
+    verified := (Proof.RsaOaep.Arm.Enc.encrypt_verified (.ofPss Proof.RsaPss.Arm.sha512) (.ofPss Proof.RsaPss.Arm.sha1)
       (Proof.RsaOaep.Arm.Enc.encrypt_sat_sha512 _) (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 
