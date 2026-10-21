@@ -59,6 +59,7 @@ structure Acc (R0 R1 : BitVec 64) (X : Nat) (s : State) : Prop where
 theorem scal_addProd (j : Nat) : scalCode (.block (addProd j)) = true := by
   simp only [scalCode, addProd, Impl.Poly1305.X86_64.addBlockAt,
     Impl.Poly1305.X86_64.products, Impl.Poly1305.X86_64.mulTo, Impl.Poly1305.X86_64.mulAdd,
+    Impl.Poly1305.X86_64.imulAdd,
     List.cons_append, List.nil_append, List.all_cons, List.all_nil, scalarI, Bool.and_true]
 
 theorem scal_carry : scalCode (.block Impl.Poly1305.X86_64.carry) = true := by
@@ -98,8 +99,7 @@ theorem Half.of_gpr {R0 R1 : BitVec 64} {Y : Nat} {s s' : State} (hg : s'.gpr = 
     (h : Half R0 R1 Y s) : Half R0 R1 Y s' := by
   obtain ⟨a0, a1, a2, e, hP⟩ := h.prods
   exact ⟨by rw [hg]; exact h.r8, by rw [hg]; exact h.r9, by rw [hg]; exact h.r10, a0, a1, a2, e,
-    ⟨hP.ha0, hP.ha1, hP.ha2, hP.hr0, hP.hq, by rw [hg]; exact hP.x, by rw [hg]; exact hP.y,
-      by rw [hg]; exact hP.z⟩⟩
+    hP.of_gpr hg⟩
 
 /-- The first piece of the block at `rsi + 16 j`. -/
 theorem addProd_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {s : State} (h : Acc R0 R1 X s)
