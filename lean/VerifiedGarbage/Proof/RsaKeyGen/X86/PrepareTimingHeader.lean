@@ -28,7 +28,7 @@ theorem header_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32
       WP isa (VG.Impl.RsaKeyGen.X86.PrepareHeader.code g.w) a (PreparedR2.Input g capacity p) := by
     obtain ⟨c, I⟩ := I
     exact WP.mono (PrepareHeader.code_ok v I.scratch I.caller length I.candidate I.odd)
-      fun _ ⟨R, _, _⟩ => ⟨c, R, I.odd, I.top⟩
+      fun _ ⟨R, _, _, _⟩ => ⟨c, R, I.odd, I.top⟩
   obtain ⟨cu, Cu, ou, tu⟩ := wp_result (post S) E
   obtain ⟨cz, Cz, oz, tz⟩ := wp_result (post T) G
   exact ⟨trace, ⟨Cu.context, Cz.context, agree⟩, ⟨cu, Cu, ou, tu⟩, ⟨cz, Cz, oz, tz⟩⟩

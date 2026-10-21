@@ -26,4 +26,6 @@ structure Data (g : Geometry) (c capacity : Nat) (p : BitVec 32) (s : State) : P
   exponent : val32 s.mem g.W (g.array 27) g.words = Spec.MillerRabin.exponent c
   marker : word s.mem g.W (g.array 27 + 8 * g.w) = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64)
 
+  stride : word s.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2))
+
 end VG.Proof.RsaKeyGen.X86.Prepare

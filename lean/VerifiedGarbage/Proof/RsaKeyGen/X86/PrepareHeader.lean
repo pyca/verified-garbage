@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderContext
 import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderLayout
+import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRead
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MontInverse
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowWord
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
@@ -25,7 +26,8 @@ theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
     (scratch : Scr s g.W g.L) (caller : Caller g capacity p s) (length : g.L = 8 * capacity)
     (candidate : val32 s.mem g.W (g.array 0) g.words = c) (odd : c % 2 = 1) :
     WP isa (VG.Impl.RsaKeyGen.X86.PrepareHeader.code g.w) s fun t =>
-      Ready g c capacity p t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps clob s t := by
+      Ready g c capacity p t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps clob s t ∧
+      word t.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
   unfold VG.Impl.RsaKeyGen.X86.PrepareHeader.code
   rw [Prepared.slot_eq]
   refine WP.seq (WP.mono (Header.context_ok v scratch) fun a ⟨Ca, Oa, Ka, Ma⟩ => ?_)
@@ -82,9 +84,16 @@ theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
       exact candidateA
     · exact inverse
   refine ⟨⟨Ct, Mt, callerA.keepOuts Kt (by decide) (Outs.of_outside Ot (List.mem_singleton_self _))
-    (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega), St⟩, ?_, ?_⟩
+    (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega), St⟩, ?_, ?_, ?_⟩
   · exact (Oa.mono (fun r mem => List.mem_append_left _ mem)).trans
       (Outs.of_outside Ot (List.mem_append_right _ (List.mem_singleton_self _)))
   · exact (Ka.mono (by unfold clob; decide)).trans Kt
+  · rw [Ot.word (by decide) (by decide), Ma]
+    change (Header.headerMemory g.W (s.gpr .edi) g.w s.mem).readW (off g.W 224) 64 = _
+    rw [Header.header_stride, Header.zeroHigh]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, VG.Impl.Bignum.X86.PublicContext.stride]
+    have := v.maxWidth
+    omega
 
 end VG.Proof.RsaKeyGen.X86.PrepareHeader
