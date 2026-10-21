@@ -162,7 +162,7 @@ def qdOk (b : T) : Bool := Nat.beq b.kind 3 && !Nat.beq b.t 32768
 abbrev tw : Nat := 48
 
 /-- The width of eight terms. -/
-abbrev yw : Nat := 384
+def yw : Nat := 384
 
 /-- Eight halfwords, packed. -/
 abbrev Y := Nat
@@ -250,7 +250,7 @@ def norm (rs : List Rg) (k o : Nat) : G :=
 
 def addG (rs : List Rg) (g : G) (imm : Nat) : G :=
   match g with
-  | .ptr k o => norm rs k (o + imm)
+  | .ptr k o => if o + imm < 2 ^ 32 then norm rs k (o + imm) else .junk
   | .num n => .num ((n + imm) % 2 ^ 64)
   | .junk => .junk
 
@@ -259,9 +259,6 @@ def subG (rs : List Rg) (g : G) (imm : Nat) : G :=
   | .ptr k o => if imm ≤ o then norm rs k (o - imm) else .junk
   | .num n => .num ((n + (2 ^ 64 - imm)) % 2 ^ 64)
   | .junk => .junk
-
-/-- `MOVK` of `imm` into halfword `hw` of `n`. -/
-def movkN (n imm hw : Nat) : Nat := n - n / 2 ^ (16 * hw) % 65536 * 2 ^ (16 * hw) + imm * 2 ^ (16 * hw)
 
 /-! ## The machine -/
 
@@ -317,9 +314,6 @@ def symRegion (rs : List Rg) (name : String) : G :=
   match rs.findIdx? (fun r => r.base == .sym name && r.off == 0) with
   | some k => .ptr k 0
   | none => .junk
-
-/-- Halfword `i` of the number `v`, as a term. -/
-def halfOf (v i : Nat) : T := cT (v / 2 ^ (16 * i) % 65536)
 
 def St.vop (R : Rules) (σ : St) : VOp → Option St
   | .movi0 d => some (σ.setV d (Y.dup (cT 0)))
@@ -379,12 +373,6 @@ def St.step (R : Rules) (rs : List Rg) (σ : St) : Instr → Option St
   | .addImm .x d n imm => if imm < 4096 then some (σ.setG d (addG rs (σ.greg n) imm)) else none
   | .subImm .x d n imm => if imm < 4096 then some (σ.setG d (subG rs (σ.greg n) imm)) else none
   | .movz .x d imm hw => if hw < 4 then some (σ.setG d (.num (imm.toNat * 2 ^ (16 * hw)))) else none
-  | .movk .x d imm hw =>
-    if hw < 4 then
-      match σ.greg d with
-      | .num n => some (σ.setG d (.num (movkN n imm.toNat hw)))
-      | _ => none
-    else none
   | .adrSym d name => some (σ.setG d (symRegion rs name))
   | .ldrq t n off =>
     if off % 16 = 0 ∧ off < 65536 then (chunkAt rs (σ.greg n) off).map fun (k, j) => σ.setV t (σ.chunk k j)
@@ -394,18 +382,6 @@ def St.step (R : Rules) (rs : List Rg) (σ : St) : Instr → Option St
       (chunkAt rs (σ.greg n) off).bind fun (k, j) =>
         if (rs.getD k default).wr then some (σ.setChunk k j (σ.vreg t)) else none
     else none
-  | .str .x t n off =>
-    match σ.greg t with
-    | .num v =>
-      if off % 8 = 0 ∧ off < 32768 then
-        (chunkAt rs (σ.greg n) (off - off % 16)).bind fun (k, j) =>
-          if (rs.getD k default).wr then
-            let h := off % 16 / 8
-            let y := σ.chunk k j
-            some (σ.setChunk k j (Y.ofFn fun e => if e / 4 = h then halfOf v (e % 4) else y.get e))
-          else none
-      else none
-    | _ => none
   | _ => none
 
 def St.run (R : Rules) (rs : List Rg) (σ : St) : List Instr → Option St

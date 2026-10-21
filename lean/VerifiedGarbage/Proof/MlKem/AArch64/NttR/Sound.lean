@@ -25,6 +25,8 @@ theorem nmod (a b : Nat) : Nat.mod a b = a % b := rfl
 
 theorem slot_def (w n i : Nat) : slot w n i = n / 2 ^ (w * i) % 2 ^ w := rfl
 
+theorem slot_bound (w n i : Nat) : slot w n i < 2 ^ w := Nat.mod_lt _ (Nat.two_pow_pos w)
+
 theorem upd_def (w n i x : Nat) : upd w n i x = n - slot w n i * 2 ^ (w * i) + x * 2 ^ (w * i) := rfl
 
 /-- `u = A + P x + P M Q`. -/
@@ -229,6 +231,7 @@ def Hd (a : T) (w : BitVec 16) : Prop := (a.kind = 0 ∨ 10 < a.kind) ∨ w = a.
 /-- The coefficients after each number of layers obey the butterflies of
 `R`, and `O` is the reduction of the last ones. -/
 structure Model (R : Rules) : Prop where
+  layers : R.layers < 16
   bfly : ∀ st p p' z t, bflyOk R st p p' z t = true →
     L (st + 1) p = L st p + mmW (L st p') z t ∧ L (st + 1) p' = L st p - mmW (L st p') z t
   out : ∀ p < 256, O p = normW (L R.layers p)
@@ -328,6 +331,129 @@ theorem mulT_ok {a b : T} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) 
       rw [eval_mk, ha.qdC h₂.1.1, hb.c h₂.1.2, h₂.2, Nat.mod_eq_of_lt (st_lt a), Nat.mod_eq_of_lt (p_lt a),
         Nat.mod_eq_of_lt (t_lt a)]
     · rw [Bool.eq_false_iff.2 h₂, Bool.cond_false]; exact Hd.junk _
+
+theorem qdT_ok {a b : T} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) : Hd L O (qdT a b) (qdW x y) := by
+  unfold qdT
+  by_cases h₁ : (Nat.beq a.kind 1 && Nat.beq b.kind 3) = true
+  · rw [h₁, Bool.cond_true]
+    simp only [Bool.and_eq_true, Nat.beq_eq] at h₁
+    refine (Hd.mk (by decide)).2 ?_
+    rw [eval_mk, ha.lv h₁.1, hb.c h₁.2, Nat.mod_eq_of_lt (st_lt a), Nat.mod_eq_of_lt (p_lt a),
+      Nat.mod_eq_of_lt (t_lt b)]
+  · rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]; exact Hd.junk _
+
+/-- `SQRDMULH` by a constant other than `-2¹⁵` is defined. -/
+theorem qdOk_some {b : T} {y : BitVec 16} (hb : Hd L O b y) (h : qdOk b = true) (x : BitVec 16) :
+    (sqdmulhHLane true x y).isSome := by
+  unfold qdOk at h
+  simp only [Bool.and_eq_true, Nat.beq_eq, Bool.not_eq_true'] at h
+  have hne : b.t ≠ 32768 := Nat.ne_of_beq_eq_false h.2
+  rw [hb.c h.1]
+  unfold sqdmulhHLane
+  have : ¬ BitVec.ofNat 16 b.t = 0x8000#16 := by
+    intro e
+    have := congrArg BitVec.toNat e
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (t_lt b)] at this
+    exact hne this
+  simp [this]
+
+theorem addT_ok {R : Rules} (hM : Model L O R) {a b : T} {x y : BitVec 16} (ha : Hd L O a x)
+    (hb : Hd L O b y) : Hd L O (addT R a b) (x + y) := by
+  unfold addT
+  by_cases h₁ : (Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st &&
+      bflyOk R a.st a.p b.p b.z b.t) = true
+  · rw [h₁, Bool.cond_true]
+    simp only [Bool.and_eq_true, Nat.beq_eq] at h₁
+    obtain ⟨⟨⟨k1, k7⟩, hs⟩, hb'⟩ := h₁
+    have hl : a.st < R.layers := by
+      unfold bflyOk at hb'
+      simp only [Bool.and_eq_true, Nat.blt_eq] at hb'
+      exact hb'.1.1.1.1.1
+    refine (Hd.mk (by decide)).2 ?_
+    rw [eval_mk, ha.lv k1, hb.mm k7, hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by have := hM.layers; omega),
+      Nat.mod_eq_of_lt (p_lt a), (hM.bfly _ _ _ _ _ hb').1]
+  · rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]
+    by_cases h₂ : (Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.st a.st && Nat.beq b.p a.p &&
+        Nat.beq a.st R.layers && Nat.blt a.p 256) = true
+    · rw [h₂, Bool.cond_true]
+      simp only [Bool.and_eq_true, Nat.beq_eq, Nat.blt_eq] at h₂
+      obtain ⟨⟨⟨⟨⟨k8, k10⟩, hs⟩, hp⟩, hl⟩, hp'⟩ := h₂
+      refine (Hd.mk (by decide)).2 ?_
+      rw [eval_mk, ha.n1 k8, hb.andN k10, hs, hp, Nat.mod_eq_of_lt (p_lt a), hM.out _ hp', hl, normW]
+    · rw [Bool.eq_false_iff.2 h₂, Bool.cond_false]; exact Hd.junk _
+
+theorem subT_ok {R : Rules} (hM : Model L O R) {a b : T} {x y : BitVec 16} (ha : Hd L O a x)
+    (hb : Hd L O b y) : Hd L O (subT R a b) (x - y) := by
+  unfold subT
+  by_cases h₁ : (Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st &&
+      bflyOk R a.st a.p b.p b.z b.t) = true
+  · rw [h₁, Bool.cond_true]
+    simp only [Bool.and_eq_true, Nat.beq_eq] at h₁
+    obtain ⟨⟨⟨k1, k7⟩, hs⟩, hb'⟩ := h₁
+    have hl : a.st < R.layers := by
+      unfold bflyOk at hb'
+      simp only [Bool.and_eq_true, Nat.blt_eq] at hb'
+      exact hb'.1.1.1.1.1
+    refine (Hd.mk (by decide)).2 ?_
+    rw [eval_mk, ha.lv k1, hb.mm k7, hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by have := hM.layers; omega),
+      Nat.mod_eq_of_lt (p_lt b), (hM.bfly _ _ _ _ _ hb').2]
+  · rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]
+    by_cases h₂ : (Nat.beq a.kind 4 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p) = true
+    · rw [h₂, Bool.cond_true]
+      simp only [Bool.and_eq_true, Nat.beq_eq] at h₂
+      obtain ⟨⟨⟨k4, k6⟩, hs⟩, hp⟩ := h₂
+      refine (Hd.mk (by decide)).2 ?_
+      rw [eval_mk, ha.mulC k4, hb.mulQ k6, hs, hp, Nat.mod_eq_of_lt (st_lt a), Nat.mod_eq_of_lt (p_lt a),
+        Nat.mod_eq_of_lt (z_lt a), Nat.mod_eq_of_lt (t_lt b), mmW]
+    · rw [Bool.eq_false_iff.2 h₂, Bool.cond_false]
+      by_cases h₃ : (Nat.beq a.kind 1 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p &&
+          Nat.beq b.t 10) = true
+      · rw [h₃, Bool.cond_true]
+        simp only [Bool.and_eq_true, Nat.beq_eq] at h₃
+        obtain ⟨⟨⟨⟨k1, k6⟩, hs⟩, hp⟩, ht⟩ := h₃
+        refine (Hd.mk (by decide)).2 ?_
+        rw [eval_mk, ha.lv k1, hb.mulQ k6, hs, hp, ht, Nat.mod_eq_of_lt (st_lt a), Nat.mod_eq_of_lt (p_lt a), n1W]
+      · rw [Bool.eq_false_iff.2 h₃, Bool.cond_false]; exact Hd.junk _
+
+theorem sraT_ok {a : T} {x : BitVec 16} (ha : Hd L O a x) : Hd L O (sraT a) (x.sshiftRight 15) := by
+  unfold sraT
+  by_cases h₁ : Nat.beq a.kind 8 = true
+  · rw [h₁, Bool.cond_true]
+    rw [Nat.beq_eq] at h₁
+    refine (Hd.mk (by decide)).2 ?_
+    rw [eval_mk, ha.n1 h₁, Nat.mod_eq_of_lt (st_lt a), Nat.mod_eq_of_lt (p_lt a)]
+  · rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]; exact Hd.junk _
+
+theorem andT_ok {a b : T} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) : Hd L O (andT a b) (x &&& y) := by
+  unfold andT
+  by_cases h₁ : (Nat.beq a.kind 9 && Nat.beq b.kind 3 && Nat.beq b.t qN) = true
+  · rw [h₁, Bool.cond_true]
+    simp only [Bool.and_eq_true, Nat.beq_eq] at h₁
+    refine (Hd.mk (by decide)).2 ?_
+    rw [eval_mk, ha.sraN h₁.1.1, hb.c h₁.1.2, h₁.2, Nat.mod_eq_of_lt (st_lt a), Nat.mod_eq_of_lt (p_lt a)]
+  · rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]; exact Hd.junk _
+
+/-- A term reduced to its width holds as the term did. -/
+theorem Hd.mod {a : T} {w : BitVec 16} (h : Hd L O a w) (ha : a < 2 ^ tw) : Hd L O (a % 2 ^ tw) w := by
+  rw [Nat.mod_eq_of_lt ha]; exact h
+
+theorem cond_lt {c : Bool} {x y n : Nat} (hx : x < n) (hy : y < n) : @LT.lt Nat instLTNat (bif c then x else y) n := by
+  cases c <;> assumption
+
+theorem mk_lt_tw (k : K) (st p z t : Nat) : @LT.lt Nat instLTNat (mk k st p z t) (2 ^ tw) :=
+  Nat.lt_trans (mk_lt ..) (by decide)
+
+theorem junk_lt : @LT.lt Nat instLTNat junkT (2 ^ tw) := by decide
+
+theorem mulT_lt (a b : T) : @LT.lt Nat instLTNat (mulT a b) (2 ^ tw) :=
+  cond_lt (mk_lt_tw ..) (cond_lt (mk_lt_tw ..) junk_lt)
+theorem qdT_lt (a b : T) : @LT.lt Nat instLTNat (qdT a b) (2 ^ tw) := cond_lt (mk_lt_tw ..) junk_lt
+theorem addT_lt (R : Rules) (a b : T) : @LT.lt Nat instLTNat (addT R a b) (2 ^ tw) :=
+  cond_lt (mk_lt_tw ..) (cond_lt (mk_lt_tw ..) junk_lt)
+theorem subT_lt (R : Rules) (a b : T) : @LT.lt Nat instLTNat (subT R a b) (2 ^ tw) :=
+  cond_lt (mk_lt_tw ..) (cond_lt (mk_lt_tw ..) (cond_lt (mk_lt_tw ..) junk_lt))
+theorem sraT_lt (a : T) : @LT.lt Nat instLTNat (sraT a) (2 ^ tw) := cond_lt (mk_lt_tw ..) junk_lt
+theorem andT_lt (a b : T) : @LT.lt Nat instLTNat (andT a b) (2 ^ tw) := cond_lt (mk_lt_tw ..) junk_lt
 
 end
 
