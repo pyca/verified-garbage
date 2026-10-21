@@ -1,4 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
+
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFailure
@@ -6,10 +8,13 @@ import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvSized
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Both recovery modulus-validation branches satisfy the shared result definition -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86

@@ -2,6 +2,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
 import VerifiedGarbage.Proof.Rsa.RecoverTries
+public import Init.Data.Fin.Basic
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.X86.State
 
 /-! # The refusal branch is determined by the declared recovery attempt count -/
 

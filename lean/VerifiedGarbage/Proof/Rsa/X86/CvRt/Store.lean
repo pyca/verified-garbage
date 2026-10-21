@@ -11,6 +11,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+public import VerifiedGarbage.Impl.Rsa.X86.Inverse
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Spec.Rsa
 
 /-! # CRT parameter calculation at a run-time width: the outputs
 

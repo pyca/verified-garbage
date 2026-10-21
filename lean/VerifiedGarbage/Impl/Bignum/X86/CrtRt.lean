@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 

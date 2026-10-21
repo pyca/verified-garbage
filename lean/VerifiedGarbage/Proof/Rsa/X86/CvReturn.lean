@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Rsa.X86.CvResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Words
+public import Init.Prelude
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Mont.Words
 
 /-! # CRT output writes preserve saved registers and the caller's return address -/
 

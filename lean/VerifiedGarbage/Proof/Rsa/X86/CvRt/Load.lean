@@ -16,6 +16,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-! # CRT parameter calculation at a run-time width: the inputs
 
@@ -173,6 +177,14 @@ theorem load_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g
 def arithmeticGeometry (g : CallGeometry) (m : Mem) : Geometry :=
   ⟨g.base, g.size, Spec.Rsa.os2ip (inputBytes g m 1), Spec.Rsa.os2ip (inputBytes g m 2),
     Spec.Rsa.os2ip (inputBytes g m 3), Spec.Rsa.os2ip (inputBytes g m 0)⟩
+
+theorem inputsGate {g : CallGeometry} {s : State} (h : Inputs g s) (m : Mem) :
+    InvGate g.args g.base g.size (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s := by
+  refine ⟨h.arguments 7 (by decide),h.arguments 9 (by decide),h.arguments 11 (by decide),?_,?_⟩
+  · have b := VG.Proof.Rsa.lt_of_os2ip (inputBytes g m 1)
+    simpa [arithmeticGeometry,inputBytes,Spec.Rsa.bytesAt,CallGeometry.buffer] using b
+  · have b := VG.Proof.Rsa.lt_of_os2ip (inputBytes g m 2)
+    simpa [arithmeticGeometry,inputBytes,Spec.Rsa.bytesAt,CallGeometry.buffer] using b
 
 theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa loads s fun t => Inputs g t ∧ Start (arithmeticGeometry g s.mem) (g.args 7).toNat t ∧

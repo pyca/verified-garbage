@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
 import VerifiedGarbage.Proof.Framework.Omega

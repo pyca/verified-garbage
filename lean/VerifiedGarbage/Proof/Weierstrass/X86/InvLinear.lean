@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
 public import VerifiedGarbage.Proof.Mont.X86.Loop
 public import VerifiedGarbage.Proof.Weierstrass.Unch
@@ -15,11 +16,11 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Spec.Weierstrass.Mont
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # The signed multiword divstep matrix row -/
 
@@ -47,12 +48,6 @@ structure LinearLay (size u v acc a b tmp n k : Nat) : Prop where
   tb : b + 4 * n ≤ tmp ∨ tmp + 4 * (k + 1) ≤ b
   acc_tmp : tmp + 4 * (k + 1) ≤ acc ∨ acc + 4 * (n + 2) ≤ tmp
 
-theorem word_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem}
-    (U : Unch base W m m') {d : Nat}
-    (hd : ∀ w ∈ W, d + 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) (hb : d + 4 ≤ 2 ^ 64) :
-    w32 m' base d = w32 m base d := by
-  have H := Outs.val32 U (d := d) (k := 1) hd hb
-  simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem linear_ok {s : State} {base : Addr} {size u v acc a b tmp n k : Nat}
     (hs : Scr s base size) (L : LinearLay size u v acc a b tmp n k) :

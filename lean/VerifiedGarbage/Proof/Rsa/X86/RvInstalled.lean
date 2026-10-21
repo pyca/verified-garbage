@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
 import VerifiedGarbage.Proof.Rsa.X86.RvEntry
 import VerifiedGarbage.Proof.Rsa.X86.RvResources
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Install recovery caller resources while saving the callee-saved registers -/
 

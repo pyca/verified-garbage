@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
@@ -22,6 +23,8 @@ traces (`sized_relCT`), and so do the runs from the states themselves
 -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Proof.Bignum.X86
@@ -34,6 +37,7 @@ def narrowW (g : CallGeometry) : List Region := [⟨g.B, g.Z⟩, g.buffer 0, g.b
 /-- The geometry with its writable regions narrowed to `narrowW`. -/
 def narrowG (g : CallGeometry) : CallGeometry := ⟨{ g.toGeo with wr := narrowW g }⟩
 
+omit rsaBatchLaw in
 theorem inputs_agree {g : CallGeometry} {s t : State} (pg : PubG g.toGeo) (h : Inputs g s) (j : Inputs g t) :
     VG.X86.Taint.Agree τA s t := by
   have a₁ : ArgsOk s := by unfold ArgsOk; rw [h.esp, h.wrEq]; exact pg
@@ -105,6 +109,7 @@ theorem sized_relCT (g : CallGeometry) (len : Lengths g) :
           have eq2 := (failure_relCT g _ _ _ _ _ _ next es et).1
           exact ⟨by rw [eq1, eq2], trivial⟩
 
+omit rsaBatchLaw in
 theorem narrow_inputs {g : CallGeometry} {s : State} (h : Inputs g s) :
     Inputs (narrowG g) (s.withRegions (s.rd ++ s.wr) (narrowW g)) := by
   refine ⟨⟨⟨h.ws.workspace.edi, by simp [State.withRegions, narrowW, narrowG], h.ws.workspace.nowrap,

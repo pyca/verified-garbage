@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedPrepared
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
@@ -14,6 +15,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFusedRest
 
 /-! Fused recovery leaks only the existing public geometry, modulus and attempt count. -/
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
@@ -21,6 +24,7 @@ open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 open VG.Spec.Rsa (recoverPrimes)
 
+omit rsaBatchLaw in
 theorem CandidateData.fusedSearch_ok {g : Geo} {n eLen dLen : Nat} (C : CandidateData g n eLen dLen)
     (modulus : C.A aN=n) (ep : 0<C.AW wR) (even : C.AW wR%2=0)
     {s : State} (h : KS g C.s0 C.A liveM C.AW [wR] C.V [sInv,sTc,sCnt] s) (vc : C.V sCnt=0) :

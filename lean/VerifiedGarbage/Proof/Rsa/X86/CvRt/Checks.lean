@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
+import VerifiedGarbage.Proof.Rsa.X86.InvChoose
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
@@ -16,8 +18,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.InvParts
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import VerifiedGarbage.Proof.Rsa.X86.InvGate
 
 /-! # CRT parameter calculation at a run-time width: the checks
 
@@ -27,6 +30,8 @@ inversion, its check and the mask releasing the results (`checksB_ok`), on
 -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys (aM aNM aZero aT1 aT2 aT3 aT4 sOdd sB sC sT hdr seqs andS)
@@ -80,6 +85,7 @@ structure StI (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
   zero : num s.mem g.base (kw len) aZero = 0
   one : num s.mem g.base (kw len) aOne = 1
 
+omit rsaBatchLaw in
 theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
     WP isa (seqs (checksA)) s fun t =>
       StI g len (num s.mem g.base (kw len) aDQ) (num s.mem g.base (kw len) aDR) t ∧
@@ -175,7 +181,7 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
       z0 _ (by decide)]
 
 
-def checksB : List (Prog isa) := [VG.Impl.Rsa.X86.KeyRt.inverse lay, VG.Impl.Rsa.X86.KeyRt.eqS lay sE3 1 aOne aT1,
+def checksB : List (Prog isa) := [inverseChoice, VG.Impl.Rsa.X86.KeyRt.eqS lay sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   VG.Impl.Rsa.X86.KeyRt.copy lay aDQ aD, VG.Impl.Rsa.X86.KeyRt.copy lay aDD aP, .block (VG.Impl.Rsa.X86.KeyRt.clrLow lay aDD)]
 
@@ -197,7 +203,8 @@ structure StD (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
   dd : num s.mem g.base (kw len) aDD = 2 * (g.P / 2)
   mask : InverseResult g len X₁ X₂ s.mem
 
-theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StI g len X₁ X₂ s) :
+theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StI g len X₁ X₂ s) {args : Nat → BitVec 32}
+    (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa (seqs (checksB)) s fun t => StD g len X₁ X₂ t ∧
       Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ [sT, sE3, sMask]) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
@@ -205,10 +212,12 @@ theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h :
   have fit := fun j (hj : j < nArr) => hw.ws.fit64 (j := j) hj
   unfold checksB
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (inverse_ok hw (by decide)) fun t1 ⟨h1, k1, r1, inv⟩ => ?_
-  have I := fun (hM : 1 < g.M) => inv (by rw [h.m, h.nm]) h.zero (by rw [h.m]; simp only [Geometry.M]; omega)
-    (by rw [h.m]; exact hM) (by simp only [bank]; rw [h.u, h.v, h.x₁, h.x₂, h.m])
-  rw [h.m, h.u] at I
+  have input : InvInput args g.base g.size len g.P g.Q s :=
+    ⟨h.ws,gate,h.u,h.m,h.nm,h.zero,by simp only [bank]; rw [h.u,h.v,h.x₁,h.x₂]; rfl⟩
+  refine WP.mono (inverseDispatch_ok input) fun t1 ⟨h1,k1,r1,inv⟩ => ?_
+  have I : 1<g.M → num t1.mem g.base (kw len) 1=Nat.gcd g.Q g.M ∧
+      (g.M : Int)∣(num t1.mem g.base (kw len) 3 : Int)*g.Q-num t1.mem g.base (kw len) 1 ∧
+      num t1.mem g.base (kw len) 3<g.M := inv
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h1 (d := sE3) (a := 1) (b := aOne) (t := aT1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun t2 ⟨h2, k2, e2, r2⟩ => ?_

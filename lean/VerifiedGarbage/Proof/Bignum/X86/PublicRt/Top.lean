@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.PublicWritten
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Public RSA at a run-time width, from the entry to the return
 

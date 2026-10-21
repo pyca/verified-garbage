@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Checks
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
@@ -15,6 +17,8 @@ composes them with the checks.
 -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys (aM aNM aZero aT1 aT2 aT3 aT4 sOdd sB sC sT hdr seqs andS)
@@ -33,6 +37,7 @@ structure Start (g : Geometry) (len : Nat) (s : State) : Prop where
   ddTop : w32 s.mem g.base (arr (kw len) aDD + 4 * (kw len)) = 0
   zeros : ∀ j ∈ zeroC, num s.mem g.base (kw len) j = 0
 
+omit rsaBatchLaw in
 theorem firstDiv_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) :
     WP isa firstDiv s fun t => StC g len t ∧
       Keep g.base (kw len) [aDD, aDQ, aDR, aDT] [sPodd, sCy, sQb] s.mem t.mem ∧
@@ -81,6 +86,7 @@ theorem firstDiv_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) :
     rw [same j fits notWritten]
     exact h.zeros j hj
 
+omit rsaBatchLaw in
 theorem InverseResult.frame {g : Geometry} {len : Nat} {X₁ X₂ : Nat} {m m' : Mem} {js ds : List Nat}
     (h : InverseResult g len X₁ X₂ m) (keep : Keep g.base (kw len) js ds m m')
     (hj : ∀ j ∈ js, j ≠ 3) (hd : ∀ d ∈ ds, d + 4 ≤ hdr)
@@ -99,6 +105,7 @@ structure StE (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
   remP : 0 < 2 * (g.P / 2) → num s.mem g.base (kw len) aDR2 = g.D % (2 * (g.P / 2))
   mask : InverseResult g len X₁ X₂ s.mem
 
+omit rsaBatchLaw in
 theorem divP_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StD g len X₁ X₂ s) :
     WP isa (div aDR2) s fun t => StE g len X₁ X₂ t ∧
       Keep g.base (kw len) [aDQ, aDR2, aDT] [sCy, sQb] s.mem t.mem ∧
@@ -125,6 +132,7 @@ structure Computed (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Pr
   remQ : 0 < 2 * (g.Q / 2) → num s.mem g.base (kw len) aDR3 = g.D % (2 * (g.Q / 2))
   mask : InverseResult g len X₁ X₂ s.mem
 
+omit rsaBatchLaw in
 theorem divQ_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StE g len X₁ X₂ s) :
     WP isa divQ s fun t => Computed g len X₁ X₂ t ∧
       Keep g.base (kw len) [aDQ, aDD, aDR3, aDT] [sCy, sQb] s.mem t.mem ∧
@@ -161,7 +169,8 @@ theorem divQ_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : St
 def coreArrays : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22, 23]
 def coreSlots : List Nat := [sOdd, sB, sC, sT, sPodd, sE1, sE2, sE3, sMask, sCy, sQb]
 
-theorem core_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) :
+theorem core_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) {args : Nat → BitVec 32}
+    (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa core s fun t =>
       Keep g.base (kw len) coreArrays coreSlots s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t ∧
@@ -173,7 +182,9 @@ theorem core_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) :
   change WP isa (seqs (checksA ++ checksB)) a _
   rw [wp_seqs_append (by unfold checksA; exact List.cons_ne_nil _ _) (by unfold checksB; exact List.cons_ne_nil _ _)]
   refine WP.mono (checksA_ok ha) fun b ⟨hb, kb, rb⟩ => ?_
-  refine WP.mono (checksB_ok hb) fun c ⟨hc, kc, rc⟩ => ?_
+  have ga := gate.keep ra (by decide) (keep_outside h.ws.ws ka (by decide) (by decide))
+  have gb := ga.keep rb (by decide) (keep_outside ha.ws.ws kb (by decide) (by decide))
+  refine WP.mono (checksB_ok hb gb) fun c ⟨hc, kc, rc⟩ => ?_
   refine WP.seq (WP.mono (divP_ok hc) fun d ⟨hd, kd, rd⟩ => ?_)
   refine WP.mono (divQ_ok hd) fun t ⟨ht, kt, rt⟩ => ?_
   have K : Keep g.base (kw len) coreArrays coreSlots s.mem t.mem :=

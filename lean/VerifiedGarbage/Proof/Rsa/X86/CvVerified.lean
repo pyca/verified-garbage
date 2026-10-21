@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
@@ -14,6 +15,8 @@ import VerifiedGarbage.Proof.Rsa.X86.CvCorrect
 /-! # Complete i686 certificate for CRT parameter calculation -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (code)
@@ -45,6 +48,7 @@ def satState : State where
   rd := [⟨0x4000, 64⟩, ⟨0x5000, 32⟩, ⟨0x6000, 32⟩, ⟨0x7000, 64⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x10000, 8448⟩, ⟨0x20004, 64⟩]
 
+omit rsaBatchLaw in
 theorem satisfiable : ∃ s, (Spec.Rsa.crtValuesContract abi 20).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 32 := by decide

@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvRest
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.Fin.Basic
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.X86.State
 
 /-! # The arithmetic recovery outputs satisfy the RSA byte-string result -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum
 open VG.Impl.Rsa.X86.Recover
@@ -19,6 +24,7 @@ def Written (g : CallGeometry) (m : Mem) (t : State) : Prop :=
   Spec.Rsa.writtenAll t.mem (outputBuffers g) (t.gpr .eax)
     ((calculated g m).1.map fun v => [v.1, v.2])
 
+omit rsaBatchLaw in
 theorem written_rest {g : CallGeometry} {s0 t : State} (h : RestResult g s0 t)
     (valid : Spec.Rsa.modulusValid (inputValue g s0.mem 0) (inputBytes g s0.mem 0).length = true)
     (pLen : (g.buffer 0).len = (inputBytes g s0.mem 0).length)

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
@@ -319,7 +320,7 @@ namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Inv
   VG.Proof.Mont.X86 VG.Proof.Mont
 
-def wordClob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
+
 
 theorem wordSteps_ok {s : State} {base : Addr} {size t n : Nat} (hs : Scr s base size)
     (ht : t + 28 ≤ size) (hn : 1 ≤ n) (hn32 : n < 2 ^ 32) :

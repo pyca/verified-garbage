@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
 import VerifiedGarbage.Proof.Rsa.X86.CvEntry
 import VerifiedGarbage.Proof.Rsa.X86.CvResources
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Install CRT caller resources while saving the callee-saved registers -/
 

@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Mul
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -33,7 +36,7 @@ theorem mulBody_noSp (c : Ctx) (o a b : Nat) :
   simp only [instrs, mulArgs, widthC, VG.Impl.Bignum.X86.PublicRt.widthB, offIn, List.all_append, List.all_cons,
     List.all_nil, List.all_replicate, e, ite_self] <;>
   rw [← Code.allInstrs_eq] <;>
-  exact (by decide : Rt.body.allInstrs (fun i => !Taint.clobbers i .esp) = true) ▸ rfl
+  rw [show Rt.body.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.StaticSquare.body_noSp] <;> rfl
 
 /-- The callee's offsets for slots `o`, `a` and `b` (3 to 8) of a context. -/
 theorem In.offs {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}

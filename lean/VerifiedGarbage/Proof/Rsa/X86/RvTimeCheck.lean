@@ -70,9 +70,6 @@ theorem candNextCheck : (VG.Taint.check taint τA (.block VG.Impl.Rsa.X86.Recove
 theorem finHeadCheck : (VG.Taint.check taint τA finHead (VG.Taint.hintOf taint τA finHead)).isSome = true := by
   taint_decide
 
-theorem factorsCheck : (VG.Taint.check taint τA factors (VG.Taint.hintOf taint τA factors)).isSome = true := by
-  taint_decide
-
 theorem storesCheck : (VG.Taint.check taint τA stores (VG.Taint.hintOf taint τA stores)).isSome = true := by
   taint_decide
 

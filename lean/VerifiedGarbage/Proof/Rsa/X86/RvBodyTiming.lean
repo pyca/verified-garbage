@@ -1,4 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
+
 public import VerifiedGarbage.Proof.Rsa.X86.RvBody
 public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
@@ -8,10 +10,13 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvTimeSized
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The wrapper exposes only the public modulus and declared attempt count -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.Recover

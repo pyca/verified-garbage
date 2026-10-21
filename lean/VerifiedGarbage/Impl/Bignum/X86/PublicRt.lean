@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
-public import VerifiedGarbage.Impl.Mont.X86.MulRt
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Impl.Bignum.X86.SparseExponent
 
 /-! # Checked public RSA at a width read at run time (i686 cdecl)
