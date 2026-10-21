@@ -85,8 +85,8 @@ def CtxMode.powers : CtxMode where
 abbrev kMR (M : CtxMode) (s₀ : State) : Region := ⟨kp s₀, M.len⟩
 
 /-- `SPre`, for a key context of kind `M`. -/
-structure SPreM (M : CtxMode) (s₀ : State) : Prop where
-  base : SPre s₀
+structure SPreM (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
+  base : SPre s₀ lo
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
   wrap_k : (kp s₀).toNat + M.len ≤ 2 ^ 64
   d_k : (dR s₀).Disjoint (kMR M s₀)

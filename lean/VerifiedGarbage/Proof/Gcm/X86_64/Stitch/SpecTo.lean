@@ -34,9 +34,9 @@ abbrev oR : Region := ⟨op s₀, 16 * nb s₀⟩
 
 end
 
-structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
+structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
-  nb16 : 16 ≤ nb s₀
+  nb16 : lo ≤ nb s₀
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
