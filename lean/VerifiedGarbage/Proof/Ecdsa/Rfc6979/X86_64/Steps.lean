@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 /-!
 # Deterministic ECDSA on x86-64: the steps on `K` and `V`
 
-`V = HMAC_K(V)` (`hmacV_ok`); `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then
+`V = HMAC_K(V)` (`hmacVS_ok`, `hmacVR_ok`); `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then
 `V = HMAC_K(V)` (`rekeyFull_ok`, steps d–g); and `K = HMAC_K(V ‖ 0x00)`,
 then `V = HMAC_K(V)` (`rekey_ok`, step h.3). Each changes only `scratch`,
 the stack below the frame, and `K` and `V`. The `V = HMAC_K(V)` after a new
@@ -54,20 +54,6 @@ theorem done_kvw {w dst : Nat} (hw : w ≤ 8192) (h : dst + P.H.D ≤ 128) :
     · exact .inl (Region.sub_prefix hw)
     · exact .inr (Region.sub_prefix (by omega))
     · exact .inr (Offset.sub_base _ (by omega))
-
-/-- `V = HMAC_K(V)`. -/
-theorem hmacV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (cfgOf P).hmacV t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
-      kOf P L t'.mem = kOf P L t.mem ∧ vOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem) := by
-  refine WP.mono (hmac_ok (P := P) hL hc (da := L.B + BitVec.ofNat 64 (24 + 64)) (len := P.H.D) (dst := 64)
-    (fun u hu => fr_ok hL hu (d := .rdx) (by decide) (o := 64) (by decide))
-    (.inl ⟨88, rfl, by omega, by nums⟩) (by nums) (by nums)) fun t' h =>
-    ⟨h.ctx, h.frame.sub (done_kvw (by decide) (by nums)), bytesAt_frame h.frame (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact hL.stk_scr0 (by nums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by nums)
-      · exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums), h.mac⟩
 
 /-- `K = HMAC_K(m)`, for the message `m` of `len` bytes at `scratch + 2256`. -/
 theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256) :

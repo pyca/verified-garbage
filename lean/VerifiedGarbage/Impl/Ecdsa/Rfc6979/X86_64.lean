@@ -175,9 +175,6 @@ def hmac (dataA : List Instr) (len dst : Nat) : Prog isa :=
   (.seq (.block (hmacArgs₃ c.H.P.B len dst))
     (.call c.H.hmacFinN c.H.hmacFin)))))
 
-/-- `V = HMAC_K(V)`. -/
-def hmacV : Prog isa := c.hmac (fr .rdx fV) c.H.D fV
-
 /-- The `8 k` bytes at `[src + so]` to `[dst + d]`, a word at a time through `rax`. -/
 def copyN (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
   (List.range k).flatMap fun j =>
@@ -258,7 +255,8 @@ states for the new `K` saved; for `b = 1` (step f), the states for `K` are
 the copy step e saved. -/
 def rekeyFull (b : Nat) : Prog isa :=
   .seq (.block (msgPtrs c.wide)) (.seq (.block (msg c.len c.H.D b true c.wide c.fHo))
-    (.seq ((if b = 0 then c.hmac else c.hmacR) (scr .rdx sMsg) (c.H.D + 2 * c.len + 1) fK) c.hmacVS))
+    (.seq (if b = 0 then c.hmac (scr .rdx sMsg) (c.H.D + 2 * c.len + 1) fK
+      else c.hmacR (scr .rdx sMsg) (c.H.D + 2 * c.len + 1) fK) c.hmacVS))
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
