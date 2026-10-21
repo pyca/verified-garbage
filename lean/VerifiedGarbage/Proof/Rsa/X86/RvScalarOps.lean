@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
@@ -25,7 +26,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 open VG.Impl.Rsa.X86.RecoverRt (nar wid)
-open VG.Impl.Rsa.X86.KeyRt (bitOf clrLow setOne eqS)
+open VG.Impl.Rsa.X86.KeyRt (bitOf clrLow setOne eqSFast)
 
 section
 variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
@@ -70,13 +71,12 @@ theorem KS.eqS_w {d a b : Nat} (h : KS g s0 A live AW liveW V ls s)
     (ha : a ∈ live) (hb : b ∈ live) (hd : SlotOk d) (hW : aW ∉ live)
     (hlW : ∀ j ∈ liveW, aW / 2 ≠ j)
     (hls : ∀ e ∈ ls, e + 4 ≤ sT ∨ sT + 4 ≤ e) :
-    WP isa (eqS nar d a b aW) s fun t =>
+    WP isa (eqSFast nar d a b) s fun t =>
       KS g s0 A live AW liveW (upd V d (if A a = A b then 1 else 0)) (d :: ls) t ∧
       Keeps opRegs s t := by
-  have hWa : aW ≠ a := fun e => hW (e ▸ ha)
-  have hWb : aW ≠ b := fun e => hW (e ▸ hb)
-  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.eqS_ok h.rt (t := aW) (by decide)
-    (h.live_lt a ha) (h.live_lt b hb) hWa hWb hd.2.1) fun t ⟨_, k, e, r⟩ => ?_
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.eqSFast_ok h.rt
+    (h.live_lt a ha) (h.live_lt b hb) hd.2.1) fun t ⟨_, k0, e, r⟩ => ?_
+  have k := k0.mono (js' := [aW]) (ds' := [sT, d]) (by simp) (by simp)
   rw [kw_nar] at k e
   have hdT : ∀ d' ∈ [sT, d], SlotOk d' := by
     intro d' hm
