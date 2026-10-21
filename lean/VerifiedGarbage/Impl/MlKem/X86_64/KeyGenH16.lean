@@ -95,4 +95,15 @@ def kemKeyGenH16 (K : Kem16) (c : Callee4) (b : Nat → Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (gRho K.L) (.seq (Top16.noise K c (2 * K.L.k)) (.seq (nttAt K)
     (.seq (.block (Encaps16.hzero K)) (.seq (rows K b) (.block topEpi))))))
 
+/-- ML-KEM-768's key generation of an implementation of `vg_mlkem_sample_ntt4`:
+hashing `ek` in the rows if it has the fragments (`Callee4.batchHM16`), as
+`kemKeyGenSel` otherwise. -/
+def kemKeyGenHSel (c : Callee4) : Prog isa :=
+  match c.batchHM16 with
+  | some b => kemKeyGenH16 kem768w c b
+  | none => kemKeyGenSel kem768w c
+
+/-- `vg_mlkem768_keygen`. -/
+abbrev keyGen (c : Callee4) : Prog isa := kemKeyGenHSel c
+
 end VG.Impl.MlKem.X86_64

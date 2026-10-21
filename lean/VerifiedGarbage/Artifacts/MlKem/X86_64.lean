@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample16
@@ -30,11 +29,6 @@ def kpkeNotes : List String :=
     before returning."]
 
 def artifacts : List Artifact := [
-  Spec.MlKem.kpkeKeyGenApi.artifact X86_64.target {
-    notes := kpkeNotes
-    code := Impl.MlKem.X86_64.kpkeKg Impl.MlKem.X86_64.kem768 .avx2 Impl.MlKem.X86_64.keygenMul16Y
-    verified := Proof.MlKem.X86_64.kpkeKg768Y_verified
-    features := ["avx", "avx2"] },
   Spec.MlKem.kpkeEncryptApi.artifact X86_64.target {
     notes := kpkeNotes
     code := Impl.MlKem.X86_64.kpkeEnc Impl.MlKem.X86_64.kem768 .avx2 Impl.MlKem.X86_64.encryptMul16Y
