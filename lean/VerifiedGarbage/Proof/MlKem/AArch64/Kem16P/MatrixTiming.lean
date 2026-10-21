@@ -12,8 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 /-!
 # The matrix computing PRF outputs leaks only public pointers and `ρ`
 
-As `Hybrid.matrixH_relCT`: the pairs hashing the message by
-`Hybrid.hashPair_relCT`, `G` by a relation the caller proves, then, with each
+The pairs hashing the message by `Hybrid.hashPair_relCT`, `G` by a relation the caller proves, then, with each
 run's invariant after `G` (`PRel`), the pairs computing PRF outputs
 (`pairPCode_relCT`), the others (`Paired.pair_relCT`) and the singleton
 (`lastCodeP_relCT` or `Paired.lastCode_relCT`).

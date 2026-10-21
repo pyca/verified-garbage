@@ -90,15 +90,6 @@ def startJ (L : KemLay) : List Instr :=
 /-- `K̄ = J(z ‖ c)`, the first 32 bytes of the third state, into `JB`. -/
 def tailJ : List Instr := copy32 .x28 ST .x28 JB
 
-/-- Decapsulation after the matrix and `J`: re-encryption and the selection. -/
-def deRest (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  seqs [encryptRest prf L .x25 (384 * L.k) .x28 MB .x28 (CB L), L.deCmp, .block (deSel ++ L.kemEpilogue)]
-
-/-- The decapsulation, hashing `z ‖ c` during the matrix (`Hybrid.matrixH`). -/
-def decaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (FixedHashDecaps.deStartUsing hash L) (.seq (.block (startJ L))
-    (.seq (Hybrid.matrixH L (jSrc L) true) (.seq (.block tailJ) (deRest prf L))))
-
 /-- Row `i` of `t̂ = Â ∘ ŝ + ê`, encoded into the public and private keys. -/
 def kgRow (L : KemLay) (i : Nat) : Prog isa :=
   seqs [dotAt (KG.TP L) ((List.range L.k).map fun j => (KG.aOff L i j, KG.sOff L j)),
