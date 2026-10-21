@@ -809,4 +809,78 @@ source. -/
 #guard vrun 0 (.addv .d2 .v0 .v1) == none
 #guard vrun 0 (.uaddlv .d2 .v0 .v1) == none
 
+/-! ### MUL, MLA, MLS, SQDMULH and SQRDMULH (by element), 16-bit lanes
+
+Computed as above, under `qemu-aarch64 -cpu max`; the printed text was also
+assembled by `llvm-mc -triple=aarch64`, which rejects an element register
+above `v15` (`Rm` has four bits for 16-bit elements). The element register
+is also the destination (`v0`), and the destination is also a source. -/
+
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v2 0) == some 0xc1f4daf8bfa08df02268a2cc92c09d7c#128
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v2 3) == some 0x613e6354d1f0eaa8fa3c60e2ff20b9aa#128
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v2 7) == some 0x0841b196de08112c10a2e8af2270d4cb#128
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v0 5) == some 0x024c02886260ad10ee1894f4c9405144#128
+#guard vrun 0 (.mulHE .mul .v0 .v0 .v1 6) == some 0x14bc96a602880b36231403126652a4e6#128
+#guard vrun 0 (.mulHE .mla .v0 .v1 .v2 0) == some 0x09b2303ba624d3fbaf129f2542b9b3df#128
+#guard vrun 0 (.mulHE .mla .v0 .v1 .v2 3) == some 0xa8fcb897b87430b386e65d3baf19d00d#128
+#guard vrun 0 (.mulHE .mla .v0 .v1 .v2 7) == some 0x4fff06d9c48c57379d4ce508d269eb2e#128
+#guard vrun 0 (.mulHE .mla .v0 .v1 .v0 5) == some 0x4a0a57cb48e4f31b7ac2914d793967a7#128
+#guard vrun 0 (.mulHE .mla .v0 .v0 .v1 6) == some 0x5c7aebe9e90c5141afbeff6b164bbb49#128
+#guard vrun 0 (.mulHE .mls .v0 .v1 .v2 0) == some 0x85ca7a4b26e4b81b6a42598d1d3978e7#128
+#guard vrun 0 (.mulHE .mls .v0 .v1 .v2 3) == some 0xe680f1ef14945b63926e9b77b0d95cb9#128
+#guard vrun 0 (.mulHE .mls .v0 .v1 .v2 7) == some 0x3f7da3ad087c34df7c0813aa8d894198#128
+#guard vrun 0 (.mulHE .mls .v0 .v1 .v0 5) == some 0x457252bb842498fb9e926765e6b9c51f#128
+#guard vrun 0 (.mulHE .mls .v0 .v0 .v1 6) == some 0x3302be9de3fc3ad56996f94749a7717d#128
+#guard vrun 0 (.mulHE .sqdmulh .v0 .v1 .v2 0) == some 0x1e534f4d2cbdc8f726e0184b3921025f#128
+#guard vrun 0 (.mulHE .sqdmulh .v0 .v1 .v2 3) == some 0xede4d0a6e54920dbe8c9f17edde3fe95#128
+#guard vrun 0 (.mulHE .sqdmulh .v0 .v1 .v2 7) == some 0xf7feeb0ff42f0e88f5bcf995f0eaff5f#128
+#guard vrun 0 (.mulHE .sqdmulh .v0 .v1 .v0 5) == some 0x086c16060c6cf0b70acb06bf0fdd00a8#128
+#guard vrun 0 (.mulHE .sqdmulh .v0 .v0 .v1 6) == some 0xc200b6511606c37863ac03284528eca7#128
+#guard vrun 0 (.mulHE .sqrdmulh .v0 .v1 .v2 0) == some 0x1e544f4e2cbdc8f726e0184b3921025f#128
+#guard vrun 0 (.mulHE .sqrdmulh .v0 .v1 .v2 3) == some 0xede5d0a7e54a20dce8caf17fdde4fe95#128
+#guard vrun 0 (.mulHE .sqrdmulh .v0 .v1 .v2 7) == some 0xf7feeb0ff4300e88f5bcf996f0eaff60#128
+#guard vrun 0 (.mulHE .sqrdmulh .v0 .v1 .v0 5) == some 0x086c16060c6df0b70acc06bf0fde00a9#128
+#guard vrun 0 (.mulHE .sqrdmulh .v0 .v0 .v1 6) == some 0xc200b6511606c37863ac03284529eca7#128
+#guard vrun 1 (.mulHE .mul .v0 .v1 .v2 0) == some 0x4108662086c473a467a8bb245a9c74b0#128
+#guard vrun 1 (.mulHE .mul .v0 .v1 .v2 3) == some 0xc996e3d8c3fbcc632acea50370cd0564#128
+#guard vrun 1 (.mulHE .mul .v0 .v1 .v2 7) == some 0xa8fcd2f00d5ea0eeb3ace52ee3f2b6a8#128
+#guard vrun 1 (.mulHE .mul .v0 .v1 .v0 5) == some 0x6e065198ddb3425b23fea3fb7255cb04#128
+#guard vrun 1 (.mulHE .mul .v0 .v0 .v1 6) == some 0x59f0da405198f610e7b0d1d040382c68#128
+#guard vrun 1 (.mulHE .mla .v0 .v1 .v2 0) == some 0x96f241387d954bbab17a7a624b09331f#128
+#guard vrun 1 (.mulHE .mla .v0 .v1 .v2 3) == some 0x1f80bef0bacca47974a06441613ac3d3#128
+#guard vrun 1 (.mulHE .mla .v0 .v1 .v2 7) == some 0xfee6ae08042f7904fd7ea46cd45f7517#128
+#guard vrun 1 (.mulHE .mla .v0 .v1 .v0 5) == some 0xc3f02cb0d4841a716dd0633962c28973#128
+#guard vrun 1 (.mulHE .mla .v0 .v0 .v1 6) == some 0xafdab5584869ce263182910e30a5ead7#128
+#guard vrun 1 (.mulHE .mls .v0 .v1 .v2 0) == some 0x14e274f8700d6472e22a041a95d149bf#128
+#guard vrun 1 (.mulHE .mls .v0 .v1 .v2 3) == some 0x8c54f74032d60bb31f041a3b7fa0b90b#128
+#guard vrun 1 (.mulHE .mls .v0 .v1 .v2 7) == some 0xacee0828e97337289626da100c7b07c7#128
+#guard vrun 1 (.mulHE .mls .v0 .v1 .v0 5) == some 0xe7e48980191e95bb25d41b437e18f36b#128
+#guard vrun 1 (.mulHE .mls .v0 .v0 .v1 6) == some 0xfbfa00d8a539e2066222ed6eb0359207#128
+#guard vrun 1 (.mulHE .sqdmulh .v0 .v1 .v2 0) == some 0x20442bb2d15d2fca54643e21d93ca8a4#128
+#guard vrun 1 (.mulHE .sqdmulh .v0 .v1 .v2 3) == some 0x04eb06a9f8e307490cde0979fa16f2ae#128
+#guard vrun 1 (.mulHE .sqdmulh .v0 .v1 .v2 7) == some 0xefcbea0d176ce7ffd59de0cb13772bdf#128
+#guard vrun 1 (.mulHE .sqdmulh .v0 .v1 .v0 5) == some 0x02a40394fc2d03ea06ea0517fcd2f8d7#128
+#guard vrun 1 (.mulHE .sqdmulh .v0 .v0 .v1 6) == some 0xde800e6303940f8fe337193f06121990#128
+#guard vrun 1 (.mulHE .sqrdmulh .v0 .v1 .v2 0) == some 0x20452bb3d15d2fcb54653e21d93da8a5#128
+#guard vrun 1 (.mulHE .sqrdmulh .v0 .v1 .v2 3) == some 0x04ec06aaf8e4074a0cde0979fa17f2ae#128
+#guard vrun 1 (.mulHE .sqrdmulh .v0 .v1 .v2 7) == some 0xefcbea0e176ce7ffd59de0cc13782bdf#128
+#guard vrun 1 (.mulHE .sqrdmulh .v0 .v1 .v0 5) == some 0x02a50395fc2e03eb06ea0517fcd3f8d8#128
+#guard vrun 1 (.mulHE .sqrdmulh .v0 .v0 .v1 6) == some 0xde810e6403950f90e338194006131990#128
+
+#guard printer.instr (.vop (.mulHE .mul .v0 .v1 .v2 0)) == ["mul v0.8h, v1.8h, v2.h[0]"]
+#guard printer.instr (.vop (.mulHE .mul .v0 .v1 .v2 3)) == ["mul v0.8h, v1.8h, v2.h[3]"]
+#guard printer.instr (.vop (.mulHE .mul .v0 .v1 .v2 7)) == ["mul v0.8h, v1.8h, v2.h[7]"]
+#guard printer.instr (.vop (.mulHE .mul .v0 .v1 .v0 5)) == ["mul v0.8h, v1.8h, v0.h[5]"]
+#guard printer.instr (.vop (.mulHE .mul .v0 .v0 .v1 6)) == ["mul v0.8h, v0.8h, v1.h[6]"]
+#guard printer.instr (.vop (.mulHE .sqrdmulh .v0 .v1 .v15 3)) == ["sqrdmulh v0.8h, v1.8h, v15.h[3]"]
+
+/- The index is below 8 and the element register one of `v0`–`v15`, or the
+model faults; SQDMULH and SQRDMULH of `0x8000` by itself fault, as for the
+vector forms. -/
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v2 8) == none
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v15 0) != none
+#guard vrun 0 (.mulHE .mul .v0 .v1 .v16 0) == none
+#guard (VOp.eval { s 0 with v := fun _ => 0x8000#128 } (.mulHE .sqdmulh .v0 .v1 .v2 0)).isNone
+#guard (VOp.eval { s 0 with v := fun _ => 0x8000#128 } (.mulHE .sqrdmulh .v0 .v1 .v2 0)).isNone
+
 end VG.Test.AArch64Simd

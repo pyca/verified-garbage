@@ -46,14 +46,6 @@ def Reg.name (sz : Size) (r : Reg) : String :=
   | .w => s!"w{r.index}"
   | .x => s!"x{r.index}"
 
-def VReg.index : VReg → Nat
-  | .v0 => 0 | .v1 => 1 | .v2 => 2 | .v3 => 3 | .v4 => 4 | .v5 => 5 | .v6 => 6 | .v7 => 7
-  | .v8 => 8 | .v9 => 9 | .v10 => 10 | .v11 => 11 | .v12 => 12 | .v13 => 13 | .v14 => 14
-  | .v15 => 15
-  | .v16 => 16 | .v17 => 17 | .v18 => 18 | .v19 => 19 | .v20 => 20 | .v21 => 21 | .v22 => 22
-  | .v23 => 23 | .v24 => 24 | .v25 => 25 | .v26 => 26 | .v27 => 27 | .v28 => 28 | .v29 => 29
-  | .v30 => 30 | .v31 => 31
-
 /-- `v<n>.<t>` -/
 def VReg.arr (r : VReg) (t : String) : String := s!"v{r.index}.{t}"
 
@@ -153,6 +145,7 @@ def VOp.asm : VOp → String
   | .sqdmulh d n m => s!"sqdmulh {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .umin d n m => s!"umin {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .mulH op d n m => s!"{op.name} {d.arr "8h"}, {n.arr "8h"}, {m.arr "8h"}"
+  | .mulHE op d n m i => s!"{op.name} {d.arr "8h"}, {n.arr "8h"}, v{m.index}.h[{i}]"
   | .pmull false d n m => s!"pmull {d.arr "1q"}, {n.arr "1d"}, {m.arr "1d"}"
   | .pmull true d n m => s!"pmull2 {d.arr "1q"}, {n.arr "2d"}, {m.arr "2d"}"
   | .aese d n => s!"aese {d.b}, {n.b}"

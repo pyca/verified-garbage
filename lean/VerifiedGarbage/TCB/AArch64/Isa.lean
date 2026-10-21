@@ -172,6 +172,15 @@ def VReg.succ : VReg → VReg
   | .v22 => .v23 | .v23 => .v24 | .v24 => .v25 | .v25 => .v26 | .v26 => .v27
   | .v27 => .v28 | .v28 => .v29 | .v29 => .v30 | .v30 => .v31 | .v31 => .v0
 
+/-- The number `n` of `v<n>`. -/
+def VReg.index : VReg → Nat
+  | .v0 => 0 | .v1 => 1 | .v2 => 2 | .v3 => 3 | .v4 => 4 | .v5 => 5 | .v6 => 6 | .v7 => 7
+  | .v8 => 8 | .v9 => 9 | .v10 => 10 | .v11 => 11 | .v12 => 12 | .v13 => 13 | .v14 => 14
+  | .v15 => 15
+  | .v16 => 16 | .v17 => 17 | .v18 => 18 | .v19 => 19 | .v20 => 20 | .v21 => 21 | .v22 => 22
+  | .v23 => 23 | .v24 => 24 | .v25 => 25 | .v26 => 26 | .v27 => 27 | .v28 => 28 | .v29 => 29
+  | .v30 => 30 | .v31 => 31
+
 /-- Operand size: 32-bit (`w` registers) or 64-bit (`x` registers). -/
 inductive Size | w | x
   deriving DecidableEq, Repr
@@ -332,6 +341,10 @@ inductive VOp
   /-- `mul`/`mla`/`mls`/`sqdmulh`/`sqrdmulh vd.8h, vn.8h, vm.8h` (MUL, MLA, MLS,
   SQDMULH and SQRDMULH (vector), 16-bit lanes) -/
   | mulH (op : VMulHOp) (d n m : VReg)
+  /-- `mul`/`mla`/`mls`/`sqdmulh`/`sqrdmulh vd.8h, vn.8h, vm.h[i]` (MUL, MLA, MLS,
+  SQDMULH and SQRDMULH (by element), 16-bit lanes): the second operand of every
+  lane is lane `i` of `vm`, which must be one of `v0`–`v15` -/
+  | mulHE (op : VMulHOp) (d n m : VReg) (i : Nat)
   /-- `pmull vd.1q, vn.1d, vm.1d`, or `pmull2 vd.1q, vn.2d, vm.2d` if `hi` -/
   | pmull (hi : Bool) (d n m : VReg)
   /-- `aese vd.16b, vn.16b` -/
@@ -732,7 +745,12 @@ V[n]`, `operand2 = V[m]` and, for MLA and MLS, `operand3 = V[d]` (lane `a`):
 * MLA (vector): `Elem[result, e] = Elem[operand3, e] + product`, `product =
   (UInt(element1) * UInt(element2))<esize-1:0>`;
 * MLS (vector): `Elem[result, e] = Elem[operand3, e] - product`;
-* SQDMULH, SQRDMULH (vector): `sqdmulhHLane`. -/
+* SQDMULH, SQRDMULH (vector): `sqdmulhHLane`.
+The (by element) forms (DDI 0487 C7.2, "MUL (by element)", "MLA (by
+element)", "MLS (by element)", "SQDMULH (by element)", "SQRDMULH (by
+element)") compute the same lanes with `element2 = Elem[operand2, index,
+esize]` in every lane: for 16-bit elements `index = UInt(H:L:M)` (0 to 7) and
+`Rm` has four bits (`m = UInt('0':Rm)`), so `Vm` is one of V0–V15. -/
 def VMulHOp.lane : VMulHOp → BitVec 16 → BitVec 16 → BitVec 16 → Option (BitVec 16)
   | .mul, _, x, y => some (x * y)
   | .mla, a, x, y => some (a + x * y)
@@ -971,6 +989,11 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .mulH op d n m =>
     let r (e : Nat) := op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) e)
     if (List.range 8).all fun e => (r e).isSome then some (d, ofVHalves fun e => (r e).getD 0)
+    else none
+  | .mulHE op d n m i =>
+    let r (e : Nat) := op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) i)
+    if i < 8 ∧ m.index < 16 ∧ (List.range 8).all fun e => (r e).isSome then
+      some (d, ofVHalves fun e => (r e).getD 0)
     else none
   | .pmull hi d n m =>
     let p := if hi then 1 else 0
