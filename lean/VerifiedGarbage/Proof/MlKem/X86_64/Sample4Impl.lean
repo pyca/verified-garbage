@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified16
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.SHM
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 import Mathlib.Tactic.Conv
@@ -84,6 +85,26 @@ theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampl
   exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1.1, h.1.1.2,
     Code.all_of_allInstrs h.1.2, h.2⟩
 
+/-- What key generation needs of a fragment it inlines absorbing `m` blocks
+(`Callee4.batchHM16`): as `BatchHOk16`, with `sampleHMKW true m`. -/
+structure BatchHMOk16 (m : Nat) (b : Prog isa) : Prop where
+  ok : ∀ s, (sampleHMKW true m).pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ (sampleHMKW true m).post s s'
+  ct : ConstantTime isa (sampleHMKW true m).pre (sampleHMKW true m).pub b
+  noCalls : b.noCalls = true
+  ctl : ctlOk b = true
+  sp : b.all (fun i => !isa.writesSp i) = true
+  /-- It uses no stack. -/
+  xd : b.x86_64Depth = 0
+
+theorem sampleHM16_checks (fast : Bool) {m : Nat} (hm : m ≤ 3) :
+    BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleHM fast m) = true := by
+  rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
+
+theorem sampleHM16_ok (fast : Bool) {m : Nat} (hm : m ≤ 3) : BatchHMOk16 m (Impl.MlKem.X86_64.Sample4.sampleHM fast m) := by
+  have h := sampleHM16_checks fast hm
+  simp only [BatchHOk16.checks, Bool.and_eq_true, beq_iff_eq] at h
+  exact ⟨SH.correctHM (fast := fast) hm, SH.ctHM (fast := fast) hm, h.1.1.1, h.1.1.2, Code.all_of_allInstrs h.1.2, h.2⟩
+
 /-- What a caller needs of an implementation's code with 16-bit
 coefficients (`Callee4.s16`): it meets `sample4KW true`, in constant time,
 never writes the stack pointer, calls at most three deep and keeps MXCSR's
@@ -130,6 +151,8 @@ structure Sample4Impl where
   arith : ArithOk callee.arith
   /-- Its fragment for encapsulation, if any, is verified. -/
   batchH16 : ∀ b, callee.batchH16 = some b → BatchHOk16 b
+  /-- Its fragments for key generation, if any, are verified. -/
+  batchHM16 : ∀ b, callee.batchHM16 = some b → ∀ m ≤ 3, BatchHMOk16 m (b m)
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -170,6 +193,7 @@ def scalar : Sample4Impl where
   prfs_xd := prfsScalar_xd
   arith := ArithOk.sse
   batchH16 := fun _ h => nomatch h
+  batchHM16 := fun _ h => nomatch h
   suffix := ""
   prfsDoc := "one at a time"
   features := []
@@ -198,6 +222,7 @@ def avx2 : Sample4Impl where
   prfs_xd := prfsAvx2_xd
   arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok false
+  batchHM16 := fun _ h m hm => Option.some.inj h ▸ sampleHM16_ok false hm
   suffix := "_avx2"
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
@@ -226,6 +251,7 @@ def avx512 : Sample4Impl where
   prfs_xd := prfsAvx2_xd
   arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok true
+  batchHM16 := fun _ h m hm => Option.some.inj h ▸ sampleHM16_ok true hm
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2", "avx512f", "avx512vl"]
