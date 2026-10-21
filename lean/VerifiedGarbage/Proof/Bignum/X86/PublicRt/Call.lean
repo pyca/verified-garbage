@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.ByteWords
@@ -17,7 +18,7 @@ and the 40 bytes of stack below `esp` (`mul_ok`).
 
 namespace VG.Proof.Bignum.X86.PublicRt
 
-open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Spec.Rsa.MontMul (scratchBytes)
 
