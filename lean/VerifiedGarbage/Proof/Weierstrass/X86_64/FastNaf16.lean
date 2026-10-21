@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16State
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafChoose
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
 
 /-! The width-nine recoder of a scalar of `n` words: its digits as sixteen-bit words. -/
 

@@ -18,7 +18,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointVerified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.P384.Comb7
-public import VerifiedGarbage.Proof.P384.GTable9
+public import VerifiedGarbage.Proof.P384.GTable9 -- shake: keep (the artifacts' bodies use `gtabOk9`)
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P384.X86_64

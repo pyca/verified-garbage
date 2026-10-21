@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.GContract
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint

@@ -651,7 +651,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p`) by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction. The public key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n` (a call of `vg_p384_inv_mod_n`), then `u = e/s` and `v = r/s`. Both public 384-bit scalars are recoded as non-adjacent signed digits, width seven for `u` and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only nonzero digits. Generator digits directly index odd multiples among the 64 affine entries of the first row of the existing static `VG_P384_COMB`, added by mixed additions; peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. The digits' additions are calls of `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's) which cover infinity, equal points and opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is read for the last time before it is written, so no copy; on six words no register values are forwarded between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
+/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p`) by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction. The public key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n` (a call of `vg_p384_inv_mod_n`), then `u = e/s` and `v = r/s`. Both public 384-bit scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only nonzero digits. Generator digits directly index the affine odd multiples `[m]G`, `m ≤ 255`, in the static `VG_P384_GTAB` of `[m]G` for `m = 1 … 256` (24 KB, in Montgomery form), added by mixed additions; peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. The digits' additions are calls of `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's) which cover infinity, equal points and opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is read for the last time before it is written, so no copy; on six words no register values are forwarded between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
 ///
 /// # Safety
 ///
@@ -1313,16 +1313,112 @@ movabs rax, 0
 mov QWORD PTR [rdi+6776], rax
 movabs rax, 0
 mov QWORD PTR [rdi+6784], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6792], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6800], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6808], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6816], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6824], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6832], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6840], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6848], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6856], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6864], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6872], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6880], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6888], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6896], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6904], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6912], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6920], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6928], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6936], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6944], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6952], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6960], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6968], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6976], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6984], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6992], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7000], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7008], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7016], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7024], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7032], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7040], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7048], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7056], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7064], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7072], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7080], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7088], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7096], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7104], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7112], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7120], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7128], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7136], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7144], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7152], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7160], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7168], rax
 23:
 mov rcx, r8
 and rcx, 1
 test rcx, rcx
 je 24f
 mov rcx, r8
-and rcx, 127
-cmp rcx, 64
+and rcx, 511
+cmp rcx, 256
 jb 26f
-sub rcx, 128
+sub rcx, 512
 jmp 27f
 26:
 27:
@@ -1337,33 +1433,33 @@ sbb r11, rdx
 sbb r12, rdx
 sbb r13, rdx
 sbb r14, rdx
-mov BYTE PTR [rdi+rbx*1+6400], cl
-shr r8, 7
+mov WORD PTR [rdi+rbx*2+6400], cx
+shr r8, 9
 mov rax, r9
-shl rax, 57
+shl rax, 55
 or r8, rax
-shr r9, 7
+shr r9, 9
 mov rax, r10
-shl rax, 57
+shl rax, 55
 or r9, rax
-shr r10, 7
+shr r10, 9
 mov rax, r11
-shl rax, 57
+shl rax, 55
 or r10, rax
-shr r11, 7
+shr r11, 9
 mov rax, r12
-shl rax, 57
+shl rax, 55
 or r11, rax
-shr r12, 7
+shr r12, 9
 mov rax, r13
-shl rax, 57
+shl rax, 55
 or r12, rax
-shr r13, 7
+shr r13, 9
 mov rax, r14
-shl rax, 57
+shl rax, 55
 or r13, rax
-shr r14, 7
-add rbx, 7
+shr r14, 9
+add rbx, 9
 jmp 25f
 24:
 shr r8, 1
@@ -12030,19 +12126,19 @@ call {vg_p384_jac_add_cached}
 jmp 219f
 218:
 219:
-movzx r8d, BYTE PTR [rdi+rbx*1+6400]
+movzx r8d, WORD PTR [rdi+rbx*2+6400]
 test r8, r8
 je 222f
-cmp r8, 128
+cmp r8, 256
 jb 224f
-mov eax, 256
+mov eax, 65536
 sub rax, r8
 mov r8, rax
 mov rax, r8
 sub rax, 1
 mov ecx, 96
 mul rcx
-lea rdx, [rip + {VG_P384_COMB}]
+lea rdx, [rip + {VG_P384_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+1024], xmm0
@@ -12104,7 +12200,7 @@ mov rax, r8
 sub rax, 1
 mov ecx, 96
 mul rcx
-lea rdx, [rip + {VG_P384_COMB}]
+lea rdx, [rip + {VG_P384_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+1024], xmm0
@@ -12789,7 +12885,7 @@ ret
         vg_p384_jac_add_cached = sym super::p384_point_ops::vg_p384_jac_add_cached,
         vg_p384_jac_add_affine = sym super::p384_point_ops::vg_p384_jac_add_affine,
         vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
-        VG_P384_COMB = sym super::consts::VG_P384_COMB,
+        VG_P384_GTAB = sym super::consts::VG_P384_GTAB,
     )
 }
 
@@ -13449,7 +13545,7 @@ pub(crate) const VG_ECDSA_P384_VERIFY_ADX_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p_adx`) by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each product's low half added through OF (`adox`) and its high half through CF (`adcx`), two carry chains that do not wait for each other, each row followed by the reduction's row by the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction. The public key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n` (a call of `vg_p384_inv_mod_n_adx`), then `u = e/s` and `v = r/s`. Both public 384-bit scalars are recoded as non-adjacent signed digits, width seven for `u` and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only nonzero digits. Generator digits directly index odd multiples among the 64 affine entries of the first row of the existing static `VG_P384_COMB`, added by mixed additions; peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. The digits' additions are calls of `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's), their `_adx` forms, which cover infinity, equal points and opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is read for the last time before it is written, so no copy, and its small multiples are fused into three steps `C a - D b mod p` (s2n-bignum's sequence); on six words no register values are forwarded between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
+/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p_adx`) by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each product's low half added through OF (`adox`) and its high half through CF (`adcx`), two carry chains that do not wait for each other, each row followed by the reduction's row by the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction. The public key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n` (a call of `vg_p384_inv_mod_n_adx`), then `u = e/s` and `v = r/s`. Both public 384-bit scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only nonzero digits. Generator digits directly index the affine odd multiples `[m]G`, `m ≤ 255`, in the static `VG_P384_GTAB` of `[m]G` for `m = 1 … 256` (24 KB, in Montgomery form), added by mixed additions; peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. The digits' additions are calls of `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's), their `_adx` forms, which cover infinity, equal points and opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is read for the last time before it is written, so no copy, and its small multiples are fused into three steps `C a - D b mod p` (s2n-bignum's sequence); on six words no register values are forwarded between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
 ///
 /// # Safety
 ///
@@ -14112,16 +14208,112 @@ movabs rax, 0
 mov QWORD PTR [rdi+6776], rax
 movabs rax, 0
 mov QWORD PTR [rdi+6784], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6792], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6800], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6808], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6816], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6824], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6832], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6840], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6848], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6856], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6864], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6872], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6880], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6888], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6896], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6904], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6912], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6920], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6928], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6936], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6944], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6952], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6960], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6968], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6976], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6984], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6992], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7000], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7008], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7016], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7024], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7032], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7040], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7048], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7056], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7064], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7072], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7080], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7088], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7096], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7104], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7112], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7120], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7128], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7136], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7144], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7152], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7160], rax
+movabs rax, 0
+mov QWORD PTR [rdi+7168], rax
 23:
 mov rcx, r8
 and rcx, 1
 test rcx, rcx
 je 24f
 mov rcx, r8
-and rcx, 127
-cmp rcx, 64
+and rcx, 511
+cmp rcx, 256
 jb 26f
-sub rcx, 128
+sub rcx, 512
 jmp 27f
 26:
 27:
@@ -14136,33 +14328,33 @@ sbb r11, rdx
 sbb r12, rdx
 sbb r13, rdx
 sbb r14, rdx
-mov BYTE PTR [rdi+rbx*1+6400], cl
-shr r8, 7
+mov WORD PTR [rdi+rbx*2+6400], cx
+shr r8, 9
 mov rax, r9
-shl rax, 57
+shl rax, 55
 or r8, rax
-shr r9, 7
+shr r9, 9
 mov rax, r10
-shl rax, 57
+shl rax, 55
 or r9, rax
-shr r10, 7
+shr r10, 9
 mov rax, r11
-shl rax, 57
+shl rax, 55
 or r10, rax
-shr r11, 7
+shr r11, 9
 mov rax, r12
-shl rax, 57
+shl rax, 55
 or r11, rax
-shr r12, 7
+shr r12, 9
 mov rax, r13
-shl rax, 57
+shl rax, 55
 or r12, rax
-shr r13, 7
+shr r13, 9
 mov rax, r14
-shl rax, 57
+shl rax, 55
 or r13, rax
-shr r14, 7
-add rbx, 7
+shr r14, 9
+add rbx, 9
 jmp 25f
 24:
 shr r8, 1
@@ -21715,19 +21907,19 @@ call {vg_p384_jac_add_cached_adx}
 jmp 219f
 218:
 219:
-movzx r8d, BYTE PTR [rdi+rbx*1+6400]
+movzx r8d, WORD PTR [rdi+rbx*2+6400]
 test r8, r8
 je 222f
-cmp r8, 128
+cmp r8, 256
 jb 224f
-mov eax, 256
+mov eax, 65536
 sub rax, r8
 mov r8, rax
 mov rax, r8
 sub rax, 1
 mov ecx, 96
 mul rcx
-lea rdx, [rip + {VG_P384_COMB}]
+lea rdx, [rip + {VG_P384_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+1024], xmm0
@@ -21789,7 +21981,7 @@ mov rax, r8
 sub rax, 1
 mov ecx, 96
 mul rcx
-lea rdx, [rip + {VG_P384_COMB}]
+lea rdx, [rip + {VG_P384_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+1024], xmm0
@@ -22308,6 +22500,6 @@ ret
         vg_p384_jac_add_cached_adx = sym super::p384_point_ops::vg_p384_jac_add_cached_adx,
         vg_p384_jac_add_affine_adx = sym super::p384_point_ops::vg_p384_jac_add_affine_adx,
         vg_p384_mul_mod_p_adx = sym super::p384_mont::vg_p384_mul_mod_p_adx,
-        VG_P384_COMB = sym super::consts::VG_P384_COMB,
+        VG_P384_GTAB = sym super::consts::VG_P384_GTAB,
     )
 }

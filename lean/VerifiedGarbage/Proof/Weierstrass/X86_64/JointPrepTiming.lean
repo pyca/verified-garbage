@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInvariant
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16
 
 @[expose] public section
 

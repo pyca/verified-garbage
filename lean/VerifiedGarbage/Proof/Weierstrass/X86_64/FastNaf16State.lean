@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 
 /-! The width-nine recoder's state: its digits as sixteen-bit words, and their stores. -/
 
