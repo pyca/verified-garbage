@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # ML-KEM on AArch64: the NTT halfword by halfword, the machine agrees with the code
@@ -409,6 +410,226 @@ theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel
         · exact h.v m i hi
     · cases hs
   | _ => simp [St.vop, reduceCtorEq] at hs
+
+/-! ## General registers and memory -/
+
+theorem read_write16' (m : Mem) (a : Addr) (x : BitVec 128) : (m.write a 16 x).read a 16 = x := by
+  refine Mem.read_eq_of_bytes fun i hi => ?_
+  simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
+
+theorem Rel.setG {σ : St} {s : State} (h : Rel rs s₀ L O σ s) {d : Reg} {g : G} {v : BitVec 64}
+    (hg : GHd rs s₀ g v) : Rel rs s₀ L O (σ.setG d g) (s.write .x d v) := by
+  refine ⟨fun r e he => ?_, fun r => ?_, fun k hk j hj e he => ?_, h.rd, h.wr, h.sp, h.syms⟩
+  · rw [vreg_setG]; exact h.v r e he
+  · rw [greg_setG]
+    simp only [State.write]
+    by_cases hr : r = d
+    · rw [ite_eq_left hr, ite_eq_left hr, BitVec.setWidth_eq]; exact hg.code
+    · rw [ite_eq_right hr, ite_eq_right hr]; exact h.g r
+  · rw [chunk_setG]; exact h.mem k hk j hj e he
+
+theorem rbase_norm {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {k o : Nat} (hk : k < rs.length) (ho : o < 2 ^ 32)
+    : GHd rs s₀ (norm rs k o) (rbase rs s₀ k + BitVec.ofNat 64 o) := by
+  unfold norm
+  split
+  · rename_i k' o' hl
+    obtain ⟨hk', hb, ho', hlt⟩ := locate_some hl
+    have hs := hc.small k' hk'
+    unfold chunks at hs
+    refine ⟨hk', by have := hc.len; omega, by omega, ?_⟩
+    unfold rbase
+    rw [hb, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add, ho']
+  · exact ⟨hk, by have := hc.len; omega, ho, rfl⟩
+
+theorem GHd.addG {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {g : G} {v : BitVec 64} (h : GHd rs s₀ g v)
+    (imm : Nat) : GHd rs s₀ (addG rs g imm) (v + BitVec.ofNat 64 imm) := by
+  cases g with
+  | junk => trivial
+  | num n =>
+    obtain ⟨-, rfl⟩ := h
+    refine ⟨Nat.mod_lt _ (by decide), ?_⟩
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  | ptr k o =>
+    obtain ⟨hk, -, -, rfl⟩ := h
+    simp only [NttR.addG]
+    split
+    · rename_i ho
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact rbase_norm hc hk ho
+    · trivial
+
+theorem GHd.subG {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {g : G} {v : BitVec 64} (h : GHd rs s₀ g v)
+    {imm : Nat} (himm : imm < 4096) : GHd rs s₀ (subG rs g imm) (v - BitVec.ofNat 64 imm) := by
+  cases g with
+  | junk => trivial
+  | num n =>
+    obtain ⟨hn, rfl⟩ := h
+    refine ⟨Nat.mod_lt _ (by decide), ?_⟩
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    omega
+  | ptr k o =>
+    obtain ⟨hk, -, ho, rfl⟩ := h
+    simp only [NttR.subG]
+    split
+    · rename_i hle
+      have e : BitVec.ofNat 64 o = BitVec.ofNat 64 (o - imm) + BitVec.ofNat 64 imm := by
+        rw [← BitVec.ofNat_add, Nat.sub_add_cancel hle]
+      rw [e, ← BitVec.add_assoc, BitVec.add_sub_cancel]
+      exact rbase_norm hc hk (by omega)
+    · trivial
+
+/-- An access the machine finds. -/
+theorem chunkAt_some {rs : List Rg} {s₀ : State} {g : G} {v : BitVec 64} (h : GHd rs s₀ g v) {off k j : Nat}
+    (hk : chunkAt rs g off = some (k, j)) :
+    k < rs.length ∧ j < chunks rs k ∧ v + BitVec.ofNat 64 off = caddr rs s₀ k j := by
+  cases g with
+  | junk => cases hk
+  | num n => cases hk
+  | ptr k₀ o =>
+    obtain ⟨hk₀, -, -, rfl⟩ := h
+    simp only [chunkAt] at hk
+    cases hl : locate rs (rs.getD k₀ default).base ((rs.getD k₀ default).off + o + off) with
+    | none => rw [hl] at hk; cases hk
+    | some p =>
+      obtain ⟨k', o'⟩ := p
+      rw [hl] at hk
+      by_cases h16 : o' % 16 = 0
+      · simp only [h16, ite_true, Option.some.injEq, Prod.mk.injEq] at hk
+        obtain ⟨rfl, rfl⟩ := hk
+        obtain ⟨hk', hb, ho', hlt⟩ := locate_some hl
+        refine ⟨hk', ?_, ?_⟩
+        · unfold chunks; omega
+        · unfold caddr rbase
+          rw [hb, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add,
+            ← BitVec.ofNat_add, show 16 * (o' / 16) = o' by omega, ho', Nat.add_assoc]
+      · simp [h16] at hk
+
+theorem chunk_none {σ : St} {k j : Nat} (hk : ¬ k < σ.mem.length) (e : Nat) : (σ.chunk k j).get e = 0 := by
+  unfold St.chunk Y.get
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (Nat.le_of_not_lt hk), Option.getD_none]
+  simp only [slot, ndiv, nmod, Nat.zero_div, Nat.zero_mod]
+
+
+theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 16) :
+    exec (.ldrq t n off) s = some (s.setV t (s.mem.read (s.gpr n + BitVec.ofNat 64 off) 16)) := by
+  simp [exec, addr, State.load, hr, ho.1, show off < 4096 * 16 by omega]
+
+theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
+    (hr : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
+    exec (.strq t n off) s =
+      some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
+  simp [exec, addr, State.store, hr, ho.1, show off < 4096 * 16 by omega]
+
+theorem movz_val (imm : BitVec 16) {hw : Nat} (hw4 : hw < 4) :
+    imm.setWidth 64 <<< (16 * hw) = BitVec.ofNat 64 (imm.toNat * 2 ^ (16 * hw)) ∧
+      imm.toNat * 2 ^ (16 * hw) < 2 ^ 64 := by
+  have hi := imm.isLt
+  have hp : imm.toNat * 2 ^ (16 * hw) < 2 ^ 64 := by
+    calc imm.toNat * 2 ^ (16 * hw) < 2 ^ 16 * 2 ^ (16 * hw) := Nat.mul_lt_mul_of_pos_right hi (Nat.two_pow_pos _)
+      _ = 2 ^ (16 + 16 * hw) := (Nat.pow_add ..).symm
+      _ ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+  refine ⟨?_, hp⟩
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
+    Nat.mod_eq_of_lt (show imm.toNat < 2 ^ 64 by omega)]
+
+theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} {s : State}
+    (h : Rel rs s₀ L O σ s) {i : Instr} (hs : σ.step R rs i = some σ') :
+    ∃ s', exec i s = some s' ∧ Rel rs s₀ L O σ' s' := by
+  cases i
+  case vop o => exact vop_ok hM h hs
+  case addImm sz d n imm =>
+    cases sz <;> simp only [St.step, reduceCtorEq] at hs
+    split at hs
+    · rename_i himm
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, by simp only [exec, himm, ite_true, State.read, BitVec.setWidth_eq], h.setG (h.g n |>.addG hc imm)⟩
+    · cases hs
+  case subImm sz d n imm =>
+    cases sz <;> simp only [St.step, reduceCtorEq] at hs
+    split at hs
+    · rename_i himm
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, by simp only [exec, himm, ite_true, State.read, BitVec.setWidth_eq], h.setG (h.g n |>.subG hc himm)⟩
+    · cases hs
+  case movz sz d imm hw =>
+    cases sz <;> simp only [St.step, reduceCtorEq] at hs
+    split at hs
+    · rename_i hw4
+      simp only [Option.some.injEq] at hs; subst hs
+      obtain ⟨e, hp⟩ := movz_val imm hw4
+      refine ⟨_, by simp only [exec, show 16 * hw < Size.bits .x by simp [Size.bits]; omega, ite_true],
+        h.setG (g := .num _) ⟨hp, e⟩⟩
+    · cases hs
+  case adrSym d name =>
+    simp only [St.step, Option.some.injEq] at hs; subst hs
+    refine ⟨_, rfl, h.setG ?_⟩
+    unfold symRegion
+    split
+    · rename_i k hk
+      obtain ⟨hk, hp, -⟩ := List.findIdx?_eq_some_iff_getElem.1 hk
+      simp only [Bool.and_eq_true, beq_iff_eq] at hp
+      refine ⟨hk, by have := hc.len; omega, by decide, ?_⟩
+      unfold rbase baseOf
+      simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some, hp.1, hp.2,
+        BitVec.add_zero, h.syms]
+    · trivial
+  case ldrq t n off =>
+    simp only [St.step] at hs
+    split at hs
+    · rename_i ho
+      cases hk : chunkAt rs (σ.greg n) off with
+      | none => rw [hk] at hs; cases hs
+      | some p =>
+        obtain ⟨k, j⟩ := p
+        rw [hk] at hs
+        simp only [Option.map_some, Option.some.injEq] at hs; subst hs
+        obtain ⟨hk', hj, ha⟩ := chunkAt_some (h.g n) hk
+        have hr := hc.rd k hk' j hj
+        rw [← ha, ← h.rd, ← h.wr] at hr
+        refine ⟨_, exec_ldrq ho hr, h.setV (chunk_lt _ _ _) fun e he => ?_⟩
+        rw [ha]
+        exact h.mem k hk' j hj e he
+    · cases hs
+  case strq t n off =>
+    simp only [St.step] at hs
+    split at hs
+    · rename_i ho
+      cases hk : chunkAt rs (σ.greg n) off with
+      | none => rw [hk] at hs; cases hs
+      | some p =>
+        obtain ⟨k, j⟩ := p
+        rw [hk] at hs
+        simp only [Option.bind_some] at hs
+        split at hs
+        · rename_i hw
+          simp only [Option.some.injEq] at hs; subst hs
+          obtain ⟨hk', hj, ha⟩ := chunkAt_some (h.g n) hk
+          have hr := hc.wr k hk' hw j hj
+          rw [← ha, ← h.wr] at hr
+          refine ⟨_, exec_strq ho hr, fun r e he => ?_, fun r => ?_, fun k' hk'' j' hj' e he => ?_,
+            h.rd, h.wr, h.sp, h.syms⟩
+          · rw [vreg_setChunk]; exact h.v r e he
+          · rw [greg_setChunk]; exact h.g r
+          · rw [chunk_setChunk _ _ _ (vreg_lt _ _), ha]
+            split
+            · rename_i hkj
+              obtain ⟨rfl, rfl, -⟩ := hkj
+              rw [read_write16']
+              exact h.v t e he
+            · by_cases hkj : k' = k ∧ j' = j
+              · obtain ⟨rfl, rfl⟩ := hkj
+                rw [chunk_none (by omega)]
+                exact Hd.junk _
+              · rw [Mem.read_write_sep (hc.sep k' j' k j hk'' hj' hk' hj hkj) (by decide)]
+                exact h.mem k' hk'' j' hj' e he
+        · cases hs
+    · cases hs
+  all_goals simp only [St.step, reduceCtorEq] at hs
 
 end
 
