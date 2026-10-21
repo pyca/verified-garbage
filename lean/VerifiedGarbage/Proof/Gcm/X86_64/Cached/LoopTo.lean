@@ -97,7 +97,7 @@ theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       (fun t ⟨hi, hh⟩ => ⟨hi, hCache.keep hh (hi.a.keys hp)⟩)
 
   have hd := hp.toD
-  have h16 := hp.nb16
+  have h16 : 16 ≤ nb s₀ := hp.nb16
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=

@@ -191,7 +191,7 @@ theorem dfinal_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {e
 /-- The decryption after the setup. -/
 theorem decTail_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk ordD (hk s₀) P) {s₁ : State}
     (hR : Ready s₀ P s₁) : WP isa (.seq (.loop dbody .ae) (.block (storeCtr ++ storeY))) s₁ (DPost s₀) := by
-  have h16 := hp.nb16
+  have h16 : 16 ≤ nb s₀ := hp.nb16
   have hI₁ : DInv s₀ P 0 s₁ :=
     ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
       fun r h1 h2 _ h4 => hR.gpr r h1 h2 h4, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩

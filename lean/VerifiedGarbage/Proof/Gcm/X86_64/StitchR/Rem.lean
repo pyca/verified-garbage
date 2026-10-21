@@ -493,7 +493,7 @@ fewer than 16 left. -/
 theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordD (hk s₀) P) {s : State}
     (hI : DInv s₀ P 0 s) :
     WP isa (.loop dbody .ae) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' := by
-  have h16 := hp.nb16
+  have h16 : 16 ≤ nb s₀ := hp.nb16
   let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s
   have hstep : ∀ m s, I m s → WP isa dbody s (fun s' =>
       (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s') ∨
