@@ -16,6 +16,11 @@ verified streaming functions of `H`, serves every hash function.
 
 `finalize` writes the MAC through an `out` pointer on every target.
 
+`keyed` computes the whole MAC of a message in one call from the two states
+`init` leaves, which it only reads: a caller that MACs many messages under
+one key (HKDF's expansion, TLS's key schedule) keeps the states and makes
+one call per message.
+
 An `Instance` is a hash function as the Rust interface has it: the names of
 its functions `vg_hmac_<hash>_init` and `vg_hmac_<hash>_finalize` (and
 `vg_pbkdf2_hmac_<hash>_iterate` and `vg_pbkdf2_hmac_<hash>`,
@@ -173,6 +178,27 @@ def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
     (writeArgs := true)
     (stack := stack)
 
+/-- `vg_hmac_<hash>_keyed(inner: *const [u8; S], outer: *const [u8; S], msg: *const u8, len: usize, out: *mut [u8; D])`,
+with `S` the size of the streaming state and `D` that of the digest: the
+whole MAC of a message, from the states `init` leaves, in one call. Both
+states are only read, so a caller keeps them for its next message. -/
+def keyedSig : Sig where
+  params := [("inner", .array false .u8 S.stateBytes), ("outer", .array false .u8 S.stateBytes),
+    ("msg", .slice false .u8 "len"), ("out", .array true .u8 S.digestBytes)]
+
+/-- If, for a key `K₀` of the block size of `H` and the `len` bytes at `msg`
+(fewer than 2⁶⁴ with the key), the streaming state at `inner` represents
+`K₀ ⊕ ipad` and the one at `outer` represents `K₀ ⊕ opad`, as `init` leaves
+them, writes the HMAC of the message under `K₀` to `out`. -/
+def keyedPost (pb : Nat) : (keyedSig S).Post pb := fun inner outer msg len out m m' _ =>
+  ∀ k0, k0.length = S.H.blockSize → k0.length + len.toNat < 2 ^ 64 →
+    S.Repr m inner (xorPad k0 ipad) → S.Repr m outer (xorPad k0 opad) →
+    bytesAt m' out S.digestBytes = hmacBlockKey S.H k0 (bytesAt m msg len.toNat)
+
+/-- `keyedPost`. The states and the message are secret. -/
+def keyedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (keyedSig S).contract A (post := keyedPost S A.ptrBits) (writeArgs := true) (stack := stack)
+
 /-! ## The functions in the Rust interface -/
 
 /-- A streaming hash function's HMAC functions in the Rust interface (and
@@ -247,6 +273,10 @@ def finalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
 /-- The contract of `vg_hmac_<hash>_finalize_scratch`: `VG.Spec.Hmac.finalizeScratchContract`. -/
 def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   Hmac.finalizeScratchContract I.S I.scratch A stack
+
+/-- The contract of `vg_hmac_<hash>_keyed`: `VG.Spec.Hmac.keyedContract`. -/
+def keyedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Hmac.keyedContract I.S A stack
 
 /-- `vg_hmac_<hash>_init` on every target. -/
 def initApi : Api where
@@ -341,6 +371,22 @@ def finalizeScratchApi : Api where
   safety := [
     "The contents of `inner` on return are unspecified.",
     "The contents of `scratch` on return are unspecified."]
+
+/-- `vg_hmac_<hash>_keyed` on every target. -/
+def keyedApi : Api where
+  module := s!"hmac_{I.rust}"
+  name := s!"vg_hmac_{I.rust}_keyed"
+  sig := keyedSig I.S
+  writeArgs := true
+  contracts := some fun A stack => I.keyedContract A stack
+  summary := s!"Computes an HMAC-{I.alg} in one call from a key's precomputed states: if, for a \
+    {I.S.H.blockSize}-byte key `K₀`, the {I.alg} streaming state `*inner` represents `K₀ ⊕ ipad` \
+    and `*outer` represents `K₀ ⊕ opad` (as `vg_hmac_{I.rust}_init` leaves them), writes the \
+    HMAC-{I.alg} of the `len` bytes at `msg` under `K₀` ({I.S.digestBytes} bytes) to `*out`. \
+    Neither state is written, so they serve the key's next message.\n\n\
+    Contract: `VG.Spec.Hmac.Instance.keyedContract` of `VG.Spec.Hmac.{I.lean}`. Constant time: \
+    only the pointers and `len` may affect timing, not the states or the message."
+  safety := []
 
 end Instance
 
