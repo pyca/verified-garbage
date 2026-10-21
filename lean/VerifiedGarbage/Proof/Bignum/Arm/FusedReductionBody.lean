@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionFirst
-public import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionTop
+import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionFirst
+import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionTop
 import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionMath
 import VerifiedGarbage.Proof.Bignum.Arm.DownRow
 import VerifiedGarbage.Proof.Bignum.Arm.RowCarryMemory
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Bignum.Arm.FusedReduction
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 /-! The fused cancellation row computes the quotient without moving its array. -/
 

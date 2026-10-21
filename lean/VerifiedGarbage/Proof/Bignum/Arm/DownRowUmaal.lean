@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaalBody
+import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaalBody
 import VerifiedGarbage.Proof.Bignum.Arm.Row
-import VerifiedGarbage.Proof.Framework.Subst
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
+public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 
 /-! The UMAAL downward row has the baseline row's exact trace and final state. -/
 

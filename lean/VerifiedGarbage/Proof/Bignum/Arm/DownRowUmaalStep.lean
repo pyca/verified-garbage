@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
+import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
 public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
 import VerifiedGarbage.Proof.Bignum.Arm.RowStep
-import VerifiedGarbage.Proof.Framework.Subst
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.Bignum.Arm.RowStep
 
 /-! Exact states and traces of the downward row's baseline step. -/
 

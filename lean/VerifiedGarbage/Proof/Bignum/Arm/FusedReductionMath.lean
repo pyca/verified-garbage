@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! The cancellation carry and the downward row together divide exactly. -/
 

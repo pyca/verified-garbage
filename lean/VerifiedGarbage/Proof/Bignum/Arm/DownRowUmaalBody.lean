@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaalStep
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
 
 /-! One UMAAL iteration simulates a downward-write baseline iteration exactly. -/
 

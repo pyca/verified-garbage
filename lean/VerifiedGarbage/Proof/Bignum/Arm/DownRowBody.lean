@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
 import VerifiedGarbage.Proof.Bignum.Arm.DownRowStep
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One iteration preserves the full row invariant -/

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # A complete ARMv7 Montgomery round, including its memory and loop state -/
 

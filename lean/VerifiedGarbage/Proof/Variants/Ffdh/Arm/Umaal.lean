@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.Ffdh.Arm.Base
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic -- shake: keep (exposed backend proof fields reference these lemmas)
 
 /-! Replace each RSA Montgomery row by the proven UMAAL row without changing
 any FFDH operation's contract, timing policy, or stack requirement. -/

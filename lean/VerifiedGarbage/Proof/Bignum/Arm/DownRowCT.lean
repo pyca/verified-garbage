@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
-public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -9,6 +9,10 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import Init.Prelude
+meta import Init.Prelude
+public import VerifiedGarbage.TCB.Code
+meta import VerifiedGarbage.TCB.Code
 
 /-! Downward-write rows reveal only their public pointers and count. -/
 

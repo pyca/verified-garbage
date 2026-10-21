@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 
 /-! Both ordinary and downward Montgomery rows use the same UMAAL arithmetic. -/
 

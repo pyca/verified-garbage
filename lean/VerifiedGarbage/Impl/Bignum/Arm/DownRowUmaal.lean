@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
+import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 public import VerifiedGarbage.Impl.Bignum.Arm.RowUmaal
+public import VerifiedGarbage.Impl.Bignum.Arm.Row
 
 /-! The downward-write row uses UMAAL and reconstructs baseline scratch registers once. -/
 

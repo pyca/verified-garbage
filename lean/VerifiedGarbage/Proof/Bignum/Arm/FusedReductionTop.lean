@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.FusedReduction
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Bignum.Arm.Mac
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! Add the last row carry and store the two high quotient words directly. -/
 

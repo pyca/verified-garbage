@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaalCaller
-import VerifiedGarbage.Proof.Framework.SubstLocal
+public import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
+import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 
 /-! Generic callers inherit both row choices without changing named calls. -/
 

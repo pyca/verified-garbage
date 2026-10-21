@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
-import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Subst
+public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 
 /-! Both row substitutions preserve the exact execution and require no stack. -/
 

@@ -3,8 +3,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 
 public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm.Base
-import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic -- shake: keep (exposed backend proof fields reference these lemmas)
 public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 public import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.BasesTail
