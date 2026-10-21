@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Expanded
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.EqCodes
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
@@ -18,7 +18,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
 
-Complete key derivation, cached-key signing, and verification are emitted
+Complete key derivation, signing with the cached SHA-512 digest of the seed and public key,
+and verification are emitted
 for every SHA-512 compression backend carried by `MdHash.sha512`, and for
 each field multiplication of the Ed25519 functions they call (the baseline's,
 and BMI2's and ADX's, `_adx`), and with AVX512_IFMA (`_ifma`): verification for
@@ -72,24 +73,24 @@ def publicKeyWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     spSafe := Proof.Ed25519.X86_64.PublicKey.publicKey_spSafe c
     features := c.features ++ ff.filter (!c.features.contains ·) }
 
-/-- Cached-key signing with the SHA-512 implementation `c`, calling the base-point
-multiplication `bs`, `vg_ed25519_scalar_base` with the suffix `fs`, which needs the CPU features
-`ff`. -/
-def signCachedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
+/-- Signing with the seed's cached SHA-512 digest and public key, with the SHA-512
+implementation `c`, calling the base-point multiplication `bs` (`vg_ed25519_scalar_base` with
+the suffix `fs`), which needs the CPU features `ff`. -/
+def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
-  Spec.Ed25519.signCachedApi.artifact X86_64.target {
+  Spec.Ed25519.signExpandedApi.artifact X86_64.target {
     suffix := c.suffix ++ fs
-    notes := ["Computes all three SHA-512 hashes with \
-      the selected backend, reduces the nonce and challenge, encodes the nonce point \
+    notes := ["Copies the seed's cached SHA-512 digest, computes the nonce and challenge \
+      hashes with the selected backend, reduces them, encodes the nonce point \
       with `vg_ed25519_scalar_base" ++ fs ++ "`, and computes the final scalar. \
       The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest \
       and saved arguments; its secret buffers are cleared before return. Calls use another 16 \
       bytes below the frame."]
     consts := Impl.Ed25519.X86_64.combConsts
-    code := Impl.Ed25519.X86_64.SignCached.code bs fs c.callee c.suffix
+    code := Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs c.callee c.suffix
     stack := 264
-    verified := Proof.Ed25519.X86_64.SignCached.verified c
-    spSafe := Proof.Ed25519.X86_64.SignCached.spSafe c
+    verified := Proof.Ed25519.X86_64.SignCached.verifiedE c
+    spSafe := Proof.Ed25519.X86_64.SignCached.spSafeE c
     features := c.features ++ ff.filter (!c.features.contains ·) }
 
 /-- The three operations with the SHA-512 implementation `c` and the field
@@ -103,7 +104,7 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
     List Artifact :=
   [publicKeyWith c bs fs bf,
     verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs ff hq,
-    signCachedWith c bs fs bf]
+    signExpandedWith c bs fs bf]
 
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and
 each field multiplication of the Ed25519 functions: the baseline's, and
@@ -124,7 +125,7 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
         Proof.Ed25519.X86_64.VerifyCode.ifma_eq,
         publicKeyWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],
-        signCachedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
+        signExpandedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]]
 
 end VG.Generic.MdHash.X86_64.Ed25519
