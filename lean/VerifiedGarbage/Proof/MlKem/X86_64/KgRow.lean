@@ -143,7 +143,7 @@ variable {k : Nat} {σ : State} (E : EP k σ)
 include E
 
 theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowIn k) = true)
-    {s : State} (h : P1 k σ s) : WP isa (.seq (.block ([.mov .rcx (.reg .rbx)] ++ Bodies.avx2.tab))
+    {s : State} (h : P1 k σ s) : WP isa (.seq (.block (([.mov .rcx (.reg .rbx)] : List Instr) ++ Bodies.avx2.tab))
       (withMxcsr .rbx oMx (rowIn k))) s (P2 k σ) := by
   have hk4 : k ≤ 4 := by omega
   have nC := E.nC
