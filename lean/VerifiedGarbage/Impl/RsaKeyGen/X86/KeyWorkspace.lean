@@ -49,4 +49,9 @@ def clearArrays (n : Nat) : Prog isa :=
 def primeProduct (n out a b : Nat) : Prog isa :=
   Product.code (n / 2) (n / 2) (slot n out) (slot n a) (slot n b) kProduct
 
+/-- Copy a smaller native integer into a cleared modulus-width array. -/
+def widenCopy (n k out src : Nat) : Prog isa :=
+  .seq (zerosW (slot n out) (n + 2))
+    (VG.Impl.Rsa.X86.Div.copyWords k src (slot n out))
+
 end VG.Impl.RsaKeyGen.X86.Key
