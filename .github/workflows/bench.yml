@@ -20,7 +20,7 @@ on:
         description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or aarch64-apple, which only a run by hand measures; empty for all but aarch64-apple)
+        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or aarch64-apple / arm-thumb, which only a run by hand measures; empty for all but aarch64-apple)
         required: false
       cpu_features:
         description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
@@ -113,7 +113,14 @@ jobs:
           fi
       - name: Install Rust
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
-        run: rustup toolchain install stable --profile minimal
+        env:
+          BENCH_TARGET: ${{ matrix.target }}
+        run: |
+          rustup toolchain install stable --profile minimal
+          if [ -n "$BENCH_TARGET" ]; then
+            rustup target add "$BENCH_TARGET"
+            echo "CARGO_BUILD_TARGET=$BENCH_TARGET" >> "$GITHUB_ENV"
+          fi
       # The dependencies (aws-lc-sys, criterion, ...) are the same for every
       # configuration and shard of an architecture, and about a third of the
       # job; ci.yml's `rust` job saves them on main whenever the key changes.

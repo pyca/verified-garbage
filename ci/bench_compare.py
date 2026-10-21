@@ -209,6 +209,8 @@ EXECUTABLES = {
     "aarch64": ("ELF", 64, 183),
     "x86": ("ELF", 32, 3),
     "arm": ("ELF", 32, 40),
+    # A32 and T32 share ELF's machine; the workflow selects the Cargo target.
+    "arm-thumb": ("ELF", 32, 40),
     "aarch64-apple": ("Mach-O", 64, 0x0100000C),
 }
 

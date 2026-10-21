@@ -173,6 +173,10 @@ PLATFORMS = {
 # and compares the fastest (bench_compare.py's `--rounds`).
 MANUAL_PLATFORMS = {
     "aarch64-apple": {"os": "macos-latest", "of": "aarch64", "rounds": 5},
+    # The same native AArch32 runner, compiling the Rust code and generated
+    # assembly as T32. OpenSSL remains the image's armhf library.
+    "arm-thumb": {"os": "ubuntu-26.04-arm", "of": "arm",
+                  "target": "thumbv7neon-unknown-linux-gnueabihf"},
 }
 
 # The other `VG_CPU_FEATURES` each architecture is benchmarked with, so that
