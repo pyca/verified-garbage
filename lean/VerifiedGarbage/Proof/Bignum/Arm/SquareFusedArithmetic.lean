@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
+import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
+public import Init.Data.BitVec.Basic
 
 /-! Doubling a two-word cross-product pair and accumulating its diagonal. -/
 

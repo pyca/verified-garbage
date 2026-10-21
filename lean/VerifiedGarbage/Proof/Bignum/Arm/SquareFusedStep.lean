@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareDiag
+import VerifiedGarbage.Proof.Bignum.Arm.SquareDiag
 public import VerifiedGarbage.Impl.Bignum.Arm.SquareUmaal
 import VerifiedGarbage.Proof.Bignum.Arm.SquareFusedArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.Mac
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 
 /-! The fused UMAAL diagonal doubles each cross-product pair before adding its square. -/
 
