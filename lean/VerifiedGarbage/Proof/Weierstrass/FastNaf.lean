@@ -14,6 +14,11 @@ open Spec.Weierstrass
 
 def Width (w : Nat) : Prop := w=5 ∨ w=7
 
+/-- The widths, nine too. -/
+def Wide (w : Nat) : Prop := w=5 ∨ w=7 ∨ w=9
+
+theorem Width.wide {w : Nat} (h : Width w) : Wide w := h.elim Or.inl (fun h => Or.inr (Or.inl h))
+
 def next (w n : Nat) : Nat :=
   if w=7 then FastNaf7.next n else if w=9 then FastNaf9.next n else Naf5.next n
 
@@ -38,6 +43,9 @@ theorem ne_7_9 : ¬(7:Nat)=9 := by decide
 
 /-- A digit of width nine, as stored. -/
 def word (k j : Nat) : BitVec 16 := FastNaf9.word k j
+
+/-- Byte `i` of the width-nine digits as stored: byte `i % 2` of digit `i / 2`. -/
+def wbyte (k i : Nat) : BitVec 8 := (word k (i/2)).extractLsb' (8*(i%2)) 8
 
 def point (C : Curve) (P : Point C) (w k j : Nat) : Point C :=
   if negative w k j then negPt (mul (magnitude w k j) P) else mul (magnitude w k j) P
@@ -240,5 +248,32 @@ theorem residual_zero_geB {w B k j : Nat} (hk : k<2^B) (hj : B+1≤j) :
 theorem residual_zero_ge {w k j : Nat} (hk : k<2^256) (hj : 257≤j) :
     residual w k j=0 :=
   residual_zero_geB hk hj
+
+theorem word_zero_iff (k j : Nat) : word k j=0 ↔ magnitude 9 k j=0 := by
+  simpa only [word,magnitude,ne_9_7,ite_true,ite_false] using FastNaf9.word_zero_iff k j
+
+theorem wbyte_of_zero {k i : Nat} (h : magnitude 9 k (i/2)=0) : wbyte k i=0 := by
+  rw [wbyte,(word_zero_iff k (i/2)).mpr h]
+  simp [BitVec.extractLsb']
+
+theorem next_odd9 (n : Nat) (hn : n%2≠0) : next 9 n=2^8*((n+2^8)/2^9) := by
+  simp only [next,FastNaf9.next,ne_9_7,ite_true,ite_false,hn,Nat.mul_comm,Nat.reducePow]
+
+theorem residual_skip9 (k j : Nat) (hn : residual 9 k j%2≠0) :
+    residual 9 k (j+9)=(residual 9 k j+2^8)/2^9 := by
+  rw [show j+9=j+1+8 from by omega,residual_add 9 k (j+1) 8,residual_succ 9 k j,next_odd9 _ hn,
+    residual_pow 9 _ 8 8 (by omega),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
+
+theorem residual_skip_between9 (k j i : Nat) (hn : residual 9 k j%2≠0) (hi : 0<i) (hiw : i≤9) :
+    residual 9 k (j+i)=2^(9-i)*((residual 9 k j+2^8)/2^9) := by
+  rw [show j+i=j+1+(i-1) from by omega,residual_add 9 k (j+1) (i-1),residual_succ 9 k j,next_odd9 _ hn,
+    residual_pow 9 _ 8 (i-1) (by omega),show 8-(i-1)=9-i from by omega]
+
+theorem magnitude_skip_zero9 (k j i : Nat) (hn : residual 9 k j%2≠0) (hi : 0<i) (hiw : i<9) :
+    magnitude 9 k (j+i)=0 := by
+  rw [magnitude_zero_iff,residual_skip_between9 k j i hn hi (by omega)]
+  have he : 9-i=(9-i-1)+1 := by omega
+  rw [he,Nat.pow_succ]
+  simp only [Nat.mul_mod,Nat.mod_self,Nat.mul_zero,Nat.zero_mul,Nat.zero_mod]
 
 end VG.Proof.Weierstrass.FastNaf

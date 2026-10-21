@@ -51,12 +51,12 @@ theorem fastStore_ok {s : State} {base : Addr} {size bits w k j : Nat}
     ea_tbl hs.rdi hc,hw,hd,fastByte_word,ite_true,Option.some.injEq,exists_eq_left']
   exact ⟨trivial,fun _ _ => rfl,rfl,rfl⟩
 
-theorem fastAdvance_ok (s : State) {j d : Nat} (hd : d=1 ∨ d=5 ∨ d=7)
+theorem fastAdvance_ok (s : State) {j d : Nat} (hd : d=1 ∨ d=5 ∨ d=7 ∨ d=9)
     (hc : s.gpr .rbx=BitVec.ofNat 64 j) :
     WP isa (.block (Impl.Weierstrass.X86_64.FastNaf.advance d)) s fun t =>
       t.gpr .rbx=BitVec.ofNat 64 (j+d) ∧ Keeps [.rbx] s t := by
   have he : (BitVec.ofNat 32 d).signExtend 64=BitVec.ofNat 64 d := by
-    rcases hd with rfl|rfl|rfl <;> rfl
+    rcases hd with rfl|rfl|rfl|rfl <;> rfl
   apply WP.of_runBlock
   simp only [Impl.Weierstrass.X86_64.FastNaf.advance,runBlock_cons,runStep_some,runBlock_nil,
     exec,execAlu,readSrc,Option.bind_some,Option.some.injEq,exists_eq_left']

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
-/-! Public width-five/width-seven recoding, skipping known zero digits. -/
+/-! Public width-five/seven/nine recoding, skipping known zero digits: bytes for widths five
+and seven, sixteen-bit words for nine. -/
 
 @[expose] public section
 
@@ -49,5 +50,19 @@ def stepN (n dst w : Nat) : Prog isa :=
 /-- The digits of a scalar of `n` words, into `8 n + 1` zeroed words at `dst`. -/
 def prepN (n src dst w : Nat) : Prog isa :=
   .seq (.block (Naf.initN n src++setConst (8*n+1) dst 0)) (.loop (stepN n dst w) .b)
+
+/-- The digits as sixteen-bit words, indexed by `rbx`. -/
+def tbl16 (d : Nat) : MemOp := { base := .rdi, index := some .rbx, scale := 2, disp := d }
+
+/-- `stepN` for width nine, storing each digit as a sixteen-bit word. -/
+def stepN16 (n dst : Nat) : Prog isa :=
+  .seq (.block [.mov .rcx (.reg .r8),.alu .and .rcx (.imm 1),.alu .test .rcx (.reg .rcx)]) <|
+  .seq (.ite .e (.block (shiftN n 1++advance 1))
+    (.seq (choose 9) (.block (Naf.subtractDigitN n++[.store16 (tbl16 dst) .rcx]++shiftN n 9++advance 9))))
+    (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (64*n+1)))])
+
+/-- The width-nine digits of a scalar of `n` words, into `16 n + 1` zeroed words at `dst`. -/
+def prepN16 (n src dst : Nat) : Prog isa :=
+  .seq (.block (Naf.initN n src++setConst (16*n+1) dst 0)) (.loop (stepN16 n dst) .b)
 
 end VG.Impl.Weierstrass.X86_64.FastNaf

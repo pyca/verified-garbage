@@ -24,16 +24,16 @@ theorem fastOddStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn :
         Impl.Weierstrass.X86_64.FastNaf.shiftN n w++Impl.Weierstrass.X86_64.FastNaf.advance w))) s fun t =>
       FastPrepState n base size bits w k (j+w) t ∧ KeepRegs (nafPrepClobN n) s t ∧
       Outside base bits (64*n+8) s.mem t.mem := by
-  have hsft : w=1 ∨ w=5 ∨ w=7 := Or.inr hw
+  have hsft : w=1 ∨ w=5 ∨ w=7 ∨ w=9 := Or.inr (hw.elim Or.inl (fun h => Or.inr (Or.inl h)))
   have hx : (s.gpr .r8).toNat%2^w=FastNaf.residual w k j%2^w := by
     have h := hI.value
     rw [nafValN_r8] at h
     rcases hw with rfl|rfl <;> omega
-  refine WP.seq (WP.mono (fastChoose_ok s hw) fun a ⟨da,ka⟩ => ?_)
+  refine WP.seq (WP.mono (fastChoose_ok s hw.wide) fun a ⟨da,ka⟩ => ?_)
   have sa := hI.scr.of_keeps ka (by decide)
   have va : nafValN n a=FastNaf.residual w k j :=
     (nafValN_keep ka.1 (by decide)).trans hI.value
-  have da' := da.trans (fastOdd_eq hw hx ho)
+  have da' := da.trans (fastOdd_eq hw.wide hx ho)
   rw [List.append_assoc,List.append_assoc,WP.block_append_iff]
   refine WP.mono (fastSubtractN_ok a hn w k j da' va hv) fun b ⟨vb,kb⟩ => ?_
   have sb := sa.of_keeps kb (fun h => by
