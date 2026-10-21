@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
 import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJP
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Framework.Offset
 

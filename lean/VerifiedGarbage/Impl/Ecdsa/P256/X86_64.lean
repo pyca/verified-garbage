@@ -15,7 +15,7 @@ open VG.X86_64
 def p256 : Cfg where
   n := 4
   C := Spec.P256.curve
-  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
+  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true, true⟩
   fastN := true
   pubVerify := true
   inverse := some Spec.Weierstrass.Inverse.p256

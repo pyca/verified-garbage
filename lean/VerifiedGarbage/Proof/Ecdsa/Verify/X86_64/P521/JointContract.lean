@@ -26,7 +26,7 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P521.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P521 VG.Proof.Weierstrass VG.Proof.Ecdh.X86_64
 
 /-- The comb's data, as `p521.comb` has it. -/
-def p521Table : CombData := ⟨7,Impl.P521.p521Comb7,Impl.P521.p521Comb7Start,"VG_P521_COMB",false⟩
+def p521Table : CombData := ⟨7,Impl.P521.p521Comb7,Impl.P521.p521Comb7Start,"VG_P521_COMB",false,false⟩
 
 theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, -, h7, held, fit, hdw⟩ := h

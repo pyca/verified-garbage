@@ -135,6 +135,9 @@ structure CombData where
   /-- Whether the comb adds Booth's digits by Jacobian mixed additions
   (`TCombCfg.combJ`), else by the complete ones (`TCombCfg.comb`). -/
   jac : Bool := false
+  /-- Whether that comb selects each window's entry during the previous
+  window's addition, where it selects with AVX2 (`TCombCfg.pipe`). -/
+  pipe : Bool := false
 
 /-- A curve as the code has it: `n` words, its parameters, and the comb for
 `G`, if it has one (else `[k]G` is by the ladder). -/
@@ -278,6 +281,7 @@ def combCfg (d : CombData) : TCombCfg where
   start := (c.mont d.start.1, c.mont d.start.2)
   one := c.mont 1
   avx2 := c.avx2
+  pipe := d.pipe && c.avx2
 
 /-- The comb's tables, in memory (`Artifact.consts`). -/
 def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl

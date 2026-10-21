@@ -152,11 +152,11 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (gWA cfg) m m') :
 theorem tbls_of {s : State} (hrd : s.rd = [⟨s.syms "VG_P256_COMB", 8 * p256W.length⟩])
     (hwr : s.wr = [⟨s.gpr .rdi, 8192⟩]) (ht : TblHeld s [⟨s.gpr .rdi, 8192⟩, ⟨s.gpr .rsp, 8⟩]) :
     TblMem s (s.syms "VG_P256_COMB") (cfg.combWords ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start,
-      "VG_P256_COMB", true⟩) ∧ ∀ i < (cfg.combWords ⟨7, Impl.P256.p256Comb7,
-      Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩).length, ∀ b < 8,
+      "VG_P256_COMB", true, true⟩) ∧ ∀ i < (cfg.combWords ⟨7, Impl.P256.p256Comb7,
+      Impl.P256.p256Comb7Start, "VG_P256_COMB", true, true⟩).length, ∀ b < 8,
       size ≤ ofs (s.gpr .rdi) (s.syms "VG_P256_COMB" + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
   obtain ⟨held, fit, hdw⟩ := ht
-  have hcd : cfg.comb = some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩ := by
+  have hcd : cfg.comb = some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true, true⟩ := by
     rfl
   refine tbl_of_held hcd (s₀ := s) ?_ (by rw [hwr]; simp) (fun r hr => ?_) (Unch.refl _ _ _)
   · rw [TblsHeld, cfg_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
@@ -167,7 +167,7 @@ theorem tbls_of {s : State} (hrd : s.rd = [⟨s.syms "VG_P256_COMB", 8 * p256W.l
     rw [hrd, hr]; simp
 
 /-- The comb of P-256's configurations. -/
-abbrev comb7 : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
+abbrev comb7 : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true, true⟩
 
 theorem cfg_comb : cfg.comb = some comb7 := rfl
 

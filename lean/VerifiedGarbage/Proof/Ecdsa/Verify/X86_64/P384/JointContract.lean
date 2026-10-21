@@ -29,7 +29,7 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P384 VG.Proof.Weierstrass VG.Pr
 open VG.Proof.Weierstrass.X86_64 (InvSounds)
 
 /-- The comb's data, as `p384.comb` has it. -/
-def p384Table : CombData := ⟨7,Impl.P384.p384Comb7,Impl.P384.p384Comb7Start,"VG_P384_COMB",false⟩
+def p384Table : CombData := ⟨7,Impl.P384.p384Comb7,Impl.P384.p384Comb7Start,"VG_P384_COMB",false,false⟩
 
 /-! The fields of `p384v` and `p384vx` that are `p384`'s, rewritten rather than
 compared by unfolding (which would evaluate the order's bits). -/

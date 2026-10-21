@@ -71,6 +71,10 @@ structure TCombCfg where
   one : Nat
   /-- Whether the selection loads 32 bytes at a time, with AVX2 (`selPassV`). -/
   avx2 : Bool := false
+  /-- Whether the comb with Booth's digits selects window `j + 1`'s entry
+  during window `j`'s addition (`TCombCfg.combJP`), where that code is
+  eligible (`TCombCfg.pipeOk`). -/
+  pipe : Bool := false
 
 /-- The accumulators of the selection: `xmm0`, `xmm1`, …, sixteen bytes of the
 entry each. -/

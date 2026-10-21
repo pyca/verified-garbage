@@ -16,7 +16,7 @@ open VG.X86_64
 def p521 : Cfg where
   n := 9
   C := Spec.P521.curve
-  comb := some ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
+  comb := some ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false, false⟩
   fastN := true
   pubVerify := true
   nbits := 521
