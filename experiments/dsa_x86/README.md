@@ -132,3 +132,14 @@ slot instead of a 128-byte stack frame. That slot is unused during table
 selection and is at least 128 bytes at all keygen widths. The optional
 `keygen_only` workflow input runs keygen/core DSA correctness tests and omits
 unchanged parameter-generation tests; leave `parameters=false` with it.
+
+Verified-integration diagnostic (2026-10-21): `VerifiedDiagnostic.lean` is rendered
+using `dsa-x86-keygen-comb` at `7648f577c`, whose complete keygen proofs pass.
+`vnow` is that program with internal symbols renamed for this disposable harness.
+`vprepare` substitutes `mfko`'s public comb-preparation bodies; `vqfast` substitutes
+its public q-modulus setup in the inline checker; `vboth` combines these changes.
+The substitutions are unproven diagnostics. Run alongside `mfko` and `baseline`
+to distinguish integration overhead from setup and instruction-layout effects.
+The exact production benchmark (Actions 39554029910) measured 0.73744, 2.77,
+3.52, 3.95, and 8.74 ms versus ordinary OpenSSL 0.62795, 2.40, 3.20, 3.64,
+and 8.13 ms. It does not satisfy the performance gate for submission.
