@@ -46,7 +46,7 @@ theorem probe_ok (s : State) (hc : Constants s)
     (fun i hi => by rw [hav,parsed_candidate _ _ hi]; exact candidate_lt _ _ _)) fun b ⟨hb,hbv⟩ => ?_
   refine WP.mono (sumCode_ok b) fun c ⟨hc0,hcv⟩ => ?_
   have hmask : vhalf (c.v .v1) 0 = BitVec.ofNat 16 (packedCount (maskAt s)) := by
-    rw [hcv,horizontal_low,accepted_sum hbv,hav]
+    rw [hcv,accepted_sum hbv,hav]
     rfl
   refine WP.mono (index_ok c (acceptanceMask_bound _) hmask) fun t ⟨ht,htv,h6,h7⟩ => ?_
   have hall := ((ha.trans hb).trans hc0).mono (rs' := [.v0,.v1,.v2]) (by decide)
