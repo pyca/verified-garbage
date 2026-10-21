@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 import VerifiedGarbage.Proof.Bignum.Arm.SubRow
 import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
+import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -116,12 +117,11 @@ theorem copy_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z w N)
   have mu : u.mem = s.mem := u5.mem.trans (u4.mem.trans m3)
   have restU : Rest opRegs s u :=
     (r3.mono (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp)))
-  refine WP.mono (selectRow_ok u (hu.subCtx ho ha ha hoa hoa) h.wpos
+  refine WP.mono (copyWords_ok u (hu.subCtx ho ha ha hoa hoa) h.wpos
     (by rw [u5.other _ (by decide), u4.other _ (by decide), p0])
     (by rw [u5.other _ (by decide), u4.other _ (by decide), p10])
     (by rw [u5.other _ (by decide), u4.other _ (by decide), p12])
-    (by rw [u5.other _ (by decide), u4.gpr, h3.r9])
-    (by rw [u5.gpr]; decide)) ?_
+    (by rw [u5.other _ (by decide), u4.gpr, h3.r9])) ?_
   intro t inv
   have v := inv.value
   rw [mu] at v

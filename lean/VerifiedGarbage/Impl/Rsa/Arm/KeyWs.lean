@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.Select
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyWords
 public import VerifiedGarbage.Impl.Rsa.Arm.ShiftRight
 public import VerifiedGarbage.Impl.Bignum.Arm.CompareWords
 
@@ -66,7 +66,7 @@ def sel (o a b sl : Nat) : Prog isa :=
 /-- `[o] := [a]`. -/
 def copy (o a : Nat) : Prog isa :=
   .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 a ++ [.mov .lr (.reg .r9), .mov .r11 (.imm 0)]))
-    selectRow
+    copyWords
 
 /-- `[j] := ([j] + r11 · 2^(32 w)) / 2`: `r11` stored as word `w`, then the shift. -/
 def half (j : Nat) : Prog isa :=
