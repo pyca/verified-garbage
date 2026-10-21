@@ -83,6 +83,9 @@ RUST_CI = {
     "ci/runner.Dockerfile",
     "ci/rust_arches.py",
     "ci/rust_matrix.toml",
+    "ci/rust_test_timing.sh",
+    "ci/rustdoc_timing.sh",
+    "ci/rustdoc_timing.cmd",
 }
 
 

@@ -456,7 +456,13 @@ jobs:
           path: bench-target
           key: ${{ steps.bench-cache-key.outputs.key }}
       - run: rustc -vV
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # libtest's per-test elapsed times are still unstable, including on
+      # the MSRV. Enable its reporting flag without changing toolchains.
+      # Hide durations that round to zero at libtest's millisecond precision.
+      - shell: bash
+        run: |
+          source ci/rust_test_timing.sh
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash
@@ -466,11 +472,13 @@ jobs:
       # its features (src/cpu.rs), which the build above, without `std`,
       # does not, and `rust-cpu-features` does only with `VG_CPU_FEATURES`.
       - name: Test CPU feature detection with std
+        shell: bash
         if: ${{ env.TESTS == 'true' && matrix.os == 'ubuntu-26.04-arm' }}
         env:
           LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
         run: |
-          cargo test --locked --features std --lib cpu::
+          source ci/rust_test_timing.sh
+          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
@@ -527,7 +535,13 @@ jobs:
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}
         run: cargo clippy --all-targets --locked
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # libtest's per-test elapsed times are still unstable, including on
+      # the MSRV. Enable its reporting flag without changing toolchains.
+      # Hide durations that round to zero at libtest's millisecond precision.
+      - shell: bash
+        run: |
+          source ci/rust_test_timing.sh
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
@@ -664,6 +678,7 @@ jobs:
         if: ${{ env.TESTS == 'true' }}
         shell: bash
         run: |
+          source ci/rust_test_timing.sh
           # On a host without AVX512_IFMA (some runners' CPUs have none, or
           # do not expose it), SDE emulates it for -icx and -dmr some thirty
           # times slower than the ADX code runs: the RSA tests then leave
@@ -688,14 +703,14 @@ jobs:
           run_line() {
             local tests=$1 status=0 selected
             if [ "$tests" = all ]; then
-              cargo test --locked --features cpu-features-env
+              cargo test --locked --features cpu-features-env -- -Z unstable-options --report-time
               return
             fi
             for binary in lib tests; do
               selected=$(python3 ci/cpu_tests.py select "$binary" "$lists/lib" "$lists/tests" $tests) || return
               [ -n "$selected" ] || continue
               if [ "$binary" = lib ]; then target=(--lib); else target=(--test tests); fi
-              cargo test --locked --features cpu-features-env "${target[@]}" -- --exact $selected || status=$?
+              cargo test --locked --features cpu-features-env "${target[@]}" -- -Z unstable-options --report-time --exact $selected || status=$?
             done
             return "$status"
           }
@@ -721,7 +736,7 @@ jobs:
           failed=()
           for i in "${!names[@]}"; do
             echo "::group::${names[$i]}"
-            cat "$logs/$i"
+            sed 's/ <0\.000s>//g' "$logs/$i"
             echo "::endgroup::"
             echo "${names[$i]}: $(cat "$logs/$i.time") s of CPU (user, system)"
             printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
