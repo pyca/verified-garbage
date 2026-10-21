@@ -11,11 +11,12 @@ namespace VG.Proof.RsaKeyGen.X86.Sieve
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.RsaKeyGen.X86.Sieve
 
-theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
+theorem loop_full_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
     (H : StateAt g c 0 g.limit s) :
     WP isa (loop stackSlots) s fun t =>
       t.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix c g.limit).toNat ∧
-      Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t := by
+      Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t ∧
+      t.mem.readW (off (g.sp.setWidth 64) 0) 32 = g.candidate := by
   let Inv : Nat → State → Prop := fun q t =>
     ∃ i, i < g.limit ∧ q = g.limit - i ∧ StateAt g c i q t ∧
       VG.Proof.RsaKeyGen.trialPrefix c i = false ∧ Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧
@@ -25,7 +26,8 @@ theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
   have run : WP isa (.loop (step stackSlots) .ne) s fun t =>
       Context g c t ∧ t.mem.readW (off (g.sp.setWidth 64) 16) 32 =
         BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix c g.limit).toNat ∧
-      Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t := by
+      Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t ∧
+      t.mem.readW (off (g.sp.setWidth 64) 0) 32 = g.candidate := by
     refine WP.loop (M := isa) Inv ?_ g.limit s initial
     rintro q t ⟨i, index, rfl, T, clearPrefix, O, K⟩
     have positive : 0 < g.limit - i := by omega
@@ -44,7 +46,7 @@ theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
     · have countZero : nextCount (g.limit - i) (dividesAt c i) = 0 := by rw [found]; rfl
       have full : VG.Proof.RsaKeyGen.trialPrefix c g.limit = true :=
         VG.Proof.RsaKeyGen.trialPrefix_hit index found
-      refine Or.inl ⟨by rw [ev, countZero]; rfl, U.context, ?_, combinedO, combinedK⟩
+      refine Or.inl ⟨by rw [ev, countZero]; rfl, U.context, ?_, combinedO, combinedK, U.candidate⟩
       rw [full]
       rw [found] at hit
       exact hit
@@ -59,7 +61,7 @@ theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
         omega
       by_cases done : i + 1 = g.limit
       · have countZero : nextCount (g.limit - i) (dividesAt c i) = 0 := by rw [count, done]; omega
-        refine Or.inl ⟨by rw [ev, countZero]; rfl, U.context, ?_, combinedO, combinedK⟩
+        refine Or.inl ⟨by rw [ev, countZero]; rfl, U.context, ?_, combinedO, combinedK, U.candidate⟩
         rw [done] at nextPrefix
         rw [nextPrefix]
         rw [missed] at hit
@@ -71,10 +73,17 @@ theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
         · rw [count] at U
           exact U
   unfold loop
-  refine WP.seq (WP.mono run fun t ⟨C, value, O, K⟩ => ?_)
+  refine WP.seq (WP.mono run fun t ⟨C, value, O, K, candidate⟩ => ?_)
   refine wp_movS (C.stack.read 16 (by decide)) fun u U _ => WP.block_nil ?_
-  refine ⟨U.gpr.trans value, ?_, K.widen U.keeps⟩
-  rw [U.mem]
-  exact O
+  refine ⟨U.gpr.trans value, ?_, K.widen U.keeps, ?_⟩
+  · rw [U.mem]; exact O
+  · rw [U.mem]; exact candidate
+
+theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
+    (H : StateAt g c 0 g.limit s) :
+    WP isa (loop stackSlots) s fun t =>
+      t.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix c g.limit).toNat ∧
+      Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t :=
+  WP.mono (loop_full_ok v H) fun _ ⟨result, O, K, _⟩ => ⟨result, O, K⟩
 
 end VG.Proof.RsaKeyGen.X86.Sieve
