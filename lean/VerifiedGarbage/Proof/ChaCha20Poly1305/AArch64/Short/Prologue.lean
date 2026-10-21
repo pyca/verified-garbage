@@ -225,6 +225,7 @@ structure Post2 (s₀ : State) (s : State) : Prop where
   ks : ∀ k < 320, s.mem (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k
   x0 : s.gpr .x0 = off (cx s₀) 448
   x1 : s.gpr .x1 = off (cx s₀) 64
+  st0 : stateAt s.mem (off (cx s₀) 0) = initState (K s₀) 0 (N s₀)
 
 open VG.Proof.ChaCha20.AArch64.Mixed5 in
 theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
@@ -253,7 +254,7 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       exact ⟨workR s₀, List.mem_singleton_self _, sub1 s₀ (by decide) (by decide)⟩
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun k hk => ?_, x0₇, x1₇⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun k hk => ?_, x0₇, x1₇, ?_⟩
   · rw [cs _ (by decide), h.x21]
   · rw [cs _ (by decide), h.x22]
   · rw [cs _ (by decide), h.x23]
@@ -277,6 +278,9 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
     rw [h.x1] at hd
     rw [hd, h.zero k hk]
     exact BitVec.zero_xor.trans (by simp only [source, h.x0, h.st])
+  · have hc := c₂.cnt
+    simp only [source, c₂.x0, h.x0] at hc
+    rw [hm, hc, h.st]
 
 /-- After the prologue. -/
 structure PostP (s₀ : State) (s : State) : Prop where
@@ -284,6 +288,7 @@ structure PostP (s₀ : State) (s : State) : Prop where
   fine : Frame [workR s₀] s₀.mem s.mem
   poly : Repr s.mem (off (cx s₀) 448) (otk s₀) []
   ks : ∀ k < 320, s.mem (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k
+  st0 : stateAt s.mem (off (cx s₀) 0) = initState (K s₀) 0 (N s₀)
 
 theorem otk_eq {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k) :
     bytesAt m (off (cx s₀) 64) 32 = otk s₀ := by
@@ -308,11 +313,15 @@ theorem prologue_ok {sve : Bool} {s₀ : State} (hp : APre e s₀) :
     (covers2 hp h₂.inv.wr (a := 448) (n := 128) (b := 64) (m := 32) (by lit_omega) (by lit_omega))
     (covers1 hp h₂.inv.wr (a := 448) (n := 128) (by lit_omega)) fun s₃ k₃ repr₃ => ?_
   refine ⟨h₂.inv.step1 (k := 448) (n := 128) k₃ (by lit_omega) (by lit_omega) (by lit_omega),
-    h₂.fine.trans (frame_work1 (k := 448) (n := 128) k₃ (by lit_omega) (by lit_omega)), ?_, fun k hk => ?_⟩
+    h₂.fine.trans (frame_work1 (k := 448) (n := 128) k₃ (by lit_omega) (by lit_omega)), ?_, fun k hk => ?_, ?_⟩
   · rw [← otk_eq h₂.ks]; exact repr₃
   · rw [k₃.frame.bytes (R := sub s₀ 64 320) (by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
         exact sub_disj s₀ (by decide) (by decide) (by decide)) (show 320 ≤ 2 ^ 64 by decide) hk]
     exact h₂.ks k hk
+  · rw [VG.Proof.ChaCha20.AArch64.Xor.stateAt_frame k₃.frame (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst hr
+        exact sub_disj s₀ (by decide) (by decide) (by decide))]
+    exact h₂.st0
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Short
