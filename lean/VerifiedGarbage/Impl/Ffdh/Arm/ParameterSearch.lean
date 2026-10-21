@@ -37,8 +37,10 @@ def zeroOut : Prog isa := .seq
 
 def exhausted : Prog isa := .seq (.block (terminal 3)) zeroOut
 
-def accept : List Instr := [
-  ldf .r9 14, ldf .r10 4, .dp .add .r10 .r10 (.reg .r9), stf .r10 4] ++ terminal 1
+def acceptHead : List Instr := [
+  ldf .r9 14, ldf .r10 4, .dp .add .r10 .r10 (.reg .r9), stf .r10 4]
+
+def accept : List Instr := acceptHead ++ terminal 1
 
 /-- Subtract one from the complete u64 retry counter. `adc` materializes
 no-borrow; high := high - 1 + no-borrow. -/
@@ -50,10 +52,12 @@ def decrementWords : List Instr := [
 def decrement : List Instr := [ldf .r9 0, .ldr .r10 .r4 4] ++
   decrementWords ++ [stf .r9 0, .str .r10 .r4 4]
 
-def reject : List Instr := [
+def rejectHead : List Instr := [
   ldf .r9 14, ldf .r10 4, ldf .r11 9, ldf .r12 10,
   .dp .add .r10 .r10 (.reg .r9), .dp .add .r11 .r11 (.reg .r9),
-  .dp .sub .r12 .r12 (.reg .r9), stf .r10 4, stf .r11 9, stf .r12 10] ++
+  .dp .sub .r12 .r12 (.reg .r9), stf .r10 4, stf .r11 9, stf .r12 10]
+
+def reject : List Instr := rejectHead ++
   decrement ++ [.mov .r11 (.imm 4), stf .r11 13]
 
 /-- Z iff r9 < r10, without interpreting an unsigned comparison as signed. -/
@@ -80,9 +84,16 @@ def candidateRun (candidate : Prog isa) : Prog isa :=
 
 def budgetGuard : List Instr := [.dp .orr .r9 .r9 (.reg .r10), .cmp .r9 (.imm 0)]
 
+/-- Do not call the candidate with a depleted tape. A tape shorter than
+one modulus cannot contain a candidate; clear the output and request its
+replacement directly, keeping pointer arithmetic away from an empty tail. -/
+def candidateStep (candidate : Prog isa) : Prog isa := .seq
+  (.block ([ldf .r9 10, ldf .r10 1] ++ less))
+  (.ite .eq (.seq zeroOut request) (.seq (candidateRun candidate) classify))
+
 def iteration (candidate : Prog isa) : Prog isa := .seq
   (.block ([ldf .r9 0, .ldr .r10 .r4 4] ++ budgetGuard))
-  (.seq (.ite .eq exhausted (.seq (candidateRun candidate) classify))
+  (.seq (.ite .eq exhausted (candidateStep candidate))
     (.block [ldf .r9 13, .cmp .r9 (.imm 4)]))
 
 def finish : List Instr := [
