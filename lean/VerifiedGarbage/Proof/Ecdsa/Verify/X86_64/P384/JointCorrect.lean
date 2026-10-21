@@ -31,7 +31,7 @@ theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
   have hc := p384v_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (p384v_tbls hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (p384v_tbls hL hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
     hp hM hQ hRep
 
@@ -42,7 +42,7 @@ theorem jointVerify_p384_adx_ok {s : State} (hp : VPre p384vx s) :
   have hc := p384vx_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (p384vx_tbls hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (p384vx_tbls hL hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
     (joint_adx_doubler hc hL) hp hM hQ hRep
 

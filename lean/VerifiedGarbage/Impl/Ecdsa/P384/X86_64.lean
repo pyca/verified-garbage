@@ -18,7 +18,7 @@ and `k^(n-2)` calls of `vg_p384_inv_mod_p` and `_n` (`Cfg.inverse`). -/
 def p384 : Cfg where
   n := 6
   C := Spec.P384.curve
-  comb := some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false, false⟩
+  comb := some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true, true⟩
   fastN := true
   hot := true
   mulBase := some Spec.Weierstrass.MulBase.p384
