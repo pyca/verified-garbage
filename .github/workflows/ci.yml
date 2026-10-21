@@ -664,7 +664,6 @@ jobs:
         if: ${{ env.TESTS == 'true' }}
         shell: bash
         run: |
-          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           # On a host without AVX512_IFMA (some runners' CPUs have none, or
           # do not expose it), SDE emulates it for -icx and -dmr some thirty
           # times slower than the ADX code runs: the RSA tests then leave
@@ -673,7 +672,11 @@ jobs:
           # sizes (tests/wycheproof/harness.rs and rsa_pss_large_keys).
           if [ "${CPU%% *}" != native ] && ! grep -qw avx512ifma /proc/cpuinfo; then
             export VG_TEST_HOST_WITHOUT_IFMA=1
+            RUNS=$(python3 ci/cpu_tests.py emulated-rsa "$CPU" <<< "$RUNS")
           fi
+          # Substitution keeps feature lines and their order: mixed hosts
+          # compute identical shard membership. Record the effective groups.
+          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           cargo test --locked --features cpu-features-env --no-run
           lists=$RUNNER_TEMP/lists
           mkdir -p "$lists"

@@ -213,19 +213,17 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # vg_rsa_private_checked_ifma and each hash function's
 # implementations (and RSAES-OAEP decryption with SHA-1's SHA
 # extensions and SHA-512's baseline code).
-# IFMA vectors run once; the restricted lines only exercise additional
-# hash implementations (scalar SHA-256/SHA-512 and AVX2 SHA-256) with the
-# same IFMA arithmetic. Prime generation uses ADX even on ICX, so its full
-# suites stay on SKX/native. Large-key signing and shared-key concurrency
-# have focused checks here, with their full repetitions on SKX/native.
+# Full suites run when the host has AVX512_IFMA. On SDE hosts without it,
+# ci/cpu_tests.py substitutes focused RSA groups at run time. Feature lines
+# stay identical so shards on different host CPUs agree on their split.
 # Two shards retain separate runners for the vectors and hash checks.
 [[cpu]]
 chip = "icx"
 shards = 2
 runs = """
-- | x25519 ed25519 rsa_ifma message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac chacha20 poly1305 cpu
-avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_hashes message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_hashes cpu
+- | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac chacha20 poly1305 cpu
+avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu
 aes,avx,avx2,ssse3,vaes | aes_gcm cpu
 avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
@@ -241,7 +239,7 @@ aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 [[cpu]]
 chip = "dmr"
 runs = """
-- | ed25519 rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | ed25519 rsa_pss rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 """
 
