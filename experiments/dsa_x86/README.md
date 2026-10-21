@@ -105,3 +105,9 @@ checks algebraic results, callee-saved registers, and reuse after clobbering
 the arithmetic context. Promotion requires DSA-specific table-lifetime and
 public-modulus contracts; the RSA contract is not claimed to cover padded
 DSA domains. This experiment adds no trusted declarations or proofs.
+
+Comb validation: 53 DSA/RSA tests pass under i686 QEMU (including CAVP,
+padded domains, rejection/replay and ABI checks). An additional focused run
+on the eight-word stack compares dense full-width exponents against the
+ordinary power helper, covering every comb column and the padded high-bit
+boundary. These are correctness checks, not performance measurements.
