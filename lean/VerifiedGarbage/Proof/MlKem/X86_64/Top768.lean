@@ -142,7 +142,8 @@ theorem kgRows768 : KgRowsOk kem768w.L where
 theorem kgH16Wf768 : KeyGenH.KgH16Wf kem768w :=
   { kgWf768.toKgWfB with
     k3 := by decide, ek := by decide, pr := by decide +kernel, se := by decide +kernel, nt := by decide +kernel,
-    hz := by decide +kernel, cp := by decide +kernel, sd := by decide +kernel, sm := by decide +kernel,
+    hz := by decide +kernel, c0 := by decide +kernel, sd0 := by decide +kernel, sm0 := by decide +kernel,
+    cP := by decide +kernel, cp := by decide +kernel, sd := by decide +kernel, sm := by decide +kernel,
     rw := by decide +kernel, flg := by decide +kernel, tS := by decide +kernel, tC := by decide +kernel,
     tH := by decide +kernel }
 
@@ -158,11 +159,12 @@ theorem kgH16T768 : KeyGenH.KgH16T kem768w where
       · exact .inr rfl
     rcases this with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   sT := ⟨_, by taint_decide⟩
+  pT := ⟨_, by taint_decide⟩
 
 theorem keyGen_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.keyGen v.callee) (Spec.MlKem.keyGenContract X86_64.abi 32) :=
   keyGenHSel_verified kgRows768 v kgH16Wf768 kgH16T768 kpke768 kg16Wf768 kgWf768 keyGenImp768
-    (fun b B => by kgh_ctl v b B kgRows768) (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
+    (fun b p B P => by kgh_ctl v b p B P kgRows768) (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 /-- The shared contract of `encapsH`, from the contract its proofs are written against. -/
 theorem encapsHImp768 : (encapsK kem768).Implies (Spec.MlKem.encapsHContract X86_64.abi 32) :=

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Rows
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Rows
 import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
@@ -58,6 +58,35 @@ theorem sampleHAtM16_tr {m : Nat} {b : Prog isa} (hb : BatchHMOk16 m b) {oa oz :
     hv2.2.2, hm1, hm2, e4, hs1, hs2, e3]
   simp only [pa, e1, and_self]
 
+/-- Two runs of the fragment computing outputs of `PRF₂` inlined, from the same seeds and pointers. -/
+theorem sampleHAtP16_tr {b : Prog isa} (hb : BatchPOk16 b) {oa oz : Nat} :
+    RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
+      bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
+      (Encaps.sampleHAt b (sc oa) (sc oz)) fun _ _ => True := by
+  refine RelCT.seq (RelCT.postDep (Q := fun x1 y1 => ∃ x y, (SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧
+      x.gpr .rsp = y.gpr .rsp ∧ bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136) ∧
+      (((x1.gpr .rdi = pa x (sc 0) ∧ x1.gpr .rsi = pa x (sc oa) ∧ x1.gpr .rdx = pa x (sc oz)) ∧ x1.mem = x.mem) ∧
+        Keep argRegs x x1) ∧
+      (((y1.gpr .rdi = pa y (sc 0) ∧ y1.gpr .rsi = pa y (sc oa) ∧ y1.gpr .rdx = pa y (sc oz)) ∧ y1.mem = y.mem) ∧
+        Keep argRegs y y1))
+    (block_nomem_tr (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _)))
+    (fun x y ⟨hx, hy, _⟩ => ⟨s4Glue_ok oa oz hx.offA hx.offZ x, s4Glue_ok oa oz hy.offA hy.offZ y⟩)
+    fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩) (RelCT.seq (regionModel.relCT_inline (Pre := samplePKW.pre)
+      (Pub := samplePKW.pub) (fun s hs => let ⟨t, s', e, _, p⟩ := hb.ok s hs; ⟨t, s', e, p⟩) hb.ct ?_)
+      (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl))
+  rintro x1 y1 ⟨x, y, ⟨hx, hy, e1, e3, e4⟩, ⟨⟨hv1, hm1⟩, k1⟩, ⟨⟨hv2, hm2⟩, k2⟩⟩
+  have hs1 : x1.gpr .rsp = x.gpr .rsp := k1.gpr (by decide)
+  have hs2 : y1.gpr .rsp = y.gpr .rsp := k2.gpr (by decide)
+  refine ⟨_, _, _, _, shPre16 hx hv1 k1, shPre16 hy hv2 k2, ?_,
+    by show Covers _ (x1.rd ++ x1.wr); rw [k1.2.1, k1.2.2]; exact hx.c,
+    by show Covers _ x1.wr; rw [k1.2.2]; exact hx.w,
+    by show Covers _ (y1.rd ++ y1.wr); rw [k2.2.1, k2.2.2]; exact hy.c,
+    by show Covers _ y1.wr; rw [k2.2.2]; exact hy.w⟩
+  show sample4K.pub (x1.withRegions _ _) (y1.withRegions _ _)
+  simp only [sample4K, State.withRegions_gpr, State.withRegions_mem, hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1,
+    hv2.2.2, hm1, hm2, e4, hs1, hs2, e3]
+  simp only [pa, e1, and_self]
+
 namespace KeyGenH
 
 open KeyGen KeyGen16 VG.Impl.MlKem.X86_64.Top16 VG.Impl.MlKem.X86_64.KeyGenH16
@@ -71,6 +100,8 @@ structure KgH16T : Prop where
     (copy (sc (Encaps16.oHB K)) (.r12, 136 * (hm i).2) (136 * (hm i).1)) h).isSome = true
   sT : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13])
     (copy (sc 0) (sc (Encaps16.oHS K)) 200) h).isSome = true
+  pT : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13])
+    (copy (sc (K.oW + Sample4.oPS)) (sc (oG + 32)) 32) h).isSome = true
 
 variable {K}
 
@@ -88,38 +119,103 @@ theorem trK {c : Prog isa} {h : VG.Taint.Hint X86_64.Taint.T}
 
 /-! ## Before the rows -/
 
-theorem noise_tr (v : Sample4Impl) :
-    RelCT isa (R K.L fun σ s => KA K.L σ s ∧ s.gpr .r15 = 1) (Top16.noise K v.callee (2 * K.L.k)) (R K.L (KN K 6)) := by
+theorem prfs_tr (v : Sample4Impl) :
+    RelCT isa (R K.L fun σ s => KA K.L σ s ∧ s.gpr .r15 = 1) (v.callee.prfs 2 4 (K.oPR + 256) (K.oW / 32))
+      (R K.L (KN K 2)) := by
   have Wb := W.toKgWfB
-  rw [W.k3]
-  unfold Top16.noise
   have hc := W.pr
   simp only [Bool.and_eq_true] at hc
-  refine RelCT.seq (relInv (fun σ s hp hs => prfs_ok W hp v hs.1 hs.2)
+  exact relInv (fun σ s hp hs => prfs_ok W hp v hs.1 hs.2)
     (rel2_of (v.prfs_tr (kgB_bases K.L) (by omega) hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
-      kc_lrel Wb p₁ p₂ pub h₁.1.kc h₂.1.kc)) ?_
-  have := seqR_tr (R := fun k => R K.L (KN K k)) 6 0 fun N _ hN =>
-    relInv (fun σ s hp hs => se_ok W hp v.arith (by omega) hs)
+      kc_lrel Wb p₁ p₂ pub h₁.1.kc h₂.1.kc)
+
+theorem se_tr (v : Sample4Impl) :
+    RelCT isa (R K.L (KN K 2)) (seqR (cbdN K v.callee.arith) 2 4) (R K.L (KN K 6)) := by
+  have Wb := W.toKgWfB
+  exact seqR_tr (R := fun k => R K.L (KN K k)) 4 2 fun N hN hN' =>
+    relInv (fun σ s hp hs => se_ok W hp v.arith (by omega) hN hs)
       (rel2_of (cbd2_16At_trL v.arith rbx_na (by
           have h := W.se N (by omega); simp only [Bool.and_eq_true] at h; exact h.1))
         fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel Wb p₁ p₂ pub h₁.kc h₂.kc)
-  rwa [Nat.zero_add] at this
 
-theorem ntt_tr (hK : KgRowsOk K.L) : RelCT isa (R K.L (KN K 6)) (nttAt K) fun _ _ => True := by
+theorem hzG_tr (T : KgH16T K) : RelCT isa (R K.L (KG K · 0 false)) (.block (Encaps16.hzero K)) fun _ _ => True := by
+  obtain ⟨_, t⟩ := T.zT
+  exact rel2_of (trK W t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W.toKgWfB p₁ p₂ pub h₁.kc h₂.kc
+
+theorem cbdP_tr (v : Sample4Impl) {N : Nat} (hN : N < 2) :
+    RelCT isa (R K.L (KG K · N true)) (cbdP K v.callee.arith N) fun _ _ => True :=
+  rel2_of (cbd2_16At_trL v.arith rbx_na (by
+      have h := W.cP N hN; simp only [Bool.and_eq_true] at h; exact h.1))
+    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W.toKgWfB p₁ p₂ pub h₁.kc h₂.kc
+
+theorem nttG_tr (hK : KgRowsOk K.L) : RelCT isa (R K.L (KG K · 2 true)) (nttAt K) fun _ _ => True := by
   have Wb := W.toKgWfB
   have k3 := W.k3
   have hc := W.nt
   simp only [Bool.and_eq_true] at hc
   have hkn : knChk (kgB K.L) (kgW K.L) K.L.k (.r13, 0) (sc oSH) (sc oEH) (sc K.oR) (sc oZK) = true := by
     rw [k3]; exact hc.1
-  have red : ∀ {σ s}, KN K 6 σ s → VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k) := fun h N hN => by
-    rw [sc_w16]; exact (h.se N (by omega)).1
+  have red : ∀ {σ s}, KG K σ 2 true s → VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k) := fun h N hN => by
+    rw [sc_w16]
+    rcases (by omega : N < 2 ∨ 2 ≤ N) with h2 | h2
+    exacts [(h.se0 N h2).1, (h.se N (by rw [k3] at hN; omega) h2).1]
   exact rel2_of (kgNttAt_trL hK rbx_na rbx_na rbx_na rbx_na hkn) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
     ⟨kc_lrel Wb p₁ p₂ pub h₁.kc h₂.kc, red h₁, red h₂⟩
 
-theorem hz_tr (T : KgH16T K) : RelCT isa (R K.L (KT K)) (.block (Encaps16.hzero K)) fun _ _ => True := by
-  obtain ⟨_, t⟩ := T.zT
-  exact rel2_of (trK W t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W.toKgWfB p₁ p₂ pub h₁.kc h₂.kc
+end
+
+/-- After the noise, for the seed `ρ` of `Â`. -/
+abbrev KNρ (K : Kem16) (ρ : List Byte) (x : State) : Prop :=
+  ∃ σ, (keyGenK K.L).pre σ ∧ KN K 6 σ x ∧ rhoK K.L σ = ρ
+
+section
+variable (W : KgH16Wf K) (T : KgH16T K)
+include W T
+
+theorem frag0_tr (v : Sample4Impl) {p : Prog isa} (hpb : v.callee.batchP16 = some p) :
+    RelCT isa (R K.L (KN K 6)) (frag0 K p) fun _ _ => True := by
+  have Wb := W.toKgWfB
+  have k3 := W.k3
+  have hsd := W.sd0
+  simp only [List.all_eq_true, List.mem_range, Bool.and_eq_true] at hsd
+  have hsm := W.sm0
+  simp only [Bool.and_eq_true] at hsm
+  have c4 := hsm.1
+  have hB := v.batchP16 p hpb
+  have hc0 := W.c0
+  simp only [Bool.and_eq_true] at hc0
+  obtain ⟨_, hr0⟩ := keepAll_spec hc0.2
+  refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => LRel kgR (kgW K.L) x y ∧ KNρ K ρ x ∧ KNρ K ρ y)
+    (Q := fun _ _ => True) fun ρ => ?_) ?_ fun _ _ _ => trivial
+  · unfold frag0
+    have hok : ∀ x, KNρ K ρ x →
+        WP isa (copy (sc (K.oW + Sample4.oPS)) (sc (oG + 32)) 32) x
+          fun x' => PPostB x x' [(psP K, 32)] ∧ SeedsIs ρ K.L.k 0 0 x' := by
+      rintro x ⟨σ, hp, h, e⟩
+      have L₀ := h.kc.lay Wb hp
+      exact WP.mono (copy_okL L₀ (dst := psP K) (src := sigP) (n := 32) (by decide) hc0.1) fun x' ⟨hP, _⟩ =>
+        ⟨hP.b, ⟨by rw [L₀.keepBytes hP.b (hr0 (sc oSB, 32) (by simp)), h.sb, e],
+          fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
+    obtain ⟨_, tP⟩ := T.pT
+    refine RelCT.seq (RelCT.postDep (RelCT.mono (trK W tP) (fun _ _ h => h.1) fun _ _ h => h)
+      (F := fun x x' => PPostB x x' [(psP K, 32)] ∧ SeedsIs ρ K.L.k 0 0 x')
+      (Q := RQ kgR (kgW K.L) ρ K.L.k 0 0) (fun x y h => ⟨hok x h.2.1, hok y h.2.2⟩)
+      fun _ _ _ _ h hx hy => ⟨h.1.post (kgB_bases K.L) hx.1 hy.1, hx.2, hy.2⟩) ?_
+    have st : ∀ J < 4, RelCT isa (RQ kgR (kgW K.L) ρ K.L.k 0 J)
+        (seedAt J ((0 + J) / 3) ((0 + J) % 3)) (RQ kgR (kgW K.L) ρ K.L.k 0 (J + 1)) := fun J hJ => by
+      have := seed_tr (kgB_bases K.L) (ρ := ρ) (n := K.L.k) (e₀ := 0) (K := J) (by omega) hJ
+        (by rw [k3]; omega) (by rw [k3]; omega) (hsd J hJ).1
+      rwa [show (0 + J) / K.L.k = (0 + J) / 3 by rw [k3], show (0 + J) % K.L.k = (0 + J) % 3 by rw [k3]] at this
+    refine RelCT.seq (st 0 (by decide)) (RelCT.seq (st 1 (by decide)) (RelCT.seq (st 2 (by decide))
+      (RelCT.seq (st 3 (by decide)) ?_)))
+    rw [Top16.aP, Nat.mul_zero, Nat.add_zero]
+    refine RelCT.mono (sampleHAtP16_tr hB) (fun x y h => ⟨SHH16.of h.1.1 c4, SHH16.of h.1.2.1 c4, h.1.eq Wb.inBs.1,
+      h.1.2.2.2, ?_⟩) fun _ _ h => h
+    rw [bytesAt136, bytesAt136, seed4_eq h.2.1 (k := 0) (by decide), seed4_eq h.2.1 (k := 1) (by decide),
+      seed4_eq h.2.1 (k := 2) (by decide), seed4_eq h.2.1 (k := 3) (by decide), seed4_eq h.2.2 (k := 0) (by decide),
+      seed4_eq h.2.2 (k := 1) (by decide), seed4_eq h.2.2 (k := 2) (by decide), seed4_eq h.2.2 (k := 3) (by decide)]
+  · rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
+    exact ⟨rhoK K.L σ₁, kc_lrel Wb p₁ p₂ pub h₁.kc h₂.kc, ⟨σ₁, p₁, h₁, rfl⟩, ⟨σ₂, p₂, h₂, (rho_pub pub).symm⟩⟩
 
 end
 
@@ -309,11 +405,18 @@ theorem lastIf_tr (hK : KgRowsOk K.L) (T : KgH16T K) :
     fun _ _ _ => trivial
 
 theorem rows_tr (hK : KgRowsOk K.L) (T : KgH16T K) (v : Sample4Impl) {b : Nat → Prog isa}
-    (hb : v.callee.batchHM16 = some b) :
-    RelCT isa (R K.L fun σ s => KH K σ 0 0 s) (KeyGenH16.rows K b) (R K.L (KEnd K.L)) := by
+    (hb : v.callee.batchHM16 = some b) {p : Prog isa} (hpb : v.callee.batchP16 = some p) :
+    RelCT isa (R K.L (KN K 6)) (KeyGenH16.rows K b p v.callee.arith) (R K.L (KEnd K.L)) := by
   unfold KeyGenH16.rows
+  refine RelCT.seq (relInv (I' := fun σ s => KG K σ 0 false s)
+    (fun σ s hp hs => frag0_ok W hp v hpb hs) (frag0_tr W T v hpb)) ?_
+  refine RelCT.seq (relInv (I' := fun σ s => KG K σ 0 true s) (fun σ s hp hs => hzG_ok W hp hs) (hzG_tr W T)) ?_
+  refine RelCT.seq (relInv (I' := fun σ s => KG K σ (0 + 1) true s)
+    (fun σ s hp hs => cbdP_ok W hp v.arith (N := 0) (by decide) hs) (cbdP_tr W v (N := 0) (by decide))) ?_
+  refine RelCT.seq (relInv (I' := fun σ s => KG K σ (1 + 1) true s)
+    (fun σ s hp hs => cbdP_ok W hp v.arith (N := 1) (by decide) hs) (cbdP_tr W v (N := 1) (by decide))) ?_
   refine RelCT.seq (relInv (I' := fun σ s => KH K σ 0 (3 * 0 + 3) s)
-    (fun σ s hp hs => frag_ok W hp v hb (i := 0) (by decide) hs) (frag_tr W T v hb (i := 0) (by decide))) ?_
+    (fun σ s hp hs => nttG_ok W hp hK hs) (nttG_tr W hK)) ?_
   refine RelCT.seq (relInv (I' := fun σ s => KH K σ (0 + 1) (3 * 0 + 3) s)
     (fun σ s hp hs => rowIf_ok W hp hK (i := 0) (by decide) hs) (rowIf_tr W hK (i := 0) (by decide))) ?_
   refine RelCT.seq (relInv (I' := fun σ s => KH K σ 1 (3 * 1 + 3) s)
@@ -330,8 +433,8 @@ end KeyGenH
 
 open KeyGen KeyGenH in
 theorem kemKeyGenH16_ct {K : Kem16} (hK : KgRowsOk K.L) (v : Sample4Impl) (W : KgH16Wf K) (T : KgH16T K)
-    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) :
-    ConstantTime isa (keyGenK K.L).pre (keyGenK K.L).pub (kemKeyGenH16 K v.callee b) := by
+    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {p : Prog isa} (hpb : v.callee.batchP16 = some p) :
+    ConstantTime isa (keyGenK K.L).pre (keyGenK K.L).pub (kemKeyGenH16 K v.callee b p) := by
   have Wb := W.toKgWfB
   refine relStart (Q := fun _ _ => True) ?_
   unfold kemKeyGenH16
@@ -339,10 +442,9 @@ theorem kemKeyGenH16_ct {K : Kem16} (hK : KgRowsOk K.L) (v : Sample4Impl) (W : K
     (fun σ s hp hs => by subst hs; exact pro_ok Wb hp) pro_tr) ?_
   refine RelCT.seq (relInv (I' := fun σ s => KA K.L σ s ∧ s.gpr .r15 = 1)
     (fun σ s hp hs => gRho_ok Wb hp hs.1 hs.2) (gRho_tr Wb)) ?_
-  refine RelCT.seq (noise_tr W v) ?_
-  refine RelCT.seq (relInv (I' := KT K) (fun σ s hp hs => ntt_ok W hp hK hs) (ntt_tr W hK)) ?_
-  refine RelCT.seq (relInv (I' := fun σ s => KH K σ 0 0 s) (fun σ s hp hs => hz_ok W hp hs) (hz_tr W T)) ?_
-  refine RelCT.seq (rows_tr W hK T v hb) ?_
+  refine RelCT.seq (prfs_tr W v) ?_
+  refine RelCT.seq (se_tr W v) ?_
+  refine RelCT.seq (rows_tr W hK T v hb hpb) ?_
   exact RelCT.mono epi_tr (fun _ _ h => h) fun _ _ _ => trivial
 
 end VG.Proof.MlKem.X86_64
