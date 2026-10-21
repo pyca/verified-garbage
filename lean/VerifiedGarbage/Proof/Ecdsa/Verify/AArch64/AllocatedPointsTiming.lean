@@ -16,8 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTimingSte
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 

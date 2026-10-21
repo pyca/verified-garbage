@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 
 /-! The generator's digit `j` as the joint loop reads it, for either width: its byte (the low byte
 of its sixteen-bit word for width nine), its table index, and its sign (the word's high byte). -/

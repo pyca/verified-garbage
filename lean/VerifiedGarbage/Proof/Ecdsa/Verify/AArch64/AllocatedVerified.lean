@@ -36,7 +36,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
@@ -50,6 +49,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 
 /-! ## `AllocatedInverse` -/
 

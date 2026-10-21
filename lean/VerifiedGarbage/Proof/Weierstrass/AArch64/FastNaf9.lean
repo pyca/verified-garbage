@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafInit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafLoop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 import VerifiedGarbage.Proof.Weierstrass.Words

@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P256.GTable9Shape
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # ECDSA verification over P-256 on AArch64 with its own table: the contract
