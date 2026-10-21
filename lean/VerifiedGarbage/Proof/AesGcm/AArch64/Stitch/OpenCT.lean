@@ -8,6 +8,12 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Open
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenW
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
@@ -267,7 +273,8 @@ theorem openRunAS_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
   refine RelCT.seq_assoc3 (rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x26] (by rw [N₁.env.sp, N₂.env.sp])
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
-    (ctE'_ok L hMK (.inr rfl) N₁ b₁ l₁) (ctE'_ok L hMK (.inr rfl) N₂ b₂ l₂)
+    (ctE'_ok L hMK (.inr rfl) N₁ b₁ l₁ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega]) (by omega))
+    (ctE'_ok L hMK (.inr rfl) N₂ b₂ l₂ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega]) (by omega))
     fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
   refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inr rfl) T₁) (tagCall_ok L v (.inr rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
@@ -287,14 +294,15 @@ theorem failCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 �
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
-      CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D P s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 := by
+      CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D P s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
+        s₈.gpr .x26 = BitVec.ofNat 64 n := by
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
-  obtain ⟨s₈, run₈, _, x23₈, x24₈, x25₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
+  obtain ⟨s₈, run₈, _, x23₈, x24₈, x25₈, x26₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
   have he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := mo.env.keep (fun r hr => og₈ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
   exact ⟨s₈, run₈, ⟨he₈, fun _ _ => rfl, by rw [og₈ _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
-    (mo.data.take hPn).of_eq rd₈ wr₈⟩, og₈ _ (by decide)⟩
+    (mo.data.take hPn).of_eq rd₈ wr₈⟩, og₈ _ (by decide), x26₈⟩
 
 /-- The arguments of `okB`'s `cryptAl`: the rest. -/
 theorem okCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -302,11 +310,11 @@ theorem okCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ 
     ∃ s₈, runBlock isa (([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr)) s₇ = some s₈ ∧
       CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P) (n - P) s₈ ∧
-        s₈.gpr .x27 = s₇.gpr .x27 := by
+        s₈.gpr .x27 = s₇.gpr .x27 ∧ s₈.gpr .x26 = BitVec.ofNat 64 n ∧ s₈.wr = s₇.wr := by
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
-  obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, r₈⟩ := okArgs_ok mo
+  obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, x26₈, r₈⟩ := okArgs_ok mo
   exact ⟨s₈, run₈, ⟨mo.env.of_regs r₈, fun _ _ => rfl, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈,
-    x25₈, (mo.data.drop hPn).of_eq r₈.rd r₈.wr⟩, r₈.others _ (by decide)⟩
+    x25₈, (mo.data.drop hPn).of_eq r₈.rd r₈.wr⟩, r₈.others _ (by decide), x26₈, r₈.wr⟩
 
 /-- `omBS` in two runs whose tags compare alike. -/
 theorem omBS_rel (v : GcmImpl) (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr fr' : List Region}
@@ -320,11 +328,13 @@ theorem omBS_rel (v : GcmImpl) (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr fr' 
       WP isa (.ite (.zero .x .x27) (failB v.callees) (okB v.callees)) m fun u => u.sp = SP ∧
         u.gpr .x27 = m.gpr .x27 := fun {fr s m} mo => by
     refine WP.ite _ (eval_zero mo.x27 (hlt _)) (fun _ => ?_) (fun _ => ?_)
-    · obtain ⟨s₈, run₈, hc, k27⟩ := failCr_ok hR mo
-      exact WP.seq (WP.of_runBlock ⟨s₈, run₈, WP.mono (cryptAl_ok L v (icb := 0) hc rfl) fun s₉ h₉ =>
+    · obtain ⟨s₈, run₈, hc, k27, k26⟩ := failCr_ok hR mo
+      exact WP.seq (WP.of_runBlock ⟨s₈, run₈, WP.mono (cryptAlT_ok L v (icb := 0) hc rfl k26 mo.data.ok.lt
+        fun _ h => absurd hP16 h) fun s₉ h₉ =>
         ⟨h₉.env.sp, by rw [h₉.kept .x27 (by decide), k27]⟩⟩)
-    · obtain ⟨s₈, run₈, hc, k27⟩ := okCr_ok hR mo
-      exact WP.seq (WP.of_runBlock ⟨s₈, run₈, WP.mono (cryptAl_ok L v (icb := 0) hc hP16) fun s₉ h₉ =>
+    · obtain ⟨s₈, run₈, hc, k27, k26, kw⟩ := okCr_ok hR mo
+      exact WP.seq (WP.of_runBlock ⟨s₈, run₈, WP.mono (cryptAlT_ok L v (icb := 0) hc hP16 k26 mo.data.ok.lt
+        (tail_big (by rw [kw]; exact mo.data.wr) mo.data.ok.lt rfl (by have := mo.hP; omega))) fun s₉ h₉ =>
         ⟨h₉.env.sp, by rw [h₉.kept .x27 (by decide), k27]⟩⟩)
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
@@ -334,24 +344,24 @@ theorem omBS_rel (v : GcmImpl) (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr fr' 
   have x27₁ := mo₁.x27
   have x27₂ : m₂.gpr .x27 = _ := hx ▸ x27₁
   refine rel_ite (eval_zero x27₁ (hlt _)) (eval_zero x27₂ (hlt _)) (fun _ => ?_) (fun _ => ?_)
-  · obtain ⟨s₈, run₈, hc₁, -⟩ := failCr_ok hR mo₁
-    obtain ⟨t₈, run₈', hc₂, -⟩ := failCr_ok hR mo₂
+  · obtain ⟨s₈, run₈, hc₁, -, k₁⟩ := failCr_ok hR mo₁
+    obtain ⟨t₈, run₈', hc₂, -, k₂⟩ := failCr_ok hR mo₂
     unfold failB
     refine rel_seq (rel_taint [.x19, .x20] (by rw [mo₁.env.sp, mo₂.env.sp])
         (by agree_tac [mo₁.env.x19, mo₂.env.x19, mo₁.env.x20, mo₂.env.x20]) ⟨_, by taint_decide⟩)
       (F₁ := fun u => u = s₈) (F₂ := fun u => u = t₈)
       (WP.of_runBlock ⟨s₈, run₈, rfl⟩) (WP.of_runBlock ⟨t₈, run₈', rfl⟩) fun _ _ e₁ e₂ => ?_
     subst e₁ e₂
-    exact cryptAl_rel L v hc₁ hc₂ rfl
-  · obtain ⟨s₈, run₈, hc₁, -⟩ := okCr_ok hR mo₁
-    obtain ⟨t₈, run₈', hc₂, -⟩ := okCr_ok hR mo₂
+    exact cryptAlT_rel L v hc₁ hc₂ rfl (by rw [k₁, k₂])
+  · obtain ⟨s₈, run₈, hc₁, -, k₁, -⟩ := okCr_ok hR mo₁
+    obtain ⟨t₈, run₈', hc₂, -, k₂, -⟩ := okCr_ok hR mo₂
     unfold okB
     refine rel_seq (rel_taint [.x19] (by rw [mo₁.env.sp, mo₂.env.sp])
         (by agree_tac [mo₁.env.x19, mo₂.env.x19]) ⟨_, by taint_decide⟩)
       (F₁ := fun u => u = s₈) (F₂ := fun u => u = t₈)
       (WP.of_runBlock ⟨s₈, run₈, rfl⟩) (WP.of_runBlock ⟨t₈, run₈', rfl⟩) fun _ _ e₁ e₂ => ?_
     subst e₁ e₂
-    exact cryptAl_rel L v hc₁ hc₂ hP16
+    exact cryptAlT_rel L v hc₁ hc₂ hP16 (by rw [k₁, k₂])
 
 end
 
