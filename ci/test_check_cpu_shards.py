@@ -179,6 +179,9 @@ class StepTests(unittest.TestCase):
                             '  *avx512ifma*) [ "$HOST_IFMA" = 1 ]; exit $?;;\n'
                             'esac\nexec /usr/bin/grep "$@"\n')
             grep.chmod(0o755)
+            rustc = bin_ / "rustc"
+            rustc.write_text("#!/bin/sh\necho host: x86_64-unknown-linux-gnu\n")
+            rustc.chmod(0o755)
             cargo = bin_ / "cargo"
             lib = "".join(f"{t}: test\\n" for t in lib_tests)
             tests = "".join(f"{t}: test\\n" for t in tests_tests)

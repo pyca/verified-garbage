@@ -460,9 +460,9 @@ jobs:
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
       - shell: bash
-        run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
-        env:
-          RUSTC_BOOTSTRAP: "1"
+        run: |
+          source ci/rust_test_timing.sh
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash
@@ -476,8 +476,8 @@ jobs:
         if: ${{ env.TESTS == 'true' && matrix.os == 'ubuntu-26.04-arm' }}
         env:
           LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
-          RUSTC_BOOTSTRAP: "1"
         run: |
+          source ci/rust_test_timing.sh
           cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
@@ -539,9 +539,9 @@ jobs:
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
       - shell: bash
-        run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
-        env:
-          RUSTC_BOOTSTRAP: "1"
+        run: |
+          source ci/rust_test_timing.sh
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
@@ -678,6 +678,7 @@ jobs:
         if: ${{ env.TESTS == 'true' }}
         shell: bash
         run: |
+          source ci/rust_test_timing.sh
           # On a host without AVX512_IFMA (some runners' CPUs have none, or
           # do not expose it), SDE emulates it for -icx and -dmr some thirty
           # times slower than the ADX code runs: the RSA tests then leave
@@ -749,8 +750,6 @@ jobs:
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:
-          # Enable libtest timing output on the stable toolchain too.
-          RUSTC_BOOTSTRAP: "1"
           RUNS: ${{ matrix.runs }}
           CPU: ${{ matrix.chip }} ${{ matrix.arch }} ${{ matrix.os }}
           SHARD: ${{ matrix.shard }}
