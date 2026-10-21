@@ -21,7 +21,7 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.P384.X86_64 VG.Proof.Weierstrass VG.Proof.We
 
 section
 variable (hL : Law Spec.P384.curve)
-    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hT : CombOkW Spec.P384.curve 9 1 Impl.P384.p384G9 Impl.P384.p384G9Start)
     (hI : InvSounds) (hO : PrimeOrder Spec.P384.curve)
 
 include hL hT hI hO
@@ -32,7 +32,7 @@ theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
   have hc := p384v_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
     (fun _ => ⟨hO,by decide⟩) hp hM hQ hRep
 
@@ -43,7 +43,7 @@ theorem jointVerify_p384_adx_ok {s : State} (hp : VPre p384vx s) :
   have hc := p384vx_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
     (joint_adx_doubler hc hL) (fun _ => ⟨hO,by decide⟩) hp hM hQ hRep
 

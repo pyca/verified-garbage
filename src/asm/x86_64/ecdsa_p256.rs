@@ -8892,7 +8892,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` to the words above the low word `t₀`, two products) with a final conditional subtraction. The public key is checked without branches; an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n`, then `u = e/s` and `v = r/s`. Both public scalars are recoded as non-adjacent signed digits, width seven for `u` and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. Generator digits directly index odd multiples in the first row of the existing static `VG_P256_COMB`; peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, equal points and opposite points. Doubling uses in-place field operations and modular halving; the ADX backend forwards stored register values between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
+/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` to the words above the low word `t₀`, two products) with a final conditional subtraction. The public key is checked without branches; an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n`, then `u = e/s` and `v = r/s`. Both public scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. Generator digits directly index the affine odd multiples `[m]G`, `m ≤ 255`, in the static `VG_P256_GTAB` of `[m]G` for `m = 1 … 256` (16 KB, in Montgomery form); peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, equal points and opposite points. Doubling uses in-place field operations and modular halving; the ADX backend forwards stored register values between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
 ///
 /// # Safety
 ///
@@ -11401,16 +11401,80 @@ movabs rax, 0
 mov QWORD PTR [rdi+6248], rax
 movabs rax, 0
 mov QWORD PTR [rdi+6256], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6264], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6272], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6280], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6288], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6296], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6304], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6312], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6320], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6328], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6336], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6344], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6352], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6360], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6368], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6376], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6384], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6392], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6400], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6408], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6416], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6424], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6432], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6440], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6448], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6456], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6464], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6472], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6480], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6488], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6496], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6504], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6512], rax
 23:
 mov rcx, r8
 and rcx, 1
 test rcx, rcx
 je 24f
 mov rcx, r8
-and rcx, 127
-cmp rcx, 64
+and rcx, 511
+cmp rcx, 256
 jb 26f
-sub rcx, 128
+sub rcx, 512
 jmp 27f
 26:
 27:
@@ -11423,25 +11487,25 @@ sbb r9, rdx
 sbb r10, rdx
 sbb r11, rdx
 sbb r12, rdx
-mov BYTE PTR [rdi+rbx*1+6000], cl
-shr r8, 7
+mov WORD PTR [rdi+rbx*2+6000], cx
+shr r8, 9
 mov rax, r9
-shl rax, 57
+shl rax, 55
 or r8, rax
-shr r9, 7
+shr r9, 9
 mov rax, r10
-shl rax, 57
+shl rax, 55
 or r9, rax
-shr r10, 7
+shr r10, 9
 mov rax, r11
-shl rax, 57
+shl rax, 55
 or r10, rax
-shr r11, 7
+shr r11, 9
 mov rax, r12
-shl rax, 57
+shl rax, 55
 or r11, rax
-shr r12, 7
-add rbx, 7
+shr r12, 9
+add rbx, 9
 jmp 25f
 24:
 shr r8, 1
@@ -20729,18 +20793,18 @@ mov QWORD PTR [rdi+600], rax
 jmp 216f
 215:
 216:
-movzx r8d, BYTE PTR [rdi+rbx*1+6000]
+movzx r8d, WORD PTR [rdi+rbx*2+6000]
 test r8, r8
 je 227f
-cmp r8, 128
+cmp r8, 256
 jb 229f
-mov eax, 256
+mov eax, 65536
 sub rax, r8
 mov r8, rax
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -20792,7 +20856,7 @@ jmp 230f
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -32680,18 +32744,18 @@ mov QWORD PTR [rdi+600], rax
 jmp 239f
 238:
 239:
-movzx r8d, BYTE PTR [rdi+rbx*1+6000]
+movzx r8d, WORD PTR [rdi+rbx*2+6000]
 test r8, r8
 je 250f
-cmp r8, 128
+cmp r8, 256
 jb 252f
-mov eax, 256
+mov eax, 65536
 sub rax, r8
 mov r8, rax
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -32743,7 +32807,7 @@ jmp 253f
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -38339,7 +38403,7 @@ ret
 .p2align 6",
         vg_p256_check_point = sym super::p256_check_point::vg_p256_check_point,
         vg_p256_inv_mod_n = sym super::p256_inverse::vg_p256_inv_mod_n,
-        VG_P256_COMB = sym super::consts::VG_P256_COMB,
+        VG_P256_GTAB = sym super::consts::VG_P256_GTAB,
     )
 }
 
@@ -40232,7 +40296,7 @@ pub(crate) const VG_ECDSA_P256_VERIFY_ADX_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` to the words above the low word `t₀`, two products; each row of products by BMI2's `mulx`, its low halves added through OF (`adox`) and its high halves through CF (`adcx`), two carry chains that do not wait for each other) with a final conditional subtraction. The public key is checked without branches; an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n_adx`, then `u = e/s` and `v = r/s`. Both public scalars are recoded as non-adjacent signed digits, width seven for `u` and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. Generator digits directly index odd multiples in the first row of the existing static `VG_P256_COMB`; peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, equal points and opposite points. Doubling uses in-place field operations and modular halving; the ADX backend forwards stored register values between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
+/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` to the words above the low word `t₀`, two products; each row of products by BMI2's `mulx`, its low halves added through OF (`adox`) and its high halves through CF (`adcx`), two carry chains that do not wait for each other) with a final conditional subtraction. The public key is checked without branches; an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n_adx`, then `u = e/s` and `v = r/s`. Both public scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. Generator digits directly index the affine odd multiples `[m]G`, `m ≤ 255`, in the static `VG_P256_GTAB` of `[m]G` for `m = 1 … 256` (16 KB, in Montgomery form); peer digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, equal points and opposite points. Doubling uses in-place field operations and modular halving; the ADX backend forwards stored register values between field operations. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
 ///
 /// # Safety
 ///
@@ -41902,16 +41966,80 @@ movabs rax, 0
 mov QWORD PTR [rdi+6248], rax
 movabs rax, 0
 mov QWORD PTR [rdi+6256], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6264], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6272], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6280], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6288], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6296], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6304], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6312], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6320], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6328], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6336], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6344], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6352], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6360], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6368], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6376], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6384], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6392], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6400], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6408], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6416], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6424], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6432], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6440], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6448], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6456], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6464], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6472], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6480], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6488], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6496], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6504], rax
+movabs rax, 0
+mov QWORD PTR [rdi+6512], rax
 23:
 mov rcx, r8
 and rcx, 1
 test rcx, rcx
 je 24f
 mov rcx, r8
-and rcx, 127
-cmp rcx, 64
+and rcx, 511
+cmp rcx, 256
 jb 26f
-sub rcx, 128
+sub rcx, 512
 jmp 27f
 26:
 27:
@@ -41924,25 +42052,25 @@ sbb r9, rdx
 sbb r10, rdx
 sbb r11, rdx
 sbb r12, rdx
-mov BYTE PTR [rdi+rbx*1+6000], cl
-shr r8, 7
+mov WORD PTR [rdi+rbx*2+6000], cx
+shr r8, 9
 mov rax, r9
-shl rax, 57
+shl rax, 55
 or r8, rax
-shr r9, 7
+shr r9, 9
 mov rax, r10
-shl rax, 57
+shl rax, 55
 or r9, rax
-shr r10, 7
+shr r10, 9
 mov rax, r11
-shl rax, 57
+shl rax, 55
 or r10, rax
-shr r11, 7
+shr r11, 9
 mov rax, r12
-shl rax, 57
+shl rax, 55
 or r11, rax
-shr r12, 7
-add rbx, 7
+shr r12, 9
+add rbx, 9
 jmp 25f
 24:
 shr r8, 1
@@ -47720,18 +47848,18 @@ mov QWORD PTR [rdi+600], rax
 jmp 216f
 215:
 216:
-movzx r8d, BYTE PTR [rdi+rbx*1+6000]
+movzx r8d, WORD PTR [rdi+rbx*2+6000]
 test r8, r8
 je 227f
-cmp r8, 128
+cmp r8, 256
 jb 229f
-mov eax, 256
+mov eax, 65536
 sub rax, r8
 mov r8, rax
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -47774,7 +47902,7 @@ jmp 230f
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -55056,18 +55184,18 @@ mov QWORD PTR [rdi+600], rax
 jmp 239f
 238:
 239:
-movzx r8d, BYTE PTR [rdi+rbx*1+6000]
+movzx r8d, WORD PTR [rdi+rbx*2+6000]
 test r8, r8
 je 250f
-cmp r8, 128
+cmp r8, 256
 jb 252f
-mov eax, 256
+mov eax, 65536
 sub rax, r8
 mov r8, rax
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -55110,7 +55238,7 @@ jmp 253f
 mov rax, r8
 sub rax, 1
 shl rax, 6
-lea rdx, [rip + {VG_P256_COMB}]
+lea rdx, [rip + {VG_P256_GTAB}]
 add rdx, rax
 movdqu xmm0, XMMWORD PTR [rdx]
 movdqu XMMWORD PTR [rdi+704], xmm0
@@ -58545,6 +58673,6 @@ ret
 .p2align 6",
         vg_p256_check_point_adx = sym super::p256_check_point::vg_p256_check_point_adx,
         vg_p256_inv_mod_n_adx = sym super::p256_inverse::vg_p256_inv_mod_n_adx,
-        VG_P256_COMB = sym super::consts::VG_P256_COMB,
+        VG_P256_GTAB = sym super::consts::VG_P256_GTAB,
     )
 }
