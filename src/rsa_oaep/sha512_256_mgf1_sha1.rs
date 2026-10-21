@@ -24,6 +24,7 @@ super::oaep_pair!(32, Sha512_256Backend, Sha1Backend {
         decrypt_adx: vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_crt_adx [VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_CRT_ADX_FEATURES],
         decrypt_ifma: vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_crt_ifma [VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_CRT_IFMA_FEATURES],
         decrypt_umaal: vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_umaal [VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_UMAAL_FEATURES],
+        encrypt_umaal: vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_precomputed_umaal [VG_RSA_OAEP_SHA512_256_MGF1_SHA1_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     (Scalar, ShaNi) => {

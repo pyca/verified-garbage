@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFail
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValid

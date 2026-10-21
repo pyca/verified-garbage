@@ -31,21 +31,8 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.Arm.PublicFn.code
     stack := 56
     verified := Proof.Bignum.Arm.public_verified },
-  Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: `n` is checked and read into 32-bit limbs, its 64-bit Montgomery \
-        inverse computed from pairs of them, and R² mod n by a fixed number of modular \
-        doublings. The output is cleared for an invalid modulus."]
-    code := Impl.Bignum.Arm.PcFn.code
-    stack := 56
-    verified := Proof.Bignum.Arm.precompute_verified },
-  Spec.Rsa.publicPrecomputedCheckedApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: `pre` is read and checked (`n` odd, its top word not zero, \
-        `R² mod n` below it) before any arithmetic, so that values of no modulus are safe; then \
-        `vg_rsa_public_checked`'s Montgomery inverse and exponentiation. The input's acceptance \
-        and the clearing of the output are under masks."]
-    code := Impl.Bignum.Arm.PdFn.code
-    stack := 56
-    verified := Proof.Bignum.Arm.pd_verified },
+
+
   Spec.Rsa.privateCrtApi.artifact Arm.target {
     notes := ["Baseline ARMv7: the checks of the input and the key give a mask; rejected primes \
         are replaced, so that the arithmetic is the same whatever the key, and a rejected result \

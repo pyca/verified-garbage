@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhaseCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
-public import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
-public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
 

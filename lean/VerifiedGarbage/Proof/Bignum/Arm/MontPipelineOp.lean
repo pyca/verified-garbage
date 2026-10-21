@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst

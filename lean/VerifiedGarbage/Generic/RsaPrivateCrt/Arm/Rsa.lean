@@ -1,5 +1,6 @@
 module
 
+
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
@@ -438,6 +439,25 @@ def artifacts (v : CrtImpl) : List Artifact := [
     code := privCode v
     stack := stackBytes
     verified := code_verified v
+    features := v.features },
+  Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA arithmetic: `n` is checked and read into 32-bit limbs, its 64-bit Montgomery \
+        inverse computed from pairs of them, and R² mod n by a fixed number of modular \
+        doublings. The output is cleared for an invalid modulus."]
+    code := v.pc
+    stack := 56
+    verified := v.pcVerified
+    features := v.features },
+  Spec.Rsa.publicPrecomputedCheckedApi.artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA arithmetic: `pre` is read and checked (`n` odd, its top word not zero, \
+        `R² mod n` below it) before any arithmetic, so that values of no modulus are safe; then \
+        `vg_rsa_public_checked`'s Montgomery inverse and exponentiation. The input's acceptance \
+        and the clearing of the output are under masks."]
+    code := v.pd
+    stack := 56
+    verified := v.pdVerified
     features := v.features }]
 
 end VG.Generic.RsaPrivateCrt.Arm.Rsa

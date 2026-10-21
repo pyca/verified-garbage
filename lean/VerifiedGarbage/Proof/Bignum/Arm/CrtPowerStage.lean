@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedPowerSources
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace

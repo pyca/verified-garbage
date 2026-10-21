@@ -3,7 +3,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Framework.RelCT
-
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp

@@ -2,458 +2,6 @@
 //! Verified `rsa_oaep_sha1_mgf1_sha1` functions for `arm`.
 #![allow(dead_code)]
 
-/// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-1 and MGF1 with SHA-1. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 20-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 42` bytes. The seed must be fresh random bytes for each encryption.
-///
-/// Contract: `VG.Spec.RsaOaep.encryptContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the message, the label or the seed.
-///
-/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
-///
-/// Contract: `VG.Spec.RsaOaep.encryptPrecomputedContract`.
-///
-/// Baseline ARMv7. This implementation hashes the label with `vg_sha1_update`, masks `DB` and the seed with MGF1 calling `vg_sha1_update`, and calls `vg_rsa_public_precomputed_checked` with the cached modulus values. The message's length is public; its bytes, the label's and the seed's are only copied, hashed and masked.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `label` must be valid for reads of `label_len` bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `seed` must be valid for reads of 20 bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` must be `n_len`.
-/// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha1_mgf1_sha1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-sub sp, sp, #128
-add r12, sp, #0
-ldr r0, [sp, #212]
-str r0, [r12, #64]
-ldr r0, [sp, #140]
-movw r1, #42
-sub r0, r0, r1
-lsr r1, r0, #31
-ldr r2, [sp, #204]
-orr r1, r1, r2, lsr #10
-sub r3, r0, r2
-orr r1, r1, r3, lsr #31
-cmp r1, #0
-bne 20f
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #0
-add r0, r0, lr
-movw r2, #0
-ldr lr, [sp, #140]
-22:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 22b
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #1
-add r0, r0, lr
-ldr r1, [sp, #208]
-movw lr, #20
-23:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 23b
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-bl {vg_sha1_init}
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #192]
-ldr r7, [sp, #196]
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-movw r2, #0
-movw r3, #0
-push {{r1, r7, r10, r12}}
-bl {vg_sha1_update_scratch}
-ldr r1, [sp], #16
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #64]
-movw lr, #3328
-add r1, r1, lr
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-ldr r2, [sp, #196]
-movw r3, #0
-mov r12, r10
-push {{r1, r12}}
-bl {vg_sha1_finalize_scratch}
-ldr r1, [sp], #8
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #21
-add r0, r0, lr
-ldr r1, [sp, #64]
-movw lr, #3328
-add r1, r1, lr
-movw lr, #20
-24:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 24b
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #0
-add r0, r0, lr
-ldr r1, [sp, #140]
-add r0, r0, r1
-ldr lr, [sp, #204]
-sub r0, r0, lr
-sub r0, r0, #1
-ldr r1, [sp, #200]
-movw r2, #1
-strb r2, [r0, #0]
-add r0, r0, #1
-cmp lr, #0
-beq 25f
-27:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 27b
-b 26f
-25:
-26:
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #21
-add r0, r0, lr
-ldr r1, [sp, #140]
-movw r2, #21
-sub r1, r1, r2
-ldr r2, [sp, #64]
-movw lr, #1
-add r2, r2, lr
-movw r3, #20
-str r0, [r12, #76]
-str r1, [r12, #80]
-str r2, [r12, #68]
-str r3, [r12, #72]
-add r12, sp, #0
-movw r0, #0
-str r0, [r12, #92]
-str r0, [r12, #96]
-28:
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-bl {vg_sha1_init}
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #68]
-ldr r7, [sp, #72]
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-movw r2, #0
-movw r3, #0
-push {{r1, r7, r10, r12}}
-bl {vg_sha1_update_scratch}
-ldr r1, [sp], #16
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3456
-add r0, r0, lr
-ldr r1, [sp, #92]
-lsr r2, r1, #24
-strb r2, [r0, #0]
-lsr r2, r1, #16
-strb r2, [r0, #1]
-lsr r2, r1, #8
-strb r2, [r0, #2]
-strb r1, [r0, #3]
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #64]
-movw lr, #3456
-add r1, r1, lr
-movw r7, #4
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-ldr r2, [sp, #72]
-movw r3, #0
-push {{r1, r7, r10, r12}}
-bl {vg_sha1_update_scratch}
-ldr r1, [sp], #16
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #64]
-movw lr, #3328
-add r1, r1, lr
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-ldr r2, [sp, #72]
-add r2, r2, #4
-movw r3, #0
-mov r12, r10
-push {{r1, r12}}
-bl {vg_sha1_finalize_scratch}
-ldr r1, [sp], #8
-add r12, sp, #0
-ldr r0, [sp, #76]
-ldr r2, [sp, #96]
-add r0, r0, r2
-ldr r1, [sp, #64]
-movw lr, #3328
-add r1, r1, lr
-ldr r3, [sp, #80]
-sub r3, r3, r2
-movw r4, #20
-sub r5, r3, r4
-lsr r5, r5, #31
-movw r6, #0
-sub r5, r6, r5
-eor r6, r3, r4
-and r6, r6, r5
-eor lr, r4, r6
-29:
-ldrb r2, [r0, #0]
-ldrb r3, [r1, #0]
-eor r2, r2, r3
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 29b
-add r12, sp, #0
-ldr r0, [sp, #92]
-add r0, r0, #1
-str r0, [r12, #92]
-ldr r0, [sp, #96]
-movw r1, #20
-add r0, r0, r1
-str r0, [r12, #96]
-ldr r1, [sp, #80]
-sub r0, r0, r1
-lsr r0, r0, #31
-cmp r0, #0
-bne 28b
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #1
-add r0, r0, lr
-movw r1, #20
-ldr r2, [sp, #64]
-movw lr, #21
-add r2, r2, lr
-ldr r3, [sp, #140]
-movw r4, #21
-sub r3, r3, r4
-str r0, [r12, #76]
-str r1, [r12, #80]
-str r2, [r12, #68]
-str r3, [r12, #72]
-add r12, sp, #0
-movw r0, #0
-str r0, [r12, #92]
-str r0, [r12, #96]
-210:
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-bl {vg_sha1_init}
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #68]
-ldr r7, [sp, #72]
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-movw r2, #0
-movw r3, #0
-push {{r1, r7, r10, r12}}
-bl {vg_sha1_update_scratch}
-ldr r1, [sp], #16
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3456
-add r0, r0, lr
-ldr r1, [sp, #92]
-lsr r2, r1, #24
-strb r2, [r0, #0]
-lsr r2, r1, #16
-strb r2, [r0, #1]
-lsr r2, r1, #8
-strb r2, [r0, #2]
-strb r1, [r0, #3]
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #64]
-movw lr, #3456
-add r1, r1, lr
-movw r7, #4
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-ldr r2, [sp, #72]
-movw r3, #0
-push {{r1, r7, r10, r12}}
-bl {vg_sha1_update_scratch}
-ldr r1, [sp], #16
-add r12, sp, #0
-ldr r0, [sp, #64]
-movw lr, #3072
-add r0, r0, lr
-ldr r1, [sp, #64]
-movw lr, #3328
-add r1, r1, lr
-ldr r10, [sp, #64]
-movw lr, #3520
-add r10, r10, lr
-ldr r2, [sp, #72]
-add r2, r2, #4
-movw r3, #0
-mov r12, r10
-push {{r1, r12}}
-bl {vg_sha1_finalize_scratch}
-ldr r1, [sp], #8
-add r12, sp, #0
-ldr r0, [sp, #76]
-ldr r2, [sp, #96]
-add r0, r0, r2
-ldr r1, [sp, #64]
-movw lr, #3328
-add r1, r1, lr
-ldr r3, [sp, #80]
-sub r3, r3, r2
-movw r4, #20
-sub r5, r3, r4
-lsr r5, r5, #31
-movw r6, #0
-sub r5, r6, r5
-eor r6, r3, r4
-and r6, r6, r5
-eor lr, r4, r6
-211:
-ldrb r2, [r0, #0]
-ldrb r3, [r1, #0]
-eor r2, r2, r3
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 211b
-add r12, sp, #0
-ldr r0, [sp, #92]
-add r0, r0, #1
-str r0, [r12, #92]
-ldr r0, [sp, #96]
-movw r1, #20
-add r0, r0, r1
-str r0, [r12, #96]
-ldr r1, [sp, #80]
-sub r0, r0, r1
-lsr r0, r0, #31
-cmp r0, #0
-bne 210b
-add r12, sp, #0
-ldr r0, [sp, #184]
-str r0, [r12, #0]
-ldr r0, [sp, #188]
-str r0, [r12, #4]
-ldr r0, [sp, #64]
-movw lr, #0
-add r0, r0, lr
-str r0, [r12, #8]
-ldr r0, [sp, #140]
-str r0, [r12, #12]
-ldr r0, [sp, #64]
-movw lr, #8192
-add r0, r0, lr
-str r0, [r12, #16]
-ldr r0, [sp, #216]
-movw r1, #1024
-sub r0, r0, r1
-str r0, [r12, #20]
-ldr r0, [sp, #128]
-ldr r1, [sp, #140]
-ldr r2, [sp, #220]
-ldr r3, [sp, #224]
-bl {vg_rsa_public_precomputed_checked}
-b 21f
-20:
-add r12, sp, #0
-ldr r0, [sp, #128]
-ldr lr, [sp, #140]
-movw r2, #0
-212:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 212b
-movw r0, #0
-21:
-add sp, sp, #128
-ldr r4, [sp, #16]
-ldr r5, [sp, #20]
-ldr r6, [sp, #24]
-ldr r7, [sp, #28]
-ldr r8, [sp, #32]
-ldr r9, [sp, #36]
-ldr r10, [sp, #40]
-ldr r11, [sp, #44]
-ldr lr, [sp, #52]
-ldr r12, [sp], #56
-bx lr",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
-    )
-}
-
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-1 and MGF1 with SHA-1, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
 /// Contract: `VG.Spec.RsaOaep.decryptContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
@@ -1057,6 +605,458 @@ bx lr",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+    )
+}
+
+/// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-1 and MGF1 with SHA-1. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 20-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 42` bytes. The seed must be fresh random bytes for each encryption.
+///
+/// Contract: `VG.Spec.RsaOaep.encryptContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the message, the label or the seed.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
+///
+/// Contract: `VG.Spec.RsaOaep.encryptPrecomputedContract`.
+///
+/// ARMv7 with the selected RSA public implementation. This implementation hashes the label with `vg_sha1_update`, masks `DB` and the seed with MGF1 calling `vg_sha1_update`, and calls `vg_rsa_public_precomputed_checked` with the cached modulus values. The message's length is public; its bytes, the label's and the seed's are only copied, hashed and masked.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `label` must be valid for reads of `label_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `seed` must be valid for reads of 20 bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha1_mgf1_sha1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #128
+add r12, sp, #0
+ldr r0, [sp, #212]
+str r0, [r12, #64]
+ldr r0, [sp, #140]
+movw r1, #42
+sub r0, r0, r1
+lsr r1, r0, #31
+ldr r2, [sp, #204]
+orr r1, r1, r2, lsr #10
+sub r3, r0, r2
+orr r1, r1, r3, lsr #31
+cmp r1, #0
+bne 20f
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+movw r2, #0
+ldr lr, [sp, #140]
+22:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 22b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1
+add r0, r0, lr
+ldr r1, [sp, #208]
+movw lr, #20
+23:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 23b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha1_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #192]
+ldr r7, [sp, #196]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #196]
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha1_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #21
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+movw lr, #20
+24:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 24b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+ldr r1, [sp, #140]
+add r0, r0, r1
+ldr lr, [sp, #204]
+sub r0, r0, lr
+sub r0, r0, #1
+ldr r1, [sp, #200]
+movw r2, #1
+strb r2, [r0, #0]
+add r0, r0, #1
+cmp lr, #0
+beq 25f
+27:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 27b
+b 26f
+25:
+26:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #21
+add r0, r0, lr
+ldr r1, [sp, #140]
+movw r2, #21
+sub r1, r1, r2
+ldr r2, [sp, #64]
+movw lr, #1
+add r2, r2, lr
+movw r3, #20
+str r0, [r12, #76]
+str r1, [r12, #80]
+str r2, [r12, #68]
+str r3, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+str r0, [r12, #96]
+28:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha1_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #68]
+ldr r7, [sp, #72]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3456
+add r0, r0, lr
+ldr r1, [sp, #92]
+lsr r2, r1, #24
+strb r2, [r0, #0]
+lsr r2, r1, #16
+strb r2, [r0, #1]
+lsr r2, r1, #8
+strb r2, [r0, #2]
+strb r1, [r0, #3]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3456
+add r1, r1, lr
+movw r7, #4
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+add r2, r2, #4
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha1_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #76]
+ldr r2, [sp, #96]
+add r0, r0, r2
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r3, [sp, #80]
+sub r3, r3, r2
+movw r4, #20
+sub r5, r3, r4
+lsr r5, r5, #31
+movw r6, #0
+sub r5, r6, r5
+eor r6, r3, r4
+and r6, r6, r5
+eor lr, r4, r6
+29:
+ldrb r2, [r0, #0]
+ldrb r3, [r1, #0]
+eor r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 29b
+add r12, sp, #0
+ldr r0, [sp, #92]
+add r0, r0, #1
+str r0, [r12, #92]
+ldr r0, [sp, #96]
+movw r1, #20
+add r0, r0, r1
+str r0, [r12, #96]
+ldr r1, [sp, #80]
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 28b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1
+add r0, r0, lr
+movw r1, #20
+ldr r2, [sp, #64]
+movw lr, #21
+add r2, r2, lr
+ldr r3, [sp, #140]
+movw r4, #21
+sub r3, r3, r4
+str r0, [r12, #76]
+str r1, [r12, #80]
+str r2, [r12, #68]
+str r3, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+str r0, [r12, #96]
+210:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha1_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #68]
+ldr r7, [sp, #72]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3456
+add r0, r0, lr
+ldr r1, [sp, #92]
+lsr r2, r1, #24
+strb r2, [r0, #0]
+lsr r2, r1, #16
+strb r2, [r0, #1]
+lsr r2, r1, #8
+strb r2, [r0, #2]
+strb r1, [r0, #3]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3456
+add r1, r1, lr
+movw r7, #4
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+add r2, r2, #4
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha1_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #76]
+ldr r2, [sp, #96]
+add r0, r0, r2
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r3, [sp, #80]
+sub r3, r3, r2
+movw r4, #20
+sub r5, r3, r4
+lsr r5, r5, #31
+movw r6, #0
+sub r5, r6, r5
+eor r6, r3, r4
+and r6, r6, r5
+eor lr, r4, r6
+211:
+ldrb r2, [r0, #0]
+ldrb r3, [r1, #0]
+eor r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 211b
+add r12, sp, #0
+ldr r0, [sp, #92]
+add r0, r0, #1
+str r0, [r12, #92]
+ldr r0, [sp, #96]
+movw r1, #20
+add r0, r0, r1
+str r0, [r12, #96]
+ldr r1, [sp, #80]
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 210b
+add r12, sp, #0
+ldr r0, [sp, #184]
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+str r0, [r12, #4]
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+str r0, [r12, #8]
+ldr r0, [sp, #140]
+str r0, [r12, #12]
+ldr r0, [sp, #64]
+movw lr, #8192
+add r0, r0, lr
+str r0, [r12, #16]
+ldr r0, [sp, #216]
+movw r1, #1024
+sub r0, r0, r1
+str r0, [r12, #20]
+ldr r0, [sp, #128]
+ldr r1, [sp, #140]
+ldr r2, [sp, #220]
+ldr r3, [sp, #224]
+bl {vg_rsa_public_precomputed_checked}
+b 21f
+20:
+add r12, sp, #0
+ldr r0, [sp, #128]
+ldr lr, [sp, #140]
+movw r2, #0
+212:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 212b
+movw r0, #0
+21:
+add sp, sp, #128
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -1669,5 +1669,463 @@ bx lr",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+    )
+}
+
+/// The CPU features `vg_rsa_oaep_sha1_mgf1_sha1_encrypt_precomputed_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub(crate) const VG_RSA_OAEP_SHA1_MGF1_SHA1_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+
+/// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-1 and MGF1 with SHA-1. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 20-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 42` bytes. The seed must be fresh random bytes for each encryption.
+///
+/// Contract: `VG.Spec.RsaOaep.encryptContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the message, the label or the seed.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
+///
+/// Contract: `VG.Spec.RsaOaep.encryptPrecomputedContract`.
+///
+/// ARMv7 with the selected RSA public implementation. This implementation hashes the label with `vg_sha1_update`, masks `DB` and the seed with MGF1 calling `vg_sha1_update`, and calls `vg_rsa_public_precomputed_checked` with the cached modulus values. The message's length is public; its bytes, the label's and the seed's are only copied, hashed and masked.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `label` must be valid for reads of `label_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `seed` must be valid for reads of 20 bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha1_mgf1_sha1_encrypt_precomputed_umaal(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #128
+add r12, sp, #0
+ldr r0, [sp, #212]
+str r0, [r12, #64]
+ldr r0, [sp, #140]
+movw r1, #42
+sub r0, r0, r1
+lsr r1, r0, #31
+ldr r2, [sp, #204]
+orr r1, r1, r2, lsr #10
+sub r3, r0, r2
+orr r1, r1, r3, lsr #31
+cmp r1, #0
+bne 20f
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+movw r2, #0
+ldr lr, [sp, #140]
+22:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 22b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1
+add r0, r0, lr
+ldr r1, [sp, #208]
+movw lr, #20
+23:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 23b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha1_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #192]
+ldr r7, [sp, #196]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #196]
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha1_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #21
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+movw lr, #20
+24:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 24b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+ldr r1, [sp, #140]
+add r0, r0, r1
+ldr lr, [sp, #204]
+sub r0, r0, lr
+sub r0, r0, #1
+ldr r1, [sp, #200]
+movw r2, #1
+strb r2, [r0, #0]
+add r0, r0, #1
+cmp lr, #0
+beq 25f
+27:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 27b
+b 26f
+25:
+26:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #21
+add r0, r0, lr
+ldr r1, [sp, #140]
+movw r2, #21
+sub r1, r1, r2
+ldr r2, [sp, #64]
+movw lr, #1
+add r2, r2, lr
+movw r3, #20
+str r0, [r12, #76]
+str r1, [r12, #80]
+str r2, [r12, #68]
+str r3, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+str r0, [r12, #96]
+28:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha1_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #68]
+ldr r7, [sp, #72]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3456
+add r0, r0, lr
+ldr r1, [sp, #92]
+lsr r2, r1, #24
+strb r2, [r0, #0]
+lsr r2, r1, #16
+strb r2, [r0, #1]
+lsr r2, r1, #8
+strb r2, [r0, #2]
+strb r1, [r0, #3]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3456
+add r1, r1, lr
+movw r7, #4
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+add r2, r2, #4
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha1_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #76]
+ldr r2, [sp, #96]
+add r0, r0, r2
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r3, [sp, #80]
+sub r3, r3, r2
+movw r4, #20
+sub r5, r3, r4
+lsr r5, r5, #31
+movw r6, #0
+sub r5, r6, r5
+eor r6, r3, r4
+and r6, r6, r5
+eor lr, r4, r6
+29:
+ldrb r2, [r0, #0]
+ldrb r3, [r1, #0]
+eor r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 29b
+add r12, sp, #0
+ldr r0, [sp, #92]
+add r0, r0, #1
+str r0, [r12, #92]
+ldr r0, [sp, #96]
+movw r1, #20
+add r0, r0, r1
+str r0, [r12, #96]
+ldr r1, [sp, #80]
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 28b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1
+add r0, r0, lr
+movw r1, #20
+ldr r2, [sp, #64]
+movw lr, #21
+add r2, r2, lr
+ldr r3, [sp, #140]
+movw r4, #21
+sub r3, r3, r4
+str r0, [r12, #76]
+str r1, [r12, #80]
+str r2, [r12, #68]
+str r3, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+str r0, [r12, #96]
+210:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha1_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #68]
+ldr r7, [sp, #72]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3456
+add r0, r0, lr
+ldr r1, [sp, #92]
+lsr r2, r1, #24
+strb r2, [r0, #0]
+lsr r2, r1, #16
+strb r2, [r0, #1]
+lsr r2, r1, #8
+strb r2, [r0, #2]
+strb r1, [r0, #3]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3456
+add r1, r1, lr
+movw r7, #4
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha1_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+add r2, r2, #4
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha1_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #76]
+ldr r2, [sp, #96]
+add r0, r0, r2
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r3, [sp, #80]
+sub r3, r3, r2
+movw r4, #20
+sub r5, r3, r4
+lsr r5, r5, #31
+movw r6, #0
+sub r5, r6, r5
+eor r6, r3, r4
+and r6, r6, r5
+eor lr, r4, r6
+211:
+ldrb r2, [r0, #0]
+ldrb r3, [r1, #0]
+eor r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 211b
+add r12, sp, #0
+ldr r0, [sp, #92]
+add r0, r0, #1
+str r0, [r12, #92]
+ldr r0, [sp, #96]
+movw r1, #20
+add r0, r0, r1
+str r0, [r12, #96]
+ldr r1, [sp, #80]
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 210b
+add r12, sp, #0
+ldr r0, [sp, #184]
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+str r0, [r12, #4]
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+str r0, [r12, #8]
+ldr r0, [sp, #140]
+str r0, [r12, #12]
+ldr r0, [sp, #64]
+movw lr, #8192
+add r0, r0, lr
+str r0, [r12, #16]
+ldr r0, [sp, #216]
+movw r1, #1024
+sub r0, r0, r1
+str r0, [r12, #20]
+ldr r0, [sp, #128]
+ldr r1, [sp, #140]
+ldr r2, [sp, #220]
+ldr r3, [sp, #224]
+bl {vg_rsa_public_precomputed_checked_umaal}
+b 21f
+20:
+add r12, sp, #0
+ldr r0, [sp, #128]
+ldr lr, [sp, #140]
+movw r2, #0
+212:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 212b
+movw r0, #0
+21:
+add sp, sp, #128
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal,
     )
 }

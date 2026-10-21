@@ -49,6 +49,15 @@ use core::fmt;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_pkcs1_enc::{
+    vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
+    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
+    vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
+    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
+    vg_rsa_pkcs1_encrypt_precomputed_ifma,
+};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -59,15 +68,8 @@ use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
         target_os = "openbsd"
     )
 ))]
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_umaal;
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
-#[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
-    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
-    vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
-    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
-    vg_rsa_pkcs1_encrypt_precomputed_ifma,
+    vg_rsa_pkcs1_decrypt_umaal, vg_rsa_pkcs1_encrypt_precomputed_umaal,
 };
 use crate::cpu::detected;
 use crate::hashes::sha256::Sha256Backend;
@@ -174,7 +176,7 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
                 target_os = "openbsd"
             )
         ))]
-        Backend::Umaal => vg_rsa_pkcs1_encrypt_precomputed,
+        Backend::Umaal => vg_rsa_pkcs1_encrypt_precomputed_umaal,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are

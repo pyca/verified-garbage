@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBegin
 import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeResult
 import VerifiedGarbage.Proof.Framework.Block

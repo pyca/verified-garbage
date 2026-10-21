@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSelection
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPowerCT

@@ -1,7 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
+public import VerifiedGarbage.TCB.Arm.Target
+
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
+
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on ARMv7, for each implementation of the CRT
@@ -36,7 +48,20 @@ def artifacts (v : CrtImpl) : List Artifact := [
       2^31, and every byte of `EM` and of the alternative message is read whichever is returned."]
     code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCode v
     stack := 3584
-    verified := Proof.RsaPkcs1Enc.Arm.Dec.code_verified v
+    verified := by exact (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v)
+    features := v.features },
+  Spec.RsaPkcs1Enc.encryptPrecomputedApi.artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA public implementation. This implementation builds `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in its \
+        frame, finding whether `PS` has a zero byte without a branch (the top bit of `byte - 1`), and \
+        calls `vg_rsa_public_precomputed_checked` on it with the cached modulus values. It then masks \
+        `out` and the result with `z - 1` for the zero test `z`, so that they are zeros and 0 if `PS` had \
+        a zero byte, without branching on the public operation's result, and overwrites the frame's `EM` \
+        with zeros either way."]
+    code := Impl.RsaPkcs1Enc.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+      (Proof.Rsa.Arm.pdOfCrt v).code
+    stack := 1168
+    verified := by exact (Proof.RsaPkcs1Enc.Arm.Pc.code_verified (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 
 end VG.Generic.RsaPrivateCrt.Arm.RsaPkcs1Enc

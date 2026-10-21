@@ -23,6 +23,7 @@ super::oaep_pair!(28, Sha512_224Backend {
         decrypt_adx: vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_crt_adx [VG_RSA_OAEP_SHA512_224_MGF1_SHA512_224_DECRYPT_CRT_ADX_FEATURES],
         decrypt_ifma: vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_crt_ifma [VG_RSA_OAEP_SHA512_224_MGF1_SHA512_224_DECRYPT_CRT_IFMA_FEATURES],
         decrypt_umaal: vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_umaal [VG_RSA_OAEP_SHA512_224_MGF1_SHA512_224_DECRYPT_UMAAL_FEATURES],
+        encrypt_umaal: vg_rsa_oaep_sha512_224_mgf1_sha512_224_encrypt_precomputed_umaal [VG_RSA_OAEP_SHA512_224_MGF1_SHA512_224_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     ShaNi => {

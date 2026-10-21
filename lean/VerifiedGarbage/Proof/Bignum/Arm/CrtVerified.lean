@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import Mathlib.Data.Int.ModEq

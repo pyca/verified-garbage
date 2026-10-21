@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryReady
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT

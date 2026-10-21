@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeSelection
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowersCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStageCT

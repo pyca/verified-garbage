@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.Arm.SgVerified
-public import VerifiedGarbage.Proof.RsaPss.Arm.SgSat
+public import VerifiedGarbage.TCB.Arm.Target
+
+public import VerifiedGarbage.Spec.RsaPss.Precomputed
+
+public import Init.Data.String.Defs
+
+
+public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfVerified
+import VerifiedGarbage.Proof.RsaPss.Arm.VfSat
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Md5
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPss.Arm.SgVerified
+public import VerifiedGarbage.Proof.RsaPss.Arm.SgSat
 
 /-!
 # RSASSA-PSS signing with MD5 on ARMv7, for each implementation of the CRT
@@ -32,7 +42,21 @@ def artifacts (v : CrtImpl) : List Artifact := [
       `salt_len` and the public key decide a branch or an address."]
     code := Proof.RsaPss.Arm.Sg.signCode Proof.RsaPss.Arm.md5 v
     stack := 3624
-    verified := Proof.RsaPss.Arm.Sg.sign_verified Proof.RsaPss.Arm.md5 Proof.RsaPss.Arm.Sg.sign_sat_md5 v
+    verified := by exact (Proof.RsaPss.Arm.Sg.sign_verified Proof.RsaPss.Arm.md5 Proof.RsaPss.Arm.Sg.sign_sat_md5 v)
+    features := v.features },
+  (Spec.RsaPss.verifyPrecomputedApi Spec.Mgf1.md5 Spec.Mgf1.md5).artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the \
+        cached modulus values, then checks EMSA-PSS in its working space without branching on the \
+        encoding: `maskedDB` is unmasked with MGF1, and the end of `DB`'s padding is found by a scan \
+        of all its bytes. A specified salt length copies that many trailing bytes of `DB` into `M'` \
+        and hashes only the blocks it needs; an unknown salt length shifts `DB` into place in ten \
+        masked passes and hashes the blocks of the longest salt. Only the lengths, the salt-length \
+        mode and the public key decide a branch or an address."]
+    code := Proof.RsaPss.Arm.Vf.verifyCode Proof.RsaPss.Arm.md5 (Proof.Rsa.Arm.pdOfCrt v)
+    stack := 240
+    verified := by exact (Proof.RsaPss.Arm.Vf.verify_verified Proof.RsaPss.Arm.md5 Proof.RsaPss.Arm.Vf.verify_sat_md5
+      (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 
 end VG.Generic.RsaPrivateCrt.Arm.RsaPssMd5

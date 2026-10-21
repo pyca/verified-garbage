@@ -30,7 +30,9 @@ use crate::arch::rsa_pss_md5_mgf1_md5::{
     )
 ))]
 use crate::arch::rsa_pss_md5_mgf1_md5::{
-    VG_RSA_PSS_MD5_MGF1_MD5_SIGN_UMAAL_FEATURES, vg_rsa_pss_md5_mgf1_md5_sign_umaal,
+    VG_RSA_PSS_MD5_MGF1_MD5_SIGN_UMAAL_FEATURES,
+    VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_UMAAL_FEATURES, vg_rsa_pss_md5_mgf1_md5_sign_umaal,
+    vg_rsa_pss_md5_mgf1_md5_verify_precomputed_umaal,
 };
 use crate::arch::rsa_pss_md5_mgf1_md5::{
     vg_rsa_pss_md5_mgf1_md5_sign, vg_rsa_pss_md5_mgf1_md5_verify_precomputed,
@@ -46,5 +48,6 @@ super::pss_hash!(16, Md5Backend {
         adx: vg_rsa_pss_md5_mgf1_md5_sign_crt_adx [VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_ADX_FEATURES],
         ifma: vg_rsa_pss_md5_mgf1_md5_sign_crt_ifma [VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_IFMA_FEATURES],
         umaal: vg_rsa_pss_md5_mgf1_md5_sign_umaal [VG_RSA_PSS_MD5_MGF1_MD5_SIGN_UMAAL_FEATURES],
+        verify_umaal: vg_rsa_pss_md5_mgf1_md5_verify_precomputed_umaal [VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_UMAAL_FEATURES],
     },
 });

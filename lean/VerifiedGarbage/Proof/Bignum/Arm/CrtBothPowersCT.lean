@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStageCT
 

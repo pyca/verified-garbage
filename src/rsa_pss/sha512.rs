@@ -62,7 +62,10 @@ use crate::arch::rsa_pss_sha512_mgf1_sha512::{
     )
 ))]
 use crate::arch::rsa_pss_sha512_mgf1_sha512::{
-    VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_UMAAL_FEATURES, vg_rsa_pss_sha512_mgf1_sha512_sign_umaal,
+    VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_UMAAL_FEATURES,
+    VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_UMAAL_FEATURES,
+    vg_rsa_pss_sha512_mgf1_sha512_sign_umaal,
+    vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_umaal,
 };
 use crate::arch::rsa_pss_sha512_mgf1_sha512::{
     vg_rsa_pss_sha512_mgf1_sha512_sign, vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed,
@@ -78,6 +81,7 @@ super::pss_hash!(64, Sha512Backend {
         adx: vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx [VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES],
         ifma: vg_rsa_pss_sha512_mgf1_sha512_sign_crt_ifma [VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_IFMA_FEATURES],
         umaal: vg_rsa_pss_sha512_mgf1_sha512_sign_umaal [VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_UMAAL_FEATURES],
+        verify_umaal: vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_umaal [VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_UMAAL_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     ShaNi => {

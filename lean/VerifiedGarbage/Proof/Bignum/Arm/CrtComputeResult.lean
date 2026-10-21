@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeStage
 import VerifiedGarbage.Proof.Framework.Block
 

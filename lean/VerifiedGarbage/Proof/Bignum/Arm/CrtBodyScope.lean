@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.RelCT
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBody
 

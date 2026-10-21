@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStage

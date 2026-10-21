@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtContractInput
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract

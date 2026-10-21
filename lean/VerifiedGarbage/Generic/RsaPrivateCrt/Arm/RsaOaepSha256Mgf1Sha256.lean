@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecVerified
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecSat
+public import VerifiedGarbage.TCB.Arm.Target
+
+public import VerifiedGarbage.Spec.RsaOaep.Precomputed
+
+public import Init.Data.String.Defs
+
+
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Spec.Mgf1
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
+public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
+public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+public import VerifiedGarbage.Proof.RsaOaep.Arm.EncVerified
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha256
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSat
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareArgs
@@ -147,16 +158,19 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFn
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnCT
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Label
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfPass
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfY
 public import VerifiedGarbage.Proof.RsaPss.Arm.YDig
 public import VerifiedGarbage.Proof.RsaPss.Params
 public import VerifiedGarbage.Proof.RsaPss.SignCases
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecVerified
+import VerifiedGarbage.Proof.RsaOaep.Arm.DecSat
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSat
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfPass
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfY
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareArgs
@@ -338,8 +352,20 @@ def artifacts (v : CrtImpl) : List Artifact := [
       lengths and the public key decide a branch or an address."]
     code := Proof.RsaOaep.Arm.Dec.decCode (.ofPss Proof.RsaPss.Arm.sha256) (.ofPss Proof.RsaPss.Arm.sha256) v
     stack := 3624
-    verified := Proof.RsaOaep.Arm.Dec.dec_verified (.ofPss Proof.RsaPss.Arm.sha256) (.ofPss Proof.RsaPss.Arm.sha256)
-      (Proof.RsaOaep.Arm.Dec.dec_sat _ _) v
+    verified := by exact (Proof.RsaOaep.Arm.Dec.dec_verified (.ofPss Proof.RsaPss.Arm.sha256) (.ofPss Proof.RsaPss.Arm.sha256)
+      (Proof.RsaOaep.Arm.Dec.dec_sat _ _) v)
+    features := v.features },
+  (Spec.RsaOaep.encryptPrecomputedApi Spec.Mgf1.sha256 Spec.Mgf1.sha256).artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA public implementation. This implementation hashes the label with `vg_sha256_update`, masks `DB` \
+        and the seed with MGF1 calling `vg_sha256_update`, and calls `vg_rsa_public_precomputed_checked` \
+        with the cached modulus values. The message's length is public; its bytes, the label's and \
+        the seed's are only copied, hashed and masked."]
+    code := Proof.RsaOaep.Arm.Enc.encryptCode (.ofPss Proof.RsaPss.Arm.sha256) (.ofPss Proof.RsaPss.Arm.sha256)
+      (Proof.Rsa.Arm.pdOfCrt v)
+    stack := 240
+    verified := by exact (Proof.RsaOaep.Arm.Enc.encrypt_verified (.ofPss Proof.RsaPss.Arm.sha256) (.ofPss Proof.RsaPss.Arm.sha256)
+      (Proof.RsaOaep.Arm.Enc.encrypt_sat_sha256 _) (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 
 end VG.Generic.RsaPrivateCrt.Arm.RsaOaepSha256Mgf1Sha256

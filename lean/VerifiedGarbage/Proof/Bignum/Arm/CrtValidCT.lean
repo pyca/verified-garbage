@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidInput
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStageCT

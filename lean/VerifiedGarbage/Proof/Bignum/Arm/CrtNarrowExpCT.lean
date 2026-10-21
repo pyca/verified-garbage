@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT

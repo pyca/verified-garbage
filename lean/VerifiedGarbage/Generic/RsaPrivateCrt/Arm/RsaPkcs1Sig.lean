@@ -1,7 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgVerified
+public import VerifiedGarbage.TCB.Arm.Target
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Precomputed
+
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.RcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgVerified
 public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 public import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
@@ -708,7 +721,30 @@ def artifacts (v : CrtImpl) : List Artifact := [
       decide a branch or an address."]
     code := Proof.RsaPkcs1Sig.Arm.Sg.signCode v
     stack := 4584
-    verified := Proof.RsaPkcs1Sig.Arm.Sg.code_verified v
+    verified := by exact (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v)
+    features := v.features },
+  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the \
+        cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of `digest` beside the \
+        result and compares the two without a branch, and returns the public operation's status masked \
+        with the encoding's success and the comparison: nothing after the call branches on its result."]
+    code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+      (Proof.Rsa.Arm.pdOfCrt v).code
+    stack := 2192
+    verified := by exact (Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v))
+    features := v.features },
+  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact Arm.target {
+    suffix := v.suffix
+    notes := ["ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the \
+        cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` \
+        bytes of the result beside it and compares the two, then copies those bytes to `out` and masks \
+        them to zeros, and the result to 0, unless the public operation succeeded and the two are equal: \
+        nothing after the call branches on its result."]
+    code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+      (Proof.Rsa.Arm.pdOfCrt v).code
+    stack := 2192
+    verified := by exact (Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v))
     features := v.features }]
 
 end VG.Generic.RsaPrivateCrt.Arm.RsaPkcs1Sig

@@ -83,6 +83,17 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::rsa::vg_rsa_public_precomputed_checked;
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa::vg_rsa_public_precomputed_checked_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
@@ -128,10 +139,8 @@ pub(crate) enum Backend {
     /// operation with `e = 65537`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
-    /// ARMv7's `umaal` for each word of a Montgomery row, in the
-    /// private-key operation and the Miller–Rabin rounds of key generation
-    /// (the public-key operation and the other functions run the
-    /// baseline's).
+    /// ARMv7's UMAAL arithmetic for public and private RSA, modulus
+    /// setup, prime recovery, and Miller–Rabin rounds of key generation.
     #[cfg(all(
         target_arch = "arm",
         any(
@@ -365,7 +374,7 @@ impl PublicKey {
                     target_os = "openbsd"
                 )
             ))]
-            Backend::Umaal => vg_rsa_public_precomputed_checked,
+            Backend::Umaal => vg_rsa_public_precomputed_checked_umaal,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
