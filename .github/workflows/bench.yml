@@ -145,7 +145,7 @@ jobs:
             export CARGO_BUILD_TARGET="$target"
             export PKG_CONFIG_LIBDIR_thumbv7neon_unknown_linux_gnueabihf=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig
             rustup target add "$target"
-            cargo test --manifest-path head/Cargo.toml --test main 'secp256k1::' > "results/$target-tests.txt" 2>&1
+            cargo test --manifest-path head/Cargo.toml --release --test tests 'secp256k1::' > "results/$target-tests.txt" 2>&1
             python3 head/ci/bench_compare.py base head --modules "$MODULES" --arch arm --rounds 1 --warm-up-time 0.5 --measurement-time 1 --work-dir "bench-$target" --summary "results/$target.md" --openssl
             cat "results/$target.md" >> "$GITHUB_STEP_SUMMARY"
           done
