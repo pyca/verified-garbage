@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Framed cdecl calls that retain the integer return register -/
 
@@ -41,5 +43,19 @@ theorem WP.callWithReturn {rs : List Reg} {n : String} {c : Prog isa} {k : Contr
         rw [pushed_esp]
         exact below_inner (by omega) hd
 
+
+theorem RelCT.callWithReturn {rs : List Reg} {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) {P : State → State → Prop} (rd wr : List Region)
+    (hP : ∀ s₁ s₂, P s₁ s₂ → CallPre k rs rd wr s₁ ∧ CallPre k rs rd wr s₂ ∧
+      s₁.gpr .esp = s₂.gpr .esp ∧
+      k.pub ((pushed rs s₁).callEntry.withRegions rd wr) ((pushed rs s₂).callEntry.withRegions rd wr)) :
+    RelCT isa P (.frame (.push rs) (.call n c) (.pop .ecx rs.length)) fun _ _ => True := by
+  refine RelCT.frame (fun s₁ s₂ h => (hP _ _ h).2.2.1) (RelCT.call hv hct rd wr ?_)
+  rintro _ _ ⟨s₁, s₂, h, rfl, rfl⟩
+  obtain ⟨k₁, k₂, hsp, hpub⟩ := hP _ _ h
+  refine ⟨k₁.pre, k₂.pre, hpub, by rw [pushed_rd, pushed_wr]; exact k₁.cov, by rw [pushed_wr]; exact k₁.covw,
+    by rw [pushed_rd, pushed_wr]; exact k₂.cov, by rw [pushed_wr]; exact k₂.covw, ?_⟩
+  rw [pushed_esp, pushed_esp, hsp]
 
 end VG.X86
