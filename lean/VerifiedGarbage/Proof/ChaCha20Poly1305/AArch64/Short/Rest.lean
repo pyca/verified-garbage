@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Stash
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Stash
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Prologue
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 257 to 511 bytes: the parts
