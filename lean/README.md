@@ -168,6 +168,130 @@ shows only warnings and errors. `python3 ../ci/lean_profile.py` reads it, to
 list the declarations the build spends the most on (CLAUDE.md, "Finding what
 to optimize").
 
+## Iterating on import narrowing
+
+Use `ci/trim_lean_imports.py` from the repository root to separate expensive
+evidence collection from fast planner changes. Start from a built checkout
+(including the downstream modules being analyzed). A capture checks the
+selected modules' builds and reads compiled declarations; it does not edit
+headers or run verification builds of proposed changes:
+
+```sh
+python3 ci/trim_lean_imports.py -m VerifiedGarbage.Proof.YourModule \
+  --discover --capture lean/.lake/import-evidence.json.gz \
+  --report lean/.lake/import-plan.json
+```
+
+`--discover` adds hypotheses based on declaration uses, including ones
+`lake shake` missed or disagrees with. Absence from compiled declarations is
+only a hypothesis: tactics, namespace opens, syntax, attributes and
+evaluation can require imports without leaving those references. To collect
+evidence without running shake, add `--no-shake`; the selected modules are
+still checked with `lake build` first. `--dry-run` produces the same analysis
+without saving an evidence snapshot. Neither mode verifies the proposed edits.
+
+After changing the Python planner, replay the same evidence without Lake,
+the toolchain, build outputs, or the original source checkout:
+
+```sh
+python3 ci/trim_lean_imports.py --replay lean/.lake/import-evidence.json.gz \
+  --report lean/.lake/import-plan-next.json
+python3 ci/trim_lean_imports.py --replay lean/.lake/import-evidence.json.gz \
+  --shake-only --report lean/.lake/import-plan-shake.json
+python3 -m unittest discover -s ci -p 'test_check*import*.py'
+```
+
+Snapshots store the sources and use queries actually consulted, plus the
+library's reverse import index. If a new planner needs uncaptured evidence,
+replay fails explicitly: collect a new snapshot on the built checkout. A
+snapshot captured with discovery usually supports more comparisons than a
+shake-only capture. Replay evaluates the captured checkout, not subsequent
+source changes. Capture and replay reports say `build_verified: false`. They list explicit
+operations separately from human diagnostics and include candidate decisions:
+proposed, retained, deferred, unsupported, or not considered. Retained decisions
+name the declaration, source reference, keep marker, or opaque module effects
+that prevented narrowing. A candidate absent from shake/discovery is not a
+claim that its import is necessary. Snapshots ending in `.gz` are compressed.
+The portable synthetic
+regression in `ci/fixtures/import_narrowing/diamond.json` demonstrates a pair
+of demotions that jointly require a downstream public import.
+
+The planner combines ordinary/meta declaration dependencies, resolved source
+references and exported effects. It plans downstream repairs with each narrowing
+and preserves repository import rules, keep markers and reviewed boundaries.
+The [design guide](../ci/IMPORT_NARROWING.md) explains the evidence, conservative
+guards and plan invariants.
+
+Reports estimate the affected library scope and recorded profile work, excluding
+blocked time; neither predicts wall time or actual recompilation. Missing profiles
+are counted explicitly. For scopes of at most 250 modules, `visibility_impact`
+also models changes to ordinary/meta access and public re-exports, including
+repairs. Larger scopes omit that calculation to bound analysis work. Emitter
+checks remain separate from library verification.
+
+Select a small batch from the report for live verification:
+
+```sh
+python3 ci/trim_lean_imports.py -m VerifiedGarbage.Proof.YourModule \
+  --discover --max-affected 25 --rounds 1 --build-timeout 120 \
+  --verify-attempts 3 --report lean/.lake/import-verification.json
+```
+
+`--max-affected` selects source modules within the combined target budget,
+starting with smaller verification scopes and deferring the rest. Each subset
+is replanned together with its repairs; repairs are never detached from their
+causes. Public boundaries that would require editing reviewed registrations or
+variants, or modules marked `shake: keep-all`, are retained, allowing
+independent work to proceed. Pinned private imports are preserved when a
+public repair needs an additional occurrence.
+
+Live runs first build the original affected modules to distinguish existing
+failures and cold dependencies from import regressions. They then apply the
+explicit operations and rebuild every affected library module. Known failures
+undo the nearest edited files and retry, up to `--verify-attempts` passes.
+`--verify-batch` limits each baseline/verification command to 32 targets by
+default; a pass stops at its first failing chunk. All chunks must pass before
+any kept changes are called verified. Dependencies may still require additional
+rebuilds. Unknown failures, timeouts, Ctrl-C and SIGTERM restore the whole batch.
+`--build-timeout` limits each analysis, baseline and verification build and
+terminates its Lean children.
+
+Declaration readers default to 32 roots per process (`--read-batch`), independently
+of shake's `--batch`, with a 120-second timeout (`--read-timeout`). Their process
+groups are cancelled on timeout or interruption, and malformed, partial or failed
+reader output is an error rather than an empty dependency set.
+Shake invocations also have durable logs and process-group cancellation, with a
+120-second default timeout; `--build-timeout` overrides it.
+
+Every live round is included in `--report`, with proposed operations, final
+kept/undone changes, verification targets, and per-attempt timings and outcomes.
+Durable logs and manifests live under `lean/.lake/import-verification/`;
+`lean/.lake/check-imports-build.log` remains a copy of the latest build log.
+Analysis builds have separate logs under `lean/.lake/import-analysis/`. A
+successful library build does not replace the final emitter/assembly checks.
+Rejected or aborted trials automatically save `evidence.json.gz` beside their
+verification manifest. Replay that snapshot to investigate the pre-edit plan
+without rebuilding proofs. Reader logs and outcomes also live under
+`lean/.lake/import-analysis/`.
+
+Declaration and source-index evidence have separate reader/toolchain cache
+keys, so Python planner changes retain reusable raw evidence. Queried downstream
+roots are refreshed before cached declaration evidence is trusted. Rejection
+keys include the exact operations, consulted sources, graph and affected traces,
+so changed context permits a new trial.
+Failed file trials also have scoped rejection keys: unrelated successful edits
+do not cause the same file to be tested again. A change to its consumers,
+relevant build outputs or planned dependency edits permits a new trial. Reports
+link deferred trials to their previous verification and rejection snapshot.
+`--retry-rejected` explicitly retries the selected modules while retaining the
+raw declaration/index/shake caches.
+
+The focused Python tests run without Lean. With the repository’s Lean toolchain
+installed, the same command also runs small core-only semantic regressions
+directly with `lean`, without Lake builds or cryptographic proofs. These cover
+combined visibility losses, exposed proof dependencies, ordinary/meta repairs,
+resolved source references and implicit core imports.
+
 ## Restoring the CI build cache
 
 After CI passes on `main`, it publishes the Linux x86-64 project build and

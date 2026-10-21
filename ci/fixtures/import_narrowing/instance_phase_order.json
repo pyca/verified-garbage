@@ -1,0 +1,18 @@
+{
+  "sources": {
+    "VerifiedGarbage.A": "module\n\npublic import VerifiedGarbage.S0\npublic import VerifiedGarbage.S1\npublic import VerifiedGarbage.S2\npublic import VerifiedGarbage.U\nmeta import VerifiedGarbage.S0\nmeta import VerifiedGarbage.S1\nmeta import VerifiedGarbage.S2\nmeta import VerifiedGarbage.U\n@[expose] public def chosenValue : Nat := chosen\n#eval chosenValue\n",
+    "VerifiedGarbage.B": "module\n\npublic import Init\n\n@[expose] public section\nnamespace Fixture\ntheorem witness : True := True.intro\ntheorem derive {n : Nat} (_ : n = 0) : True := True.intro\nend Fixture\n",
+    "VerifiedGarbage.C0": "module\n\npublic import VerifiedGarbage.E\npublic instance choice0 : Chosen := \u27e80\u27e9\n",
+    "VerifiedGarbage.C1": "module\n\npublic import VerifiedGarbage.E\npublic instance choice1 : Chosen := \u27e81\u27e9\n",
+    "VerifiedGarbage.C2": "module\n\npublic import VerifiedGarbage.E\npublic instance choice2 : Chosen := \u27e82\u27e9\n",
+    "VerifiedGarbage.C3": "module\n\npublic import VerifiedGarbage.E\npublic instance choice3 : Chosen := \u27e83\u27e9\n",
+    "VerifiedGarbage.C4": "module\n\npublic import VerifiedGarbage.E\npublic instance choice4 : Chosen := \u27e84\u27e9\n",
+    "VerifiedGarbage.E": "module\n\n@[expose] public section\nclass Chosen where\n  value : Nat\ndef chosen [Chosen] : Nat := Chosen.value\n",
+    "VerifiedGarbage.S0": "module\n\nimport VerifiedGarbage.C3\nimport VerifiedGarbage.C0\nimport VerifiedGarbage.C1\nmeta import VerifiedGarbage.C4\n",
+    "VerifiedGarbage.S1": "module\n\npublic import VerifiedGarbage.C1\nmeta import VerifiedGarbage.C3\n",
+    "VerifiedGarbage.S2": "module\n\nmeta import VerifiedGarbage.C1\npublic import VerifiedGarbage.C4\nimport VerifiedGarbage.C3\nmeta import VerifiedGarbage.C2\n",
+    "VerifiedGarbage.U": "module\n\npublic import VerifiedGarbage.C0\npublic import VerifiedGarbage.C2\npublic import VerifiedGarbage.C4\npublic import VerifiedGarbage.C1\npublic import VerifiedGarbage.C3\n"
+  },
+  "expected": "3",
+  "seed": 7312962
+}
