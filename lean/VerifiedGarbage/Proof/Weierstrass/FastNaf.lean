@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf7
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf9
 
-/-! Shared interface for the two public verification NAF widths. -/
+/-! Shared interface for the public verification NAF widths: five and seven, whose digits are
+bytes (`Width`), and nine, whose digits are stored as sixteen-bit words (`word`). -/
 
 @[expose] public section
 
@@ -12,17 +14,30 @@ open Spec.Weierstrass
 
 def Width (w : Nat) : Prop := w=5 ∨ w=7
 
-def next (w n : Nat) : Nat := if w=7 then FastNaf7.next n else Naf5.next n
+def next (w n : Nat) : Nat :=
+  if w=7 then FastNaf7.next n else if w=9 then FastNaf9.next n else Naf5.next n
 
-def residual (w k j : Nat) : Nat := if w=7 then FastNaf7.residual k j else Naf5.residual k j
+def residual (w k j : Nat) : Nat :=
+  if w=7 then FastNaf7.residual k j else if w=9 then FastNaf9.residual k j else Naf5.residual k j
 
-def negative (w k j : Nat) : Bool := if w=7 then FastNaf7.negative k j else Naf5.negative k j
+def negative (w k j : Nat) : Bool :=
+  if w=7 then FastNaf7.negative k j else if w=9 then FastNaf9.negative k j else Naf5.negative k j
 
-def magnitude (w k j : Nat) : Nat := if w=7 then FastNaf7.magnitude k j else Naf5.magnitude k j
+def magnitude (w k j : Nat) : Nat :=
+  if w=7 then FastNaf7.magnitude k j else if w=9 then FastNaf9.magnitude k j else Naf5.magnitude k j
 
-def digit (w k j : Nat) : Int := if w=7 then FastNaf7.digit k j else Naf5.digit k j
+def digit (w k j : Nat) : Int :=
+  if w=7 then FastNaf7.digit k j else if w=9 then FastNaf9.digit k j else Naf5.digit k j
 
-def byte (w k j : Nat) : BitVec 8 := if w=7 then FastNaf7.byte k j else Naf5.byte k j
+def byte (w k j : Nat) : BitVec 8 :=
+  if w=7 then FastNaf7.byte k j else if w=9 then FastNaf9.byte k j else Naf5.byte k j
+
+theorem ne_9_7 : ¬(9:Nat)=7 := by decide
+theorem ne_5_9 : ¬(5:Nat)=9 := by decide
+theorem ne_7_9 : ¬(7:Nat)=9 := by decide
+
+/-- A digit of width nine, as stored. -/
+def word (k j : Nat) : BitVec 16 := FastNaf9.word k j
 
 def point (C : Curve) (P : Point C) (w k j : Nat) : Point C :=
   if negative w k j then negPt (mul (magnitude w k j) P) else mul (magnitude w k j) P
@@ -30,76 +45,96 @@ def point (C : Curve) (P : Point C) (w k j : Nat) : Point C :=
 theorem residual_zero (w k : Nat) :
     residual w k 0=k := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.residual_zero k
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.residual_zero k
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.residual_zero k
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.residual_zero k
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.residual_zero k
 
 theorem residual_succ (w k j : Nat) :
     residual w k (j+1)=next w (residual w k j) := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.residual_succ k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.residual_succ k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.residual_succ k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.residual_succ k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.residual_succ k j
 
 theorem magnitude_le {w : Nat} (hw : Width w) (k j : Nat) :
     magnitude w k j≤2^(w-1)-1 := by
   rcases hw with rfl | rfl
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,Nat.reduceSub,Nat.reducePow,ite_false,ite_true,show ¬(5=7) from by decide] using Naf5.magnitude_le k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,Nat.reduceSub,Nat.reducePow,ite_false,ite_true] using FastNaf7.magnitude_le k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,Nat.reduceSub,Nat.reducePow,ite_false,ite_true,ne_9_7,ne_5_9,ne_7_9,show ¬(5=7) from by decide] using Naf5.magnitude_le k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,Nat.reduceSub,Nat.reducePow,ite_false,ite_true,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.magnitude_le k j
 
 theorem magnitude_odd_or_zero (w k j : Nat) :
     magnitude w k j=0 ∨ magnitude w k j%2=1 := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.magnitude_odd_or_zero k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.magnitude_odd_or_zero k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.magnitude_odd_or_zero k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.magnitude_odd_or_zero k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.magnitude_odd_or_zero k j
 
 theorem magnitude_zero_iff (w k j : Nat) :
     magnitude w k j=0 ↔ residual w k j%2=0 := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.magnitude_zero_iff k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.magnitude_zero_iff k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.magnitude_zero_iff k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.magnitude_zero_iff k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.magnitude_zero_iff k j
 
 theorem recurrence (w k j : Nat) :
     if negative w k j then residual w k j+magnitude w k j=2*residual w k (j+1) else residual w k j=2*residual w k (j+1)+magnitude w k j := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.recurrence k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.recurrence k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.recurrence k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.recurrence k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.recurrence k j
 
 theorem negative_magnitude_pos (w k j : Nat) (h : negative w k j=true) :
     0<magnitude w k j := by
   by_cases h7 : w=7
-  · have h : FastNaf7.negative k j=true := by simpa only [negative,h7,ite_true,ite_false] using h
-    simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.negative_magnitude_pos k j h
-  · have h : Naf5.negative k j=true := by simpa only [negative,h7,ite_true,ite_false] using h
-    simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.negative_magnitude_pos k j h
+  · have h : FastNaf7.negative k j=true := by simpa only [negative,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using h
+    simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.negative_magnitude_pos k j h
+  by_cases h9 : w=9
+  · subst h9
+    have h : FastNaf9.negative k j=true := by simpa only [negative,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using h
+    simpa only [magnitude,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf9.negative_magnitude_pos k j h
+  · have h : Naf5.negative k j=true := by simpa only [negative,h7,h9,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using h
+    simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,h9,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using Naf5.negative_magnitude_pos k j h
 
 theorem byte_toNat (w k j : Nat) :
     (byte w k j).toNat=if negative w k j then 256-magnitude w k j else magnitude w k j := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.byte_toNat k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.byte_toNat k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.byte_toNat k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.byte_toNat k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.byte_toNat k j
 
-theorem byte_magnitude (w k j : Nat) :
+theorem byte_magnitude (w k j : Nat) (h9 : w≠9 := by decide) :
     (if (byte w k j).toNat<128 then (byte w k j).toNat else 256-(byte w k j).toNat)=magnitude w k j := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.byte_magnitude k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.byte_magnitude k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.byte_magnitude k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.byte_magnitude k j
 
-theorem byte_negative (w k j : Nat) :
+theorem byte_negative (w k j : Nat) (h9 : w≠9 := by decide) :
     decide (128≤(byte w k j).toNat)=negative w k j := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.byte_negative k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.byte_negative k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.byte_negative k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.byte_negative k j
 
 theorem byte_zero_iff (w k j : Nat) :
     byte w k j=0 ↔ magnitude w k j=0 := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.byte_zero_iff k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.byte_zero_iff k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.byte_zero_iff k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.byte_zero_iff k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.byte_zero_iff k j
 
 theorem residual_boundB (w : Nat) {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
     residual w k j≤2^(B-j) := by
   by_cases h7 : w=7
   · simpa only [residual,h7,ite_true] using FastNaf7.residual_boundB hk hj
-  · simpa only [residual,h7,ite_false] using Naf5.residual_boundB hk hj
+  by_cases h9 : w=9
+  · subst h9; simpa only [residual,ite_true,ite_false,ne_9_7] using FastNaf9.residual_boundB hk hj
+  · simpa only [residual,h7,ite_false,h9] using Naf5.residual_boundB hk hj
 
 theorem residual_bound (w : Nat) {k : Nat} (hk : k≤2^256) {j : Nat} (hj : j≤256) :
     residual w k j≤2^(256-j) :=
@@ -109,7 +144,9 @@ theorem residual_zero_top (w : Nat) {B k : Nat} (hk : k<2^B) :
     residual w k (B+1)=0 := by
   by_cases h7 : w=7
   · simpa only [residual,h7,ite_true] using FastNaf7.residual_zero_top hk
-  · simpa only [residual,h7,ite_false] using Naf5.residual_zero_top hk
+  by_cases h9 : w=9
+  · subst h9; simpa only [residual,ite_true,ite_false,ne_9_7] using FastNaf9.residual_zero_top hk
+  · simpa only [residual,h7,ite_false,h9] using Naf5.residual_zero_top hk
 
 theorem residual_zero257 (w : Nat) {k : Nat} (hk : k<2^256) :
     residual w k 257=0 :=
@@ -118,19 +155,23 @@ theorem residual_zero257 (w : Nat) {k : Nat} (hk : k<2^256) :
 theorem add_step {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (w k j : Nat) :
     Spec.Weierstrass.add (mul (2*residual w k (j+1)) P) (point C P w k j)=mul (residual w k j) P := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.add_step hC hP k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.add_step hC hP k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.add_step hC hP k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.add_step hC hP k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.add_step hC hP k j
 
 theorem onCurve_point {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (w k j : Nat) :
     onCurve C (point C P w k j)=true := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.onCurve_point hC hP k j
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.onCurve_point hC hP k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9] using FastNaf7.onCurve_point hC hP k j
+  by_cases h9 : w=9
+  · subst h9; simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,FastNaf9.point] using FastNaf9.onCurve_point hC hP k j
+  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false,ne_9_7,ne_5_9,ne_7_9,h9] using Naf5.onCurve_point hC hP k j
 
 
 theorem next_even (w n : Nat) (hn : n%2=0) : next w n=n/2 := by
-  simp only [next,Naf5.next,FastNaf7.next,hn,ite_true]
-  split <;> rfl
+  simp only [next,Naf5.next,FastNaf7.next,FastNaf9.next,hn,ite_true]
+  split <;> (try split) <;> rfl
 
 theorem next_double (w n : Nat) : next w (2*n)=n := by
   rw [next_even w _ (by omega)]
@@ -160,7 +201,7 @@ theorem next_odd {w : Nat} (hw : Width w) (n : Nat) (hn : n%2≠0) :
     next w n=2^(w-1)*((n+2^(w-1))/2^w) := by
   rcases hw with rfl | rfl <;>
     simp only [next,Naf5.next,FastNaf7.next,Nat.reduceSub,Nat.reducePow,
-      show ¬(5=7) from by decide,ite_false,ite_true,hn,Nat.mul_comm]
+      show ¬(5=7) from by decide,ite_false,ite_true,ne_5_9,ne_7_9,hn,Nat.mul_comm]
 
 theorem residual_skip {w : Nat} (hw : Width w) (k j : Nat)
     (hn : residual w k j%2≠0) :

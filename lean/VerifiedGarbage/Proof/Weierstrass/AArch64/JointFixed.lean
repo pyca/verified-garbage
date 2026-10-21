@@ -153,7 +153,7 @@ theorem jointEntry_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {siz
     (it.sub (fun _ hx => List.mem_append_right _ hx)) et
   refine ⟨(kpb.mono (by simp)).trans ((kd.mono (jointEntry_work c)).trans (kt.mono hyw)),ct,it.to_tmv,?_,?_⟩
   · have jp := it.point_tmv (fun _ hx => List.mem_append_left _ hx) jt
-    simpa only [nafNegative,FastNaf.byte_negative,FastNaf.point] using jp
+    simpa only [nafNegative,FastNaf.byte_negative 7 u j,FastNaf.point] using jp
   · exact (it.val c.K.E.z (by simp)).trans zt
 
 end VG.Proof.Weierstrass.AArch64
