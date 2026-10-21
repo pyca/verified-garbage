@@ -108,4 +108,50 @@ def sampleHM (fast : Bool) (m : Nat) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4)) (.seq (.block hload) (.seq (squeezesHM fast m)
     (.seq (.block tabAddr) (.seq (run1 0 true) (.seq (run1 1 true) (.seq (run1 2 true) (tail3 fast true)))))))
 
+/-! ## Two outputs of `PRF₂` in the fourth state
+
+`sampleP` runs `SampleNTT` on the first three seeds as `sampleHM fast 0`
+does, while the fourth state computes `PRF₂(σ, 0)` and `PRF₂(σ, 1)`
+(SHAKE256 of `σ ‖ N`, 128 bytes): before each of the first two squeezes it
+is overwritten with the padded block of `σ ‖ N` (`σ` at `scratch + oPS`,
+`r9` holding lane 4: `N` and SHAKE's suffix), and after it the first 128
+bytes of its output go to `scratch + oPO + 128 N` (`r8`, which the
+permutation keeps, as it keeps `r9`). The input of `PRF₂` is one block of
+SHAKE256 (rate 136) and its output fewer bytes than the rate, so each is
+one permutation. The stores have fixed addresses, so `σ` does not affect
+timing. -/
+
+/-- `σ` (32 bytes) and the two outputs of `PRF₂` (256 bytes), in the
+scratch space, past what the sampling and the sponge of `H` use. -/
+def oPS : Nat := 6920
+def oPO : Nat := 7424
+
+/-- Lane `j` of the fourth state: of the padded block of `σ ‖ N`, with lane
+4 (`N` and SHAKE's suffix) in `r9`. -/
+def plane (j : Nat) : List Instr :=
+  if j < 4 then [.mov .rax (.mem (at_ .rbx (oPS + 8 * j))), .store (at_ .rbx (32 * j + 24)) .rax]
+  else if j = 4 then [.store (at_ .rbx (32 * 4 + 24)) .r9]
+  else if j = 16 then [.movImm64 .rax 0x8000000000000000#64, .store (at_ .rbx (32 * 16 + 24)) .rax]
+  else [.mov32 .rax (.imm 0), .store (at_ .rbx (32 * j + 24)) .rax]
+
+/-- The fourth state: the padded block of `σ ‖ N`. -/
+def pload : List Instr := (List.range 25).flatMap plane
+
+/-- The first 128 bytes of the fourth state to `r8`, `r8` to the next
+output and `r9` to the next `N`. -/
+def pext : List Instr :=
+  ((List.range 16).flatMap fun i => [.mov .rax (.mem (at_ .rbx (32 * i + 24))), .store (at_ .r8 (8 * i)) .rax]) ++
+    [.alu .add .r8 (.imm 128), .alu .add .r9 (.imm 1)]
+
+/-- A squeeze with an output of `PRF₂` in the fourth state. -/
+def squeezeP (fast : Bool := false) : Prog isa := .seq (.block pload) (.seq (squeeze fast) (.block pext))
+
+/-- Three entries of the matrix, with 16-bit coefficients, and `PRF₂(σ, 0)`
+and `PRF₂(σ, 1)`. -/
+def sampleP (fast : Bool) : Prog isa :=
+  .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4 ++
+      [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 oPO)), .mov32 .r9 (.imm 0x1f00)]))
+    (.seq (blocks oBuf 168 2 (squeezeP fast)) (.seq (squeezes 2 1 fast)
+      (.seq (.block tabAddr) (.seq (run1 0 true) (.seq (run1 1 true) (.seq (run1 2 true) (tail3 fast true)))))))
+
 end VG.Impl.MlKem.X86_64.Sample4

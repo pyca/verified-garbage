@@ -57,6 +57,12 @@ abbrev ekR (i : Nat) : List (Ptr × Nat) := (List.range i).map fun j => (ekP j, 
 abbrev aR (e : Nat) : List (Ptr × Nat) := (List.range e).map fun e' => (aP K e', 512)
 abbrev prR : List (Ptr × Nat) := (List.range 6).map fun N => (prfO K N, 128)
 abbrev rR (n : Nat) : List (Ptr × Nat) := (List.range n).map fun N => (rP K N, 512)
+/-- The polynomials of `s ‖ e` but `N`. -/
+abbrev rRx (N : Nat) : List (Ptr × Nat) := ((List.range 6).filter (· ≠ N)).map fun N' => (rP K N', 512)
+/-- `σ`, copied for the fragment of row 0, and its outputs of `PRF₂`. -/
+abbrev psP : Ptr := sc (K.oW + Sample4.oPS)
+abbrev poP (N : Nat) : Ptr := sc (K.oW + Sample4.oPO + 128 * N)
+abbrev poR : List (Ptr × Nat) := (List.range 2).map fun N => (poP K N, 128)
 
 /-- What the matrix's fragments and rows keep: `ê[j]` from `ie` on, the
 first `ik` rows of `ek` and the first `e` entries of `Â`. -/
@@ -96,13 +102,22 @@ layout, evaluated for each parameter set. -/
 structure KgH16Wf : Prop extends KgWfB K.L where
   k3 : K.L.k = 3
   ek : K.L.ekLen = 1184
-  -- the noise
-  pr : (prfsChk (kgB K.L) (kgW K.L) 6 K.oPR (K.oW / 32) && keepAll K (prfsW 6 K.oPR (K.oW / 32)) baseR) = true
+  -- the noise but `PRF₂(σ, 0)` and `PRF₂(σ, 1)`
+  pr : (prfsChk (kgB K.L) (kgW K.L) 4 (K.oPR + 256) (K.oW / 32) &&
+    keepAll K (prfsW 4 (K.oPR + 256) (K.oW / 32)) baseR) = true
   se : ∀ N < 6, (twoChk (kgB K.L) (kgW K.L) (prfO K N) 128 (rP K N) 512 &&
     keepAll K [(rP K N, 512)] (baseR ++ prR K ++ rR K N)) = true
+  -- row 0 of `Â` with `PRF₂(σ, 0)` and `PRF₂(σ, 1)`
+  c0 : (copyChk (kgB K.L) (kgW K.L) (psP K) sigP 32 && keepAll K [(psP K, 32)] (baseR ++ rR K 6)) = true
+  sd0 : ((List.range 4).all fun J => seedsChk (kgB K.L) (kgW K.L) J &&
+    keepAll K (seedW J) (baseR ++ rR K 6 ++ [(psP K, 32)])) = true
+  sm0 : (s4_16Chk (kgB K.L) (kgW K.L) K.oA K.oW && keepAll K (smW K 0) (baseR ++ rR K 6)) = true
+  hz : (inB (kgW K.L) (hsP K) 200 && keepAll K [(hsP K, 200)] (baseR ++ rR K 6 ++ aR K 3 ++ poR K)) = true
+  cP : ∀ N < 2, (twoChk (kgB K.L) (kgW K.L) (poP K N) 128 (rP K N) 512 &&
+    keepAll K [(rP K N, 512)] (baseR ++ rRx K N ++ aR K 3 ++ poR K ++ [(hsP K, 200)])) = true
   -- the transforms
-  nt : (knChk (kgB K.L) (kgW K.L) 3 (.r13, 0) (sc oSH) (sc oEH) (sc K.oR) (sc oZK) && keepAll K ntW baseR) = true
-  hz : (inB (kgW K.L) (hsP K) 200 && keepAll K [(hsP K, 200)] (liveR K 0 0)) = true
+  nt : (knChk (kgB K.L) (kgW K.L) 3 (.r13, 0) (sc oSH) (sc oEH) (sc K.oR) (sc oZK) &&
+    keepAll K ntW (baseR ++ aR K 3 ++ [(hsP K, 200)])) = true
   -- the rows
   cp : ∀ i < 3, cpChk K i = true
   sd : ∀ i < 3, sdChk K i = true
@@ -128,15 +143,16 @@ theorem pa_off (s : State) (o d : Nat) : pa s (sc o) + BitVec.ofNat 64 d = pa s 
 
 /-! ## While the noise is sampled -/
 
-/-- After `G(d ‖ k)`, the outputs of `PRF₂` and the first `n` of `s ‖ e`. -/
+/-- After `G(d ‖ k)`, the outputs of `PRF₂` from `PRF₂(σ, 2)` on, and the
+polynomials of `s ‖ e` from 2 to `n`. -/
 structure KN (K : Kem16) (n : Nat) (σ s : State) : Prop where
   kc : KC σ s
   rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK K.L σ
   sig : bytesAt s.mem (pa s sigP) 32 = KPke.kgSigma K.L.p (kgD σ)
   sb : bytesAt s.mem (pa s (sc oSB)) 32 = rhoK K.L σ
   r15 : s.gpr .r15 = 1
-  prf : ∀ N < 6, bytesAt s.mem (pa s (prfO K N)) 128 = prf 2 (KPke.kgSigma K.L.p (kgD σ)) (BitVec.ofNat 8 N)
-  se : ∀ N < n, PolyIsW 16 s.mem (pa s (rP K N)) (cbd (KPke.kgSigma K.L.p (kgD σ)) N)
+  prf : ∀ N < 6, 2 ≤ N → bytesAt s.mem (pa s (prfO K N)) 128 = prf 2 (KPke.kgSigma K.L.p (kgD σ)) (BitVec.ofNat 8 N)
+  se : ∀ N < n, 2 ≤ N → PolyIsW 16 s.mem (pa s (rP K N)) (cbd (KPke.kgSigma K.L.p (kgD σ)) N)
 
 /-! ## From the transforms on -/
 
@@ -243,9 +259,9 @@ section
 variable (W : KgH16Wf K) {σ : State} (hp : (keyGenK K.L).pre σ)
 include W hp
 
-/-- The outputs of `PRF₂`. -/
+/-- The outputs of `PRF₂` from `PRF₂(σ, 2)` on. -/
 theorem prfs_ok (v : Sample4Impl) {s : State} (h : KA K.L σ s) (h15 : s.gpr .r15 = 1) :
-    WP isa (v.callee.prfs 0 6 K.oPR (K.oW / 32)) s (KN K 0 σ) := by
+    WP isa (v.callee.prfs 2 4 (K.oPR + 256) (K.oW / 32)) s (KN K 2 σ) := by
   have hc := W.pr
   simp only [Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
@@ -254,117 +270,46 @@ theorem prfs_ok (v : Sample4Impl) {s : State} (h : KA K.L σ s) (h15 : s.gpr .r1
   have hσ : bytesAt s'.mem (pa s' sigP) 32 = bytesAt s.mem (pa s sigP) 32 := L₀.keepBytes hP.b (hr (sigP, 32) (.tail _ (.head _)))
   refine ⟨h.kc.step W.toKgWfB hp hP.b hkc, by rw [L₀.keepBytes hP.b (hr (sc oG, 32) (by simp))]; exact h.rho,
     hσ.trans h.sig, by rw [L₀.keepBytes hP.b (hr (sc oSB, 32) (by simp))]; exact h.sb,
-    by rw [hP.cs .r15 (by decide)]; exact h15, fun N hN => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  rw [Top16.prfO, hP.pa rbx_cs, hb N hN, h.sig, Nat.zero_add]
+    by rw [hP.cs .r15 (by decide)]; exact h15, fun N hN h2 => ?_, fun _ h h2 => absurd h (by omega)⟩
+  have := hb (N - 2) (by omega)
+  rw [show K.oPR + 256 + 128 * (N - 2) = K.oPR + 128 * N by omega, show 2 + (N - 2) = N by omega] at this
+  rw [Top16.prfO, hP.pa rbx_cs, this, h.sig]
 
 /-- `s ‖ e`, polynomial `N`. -/
-theorem se_ok {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 6) {s : State} (h : KN K N σ s) :
+theorem se_ok {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 6) (h2 : 2 ≤ N) {s : State} (h : KN K N σ s) :
     WP isa (cbdN K A N) s (KN K (N + 1) σ) := by
   have hc := W.se N hN
   simp only [Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
   have L₀ := h.kc.lay W.toKgWfB hp
   refine WP.mono (cbd2_16At_okL hA L₀ rbx_na hc.1) fun s₁ ⟨hP₁, hp₁⟩ => ?_
-  rw [h.prf N hN, ← hP₁.pa rbx_cs] at hp₁
+  rw [h.prf N hN h2, ← hP₁.pa rbx_cs] at hp₁
   have k : ∀ r ∈ baseR ++ prR K ++ rR K N, keepB (kgB K.L) [(rP K N, 512)] r.1 r.2 = true := hr
   refine ⟨h.kc.step W.toKgWfB hp hP₁.b hkc, ?_, ?_, ?_, by rw [hP₁.cs .r15 (by decide)]; exact h.r15,
-    fun N' hN' => ?_, fun N' hN' => ?_⟩
+    fun N' hN' h2' => ?_, fun N' hN' h2' => ?_⟩
   · rw [L₀.keepBytes hP₁.b (k (sc oG, 32) (by simp))]; exact h.rho
   · rw [L₀.keepBytes hP₁.b (k (sigP, 32) (List.mem_append_left _ (List.mem_append_left _ (.tail _ (.head _)))))]; exact h.sig
   · rw [L₀.keepBytes hP₁.b (k (sc oSB, 32) (by simp))]; exact h.sb
   · rw [L₀.keepBytes hP₁.b (k (prfO K N', 128) (List.mem_append_left _ (List.mem_append_right _
-      (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))))]; exact h.prf N' hN'
+      (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))))]; exact h.prf N' hN' h2'
   · rcases (by omega : N' < N ∨ N' = N) with hN' | rfl
     · exact L₀.keepPoly16 hP₁.b (k (rP K N', 512) (List.mem_append_right _
-        (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))) (h.se N' hN')
+        (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))) (h.se N' hN' h2')
     · exact hp₁
 
-/-- The noise: the outputs of `PRF₂` and `s ‖ e`. -/
+/-- The noise but `PRF₂(σ, 0)` and `PRF₂(σ, 1)`: the outputs of `PRF₂` and
+`s ‖ e` from 2 on. -/
 theorem noise_ok (v : Sample4Impl) {s : State} (h : KA K.L σ s) (h15 : s.gpr .r15 = 1) :
-    WP isa (Top16.noise K v.callee (2 * K.L.k)) s (KN K 6 σ) := by
-  rw [W.k3]
-  unfold Top16.noise
-  refine WP.seq (WP.mono (prfs_ok W hp v h h15) fun s₀ h₀ => ?_)
-  have := seqR_ok (I := fun k => KN K k σ) 6 0 (fun k _ hk s hs => se_ok W hp v.arith (by omega) hs) s₀ h₀
-  rwa [Nat.zero_add] at this
+    WP isa (.seq (v.callee.prfs 2 4 (K.oPR + 256) (K.oW / 32)) (seqR (cbdN K v.callee.arith) 2 4)) s (KN K 6 σ) :=
+  WP.seq (WP.mono (prfs_ok W hp v h h15) fun s₀ h₀ =>
+    seqR_ok (I := fun k => KN K k σ) 4 2 (fun k hk hk' s hs => se_ok W hp v.arith (by omega) hk hs) s₀ h₀)
 
 end
-
-/-- After the transforms: `ŝ`, `ê` and `dk_PKE`. -/
-structure KT (K : Kem16) (σ s : State) : Prop where
-  kc : KC σ s
-  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK K.L σ
-  sb : bytesAt s.mem (pa s (sc oSB)) 32 = rhoK K.L σ
-  r15 : s.gpr .r15 = 1
-  sh : ∀ j < 3, PolyIs s.mem (pa s (shP j)) (KPke.kgS K.L.p (kgD σ) j)
-  eh : ∀ j < 3, PolyIs s.mem (pa s (ehP j)) (KPke.kgE K.L.p (kgD σ) j)
-  dk : bytesAt s.mem (pa s (.r13, 0)) 1152 = KPke.dkPKE K.L.p (kgD σ)
 
 theorem vecIs_get {m : Mem} {p : Addr} {f : Nat → Poly} (h : VecIs m p 3 ((List.range 3).map f)) {j : Nat}
     (hj : j < 3) : PolyIs m (p + BitVec.ofNat 64 (1024 * j)) (f j) := by
   have := h.2 j hj
   simpa [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj] using this
-
-section
-variable (W : KgH16Wf K) {σ : State} (hp : (keyGenK K.L).pre σ)
-include W hp
-
-/-- `vg_mlkem768_kpke_keygen_ntt`: `ŝ`, `ê` and `dk_PKE`. -/
-theorem ntt_ok (hK : KgRowsOk K.L) {s : State} (h : KN K 6 σ s) : WP isa (nttAt K) s (KT K σ) := by
-  have hc := W.nt
-  simp only [Bool.and_eq_true] at hc
-  obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
-  have L₀ := h.kc.lay W.toKgWfB hp
-  have k3 := W.k3
-  have red : VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k) := fun N hN => by
-    rw [sc_w16]; exact (h.se N (by omega)).1
-  rw [← k3] at hc
-  refine WP.mono (kgNttAt_okL hK L₀ rbx_na rbx_na rbx_na rbx_na hc.1 red) fun s' ⟨hP, hS, hE, hD⟩ => ?_
-  have eS : (vecAtW 16 s.mem (pa s (sc K.oR)) K.L.k).map ntt = (List.range 3).map (KPke.kgS K.L.p (kgD σ)) := by
-    rw [k3]; simp only [vecAtW, List.map_map]
-    refine List.map_congr_left fun j hj => ?_
-    simp only [Function.comp, KPke.kgS]
-    rw [sc_w16, (h.se j (by have := List.mem_range.mp hj; omega)).2]
-  have eE : (vecAtW 16 s.mem (pa s (sc K.oR) + BitVec.ofNat 64 (512 * K.L.k)) K.L.k).map ntt =
-      (List.range 3).map (KPke.kgE K.L.p (kgD σ)) := by
-    rw [k3]; simp only [vecAtW, List.map_map]
-    refine List.map_congr_left fun j hj => ?_
-    simp only [Function.comp, KPke.kgE]
-    rw [w16_off, pa_off, show K.oR + (512 * 3 + 512 * j) = K.oR + 512 * (3 + j) by omega]
-    have := (h.se (3 + j) (by have := List.mem_range.mp hj; omega)).2
-    rw [Top16.rP] at this
-    rw [this, show K.L.p.k = 3 from k3]
-  rw [eS, k3] at hS; rw [eE, k3] at hE; rw [eS, k3] at hD
-  refine ⟨h.kc.step W.toKgWfB hp hP.b (by rw [k3]; exact hkc), ?_, ?_, by rw [hP.cs .r15 (by decide)]; exact h.r15,
-    fun j hj => ?_, fun j hj => ?_, ?_⟩
-  · rw [L₀.keepBytes hP.b (by rw [k3]; exact hr (sc oG, 32) (by simp))]; exact h.rho
-  · rw [L₀.keepBytes hP.b (by rw [k3]; exact hr (sc oSB, 32) (by simp))]; exact h.sb
-  · rw [hP.pa rbx_cs, ← pa_off]; exact vecIs_get hS hj
-  · rw [hP.pa rbx_cs, ← pa_off]; exact vecIs_get hE hj
-  · rw [hP.pa r13_cs, hD, KPke.dkPKE, KPke.catK_eq, show K.L.p.k = 3 from k3]
-    simp only [encodeVec, List.flatMap_map]
-
-/-- The sponge's state zeroed: before row 0. -/
-theorem hz_ok {s : State} (h : KT K σ s) : WP isa (.block (Encaps16.hzero K)) s (KH K σ 0 0) := by
-  have hc := W.hz
-  simp only [Bool.and_eq_true] at hc
-  obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
-  have L₀ := h.kc.lay W.toKgWfB hp
-  refine WP.mono (EkF16.hzero16_ok L₀ hc.1) fun s' ⟨hP, hz⟩ => ?_
-  have k : ∀ r ∈ liveR K 0 0, keepB (kgB K.L) [(hsP K, 200)] r.1 r.2 = true := hr
-  refine ⟨h.kc.step W.toKgWfB hp hP.b hkc, ?_, ?_, fun j hj => ?_, fun j hj _ => ?_, ?_,
-    MatB16.zero _ _ _ (by rw [hP.cs .r15 (by decide)]; exact h.r15),
-    fun _ => ⟨fun _ h => absurd h (Nat.not_lt_zero _), ?_⟩⟩
-  · rw [L₀.keepBytes hP.b (k (sc oG, 32) (by simp))]; exact h.rho
-  · rw [L₀.keepBytes hP.b (k (sc oSB, 32) (by simp))]; exact h.sb
-  · exact L₀.keepPoly hP.b (k (shP j, 1024) (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
-      (List.mem_append_left _ (List.mem_append_right _ (List.mem_map.2 ⟨j, List.mem_range.2 hj, rfl⟩))))))) (h.sh j hj)
-  · exact L₀.keepPoly hP.b (k (ehP j, 1024) (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
-      (List.mem_append_right _ (List.mem_map.2 ⟨j, List.mem_range.2 (by omega), by rw [Nat.zero_add]⟩)))))) (h.eh j hj)
-  · rw [L₀.keepBytes hP.b (k ((.r13, 0), 1152) (by simp))]; exact h.dk
-  · rw [hP.pa rbx_cs, hz]; exact (HSponge.hstate_zero _).symm
-
-end
 
 end KeyGenH
 
