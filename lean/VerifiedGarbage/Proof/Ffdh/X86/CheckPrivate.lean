@@ -134,6 +134,51 @@ theorem bound_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
       · rw [k₄.slots j a b (by simp), U₃.mem, k₂.slots j a b c, m₁]
       · rw [k₄.words d a b e c, U₃.mem, k₂.words d a b e (by simp), m₁]
 
+/-- The bound, the scalar's mask and ZF telling whether x is not below the bound and positive (and,
+without q, below p). -/
+theorem boundTest_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
+    {x p qv : Nat} (h15 : sv s.mem base len .wide 15 = pm1 len p) (h13 : sv s.mem base len .wide 13 = x)
+    (h9 : sv s.mem base len .wide 9 = p) (hq : ¬ dlen = 2 * len → comp s.mem args len 2 = qv) :
+    WP isa (Prog.chain [Impl.Ffdh.X86.CheckPrivate.bound, Impl.Ffdh.X86.CheckPrivate.scalarMask,
+      Impl.Ffdh.X86.testMask] (.block [])) s fun u => Step Ex base bytes len args s u ∧
+      Kept base len [16, 17] [maskOff, accOff] s.mem u.mem ∧
+      isa.eval .e u = some (!((decide (x < (if dlen = 2 * len then pm1 len p else qv)) && decide (0 < x)) &&
+        (if dlen = 2 * len then decide (x < p) else true))) ∧
+      sv u.mem base len .wide 16 = (if dlen = 2 * len then pm1 len p else qv) := by
+  have mo : maskOff = 12 := rfl
+  have ao : accOff = 8 := rfl
+  have nb : numBase = 3336 := rfl
+  refine WP.seq (WP.mono (bound_ok h G h15 h13 h9 hq) fun u₅ ⟨S₅, B₅, W₅, k₅⟩ => ?_)
+  refine WP.seq ?_
+  unfold Impl.Ffdh.X86.CheckPrivate.scalarMask
+  refine WP.seq (WP.mono (zeroW_ok S₅.inp (a := 17) (by decide)) fun u₆ ⟨O₆, Z₆, K₆⟩ => ?_)
+  have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₅.inp (by decide) O₆ K₆
+  have k₆ := kept_slot S₅.inp (a := 17) O₆
+  refine WP.seq (WP.mono (lessW_ok S₆.inp (a := 17) (b := 13) (by decide) (by decide)) fun u₇ ⟨m₇, e₇, K₇⟩ => ?_)
+  rw [Z₆, k₆.slot_eq, k₅.slot_eq, h13] at e₇
+  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.regs S₆.inp m₇ K₇
+  refine WP.seq (WP.mono (storeMask_ok S₇.inp (d := maskOff) (by omega) e₇) fun u₈ ⟨_, O₈, W₈, _, K₈⟩ => ?_)
+  have S₈ : Step Ex base bytes len args u₇ u₈ := Step.word S₇.inp (by omega) O₈ K₈
+  have k₈ := kept_word S₇.inp (d := maskOff) (by omega) (by decide) O₈
+  refine WP.seq (WP.mono (lessW_ok S₈.inp (a := 13) (b := 16) (by decide) (by decide)) fun u₉ ⟨m₉, e₉, K₉⟩ => ?_)
+  rw [k₈.slot_eq, k₈.slot_eq, m₇, k₆.slot_eq, k₆.slot_eq, B₅, k₅.slot_eq, h13] at e₉
+  have S₉ : Step Ex base bytes len args u₈ u₉ := Step.regs S₈.inp m₉ K₉
+  have Wacc : w32 u₉.mem base accOff = (cmask (if dlen = 2 * len then decide (x < p) else true)).toNat := by
+    rw [m₉, k₈.word_eq, m₇, k₆.word_eq, W₅]
+  refine (show WP isa (.block ([.alu .and .ecx (.mem (sc maskOff))] ++ [.alu .and .ecx (.mem (sc accOff))])) u₉ _
+    from WP.block_append (WP.mono (andMask_ok S₉.inp (d := maskOff) (c' := decide (0 < x)) (by omega) e₉ (by rw [m₉]; exact W₈))
+      fun u₁₀ ⟨e₁₀, m₁₀, K₁₀⟩ => WP.mono (andMask_ok (S₉.inp.regs K₁₀ m₁₀) (d := accOff)
+        (c' := if dlen = 2 * len then decide (x < p) else true) (by omega) e₁₀
+        (by rw [m₁₀]; exact Wacc)) fun u₁₁ ⟨e₁₁, m₁₁, K₁₁⟩ => ?_))
+  have S₁₀ : Step Ex base bytes len args u₉ u₁₀ := Step.regs S₉.inp m₁₀ K₁₀
+  have S₁₁ : Step Ex base bytes len args u₁₀ u₁₁ := Step.regs S₁₀.inp m₁₁ K₁₁
+  refine WP.seq (WP.mono (testMask_ok e₁₁) fun u₁₂ ⟨z, m₁₂, K₁₂⟩ => WP.block_nil ?_)
+  have S₁₂ : Step Ex base bytes len args u₁₁ u₁₂ := Step.regs S₁₁.inp m₁₂ K₁₂
+  refine ⟨((((((S₅.trans S₆).trans S₇).trans S₈).trans S₉).trans S₁₀).trans S₁₁).trans S₁₂, ?_, z, ?_⟩
+  · rw [m₁₂, m₁₁, m₁₀, m₉]
+    exact ((k₅.mono).trans k₆.mono).trans (by rw [← m₇]; exact k₈.mono)
+  · rw [m₁₂, m₁₁, m₁₀, m₉, k₈.slot_eq, m₇, k₆.slot_eq, B₅]
+
 /-- The body up to its branch on the scalar. -/
 abbrev privFront : List (Prog isa) :=
   [Impl.Ffdh.X86.pSetup, load (.slot .wide 10) (one .wide) 4 5, load (.slot .wide 12) (one .wide) 8 9,
@@ -226,43 +271,12 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   have v12 : sv u₄.mem base len .wide 12 = y := by rw [k₄.slot_eq, V₃]
   have v14 : sv u₄.mem base len .wide 14 = 1 := by rw [k₄.slot_eq, k₃.slot_eq, k₂.slot_eq, V14]
   have v15 : sv u₄.mem base len .wide 15 = pm1 len p := by rw [k₄.slot_eq, k₃.slot_eq, k₂.slot_eq, V15]
-  -- The bound.
-  refine WP.seq (WP.mono (bound_ok S₄.inp (G.keep ⟨rfl, rfl⟩ S₁₄.keeps) v15 V₄ v9
-    (fun n2 => comp_keep h G hb40 S₁₄.frame (by omega))) fun u₅ ⟨S₅, B₅, W₅, k₅⟩ => ?_)
-  -- The scalar's mask.
-  refine WP.seq ?_
-  unfold Impl.Ffdh.X86.CheckPrivate.scalarMask
-  refine WP.seq (WP.mono (zeroW_ok S₅.inp (a := 17) (by decide)) fun u₆ ⟨O₆, Z₆, K₆⟩ => ?_)
-  have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₅.inp (by decide) O₆ K₆
-  have k₆ := kept_slot S₅.inp (a := 17) O₆
-  refine WP.seq (WP.mono (lessW_ok S₆.inp (a := 17) (b := 13) (by decide) (by decide)) fun u₇ ⟨m₇, e₇, K₇⟩ => ?_)
-  rw [Z₆, k₆.slot_eq, k₅.slot_eq, V₄] at e₇
-  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.regs S₆.inp m₇ K₇
-  refine WP.seq (WP.mono (storeMask_ok S₇.inp (d := maskOff) (by omega) e₇) fun u₈ ⟨_, O₈, W₈, _, K₈⟩ => ?_)
-  have S₈ : Step Ex base bytes len args u₇ u₈ := Step.word S₇.inp (by omega) O₈ K₈
-  have k₈ := kept_word S₇.inp (d := maskOff) (by omega) (by decide) O₈
-  refine WP.seq (WP.mono (lessW_ok S₈.inp (a := 13) (b := 16) (by decide) (by decide)) fun u₉ ⟨m₉, e₉, K₉⟩ => ?_)
-  rw [k₈.slot_eq, k₈.slot_eq, m₇, k₆.slot_eq, k₆.slot_eq, B₅, k₅.slot_eq, V₄] at e₉
-  have S₉ : Step Ex base bytes len args u₈ u₉ := Step.regs S₈.inp m₉ K₉
-  have Wacc : w32 u₉.mem base accOff = (cmask (if dlen = 2 * len then decide (x < p) else true)).toNat := by
-    rw [m₉, k₈.word_eq, m₇, k₆.word_eq, W₅]
-  refine (show WP isa (.block ([.alu .and .ecx (.mem (sc maskOff))] ++ [.alu .and .ecx (.mem (sc accOff))])) u₉ _
-    from WP.block_append (WP.mono (andMask_ok S₉.inp (d := maskOff) (c' := decide (0 < x)) (by omega) e₉ (by rw [m₉]; exact W₈))
-      fun u₁₀ ⟨e₁₀, m₁₀, K₁₀⟩ => WP.mono (andMask_ok (S₉.inp.regs K₁₀ m₁₀) (d := accOff)
-        (c' := if dlen = 2 * len then decide (x < p) else true) (by omega) e₁₀
-        (by rw [m₁₀]; exact Wacc)) fun u₁₁ ⟨e₁₁, m₁₁, K₁₁⟩ => ?_))
-  have S₁₀ : Step Ex base bytes len args u₉ u₁₀ := Step.regs S₉.inp m₁₀ K₁₀
-  have S₁₁ : Step Ex base bytes len args u₁₀ u₁₁ := Step.regs S₁₀.inp m₁₁ K₁₁
-  refine WP.seq (WP.mono (testMask_ok e₁₁) fun u₁₂ ⟨z, m₁₂, K₁₂⟩ => WP.block_nil ?_)
-  have S₁₂ : Step Ex base bytes len args u₁₁ u₁₂ := Step.regs S₁₁.inp m₁₂ K₁₂
-  have S := (((((((S₁₄.trans S₅).trans S₆).trans S₇).trans S₈).trans S₉).trans S₁₀).trans S₁₁).trans S₁₂
+  -- The bound and the scalar's test.
+  refine WP.mono (boundTest_ok S₄.inp (G.keep ⟨rfl, rfl⟩ S₁₄.keeps) v15 V₄ v9
+    (fun n2 => comp_keep h G hb40 S₁₄.frame (by omega))) fun u₁₂ ⟨S₁₂, k₁₂, z, _⟩ => ?_
+  have S := S₁₄.trans S₁₂
   have kk : ∀ {j}, 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16, 17] →
-      sv u₁₂.mem base len .wide j = sv u₄.mem base len .wide j := by
-    intro j hj
-    have h16 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16] := ⟨hj.1, hj.2.1, by simp at hj ⊢; omega⟩
-    have h17 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] := ⟨hj.1, hj.2.1, by simp at hj ⊢; omega⟩
-    have h0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨hj.1, hj.2.1, by simp⟩
-    rw [m₁₂, m₁₁, m₁₀, m₉, k₈.slot_eq h0, m₇, k₆.slot_eq h17, k₅.slot_eq h16]
+      sv u₁₂.mem base len .wide j = sv u₄.mem base len .wide j := fun hj => k₁₂.slot_eq hj
   refine ⟨S, Gate.of_eval z (scalar_iff hpa.symm hqa), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [kk (by decide), v9]
   · rw [kk (by decide), v10]
