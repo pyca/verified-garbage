@@ -226,11 +226,14 @@ def slLo : Nat := 124
 def slHi : Nat := 128
 def slG : Nat := 136
 
+/-- `r9` and `r7`: the words of the key working space and the stride, which
+the division changes. -/
+def wRegs (pLen : Nat) : List Instr := [.mov .r9 (.imm (BitVec.ofNat 32 (pLen / 4)))] ++ stride
+
 /-- `r8`, `r9` and `r7`: the key working space, its words and the stride,
 which the search keeps. -/
 def ksRegs (pLen : Nat) : List Instr :=
-  [ld .r8 fScratch, .movw .r12 (BitVec.ofNat 16 (sK pLen)), .dp .add .r8 .r8 (.reg .r12),
-    .mov .r9 (.imm (BitVec.ofNat 32 (pLen / 4)))] ++ stride
+  [ld .r8 fScratch, .movw .r12 (BitVec.ofNat 16 (sK pLen)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs pLen
 
 /-- The words into the division's header, every array zeroed and 1 set. -/
 def ksSetup : Prog isa :=
@@ -254,6 +257,7 @@ def pArith (pLen qLen e : Nat) : Prog isa := seqs [
   loadS pLen aQt sX pLen, loadS pLen aX sX pLen, loadS pLen aDv sQ qLen,
   .block (VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt),
   VG.Impl.Rsa.Arm.Div.code,
+  .block (wRegs pLen),
   sub3 aT aX aRm,
   .block (bitOf slOdd aQt), sel aS aZero aDv slOdd,
   sub3 aPm1 aT aS,

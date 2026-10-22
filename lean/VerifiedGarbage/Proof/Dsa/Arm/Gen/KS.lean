@@ -50,30 +50,35 @@ theorem SS.ws (h : SS G σ c s) : Ws (G.ksState s) G.KB (kz G.pLen) G.w nArrs :=
   refine ⟨by omega, List.mem_singleton_self _, ?_, ?_, ?_, h.r7, h.r8, h.r9⟩ <;>
     simp only [arr, S, hdr, nArrs, kz, GP.w] <;> rcases l with e | e | e <;> rw [e] <;> decide
 
-/-- Code in the key working space alone, from a state of the search. -/
-theorem SS.ksWP (h : SS G σ c s) {code : Prog isa} (hn : code.noCalls = true) {P : State → Prop}
-    (hwp : WP isa code (G.ksState s) P) {Q : State → Prop}
-    (k : ∀ t, P (G.ksState t) → t.rd = s.rd → t.wr = s.wr → Frame [G.rK] s.mem t.mem → Q t) :
-    WP isa code s Q := by
+/-- The narrowed state's regions are within the state's. -/
+theorem SS.kcov (h : SS G σ c s) : Covers (s.rd ++ [G.rK]) (s.rd ++ s.wr) ∧ Covers [G.rK] s.wr := by
   have big := h.gi.scrBig
   have inS : G.rScr ∈ s.wr := by rw [h.gi.wr, h.gi.pre.wr, h.gi.hG]; simp
   have hw : Covers [G.rK] s.wr := (Covers.of_sub (rs' := [G.rScr]) fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨G.rScr, List.mem_singleton_self _, sK G.pLen, h.gi.kaddr, by omega⟩).trans
     (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact inS)
-  refine regionModel.wp_narrow (r := s.rd) (w := [G.rK]) hwp (Covers.append (Covers.refl _) hw) hw
+  exact ⟨Covers.append (Covers.refl _) hw, hw⟩
+
+/-- Code in the key working space alone, from a state of the search. -/
+theorem SS.ksWP (h : SS G σ c s) {code : Prog isa} (hn : code.noCalls = true) {P : State → Prop}
+    (hwp : WP isa code (G.ksState s) P) {Q : State → Prop}
+    (k : ∀ t, P (G.ksState t) → t.rd = s.rd → t.wr = s.wr → Frame [G.rK] s.mem t.mem → Q t) :
+    WP isa code s Q := by
+  refine regionModel.wp_narrow (r := s.rd) (w := [G.rK]) hwp h.kcov.1 h.kcov.2
     (Code.noFrames_of_noCalls hn) (.inl hn) fun t s' _ hr hw' f p => ?_
   have hr' : s'.rd = s.rd := hr
   refine k s' ?_ hr' hw' f
   show P (s'.withRegions s'.rd _)
   rw [hr']; exact p
 
-/-- After a step in the key working space: its arrays and header words. -/
-theorem SS.of_ks (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t)
+/-- After a step in the key working space: its arrays and header words, and
+the working space's registers. -/
+theorem SS.of_ks' (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t)
     (f : Frame [G.rK] s.mem t.mem) {A : Nat → Nat} {live : List Nat} {KV : Nat → Nat} {kls : List Nat}
     (ha : Arrs t.mem G.KB G.w A live) (hl : ∀ j ∈ live, j < nArrs)
     (hk : ∀ d ∈ kls, slot t.mem G.KB d = KV d) (hko : ∀ d ∈ kls, KlsOk d)
-    (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) :
+    (e7 : t.gpr .r7 = BitVec.ofNat 32 (S G.w)) (e8 : t.gpr .r8 = G.KB) (e9 : t.gpr .r9 = BitVec.ofNat 32 G.w) :
     SS G σ { c with A := A, live := live, KV := KV, kls := kls } t := by
   have gi := h.gi
   have big := gi.scrBig
@@ -85,10 +90,18 @@ theorem SS.of_ks (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t)
     rw [gi.kaddr]
     have := h.clOk x hx
     exact gi.sdisj (.inl this) (by omega) big
-  refine ⟨gi.of_scr r (f.sub fun x hx => ?_), (r.gpr _ h7).trans h.r7, (r.gpr _ h8).trans h.r8,
-    (r.gpr _ h9).trans h.r9, h.sb.frame f kd fun x hx => ?_, h.clOk, ha, hl, hk, hko⟩
+  refine ⟨gi.of_scr r (f.sub fun x hx => ?_), e7, e8, e9, h.sb.frame f kd fun x hx => ?_, h.clOk, ha, hl, hk, hko⟩
   · rw [List.mem_singleton] at hx; subst hx; exact ⟨G.rScr, List.mem_cons_self, gi.kSub⟩
   · have := h.clOk x hx; omega
+
+/-- After a step in the key working space: its arrays and header words. -/
+theorem SS.of_ks (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t)
+    (f : Frame [G.rK] s.mem t.mem) {A : Nat → Nat} {live : List Nat} {KV : Nat → Nat} {kls : List Nat}
+    (ha : Arrs t.mem G.KB G.w A live) (hl : ∀ j ∈ live, j < nArrs)
+    (hk : ∀ d ∈ kls, slot t.mem G.KB d = KV d) (hko : ∀ d ∈ kls, KlsOk d)
+    (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) :
+    SS G σ { c with A := A, live := live, KV := KV, kls := kls } t :=
+  h.of_ks' r f ha hl hk hko ((r.gpr _ h7).trans h.r7) ((r.gpr _ h8).trans h.r8) ((r.gpr _ h9).trans h.r9)
 
 /-- An operation on the key working space (`Ws` to `Ws`, writing the arrays
 `js` and header words `ds`), from a state of the search. -/
