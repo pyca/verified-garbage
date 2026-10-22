@@ -171,13 +171,14 @@ aligned). -/
 def callWith (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.push [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]) (.call name callee) (.pop .r4 32)
 
-/-- A probable-prime test of the candidate at `sA`, with the witnesses left:
-its result into `fRes`, and the octets it read added to `fUsed` unless it ran
-out. -/
+/-- A probable-prime test of the candidate at `sA`, with the witnesses left
+(from `witnesses` itself when none is: an empty range within the tape): its
+result into `fRes`, and the octets it read added to `fUsed` unless it ran out. -/
 def test (pLen : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
   .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8))]),
   .block [ld .r4 fUsed, ld .r2 fWit, ld .r3 fWitLen],
-  .block [.dp .add .r2 .r2 (.reg .r4), .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut],
+  .block [.dp .add .r2 .r2 (.reg .r4), .addSp .r4 fUsedOut, .subs .r3 .r3 (.reg .r4)],
+  .ite .eq (.block [ld .r2 fWit]) (.block []),
   callWith name callee,
   .block (st .r0 fRes),
   .block [.cmp .r0 (.imm 0)],
