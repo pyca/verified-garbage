@@ -73,7 +73,7 @@ theorem StitchName.okP : (n : StitchName) →
 /-- The loops `p` names for a key context of `vg_aes_gcm_init_precomputed`,
 with their proof, if they read the powers of the hash subkey from it. -/
 def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, false, false, p.name.okP, q.enc, q.dec⟩
+  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, false, false, false, p.name.okP, q.enc, q.dec⟩
 
 /-- The out-of-place loops named `n` interleave counter mode and GHASH
 correctly. -/
