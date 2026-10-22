@@ -207,14 +207,18 @@ namespace CheckPrivate
 
 def args : Args := { dom := 0, dlen := 1, plen := 2, y := some 3, x := some 5, ws := 7 }
 
-/-- The scalar's bound: q, or `p − 1` without q, into slot 16. -/
+/-- The scalar's bound: q, or `p − 1` without q, into slot 16, and in the accumulator word all ones,
+or without q whether `x < p` (slot 15 holds all ones for a p of zero, whose `p − 1` is zero). -/
 def bound : Prog isa :=
-  .seq (.block qTest) (.ite .e (copy (sl 15) (sl 16) n1) (load (sl 16) n1 6 7))
+  .seq (.block qTest) (.ite .e
+    (.seq (copy (sl 15) (sl 16) n1) (.seq (lessThan (sl 13) (sl 9) n1) (.block [.store (sc accOff) .ecx])))
+    (.seq (load (sl 16) n1 6 7) (.block [.mov .ecx (.imm 0xFFFFFFFF), .store (sc accOff) .ecx])))
 
-/-- `ecx` all ones if `0 < x < bound`, else zero. -/
+/-- `ecx` all ones if `0 < x < bound` (and the accumulator word is all ones), else zero. -/
 def scalarMask : Prog isa :=
   .seq (zero (sl 17) n1) <| .seq (lessThan (sl 17) (sl 13) n1) <| .seq (.block [.store (sc maskOff) .ecx]) <|
-  .seq (lessThan (sl 13) (sl 16) n1) (.block [.alu .and .ecx (.mem (sc maskOff))])
+  .seq (lessThan (sl 13) (sl 16) n1)
+    (.block [.alu .and .ecx (.mem (sc maskOff)), .alu .and .ecx (.mem (sc accOff))])
 
 /-- `1 < y < p − 1` and `g^x mod p = y`; a power of the checked generator is in its subgroup. -/
 def pair : Prog isa :=
