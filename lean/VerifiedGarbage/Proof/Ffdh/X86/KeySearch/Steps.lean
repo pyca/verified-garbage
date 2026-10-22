@@ -51,6 +51,13 @@ theorem St.fupd {o s t : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St 
   ⟨h.abi, F.rd.trans h.rd, F.wr.trans h.wr, by rw [F.gpr, h.esp], by rw [F.gpr, h.esi],
     fun q hq hne => by rw [F.gpr, h.saved q hq hne], F.mem ▸ h.frame, F.mem ▸ h.words⟩
 
+theorem Live.st {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o used keys scalars s) :
+    St o liveDs (liveF p (o.gpr .esi) used keys scalars) s := by
+  obtain ⟨A, rfl⟩ := h.input
+  exact ⟨A, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words⟩
+
+theorem liveDs_aligned : Aligned liveDs := by decide
+
 /-- The state's words are readable and writable. -/
 theorem St.wIn {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) {d : Nat} (hd : d + 4 ≤ 128) :
     InRegions s.wr (addr (arg o 12) d) 4 := by

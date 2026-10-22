@@ -18,13 +18,6 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Impl.Mont.X86 VG.Spec.Ffdh
 open VG.Impl.Ffdh.X86.KeySearch
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem Live.st {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o used keys scalars s) :
-    St o liveDs (liveF p (o.gpr .esi) used keys scalars) s := by
-  obtain ⟨A, rfl⟩ := h.input
-  exact ⟨A, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words⟩
-
-theorem liveDs_aligned : Aligned liveDs := by decide
-
 /-- A run's state, with the words a finished search leaves. -/
 theorem St.done {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) {r : KeySearchResult}
     (hs : ∀ d ∈ doneDs, d ∈ ds) (he : ∀ d ∈ doneDs, f d = doneF (ofState o) (o.gpr .esi) r d)

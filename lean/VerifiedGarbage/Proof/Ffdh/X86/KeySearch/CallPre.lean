@@ -66,18 +66,23 @@ theorem win_sub {o : State} (A : KeySearchABI o) {used : Nat} (hu : used + (arg 
     Region.Sub (winR o used) (rR o) := by
   rw [winR, win_base A hu]; exact Offset.sub_base _ hu
 
+/-- The callee's stack pointer on its entry. -/
+theorem esp_sub4 {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
+    t.gpr .esp - 4 = o.gpr .esp - BitVec.ofNat 32 48 := by
+  have h1 : 164 ≤ (o.gpr .esp).toNat := A.stackLow
+  rw [he]; apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, argsBytes]
+  have := (o.gpr .esp).isLt
+  show (2 ^ 32 - 4 % 2 ^ 32 + (2 ^ 32 - 44 % 2 ^ 32 + (o.gpr .esp).toNat) % 2 ^ 32) % 2 ^ 32 = _
+  omega
+
 theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (arg o 7).toNat ≤ (arg o 9).toNat)
     (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) (ha : ArgsAt o used 11 t.mem) :
     (Spec.Ffdh.generateKeyContract abi Proof.Ffdh.X86.stack).pre
       (t.callEntry.withRegions (callRd o used) (callWr o)) := by
   have h1 : 164 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
-  have hs4 : t.gpr .esp - 4 = o.gpr .esp - BitVec.ofNat 32 48 := by
-    rw [he]; apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, argsBytes]
-    have := (o.gpr .esp).isLt
-    show (2 ^ 32 - 4 % 2 ^ 32 + (2 ^ 32 - 44 % 2 ^ 32 + (o.gpr .esp).toNat) % 2 ^ 32) % 2 ^ 32 = _
-    omega
+  have hs4 := esp_sub4 A he
   have hs4n : (o.gpr .esp - BitVec.ofNat 32 48).toNat = (o.gpr .esp).toNat - 48 := VG.X86.sub_toNat (by omega)
   have ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 120 := by
     rw [argAddr_withRegions, argAddr_callEntry, show 4 * 0 = 0 from rfl, BitVec.add_zero, he,
