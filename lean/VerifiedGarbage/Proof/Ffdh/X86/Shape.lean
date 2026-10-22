@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 import VerifiedGarbage.Proof.Rsa.X86.RtShape
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # FFDH on i686: no instruction writes `esp` -/
 

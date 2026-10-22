@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.Dom
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
+import VerifiedGarbage.Proof.Ffdh.X86.Stages
+public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 
 /-!
 # FFDH on i686: what the checks read

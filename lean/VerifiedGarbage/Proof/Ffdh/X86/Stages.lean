@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
 
 /-!
 # FFDH on i686: the stages on the wide slots

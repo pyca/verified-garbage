@@ -7,6 +7,10 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
+meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 
 /-!
 # `vg_ffdh_check_public` on i686 in time that depends on the domain and y only

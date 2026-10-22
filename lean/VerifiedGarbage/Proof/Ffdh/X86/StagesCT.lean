@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Impl.Ffdh.X86.Domain
-import VerifiedGarbage.Proof.Framework.RelCTChain
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 
 /-!
 # FFDH on i686: the traces of the stages

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 
 /-!
 # FFDH on i686: the operations on the wide slots

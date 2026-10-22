@@ -1,13 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeTop
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.ExchangeTop
 meta import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ffdh.X86.Stages
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivate
+public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 
 /-!
 # `vg_ffdh_exchange` on i686 in constant time

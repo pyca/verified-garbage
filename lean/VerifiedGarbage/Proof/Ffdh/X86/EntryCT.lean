@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
-public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Bignum.X86.CrtEntryTiming
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # FFDH on i686: the trace of the entry and the return

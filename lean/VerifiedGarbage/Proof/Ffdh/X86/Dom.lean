@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Stages
-public import VerifiedGarbage.Proof.Ffdh.Domain
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Ffdh.X86.Stages
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+public import VerifiedGarbage.Impl.Ffdh.X86.Domain
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Ffdh.Contract
 
 /-!
 # FFDH on i686: the domain's components

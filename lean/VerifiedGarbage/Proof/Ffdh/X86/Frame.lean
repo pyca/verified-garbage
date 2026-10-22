@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Rsa
 
 /-!
 # FFDH on i686: the frame of the synthetic arguments

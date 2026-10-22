@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivate
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+public import VerifiedGarbage.Proof.Ffdh.X86.Ops
+public import VerifiedGarbage.Proof.Ffdh.X86.Stages
+public import VerifiedGarbage.Proof.Framework.RelCTChain
 
 /-!
 # `vg_ffdh_exchange` on i686: the shared value

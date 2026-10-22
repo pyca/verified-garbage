@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicCT
+import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.Sig
+public import Mathlib.Tactic.ToAdditive
+public import VerifiedGarbage.Impl.Ffdh.X86.Domain
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Proof.Ffdh.X86.ABI
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # `vg_ffdh_check_public` on i686 against its contract -/
 

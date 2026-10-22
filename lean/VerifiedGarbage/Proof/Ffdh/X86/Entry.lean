@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.Frame
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.ABI
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSave
+import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
@@ -13,6 +13,10 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-!
 # FFDH on i686: entry and return around the frame of the synthetic arguments

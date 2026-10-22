@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
+meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 
 /-!
 # `vg_ffdh_check_private` on i686 in time that depends on the domain, y and the status only

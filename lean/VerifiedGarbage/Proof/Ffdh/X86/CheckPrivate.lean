@@ -1,10 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublic
-public import VerifiedGarbage.Proof.Ffdh.Power
+import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.Ops
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
+public import VerifiedGarbage.Proof.Ffdh.X86.Stages
+public import VerifiedGarbage.Proof.Framework.RelCTChain
+public import VerifiedGarbage.Spec.Ffdh
 
 /-!
 # `vg_ffdh_check_private` on i686: the checks

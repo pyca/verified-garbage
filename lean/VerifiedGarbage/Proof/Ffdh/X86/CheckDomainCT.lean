@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainTop
-public import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainTop
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
@@ -9,6 +9,12 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
+import VerifiedGarbage.Proof.Ffdh.X86.Checks
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
+meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 
 /-!
 # `vg_ffdh_check_domain` on i686 in time that depends on the domain only
