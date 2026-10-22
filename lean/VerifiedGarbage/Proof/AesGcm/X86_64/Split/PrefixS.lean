@@ -41,29 +41,45 @@ open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
-/-- `a - 1 < 3` unsigned: `1 ≤ a ≤ 3`. -/
-theorem pred_lt_three {a : Nat} (ha : a < 2 ^ 64) :
-    (BitVec.ofNat 64 a - 1#64).toNat < 3 ↔ 1 ≤ a ∧ a ≤ 3 := by
+/-- `a - 16 < 48` unsigned: one to three whole blocks. -/
+theorem sub16_lt48 {a : Nat} (ha : a < 2 ^ 64) :
+    (BitVec.ofNat 64 a - 16#64).toNat < 48 ↔ 1 ≤ a / 16 ∧ a / 16 ≤ 3 := by
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha]
   omega
+
+/-- The texts `sTest` takes hold one to three whole blocks. -/
+theorem sLim_sound {a : Nat} (ha : a < 2 ^ 64) (h : (BitVec.ofNat 64 a - 16#64).toNat < SealSplit.sLim) :
+    1 ≤ a / 16 ∧ a / 16 ≤ 3 :=
+  (sub16_lt48 ha).mp (Nat.lt_of_lt_of_le h (by decide))
+
+/-- `16 q`, by a shift. -/
+theorem shl4_ofNat (q : Nat) : BitVec.ofNat 64 q <<< 4 = BitVec.ofNat 64 (16 * q) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega
+
+/-- An address `k` bytes before `p + a`. -/
+theorem add_ofInt_back (p : Addr) {a k : Nat} (h : k ≤ a) :
+    p + BitVec.ofNat 64 a + BitVec.ofInt 64 (-(k : Int)) = p + BitVec.ofNat 64 (a - k) := by
+  rw [BitVec.ofInt_neg, BitVec.ofInt_natCast]; bv_omega
 
 section
 variable {Ctx W SP : Addr}
 
 /-- `CF` if `src` holds one to three whole blocks. -/
-theorem sTest_ok {sl : Nat} (hsl : sl < 2 ^ 64) {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+theorem sTest_ok {sl : Nat} {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
     (hslot : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 sl) :
-    WP isa (.block SealSplit.sTest) s fun t => t.cf = some (decide (1 ≤ sl / 16 ∧ sl / 16 ≤ 3)) ∧
+    WP isa (.block SealSplit.sTest) s fun t =>
+      t.cf = some (decide ((BitVec.ofNat 64 sl - 16#64).toNat < SealSplit.sLim)) ∧
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have q₁ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
-  have h₁ := Gather.shr_ofNat sl 4 hsl
-  have i1 := imm_eq (n := 1) (by decide)
-  have i3 := imm_eq (n := 3) (by decide)
+  have i16 := imm_eq (n := 16) (by decide)
+  have iL := imm_eq (n := SealSplit.sLim) (by decide)
   unfold SealSplit.sTest
   apply WP.of_runBlock
-  refine ⟨_, by xrun [he.r15, q₁, hslot, h₁, i1, i3], ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨_, by xrun [he.r15, q₁, hslot, i16, iL], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [cf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, reduceCtorEq, ↓reduceIte,
-      Nat.reducePow, BitVec.toNat_ofNat, Nat.reduceMod, pred_lt_three (show sl / 16 < 2 ^ 64 by omega)]
+      Nat.reducePow, BitVec.toNat_ofNat, Nat.reduceMod, Nat.mod_eq_of_lt (show SealSplit.sLim < 2 ^ 64 by decide)]
   · intro r ha; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, ha]
   all_goals simp [mem_arithFlags, mem_setReg, mem_setFlags, rd_arithFlags, rd_setReg, rd_setFlags, wr_arithFlags,
     wr_setReg, wr_setFlags]
@@ -93,7 +109,8 @@ theorem sCtrArgs_ok {R : Nat} {D : Addr} {sl : Nat} (hsl : sl < 2 ^ 64) {s : Sta
     (hslot : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 sl) :
     WP isa (.block SealSplit.sCtrArgs) s fun t => t.gpr .rdi = Ctx ∧ t.gpr .rsi = BitVec.ofNat 64 R ∧
       t.gpr .rdx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48 ∧ t.gpr .rcx = D ∧
-      t.gpr .r8 = BitVec.ofNat 64 (sl / 16) ∧ t.gpr .r9 = W + BitVec.ofNat 64 512 ∧ t.gpr .rbx = D ∧
+      t.gpr .r8 = BitVec.ofNat 64 (sl / 16) ∧ t.gpr .r9 = W + BitVec.ofNat 64 512 ∧
+      t.gpr .rbx = D + BitVec.ofNat 64 (16 * (sl / 16)) ∧
       t.gpr .rbp = BitVec.ofNat 64 (sl / 16) ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have q₁ := he.perm.wR (show 176 + 8 ≤ 2560 by decide)
@@ -110,7 +127,8 @@ theorem sCtrArgs_ok {R : Nat} {D : Addr} {sl : Nat} (hsl : sl < 2 ^ 64) {s : Sta
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, hdat]
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁]
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, he.r15, imm_eq, scrO]
-  · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, hdat]
+  · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, hdat, h₁, shl4_ofNat (sl / 16),
+      BitVec.add_comm]
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁]
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -138,50 +156,63 @@ theorem ld128_ok (x : XReg) (b : Reg) (d : Nat) (s : State)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [hr, ite_false]
 
-/-- A step after the first: block `i` at `rbx`, times the power at `r13 + powOff (k - i)`. -/
-theorem sStep_ok (k i : Nat) (hi : i ≠ 0) (s : State) (x0 : s.xmm .xmm0 = revMask)
-    (hX : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofInt 64 ((16 * i : Nat) : Int)) 16)
-    (hP : InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff (k - i) : Nat) : Int)) 16) :
-    WP isa (.block (SealSplit.sGhStep k i)) s fun t =>
-      prod t = (prod s).acc (blockAt s.mem (s.gpr .rbx + BitVec.ofInt 64 ((16 * i : Nat) : Int)))
-        (s.mem.readW (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff (k - i) : Nat) : Int)) 128) ∧
-      Only [.xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] s t := by
-  simp only [SealSplit.sGhStep, hi, ↓reduceIte, List.nil_append, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok .xmm7 .rbx (16 * i) s (by decide) x0 hX) fun s₁ ⟨l₁, o₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (ld128_ok .xmm6 .r13 _ s₁ (by rw [o₁.rd, o₁.wr, o₁.gpr _ (by decide)]; exact hP)) fun s₂ ⟨l₂, o₂⟩ => ?_
-  refine WP.mono (acc_ok .xmm7 .xmm6 s₂ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide)) fun t ⟨p, o⟩ => ⟨?_, ((o₁.trans o₂).trans o).weaken fun r hr => by
-      revert hr; cases r <;> decide⟩
-  rw [p, o₂.prod (by decide) (by decide) (by decide), o₁.prod (by decide) (by decide) (by decide),
-    o₂.xmm _ (by decide), l₁, l₂, o₁.mem, o₁.gpr _ (by decide)]
+/-- `movdqu x, [b + d]; pshufb x, xmm0`, for any displacement. -/
+theorem ldrevI_ok (x : XReg) (b : Reg) (d : Int) (s : State) (hx : x ≠ .xmm0) (h0 : s.xmm .xmm0 = revMask)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofInt 64 d) 16) :
+    WP isa (.block [.movdquLoad x { base := b, disp := d }, .xop (.bin .pshufb x .xmm0)]) s fun s' =>
+      s'.xmm x = blockAt s.mem (s.gpr b + BitVec.ofInt 64 d) ∧ Only [x] s s' := by
+  have e : ∀ t : State, t.ea { base := b, disp := d } = t.gpr b + BitVec.ofInt 64 d := fun _ => rfl
+  apply WP.of_runBlock
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, State.load128, e, hin, Ne.symm hx, h0, VG.Proof.Gcm.X86_64.Pclmul.rev_eq,
+    Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  · rw [VG.Proof.Gcm.X86_64.blockAt_eq]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [hr, ite_false]
 
-/-- The first step: block 0 at `rbx`, `Y` (in `xmm12`) added, times the power
-at `r13 + powOff k`. -/
-theorem sStep0_ok (k : Nat) (s : State) (x0 : s.xmm .xmm0 = revMask)
-    (hX : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofInt 64 ((16 * 0 : Nat) : Int)) 16)
-    (hP : InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff (k - 0) : Nat) : Int)) 16) :
-    WP isa (.block (SealSplit.sGhStep k 0)) s fun t =>
-      prod t = (prod s).acc (blockAt s.mem (s.gpr .rbx + BitVec.ofInt 64 ((16 * 0 : Nat) : Int)) ^^^ s.xmm .xmm12)
-        (s.mem.readW (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff (k - 0) : Nat) : Int)) 128) ∧
-      Only [.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] s t := by
-  simp only [SealSplit.sGhStep, ↓reduceIte, List.append_assoc]
+/-- `pxor xmm12, xmm12`. -/
+theorem clr12_ok (s : State) :
+    WP isa (.block [.xop (.bin .pxor .xmm12 .xmm12)]) s fun s' => s'.xmm .xmm12 = 0 ∧ Only [.xmm12] s s' := by
+  apply WP.of_runBlock
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, VG.Proof.Gcm.X86_64.Pclmul.eval_pxor, BitVec.xor_self, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [hr, ite_false]
+
+/-- The registers a step writes. -/
+abbrev stepRegs : List XReg := [.xmm7, .xmm12, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11]
+
+/-- A step: the block `16 j` bytes before `rbx`, with `xmm12` added, times
+the power at `r13 + powOff j`, added to the product, and `xmm12` cleared. -/
+theorem sStep_ok (j : Nat) (s : State) (x0 : s.xmm .xmm0 = revMask)
+    (hX : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofInt 64 (-(16 * j : Int))) 16)
+    (hP : InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int)) 16) :
+    WP isa (.block (SealSplit.sGhStep j)) s fun t =>
+      prod t = (prod s).acc (blockAt s.mem (s.gpr .rbx + BitVec.ofInt 64 (-(16 * j : Int))) ^^^ s.xmm .xmm12)
+        (s.mem.readW (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int)) 128) ∧
+      t.xmm .xmm12 = 0 ∧ Only stepRegs s t := by
+  rw [show SealSplit.sGhStep j = [.movdquLoad .xmm7 { base := .rbx, disp := -(16 * j : Int) },
+      .xop (.bin .pshufb .xmm7 .xmm0)] ++ ([.xop (.bin .pxor .xmm7 .xmm12)] ++ ([.xop (.bin .pxor .xmm12 .xmm12)] ++
+      ([.movdquLoad .xmm6 (Impl.Gcm.X86_64.Pclmul.at_ .r13 (SealSplit.powOff j))] ++
+      Impl.Gcm.X86_64.Pclmul.acc .xmm7 .xmm6))) from rfl]
   rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok .xmm7 .rbx (16 * 0) s (by decide) x0 hX) fun s₁ ⟨l₁, o₁⟩ => ?_
+  refine WP.mono (ldrevI_ok .xmm7 .rbx _ s (by decide) x0 hX) fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (pxor712_ok s₁) fun s₂ ⟨l₂, o₂⟩ => ?_
   rw [WP.block_append_iff]
-  have hP₂ : InRegions (s₂.rd ++ s₂.wr)
-      (s₂.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff (k - 0) : Nat) : Int)) 16 := by
-    rw [o₂.rd, o₂.wr, o₂.gpr _ (by decide), o₁.rd, o₁.wr, o₁.gpr _ (by decide)]; exact hP
-  refine WP.mono (ld128_ok .xmm6 .r13 _ s₂ hP₂) fun s₃ ⟨l₃, o₃⟩ => ?_
-  refine WP.mono (acc_ok .xmm7 .xmm6 s₃ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide)) fun t ⟨p, o⟩ => ⟨?_, (((o₁.trans o₂).trans o₃).trans o).weaken fun r hr => by
+  refine WP.mono (clr12_ok s₂) fun s₃ ⟨l₃, o₃⟩ => ?_
+  rw [WP.block_append_iff]
+  have O := (o₁.trans o₂).trans o₃
+  refine WP.mono (ld128_ok .xmm6 .r13 _ s₃ (by rw [O.rd, O.wr, O.gpr _ (by decide)]; exact hP)) fun s₄ ⟨l₄, o₄⟩ => ?_
+  refine WP.mono (acc_ok .xmm7 .xmm6 s₄ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun t ⟨p, o⟩ => ⟨?_, ?_, ((O.trans o₄).trans o).weaken fun r hr => by
       revert hr; cases r <;> decide⟩
-  rw [p, o₃.prod (by decide) (by decide) (by decide), o₂.prod (by decide) (by decide) (by decide),
-    o₁.prod (by decide) (by decide) (by decide), o₃.xmm _ (by decide), l₂, l₁, l₃, o₂.mem, o₁.mem,
-    o₂.gpr _ (by decide), o₁.gpr _ (by decide), o₁.xmm _ (by decide)]
+  · rw [p, o₄.prod (by decide) (by decide) (by decide), o₃.prod (by decide) (by decide) (by decide),
+      o₂.prod (by decide) (by decide) (by decide), o₁.prod (by decide) (by decide) (by decide),
+      o₄.xmm _ (by decide), o₃.xmm _ (by decide), l₂, l₁, l₄, O.mem, O.gpr _ (by decide), o₁.xmm _ (by decide)]
+  · rw [o.xmm _ (by decide), o₄.xmm _ (by decide), l₃]
 
 section
 variable {Ctx St W SP : Addr}
@@ -204,132 +235,66 @@ theorem sProd_ghash (hF : ShortFacts) (H Y : Block) {X : List Block} (hX : X.len
   | [X₀, X₁], _ => simp only [sProd]; rw [BitVec.xor_comm]; exact hF.pp2 H Y X₀ X₁
   | [X₀, X₁, X₂], _ => simp only [sProd]; rw [BitVec.xor_comm]; exact hF.pp3 H Y X₀ X₁ X₂
 
-/-- The steps of `sGhK k`, from a cleared product: `sProd` of the `k` blocks at
-`rbx` and the powers at `r13`. -/
-theorem sSteps_ok {k : Nat} (hk : k = 1 ∨ k = 2 ∨ k = 3) {D : Addr} (u : State) (x0 : u.xmm .xmm0 = revMask)
-    (hbx : u.gpr .rbx = D) (hz : prod u = VG.Proof.Gcm.X86_64.Pclmul.Prod.zero)
-    (hX : ∀ i < k, InRegions (u.rd ++ u.wr) (D + BitVec.ofNat 64 (16 * i)) 16)
-    (hP : ∀ j, 1 ≤ j → j ≤ 3 → InRegions (u.rd ++ u.wr) (u.gpr .r13 + BitVec.ofNat 64 (SealSplit.powOff j)) 16) :
-    WP isa (.block ((List.range k).flatMap (SealSplit.sGhStep k))) u fun t =>
-      prod t = sProd (u.xmm .xmm12) (blocksAt u.mem D k)
-        (fun j => u.mem.readW (u.gpr .r13 + BitVec.ofNat 64 (SealSplit.powOff j)) 128) ∧
-      Only [.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] u t := by
-  have eX : ∀ i, u.gpr .rbx + BitVec.ofInt 64 ((16 * i : Nat) : Int) = D + BitVec.ofNat 64 (16 * i) := fun i => by
-    rw [hbx, BitVec.ofInt_natCast]
-  have eP : ∀ j, u.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int) =
-      u.gpr .r13 + BitVec.ofNat 64 (SealSplit.powOff j) := fun j => by rw [BitVec.ofInt_natCast]
-  have W : ∀ {a b : List XReg}, (∀ r ∈ a, r ∈ [.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11]) →
-      (∀ r ∈ b, r ∈ [.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11]) →
-      ∀ r ∈ a ++ b, r ∈ [XReg.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] := fun ha hb r hr => by
-    rcases List.mem_append.mp hr with h | h; exacts [ha r h, hb r h]
-  have S6 : ∀ r ∈ [XReg.xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11],
-      r ∈ [XReg.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] := by decide
-  have S7 : ∀ r ∈ [XReg.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11],
-      r ∈ [XReg.xmm7, .xmm7, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] := fun _ h => h
-  rcases hk with rfl | rfl | rfl
-  · show WP isa (.block (SealSplit.sGhStep 1 0 ++ [])) u _
-    rw [List.append_nil]
-    refine WP.mono (sStep0_ok 1 u x0 (by rw [eX]; exact hX 0 (by decide)) (by rw [eP]; exact hP 1 (by decide) (by decide)))
-      fun t ⟨p, o⟩ => ⟨?_, o⟩
-    rw [p, hz, eX, eP]; rfl
-  · show WP isa (.block (SealSplit.sGhStep 2 0 ++ (SealSplit.sGhStep 2 1 ++ []))) u _
-    rw [List.append_nil, WP.block_append_iff]
-    refine WP.mono (sStep0_ok 2 u x0 (by rw [eX]; exact hX 0 (by decide)) (by rw [eP]; exact hP 2 (by decide) (by decide)))
-      fun t₁ ⟨p₁, o₁⟩ => ?_
-    have c₁ : t₁.gpr .rbx = u.gpr .rbx := o₁.gpr _ (by decide)
-    have d₁ : t₁.gpr .r13 = u.gpr .r13 := o₁.gpr _ (by decide)
-    refine WP.mono (sStep_ok 2 1 (by decide) t₁ (by rw [o₁.xmm _ (by decide), x0])
-      (by rw [o₁.rd, o₁.wr, c₁, eX]; exact hX 1 (by decide)) (by rw [o₁.rd, o₁.wr, d₁, eP]; exact hP 1 (by decide) (by decide)))
-      fun t ⟨p, o⟩ => ⟨?_, (o₁.trans o).weaken (W S7 S6)⟩
-    rw [p, p₁, hz, c₁, d₁, o₁.mem, eX, eX, eP, eP]; rfl
-  · show WP isa (.block (SealSplit.sGhStep 3 0 ++ (SealSplit.sGhStep 3 1 ++ (SealSplit.sGhStep 3 2 ++ [])))) u _
-    rw [List.append_nil, WP.block_append_iff]
-    refine WP.mono (sStep0_ok 3 u x0 (by rw [eX]; exact hX 0 (by decide)) (by rw [eP]; exact hP 3 (by decide) (by decide)))
-      fun t₁ ⟨p₁, o₁⟩ => ?_
-    have c₁ : t₁.gpr .rbx = u.gpr .rbx := o₁.gpr _ (by decide)
-    have d₁ : t₁.gpr .r13 = u.gpr .r13 := o₁.gpr _ (by decide)
-    rw [WP.block_append_iff]
-    refine WP.mono (sStep_ok 3 1 (by decide) t₁ (by rw [o₁.xmm _ (by decide), x0])
-      (by rw [o₁.rd, o₁.wr, c₁, eX]; exact hX 1 (by decide)) (by rw [o₁.rd, o₁.wr, d₁, eP]; exact hP 2 (by decide) (by decide)))
-      fun t₂ ⟨p₂, o₂⟩ => ?_
-    have O := o₁.trans o₂
-    have c₂ : t₂.gpr .rbx = u.gpr .rbx := O.gpr _ (by decide)
-    have d₂ : t₂.gpr .r13 = u.gpr .r13 := O.gpr _ (by decide)
-    refine WP.mono (sStep_ok 3 2 (by decide) t₂ (by rw [O.xmm _ (by decide), x0])
-      (by rw [O.rd, O.wr, c₂, eX]; exact hX 2 (by decide)) (by rw [O.rd, O.wr, d₂, eP]; exact hP 1 (by decide) (by decide)))
-      fun t ⟨p, o⟩ => ⟨?_, (O.trans o).weaken (W (W S7 S6) S6)⟩
-    rw [p, p₂, p₁, hz, c₂, d₂, c₁, d₁, O.mem, o₁.mem, eX, eX, eX, eP, eP, eP]; rfl
-
-/-- `sGhK k`: the `k` blocks at `rbx` absorbed into `Y` at `St + 16` with
-the powers of the context, reduced once. -/
-theorem sGhK_ok {k : Nat} (hk : k = 1 ∨ k = 2 ∨ k = 3) {Ctx St D : Addr} (u : State) (h13 : u.gpr .r13 = Ctx)
-    (h14 : u.gpr .r14 = St) (hbx : u.gpr .rbx = D)
-    (inY : InRegions (u.rd ++ u.wr) (St + BitVec.ofNat 64 16) 16) (outY : InRegions u.wr (St + BitVec.ofNat 64 16) 16)
-    (hX : ∀ i < k, InRegions (u.rd ++ u.wr) (D + BitVec.ofNat 64 (16 * i)) 16)
-    (hP : ∀ j, 1 ≤ j → j ≤ 3 → InRegions (u.rd ++ u.wr) (Ctx + BitVec.ofNat 64 (SealSplit.powOff j)) 16) :
-    WP isa (.block (SealSplit.sGhK k)) u fun t =>
-      blockAt t.mem (St + BitVec.ofNat 64 16) = VG.Proof.Gcm.X86_64.Pclmul.reduce
-        (sProd (blockAt u.mem (St + BitVec.ofNat 64 16)) (blocksAt u.mem D k)
-          (fun j => u.mem.readW (Ctx + BitVec.ofNat 64 (SealSplit.powOff j)) 128)) ∧
-      Frame [⟨St + BitVec.ofNat 64 16, 16⟩] u.mem t.mem ∧
-      (∀ r, r ≠ .rax → t.gpr r = u.gpr r) ∧ t.rd = u.rd ∧ t.wr = u.wr := by
-  simp only [SealSplit.sGhK, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm0 _ u (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm1 _ s₁ (by decide)) fun s₃ ⟨c₂, o₂⟩ => ?_
-  have O₂ := o₁.trans o₂
-  rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok .xmm12 .r14 16 s₃ (by decide)
-    (by rw [o₂.xmm _ (by decide), c₁, VG.Proof.Gcm.X86_64.Pclmul.rev_eq])
-    (by rw [O₂.rd, O₂.wr, O₂.gpr _ (by decide), h14, BitVec.ofInt_natCast]; exact inY))
-    fun s₄ ⟨l₄, o₄⟩ => ?_
-  rw [O₂.gpr _ (by decide), h14, BitVec.ofInt_natCast, O₂.mem] at l₄
-  rw [WP.block_append_iff]
-  refine WP.mono (zero_ok s₄) fun s₅ ⟨p₅, o₅⟩ => ?_
-  have o₄₅ := O₂.trans (o₄.trans o₅)
-  have rd₅ : s₅.rd = u.rd := o₄₅.rd
-  have wr₅ : s₅.wr = u.wr := o₄₅.wr
-  have mm₅ : s₅.mem = u.mem := o₄₅.mem
-  have d₅ : s₅.gpr .r13 = Ctx := by rw [o₄₅.gpr _ (by decide), h13]
-  rw [WP.block_append_iff]
-  refine WP.mono (sSteps_ok hk (D := D) s₅ (by rw [(o₄.trans o₅).xmm _ (by decide), o₂.xmm _ (by decide), c₁])
-    (by rw [o₄₅.gpr _ (by decide), hbx]) p₅
-    (fun i hi => by rw [rd₅, wr₅]; exact hX i hi) (fun j h₁ h₂ => by rw [rd₅, wr₅, d₅]; exact hP j h₁ h₂))
-    fun s₆ ⟨p₆, o₆⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (reduce_ok .xmm2 s₆ (by decide) (by decide) (by decide) (by decide)
-    (by rw [o₆.xmm _ (by decide), (o₄.trans o₅).xmm _ (by decide), c₂])) fun s₇ ⟨r₇, o₇⟩ => ?_
-  have o₆₇ := o₆.trans o₇
-  refine WP.mono (Fast.strev_ok .xmm2 .r14 16 s₇ (by decide)
-    (by rw [o₆₇.xmm _ (by decide), (o₄.trans o₅).xmm _ (by decide), o₂.xmm _ (by decide), c₁,
-      VG.Proof.Gcm.X86_64.Pclmul.rev_eq])
-    (by rw [o₆₇.wr, wr₅, o₆₇.gpr _ (by decide), o₄₅.gpr _ (by decide), h14, BitVec.ofInt_natCast]; exact outY))
-    fun t ⟨m₈, b₈, g₈, rd₈, wr₈, _⟩ => ?_
-  rw [o₆₇.gpr _ (by decide), o₄₅.gpr _ (by decide), h14, BitVec.ofInt_natCast] at m₈ b₈
-  have y12 : s₅.xmm .xmm12 = blockAt u.mem (St + BitVec.ofNat 64 16) := by
-    rw [o₅.xmm _ (by decide), l₄]
-  refine ⟨by rw [b₈, r₇, p₆, y12, mm₅, d₅], ?_, fun r a => by rw [g₈, o₆₇.gpr r a, o₄₅.gpr r a],
-    by rw [rd₈, o₆₇.rd, rd₅], by rw [wr₈, o₆₇.wr, wr₅]⟩
-  rw [m₈, o₆₇.mem, mm₅]
-  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-
 /-- `cmp rbp, m`: `CF` if `rbp`, the number of whole blocks, is below `m`. -/
 theorem sCmp_ok {q m : Nat} (hq : q < 2 ^ 64) (hm : m < 2 ^ 31) (s : State) (hbp : s.gpr .rbp = BitVec.ofNat 64 q) :
     WP isa (.block [.alu .cmp .rbp (imm m)]) s fun t =>
-      t.cf = some (decide (q < m)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+      t.cf = some (decide (q < m)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+        t.xmm = s.xmm := by
   have im := imm_eq (n := m) hm
   apply WP.of_runBlock
-  refine ⟨_, by xrun [hbp, im], ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨_, by xrun [hbp, im], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [cf_arithFlags, ite_true, reduceCtorEq, ↓reduceIte,
       Nat.reducePow, BitVec.toNat_ofNat, Nat.reduceMod, Nat.mod_eq_of_lt hq, Nat.mod_eq_of_lt (show m < 2 ^ 64 by omega)]
   · funext r; simp [gpr_arithFlags]
-  all_goals simp [mem_arithFlags, rd_arithFlags, wr_arithFlags]
+  all_goals simp [mem_arithFlags, rd_arithFlags, wr_arithFlags, xmm_arithFlags]
 
-/-- `sGh`: the `⌊sl / 16⌋` blocks at `rbx` (one to three, in `rbp`) absorbed
-into `Y` at `St + 16` at once. -/
+/-- `cmp rbp, m` and the step for `H'ʲ` if `rbp` is not below `m`. -/
+theorem sOpt_ok (j m : Nat) {q : Nat} (hq : q < 2 ^ 64) (hm : m < 2 ^ 31) (s : State)
+    (hbp : s.gpr .rbp = BitVec.ofNat 64 q) (x0 : s.xmm .xmm0 = revMask)
+    (hX : ¬ q < m → InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofInt 64 (-(16 * j : Int))) 16)
+    (hP : InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int)) 16) :
+    WP isa (.seq (.block [.alu .cmp .rbp (imm m)]) (.ite .b (.block []) (.block (SealSplit.sGhStep j)))) s fun t =>
+      (q < m → prod t = prod s ∧ t.xmm .xmm12 = s.xmm .xmm12) ∧
+      (¬ q < m → prod t = (prod s).acc (blockAt s.mem (s.gpr .rbx + BitVec.ofInt 64 (-(16 * j : Int))) ^^^
+        s.xmm .xmm12) (s.mem.readW (s.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int)) 128) ∧
+        t.xmm .xmm12 = 0) ∧ Only stepRegs s t := by
+  refine WP.seq (WP.mono (sCmp_ok hq hm s hbp) fun t₁ ⟨cf, g, m₁, rd, wr, x⟩ => ?_)
+  have o₁ : Only [] s t₁ := ⟨fun r _ => by rw [g], m₁, rd, wr, fun r _ => by rw [x]⟩
+  refine WP.ite (decide (q < m)) (by simp only [eval, cf]) (fun hc => ?_) (fun hc => ?_)
+  · have hc' := of_decide_eq_true hc
+    refine WP.block_nil ⟨fun _ => ⟨by simp only [prod, x], by rw [x]⟩, fun h => absurd hc' h, o₁.weaken nofun⟩
+  · have hc' := of_decide_eq_false hc
+    refine WP.mono (sStep_ok j t₁ (by rw [x, x0]) (by rw [rd, wr, g]; exact hX hc') (by rw [rd, wr, g]; exact hP))
+      fun t ⟨p, z, o⟩ => ⟨fun h => absurd h hc', fun _ => ⟨?_, z⟩, o₁.trans o⟩
+    rw [p, show prod t₁ = prod s by simp only [prod, x], g, m₁, x]
+
+/-- `sGhPre`: the constants, `Y` in `xmm12`, the product cleared. -/
+theorem sPre_ok {St : Addr} (u : State) (h14 : u.gpr .r14 = St)
+    (inY : InRegions (u.rd ++ u.wr) (St + BitVec.ofNat 64 16) 16) :
+    WP isa (.block SealSplit.sGhPre) u fun t => t.xmm .xmm0 = revMask ∧ t.xmm .xmm1 = poly ∧
+      t.xmm .xmm12 = blockAt u.mem (St + BitVec.ofNat 64 16) ∧ prod t = VG.Proof.Gcm.X86_64.Pclmul.Prod.zero ∧
+      Only [.xmm0, .xmm12, .xmm1, .xmm12, .xmm12, .xmm8, .xmm9, .xmm10] u t := by
+  simp only [SealSplit.sGhPre, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (const_ok .xmm0 _ u (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (const_ok .xmm1 _ s₁ (by decide)) fun s₂ ⟨c₂, o₂⟩ => ?_
+  have O₂ := o₁.trans o₂
+  rw [WP.block_append_iff]
+  refine WP.mono (ldrev_ok .xmm12 .r14 16 s₂ (by decide)
+    (by rw [o₂.xmm _ (by decide), c₁, VG.Proof.Gcm.X86_64.Pclmul.rev_eq])
+    (by rw [O₂.rd, O₂.wr, O₂.gpr _ (by decide), h14, BitVec.ofInt_natCast]; exact inY))
+    fun s₃ ⟨l₃, o₃⟩ => ?_
+  rw [O₂.gpr _ (by decide), h14, BitVec.ofInt_natCast, O₂.mem] at l₃
+  refine WP.mono (zero_ok s₃) fun t ⟨p, o⟩ => ⟨?_, ?_, ?_, p, (O₂.trans o₃).trans o⟩
+  · rw [o.xmm _ (by decide), o₃.xmm _ (by decide), o₂.xmm _ (by decide), c₁, VG.Proof.Gcm.X86_64.Pclmul.rev_eq]
+  · rw [o.xmm _ (by decide), o₃.xmm _ (by decide), c₂]
+  · rw [o.xmm _ (by decide), l₃]
+
+/-- `sGh`: the `q = ⌊sl / 16⌋` blocks (one to three, in `rbp`) before
+`rbx = D + 16 q` absorbed into `Y` at `St + 16` at once. -/
 theorem sGh_ok {sl : Nat} (hq : 1 ≤ sl / 16 ∧ sl / 16 ≤ 3) {Ctx St D : Addr} (u : State)
-    (h13 : u.gpr .r13 = Ctx) (h14 : u.gpr .r14 = St) (hbx : u.gpr .rbx = D)
+    (h13 : u.gpr .r13 = Ctx) (h14 : u.gpr .r14 = St) (hbx : u.gpr .rbx = D + BitVec.ofNat 64 (16 * (sl / 16)))
     (hbp : u.gpr .rbp = BitVec.ofNat 64 (sl / 16))
     (inY : InRegions (u.rd ++ u.wr) (St + BitVec.ofNat 64 16) 16) (outY : InRegions u.wr (St + BitVec.ofNat 64 16) 16)
     (hX : ∀ i < sl / 16, InRegions (u.rd ++ u.wr) (D + BitVec.ofNat 64 (16 * i)) 16)
@@ -340,34 +305,81 @@ theorem sGh_ok {sl : Nat} (hq : 1 ≤ sl / 16 ∧ sl / 16 ≤ 3) {Ctx St D : Add
           (fun j => u.mem.readW (Ctx + BitVec.ofNat 64 (SealSplit.powOff j)) 128)) ∧
       Frame [⟨St + BitVec.ofNat 64 16, 16⟩] u.mem t.mem ∧
       (∀ r, r ≠ .rax → t.gpr r = u.gpr r) ∧ t.rd = u.rd ∧ t.wr = u.wr := by
+  generalize hqd : sl / 16 = q at hq hbx hbp hX ⊢
+  -- The block `16 j` bytes before `rbx`, for a step that runs.
+  have back : ∀ j, j ≤ q → u.gpr .rbx + BitVec.ofInt 64 (-(16 * j : Int)) = D + BitVec.ofNat 64 (16 * (q - j)) :=
+    fun j hj => by
+      rw [hbx, show (-(16 * j : Int)) = -((16 * j : Nat) : Int) by push_cast; rfl,
+        add_ofInt_back D (show 16 * j ≤ 16 * q by omega), Nat.mul_sub]
+  have pw : ∀ j, u.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int) =
+      Ctx + BitVec.ofNat 64 (SealSplit.powOff j) := fun j => by rw [h13, BitVec.ofInt_natCast]
   unfold SealSplit.sGh
-  have K : ∀ {k : Nat} {t₁ : State}, t₁.gpr = u.gpr → t₁.mem = u.mem → t₁.rd = u.rd → t₁.wr = u.wr →
-      k = sl / 16 → (k = 1 ∨ k = 2 ∨ k = 3) →
-      WP isa (.block (SealSplit.sGhK k)) t₁ fun t =>
+  refine WP.seq (WP.mono (sPre_ok u h14 inY) fun s₁ ⟨x0, x1, y₁, z₁, o₁⟩ => ?_)
+  have g₁ : ∀ r, r ≠ .rax → s₁.gpr r = u.gpr r := o₁.gpr
+  -- After both optional steps: the step for `H'` and the reduction.
+  have fin : ∀ {s₃ : State} (Pr : VG.Proof.Gcm.X86_64.Pclmul.Prod) (Yp : Block), Only (([.xmm0, .xmm12,
+      .xmm1, .xmm12, .xmm12, .xmm8, .xmm9, .xmm10] ++ stepRegs) ++ stepRegs) u s₃ → prod s₃ = Pr → s₃.xmm .xmm12 = Yp →
+      s₃.xmm .xmm0 = revMask → s₃.xmm .xmm1 = poly →
+      WP isa (.block SealSplit.sGhPost) s₃ fun t =>
         blockAt t.mem (St + BitVec.ofNat 64 16) = VG.Proof.Gcm.X86_64.Pclmul.reduce
-          (sProd (blockAt u.mem (St + BitVec.ofNat 64 16)) (blocksAt u.mem D (sl / 16))
-            (fun j => u.mem.readW (Ctx + BitVec.ofNat 64 (SealSplit.powOff j)) 128)) ∧
+          (Pr.acc (blockAt u.mem (D + BitVec.ofNat 64 (16 * (q - 1))) ^^^ Yp)
+            (u.mem.readW (Ctx + BitVec.ofNat 64 (SealSplit.powOff 1)) 128)) ∧
         Frame [⟨St + BitVec.ofNat 64 16, 16⟩] u.mem t.mem ∧
-        (∀ r, r ≠ .rax → t.gpr r = u.gpr r) ∧ t.rd = u.rd ∧ t.wr = u.wr := fun g₁ m₁ rd₁ wr₁ hk k3 => by
-    subst hk
-    refine WP.mono (sGhK_ok (Ctx := Ctx) (St := St) (D := D) k3 _ (by rw [g₁, h13]) (by rw [g₁, h14])
-      (by rw [g₁, hbx]) (by rw [rd₁, wr₁]; exact inY) (by rw [wr₁]; exact outY)
-      (fun i hi => by rw [rd₁, wr₁]; exact hX i hi) (fun j a b => by rw [rd₁, wr₁]; exact hP j a b))
-      fun t ⟨y, f, g, rd, wr⟩ => ?_
-    rw [m₁] at y f
-    exact ⟨y, f, fun r a => by rw [g r a, g₁], rd.trans rd₁, wr.trans wr₁⟩
-  refine WP.seq (WP.mono (sCmp_ok (q := sl / 16) (m := 2) (by omega) (by decide) u hbp)
-    fun t₁ ⟨cf₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
-  refine WP.ite (decide (sl / 16 < 2)) (by simp only [eval, cf₁]) (fun hc => ?_) (fun hc => ?_)
-  · exact K g₁ m₁ rd₁ wr₁ (by have := of_decide_eq_true hc; omega) (.inl rfl)
-  · have hc' := of_decide_eq_false hc
-    refine WP.seq (WP.mono (sCmp_ok (q := sl / 16) (m := 3) (by omega) (by decide) t₁ (by rw [g₁, hbp]))
-      fun t₂ ⟨cf₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
-    refine WP.ite (decide (sl / 16 < 3)) (by simp only [eval, cf₂]) (fun hc => ?_) (fun hc => ?_)
-    · exact K (k := 2) (g₂.trans g₁) (m₂.trans m₁) (rd₂.trans rd₁) (wr₂.trans wr₁)
-        (by have := of_decide_eq_true hc; omega) (.inr (.inl rfl))
-    · exact K (k := 3) (g₂.trans g₁) (m₂.trans m₁) (rd₂.trans rd₁) (wr₂.trans wr₁)
-        (by have := of_decide_eq_false hc; omega) (.inr (.inr rfl))
+        (∀ r, r ≠ .rax → t.gpr r = u.gpr r) ∧ t.rd = u.rd ∧ t.wr = u.wr := by
+    intro s₃ Pr Yp O hp hy c0 c1
+    simp only [SealSplit.sGhPost, List.append_assoc]
+    rw [WP.block_append_iff]
+    refine WP.mono (sStep_ok 1 s₃ c0 (by rw [O.rd, O.wr, O.gpr _ (by decide), back 1 (by omega)]; exact hX _ (by omega))
+      (by rw [O.rd, O.wr, O.gpr _ (by decide), pw]; exact hP 1 (by decide) (by decide))) fun s₄ ⟨p₄, _, o₄⟩ => ?_
+    rw [WP.block_append_iff]
+    refine WP.mono (reduce_ok .xmm2 s₄ (by decide) (by decide) (by decide) (by decide)
+      (by rw [o₄.xmm _ (by decide), c1])) fun s₅ ⟨r₅, o₅⟩ => ?_
+    have o₄₅ := o₄.trans o₅
+    refine WP.mono (Fast.strev_ok .xmm2 .r14 16 s₅ (by decide)
+      (by rw [o₄₅.xmm _ (by decide), c0, VG.Proof.Gcm.X86_64.Pclmul.rev_eq])
+      (by rw [o₄₅.wr, O.wr, o₄₅.gpr _ (by decide), O.gpr _ (by decide), h14, BitVec.ofInt_natCast]; exact outY))
+      fun t ⟨m₈, b₈, g₈, rd₈, wr₈, _⟩ => ?_
+    rw [o₄₅.gpr _ (by decide), O.gpr _ (by decide), h14, BitVec.ofInt_natCast] at m₈ b₈
+    refine ⟨by rw [b₈, r₅, p₄, hp, hy, O.gpr .rbx (by decide), O.gpr .r13 (by decide), back 1 (by omega), O.mem, pw], ?_,
+      fun r a => by rw [g₈, o₄₅.gpr r a, O.gpr r a], by rw [rd₈, o₄₅.rd, O.rd], by rw [wr₈, o₄₅.wr, O.wr]⟩
+    rw [m₈, o₄₅.mem, O.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have bp₁ : s₁.gpr .rbp = BitVec.ofNat 64 q := by rw [g₁ _ (by decide), hbp]
+  have P₁ : ∀ j, 1 ≤ j → j ≤ 3 → InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r13 + BitVec.ofInt 64 ((SealSplit.powOff j : Nat) : Int)) 16 :=
+    fun j a b => by rw [o₁.rd, o₁.wr, g₁ _ (by decide), pw]; exact hP j a b
+  refine WP.seq (WP.mono (sOpt_ok 3 3 (q := q) (by omega) (by decide) s₁ bp₁ x0
+    (fun h => by rw [o₁.rd, o₁.wr, g₁ _ (by decide), back 3 (by omega)]; exact hX _ (by omega)) (P₁ 3 (by decide) (by decide)))
+    fun s₂ ⟨sk₂, tk₂, o₂⟩ => ?_)
+  have O₂ := o₁.trans o₂
+  refine WP.seq (WP.mono (sOpt_ok 2 2 (q := q) (by omega) (by decide) s₂ (by rw [O₂.gpr _ (by decide), hbp])
+    (by rw [o₂.xmm _ (by decide), x0])
+    (fun h => by rw [O₂.rd, O₂.wr, O₂.gpr _ (by decide), back 2 (by omega)]; exact hX _ (by omega))
+    (by rw [O₂.rd, O₂.wr, O₂.gpr _ (by decide), pw]; exact hP 2 (by decide) (by decide)))
+    fun s₃ ⟨sk₃, tk₃, o₃⟩ => ?_)
+  have O₃ := O₂.trans o₃
+  have c0 : s₃.xmm .xmm0 = revMask := by rw [o₃.xmm _ (by decide), o₂.xmm _ (by decide), x0]
+  have c1 : s₃.xmm .xmm1 = poly := by rw [o₃.xmm _ (by decide), o₂.xmm _ (by decide), x1]
+  have m₁ : s₁.mem = u.mem := o₁.mem
+  have m₂ : s₂.mem = u.mem := O₂.mem
+  have bx₁ : s₁.gpr .rbx = u.gpr .rbx := g₁ _ (by decide)
+  have bx₂ : s₂.gpr .rbx = u.gpr .rbx := O₂.gpr _ (by decide)
+  have d₁ : s₁.gpr .r13 = u.gpr .r13 := g₁ _ (by decide)
+  have d₂ : s₂.gpr .r13 = u.gpr .r13 := O₂.gpr _ (by decide)
+  have xz : ∀ x : Block, x ^^^ (0 : Block) = x := fun _ => BitVec.xor_zero
+  rcases (show q = 1 ∨ q = 2 ∨ q = 3 by omega) with rfl | rfl | rfl
+  · obtain ⟨p₂, y₂⟩ := sk₂ (by decide)
+    obtain ⟨p₃, y₃⟩ := sk₃ (by decide)
+    refine WP.mono (fin _ _ O₃ (p₃.trans (p₂.trans z₁)) (y₃.trans (y₂.trans y₁)) c0 c1) fun t ⟨y, f, g, rd, wr⟩ =>
+      ⟨by rw [y]; rfl, f, g, rd, wr⟩
+  · obtain ⟨p₂, y₂⟩ := sk₂ (by decide)
+    obtain ⟨p₃, y₃⟩ := tk₃ (by decide)
+    refine WP.mono (fin _ _ O₃ p₃ y₃ c0 c1) fun t ⟨y, f, g, rd, wr⟩ => ⟨?_, f, g, rd, wr⟩
+    rw [y, p₂, z₁, y₂, y₁, m₂, bx₂, d₂, back 2 (by omega), pw, xz]; rfl
+  · obtain ⟨p₂, y₂⟩ := tk₂ (by decide)
+    obtain ⟨p₃, y₃⟩ := tk₃ (by decide)
+    refine WP.mono (fin _ _ O₃ p₃ y₃ c0 c1) fun t ⟨y, f, g, rd, wr⟩ => ⟨?_, f, g, rd, wr⟩
+    rw [y, p₂, z₁, y₂, y₁, m₂, bx₂, d₂, m₁, bx₁, d₁, back 2 (by omega), back 3 (by omega), pw, pw,
+      xz, xz]; rfl
 
 end
 
@@ -413,7 +425,7 @@ structure SB (t : State) : Prop where
 structure SC (t : State) : Prop where
   call : CtrCall t Ctx (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) D (W + BitVec.ofNat 64 512) R (sl / 16)
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP t
-  rbx : t.gpr .rbx = D
+  rbx : t.gpr .rbx = D + BitVec.ofNat 64 (16 * (sl / 16))
   rbp : t.gpr .rbp = BitVec.ofNat 64 (sl / 16)
   mem : t.mem = sMem D S sl σ
   rd : t.rd = σ.rd
@@ -422,7 +434,7 @@ structure SC (t : State) : Prop where
 /-- After the call. -/
 structure SD (t : State) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP t
-  rbx : t.gpr .rbx = D
+  rbx : t.gpr .rbx = D + BitVec.ofNat 64 (16 * (sl / 16))
   rbp : t.gpr .rbp = BitVec.ofNat 64 (sl / 16)
   rd : t.rd = σ.rd
   wr : t.wr = σ.wr
@@ -712,10 +724,11 @@ theorem prefixSOk (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) {ctr : Fn}
   intro Ctx W SP D S R n sl s h
   subst hc
   unfold SealSplit.prefixS
-  refine WP.seq (WP.mono (sTest_ok (sl := sl) (by have := h.sl_le; have := h.data.ok.lt; omega) h.env h.slen)
+  refine WP.seq (WP.mono (sTest_ok (sl := sl) h.env h.slen)
     fun t ⟨cf, g, tm, trd, twr⟩ => ?_)
-  refine WP.ite (decide (1 ≤ sl / 16 ∧ sl / 16 ≤ 3)) (by simp only [eval, cf]) (fun hs => ?_) (fun hs => ?_)
-  · have hs' := of_decide_eq_true hs
+  refine WP.ite (decide ((BitVec.ofNat 64 sl - 16#64).toNat < SealSplit.sLim)) (by simp only [eval, cf])
+    (fun hs => ?_) (fun hs => ?_)
+  · have hs' := sLim_sound (by have := h.sl_le; have := h.data.ok.lt; omega) (of_decide_eq_true hs)
     have : ¬ (1 ≤ sl / 256 ∧ sl / 256 < n / 256) := by omega
     simp only [this, ↓reduceIte]
     exact WP.mono (sPath_ok h hs' hF v g tm trd twr) fun _ Q => Q.toG h

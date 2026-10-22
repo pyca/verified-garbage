@@ -47,7 +47,7 @@ theorem sCtrArgs_check :
   ⟨_, by taint_decide⟩
 theorem sGh_check :
     ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r13, .r14]) SealSplit.sGh hc).isSome = true :=
-  ⟨_, by unfold SealSplit.sGh SealSplit.sGhK SealSplit.sGhStep; taint_decide⟩
+  ⟨_, by unfold SealSplit.sGh SealSplit.sGhPre SealSplit.sGhPost SealSplit.sGhStep; taint_decide⟩
 
 section
 variable {Ctx W SP D S : Addr} {R n sl : Nat} {σ σ' : State}
@@ -56,7 +56,7 @@ include h h'
 
 /-- After `sTest`. -/
 abbrev STs (sl : Nat) (σ t : State) : Prop :=
-  t.cf = some (decide (1 ≤ sl / 16 ∧ sl / 16 ≤ 3)) ∧
+  t.cf = some (decide ((BitVec.ofNat 64 sl - 16#64).toNat < SealSplit.sLim)) ∧
     (∀ r, r ≠ .rax → t.gpr r = σ.gpr r) ∧ t.mem = σ.mem ∧ t.rd = σ.rd ∧ t.wr = σ.wr
 
 /-- The path for one to three whole blocks, in two runs. -/
@@ -131,11 +131,11 @@ theorem prefixSRel (hF : Short.ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) {ctr
     (G₁ := STs sl σ) (G₂ := STs sl σ')
     (fun _ _ g r hr => by
       obtain ⟨rfl, rfl⟩ := g; simp only [List.mem_singleton] at hr; subst hr; rw [h.env.r15, h'.env.r15])
-    (fun _ _ g => g) (fun _ hs => by rw [hs]; exact sTest_ok (hsl h) h.env h.slen)
-    (fun _ hs => by rw [hs]; exact sTest_ok (hsl h') h'.env h'.slen)) ?_
+    (fun _ _ g => g) (fun _ hs => by rw [hs]; exact sTest_ok h.env h.slen)
+    (fun _ hs => by rw [hs]; exact sTest_ok h'.env h'.slen)) ?_
   refine RelCT.ite (fun _ _ g => by simp only [eval, g.1.1, g.2.1]) ?_ ?_
   · refine StreamTo.RelCT.of_imp (1 ≤ sl / 16 ∧ sl / 16 ≤ 3) (fun _ _ g => by
-      have e := g.2; simp only [eval, g.1.1.1] at e; simpa using e) fun hq => ?_
+      have e := g.2; simp only [eval, g.1.1.1] at e; exact sLim_sound (hsl h) (by simpa using e)) fun hq => ?_
     exact sPath_rel h h' hF v hq fun _ _ g => g.1
   · refine rel_each fun t t' g => ?_
     obtain ⟨⟨⟨-, g₁, m₁, rd₁, wr₁⟩, ⟨-, g₂, m₂, rd₂, wr₂⟩⟩, -⟩ := g
