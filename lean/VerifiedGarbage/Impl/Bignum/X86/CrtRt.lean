@@ -180,6 +180,14 @@ def load (x : Loc) (n : Cnt) (p l : Nat) : Prog isa :=
   .seq (zero x n) (.seq (.block (ptrTo x .ebx .edx ++ [.mov .esi (.mem (argAt 0 p)),
     .mov .ecx (.mem (argAt 0 l)), .alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)])) reverseBytes)
 
+/-- As `load`, with the bytes at the top of the number: the bytes' value times
+`256^(cb − l)`, from the byte `cb − l` of the number on, for an exponent of
+`l` public bytes whose windows `windowPowerWith` takes from the top. -/
+def loadTop (x : Loc) (n : Cnt) (p l : Nat) : Prog isa :=
+  .seq (zero x n) (.seq (.block (ptrTo x .ebx .edx ++ cntTo n .edx ++ [.alu .add .ebx (.reg .edx),
+    .mov .ecx (.mem (argAt 0 l)), .alu .sub .ebx (.reg .ecx), .mov .esi (.mem (argAt 0 p)),
+    .alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)])) reverseBytes)
+
 /-! ## Montgomery arithmetic -/
 
 /-- `eax` the offset of the number, from `edx` the stride. -/
@@ -312,13 +320,21 @@ def windowStep (c : Ctx) : Prog isa :=
   .seq (mul c 6 6 7) (.block [.alu .sub .esi (.imm 1)])
 
 /-- The base (slot 5) to the exponent (slot 8, `Bc` bytes) modulo `M` into
-slot 6, with `R² mod M` in slot 4 and one in slot 3. -/
-def windowPower (c : Ctx) : Prog isa :=
+slot 6, with `R² mod M` in slot 4 and one in slot 3, over the windows
+`count` sets in `esi`, from the top of slot 8. -/
+def windowPowerWith (c : Ctx) (count : List Instr) : Prog isa :=
   .seq (mul c 6 4 3) <|
   .seq (mul c 5 5 4) <|
   .seq (buildTable c) <|
-  .seq (.block (widthC 0 c .esi ++ [.alu .add .esi (.reg .esi)])) <|
+  .seq (.block count) <|
   .seq (.loop (windowStep c) .ne) (mul c 6 6 3)
+
+/-- `windowPowerWith` over every window of the exponent, `2 Bc`. -/
+def windowPower (c : Ctx) : Prog isa := windowPowerWith c (widthC 0 c .esi ++ [.alu .add .esi (.reg .esi)])
+
+/-- The windows of an exponent of the public length in argument `l`, which
+`loadTop` loaded at the top of slot 8: `2 l`. -/
+def lenCount (l : Nat) : List Instr := [.mov .esi (.mem (argAt 0 l)), .alu .add .esi (.reg .esi)]
 
 /-! ## The private-key operation -/
 

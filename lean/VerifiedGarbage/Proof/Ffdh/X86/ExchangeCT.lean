@@ -40,7 +40,8 @@ open VG.Impl.Ffdh.X86 (argsFrame)
 
 theorem pSetup_check : ACheck Impl.Ffdh.X86.pSetup := by dsimp only [ACheck]; taint_decide
 theorem loads_check : ACheck (Prog.chain [load (.slot .wide 5) (one .wide) 8 9,
-    load (.slot .wide 8) (one .wide) 10 11] (.block [])) := by dsimp only [ACheck]; taint_decide
+    loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])) := by dsimp only [ACheck]; taint_decide
+theorem count_check : ACheck (.block (lenCount 11)) := by dsimp only [ACheck]; taint_decide
 theorem tail_check : ACheck exTail := by dsimp only [ACheck]; taint_decide
 theorem fill_check :
     (VG.Taint.check taint (τr [.esp]) (.block (Impl.Ffdh.X86.fill Impl.Ffdh.X86.Exchange.args)) (.block [])).isSome =
@@ -69,7 +70,7 @@ context by `ctxP_relCT`. -/
 theorem front_trace :
     RelCT isa (Both (ExAt Ex base bytes len dlen xl args sp)) (Prog.chain exFront (.block [])) fun _ _ => True := by
   show RelCT isa _ (.seq Impl.Ffdh.X86.pSetup (.seq Impl.Ffdh.X86.ctxP
-    (Prog.chain [load (.slot .wide 5) (one .wide) 8 9, load (.slot .wide 8) (one .wide) 10 11] (.block [])))) _
+    (Prog.chain [load (.slot .wide 5) (one .wide) 8 9, loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])))) _
   refine VG.RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun _ A => A.run) pSetup_check fun x A => ?_) ?_
   · have G := A.dom
     have dl := G.dl
@@ -84,6 +85,10 @@ theorem front_trace :
 
 theorem body_relCT :
     RelCT isa (Both (ExAt Ex base bytes len dlen xl args sp)) Impl.Ffdh.X86.Exchange.body fun _ _ => True := by
+  by_cases hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024
+  swap
+  · refine VG.RelCT.of_false fun s₁ _ h => hx ⟨h.1.x.e11, h.1.x.pos, ?_⟩
+    have := h.1.x.le; have := h.1.run.1.upper'; omega
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
@@ -97,7 +102,8 @@ theorem body_relCT :
     rcases hj with rfl | rfl
     · rw [one]; exact hM
     · rw [R2]; exact Nat.mod_lt _ (by omega)
-  · exact VG.RelCT.seq (windowPower_relCT (winChecks .wide))
+  · exact VG.RelCT.seq (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega) (by omega) count_check
+      fun _ W => lenCount_wst (by decide) hx.1 W)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
 end

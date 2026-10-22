@@ -189,24 +189,45 @@ theorem count_wst (W : TSt Ex base bytes len args sp c [3, 5, 6] 16 s) :
     fun j hj => by rw [m]; exact He j hj, A.keep K, (K.1 _ (by decide)).trans sp₀⟩, ?_⟩
   rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega
 
-/-- A windowed power's runs, from slots 3 and 4 below the modulus. -/
-theorem windowPower_relCT (hc : WinChecks c) :
-    RelCT isa (Both (WSt Ex base bytes len args sp c [3, 4] 0)) (windowPower c)
+theorem lenCount_wst {l L : Nat} (hl : l < 18) (hL : args l = BitVec.ofNat 32 L)
+    (W : TSt Ex base bytes len args sp c [3, 5, 6] 16 s) :
+    WP isa (.block (lenCount l)) s (WinSt Ex base bytes len args sp c [3, 6] (2 * L)) := by
+  obtain ⟨⟨M, C, Hk, He, A, sp₀⟩, -⟩ := W
+  refine wp_movS (C.inp.arg hl) fun s₄ a₄ _ => wp_addS rfl fun s₅ a₅ _ => WP.block_nil ?_
+  have K : Keeps [.esi] s s₅ := a₄.keeps.trans (a₅.keeps.mono (by decide))
+  have m : s₅.mem = s.mem := by rw [a₅.mem, a₄.mem]
+  refine ⟨⟨M, C.regs K m, fun j hj => by rw [sv, m]; exact Hk j (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega),
+    fun j hj => by rw [m]; exact He j hj, A.keep K, (K.1 _ (by decide)).trans sp₀⟩, ?_⟩
+  rw [a₅.gpr, a₄.gpr, hL, BitVec.ofNat_add_ofNat]; congr 1; omega
+
+/-- A windowed power's runs over the `N` windows `count` sets, from slots 3 and 4 below the modulus. -/
+theorem windowPowerWith_relCT (hc : WinChecks c) {count : List Instr} {N : Nat} (hN0 : 0 < N) (hN32 : N < 2 ^ 32)
+    (hcount : ACheck (.block count))
+    (hcw : ∀ s, TSt Ex base bytes len args sp c [3, 5, 6] 16 s →
+      WP isa (.block count) s (WinSt Ex base bytes len args sp c [3, 6] N)) :
+    RelCT isa (Both (WSt Ex base bytes len args sp c [3, 4] 0)) (windowPowerWith c count)
       (Both (WSt Ex base bytes len args sp c [6] 0)) := by
-  unfold windowPower
+  unfold windowPowerWith
   refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hc.m643 (ks' := [3, 4, 6]) (by decide) (by decide) (by decide)) ?_
   refine VG.RelCT.seq (mul_wst_relCT0 (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hc.m554 (ks' := [3, 5, 6]) (by decide) (by decide) (by decide)) ?_
   refine VG.RelCT.seq (buildTable_relCT hc.m775 hc.tail hc.setup) ?_
-  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.1.agree W₂.1) _ hc.count fun _ W => count_wst W) ?_
+  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.1.agree W₂.1) _ hcount hcw) ?_
+  refine VG.RelCT.seq (windowLoop_relCT hc hN0 hN32) ?_
+  exact (mul_wst_relCT0 (o := 6) (a := 6) (b := 3) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hc.m663 (ks := [3, 6]) (ks' := [6]) (by decide) (by decide) (by decide)).mono
+    (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => ⟨h.1.mono, h.2.mono⟩
+
+/-- A windowed power's runs, from slots 3 and 4 below the modulus. -/
+theorem windowPower_relCT (hc : WinChecks c) :
+    RelCT isa (Both (WSt Ex base bytes len args sp c [3, 4] 0)) (windowPower c)
+      (Both (WSt Ex base bytes len args sp c [6] 0)) := by
   by_cases hN : 0 < 2 * bc len c ∧ 2 * bc len c < 2 ^ 32
-  · refine VG.RelCT.seq (windowLoop_relCT hc hN.1 hN.2) ?_
-    exact (mul_wst_relCT0 (o := 6) (a := 6) (b := 3) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) hc.m663 (ks := [3, 6]) (ks' := [6]) (by decide) (by decide) (by decide)).mono
-      (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => ⟨h.1.mono, h.2.mono⟩
+  · exact windowPowerWith_relCT hc hN.1 hN.2 hc.count fun _ W => count_wst W
   · refine VG.RelCT.of_false fun s₁ s₂ h => hN ?_
-    obtain ⟨⟨⟨_, C, _⟩, _⟩, _⟩ := h
+    obtain ⟨⟨_, C, _⟩, _⟩ := h
     have := bc_ge C.inp.lower' c
     have := bc_le C.inp.upper' c
     omega
