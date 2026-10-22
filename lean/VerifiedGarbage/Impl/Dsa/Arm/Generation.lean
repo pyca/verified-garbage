@@ -246,6 +246,11 @@ def ksSetup : Prog isa :=
 def loadS (L j o n : Nat) : Prog isa :=
   .seq (.block (scr L .r4 o ++ [.movw .r6 (BitVec.ofNat 16 n)])) (VG.Impl.Rsa.Arm.CrtValues.load j)
 
+/-- `scratch + o` := `[j]`'s low `n` bytes, big-endian. -/
+def storeBE (L j o n : Nat) : Prog isa :=
+  .seq (.block (ptr .r1 j ++ [.movw .r2 (BitVec.ofNat 16 (n - 1)), .dp .add .r1 .r1 (.reg .r2)] ++ scr L .r0 o ++
+    [.movw .lr (BitVec.ofNat 16 n)])) reverseBytes
+
 /-- The slot `d` := `[a] < [b]`. -/
 def ltS (d a b : Nat) : List (Prog isa) := [sub3 aTmp a b, .block [.str .r11 .r8 d]]
 
@@ -263,9 +268,7 @@ def pArith (pLen qLen e : Nat) : Prog isa := seqs [
   sub3 aPm1 aT aS,
   copy aP aPm1, .block (orOne aP),
   copy aE aQt, .block (clrLow aE),
-  .block ([.mov .r1 (.imm 1), .str .r1 .r8 VG.Impl.Rsa.Arm.CrtValues.sMask] ++ scr pLen .r10 sPBE ++
-    [.movw .r11 (BitVec.ofNat 16 pLen)]),
-  VG.Impl.Rsa.Arm.CrtValues.store aP,
+  storeBE pLen aP sPBE pLen,
   copyN (scr pLen .r0 sPLE) (ptr .r1 aP) pLen,
   copyN (scr pLen .r0 sE) (ptr .r1 aE) (4 * e)]
 
@@ -365,9 +368,7 @@ def gStep : Prog isa := seqs [
       seqs (ltS slG aOne aG),
       .block [.ldr .r1 .r8 slG, .cmp .r1 (.imm 0)],
       .ite .eq (.block [])
-        (seqs [.block ([.mov .r1 (.imm 1), .str .r1 .r8 VG.Impl.Rsa.Arm.CrtValues.sMask] ++
-            scr g.pLen .r10 sG ++ [.movw .r11 (BitVec.ofNat 16 g.pLen)]),
-          VG.Impl.Rsa.Arm.CrtValues.store aG, .block (stImm fG 1)])])]
+        (seqs [storeBE g.pLen aG sG g.pLen, .block (stImm fG 1)])])]
 
 /-- g: `fG` := 1, or 2 if no `h` gives one. -/
 def gPart : Prog isa := seqs [
