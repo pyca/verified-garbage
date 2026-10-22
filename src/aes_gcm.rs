@@ -2333,13 +2333,20 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
-            // On x86-64, the powers, if the backend `new` chose has no
-            // `_prepared` instances but `backend` has (VAES without
-            // VPCLMULQDQ chooses `VaesPclmul`, and `AesNiPclmulAvx` runs).
+            // On x86-64, the powers `backend` computes, if the backend `new`
+            // chose has no `_prepared` instances (VAES without VPCLMULQDQ
+            // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs) or prepares
+            // another number of them (AVX-512 all 48, VAES-256 16): from the
+            // key context alone, as `new` would with `backend`.
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             {
                 k.prepared = backend.prepared();
-                if let (Some(fns), None) = (k.prepared, self.prepared) {
+                if let Some(fns) = k.prepared
+                    && self
+                        .prepared
+                        .is_none_or(|old| !core::ptr::fn_addr_eq(old.prepare, fns.prepare))
+                {
+                    k.ctx[32..].fill(0);
                     k.prepare(fns);
                 }
             }
