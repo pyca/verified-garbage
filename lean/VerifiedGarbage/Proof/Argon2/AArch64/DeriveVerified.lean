@@ -53,7 +53,6 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
 import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
 import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
@@ -76,7 +75,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
 meta import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
-meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare

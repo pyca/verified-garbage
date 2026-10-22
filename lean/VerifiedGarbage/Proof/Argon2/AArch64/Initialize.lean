@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Argon2.AArch64.Copy`. -/
 
@@ -17,46 +21,82 @@ namespace VG.Proof.Argon2.AArch64
 
 open VG VG.AArch64 VG.Impl.Argon2.AArch64
 
-theorem initWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Fin 128)
-    (hx : InRegions (s.rd ++ s.wr) (off (s.gpr .x0) (8 * i.val)) 8)
-    (hy : InRegions (s.rd ++ s.wr) (off (s.gpr .x1) (8 * i.val)) 8) :
-    let v := s.mem.readW (off (s.gpr .x0) (8 * i.val)) 64 ^^^
-      s.mem.readW (off (s.gpr .x1) (8 * i.val)) 64
-    WP isa (.block (initWord i.val)) s fun t =>
-      t.mem = (s.mem.writeW (off p (8 * i.val)) v).writeW (off p (1024 + 8 * i.val)) v ∧
-      (∀ r, r ≠ .x8 → r ≠ .x9 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  dsimp only
-  have w1 := hs.write (d := 8 * i.val) (n := 8) (by omega)
-  have w2 := hs.write (d := 1024 + 8 * i.val) (n := 8) (by omega)
-  have e1 : (8 * i.val) % 8 = 0 ∧ 8 * i.val < 32768 := by omega
-  have e2 := word_offset i.val i.isLt
-  apply WP.of_runBlock
-  simp only [initWord, runBlock_cons, runStep_some, runBlock_nil,
-    exec, addr, Size.bytes, e1, e2, and_self, ite_true, Option.bind_some,
-    State.load, State.store, off, hs.reg, hx, hy, w1, w2, State.read,
-    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-    Mem.readW, Mem.writeW, reduceCtorEq, ite_false, Option.map_some,
-    Option.some.injEq, exists_eq_left', BitVec.setWidth_eq]
-  exact ⟨trivial, fun r hr hr9 => by simp only [hr, hr9, ite_false], trivial⟩
+theorem exec_ldrq_dwords {s : State} {t : VReg} {n : Reg} {off : Nat}
+    (ho : off % 16 = 0 ∧ off < 65536)
+    (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 16) :
+    exec (.ldrq t n off) s = some (s.setV t (ofVDwords
+      (s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 64)
+      (s.mem.readW (s.gpr n + BitVec.ofNat 64 (off + 8)) 64))) := by
+  simp only [exec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
+    State.load, h, Option.map_some, read16_dwords, Offset.add_add]
 
-theorem finishWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Fin 128)
-    (hout : InRegions s.wr (off (s.gpr .x2) (8 * i.val)) 8) :
-    WP isa (.block (finishWord i.val)) s fun t =>
-      t.mem = s.mem.writeW (off (s.gpr .x2) (8 * i.val))
-        (word s.mem p i.val ^^^ s.mem.readW (off p (8 * i.val)) 64) ∧
-      (∀ r, r ≠ .x8 → r ≠ .x9 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have r1 := hs.read (d := 8 * i.val) (n := 8) (by omega)
-  have r2 := hs.read (d := 1024 + 8 * i.val) (n := 8) (by omega)
-  have e1 : (8 * i.val) % 8 = 0 ∧ 8 * i.val < 32768 := by omega
-  have e2 := word_offset i.val i.isLt
-  apply WP.of_runBlock
-  simp only [finishWord, runBlock_cons, runStep_some, runBlock_nil,
-    exec, addr, Size.bytes, e1, e2, and_self, ite_true, Option.bind_some,
-    State.load, State.store, off, hs.reg, hout, r1, r2, State.read,
-    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-    Mem.readW, Mem.writeW, reduceCtorEq, ite_false, Option.map_some,
-    Option.some.injEq, exists_eq_left', BitVec.setWidth_eq]
-  exact ⟨trivial, fun r hr hr9 => by simp only [hr, hr9, ite_false], trivial⟩
+theorem exec_strq_write {s : State} {t : VReg} {n : Reg} {off : Nat}
+    (ho : off % 16 = 0 ∧ off < 65536)
+    (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
+    exec (.strq t n off) s =
+      some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
+  simp only [exec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
+    State.store, h]
+
+theorem ofVDwords_xor (a b c d : BitVec 64) :
+    ofVDwords a b ^^^ ofVDwords c d = ofVDwords (a ^^^ c) (b ^^^ d) := by
+  rw [ofVDwords, ofVDwords, ofVDwords, BitVec.xor_append]
+
+theorem exec_eor_v {s : State} {d n m : VReg} :
+    exec (.vop (.logic .eor d n m)) s = some (s.setV d (s.v n ^^^ s.v m)) := rfl
+
+theorem initPair_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Nat) (hi : i < 64)
+    (hx : InRegions (s.rd ++ s.wr) (off (s.gpr .x0) (16 * i)) 16)
+    (hy : InRegions (s.rd ++ s.wr) (off (s.gpr .x1) (16 * i)) 16) :
+    let a := s.mem.readW (off (s.gpr .x0) (16 * i)) 64 ^^^
+      s.mem.readW (off (s.gpr .x1) (16 * i)) 64
+    let b := s.mem.readW (off (s.gpr .x0) (16 * i + 8)) 64 ^^^
+      s.mem.readW (off (s.gpr .x1) (16 * i + 8)) 64
+    WP isa (.block (initPair i)) s fun t =>
+      t.mem = (((s.mem.writeW (off p (16 * i)) a).writeW (off p (16 * i + 8)) b).writeW
+        (off p (1024 + 16 * i)) a).writeW (off p (1024 + 16 * i + 8)) b ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  dsimp only
+  have w1 := hs.write (d := 16 * i) (n := 16) (by omega)
+  have w2 := hs.write (d := 1024 + 16 * i) (n := 16) (by omega)
+  have e1 : (16 * i) % 16 = 0 ∧ 16 * i < 65536 := by omega
+  have e2 : (1024 + 16 * i) % 16 = 0 ∧ 1024 + 16 * i < 65536 := by omega
+  simp only [off] at hx hy w1 w2
+  rw [initPair]
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e1 hx, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e1 hy, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_eor_v, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq_write e1 (by rw [← hs.reg] at w1; exact w1), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq_write e2 (by rw [← hs.reg] at w2; exact w2), ?_⟩
+  refine WP.block_nil ⟨?_, rfl, rfl, rfl⟩
+  simp only [RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_setV_self,
+    RegUpd.v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1), hs.reg,
+    ofVDwords_xor, write16_dwords, Offset.add_add, off]
+
+theorem finishPair_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Nat) (hi : i < 64)
+    (hout : InRegions s.wr (off (s.gpr .x2) (16 * i)) 16) :
+    WP isa (.block (finishPair i)) s fun t =>
+      t.mem = (s.mem.writeW (off (s.gpr .x2) (16 * i))
+          (word s.mem p (2 * i) ^^^ s.mem.readW (off p (16 * i)) 64)).writeW
+        (off (s.gpr .x2) (16 * i + 8))
+          (word s.mem p (2 * i + 1) ^^^ s.mem.readW (off p (16 * i + 8)) 64) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have r1 := hs.read (d := 16 * i) (n := 16) (by omega)
+  have r2 := hs.read (d := 1024 + 16 * i) (n := 16) (by omega)
+  have e1 : (16 * i) % 16 = 0 ∧ 16 * i < 65536 := by omega
+  have e2 : (1024 + 16 * i) % 16 = 0 ∧ 1024 + 16 * i < 65536 := by omega
+  simp only [off] at r1 r2 hout
+  rw [finishPair]
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e2 (by rw [← hs.reg] at r2; exact r2), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e1 (by rw [← hs.reg] at r1; exact r1), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_eor_v, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq_write e1 hout, ?_⟩
+  refine WP.block_nil ⟨?_, rfl, rfl, rfl⟩
+  simp only [RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_setV_self,
+    RegUpd.v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1), hs.reg,
+    ofVDwords_xor, write16_dwords, Offset.add_add, off, word,
+    show 1024 + 8 * (2 * i) = 1024 + 16 * i by omega,
+    show 1024 + 8 * (2 * i + 1) = 1024 + 16 * i + 8 by omega]
 
 end VG.Proof.Argon2.AArch64
 end
@@ -111,46 +151,74 @@ def Initialized (m : Mem) (p : Addr) (r : Block) (n : Nat) : Prop :=
   ∀ i : Fin 128, i.val < n →
     m.readW (off p (8 * i.val)) 64 = r[i] ∧ word m p i.val = r[i]
 
-theorem init_store_frame (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
+theorem init_store_frame (m : Mem) (p : Addr) (n : Nat) (hn : n < 64) (a b : Word) :
     Frame [⟨p, 4096⟩] m
-      ((m.writeW (off p (8 * i.val)) v).writeW (off p (1024 + 8 * i.val)) v) :=
-  ((Frame.refl [⟨p, 4096⟩] m).writeW (r := ⟨p, 4096⟩) (by simp) v (Offset.contains_base p (by omega) (by omega))).writeW (r := ⟨p, 4096⟩)
-    (by simp) v (Offset.contains_base p (by omega) (by omega))
+      ((((m.writeW (off p (16 * n)) a).writeW (off p (16 * n + 8)) b).writeW
+        (off p (1024 + 16 * n)) a).writeW (off p (1024 + 16 * n + 8)) b) :=
+  ((((Frame.refl [⟨p, 4096⟩] m).writeW (r := ⟨p, 4096⟩) (by simp) a
+    (Offset.contains_base p (by omega) (by omega))).writeW (r := ⟨p, 4096⟩) (by simp) b
+    (Offset.contains_base p (by omega) (by omega))).writeW (r := ⟨p, 4096⟩) (by simp) a
+    (Offset.contains_base p (by omega) (by omega))).writeW (r := ⟨p, 4096⟩) (by simp) b
+    (Offset.contains_base p (by omega) (by omega))
 
 theorem initialized_step {m : Mem} {p : Addr} {r : Block} {n : Nat}
-    (hn : n < 128) (h : Initialized m p r n) :
-    Initialized ((m.writeW (off p (8 * n)) r[n]).writeW
-      (off p (1024 + 8 * n)) r[n]) p r (n + 1) := by
+    (hn : n < 64) (h : Initialized m p r (2 * n)) :
+    Initialized ((((m.writeW (off p (16 * n)) r[2 * n]).writeW (off p (16 * n + 8)) r[2 * n + 1]).writeW
+      (off p (1024 + 16 * n)) r[2 * n]).writeW (off p (1024 + 16 * n + 8)) r[2 * n + 1])
+      p r (2 * n + 2) := by
   intro i hi
-  have lower (v : Word) :
-      ((m.writeW (off p (8 * n)) r[n]).writeW (off p (1024 + 8 * n)) v).readW
-        (off p (8 * i.val)) 64 = (m.writeW (off p (8 * n)) r[n]).readW
-        (off p (8 * i.val)) 64 :=
-    Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
-  by_cases he : i.val = n
-  · subst n
-    simp only [word, lower, Mem.readW_writeW_self64]
-    exact ⟨rfl, rfl⟩
-  · have hi' : i.val < n := by omega
-    have sep1 : Mem.Sep (off p (8 * i.val)) 8 (off p (8 * n)) 8 :=
-      Offset.sep p (by omega) (by omega) (by omega)
-    have sep2 : Mem.Sep (off p (1024 + 8 * i.val)) 8 (off p (1024 + 8 * n)) 8 :=
-      Offset.sep p (by omega) (by omega) (by omega)
-    have sep3 : Mem.Sep (off p (1024 + 8 * i.val)) 8 (off p (8 * n)) 8 :=
-      Offset.sep p (by omega) (by omega) (by omega)
-    simp only [word, lower, Mem.readW_writeW_sep (w := 64) (w' := 64) sep1 (by decide),
-      Mem.readW_writeW_sep (w := 64) (w' := 64) sep2 (by decide), Mem.readW_writeW_sep (w := 64) (w' := 64) sep3 (by decide)]
-    exact h i hi'
+  have rd (d : Nat) (hd : d + 8 ≤ 2048)
+      (h1 : d + 8 ≤ 16 * n ∨ 16 * n + 8 ≤ d) (h2 : d + 8 ≤ 16 * n + 8 ∨ 16 * n + 16 ≤ d)
+      (h3 : d + 8 ≤ 1024 + 16 * n ∨ 1024 + 16 * n + 8 ≤ d)
+      (h4 : d + 8 ≤ 1024 + 16 * n + 8 ∨ 1024 + 16 * n + 16 ≤ d) :
+      ((((m.writeW (off p (16 * n)) r[2 * n]).writeW (off p (16 * n + 8)) r[2 * n + 1]).writeW
+        (off p (1024 + 16 * n)) r[2 * n]).writeW (off p (1024 + 16 * n + 8)) r[2 * n + 1]).readW
+        (off p d) 64 = m.readW (off p d) 64 := by
+    rw [Mem.readW_writeW_sep (Offset.sep p h4 (by omega) (by omega)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p h3 (by omega) (by omega)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p h2 (by omega) (by omega)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p h1 (by omega) (by omega)) (by decide)]
+  have top (d : Nat) {m' : Mem} {a : Addr} {w : Word}
+      (hs : Mem.Sep (off p d) 8 a 8) : (m'.writeW a w).readW (off p d) 64 = m'.readW (off p d) 64 :=
+    Mem.readW_writeW_sep hs (by decide)
+  simp only [word]
+  obtain ⟨k, hk⟩ := i
+  simp only at hi
+  rcases (by omega : k = 2 * n ∨ k = 2 * n + 1 ∨ k < 2 * n) with he | he | he
+  · subst he
+    simp only [show 8 * (2 * n) = 16 * n by omega]
+    refine ⟨?_, ?_⟩
+    · rw [top _ (Offset.sep p (by omega) (by omega) (by omega)),
+        top _ (Offset.sep p (by omega) (by omega) (by omega)),
+        top _ (Offset.sep p (by omega) (by omega) (by omega)),
+        Mem.readW_writeW_self64]
+      rfl
+    · rw [top _ (Offset.sep p (by omega) (by omega) (by omega)),
+        Mem.readW_writeW_self64]
+      rfl
+  · subst he
+    simp only [show 8 * (2 * n + 1) = 16 * n + 8 by omega,
+      show 1024 + (16 * n + 8) = 1024 + 16 * n + 8 by omega]
+    refine ⟨?_, ?_⟩
+    · rw [top _ (Offset.sep p (by omega) (by omega) (by omega)),
+        top _ (Offset.sep p (by omega) (by omega) (by omega)),
+        Mem.readW_writeW_self64]
+      rfl
+    · rw [Mem.readW_writeW_self64]
+      rfl
+  · rw [rd (8 * k) (by omega) (by omega) (by omega) (by omega) (by omega),
+      rd (1024 + 8 * k) (by omega) (by omega) (by omega) (by omega) (by omega)]
+    exact h ⟨k, hk⟩ he
 
 theorem xorBlock_get (a b : Block) (i : Fin 128) :
     (xorBlock a b)[i] = a[i] ^^^ b[i] := by
   simp only [xorBlock, Fin.getElem_fin, Vector.getElem_zipWith]
 
-/-- Initialize an arbitrary prefix, framing both input blocks. -/
-theorem init_prefix (n : Nat) (hn : n ≤ 128) (s : State) {x y p : Addr}
+/-- Initialize an arbitrary prefix of pairs, framing both input blocks. -/
+theorem init_prefix (n : Nat) (hn : n ≤ 64) (s : State) {x y p : Addr}
     (hs : Scratch s p) (hin : Inputs s x y p) :
-    WP isa (.block ((List.range n).flatMap Impl.Argon2.AArch64.initWord)) s fun t =>
-      Initialized t.mem p (xorBlock (blockAt s.mem x) (blockAt s.mem y)) n ∧
+    WP isa (.block ((List.range n).flatMap Impl.Argon2.AArch64.initPair)) s fun t =>
+      Initialized t.mem p (xorBlock (blockAt s.mem x) (blockAt s.mem y)) (2 * n) ∧
       Frame [⟨p, 4096⟩] s.mem t.mem ∧ CopyKeeps s t := by
   induction n with
   | zero =>
@@ -161,28 +229,34 @@ theorem init_prefix (n : Nat) (hn : n ≤ 128) (s : State) {x y p : Addr}
     apply WP.block_append
     refine (ih (by omega)).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    have hn' : n < 128 := by omega
+    have hn' : n < 64 := by omega
     have htIn := hin.of_copy hk
-    have lx : InRegions (t.rd ++ t.wr) (off (t.gpr .x0) (8 * n)) 8 := by
+    have lx : InRegions (t.rd ++ t.wr) (off (t.gpr .x0) (16 * n)) 16 := by
       rw [htIn.xreg]
-      exact input_read htIn.xread ⟨n, hn'⟩
-    have ly : InRegions (t.rd ++ t.wr) (off (t.gpr .x1) (8 * n)) 8 := by
+      exact ⟨_, htIn.xread, Offset.contains_base x (by omega) (by omega)⟩
+    have ly : InRegions (t.rd ++ t.wr) (off (t.gpr .x1) (16 * n)) 16 := by
       rw [htIn.yreg]
-      exact input_read htIn.yread ⟨n, hn'⟩
-    refine (initWord_ok t (hs.of_copy hk) ⟨n, hn'⟩ lx ly).mono ?_
+      exact ⟨_, htIn.yread, Offset.contains_base y (by omega) (by omega)⟩
+    refine (initPair_ok t (hs.of_copy hk) n hn' lx ly).mono ?_
     rintro u ⟨hm, hreg, hr, hw⟩
-    have hv : t.mem.readW (off x (8 * n)) 64 ^^^ t.mem.readW (off y (8 * n)) 64 =
-        (xorBlock (blockAt s.mem x) (blockAt s.mem y))[(⟨n, hn'⟩ : Fin 128)] := by
-      rw [xorBlock_get, blockAt_get, blockAt_get,
-        input_unchanged hf hin.xsep ⟨n, hn'⟩, input_unchanged hf hin.ysep ⟨n, hn'⟩]
-    refine ⟨?_, ?_, hk.trans ⟨hreg, hr, hw⟩⟩
-    · rw [hm, htIn.xreg, htIn.yreg, hv]
+    have hv (k : Nat) (hk : k < 128) (d : Nat) (hd : d = 8 * k) :
+        t.mem.readW (off x d) 64 ^^^ t.mem.readW (off y d) 64 =
+          (xorBlock (blockAt s.mem x) (blockAt s.mem y))[k] := by
+      subst hd
+      rw [show (xorBlock (blockAt s.mem x) (blockAt s.mem y))[k] =
+          (xorBlock (blockAt s.mem x) (blockAt s.mem y))[(⟨k, hk⟩ : Fin 128)] from rfl,
+        xorBlock_get, blockAt_get, blockAt_get,
+        input_unchanged hf hin.xsep ⟨k, hk⟩, input_unchanged hf hin.ysep ⟨k, hk⟩]
+    refine ⟨?_, ?_, hk.trans ⟨fun r _ _ => congrFun hreg r, hr, hw⟩⟩
+    · rw [hm, htIn.xreg, htIn.yreg, hv (2 * n) (by omega) (16 * n) (by omega),
+        hv (2 * n + 1) (by omega) (16 * n + 8) (by omega),
+        show 2 * (n + 1) = 2 * n + 2 by omega]
       exact initialized_step hn' ht
-    · rw [hm, htIn.xreg, htIn.yreg]
-      exact hf.trans (init_store_frame t.mem p ⟨n, hn'⟩ _)
+    · rw [hm]
+      exact hf.trans (init_store_frame t.mem p n hn' _ _)
 
 /-- The initialized copies both contain X XOR Y. -/
-theorem initialized_blocks {m : Mem} {p : Addr} {r : Block} (h : Initialized m p r 128) :
+theorem initialized_blocks {m : Mem} {p : Addr} {r : Block} (h : Initialized m p r (2 * 64)) :
     blockAt m p = r ∧ working m p = r := by
   constructor
   · apply Vector.ext

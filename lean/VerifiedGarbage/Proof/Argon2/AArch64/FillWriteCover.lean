@@ -40,8 +40,9 @@ theorem code_ok (s : State)
   refine WP.ite (decide (s.gpr .x5 = 0)) (by simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, flag, Bool.beq_eq_decide_eq]) ?_ ?_
   · intro h
     have zero := of_decide_eq_true h
-    refine (prefix_ok false 128 (by decide) a hs' hw' hd').mono ?_
-    rintro t ⟨written, frame, keeps, mx⟩
+    refine (prefix_ok false 64 (by decide) a hs' hw' hd').mono ?_
+    rintro t ⟨written, frame, gpr, rd, wr, mx⟩
+    have keeps : CopyKeeps a t := ⟨fun r _ _ _ _ => congrFun gpr r, rd, wr⟩
     refine ⟨?_, ?_, ?_, mx.trans ka.sp⟩
     · rw [dest] at written
       rw [ite_eq_left zero, written_block written]
@@ -52,8 +53,9 @@ theorem code_ok (s : State)
         exact ⟨h13, h14, h15⟩), ka.rd, ka.wr⟩).trans keeps
   · intro h
     have nonzero := of_decide_eq_false h
-    refine (prefix_ok true 128 (by decide) a hs' hw' hd').mono ?_
-    rintro t ⟨written, frame, keeps, mx⟩
+    refine (prefix_ok true 64 (by decide) a hs' hw' hd').mono ?_
+    rintro t ⟨written, frame, gpr, rd, wr, mx⟩
+    have keeps : CopyKeeps a t := ⟨fun r _ _ _ _ => congrFun gpr r, rd, wr⟩
     refine ⟨?_, ?_, ?_, mx.trans ka.sp⟩
     · rw [dest] at written
       rw [ite_eq_right nonzero, written_block written]

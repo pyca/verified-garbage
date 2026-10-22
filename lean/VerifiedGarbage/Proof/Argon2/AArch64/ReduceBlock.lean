@@ -88,7 +88,7 @@ theorem words_ok (m₀ : Mem) (dest src : Addr) (j : Nat) (hj : j < 16) (s : Sta
     have v : t.mem.readW (off (t.gpr .x1) (8 * n)) 64 ^^^ t.mem.readW (off (t.gpr .x0) (8 * n)) 64 =
         (R m₀ src dest)[(⟨8 * j + n, k⟩ : Fin 128)] := by
       rw [R, result_get, src', dest', source_read frameT (by omega) hd ⟨8 * j + n, k⟩,
-        old_read frameT k]
+        old_read frameT (Nat.le_refl _) k]
       rfl
     refine ⟨?_, ?_, fun r h8 h13 => (regs' r h8 h13).trans (regs r h8 h13),
       rd'.trans rd, wr'.trans wr, mx'.trans mx⟩

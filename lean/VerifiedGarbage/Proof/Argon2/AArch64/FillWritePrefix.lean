@@ -5,6 +5,9 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 
 /-! Merged from `Proof.Argon2.AArch64.FillWriteWord`. -/
 
@@ -34,37 +37,39 @@ def value (xorOld : Bool) (m : Mem) (src dest : Addr) (i : Nat) : Addr :=
 
 /-- The source is readable and the destination writable; its old contents
 are read only on later passes. -/
-theorem word_ok (xorOld : Bool) (s : State) (i : Nat) (hi : i < 128)
-    (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x1) (8 * i)) 8)
-    (hw : InRegions s.wr (off (s.gpr .x0) (8 * i)) 8)
-    (ho : InRegions (s.rd ++ s.wr) (off (s.gpr .x0) (8 * i)) 8) :
-    WP isa (.block (Impl.Argon2.AArch64.FillWrite.word xorOld i)) s fun t =>
-      t.mem = s.mem.writeW (off (s.gpr .x0) (8 * i))
-        (value xorOld s.mem (s.gpr .x1) (s.gpr .x0) i) ∧
-      (∀ r, r ≠ .x8 → r ≠ .x13 → r ≠ .x14 → r ≠ .x15 → t.gpr r = s.gpr r) ∧
-      t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have hoff : (8 * i) % 8 = 0 ∧ 8 * i < 4096 * 8 := by omega
-  cases xorOld <;> apply WP.of_runBlock <;>
-    simp only [Impl.Argon2.AArch64.FillWrite.word, value, Bool.false_eq_true, ite_false, ite_true,
-      Instructions.load, Instructions.store, Instructions.xorm, Instructions.logic,
-      Instructions.mark, Instructions.mov,
-      List.flatten_cons, List.flatten_nil, List.cons_append, List.nil_append,
-      runBlock_cons, runStep_some, runBlock_nil, exec, addr, hoff,
-      State.load, State.store, State.read, Size.bits, Size.bytes,
-      off, hr, hw, ho, and_self, show 0 < 4096 from by decide,
-      RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-      BitVec.setWidth_eq, BitVec.add_zero, reduceCtorEq, ite_true, ite_false,
-      Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-  all_goals
-    refine ⟨?_, ?_, trivial, trivial, rfl⟩
-    · rfl
-    · intro r h8 h13 _h14 h15
-      simp only [h8, h13, h15, ite_false]
+theorem pair_ok (xorOld : Bool) (s : State) (i : Nat) (hi : i < 64)
+    (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x1) (16 * i)) 16)
+    (hw : InRegions s.wr (off (s.gpr .x0) (16 * i)) 16)
+    (ho : InRegions (s.rd ++ s.wr) (off (s.gpr .x0) (16 * i)) 16) :
+    WP isa (.block (Impl.Argon2.AArch64.FillWrite.pair xorOld i)) s fun t =>
+      t.mem = (s.mem.writeW (off (s.gpr .x0) (8 * (2 * i)))
+          (value xorOld s.mem (s.gpr .x1) (s.gpr .x0) (2 * i))).writeW
+        (off (s.gpr .x0) (8 * (2 * i + 1)))
+          (value xorOld s.mem (s.gpr .x1) (s.gpr .x0) (2 * i + 1)) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+  have e : (16 * i) % 16 = 0 ∧ 16 * i < 65536 := by omega
+  simp only [off] at hr hw ho
+  have a0 : 8 * (2 * i) = 16 * i := by omega
+  have a1 : 8 * (2 * i + 1) = 16 * i + 8 := by omega
+  cases xorOld
+  · refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e hr, ?_⟩
+    refine WP.block_cons_iff.mpr ⟨_, exec_strq_write e hw, ?_⟩
+    refine WP.block_nil ⟨?_, rfl, rfl, rfl, rfl⟩
+    simp only [RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_setV_self, write16_dwords,
+      Offset.add_add, value, off, a0, a1, Bool.false_eq_true, ite_false]
+  · refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e hr, ?_⟩
+    refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e ho, ?_⟩
+    refine WP.block_cons_iff.mpr ⟨_, exec_eor_v, ?_⟩
+    refine WP.block_cons_iff.mpr ⟨_, exec_strq_write e hw, ?_⟩
+    refine WP.block_nil ⟨?_, rfl, rfl, rfl, rfl⟩
+    simp only [RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_setV_self,
+      RegUpd.v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1), ofVDwords_xor, write16_dwords,
+      Offset.add_add, value, off, a0, a1, ite_true]
 
 end VG.Proof.Argon2.AArch64.FillWrite
 end
 
-/-! Compose the word writes without re-executing a long load/store block. -/
+/-! Compose the pair writes without re-executing a long load/store block. -/
 
 namespace VG.Proof.Argon2.AArch64.FillWrite
 
@@ -95,59 +100,64 @@ theorem source_read {m m' : Mem} {src dest : Addr} {n : Nat}
     (Offset.contains_base src (by omega) (by omega))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
-theorem old_read {m m' : Mem} {dest : Addr} {n : Nat}
-    (hf : Frame [⟨dest, 8 * n⟩] m m') (hn : n < 128) :
-    m'.readW (off dest (8 * n)) 64 = m.readW (off dest (8 * n)) 64 :=
-  hf.readW (r := ⟨off dest (8 * n), 8⟩) (Region.contains_self _ _)
+theorem old_read {m m' : Mem} {dest : Addr} {n k : Nat}
+    (hf : Frame [⟨dest, 8 * n⟩] m m') (hk : n ≤ k) (hk' : k < 128) :
+    m'.readW (off dest (8 * k)) 64 = m.readW (off dest (8 * k)) 64 :=
+  hf.readW (r := ⟨off dest (8 * k), 8⟩) (Region.contains_self _ _)
     (by
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
-      exact Offset.disjoint_base dest (Nat.le_refl _) (by omega)) (by decide)
+      exact Offset.disjoint_base dest (by omega) (by omega)) (by decide)
 
-theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 128) (s : State)
+theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 64) (s : State)
     (hs : (⟨s.gpr .x1, 1024⟩ : Region) ∈ s.rd ++ s.wr)
     (hw : (⟨s.gpr .x0, 1024⟩ : Region) ∈ s.wr)
     (hd : (⟨s.gpr .x1, 1024⟩ : Region).Disjoint ⟨s.gpr .x0, 1024⟩) :
     WP isa (.block (words xorOld n)) s fun t =>
-      Written t.mem (s.gpr .x0) (result xorOld s.mem (s.gpr .x1) (s.gpr .x0)) n ∧
-      Frame [⟨s.gpr .x0, 8 * n⟩] s.mem t.mem ∧ CopyKeeps s t ∧ t.sp = s.sp := by
+      Written t.mem (s.gpr .x0) (result xorOld s.mem (s.gpr .x1) (s.gpr .x0)) (2 * n) ∧
+      Frame [⟨s.gpr .x0, 8 * (2 * n)⟩] s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ t.sp = s.sp := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, CopyKeeps.refl s, rfl⟩
+  | zero => exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     simp only [words, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
     refine (ih (by omega)).mono ?_
-    rintro t ⟨written, frame, keeps, mx⟩
-    have hn' : n < 128 := by omega
-    have src : t.gpr .x1 = s.gpr .x1 := keeps.1 .x1 (by decide) (by decide) (by decide) (by decide)
-    have dest : t.gpr .x0 = s.gpr .x0 := keeps.1 .x0 (by decide) (by decide) (by decide) (by decide)
-    have write : InRegions t.wr (off (t.gpr .x0) (8 * n)) 8 := by
-      rw [dest, keeps.2.2]
+    rintro t ⟨written, frame, gpr, rd, wr, mx⟩
+    have hn' : n < 64 := by omega
+    have src : t.gpr .x1 = s.gpr .x1 := congrFun gpr .x1
+    have dest : t.gpr .x0 = s.gpr .x0 := congrFun gpr .x0
+    have write : InRegions t.wr (off (t.gpr .x0) (16 * n)) 16 := by
+      rw [dest, wr]
       exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
-    have read : InRegions (t.rd ++ t.wr) (off (t.gpr .x1) (8 * n)) 8 := by
-      rw [src, keeps.2.1, keeps.2.2]
+    have read : InRegions (t.rd ++ t.wr) (off (t.gpr .x1) (16 * n)) 16 := by
+      rw [src, rd, wr]
       exact ⟨_, hs, Offset.contains_base _ (by omega) (by omega)⟩
-    have old : InRegions (t.rd ++ t.wr) (off (t.gpr .x0) (8 * n)) 8 := by
+    have old : InRegions (t.rd ++ t.wr) (off (t.gpr .x0) (16 * n)) 16 := by
       obtain ⟨r, hr, hc⟩ := write
       exact ⟨r, List.mem_append_right _ hr, hc⟩
-    refine (word_ok xorOld t n hn' read write old).mono ?_
-    rintro u ⟨mem, regs, rd, wr, mx'⟩
-    have v : value xorOld t.mem (t.gpr .x1) (t.gpr .x0) n =
-        (result xorOld s.mem (s.gpr .x1) (s.gpr .x0))[(⟨n, hn'⟩ : Fin 128)] := by
+    refine (pair_ok xorOld t n hn' read write old).mono ?_
+    rintro u ⟨mem, gpr', rd', wr', mx'⟩
+    have v (k : Nat) (hk : k < 128) (hk' : 2 * n ≤ k) :
+        value xorOld t.mem (t.gpr .x1) (t.gpr .x0) k =
+          (result xorOld s.mem (s.gpr .x1) (s.gpr .x0))[(⟨k, hk⟩ : Fin 128)] := by
       rw [result_get, src, dest]
       unfold value
-      rw [source_read frame (by omega) hd ⟨n, hn'⟩]
+      rw [source_read frame (by omega) hd ⟨k, hk⟩]
       cases xorOld
       · rfl
-      · rw [old_read frame hn']
-    refine ⟨?_, ?_, keeps.trans ⟨regs, rd, wr⟩, mx'.trans mx⟩
-    · rw [mem, v, dest]
-      exact written_step hn' written
+      · rw [old_read frame hk' hk]
+    refine ⟨?_, ?_, gpr'.trans gpr, rd'.trans rd, wr'.trans wr, mx'.trans mx⟩
+    · rw [mem, v (2 * n) (by omega) (by omega), v (2 * n + 1) (by omega) (by omega), dest,
+        show 2 * (n + 1) = 2 * n + 1 + 1 by omega]
+      exact written_step (by omega) (written_step (by omega) written)
     · rw [mem, dest]
-      exact (frame_extend frame (Nat.le_succ n)).writeW
-        (r := ⟨s.gpr .x0, 8 * (n + 1)⟩) (by simp) _
+      exact ((frame_extend frame (by omega : 2 * n ≤ 2 * (n + 1))).writeW
+        (r := ⟨s.gpr .x0, 8 * (2 * (n + 1))⟩) (by simp) _
+        (Offset.contains_base _ (by omega) (by omega))).writeW
+        (r := ⟨s.gpr .x0, 8 * (2 * (n + 1))⟩) (by simp) _
         (Offset.contains_base _ (by omega) (by omega))
 
-end VG.Proof.Argon2.AArch64.FillWrite
+
