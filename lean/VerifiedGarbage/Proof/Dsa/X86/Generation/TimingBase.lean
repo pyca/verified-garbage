@@ -92,6 +92,14 @@ theorem callWithPop {rs : List Reg} {n : String} {c : Prog isa} {k : Contract is
     by rw [pushed_rd, pushed_wr]; exact k₂.cov, by rw [pushed_wr]; exact k₂.covw, ?_⟩
   rw [pushed_esp, pushed_esp, hsp]
 
+/-- `tcheck` for code checked as `c₀`, which differs only in immediates and
+offsets. -/
+theorem tcheckE (rs : List Reg) (c c₀ : Prog isa) (e : Code.erase c = Code.erase c₀)
+    (hh : VG.X86.Taint.hintNoBases (VG.Taint.hintOf taint (τr rs) c₀) = true)
+    (h : (VG.Taint.check taint (τr rs) c₀ (VG.Taint.hintOf taint (τr rs) c₀)).map (taint.le (τr [])) = some true) :
+    RelCT isa (VG.X86.Taint.Agree (τr rs)) c fun _ _ => True :=
+  (erased_relCT c c₀ _ e rfl hh h).mono (fun _ _ h => h) fun _ _ _ => trivial
+
 theorem Base.edi {E : Env} {s : State} (B : Base E s) : s.gpr .edi = E.base.setWidth 32 := by
   rw [← B.scr.edi, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
 
