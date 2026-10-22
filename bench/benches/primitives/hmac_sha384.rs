@@ -15,9 +15,10 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::hashes::sha384::Sha384;
     use verified_garbage::hmac::Hmac;
 
-    crate::hmac_group(
+    crate::hmac_group_sizes(
         c,
         "hmac-sha384",
+        &crate::sha384::SHA384_SIZES,
         Hmac::<Sha384>::mac,
         MessageDigest::sha384(),
         Some(aws_lc_rs::hmac::HMAC_SHA384),
