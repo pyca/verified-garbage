@@ -60,6 +60,24 @@ def derivePrepared8Post (pb : Nat) : derivePrepared8Sig.Post pb := fun src dst m
 def derivePrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   derivePrepared8Sig.contract A (post := derivePrepared8Post A.ptrBits) (stack := stack)
 
+/-- `vg_aes_gcm_derive_prepared8` on every target. -/
+def derivePrepared8Api : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_derive_prepared8"
+  sig := derivePrepared8Sig
+  contracts := some fun A stack => derivePrepared8Contract A stack
+  summary := "Writes a 384-byte AES-GCM key context from the 256-byte key context at `src` \
+    (from `vg_aes_gcm_init`). Copies its 256 bytes, the key schedule and hash subkey `H`, to \
+    the first 256 bytes of `*dst`. At byte `256 + 32*k`, for `k` from 0 to 3, stores \
+    `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
+    128-bit words (`VG.Spec.Gcm.PreparedPowers8Repr`, `VG.Spec.Gcm.preparedPower`): the \
+    buffer of 8 powers that the `*_with_powers` functions read at `pw` \
+    (`VG.Spec.Gcm.Powers8Repr`), for the key context `dst` and `pw = dst + 256`. The key \
+    context, its hash subkey and the powers are secret: only the pointers may affect \
+    timing.\n\n\
+    Contract: `VG.Spec.Gcm.derivePrepared8Contract`."
+  safety := []
+
 /-! ## One-shot -/
 
 /-- `vg_aes_gcm_seal_prepared8(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`:

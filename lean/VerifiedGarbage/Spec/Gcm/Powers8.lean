@@ -13,7 +13,10 @@ bytes 256 through 383 of `PreparedPowersRepr`'s 1024-byte format, in a buffer
 of its own. It is a storage convention, not a change to GCM's field
 arithmetic (NIST SP 800-38D §6.3).
 
-No function computes the buffer on its own. Each `*_store_powers` function is
+`vg_aes_gcm_derive_prepared8` (`Spec/Gcm/Prepared8.lean`) writes the same
+powers right after a copy of the key context: bytes 256 to 383 of its
+384-byte context are this buffer, for that context's hash subkey. Each
+`*_store_powers` function is
 a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, `vg_ghash`), with its
 unchanged postcondition, that also writes to a 128-byte buffer the powers of
 the hash subkey that it computes for its own GHASH. `vg_aes_gcm_seal_store_powers`
@@ -70,8 +73,10 @@ def withPowersSummary (name contract : String) : String :=
 
 /-- What `*pw` must hold for the `*_with_powers` functions. -/
 def withPowersSafety : String :=
-  "`*pw` must be what a `*_store_powers` function wrote for the same key context (the \
-    contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey)."
+  "`*pw` must be what a `*_store_powers` function wrote for the same key context, or bytes \
+    256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at `dst`, for the key context \
+    `dst` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash \
+    subkey)."
 
 /-! ## Writing the powers -/
 
@@ -274,7 +279,8 @@ def ghashWithPowersApi : Api where
     Contract: `VG.Spec.Gcm.ghashWithPowersContract`. Constant time: only the pointers and `n` \
     may affect timing."
   safety := ghashApi.safety ++ ["`*pw` must be what a `*_store_powers` function wrote for the \
-      hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and \
-      that subkey)."]
+      hash subkey at `h`, or bytes 256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at \
+      `dst`, whose hash subkey is at `dst + 240` (the contract's precondition: \
+      `VG.Spec.Gcm.Powers8Repr` of `pw` and that subkey)."]
 
 end VG.Spec.Gcm
