@@ -27,20 +27,20 @@ theorem blocksToPrepared_pre : ∀ s, (Spec.Gcm.encryptBlocksToPreparedContract 
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.prepared] at h
+      Gcm.X86_64.Stitch.CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at h
   sig_split h
   sig_reduce [Spec.Gcm.encryptBlocksToPreparedContract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPreparedPre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.prepared]
+      Gcm.X86_64.Stitch.CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
   sig_simp [Spec.Gcm.encryptBlocksToPreparedContract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPreparedPre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.prepared] []
+      Gcm.X86_64.Stitch.CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] []
   sig_and_intros
   sig_close
   all_goals with_reducible assumption
@@ -53,13 +53,13 @@ theorem blocksToPrepared_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.prepared]
+      Gcm.X86_64.Stitch.CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           pub := by sig_implies_pub [Spec.Gcm.encryptBlocksToPreparedContract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPreparedPre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.prepared]
+      Gcm.X86_64.Stitch.CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           sat := ⟨blocksToSatP, by
             sig_pre [Spec.Gcm.encryptBlocksToPreparedContract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig,
               Spec.Gcm.encryptBlocksToPreparedPre, X86_64.abi, X86_64.argRegs, blocksToSatP, blocksToSat]
