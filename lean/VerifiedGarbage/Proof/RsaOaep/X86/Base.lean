@@ -61,6 +61,35 @@ theorem OCerts.of_shape {H : Hash} (h : OCerts (dShape H.D)) : OCerts H :=
   ⟨h.xorSet, h.mgfNext, h.dbArgs3, h.dbArgs4, h.seedArgs3, h.seedArgs4, h.encChk, h.seedSet, h.lhSet, h.decChk,
     h.cmpSet, h.scanSet, h.tSet, h.mlHead, h.sp⟩
 
+theorem noSp_seq_inv' {a b : Prog isa} (h : NoSp (.seq a b)) : NoSp a ∧ NoSp b :=
+  ⟨fun i hi => h i (List.mem_append_left _ hi), fun i hi => h i (List.mem_append_right _ hi)⟩
+
+/-- The blocks `OCerts.sp` checks, one by one. -/
+theorem OCerts.parts {H : Hash} (c : OCerts H) :
+    NoSp (.block (VG.Impl.RsaOaep.X86.xorSet H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.mgfNext H) : Prog isa) ∧
+    NoSp (.block (VG.Impl.RsaOaep.X86.dbArgs H 3) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.dbArgs H 4) : Prog isa) ∧
+    NoSp (.block (VG.Impl.RsaOaep.X86.seedArgs H 3) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.seedArgs H 4) : Prog isa) ∧
+    NoSp (.block (VG.Impl.RsaOaep.X86.encChk H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.seedSet H) : Prog isa) ∧
+    NoSp (.block (VG.Impl.RsaOaep.X86.lhSet H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.decChk H) : Prog isa) ∧
+    NoSp (.block (VG.Impl.RsaOaep.X86.cmpSet H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.scanSet H) : Prog isa) ∧
+    NoSp (.block (VG.Impl.RsaOaep.X86.tSet H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.mlSet H) : Prog isa) := by
+  have s := c.sp
+  simp only [spBlocks, seqs] at s
+  obtain ⟨a1, s⟩ := noSp_seq_inv' s
+  obtain ⟨a2, s⟩ := noSp_seq_inv' s
+  obtain ⟨a3, s⟩ := noSp_seq_inv' s
+  obtain ⟨a4, s⟩ := noSp_seq_inv' s
+  obtain ⟨a5, s⟩ := noSp_seq_inv' s
+  obtain ⟨a6, s⟩ := noSp_seq_inv' s
+  obtain ⟨a7, s⟩ := noSp_seq_inv' s
+  obtain ⟨a8, s⟩ := noSp_seq_inv' s
+  obtain ⟨a9, s⟩ := noSp_seq_inv' s
+  obtain ⟨a10, s⟩ := noSp_seq_inv' s
+  obtain ⟨a11, s⟩ := noSp_seq_inv' s
+  obtain ⟨a12, s⟩ := noSp_seq_inv' s
+  obtain ⟨a13, a14⟩ := noSp_seq_inv' s
+  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩
+
 /-- A hash function, as RSAES-OAEP on x86 uses it. -/
 structure OHash where
   H : Hash
