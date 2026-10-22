@@ -24,8 +24,8 @@
 //!
 //! The functions but `init` are emitted once for each implementation of
 //! `vg_ghash` they call, which have the same contract: CPUs with PCLMULQDQ
-//! and SSSE3 run the `_pclmul` instances (with `vg_ghash_pclmul`), and CPUs
-//! with VPCLMULQDQ and AVX2 too the `_vpclmul` ones (with
+//! and SSSE3 run the `_pclmul` instances (with `vg_ghash_pclmul`), and, on
+//! x86-64, CPUs with VPCLMULQDQ and AVX2 too the `_vpclmul` ones (with
 //! `vg_ghash_vpclmul`, eight blocks at a time in 256-bit registers). Which
 //! one a key calls depends only on the CPU.
 //!
@@ -40,18 +40,22 @@
 //! compile time, as AES-GCM's (see [`crate::aes_gcm`]'s documentation for
 //! why the length is never taken from a slice).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 
 use crate::arch::sm4_gcm::{
-    VG_SM4_GCM_SEAL_PCLMUL_FEATURES, VG_SM4_GCM_SEAL_VPCLMUL_FEATURES, vg_sm4_gcm_init,
-    vg_sm4_gcm_open, vg_sm4_gcm_open_pclmul, vg_sm4_gcm_open_vpclmul, vg_sm4_gcm_seal,
-    vg_sm4_gcm_seal_pclmul, vg_sm4_gcm_seal_vpclmul, vg_sm4_gcm_stream_aad,
-    vg_sm4_gcm_stream_aad_pclmul, vg_sm4_gcm_stream_aad_vpclmul, vg_sm4_gcm_stream_decrypt,
-    vg_sm4_gcm_stream_decrypt_pclmul, vg_sm4_gcm_stream_decrypt_vpclmul, vg_sm4_gcm_stream_encrypt,
-    vg_sm4_gcm_stream_encrypt_pclmul, vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish,
-    vg_sm4_gcm_stream_finish_pclmul, vg_sm4_gcm_stream_finish_vpclmul, vg_sm4_gcm_stream_init,
-    vg_sm4_gcm_stream_init_pclmul, vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify,
-    vg_sm4_gcm_stream_verify_pclmul, vg_sm4_gcm_stream_verify_vpclmul,
+    VG_SM4_GCM_SEAL_PCLMUL_FEATURES, vg_sm4_gcm_init, vg_sm4_gcm_open, vg_sm4_gcm_open_pclmul,
+    vg_sm4_gcm_seal, vg_sm4_gcm_seal_pclmul, vg_sm4_gcm_stream_aad, vg_sm4_gcm_stream_aad_pclmul,
+    vg_sm4_gcm_stream_decrypt, vg_sm4_gcm_stream_decrypt_pclmul, vg_sm4_gcm_stream_encrypt,
+    vg_sm4_gcm_stream_encrypt_pclmul, vg_sm4_gcm_stream_finish, vg_sm4_gcm_stream_finish_pclmul,
+    vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_init_pclmul, vg_sm4_gcm_stream_verify,
+    vg_sm4_gcm_stream_verify_pclmul,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sm4_gcm::{
+    VG_SM4_GCM_SEAL_VPCLMUL_FEATURES, vg_sm4_gcm_open_vpclmul, vg_sm4_gcm_seal_vpclmul,
+    vg_sm4_gcm_stream_aad_vpclmul, vg_sm4_gcm_stream_decrypt_vpclmul,
+    vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish_vpclmul,
+    vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify_vpclmul,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -76,7 +80,8 @@ pub(crate) enum Ghash {
     /// `_pclmul` instances.
     Pclmul,
     /// VPCLMULQDQ, eight blocks at a time in 256-bit registers: the
-    /// `_vpclmul` instances.
+    /// `_vpclmul` instances (x86-64 only).
+    #[cfg(target_arch = "x86_64")]
     Vpclmul,
 }
 
@@ -87,6 +92,7 @@ macro_rules! instance {
         match $ghash {
             Ghash::Scalar => $scalar,
             Ghash::Pclmul => $pclmul,
+            #[cfg(target_arch = "x86_64")]
             Ghash::Vpclmul => $vpclmul,
         }
     };
@@ -97,9 +103,11 @@ impl Ghash {
     /// features of its instances are `seal`'s, which are every other
     /// function's (those of the implementation of `vg_ghash`).
     fn select(f: Features) -> Ghash {
+        #[cfg(target_arch = "x86_64")]
         if f.contains(VG_SM4_GCM_SEAL_VPCLMUL_FEATURES) {
-            Ghash::Vpclmul
-        } else if f.contains(VG_SM4_GCM_SEAL_PCLMUL_FEATURES) {
+            return Ghash::Vpclmul;
+        }
+        if f.contains(VG_SM4_GCM_SEAL_PCLMUL_FEATURES) {
             Ghash::Pclmul
         } else {
             Ghash::Scalar
@@ -597,7 +605,11 @@ mod tests {
         assert_eq!(f(&["pclmulqdq"]), Ghash::Scalar);
         assert_eq!(f(&["pclmulqdq", "ssse3"]), Ghash::Pclmul);
         let all = ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"];
+        #[cfg(target_arch = "x86_64")]
         assert_eq!(f(&all), Ghash::Vpclmul);
+        // 32-bit x86 has no `_vpclmul` instances.
+        #[cfg(target_arch = "x86")]
+        assert_eq!(f(&all), Ghash::Pclmul);
         assert_eq!(f(&all[1..]), Ghash::Pclmul);
         assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
     }

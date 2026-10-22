@@ -432,4 +432,50 @@ theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length
     (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2)]
   rfl
 
+theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).length →
+    (∀ b ∈ Sig.bufs initSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (initSig.words pb) (initPost pb) vs m₁ m' r →
+      Curry.apply (initSig.words pb) (initPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hk := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.addr] (initPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr] (initPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
+  rw [bytesAt_congr (n := 16) fun i hi => hk i (by omega)]
+  exact h
+
+theorem streamFinishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamFinishSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamFinishSig.words pb) (streamFinishPost pb) vs m₁ m' r →
+      Curry.apply (streamFinishSig.words pb) (streamFinishPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  have hs := agree_of hb.2.1
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr] (streamFinishPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr] (streamFinishPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, streamFinishPost, ArgWord.ofRaw] at h ⊢
+  intro iv a c hr hl ht
+  rw [ctxCiph_congr fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)]
+  rw [ctxCiph_congr fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
+  exact h iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+
 end VG.Proof.Sm4Gcm

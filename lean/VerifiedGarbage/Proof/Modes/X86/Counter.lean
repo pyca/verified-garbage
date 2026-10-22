@@ -9,12 +9,14 @@ public import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# CTR on x86: the increment
+# CTR on x86: the increments
 
 `incAt` run once, with its memory as explicit writes (`incMem`): four
 words, loaded and byte-reversed, the last plus 1 and each other plus the
 carry out of the one after it, reversed again and stored. `incMem_bytes`:
-the block it writes is `Spec.Ctr.inc` of the one it read.
+the block it writes is `Spec.Ctr.inc` of the one it read. `inc32At`, GCM's
+`inc₃₂` of a counter block's last word, likewise (`inc32Mem`,
+`inc32Mem_bytes`): the big-endian word plus 1, modulo 2³².
 -/
 
 @[expose] public section
@@ -130,6 +132,62 @@ theorem incMem_apply (m : Mem) (Q x : Addr) :
     rwa [ex] at e
   · rename_i hi
     exact incMem_frame m Q x (by
+      intro r hr hc
+      simp only [List.mem_singleton] at hr
+      subst hr
+      simp only [Region.Contains] at hc
+      omega)
+
+/-! ## GCM's `inc₃₂` -/
+
+/-- The memory after `inc32At` on the word at `Q`. -/
+def inc32Mem (m : Mem) (Q : Addr) : Mem := m.writeW Q (bswap (bswap (m.readW Q 32) + 1))
+
+theorem inc32_ok (s : State) {base : Reg} {off : Nat} (hne : base ≠ .eax) {Q : Addr}
+    (ha : addr (s.gpr base) off = Q) (hr : InRegions (s.rd ++ s.wr) Q 4) (hw : InRegions s.wr Q 4) :
+    ∃ s', runBlock isa (inc32At base off) s = some s' ∧
+      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧
+      s'.mem = inc32Mem s.mem Q ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [↓reduceIte, inc32At, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+      State.load32, State.store32, ea_mk, execAlu, Option.bind_some, Option.map_some,
+      gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
+      wr_arithFlags, hne, ha, hr, hw]
+    rfl, ?_⟩
+  exact ⟨fun r h => by simp only [gpr_setReg, gpr_arithFlags, h, ite_false], rfl, rfl, rfl⟩
+
+/-- The word `inc32At` writes: the big-endian number it held, plus 1,
+modulo 2³². -/
+theorem inc32Mem_bytes (m : Mem) (Q : Addr) :
+    bytesAt (inc32Mem m Q) Q 4 = Spec.Ctr.ofNat (Spec.Ctr.toNat (bytesAt m Q 4) + 1) 4 := by
+  have e : inc32Mem m Q = m.writeW Q (AesCtr.rv32 (AesCtr.rv32 (m.readW Q 32) + 1)) := rfl
+  rw [e, AesCtr.bytesAt_writeW_rv32, AesCtr.bytesAt_rv32, AesCtr.toNat_ofNat]
+  apply AesCtr.ofNat_congr
+  have := (AesCtr.rv32 (m.readW Q 32)).isLt
+  have e₁ : (1 : BitVec 32).toNat = 1 := rfl
+  rw [BitVec.toNat_add, e₁]
+  simp only [Nat.reducePow]
+  omega
+
+theorem inc32Mem_frame (m : Mem) (Q : Addr) : Frame [⟨Q, 4⟩] m (inc32Mem m Q) :=
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+    (by simpa using Offset.contains_base Q (d := 0) (n := 4) (k := 4) (by decide) (by decide))
+
+/-- The word's bytes, with every other byte unchanged. -/
+theorem inc32Mem_apply (m : Mem) (Q x : Addr) :
+    inc32Mem m Q x = if (x - Q).toNat < 4 then
+      (Spec.Ctr.ofNat (Spec.Ctr.toNat (bytesAt m Q 4) + 1) 4).getD (x - Q).toNat 0 else m x := by
+  split
+  · rename_i hi
+    have e := congrArg (fun bs : List Byte => bs.getD (x - Q).toNat 0) (inc32Mem_bytes m Q)
+    simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
+      Option.map_some, Option.getD_some] at e
+    have ex : Q + BitVec.ofNat 64 (x - Q).toNat = x := by bv_omega
+    rw [ex] at e
+    rw [e]
+    simp only [bytesAt, List.getD_eq_getElem?_getD]
+  · rename_i hi
+    exact inc32Mem_frame m Q x (by
       intro r hr hc
       simp only [List.mem_singleton] at hr
       subst hr
