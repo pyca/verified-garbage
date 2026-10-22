@@ -615,8 +615,6 @@ abbrev Size.bytes : Size → Nat
   | .w => 4
   | .x => 8
 
-theorem Size.bits_eq (sz : Size) : sz.bits = 8 * sz.bytes := by cases sz <;> rfl
-
 /-- The address of `[n, #off]` for an access of `bytes` bytes, if `off` is
 encodable (DDI 0487 C6.2, "LDR (immediate)"/"STR (immediate)" and "LDRB
 (immediate)"/"STRB (immediate)", unsigned offset: `offset = LSL(imm12,
