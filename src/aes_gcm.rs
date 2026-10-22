@@ -72,13 +72,15 @@
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
 //!
-//! On x86-64, the `_vaes_vpclmul_avx512`, `_vaes_vpclmul` and
-//! `_aesni_pclmul_avx` instances also have `_prepared` ones
-//! (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read encoded
-//! pairs of powers `H¹ … H⁴⁸` from a larger key context, which
-//! `vg_aes_gcm_prepare` writes from the key context of `vg_aes_gcm_init`,
-//! instead of computing them on every call (`H¹ … H¹⁶` for `_vaes_vpclmul`,
-//! `H¹ … H⁸` on 128-bit registers). The `_vaes_vpclmul_avx512` loops also
+//! On x86-64, the `_vaes_vpclmul_avx512` and `_aesni_pclmul_avx` instances
+//! also have `_prepared` ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose
+//! interleaved loops read encoded pairs of powers `H¹ … H⁴⁸` from a larger
+//! key context, which `vg_aes_gcm_prepare` writes from the key context of
+//! `vg_aes_gcm_init`, instead of computing them on every call (`H¹ … H⁸` on
+//! 128-bit registers); the `_vaes_vpclmul` instances have `_prepared16` ones
+//! (`VG.Spec.Gcm.PreparedPowers16Repr`), which read only `H¹ … H¹⁶`, the
+//! first 512 bytes of the same context, which `vg_aes_gcm_prepare16` writes
+//! in less than half the time. The `_vaes_vpclmul_avx512` loops also
 //! load the AES round keys into `zmm16`–`zmm31` once per block call and
 //! reuse them across batches. A key computes the
 //! prepared context once, after it has encrypted or decrypted
@@ -123,18 +125,19 @@ use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
     VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES, VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
-    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul,
-    vg_aes_gcm_open_prepared_vaes_vpclmul_avx512, vg_aes_gcm_prepare_pclmul_avx,
-    vg_aes_gcm_prepare_vpclmul, vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
-    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_seal_prepared_vaes_vpclmul, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+    VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES, vg_aes_gcm_open_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_open_prepared_vaes_vpclmul_avx512, vg_aes_gcm_open_prepared16_vaes_vpclmul,
+    vg_aes_gcm_prepare_pclmul_avx, vg_aes_gcm_prepare_vpclmul, vg_aes_gcm_prepare16_vpclmul,
+    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_prepared16_vaes_vpclmul,
     vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
     vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -418,9 +421,10 @@ pub(crate) fn select(f: Features) -> Backend {
 }
 
 /// The `_prepared` instances of a backend (`VG.Spec.Gcm.PreparedPowersRepr`),
-/// whose interleaved loops read the powers of the hash subkey from the key
-/// context instead of computing them on every call, and the CPU features
-/// their key setup needs.
+/// or its `_prepared16` ones (`VG.Spec.Gcm.PreparedPowers16Repr`), whose
+/// interleaved loops read the powers of the hash subkey from the key context
+/// instead of computing them on every call, and the CPU features their key
+/// setup needs.
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
@@ -596,13 +600,13 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
-    features: VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
-    seal: vg_aes_gcm_seal_prepared_vaes_vpclmul,
-    open: vg_aes_gcm_open_prepared_vaes_vpclmul,
-    seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
-    prepare: vg_aes_gcm_prepare_vpclmul,
+    features: VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
+    seal: vg_aes_gcm_seal_prepared16_vaes_vpclmul,
+    open: vg_aes_gcm_open_prepared16_vaes_vpclmul,
+    seal_gather: vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul,
+    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
+    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
+    prepare: vg_aes_gcm_prepare16_vpclmul,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -2166,12 +2170,12 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
-                        VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
@@ -2329,13 +2333,20 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
-            // On x86-64, the powers, if the backend `new` chose has no
-            // `_prepared` instances but `backend` has (VAES without
-            // VPCLMULQDQ chooses `VaesPclmul`, and `AesNiPclmulAvx` runs).
+            // On x86-64, the powers `backend` computes, if the backend `new`
+            // chose has no `_prepared` instances (VAES without VPCLMULQDQ
+            // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs) or prepares
+            // another number of them (AVX-512 all 48, VAES-256 16): from the
+            // key context alone, as `new` would with `backend`.
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             {
                 k.prepared = backend.prepared();
-                if let (Some(fns), None) = (k.prepared, self.prepared) {
+                if let Some(fns) = k.prepared
+                    && self
+                        .prepared
+                        .is_none_or(|old| !core::ptr::fn_addr_eq(old.prepare, fns.prepare))
+                {
+                    k.ctx[32..].fill(0);
                     k.prepare(fns);
                 }
             }
@@ -2525,28 +2536,39 @@ mod tests {
     }
 
     /// `vg_aes_gcm_prepare` on 128-bit registers makes the context it makes
-    /// on 256-bit ones.
+    /// on 256-bit ones, and `vg_aes_gcm_prepare16` its first 16 powers,
+    /// leaving the rest of the context as it was.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     #[test]
     fn prepare() {
-        use super::{Ctx, PREPARED_AESNI_PCLMUL_AVX, PREPARED_VAES_VPCLMUL};
-        let (narrow, wide) = (&PREPARED_AESNI_PCLMUL_AVX, &PREPARED_VAES_VPCLMUL);
-        if !detected().contains(narrow.features) || !detected().contains(wide.features) {
+        use super::{
+            Ctx, PREPARED_AESNI_PCLMUL_AVX, PREPARED_VAES_VPCLMUL,
+            VG_AES_GCM_PREPARE_VPCLMUL_FEATURES, vg_aes_gcm_prepare_vpclmul,
+        };
+        let (narrow, sixteen) = (&PREPARED_AESNI_PCLMUL_AVX, &PREPARED_VAES_VPCLMUL);
+        if !detected().contains(narrow.features)
+            || !detected().contains(sixteen.features)
+            || !detected().contains(VG_AES_GCM_PREPARE_VPCLMUL_FEATURES)
+        {
             return;
         }
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x5b; 32][..key_len]).unwrap();
             let mut want: Ctx = [0; 128];
             want[..32].copy_from_slice(k.key());
-            let mut got = want;
-            // SAFETY: `want` and `got` are valid for reads and writes of 1024
-            // bytes, and start with a key context of `vg_aes_gcm_init`; they
-            // overlap nothing. The CPU has the features of both.
+            let (mut got, mut first) = (want, want);
+            // SAFETY: `want`, `got` and `first` are valid for reads and writes
+            // of 1024 bytes, and start with a key context of
+            // `vg_aes_gcm_init`; they overlap nothing. The CPU has the
+            // features of all three.
             unsafe {
-                (wide.prepare)(&mut want);
+                vg_aes_gcm_prepare_vpclmul(&mut want);
                 (narrow.prepare)(&mut got);
+                (sixteen.prepare)(&mut first);
             }
             assert_eq!(got, want);
+            assert_eq!(first[..64], want[..64]);
+            assert!(first[64..].iter().all(|&w| w == 0));
         }
     }
 

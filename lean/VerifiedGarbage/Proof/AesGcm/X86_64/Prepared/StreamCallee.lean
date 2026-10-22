@@ -34,7 +34,7 @@ theorem encSpecPrepared_pre {s : State} (h : encCallPre CtxMode.prepared s) :
     VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
-    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared] at *
+    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
   all_goals with_reducible assumption
 
 theorem encSpecPrepared_post {s s' : State} (hR : Proof.AesGcm.rounds s)

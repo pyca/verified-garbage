@@ -163,9 +163,9 @@ theorem sealGatherG_rel {M : CtxMode} {q : Nat} {quick fast test short : Prog is
         (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (go s₀')))
     (hshort : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → go s₀ = true → ∀ {σ₁ σ₂ : State},
       E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) short TT)
-    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
+    (inl : Bool) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
     {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀') :
-    RelCT isa (fun a b => Same s₀ a ∧ Same s₀' b) (sealGather quick fast test short I.fn A.fn T.fn F.fn)
+    RelCT isa (fun a b => Same s₀ a ∧ Same s₀' b) (sealGather quick fast test short I.fn A.fn T.fn F.fn inl)
       fun _ _ => True := by
   have eg := hgo hp hp' pb
   unfold sealGather gatherRest
@@ -173,7 +173,7 @@ theorem sealGatherG_rel {M : CtxMode} {q : Nat} {quick fast test short : Prog is
     (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, pb.eL]) ?_
       ((RelCT.seq (htest hp hp' pb)
         (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, eg]) ?_
-          ((stream_rel hp hp' pb I A T F).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))).mono
+          ((stream_rel hp hp' pb inl I A T F).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))).mono
         (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))))
   · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
     have e : L s₀ < q := by simp only [eval, c₁] at ev; simpa using ev
@@ -200,11 +200,11 @@ theorem sealGatherG_ct {M : CtxMode} {q : Nat} {quick fast test short : Prog isa
         (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (go s₀')))
     (hshort : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → go s₀ = true → ∀ {σ₁ σ₂ : State},
       E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) short TT)
-    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
+    (inl : Bool) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
     ConstantTime isa (Proof.AesGcm.sealGatherX86_64M M).pre Proof.AesGcm.sealGatherPub
-      (sealGather quick fast test short I.fn A.fn T.fn F.fn) :=
+      (sealGather quick fast test short I.fn A.fn T.fn F.fn inl) :=
   ct_of_rel (k := Proof.AesGcm.sealGatherX86_64M M) fun _ _ h h' hq =>
-    (sealGatherG_rel go hgo hquick hfast htest hshort I A T F (SG.ofM h) (SG.ofM h') (Pub.of hq)).mono
+    (sealGatherG_rel go hgo hquick hfast htest hshort inl I A T F (SG.ofM h) (SG.ofM h') (Pub.of hq)).mono
       (fun _ _ e => by obtain ⟨rfl, rfl⟩ := e; exact ⟨Same.refl _, Same.refl _⟩) fun _ _ e => e
 
 /-- The short path of `copySeal S` below `t` bytes, in two runs. -/

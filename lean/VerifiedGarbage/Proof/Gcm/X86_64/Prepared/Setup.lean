@@ -23,7 +23,7 @@ open VG.Impl.Gcm.X86_64.StitchZR (cvtPair setupGP setupP)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF vinsSelf_ok cvtRegs preg16_mem preg16_inj)
 
 /-- Load the first `n` register pairs from the prepared context. -/
-theorem cvtRun_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
+theorem cvtRun_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (h8 : 8 ≤ np) :
     ∀ n, n ≤ 8 → ∀ s, s.gpr .rdi = kp s₀ → s.mem = s₀.mem → s.rd = s₀.rd → s.wr = s₀.wr →
       WP isa (.block ((List.range n).flatMap fun k => cvtPair (15 - 2*k) (preg16 k))) s fun s' =>
         (∀ k < n, ∀ l < 2, s'.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2*k - l))) ∧
@@ -33,7 +33,7 @@ theorem cvtRun_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
     exact WP.block_nil ⟨fun k hk => absurd hk (by omega), YFrame.refl _ _⟩
   | n+1, hn, s, hdi, hm, hrd, hwr => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (cvtRun_ok hp n (by omega) s hdi hm hrd hwr) fun s₁ ⟨p₁, f₁⟩ => ?_
+    refine WP.mono (cvtRun_ok hp h8 n (by omega) s hdi hm hrd hwr) fun s₁ ⟨p₁, f₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     have hin : InRegions (s₁.rd ++ s₁.wr)
         (s₁.gpr .rdi + BitVec.ofInt 64 ((240 + 16*(15-2*n) : Nat) : Int)) 32 := by
@@ -54,7 +54,7 @@ theorem cvtRun_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
       exact preg16_mem n
 
 /-- `setupGP`: what `Stitch.setupG_ok` says of `setupG`. -/
-theorem setupGP_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
+theorem setupGP_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (h8 : 8 ≤ np := by decide) :
     WP isa (.block setupGP) s₀ fun s =>
       (∀ l < 2, s.lane .xmm0 l = revMask) ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
       (∀ k < 8, ∀ l < 2, s.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) ∧
@@ -78,7 +78,7 @@ theorem setupGP_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
   have mm₄ : s₄.mem = s₀.mem := by rw [f₄.mem, f₃.mem, o₁₂.mem]
   have rd₄ : s₄.rd = s₀.rd := by rw [f₄.rd, f₃.rd, o₁₂.rd]
   have wr₄ : s₄.wr = s₀.wr := by rw [f₄.wr, f₃.wr, o₁₂.wr]
-  refine WP.mono (cvtRun_ok hp 8 (Nat.le_refl _) s₄ (g₄ _ (by decide)) mm₄ rd₄ wr₄)
+  refine WP.mono (cvtRun_ok hp h8 8 (Nat.le_refl _) s₄ (g₄ _ (by decide)) mm₄ rd₄ wr₄)
     fun s' ⟨pw, F⟩ =>
     ⟨fun l hl => by rw [F.lane _ (by decide) l hl]; exact m0 l hl,
       fun l hl => by rw [F.lane _ (by decide) l hl]; exact m1 l hl, pw,

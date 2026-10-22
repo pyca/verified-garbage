@@ -198,20 +198,20 @@ theorem splitP_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.powers).Implies
 theorem splitPrepared_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.prepared).Implies
     (Proof.AesGcm.sealSplitPreparedScratchContract X86_64.abi 56) := by
   exact { pre := by sig_implies_pre [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared]
+      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           post := by sig_implies_post [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared]
+      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           pub := by sig_implies_pub [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared]
+      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           sat := ⟨splitSatP, by
             sig_pre [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig,
               Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre, X86_64.abi,
