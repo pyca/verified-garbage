@@ -80,7 +80,7 @@ theorem fault_wp {P : EP} {σ s : State} (hc : Ctx P.lay P.scr σ s) (hi : In P 
   have hg := hi.geo
   simp only [faultBit, ld, List.cons_append, List.nil_append]
   refine hc.wp_slot hg (d := sRes) (by decide) (by decide) (by decide) fun t1 c1 u1 => ?_
-  refine wp_xori fun t2 u2 => wp_cmpi fun t3 f3 cf3 _ => wp_sbb_self cf3 fun t4 u4 => wp_andi fun t5 u5 => ?_
+  refine wp_xorI fun t2 u2 => wp_cmpi fun t3 f3 cf3 _ => wp_sbb_self cf3 fun t4 u4 => wp_andi fun t5 u5 => ?_
   have c5 : Ctx P.lay P.scr σ t5 :=
     (((c1.upd u2 (by decide) (by decide)).fupd f3).upd u4 (by decide) (by decide)).upd u5 (by decide) (by decide)
   refine hq t5 c5 (by rw [u5.mem, u4.mem, f3.mem, u2.mem, u1.mem]) ?_

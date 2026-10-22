@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # RSAES-OAEP on x86: the instructions decryption uses beyond the framework's
 
-`xor d, v`, `or d, [b + o]` and `and d, [b + o]`; and a 64-bit word written
+`or d, [b + o]` and `and d, [b + o]`; and a 64-bit word written
 as two 32-bit halves, the high one zero (`readW_pair`, as for RSAES-PKCS1-v1_5
 in `Proof/RsaPkcs1Enc/X86/DecSel.lean`).
 -/
@@ -21,10 +21,6 @@ open VG VG.X86 VG.X86.Wp
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
-
-theorem wp_xori {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d ^^^ v) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .xor d (.imm v) :: is)) s Q :=
-  cons rfl (k _ (Upd.flags _ _ _ _ _ _))
 
 /-- `or d, [b + o]` -/
 theorem wp_orm {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
