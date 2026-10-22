@@ -3570,7 +3570,7 @@ vpandq zmm5, zmm5, zmm10
 vpaddq zmm6, zmm6, zmm12
 vmovdqu32 zmm12, ZMMWORD PTR [rdi+5568]
 vpmadd52luq zmm5, zmm11, zmm12
-vpxord zmm13, zmm13, zmm13
+vpxor ymm13, ymm13, ymm13
 vpermq zmm10, zmm0, 181
 vpermq zmm11, zmm0, 0
 vmovdqu32 zmm12, ZMMWORD PTR [rdi+5632]
@@ -3648,10 +3648,10 @@ vmovdqu32 ZMMWORD PTR [rdi+4288], zmm1
 vmovdqu32 ZMMWORD PTR [rdi+4352], zmm2
 vmovdqu32 ZMMWORD PTR [rdi+4416], zmm3
 vmovdqu32 ZMMWORD PTR [rdi+4480], zmm4
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4224]
 vpmadd52luq zmm11, zmm10, zmm5
 vpmadd52huq zmm14, zmm10, zmm9
@@ -3676,10 +3676,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm0, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4224]
 vpmadd52luq zmm11, zmm10, zmm6
 vpmadd52huq zmm12, zmm10, zmm5
@@ -3704,10 +3704,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm1, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4224]
 vpmadd52luq zmm11, zmm10, zmm7
 vpmadd52huq zmm12, zmm10, zmm6
@@ -3732,10 +3732,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm2, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4224]
 vpmadd52luq zmm11, zmm10, zmm8
 vpmadd52huq zmm12, zmm10, zmm7
@@ -3760,10 +3760,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm3, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4224]
 vpmadd52luq zmm11, zmm10, zmm9
 vpmadd52huq zmm12, zmm10, zmm8
@@ -3877,10 +3877,10 @@ vmovdqu32 ZMMWORD PTR [rdi+4608], zmm1
 vmovdqu32 ZMMWORD PTR [rdi+4672], zmm2
 vmovdqu32 ZMMWORD PTR [rdi+4736], zmm3
 vmovdqu32 ZMMWORD PTR [rdi+4800], zmm4
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4544]
 vpmadd52luq zmm11, zmm10, zmm5
 vpmadd52huq zmm14, zmm10, zmm9
@@ -3905,10 +3905,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm0, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4544]
 vpmadd52luq zmm11, zmm10, zmm6
 vpmadd52huq zmm12, zmm10, zmm5
@@ -3933,10 +3933,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm1, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4544]
 vpmadd52luq zmm11, zmm10, zmm7
 vpmadd52huq zmm12, zmm10, zmm6
@@ -3961,10 +3961,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm2, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4544]
 vpmadd52luq zmm11, zmm10, zmm8
 vpmadd52huq zmm12, zmm10, zmm7
@@ -3989,10 +3989,10 @@ vpsllq zmm12, zmm13, 1
 vpaddq zmm11, zmm11, zmm12
 vpsllq zmm12, zmm13, 4
 vpaddq zmm3, zmm11, zmm12
-vpxord zmm11, zmm11, zmm11
-vpxord zmm12, zmm12, zmm12
-vpxord zmm13, zmm13, zmm13
-vpxord zmm14, zmm14, zmm14
+vpxor ymm11, ymm11, ymm11
+vpxor ymm12, ymm12, ymm12
+vpxor ymm13, ymm13, ymm13
+vpxor ymm14, ymm14, ymm14
 vmovdqu32 zmm10, ZMMWORD PTR [rdi+4544]
 vpmadd52luq zmm11, zmm10, zmm9
 vpmadd52huq zmm12, zmm10, zmm8
