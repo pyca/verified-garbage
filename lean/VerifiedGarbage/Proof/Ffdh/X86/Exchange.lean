@@ -29,7 +29,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
 open VG.Proof.Ffdh.X86.CheckDomain (domBytes argNum_comp)
 open VG.Proof.Ffdh.X86.CheckPublic (YGeo yv bytes_keep)
-open VG.Proof.Ffdh.X86.CheckPrivate (XGeo xv)
+open VG.Proof.Ffdh.X86.CheckPrivate (XGeo xv loadTopCtx_ok top_windows)
 
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len dlen xl : Nat}
   {args : Nat → BitVec 32}
@@ -67,43 +67,6 @@ theorem loadCtx_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {d p l
       (frameR_of_outside O (by omega) (by simp))
       (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
       (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega), V, O, K⟩
-
-/-- A number of `L` bytes into the top of the wide context's slot `d`, kept by its context: the bytes'
-value times `2^(8 (Bc − L))`. -/
-theorem loadTopCtx_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {d p l L : Nat} (hd1 : 1 ≤ d)
-    (hd : d ≤ 8) (hp : p < 18) (hl : l < 18) (hlen : args l = BitVec.ofNat 32 L) (hL : 0 < L) (hLl : L ≤ len)
-    (fit : (args p).toNat + L ≤ 2 ^ 32) (rd : InRegions (s.rd ++ s.wr) (byteAddr (args p)) L)
-    (apart : Region.Disjoint ⟨byteAddr (args p), L⟩ ⟨base, bytes⟩) :
-    WP isa (loadTop (.slot .wide d) (one .wide) p l) s fun u =>
-      CtxOk Ex base bytes len args .wide M u ∧
-      sv u.mem base len .wide d =
-        2 ^ (8 * (bc len .wide - L)) * Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args p)) L) ∧
-      Outside base (lo len (.slot .wide d)) (bc len .wide) s.mem u.mem ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have h := C.inp
-  have bl := h.bytes_lt
-  have lb := len_le_bc len
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
-  have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have ed : lo len (.slot .wide d) = numBase + d * st len .wide := rfl
-  have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
-  have d8 := Nat.mul_le_mul_right (st len .wide) hd
-  have d1 := Nat.mul_le_mul_right (st len .wide) hd1
-  refine WP.mono (loadTop_ok h (one_ok .wide) (slot_fit1 h (j := d) (by omega)) (p := p) (l := l) (L := L) hp hl hlen
-    hL (by rw [cb1]; omega) fit rd apart) fun u ⟨V, O, K⟩ => ?_
-  rw [cb1] at O V
-  rw [cw1] at V
-  exact ⟨C.keepF K (by decide) (by decide) (ws := [(lo len (.slot .wide d), bc len .wide)])
-      (frameR_of_outside O (by omega) (by simp))
-      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
-      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega), V, O, K⟩
-
-/-- The exponent's top `2 L` windows, of a number of `L` bytes at the top of `Bc`: the number. -/
-theorem top_windows {E L B : Nat} (hL : L ≤ B) :
-    2 ^ (8 * (B - L)) * E * 16 ^ (2 * L) / 2 ^ (8 * B) = E := by
-  rw [show (16 : Nat) ^ (2 * L) = 2 ^ (8 * L) by rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega,
-    Nat.mul_comm (2 ^ _) E, Nat.mul_assoc, ← Nat.pow_add, show 8 * (B - L) + 8 * L = 8 * B by omega]
-  exact Nat.mul_div_cancel _ (Nat.two_pow_pos _)
 
 /-- The body up to the power. -/
 abbrev exFront : List (Prog isa) :=

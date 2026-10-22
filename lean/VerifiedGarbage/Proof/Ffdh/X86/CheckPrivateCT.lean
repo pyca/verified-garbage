@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 
@@ -53,6 +54,9 @@ theorem range_check : ACheck (Impl.Ffdh.X86.rangeMask 12) := by dsimp only [AChe
 theorem store_check : ACheck (.block [.store (sc accOff) .ecx]) := by dsimp only [ACheck]; taint_decide
 theorem copy13_check : ACheck (copy (.slot .wide 13) (.slot .wide 8) (one .wide)) := by
   dsimp only [ACheck]; taint_decide
+theorem topLoads_check : ACheck (Prog.chain [copy (.slot .wide 10) (.slot .wide 5) (one .wide),
+    loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])) := by dsimp only [ACheck]; taint_decide
+theorem count_check : ACheck (.block (lenCount 11)) := by dsimp only [ACheck]; taint_decide
 theorem tail_check : ACheck (.seq (equal (.slot .wide 6) (.slot .wide 12) (one .wide))
     (.seq (.block [.alu .and .ecx (.mem (sc accOff))]) Impl.Ffdh.X86.retMask)) := by
   dsimp only [ACheck]; taint_decide
@@ -83,22 +87,54 @@ theorem status_two {a : Spec.Ffdh.Parameters} {y x : Nat} :
   · simp only [Bool.not_true, Bool.false_eq_true, ↓reduceIte, reduceCtorEq, iff_false]
     split <;> decide
 
-theorem pair_trace {P : State → Prop} (hP : ∀ x, P x → Run Ex base bytes len args sp x) :
+/-- A run, with x's geometry. -/
+abbrev RX (Ex : List Region → List Region → Prop) (base : Addr) (bytes len xl : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (u : State) : Prop :=
+  Run Ex base bytes len args sp u ∧ XGeo args base bytes len xl u.rd u.wr
+
+/-- x's power: p's context by `ctxP_relCT`, the copy and x's load by the taint analysis, and the power
+over x's `xl` bytes by private CRT's windowed power. -/
+theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024)
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) :
+    RelCT isa (Both (RX Ex base bytes len xl args sp)) (Impl.Ffdh.X86.powTop 10)
+      (Both (Run Ex base bytes len args sp)) := by
+  rw [powTop_eq]
+  apply VG.RelCT.chain
+  refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
+    ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
+      (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) topLoads_check))) fun x ⟨R, X⟩ => ?_) ?_
+  · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
+      fun u ⟨C, one, R4, _, _, _, _, K⟩ =>
+      ⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
+    have hM := safeM_gt (sv x.mem base len .wide 9)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl
+    · rw [one]; exact hM
+    · rw [R4]; exact Nat.mod_lt _ (by omega)
+  · exact (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega) (by omega) count_check
+      fun _ W => lenCount_wst (by decide) hx.1 W).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
+
+theorem pair_trace {P : State → Prop}
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) :
     RelCT isa (Both P) Impl.Ffdh.X86.CheckPrivate.pair fun _ _ => True := by
+  by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
+    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+  swap
+  · refine VG.RelCT.of_false fun s₁ _ h => hx ?_
+    obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
+    exact ⟨⟨X.e11, X.pos, by have := X.le; have := R.1.upper'; omega⟩, d⟩
   unfold Impl.Ffdh.X86.CheckPrivate.pair
   have ao : accOff = 8 := rfl
   have nb : numBase = 3336 := rfl
-  refine VG.RelCT.seq (aRel (F := fun v => Run Ex base bytes len args sp v ∧ ∃ c, v.gpr .ecx = cmask c) hP
-    range_check fun x R => ?_) ?_
-  · have R := hP x R
+  refine VG.RelCT.seq (aRel (F := fun v => RX Ex base bytes len xl args sp v ∧ ∃ c, v.gpr .ecx = cmask c)
+    (fun x h => (hP x h).1.1) range_check fun x R => ?_) ?_
+  · obtain ⟨⟨R, X⟩, _⟩ := hP x R
     exact WP.mono (rangeMask_ok R.1 (a := 12) (by decide)) fun v ⟨_, e, O, K⟩ =>
-      ⟨run_step R (Step.word R.1 (by decide) O K), _, e⟩
-  refine VG.RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun _ h => h.1) store_check
-    fun x ⟨R, c, e⟩ => WP.mono (storeMask_ok R.1 (d := accOff) (by omega) e) fun v ⟨_, O, _, _, K⟩ =>
-      run_step R (Step.word R.1 (by omega) O K)) ?_
-  exact VG.RelCT.seq (powP_trace (b := 10) (e := 13) (by decide) (by decide) (by decide) (by decide)
-    VG.Proof.Ffdh.X86.CheckDomain.copy10_check copy13_check)
-    (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
+      ⟨⟨run_step R (Step.word R.1 (by decide) O K), X.keep ⟨rfl, rfl⟩ K⟩, _, e⟩
+  refine VG.RelCT.seq (aRel (F := RX Ex base bytes len xl args sp) (fun _ h => h.1.1) store_check
+    fun x ⟨⟨R, X⟩, c, e⟩ => WP.mono (storeMask_ok R.1 (d := accOff) (by omega) e) fun v ⟨_, O, _, _, K⟩ =>
+      ⟨run_step R (Step.word R.1 (by omega) O K), X.keep ⟨rfl, rfl⟩ K⟩) ?_
+  exact VG.RelCT.seq (powTop_trace hx.1 hx.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
 /-- A run, with the domain's geometry. -/
 def RG (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
@@ -158,12 +194,14 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => Run Ex base bytes len args sp u ∧ Gate u (St = 2)) front_trace fun x A => ?_) ?_
+    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) ∧
+      Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.pub.dom.run.1 A.pub.dom.geo A.pub.geo A.geo
       (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.hb40) (by rw [A.pub.dom.run.2.2]; exact A.pub.hy40)
-      (by rw [A.pub.dom.run.2.2]; exact A.hx40)) fun u ⟨S, G, _⟩ => ⟨run_step A.pub.dom.run S, G.congr ?_⟩
+      (by rw [A.pub.dom.run.2.2]; exact A.hx40)) fun u ⟨S, G, _⟩ =>
+      ⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.hx40⟩, G.congr ?_⟩
     rw [← A.st, status_two, params, A.pub.dom.dom]
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1) ret2_check) (pair_trace fun _ h => h.1.1)
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1) ret2_check) (pair_trace fun _ h => h.1.1)
 
 end
 

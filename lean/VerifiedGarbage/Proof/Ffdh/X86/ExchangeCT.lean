@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeTop
 meta import VerifiedGarbage.Proof.Ffdh.X86.ExchangeTop
 meta import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
+import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Omega
@@ -41,7 +42,6 @@ open VG.Impl.Ffdh.X86 (argsFrame)
 theorem pSetup_check : ACheck Impl.Ffdh.X86.pSetup := by dsimp only [ACheck]; taint_decide
 theorem loads_check : ACheck (Prog.chain [load (.slot .wide 5) (one .wide) 8 9,
     loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])) := by dsimp only [ACheck]; taint_decide
-theorem count_check : ACheck (.block (lenCount 11)) := by dsimp only [ACheck]; taint_decide
 theorem tail_check : ACheck exTail := by dsimp only [ACheck]; taint_decide
 theorem fill_check :
     (VG.Taint.check taint (τr [.esp]) (.block (Impl.Ffdh.X86.fill Impl.Ffdh.X86.Exchange.args)) (.block [])).isSome =
@@ -102,7 +102,7 @@ theorem body_relCT :
     rcases hj with rfl | rfl
     · rw [one]; exact hM
     · rw [R2]; exact Nat.mod_lt _ (by omega)
-  · exact VG.RelCT.seq (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega) (by omega) count_check
+  · exact VG.RelCT.seq (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega) (by omega) CheckPrivate.count_check
       fun _ W => lenCount_wst (by decide) hx.1 W)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
