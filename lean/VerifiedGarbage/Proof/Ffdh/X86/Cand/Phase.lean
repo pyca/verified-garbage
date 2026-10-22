@@ -36,7 +36,7 @@ theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args 
     WP isa (phase j) s fun u => Step Ex base bytes len args s u ∧
       u.gpr .eax = BitVec.ofNat 32 (drawStatus (ParameterCandidate.checkWitnesses w n (T.drop c))) ∧
       (∀ b r, ParameterCandidate.checkWitnesses w n (T.drop c) = some (b, r) →
-        ∃ c', w32 u.mem base curOff = c' ∧ T.drop c' = r) ∧
+        ∃ c', w32 u.mem base curOff = c' ∧ c' ≤ T.length ∧ T.drop c' = r) ∧
       Kept base len [11, 13, 14, 15] (twoOff :: drawDs) s.mem u.mem := by
   have hwl : w - 1 < 2 ^ (32 * cwc len .wide) := by
     have := val32_lt s.mem base (lo len (.slot .wide j)) (cwc len .wide)
@@ -78,8 +78,8 @@ theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args 
   · exact S₀.trans (E.step.trans (Step.regs E.step.inp U.mem U.keeps))
   · rw [U.gpr, E.status]
   · intro b r e
-    obtain ⟨c', hc', hr⟩ := E.used b r e
-    exact ⟨c', by rw [U.mem, hc'], hr⟩
+    obtain ⟨c', hc', hl, hr⟩ := E.used b r e
+    exact ⟨c', by rw [U.mem, hc'], hl, hr⟩
   · exact k₀.mono.trans (E.kept.mono.trans (by rw [U.mem]; exact (Kept.refl _).mono))
 
 end VG.Proof.Ffdh.X86.Cand

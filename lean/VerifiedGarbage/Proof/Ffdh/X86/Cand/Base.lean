@@ -30,6 +30,9 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
 saved registers, or between the multiplier's word and the product. -/
 abbrev Hdr (d : Nat) : Prop := ((16 ≤ d ∧ d + 4 ≤ 32) ∨ (52 ≤ d ∧ d + 4 ≤ 256)) ∧ d % 4 = 0
 
+theorem hdr_cur : Hdr curOff := ⟨.inl ⟨by decide, by decide⟩, by decide⟩
+theorem hdr_oct : Hdr octOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
+
 theorem hdr_fit (h : In Ex base bytes len args s) {d : Nat} (hd : Hdr d) : d + 4 ≤ bytes := by
   have := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl

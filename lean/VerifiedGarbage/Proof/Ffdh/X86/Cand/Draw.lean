@@ -66,9 +66,6 @@ theorem tape_keep {n : Nat} (G : TapeGeo Ex args base bytes (s.gpr .esp) n) {t :
   · have := fit p hp
     exact G.apart.sub_right (Offset.sub_base _ (by omega))
 
-theorem hdr_cur : Hdr curOff := ⟨.inl ⟨by decide, by decide⟩, by decide⟩
-theorem hdr_oct : Hdr octOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
-
 /-- The `o` octets of the tape `T` at the cursor `c` into slot 13, and the cursor past them. -/
 theorem drawLoad_ok {w n : Nat} (P : Prepped Ex base bytes len args w s) (G : TapeGeo Ex args base bytes (s.gpr .esp) n)
     {T : List Byte} (hT : Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) n = T) {c o : Nat}
@@ -253,7 +250,7 @@ structure DrawEnd (Ex : List Region → List Region → Prop) (base : Addr) (byt
     (s₀ : State) (w : Nat) (T : List Byte) (D : Option (Bool × Spec.RsaKeyGen.Rand)) (t : State) : Prop
     extends Mid Ex base bytes len args s₀ w T t where
   status : w32 t.mem base stOff = drawStatus D
-  used : ∀ b r, D = some (b, r) → ∃ c, w32 t.mem base curOff = c ∧ T.drop c = r
+  used : ∀ b r, D = some (b, r) → ∃ c, w32 t.mem base curOff = c ∧ c ≤ T.length ∧ T.drop c = r
 
 theorem DrawAt.regs {s₀ t : State} {w : Nat} {T : List Byte} {n c : Nat}
     (A : DrawAt Ex base bytes len args s₀ w T n c t) {u : State} {rs : List Reg} (K : Keeps rs t u) (m : u.mem = t.mem)
@@ -490,7 +487,7 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
     · intro b r' e'
       rw [D'] at e'
       cases e'
-      exact ⟨c + o, by rw [ku.word_eq, cur₇], rfl⟩
+      exact ⟨c + o, by rw [ku.word_eq, cur₇], co, rfl⟩
     · rw [D']; simp [drawStatus]
   -- The round passed.
   have mt : Spec.Ffdh.mrRound w a = true := by simpa using e
@@ -508,7 +505,7 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
     · intro b r' e'
       rw [D''] at e'
       cases e'
-      exact ⟨c + o, curu, rfl⟩
+      exact ⟨c + o, curu, co, rfl⟩
     · rw [D'']; simp [drawStatus]
   · refine .inl ⟨n₁, c + o, ⟨Mu, ?_, ?_, curu, Cu, by rw [Su]; simp [n0]⟩, by omega, by omega, co, D'.symm⟩
     · rw [ku.word_eq, k₇.word_eq, oct₄, hoo]
