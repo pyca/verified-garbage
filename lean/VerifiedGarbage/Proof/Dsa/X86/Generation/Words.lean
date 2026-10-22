@@ -16,7 +16,7 @@ space that `edi` holds (`[edi + d]`, `sc d`). -/
 namespace VG.Proof.Dsa.X86.Generation
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Mont.X86 (sc)
-open VG.Impl.Dsa.X86.Generation (scr)
+open VG.Impl.Dsa.X86.Generation (scr orByte)
 
 theorem Scr.addr {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat} (hd : d < size) :
     VG.X86.addr (s.gpr .edi) d = off base d :=
@@ -73,6 +73,53 @@ theorem addm_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
     WP isa (.block (.alu .add r (.mem (sc d)) :: is)) s Q := by
   have e := Scr.addr hs (d := d) (by omega)
   exact wp_addm (B := s.gpr .edi) rfl (by rw [e]; exact hs.read hd) fun s' u => by rw [e] at u; exact k s' u
+
+/-- `movzx r, byte [edi + d]`. -/
+theorem ld8_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
+    (k : ∀ s', Upd s s' r ((s.mem (off base d)).setWidth 32) → WP isa (.block is) s' Q) :
+    WP isa (.block (.movzx8 r (sc d) :: is)) s Q := by
+  have e := Scr.addr hs (d := d) (by omega)
+  refine cons (s' := s.setReg r ((s.mem (off base d)).setWidth 32)) ?_ (k _ (Upd.setReg _ _ _))
+  have hin := hs.read (d := d) (n := 1) hd
+  simp only [exec, State.load8, sc, VG.Impl.Mont.X86.at_, ea_mk, e, hin, ↓reduceIte, Option.map_some]
+
+/-- `mov byte [edi + d], r8`. -/
+theorem st8_ok {r : Reg8} {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
+    (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.store8 (sc d) r :: is)) s Q := by
+  have e := Scr.addr hs (d := d) (by omega)
+  refine cons (s' := { s with mem := s.mem.writeW (off base d) ((s.gpr r.reg).setWidth 8) }) ?_
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
+  have hout := hs.write (d := d) (n := 1) hd
+  simp only [exec, State.store8, sc, VG.Impl.Mont.X86.at_, ea_mk, e, hout, ↓reduceIte]
+
+/-- `or d, imm`. -/
+theorem wp_ori {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d ||| v) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .or d (.imm v) :: is)) s Q :=
+  cons rfl (k _ (Upd.flags _ _ _ _ _ _))
+
+theorem or_byte (b : Byte) (v : Nat) (hv : v < 256) :
+    ((b.setWidth 32 ||| BitVec.ofNat 32 v).setWidth 8) = b ||| BitVec.ofNat 8 v := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_ofNat]
+  have := b.isLt
+  rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega), Nat.mod_eq_of_lt (a := v) (by omega),
+    Nat.mod_eq_of_lt (a := v) (by omega), Nat.mod_eq_of_lt (Nat.or_lt_two_pow (n := 8) (by omega) (by omega))]
+
+/-- The byte at `scratch + o` ORed with `v`. -/
+theorem orByte_ok {o v : Nat} (hs : Scr s base size) (ho : o + 1 ≤ size) (hv : v < 256)
+    (k : ∀ s', (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms →
+      s'.mem = s.mem.writeW (off base o) (s.mem (off base o) ||| BitVec.ofNat 8 v) → WP isa (.block is) s' Q) :
+    WP isa (.block (orByte o v ++ is)) s Q := by
+  simp only [orByte, List.cons_append, List.nil_append]
+  refine ld8_ok hs ho fun s₁ u₁ => wp_ori fun s₂ u₂ =>
+    st8_ok (Scr.of_eq hs (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
+      (by rw [u₂.other _ (by decide), u₁.other _ (by decide)]) (by rw [u₂.wr, u₁.wr])) ho fun s₃ M₃ => ?_
+  refine k s₃ (fun r hr => by rw [M₃.gpr, u₂.other r hr, u₁.other r hr]) (by rw [M₃.rd, u₂.rd, u₁.rd])
+    (by rw [M₃.wr, u₂.wr, u₁.wr]) (by rw [M₃.syms, u₂.syms, u₁.syms]) ?_
+  rw [M₃.mem, u₂.mem, u₁.mem]
+  simp only [Reg8.reg, u₂.gpr, u₁.gpr]
+  rw [or_byte _ _ hv]
 
 end
 

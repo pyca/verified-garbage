@@ -70,13 +70,66 @@ theorem Chg.bytesAt {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {R
   simp only [List.mem_range] at hi
   exact Frame.bytes h (far_all hR hS hos) hl hi
 
+/-- A frame within the ranges and the stack. -/
+theorem Chg.of_frame {os : List (Nat × Nat)} {rs : List Region} {m m' : Mem} (F : Frame rs m m')
+    (h : ∀ r ∈ rs, ∃ r' ∈ (os.map fun o => (⟨off E.base o.1, o.2⟩ : Region)) ++ [E.stackRegion], Region.Sub r r') :
+    E.Chg os m m' :=
+  Frame.sub F h
+
+/-- A part of one of the ranges. -/
+theorem in_range {os : List (Nat × Nat)} {o : Nat × Nat} (ho : o ∈ os) {d n : Nat} (h₁ : o.1 ≤ d)
+    (h₂ : d + n ≤ o.1 + o.2) :
+    ∃ r' ∈ (os.map fun o => (⟨off E.base o.1, o.2⟩ : Region)) ++ [E.stackRegion],
+      Region.Sub ⟨off E.base d, n⟩ r' :=
+  ⟨_, List.mem_append_left _ (List.mem_map.mpr ⟨o, ho, rfl⟩), Offset.sub E.base h₁ h₂⟩
+
+/-- A part of the stack. -/
+theorem in_stack {os : List (Nat × Nat)} {r : Region} (h : Region.Sub r E.stackRegion) :
+    ∃ r' ∈ (os.map fun o => (⟨off E.base o.1, o.2⟩ : Region)) ++ [E.stackRegion], Region.Sub r r' :=
+  ⟨_, List.mem_append_right _ (List.mem_singleton_self _), h⟩
+
 /-- A store of a word into one of the ranges. -/
 theorem Chg.store {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat} (ho : (d, n) ∈ os)
     (hn : 4 ≤ n) (v : BitVec 32) : E.Chg os m (m'.writeW (off E.base d) v) :=
   Frame.writeW h (r := ⟨off E.base d, n⟩) (List.mem_append_left _ (List.mem_map.mpr ⟨_, ho, rfl⟩)) v
     (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
 
+/-- A store of a byte into one of the ranges. -/
+theorem Chg.byte {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat} (ho : (d, n) ∈ os)
+    {i : Nat} (hi : i < n) (hn : n < 2 ^ 64) (b : Byte) :
+    E.Chg os m (m'.writeW (off E.base d + BitVec.ofNat 64 i) b) :=
+  Frame.writeW h (r := ⟨off E.base d, n⟩) (List.mem_append_left _ (List.mem_map.mpr ⟨_, ho, rfl⟩)) b
+    (Offset.contains_base _ (by omega) (by omega))
+
+/-- The bytes of a range of `scratch` apart from every range of a change. -/
+theorem Chg.scratch (v : E.Valid) {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat}
+    (hd : d + n ≤ E.size) (hos : ∀ o ∈ os, o.1 + o.2 ≤ E.size ∧ (o.1 + o.2 ≤ d ∨ d + n ≤ o.1)) :
+    Spec.Rsa.bytesAt m' (off E.base d) n = Spec.Rsa.bytesAt m (off E.base d) n := by
+  have nw := v.scratchFit
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  simp only [List.mem_range] at hi
+  refine Frame.bytes h (R := ⟨off E.base d, n⟩) ?_ (by show n ≤ 2 ^ 64; omega) hi
+  intro r hr
+  simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
+  rcases hr with ⟨o, ho, rfl⟩ | rfl
+  · have := hos o ho
+    exact Offset.disjoint E.base (by omega) (by omega) (by omega)
+  · exact v.scratchStack.sub_left (range_sub (o := (d, n)) hd)
+
 end Env
+
+/-- The bytes of a range of `scratch` apart from a write to another. -/
+theorem frame_bytes {base : Addr} {m m' : Mem} {d n d' n' : Nat}
+    (F : Frame [⟨off base d, n⟩] m m') (h : d + n ≤ d' ∨ d' + n' ≤ d) (hd : d + n ≤ 2 ^ 32)
+    (hd' : d' + n' ≤ 2 ^ 32) :
+    Spec.Rsa.bytesAt m' (off base d') n' = Spec.Rsa.bytesAt m (off base d') n' := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  simp only [List.mem_range] at hi
+  refine Frame.bytes F (R := ⟨off base d', n'⟩) ?_ (by show n' ≤ 2 ^ 64; omega) hi
+  intro r hr; simp only [List.mem_singleton] at hr; subst hr
+  exact Offset.disjoint base h.symm (by omega) (by omega)
 
 /-- A store into a word of `scratch` leaves the words apart from it. -/
 theorem word_store_other {E : Env} (v : E.Valid) (m : Mem) {d e : Nat} (hd : d + 4 ≤ E.size) (he : e + 4 ≤ E.size)
