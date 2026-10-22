@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Arm.PackedProduct
+public import VerifiedGarbage.Impl.Mont.ArmPacked
+import VerifiedGarbage.Proof.Mont.Arm.PackedProduct
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

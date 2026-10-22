@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Arm.PackedLoop
+public import VerifiedGarbage.Impl.Mont.ArmPacked
+import VerifiedGarbage.Proof.Mont.Arm.PackedLoop
 import VerifiedGarbage.Proof.Mont.Arm.PackedExpand
 public import VerifiedGarbage.Proof.Mont.Arm.Ops
 import VerifiedGarbage.Proof.Mont.Arm.Csub

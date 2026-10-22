@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Arm.PackedStep
+import VerifiedGarbage.Proof.Mont.Arm.PackedProduct
 import VerifiedGarbage.Proof.Bignum.Arm.RowFull
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

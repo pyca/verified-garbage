@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.ArmPacked
-public import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Mont.Arm.Row
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Convert the packed accumulator to the existing reducer's digit format. -/

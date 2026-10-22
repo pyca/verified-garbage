@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Arm.PackedShift
+public import VerifiedGarbage.Impl.Mont.ArmPacked
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Proof.Mont.Arm.PackedShift
 import VerifiedGarbage.Proof.Mont.Arm.PackedRow
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Mont.Arm.Loop
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! One packed Montgomery round in the curve workspace. -/
