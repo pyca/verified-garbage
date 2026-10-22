@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 public import VerifiedGarbage.Proof.Framework.X86.CallReturn
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
@@ -159,47 +160,66 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     exact Offset.disjoint_of_le (by simp only [nat60, nat24]; omega) (by simp only [nat24]; omega)
   · rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
 
-/-- The domain check of p||q||g: `fStatus` := 1 if it passes. -/
-theorem check_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
-    {s : State} (B : Base E s) :
-    WP isa (check g.pLen g.qLen (16 * g.pLen) g.checkName g.checkCode) s fun t =>
-      Base E t ∧ E.Chg [(sChk, 16 * g.pLen * 8), (fStatus, 4)] s.mem t.mem ∧
-      t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms ∧
-      t.mem.readW (off E.base fStatus) 32 =
-        (if Spec.Dsa.checkParametersBytes g.pLen g.qLen
-            (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) then BitVec.ofNat 32 1
-          else s.mem.readW (off E.base fStatus) 32) := by
+/-- What the check's call needs. -/
+theorem chk_callPre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
+    {s t : State} (B : Base E s) (A : ChkArgs E g s t) : CallPre chkContract chkRegs (chkRd E) (chkWr E t) t := by
+  have sz := v.size_ge
+  have bd := G.bounds
+  have room : 512 * g.pLen + 8192 ≤ E.size := hp ▸ v.room
+  have subP : Region.Sub ⟨off E.base sPk, E.outLen⟩ E.scratchRegion :=
+    Offset.sub_base _ (by simp only [Env.outLen, sPk, hp, hq]; omega)
+  refine ⟨check_pre G v hp hq B A, ?_, ?_⟩
+  · refine Covers.of_sub fun r hr => ?_
+    simp only [chkRd, chkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ B.scr.wr)), sPk, rfl,
+        by simp only [Env.scratchRegion, Env.outLen, sPk, hp, hq]; omega⟩
+    · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ B.scr.wr)), sChk, rfl,
+        by simp only [Env.scratchRegion, sChk]; omega⟩
+    · exact ⟨below (t.gpr .esp) (4 * chkRegs.length), List.mem_append_right _ (.head _), 0, by simp, by simp⟩
+  · refine Covers.of_sub fun r hr => ?_
+    simp only [chkWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨E.scratchRegion, .tail _ (A.wr ▸ B.scr.wr), sChk, rfl, by simp only [Env.scratchRegion, sChk]; omega⟩
+    · exact ⟨below (t.gpr .esp) (4 * chkRegs.length), .head _, 0, by simp, by simp⟩
+
+/-- After the domain check's call and its comparison: ZF set exactly when
+p||q||g passes. -/
+structure ChkMid (E : Env) (g : Geo) (c : Bool) (s x : State) : Prop where
+  base : Base E x
+  zf : isa.eval .e x = some c
+  chg : E.Chg [(sChk, 16 * g.pLen * 8), (fStatus, 4)] s.mem x.mem
+  rd : x.rd = s.rd
+  wr : x.wr = s.wr
+  syms : x.syms = s.syms
+  st : x.mem.readW (off E.base fStatus) 32 = s.mem.readW (off E.base fStatus) 32
+  edi : x.gpr .edi = s.gpr .edi
+  esp : x.gpr .esp = s.gpr .esp
+
+/-- The domain check of p||q||g, up to the branch on its result. -/
+theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
+    {s : State} (B : Base E s) {P : Prog isa} {Q : State → Prop}
+    (k : ∀ x, ChkMid E g (Spec.Dsa.checkParametersBytes g.pLen g.qLen
+      (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen))) s x → WP isa P x Q) :
+    WP isa (Prog.chain [.block (scr .eax sPk ++ [.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen))),
+      .mov .edx (.imm (BitVec.ofNat 32 g.pLen)), .mov .ebx (.imm (BitVec.ofNat 32 g.qLen))] ++ scr .esi sChk ++
+      [.mov .ebp (.imm (BitVec.ofNat 32 (16 * g.pLen)))]),
+      .frame (.push [.ebp, .esi, .ebx, .edx, .ecx, .eax]) (.call g.checkName g.checkCode) (.pop .ecx 6),
+      .block [.alu .cmp .eax (.imm 1)]] P) s Q := by
   have sz := v.size_ge
   have bd := G.bounds
   have low := v.low
   have nw := v.scratchFit
   have cs := G.cStack
   have room : 512 * g.pLen + 8192 ≤ E.size := hp ▸ v.room
-  unfold check
-  simp only [seqs]
+  simp only [Prog.chain]
   refine chkArgs_ok (E := E) fun t A => ?_
   have spT : t.gpr .esp = E.sp := by
     rw [A.other _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), B.sp]
   have hsT : Scr t E.base E.size := Scr.of_eq B.scr (A.other _ (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide)) (by rw [spT, B.sp]) A.wr
-  have subP : Region.Sub ⟨off E.base sPk, E.outLen⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [Env.outLen, sPk, hp, hq]; omega)
-  have cp : CallPre chkContract chkRegs (chkRd E) (chkWr E t) t := by
-    refine ⟨check_pre G v hp hq B A, ?_, ?_⟩
-    · refine Covers.of_sub fun r hr => ?_
-      simp only [chkRd, chkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-        or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ B.scr.wr)), sPk, rfl,
-          by simp only [Env.scratchRegion, Env.outLen, sPk, hp, hq]; omega⟩
-      · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ B.scr.wr)), sChk, rfl,
-          by simp only [Env.scratchRegion, sChk]; omega⟩
-      · exact ⟨below (t.gpr .esp) (4 * chkRegs.length), List.mem_append_right _ (.head _), 0, by simp, by simp⟩
-    · refine Covers.of_sub fun r hr => ?_
-      simp only [chkWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨E.scratchRegion, .tail _ (A.wr ▸ B.scr.wr), sChk, rfl, by simp only [Env.scratchRegion, sChk]; omega⟩
-      · exact ⟨below (t.gpr .esp) (4 * chkRegs.length), .head _, 0, by simp, by simp⟩
+  have cp := chk_callPre G v hp hq B A
   have fitT : 28 ≤ (t.gpr .esp).toNat := by rw [spT]; omega
   obtain ⟨e0, e1, e2, e3, e4, e5⟩ := chkEntry_arg (E := E) (s := t) fitT
   have Fm := chkEntry_mem (E := E) (s := t) fitT
@@ -231,7 +251,7 @@ theorem check_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       (below_sub (by decide) (by omega))
   simp only [pW, l1, l2, l3, e2, e3, bytesW] at post
   generalize hc : Spec.Dsa.checkParametersBytes g.pLen g.qLen
-    (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) = c at post ⊢
+    (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) = c at post k ⊢
   have uax : u.gpr .eax = BitVec.ofNat 32 (if c = true then 1 else 0) := by
     rw [← ax₂]; exact BitVec.eq_of_toNat_eq (by rw [post, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by split <;> decide)])
   have tdi : t.gpr .edi = s.gpr .edi := A.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -268,15 +288,40 @@ theorem check_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   have hsX : Scr x₁ E.base E.size := Scr.of_eq hsU (by rw [f₁.gpr]) (by rw [f₁.gpr]) f₁.wr
   have B₁ : Base E x₁ := B.keep v (by rw [f₁.mem]; exact CH) Ac (by rw [f₁.gpr, udi]) (by rw [f₁.gpr, usp, B.sp])
     (by rw [f₁.rd, urd]) (by rw [f₁.wr, uwr]) (by rw [f₁.syms, usy'])
-  refine WP.ite c zf₁ (fun h1 => stImm_end hsX (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega)
+  exact k x₁ ⟨B₁, zf₁, by rw [f₁.mem]; exact CH, by rw [f₁.rd, urd], by rw [f₁.wr, uwr], by rw [f₁.syms, usy'],
+    by rw [f₁.mem, stU], by rw [f₁.gpr, udi], by rw [f₁.gpr, usp, B.sp]⟩
+
+/-- The domain check of p||q||g: `fStatus` := 1 if it passes. -/
+theorem check_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
+    {s : State} (B : Base E s) :
+    WP isa (check g.pLen g.qLen (16 * g.pLen) g.checkName g.checkCode) s fun t =>
+      Base E t ∧ E.Chg [(sChk, 16 * g.pLen * 8), (fStatus, 4)] s.mem t.mem ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms ∧
+      t.mem.readW (off E.base fStatus) 32 =
+        (if Spec.Dsa.checkParametersBytes g.pLen g.qLen
+            (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) then BitVec.ofNat 32 1
+          else s.mem.readW (off E.base fStatus) 32) := by
+  have sz := v.size_ge
+  have bd := G.bounds
+  have room : 512 * g.pLen + 8192 ≤ E.size := hp ▸ v.room
+  have Ac : E.Apart [(sChk, 16 * g.pLen * 8), (fStatus, 4)] := by
+    intro o ho
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
+    rcases ho with rfl | rfl <;> simp only [sChk, fStatus, fOut, fWitLen, hdr] <;> omega
+  unfold check
+  show WP isa (Prog.chain [_, _, _] (.ite .e _ _)) s _
+  refine checkMid_ok G v hp hq B fun x₁ M => ?_
+  generalize Spec.Dsa.checkParametersBytes g.pLen g.qLen
+    (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) = c at M ⊢
+  refine WP.ite c M.zf (fun h1 => stImm_end M.base.scr (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega)
     fun x₂ g₂ m₂' rd₂ wr₂ sy₂ => ?_) (fun h1 => WP.block_nil ?_)
   · have C₂ : E.Chg [(sChk, 16 * g.pLen * 8), (fStatus, 4)] s.mem x₂.mem := by
-      rw [m₂', f₁.mem]; exact CH.store (.tail _ (.head _)) (by decide) _
-    refine ⟨B.keep v C₂ Ac (by rw [g₂ _ (by decide), f₁.gpr, udi]) (by rw [g₂ _ (by decide), f₁.gpr, usp, B.sp])
-      (by rw [rd₂, f₁.rd, urd]) (by rw [wr₂, f₁.wr, uwr]) (by rw [sy₂, f₁.syms, usy']), C₂,
-      by rw [rd₂, f₁.rd, urd], by rw [wr₂, f₁.wr, uwr], by rw [sy₂, f₁.syms, usy'], ?_⟩
+      rw [m₂']; exact M.chg.store (.tail _ (.head _)) (by decide) _
+    refine ⟨B.keep v C₂ Ac (by rw [g₂ _ (by decide), M.edi]) (by rw [g₂ _ (by decide), M.esp])
+      (by rw [rd₂, M.rd]) (by rw [wr₂, M.wr]) (by rw [sy₂, M.syms]), C₂,
+      by rw [rd₂, M.rd], by rw [wr₂, M.wr], by rw [sy₂, M.syms], ?_⟩
     rw [m₂', Mem.readW_writeW_self32, h1]; rfl
-  · refine ⟨B₁, by rw [f₁.mem]; exact CH, by rw [f₁.rd, urd], by rw [f₁.wr, uwr], by rw [f₁.syms, usy'], ?_⟩
-    rw [h1, f₁.mem, stU]; rfl
+  · refine ⟨M.base, M.chg, M.rd, M.wr, M.syms, ?_⟩
+    rw [h1, M.st]; rfl
 
 end VG.Proof.Dsa.X86.Generation
