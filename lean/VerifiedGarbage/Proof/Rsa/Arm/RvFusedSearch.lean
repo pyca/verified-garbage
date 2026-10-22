@@ -24,10 +24,10 @@ theorem fusedCandidates_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (h101 : 101 < P.n)
     (lengths : P.el + P.dl ≤ 2 * P.K) (positive : 0 < P.el + P.dl)
     (hnt : 1 ≤ P.nt) (hnt' : P.nt ≤ 100) {E : State → Prop}
     (hE : ∀ σ, E σ → In P σ ∧ goOn P σ = true ∧ (gos P σ 100).2 = P.nt) :
-    VP (fun σ s => E σ ∧ KM P σ (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc] s) candidates
+    VP (fun σ s => E σ ∧ KM P σ (fusedAW P σ) [wM] (fun _ => 0) [] s) candidates
       (FCF P (Ej P E (P.nt - 1)) (P.nt - 1)) := by
-  refine VP.seq (St.pcandZero (P := P) (E := E) (A := fun _ => AM P) (L := liveM) (AW := fun σ => AWh P σ P.c)
-    (LW := [wR, wM]) (V := fun σ => Vh P σ P.c) (LS := [sTc])) ?_
+  refine VP.seq (St.pcandZero (P := P) (E := E) (A := fun _ => AM P) (L := liveM) (AW := fun σ => fusedAW P σ)
+    (LW := [wM]) (V := fun _ _ => 0) (LS := [])) ?_
   have hl := VP.loop (I := fun m σ s => m ≤ P.nt ∧ FCS P (Ej P E (P.nt - m)) (P.nt - m) σ s) (body := candidate)
     (c := .ne) (Q := FCF P (Ej P E (P.nt - 1)) (P.nt - 1)) (fun n => VP.pure fun hle => ?_) (P.nt - 1)
   · refine hl.mono (fun σ s h => ⟨by omega, ?_⟩) fun _ _ h => h

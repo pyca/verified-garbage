@@ -30,11 +30,11 @@ variable {P : RP} {E : State → Prop} {j : Nat} {st : State → VG.Proof.Rsa.Fu
 
 theorem fusedRoot_vp :
     VP (St P E (fun σ => fusedSquareA P j (st σ)) (mX :: fusedKeep)
-      (fun σ => AWh P σ P.c) [wR, wM] (fun σ => fusedSquareV P (V σ) (st σ))
+      (fun σ => fusedAW P σ) [wM] (fun σ => fusedSquareV P (V σ) (st σ))
       fusedSquareSlots P.w nArr)
       (.seq (sel aU aRoot aZ sBit) (sel aRoot aU mY sLive))
       (St P E (fun σ => fusedRootA P j (V σ) (st σ)) (mX :: fusedKeep)
-        (fun σ => AWh P σ P.c) [wR, wM] (fun σ => fusedSquareV P (V σ) (st σ))
+        (fun σ => fusedAW P σ) [wM] (fun σ => fusedSquareV P (V σ) (st σ))
         fusedSquareSlots P.w nArr) := by
   refine VP.seq (St.psel ⟨_, by taint_decide⟩ (o := aU) (a := aRoot) (b := aZ) (sl := sBit)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)

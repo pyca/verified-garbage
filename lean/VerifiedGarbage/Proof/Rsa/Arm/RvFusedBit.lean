@@ -21,7 +21,7 @@ variable {P : RP} {E : State → Prop} {j : Nat} {st : State → VG.Proof.Rsa.Fu
 
 theorem fusedBitFinish_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) :
     VP (St P E (fun σ => fusedValueA P j (V σ) (st σ)) (mX :: fusedKeep)
-      (fun σ => AWh P σ P.c) [wR, wM] (fun σ => fusedSquareV P (V σ) (st σ))
+      (fun σ => fusedAW P σ) [wM] (fun σ => fusedSquareV P (V σ) (st σ))
       fusedSquareSlots P.w nArr) finishBit
       (FI P E j (fun σ => fusedNext P j (V σ) (st σ))
         (fun σ => upd (V σ) sByte (2 * V σ sByte % 256))) := by

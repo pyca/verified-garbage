@@ -27,7 +27,7 @@ def fusedCandidateV (P : RP) (σ : State) (j : Nat) : Nat → Nat :=
   upd (upd (fun _ => 0) sOk (b2n (fusedResult P σ j).isSome)) sCand (j + 1)
 
 abbrev FCF (P : RP) (E : State → Prop) (j : Nat) : State → State → Prop :=
-  St P E (finishA P (fusedFinish P j)) Lq (fun σ => AWh P σ P.c) [wR, wM]
+  St P E (finishA P (fusedFinish P j)) Lq (fun σ => fusedAW P σ) [wM]
     (fun σ => fusedCandidateV P σ j) [sCand, sOk] P.w nArr
 
 section

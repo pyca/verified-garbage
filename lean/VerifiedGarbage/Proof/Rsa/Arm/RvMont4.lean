@@ -27,8 +27,8 @@ open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout)
 abbrev R2v (P : RP) : Nat := 2 ^ (128 * P.w6) % P.n
 
 /-- The stage `K01` but for `r8`. -/
-abbrev R01 (P : RP) (σ : State) (s : State) : Prop :=
-  KR P σ (A01 P σ) live01 (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc] s
+abbrev R01 (P : RP) (σ : State) (s : State) (keepHalves : Bool := true) : Prop :=
+  KR P σ (A01 P σ) live01 (AWh P σ P.c) (montWide keepHalves) (Vh P σ P.c) (montSlots keepHalves) s
 
 section
 variable {P : RP}
@@ -58,10 +58,10 @@ theorem fitsM : arrAt P.w6 8 ≤ 8 * P.lenM := by
   simp only [arrAt, Spec.Rsa.Mont.hdrBytes, RP.lenM]; omega
 
 /-- `setup`. -/
-theorem setup_vp {E : State → Prop} :
-    VP (fun σ s => E σ ∧ K01 P σ s ∧ s.gpr .r0 = P.M0 ∧ s.gpr .r7 = BitVec.ofNat 32 P.w6 ∧ s.gpr .r3 = 0 ∧
+theorem setup_vp {E : State → Prop} (keepHalves : Bool := true) :
+    VP (fun σ s => E σ ∧ K01 P σ s keepHalves ∧ s.gpr .r0 = P.M0 ∧ s.gpr .r7 = BitVec.ofNat 32 P.w6 ∧ s.gpr .r3 = 0 ∧
         s.mem.readW (State.addr P.sp) 32 = P.M0) VG.Impl.Bignum.Arm.setup
-      (fun σ s => E σ ∧ R01 P σ s ∧ Layout s.mem (State.addr P.M0) P.lenM ∧ wOf s.mem (State.addr P.M0) = P.w6 ∧
+      (fun σ s => E σ ∧ R01 P σ s keepHalves ∧ Layout s.mem (State.addr P.M0) P.lenM ∧ wOf s.mem (State.addr P.M0) = P.w6 ∧
         s.gpr .r0 = P.M0 ∧ s.mem.readW (State.addr P.sp) 32 = P.M0) := by
   refine VP.of_ct (fun σ₁ σ₂ s t tr1 tr2 u v h e1 e2 =>
     ⟨setup_ct s t tr1 tr2 u v trivial trivial (h.1.2.2.1.trans h.2.2.2.1.symm) e1 e2, trivial⟩)
@@ -73,7 +73,7 @@ theorem setup_vp {E : State → Prop} :
     fitsM r0 r7 r3) fun t ⟨lay, wd, t0, outs, rest⟩ => ⟨e, ?_, lay, wd, t0, ?_⟩
   · have f := frameM_of_outs outs (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;>
       simp only [RP.lenM] <;> omega)
-    exact h.toR.keep (keepM sz hf f) (by decide) (by decide) (by decide) rest.sp rest.rd rest.wr
+    exact h.toR.keep (keepM sz hf f) (by decide) (by decide) (by cases keepHalves <;> decide) rest.sp rest.rd rest.wr
   · have f := frameM_of_outs outs (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;>
       simp only [RP.lenM] <;> omega)
     rw [← sv]
@@ -81,12 +81,12 @@ theorem setup_vp {E : State → Prop} :
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pre.r0F_rM) (by decide)
 
 /-- The stage before `precompute`. -/
-abbrev PreP (P : RP) (σ s : State) : Prop :=
-  R01 P σ s ∧ Layout s.mem (State.addr P.M0) P.lenM ∧ wOf s.mem (State.addr P.M0) = P.w6 ∧
+abbrev PreP (P : RP) (σ s : State) (keepHalves : Bool := true) : Prop :=
+  R01 P σ s keepHalves ∧ Layout s.mem (State.addr P.M0) P.lenM ∧ wOf s.mem (State.addr P.M0) = P.w6 ∧
     s.gpr .r0 = P.M0 ∧ s.mem.readW (State.addr P.sp) 32 = P.M0 ∧ s.gpr .r4 = P.nP ∧
     s.gpr .r6 = BitVec.ofNat 32 P.K
 
-theorem preP_input {σ s : State} (hn : P.n % 2 = 1 ∧ 1 < P.n) (h : PreP P σ s) :
+theorem preP_input {keepHalves : Bool} {σ s : State} (hn : P.n % 2 = 1 ∧ 1 < P.n) (h : PreP P σ s keepHalves) :
     PrecomputeInput P.M0 P.nP P.lenM P.w6 P.K s := by
   obtain ⟨k, lay, wd, r0, sv, r4, r6⟩ := h
   have hb := k.bs
@@ -103,9 +103,9 @@ theorem preP_input {σ s : State} (hn : P.n % 2 = 1 ∧ 1 < P.n) (h : PreP P σ 
 theorem countFits (sz : Sizes P) : 128 * P.w6 < 2 ^ 32 := by have := sz.w6b; omega
 
 /-- `n` and `R² mod n`. -/
-theorem precompute_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hs : Sizes P) {E : State → Prop} :
-    VP (fun σ s => E σ ∧ PreP P σ s) VG.Impl.Bignum.Arm.precompute
-      (fun σ s => E σ ∧ R01 P σ s ∧ MR P s ∧ numAt s.mem (State.addr P.M0) P.w6 0 = P.n ∧
+theorem precompute_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hs : Sizes P) {E : State → Prop} (keepHalves : Bool := true) :
+    VP (fun σ s => E σ ∧ PreP P σ s keepHalves) VG.Impl.Bignum.Arm.precompute
+      (fun σ s => E σ ∧ R01 P σ s keepHalves ∧ MR P s ∧ numAt s.mem (State.addr P.M0) P.w6 0 = P.n ∧
         numAt s.mem (State.addr P.M0) P.w6 4 = R2v P) := by
   refine VP.of_ct (fun σ₁ σ₂ => ((precompute_ct (base := P.M0) (src := P.nP) (len := P.lenM) (w := P.w6) (k := P.K)
     (countFits hs)).mono (fun s t h => ⟨preP_input hn h.1.2, preP_input hn h.2.2, ?_⟩) fun _ _ _ => trivial))
@@ -118,7 +118,7 @@ theorem precompute_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hs : Sizes P) {E : State �
   refine WP.mono (precompute_ok s i.workspace i.layout i.width i.positive i.fits i.sourceFits i.readable i.separate
     i.ptr i.source i.count i.stackRead i.stackSep i.saved i.large i.odd (countFits hs))
     fun t ⟨d, n0, r2, f, rest⟩ => ⟨e, ?_, ?_, by rw [n0, nb], by rw [r2, nb]⟩
-  · exact h.1.keep (keepM sz hf f) (by decide) (by decide) (by decide) rest.sp rest.rd rest.wr
+  · exact h.1.keep (keepM sz hf f) (by decide) (by decide) (by cases keepHalves <;> decide) rest.sp rest.rd rest.wr
   · exact ⟨d.workspace, d.layout, d.width, d.inverse, by rw [n0, nb]; exact hn.2, d.stackRead, d.stackSep, d.saved⟩
 
 end

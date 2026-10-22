@@ -53,7 +53,7 @@ theorem fusedSquare_vp (hn : P.n % 2 = 1 ∧ 1 < P.n)
     VP (FI P E j st V)
       (seqs [.block bitHead, seqs (mmul iX iY iY), eqAt sE1 mX aO, eqAt sE2 mX aNg, hit])
       (St P E (fun σ => fusedSquareA P j (st σ)) (mX :: fusedKeep)
-        (fun σ => AWh P σ P.c) [wR, wM] (fun σ => fusedSquareV P (V σ) (st σ))
+        (fun σ => fusedAW P σ) [wM] (fun σ => fusedSquareV P (V σ) (st σ))
         fusedSquareSlots P.w nArr) := by
   have pos : 0 < P.n := by omega
   simp only [seqs]
