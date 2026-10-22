@@ -80,7 +80,7 @@ theorem expReg_regOf {p kk i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) (hk : kk < 
 theorem expReg_zN (i : Nat) : expReg l i (zN l) = .reg (zN l) := by
   simp only [expReg, zN, show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R by omega,
     show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + l.nl by omega,
-    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega, Nat.lt_irrefl, false_and, ite_false]
+    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega, false_and, ite_false]
 
 theorem ammStep_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.R) {L a m : Nat → Nat → Nat}
     {k b : Nat → Nat} (h : StepIn l s i L a m k b) (hc : Ctx (lim l) s) :
