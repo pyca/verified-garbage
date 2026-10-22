@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

@@ -82,7 +82,12 @@ pub fn rsa_bits_tested(bits: usize) -> bool {
 /// the 3072- and 4096-bit keys, emulated some thirty times slower than the
 /// ADX code, each for minutes of CI's time.
 #[cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 pub fn rsa_bits_signed(bits: usize) -> bool {

@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaPss.X86.VfFixed
+public import VerifiedGarbage.Proof.RsaPss.X86.VfTail
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: a salt of any length

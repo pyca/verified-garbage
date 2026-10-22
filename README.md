@@ -2142,7 +2142,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 

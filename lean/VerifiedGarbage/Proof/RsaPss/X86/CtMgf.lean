@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.CtHash
-public import VerifiedGarbage.Proof.RsaPss.X86.CtSel
+import VerifiedGarbage.Proof.RsaPss.X86.CtSel
 public import VerifiedGarbage.Proof.Mgf1.Basic
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 
 /-!
 # RSASSA-PSS on x86: the stages of an iteration of `DB ⊕= MGF1(H, dbLen)`

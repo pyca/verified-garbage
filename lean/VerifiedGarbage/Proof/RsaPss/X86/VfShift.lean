@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86.VfFixed
+import VerifiedGarbage.Proof.RsaPss.X86.VfFixed
 public import VerifiedGarbage.Proof.RsaPss.X86.VfPass
 import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaPss.X86.VfPos
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: the shift

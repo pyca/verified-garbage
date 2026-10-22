@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.SgCall
 import VerifiedGarbage.Proof.RsaPss.X86.NoSp
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
