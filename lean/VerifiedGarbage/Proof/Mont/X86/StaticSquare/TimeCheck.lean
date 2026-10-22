@@ -31,6 +31,28 @@ private theorem check_of_erased {c : Prog isa}
   rw [← VG.X86.Taint.check_erase c rtTaint hint rfl hn]
   exact hc
 
+materialize_shared square32 := VG.X86.Code.erase (Impl.Mont.X86.Rt.StaticSquare.square 32)
+
+theorem square32_check : ∃ hint, (VG.Taint.check taint rtTaint
+    (Impl.Mont.X86.Rt.StaticSquare.square 32)
+    hint).isSome=true := by
+  apply check_of_erased
+  exact ⟨_, by
+    constructor
+    · taint_decide
+    · decide +kernel⟩
+
+materialize_shared square48 := VG.X86.Code.erase (Impl.Mont.X86.Rt.StaticSquare.square 48)
+
+theorem square48_check : ∃ hint, (VG.Taint.check taint rtTaint
+    (Impl.Mont.X86.Rt.StaticSquare.square 48)
+    hint).isSome=true := by
+  apply check_of_erased
+  exact ⟨_, by
+    constructor
+    · taint_decide
+    · decide +kernel⟩
+
 materialize_shared square64 := VG.X86.Code.erase (Impl.Mont.X86.Rt.StaticSquare.square 64)
 
 theorem square64_check : ∃ hint, (VG.Taint.check taint rtTaint

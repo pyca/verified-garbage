@@ -35,15 +35,19 @@ open VG VG.X86 VG.Proof.Mont.X86.Rt
   · exact other.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
 
  theorem dispatch_relCT : RelCT isa (VG.X86.Taint.Agree rtTaint) Impl.Mont.X86.Rt.StaticSquare.dispatch (fun _ _ => True) := by
+  obtain ⟨_, square32_check⟩ := square32_check
+  obtain ⟨_, square48_check⟩ := square48_check
   obtain ⟨_, square64_check⟩ := square64_check
   obtain ⟨_, square96_check⟩ := square96_check
   obtain ⟨_, square128_check⟩ := square128_check
   unfold Impl.Mont.X86.Rt.StaticSquare.dispatch
   refine VG.RelCT.seq aliasChoice_relCT ?_
   refine VG.RelCT.ite (fun _ _ h => h.2) ?_ ?_
-  · exact (selectSize_relCT 64 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square64_check)
+  · exact (selectSize_relCT 32 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square32_check)
+      (selectSize_relCT 48 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square48_check)
+      (selectSize_relCT 64 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square64_check)
       (selectSize_relCT 96 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square96_check)
-        (selectSize_relCT 128 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square128_check) oldSquare_relCT))).mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
+        (selectSize_relCT 128 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square128_check) oldSquare_relCT))))).mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
   · exact scalar_relCT.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
 
  theorem constantTime : ConstantTime isa (Spec.Rsa.MontMul.mulContract abi 0).pre
