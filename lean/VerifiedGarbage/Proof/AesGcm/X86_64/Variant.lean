@@ -99,7 +99,8 @@ def decR : StitchName → Prog isa
 blocks than a group, from 1 on (`Blocks.fullBody`'s `small`). -/
 def smallR : StitchName → Bool
   | .vaes => true
-  | _ => false
+  | .vaesAvx512 => false
+  | .aesniAvx => true
 
 /-- Whether the decryption loop named `n` for a prepared context takes all
 the blocks, from 16 on (`Blocks.stitchPart`'s `full`). -/

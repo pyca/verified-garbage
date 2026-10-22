@@ -148,7 +148,7 @@ private theorem keyCmp12_ok (t : State) {p : Addr} {n : Nat} (hn : n < 2 ^ 32)
 
 /-- The setup, then the loop for the key size, read back from where the
 setup saved it. -/
-theorem dispatch_ok {s₀ : State} (hp : SPre s₀) {su : List Instr} {a b c : Prog isa}
+theorem dispatch_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {su : List Instr} {a b c : Prog isa}
     {R Q : State → Prop} (hsu : WP isa (.block su) s₀ R)
     (hR : ∀ s, R s → s.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr s₀))
     (ha : ∀ s t, R s → RaxStep s t → nr s₀ = 10 → WP isa a t Q)
@@ -321,7 +321,7 @@ open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame)
 open VG.Spec.Gcm (Block blockAt)
 
-theorem setupPrefix_ok {s₀ : State} (hp : SPre s₀) (s : State) (P : Nat → Block)
+theorem setupPrefix_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) (s : State) (P : Nat → Block)
     (hg : ∀ r, r ≠ .rax → s.gpr r = s₀.gpr r)
     (hm : Frame [pR s₀] s₀.mem s.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (h0 : s.lane .xmm0 0 = revMask) (h1 : s.lane .xmm1 0 = poly)
@@ -434,7 +434,7 @@ theorem Seeded.done {s₀ : State} {m : Mem} (h : Seeded s₀ 8 m) : Templates s
   intro i hi
   simpa only [hi, ite_true, Nat.zero_add, Nat.not_lt_zero, ite_false, Nat.add_zero] using h i hi
 
-theorem copyTemplate_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
+theorem copyTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
     (hE : Env s₀ P s) (i : Nat) (hi : i < 8)
     (hC : XBinOp.eval .pshufb (s.lane .xmm7 0) revMask = cb s₀) :
     WP isa (.block [.vmovdquStore .l128 (at_ .r11 (640 + 16 * i)) .xmm7]) s fun t =>
@@ -464,7 +464,7 @@ theorem copyTemplate_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
   · rw [State.setMem_mem, blockAt_eq, Mem.readW_writeW_self s.mem _ 16 _ (by decide)]
     exact hC
 
-theorem copyTemplates_ok {s₀ : State} {P : Nat → Block} (hp : SPre s₀)
+theorem copyTemplates_ok {s₀ : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
     (s : State) (hE : Env s₀ P s)
     (hC : XBinOp.eval .pshufb (s.lane .xmm7 0) revMask = cb s₀)
     (n : Nat) (hn : n ≤ 8) :
@@ -491,7 +491,7 @@ theorem copyTemplates_ok {s₀ : State} {P : Nat → Block} (hp : SPre s₀)
       exact ⟨counterR s₀, List.mem_singleton_self _,
         Offset.sub (pp s₀) (d := 640 + 16 * n) (e := 640) (n := 16) (k := 128) (by omega) (by omega)⟩
 
-theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
+theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
     (hE : Env s₀ P s) (n : Nat) (hn : n < 8) (hT : Seeded s₀ n s.mem)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32) :
     WP isa (.block (prepCounter n)) s fun t =>
@@ -523,7 +523,7 @@ theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
         exact Offset.disjoint (pp s₀) (by omega) (by omega) (by omega)), hk]
       exact hT i hi
 
-theorem seedTemplates_ok {s₀ : State} {P : Nat → Block} (hp : SPre s₀)
+theorem seedTemplates_ok {s₀ : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
     (s : State) (hE : Env s₀ P s) (hT : Seeded s₀ 0 s.mem)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32) (n : Nat) (hn : n ≤ 8) :
     WP isa (.block ((List.range n).flatMap prepCounter)) s fun t =>
@@ -560,7 +560,7 @@ def counterTail : List Instr :=
   (List.range 8).map (fun i => .vmovdquStore .l128 (at_ .r11 (640 + 16 * i)) .xmm7) ++
   (List.range 8).flatMap prepCounter ++ [.alu32 .add .r8 (.imm 8)]
 
-theorem counterTail_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
+theorem counterTail_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
     (hE : Env s₀ P s) (hC : XBinOp.eval .pshufb (s.lane .xmm7 0) revMask = cb s₀)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32) :
     WP isa (.block counterTail) s fun t => Env s₀ P t ∧ Templates s₀ 0 0 t.mem ∧
