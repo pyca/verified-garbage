@@ -49,30 +49,34 @@ def TailLaw (s₀ : State) (P : Nat → Block) : Prop :=
   ∀ r, 1 ≤ r → r ≤ 7 → ∀ (X : Nat → Block) (y : Block),
     reduceB (StitchZH.accR X (fun j => P (8 - r + j)) y r) = ghashFrom (hk s₀) y ((List.range r).map X)
 
-/-- Where `ksTail` stores the keystream of block `i`. -/
-abbrev ksAddr (s₀ : State) (i : Nat) : Addr := pp s₀ + BitVec.ofNat 64 (832 + 16 * i)
-abbrev ksR (s₀ : State) : Region := ⟨pp s₀ + BitVec.ofNat 64 832, 128⟩
+/-- Where `ksTail _ off` stores the keystream of block `i`. -/
+abbrev ksAddr (s₀ : State) (i : Nat) (off : Nat := 832) : Addr := pp s₀ + BitVec.ofNat 64 (off + 16 * i)
+abbrev ksR (s₀ : State) (off : Nat := 832) : Region := ⟨pp s₀ + BitVec.ofNat 64 off, 128⟩
+
+/-- Where `ksTail` may store the keystream without overwriting what `Env`
+keeps: below the constants at `scratch + 768`, or after them. -/
+abbrev KsOff (off : Nat) : Prop := off = 384 ∨ off = 512 ∨ off = 832
 
 /-! ## The keystream -/
 
-theorem ksStores_ok (s : State) (p : Addr) (hr11 : s.gpr .r11 = p)
-    (hin : ∀ i < 8, InRegions s.wr (p + BitVec.ofNat 64 (832 + 16 * i)) 16)
+theorem ksStores_ok (s : State) (p : Addr) (off : Nat) (hoff : off + 128 ≤ 1024) (hr11 : s.gpr .r11 = p)
+    (hin : ∀ i < 8, InRegions s.wr (p + BitVec.ofNat 64 (off + 16 * i)) 16)
     (hwrap : p.toNat + 1024 ≤ 2 ^ 64) :
     ∀ n ≤ 8, WP isa (.block ((List.range n).map fun i =>
-      .vmovdquStore .l128 (at_ .r11 (832 + 16 * i)) (aregs.getD i .xmm3))) s fun t =>
-      (∀ i < n, t.mem.readW (p + BitVec.ofNat 64 (832 + 16 * i)) 128 = s.lane (aregs.getD i .xmm3) 0) ∧
-      Frame [⟨p + BitVec.ofNat 64 832, 128⟩] s.mem t.mem ∧
+      .vmovdquStore .l128 (at_ .r11 (off + 16 * i)) (aregs.getD i .xmm3))) s fun t =>
+      (∀ i < n, t.mem.readW (p + BitVec.ofNat 64 (off + 16 * i)) 128 = s.lane (aregs.getD i .xmm3) 0) ∧
+      Frame [⟨p + BitVec.ofNat 64 off, 128⟩] s.mem t.mem ∧
       t.gpr = s.gpr ∧ (∀ r l, t.lane r l = s.lane r l) ∧ t.rd = s.rd ∧ t.wr = s.wr
   | 0, _ => WP.block_nil ⟨fun _ h => absurd h (by omega), Frame.refl _ _, rfl, fun _ _ => rfl, rfl, rfl⟩
   | n + 1, hn => by
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ksStores_ok s p hr11 hin hwrap n (by omega)) fun t ⟨v, f, g, l, rd, wr⟩ => ?_
+    refine WP.mono (ksStores_ok s p off hoff hr11 hin hwrap n (by omega)) fun t ⟨v, f, g, l, rd, wr⟩ => ?_
     simp only [List.map_cons, List.map_nil]
-    have ea : t.ea (at_ .r11 (832 + 16 * n)) = p + BitVec.ofNat 64 (832 + 16 * n) := by
+    have ea : t.ea (at_ .r11 (off + 16 * n)) = p + BitVec.ofNat 64 (off + 16 * n) := by
       rw [ea_at, BitVec.ofInt_natCast, g, hr11]
-    have hw : InRegions t.wr (p + BitVec.ofNat 64 (832 + 16 * n)) 16 := by rw [wr]; exact hin n (by omega)
+    have hw : InRegions t.wr (p + BitVec.ofNat 64 (off + 16 * n)) 16 := by rw [wr]; exact hin n (by omega)
     rw [WP.block_cons_iff]
-    refine ⟨t.setMem (t.mem.writeW (p + BitVec.ofNat 64 (832 + 16 * n)) (t.xmm (aregs.getD n .xmm3))),
+    refine ⟨t.setMem (t.mem.writeW (p + BitVec.ofNat 64 (off + 16 * n)) (t.xmm (aregs.getD n .xmm3))),
       by simp only [isa, exec, State.store128_eq, ea, hw, ite_true], WP.block_nil ⟨fun i hi => ?_, ?_,
         by rw [State.setMem_gpr, g], fun r l' => by rw [State.setMem_lane, l], by rw [State.setMem_rd, rd],
         by rw [State.setMem_wr, wr]⟩⟩
@@ -86,37 +90,43 @@ theorem ksStores_ok (s : State) (p : Addr) (hr11 : s.gpr .r11 = p)
     · simp only [State.setMem_mem]
       exact f.writeW (List.mem_singleton_self _) _ (Offset.contains p (by omega) (by omega) (by omega))
 
-/-- A write of the keystream keeps what the working space holds below it. -/
-theorem ks_read {s₀ : State} {m m' : Mem} (hf : Frame [ksR s₀] m m') (d n : Nat) (hd : d + n ≤ 832) :
+/-- A write of the keystream keeps what the working space holds outside it. -/
+theorem ks_read {s₀ : State} {off : Nat} {m m' : Mem} (hf : Frame [ksR s₀ off] m m') (hoff : off + 128 ≤ 1024)
+    (d n : Nat) (hd : d + n ≤ off ∨ off + 128 ≤ d) (hdn : d + n ≤ 1024) :
     m'.readW (pp s₀ + BitVec.ofNat 64 d) (8 * n) = m.readW (pp s₀ + BitVec.ofNat 64 d) (8 * n) := by
   apply hf.readW (r := ⟨pp s₀ + BitVec.ofNat 64 d, n⟩)
   · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
   · intro r hr; simp only [List.mem_singleton] at hr; subst r
-    exact Offset.disjoint (pp s₀) (.inl hd) (by omega) (by decide)
+    exact Offset.disjoint (pp s₀) hd (by omega) (by omega)
   · omega
 
-theorem Env.ksFrame {s₀ u v : State} {P : Nat → Block} (h : Env s₀ P u) (hf : Frame [ksR s₀] u.mem v.mem)
+theorem Env.ksFrame {s₀ u v : State} {P : Nat → Block} {off : Nat} (hoff : KsOff off) (h : Env s₀ P u)
+    (hf : Frame [ksR s₀ off] u.mem v.mem)
     (hg : v.gpr = u.gpr) (hrd : v.rd = u.rd) (hwr : v.wr = u.wr) : Env s₀ P v := by
+  have ho : off + 128 ≤ 1024 := by rcases hoff with h | h | h <;> omega
   refine ⟨by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.rcx,
     by rw [hg]; exact h.r11, by rw [hg]; exact h.r10,
     fun r h1 h2 h3 h4 h5 h6 => by rw [hg]; exact h.other r h1 h2 h3 h4 h5 h6,
     h.frame.trans (hf.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst r
-      exact ⟨pR s₀, by simp, Offset.sub_base _ (by decide)⟩),
-    fun k hk => (ks_read hf (128 + 16 * k) 16 (by omega)).trans (h.powers k hk),
-    (ks_read hf 768 16 (by decide)).trans h.mask, (ks_read hf 784 16 (by decide)).trans h.poly,
-    (ks_read hf 800 8 (by decide)).trans h.rounds, (ks_read hf 808 8 (by decide)).trans h.data,
-    (ks_read hf 816 8 (by decide)).trans h.saved,
+      exact ⟨pR s₀, by simp, Offset.sub_base _ (by omega)⟩),
+    fun k hk => (ks_read hf ho (128 + 16 * k) 16 (by omega) (by omega)).trans (h.powers k hk),
+    (ks_read hf ho 768 16 (by omega) (by omega)).trans h.mask,
+    (ks_read hf ho 784 16 (by omega) (by omega)).trans h.poly,
+    (ks_read hf ho 800 8 (by omega) (by omega)).trans h.rounds,
+    (ks_read hf ho 808 8 (by omega) (by omega)).trans h.data,
+    (ks_read hf ho 816 8 (by omega) (by omega)).trans h.saved,
     by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
 
-theorem ksTail_ok {s₀ s : State} {P : Nat → Block} {c : Nat} (hp : SPre s₀) (hE : Env s₀ P s)
-    (hT : Templates s₀ c 0 s.mem) :
-    WP isa (ksTail (nr s₀)) s fun t => Env s₀ P t ∧
-      (∀ i < 8, blockAt t.mem (ksAddr s₀ i) = ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
-      Frame [ksR s₀] s.mem t.mem ∧ t.gpr = s.gpr ∧ t.lane .xmm2 0 = s.lane .xmm2 0 ∧
+theorem ksTail_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} {c off : Nat} (hp : SPre s₀ lo) (hoff : KsOff off)
+    (hE : Env s₀ P s) (hT : Templates s₀ c 0 s.mem) :
+    WP isa (ksTail (nr s₀) off) s fun t => Env s₀ P t ∧
+      (∀ i < 8, blockAt t.mem (ksAddr s₀ i off) = ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
+      Frame [ksR s₀ off] s.mem t.mem ∧ t.gpr = s.gpr ∧ t.lane .xmm2 0 = s.lane .xmm2 0 ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
   have hpos : 0 < nr s₀ := by rcases hp.rounds with h | h | h <;> omega
   have hwp := hp.wrap_p
+  have ho : off + 128 ≤ 1024 := by rcases hoff with h | h | h <;> omega
   refine WP.seq (WP.mono (loadCounters_ok s (fun i hi => by
     rw [ea_at, BitVec.ofInt_natCast, hE.rd, hE.wr, hE.r11]
     exact in_rdwr (in_sub hp.p_in (by omega))) 8 (by decide)) fun t ⟨ht, hf⟩ => ?_)
@@ -135,13 +145,13 @@ theorem ksTail_ok {s₀ s : State} {P : Nat → Block} {c : Nat} (hp : SPre s₀
     rw [hu _ (aregs_member i hi) 0 (by decide), ht i hi, ea_at, BitVec.ofInt_natCast, hE.r11]
     exact congrArg (fun x => Spec.Aes.cipher (nr s₀) (sch s₀)
       (VG.Proof.Aes.X86_64.AesNi.st x)) (hT.read i hi)
-  refine WP.mono (ksStores_ok u (pp s₀) hQ.1.r11 (fun i hi => by
+  refine WP.mono (ksStores_ok u (pp s₀) off ho hQ.1.r11 (fun i hi => by
     rw [hQ.1.wr]; exact in_sub hp.p_in (by omega)) (by omega) 8 (by decide))
     fun v ⟨hv, hvF, hvG, hvL, hvR, hvW⟩ => ?_
   have hm : u.mem = s.mem := by rw [hQ.2.mem, hf.mem]
-  have hFv : Frame [ksR s₀] s.mem v.mem := hm ▸ hvF
+  have hFv : Frame [ksR s₀ off] s.mem v.mem := hm ▸ hvF
   refine ⟨?_, fun i hi => ?_, hFv, ?_, ?_, ?_, ?_⟩
-  · exact hQ.1.ksFrame hvF hvG hvR hvW
+  · exact hQ.1.ksFrame hoff hvF hvG hvR hvW
   · rw [blockAt_eq, hv i hi]; exact hct i hi
   · rw [hvG, hQ.2.gpr, hf.gpr]
   · rw [hvL, hQ.2.lane _ (by decide) 0 (by decide), hf.lane _ (by decide) 0 (by decide)]
@@ -201,24 +211,19 @@ theorem tailSetup_ok (s : State) {t : Nat} (ht : t < 8) (h9 : s.gpr .r9 = BitVec
 
 /-! ## After the loop -/
 
-theorem tailEnd_ok (s : State) {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
-    (h1 : s.lane .xmm1 0 = poly) :
-    WP isa (.block (tailEnd nr)) s fun u =>
-      u.lane .xmm2 0 = reduceB (prod (s.proj 0)) ∧ u.gpr .r11 = s.gpr .r11 - 64 ∧
+/-- `tailEnd nr back`, where `back` leaves `v` in `r11` and the rest as it was. -/
+theorem tailEndWith_ok (s : State) {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
+    (h1 : s.lane .xmm1 0 = poly) {back : Instr} {v : Addr}
+    (hA : WP isa (.block [back]) s fun s₁ =>
+      s₁.gpr .r11 = v ∧ (∀ q, q ≠ .r11 → s₁.gpr q = s.gpr q) ∧
+      (∀ r l, s₁.lane r l = s.lane r l) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) :
+    WP isa (.block (tailEnd nr back)) s fun u =>
+      u.lane .xmm2 0 = reduceB (prod (s.proj 0)) ∧ u.gpr .r11 = v ∧
       u.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr) ∧
       (∀ q, q ≠ .r11 → q ≠ .r10 → u.gpr q = s.gpr q) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
-  have e64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
   have enr : BitVec.signExtend 64 (BitVec.ofNat 32 (16 * nr)) = BitVec.ofNat 64 (16 * nr) := by
     rcases hnr with rfl | rfl | rfl <;> decide
   rw [tailEnd, List.append_assoc, WP.block_append_iff]
-  have hA : WP isa (.block [.alu .sub .r11 (.imm 64)]) s fun s₁ =>
-      s₁.gpr .r11 = s.gpr .r11 - 64 ∧ (∀ q, q ≠ .r11 → s₁.gpr q = s.gpr q) ∧
-      (∀ r l, s₁.lane r l = s.lane r l) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, isa, e64, gpr_setReg,
-      gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags,
-      ↓reduceIte, Option.bind_some, Option.some.injEq, exists_eq_left']
-    exact ⟨trivial, fun q h => by simp only [h, ↓reduceIte], fun _ _ => rfl, trivial, trivial, trivial⟩
   refine WP.mono hA fun s₁ ⟨a11, ag, al, am, ard, awr⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (StitchAvx.reduceHash_ok s₁ (by rw [al]; exact h1)) fun s₂ ⟨y₂, f₂⟩ => ?_
@@ -237,6 +242,20 @@ theorem tailEnd_ok (s : State) {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14
   · rw [c10, f₂.gpr, ag _ (by decide)]
   · rw [cg q h10, f₂.gpr, ag q h11]
 
+theorem tailEnd_ok (s : State) {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
+    (h1 : s.lane .xmm1 0 = poly) :
+    WP isa (.block (tailEnd nr)) s fun u =>
+      u.lane .xmm2 0 = reduceB (prod (s.proj 0)) ∧ u.gpr .r11 = s.gpr .r11 - 64 ∧
+      u.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr) ∧
+      (∀ q, q ≠ .r11 → q ≠ .r10 → u.gpr q = s.gpr q) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
+  have e64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
+  refine tailEndWith_ok s hnr h1 ?_
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, isa, e64, gpr_setReg,
+    gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags,
+    ↓reduceIte, Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, fun q h => by simp only [h, ↓reduceIte], fun _ _ => rfl, trivial, trivial, trivial⟩
+
 /-- `cmp r9, 16`. -/
 theorem cmp16z_ok (s : State) :
     WP isa (.block [.alu .cmp .r9 (.imm 16)]) s fun s' =>
@@ -248,7 +267,7 @@ theorem cmp16z_ok (s : State) :
   exact ⟨trivial, ⟨rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩⟩
 
 /-- Writes to a region of the data keep `Env`. -/
-theorem Env.dataWrite {s₀ s t : State} {P : Nat → Block} (hp : SPre s₀) (h : Env s₀ P s) {R : Region}
+theorem Env.dataWrite {s₀ s t : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo) (h : Env s₀ P s) {R : Region}
     (hR : Region.Sub R (dR s₀)) (hf : Frame [R] s.mem t.mem)
     (hg : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r)
     (hr : t.rd = s.rd) (hw : t.wr = s.wr) : Env s₀ P t := by
@@ -359,7 +378,7 @@ theorem tail_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {g : Nat} (hp :
   have t1 : 1 ≤ t := by
     have : t ≠ 0 := by simpa using he
     omega
-  refine WP.seq (WP.mono (ksTail_ok hp hE₁ (f₁.mem ▸ h.templates))
+  refine WP.seq (WP.mono (ksTail_ok hp (.inr (.inr rfl)) hE₁ (f₁.mem ▸ h.templates))
     fun s₂ ⟨hE₂, hks, hF₂, hg₂, hy₂, hrd₂, hwr₂⟩ => ?_)
   have g₂ : ∀ q, s₂.gpr q = s.gpr q := fun q => by rw [hg₂, f₁.gpr]
   have rbx₂ : s₂.gpr .rbx = s₀.gpr .rbx :=

@@ -30,14 +30,14 @@ Encryption, and decryption with a prepared key context, are checked as
 `Blocks.stitchPart` runs them with `full`: the number of blocks after the
 pipeline's, in `r9`, is public.
 
-With a prepared key context (`encR`, `dec`), the working tables are
+With a prepared key context (`encR`, `decR`, `encRS`, `decRS`), the working tables are
 aligned (`Blocks.stitchPart`'s `aligned`).
 
 Out of place (`encTo`, `encToR`, as `BlocksTo.stitchPart` runs them), `rbx`,
 which the caller's taint leaves secret, is only stored and loaded back; the
 `src - dst` it holds in the loop, from the public `r8` and `r10`, is public.
 
-Each loop is checked six times, so it is built once, as a literal.
+Each loop is checked several times, so it is built once, as a literal.
 -/
 
 @[expose] public section
@@ -48,6 +48,8 @@ materialize_code Impl.Gcm.X86_64.StitchAvx8.enc
 materialize_code Impl.Gcm.X86_64.StitchAvx8.dec
 materialize_code Impl.Gcm.X86_64.StitchAvx8.encR
 materialize_code Impl.Gcm.X86_64.StitchAvx8.decR
+materialize_code Impl.Gcm.X86_64.StitchAvx8.encRS
+materialize_code Impl.Gcm.X86_64.StitchAvx8.decRS
 materialize_code Impl.Gcm.X86_64.StitchAvx8.encTo
 materialize_code Impl.Gcm.X86_64.StitchAvx8.encToR
 
@@ -57,19 +59,21 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64
 open VG.Proof.AesGcm.X86_64 (Piece PieceTo)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR decR encTo encToR)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR decR encRS decRS encTo encToR)
 
-/-- The six loops' checks, in one kernel evaluation (`taint_decide_all`). -/
+/-- The eight loops' checks, in one kernel evaluation (`taint_decide_all`). -/
 theorem pieces : Piece enc false true ∧ Piece dec ∧ Piece encR true true ∧ Piece decR true true ∧
-    PieceTo encTo false true ∧ PieceTo encToR true true := by
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩⟩
+    Piece encRS true true ∧ Piece decRS true true ∧ PieceTo encTo false true ∧ PieceTo encToR true true := by
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩⟩
   taint_decide_all
 
 theorem enc_piece : Piece enc false true := pieces.1
 theorem dec_piece : Piece dec := pieces.2.1
 theorem encR_piece : Piece encR true true := pieces.2.2.1
 theorem decR_piece : Piece decR true true := pieces.2.2.2.1
-theorem encTo_piece : PieceTo encTo false true := pieces.2.2.2.2.1
-theorem encToR_piece : PieceTo encToR true true := pieces.2.2.2.2.2
+theorem encRS_piece : Piece encRS true true := pieces.2.2.2.2.1
+theorem decRS_piece : Piece decRS true true := pieces.2.2.2.2.2.1
+theorem encTo_piece : PieceTo encTo false true := pieces.2.2.2.2.2.2.1
+theorem encToR_piece : PieceTo encToR true true := pieces.2.2.2.2.2.2.2
 
 end VG.Proof.Gcm.X86_64.StitchAvx8

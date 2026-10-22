@@ -95,10 +95,35 @@ def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
 
+/-- The encryption loop named `n` for a prepared context that
+`Blocks.fullBody` runs on fewer than 16 blocks (with `smallR`): `encR`, or,
+for the AES-NI loops, `encR` with its own code for them, which runs after
+`encR`'s code, so that `encR`'s loops keep their addresses. -/
+def encRS : StitchName → Prog isa
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encRS
+  | n => n.encR
+
+/-- The decryption loop named `n` for a prepared context that
+`Blocks.fullBody` runs on fewer than 16 blocks (see `encRS`). -/
+def decRS : StitchName → Prog isa
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decRS
+  | n => n.decR
+
 /-- Whether the loops named `n` for a prepared context also take fewer
-blocks than a group, from 1 on (`Blocks.fullBody`'s `small`). -/
+blocks than a group, from 1 on (`Blocks.fullBody`'s `small`): `encRS` and
+`decRS`. -/
 def smallR : StitchName → Bool
   | .vaes => true
+  | .vaesAvx512 => false
+  | .aesniAvx => true
+
+/-- With `smallR`, whether the loops named `n` take fewer blocks than a group
+only from 5 on (`Blocks.smallMin`), and never 8 or 12 to encrypt
+(`Blocks.skip4`): the AES-NI loops' setup and eight AES lanes cost more
+than the calls below 5 blocks (by 9–13% to decrypt 4 on Zen 5), and at
+least as much as the calls' batches of eight and four at 8 and 12. -/
+def small4R : StitchName → Bool
+  | .aesniAvx => true
   | _ => false
 
 /-- Whether the decryption loop named `n` for a prepared context takes all

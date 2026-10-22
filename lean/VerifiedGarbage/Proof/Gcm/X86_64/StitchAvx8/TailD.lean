@@ -128,7 +128,7 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
   have t1 : 1 ≤ t := by
     have : t ≠ 0 := by simpa using he
     omega
-  refine WP.seq (WP.mono (ksTail_ok hp hE₁ (m₁ ▸ h.templates))
+  refine WP.seq (WP.mono (ksTail_ok hp (.inr (.inr rfl)) hE₁ (m₁ ▸ h.templates))
     fun s₂ ⟨hE₂, hks, hF₂, hg₂, hy₂, hrd₂, hwr₂⟩ => ?_)
   refine WP.seq ?_
   rw [WP.block_append_iff]
