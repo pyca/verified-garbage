@@ -39,7 +39,7 @@ theorem writeUsed1_check : PCheck [.ecx] (.block [.store (at_ .ecx 0) .eax, .mov
     .store (at_ .ecx 4) .eax, .mov .eax (.imm 1)]) := by dsimp only [PCheck]; taint_decide
 theorem writeUsed2_check : PCheck [.ecx] (.block [.store (at_ .ecx 0) .eax, .mov .eax (.imm 0),
     .store (at_ .ecx 4) .eax, .mov .eax (.imm 2)]) := by dsimp only [PCheck]; taint_decide
-theorem words1_check : ACheck (.block (phaseWords 0 0 ++ [.mov .eax (.imm 1), .store (sc cntOff) .eax])) := by
+theorem words1_check : ACheck (.block (phaseWords 0 0 ++ ([.mov .eax (.imm 1), .store (sc cntOff) .eax] : List Instr))) := by
   dsimp only [ACheck]; taint_decide
 theorem words2_check : ACheck (.block (phaseWords 1 0)) := by dsimp only [ACheck]; taint_decide
 theorem words3_check : ACheck (.block (phaseWords 0 1)) := by dsimp only [ACheck]; taint_decide
@@ -73,7 +73,7 @@ theorem usedTail_trace {i : Instr} {r : BitVec 32} {up : BitVec 32}
       .mov .eax (.imm r)]))
     (hi : ∀ x, In Ex base bytes len args x → WP isa (.block [i]) x fun v => Keeps [.eax] x v ∧ v.mem = x.mem)
     {P : State → Prop} (hP : ∀ x, P x → Run Ex base bytes len args sp x ∧ w32 x.mem base usedOff = up.toNat) :
-    RelCT isa (Both P) (.block ([i] ++ storeUsed ++ [.mov .eax (.imm r)])) fun _ _ => True := by
+    RelCT isa (Both P) (.block (([i] : List Instr) ++ storeUsed ++ ([.mov .eax (.imm r)] : List Instr))) fun _ _ => True := by
   have e : [i] ++ storeUsed ++ [.mov .eax (.imm r)] = [i, .mov .ecx (.mem (sc usedOff))] ++
       [.store (at_ .ecx 0) .eax, .mov .eax (.imm 0), .store (at_ .ecx 4) .eax, .mov .eax (.imm r)] := rfl
   rw [e]

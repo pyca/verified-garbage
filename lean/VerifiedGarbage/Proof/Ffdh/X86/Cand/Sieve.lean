@@ -53,8 +53,8 @@ theorem countBlock_ok {is : List Instr} {Q : State → Prop} (h : In Ex base byt
     (hb : w32 s.mem base bitsOff = bits)
     (k : ∀ t, t.mem = s.mem → Keeps [.edx] s t → t.gpr .edx = BitVec.ofNat 32 (sieveCount bits) →
       WP isa (.block is) t Q) :
-    WP isa (.block ([.mov .edx (.mem (sc bitsOff)), .alu .cmp .edx (.imm 1025), .alu .sbb .edx (.reg .edx),
-      .alu .and .edx (.imm 0xFFFFFE00), .alu .add .edx (.imm 1024)] ++ is)) s Q := by
+    WP isa (.block (([.mov .edx (.mem (sc bitsOff)), .alu .cmp .edx (.imm 1025), .alu .sbb .edx (.reg .edx),
+      .alu .and .edx (.imm 0xFFFFFE00), .alu .add .edx (.imm 1024)] : List Instr) ++ is)) s Q := by
   have bl : bits < 2 ^ 32 := by rw [← hb]; exact (s.mem.readW _ 32).isLt
   simp only [List.cons_append, List.nil_append]
   refine wp_movS (hdr_read h (d := bitsOff) ⟨.inl ⟨by decide, by decide⟩, by decide⟩) fun u₁ U₁ _ => ?_

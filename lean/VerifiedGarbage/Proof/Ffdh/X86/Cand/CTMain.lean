@@ -35,7 +35,7 @@ open VG.Impl.Ffdh.X86.Candidate
 
 theorem congHead_check : ACheck (.block [.mov .eax (.mem (sc genOff)), .alu .cmp .eax (.imm 2)]) := by
   dsimp only [ACheck]; taint_decide
-theorem gen2Head_check : ACheck (.block (lowWord (.slot .wide 9) ++ [.alu .and .eax (.imm 7), .alu .cmp .eax (.imm 3)])) := by
+theorem gen2Head_check : ACheck (.block (lowWord (.slot .wide 9) ++ ([.alu .and .eax (.imm 7), .alu .cmp .eax (.imm 3)] : List Instr))) := by
   dsimp only [ACheck]; taint_decide
 theorem minus2_check : ACheck (minus 2) := by dsimp only [ACheck]; taint_decide
 theorem minus3_check : ACheck (minus 3) := by dsimp only [ACheck]; taint_decide
@@ -46,15 +46,15 @@ theorem load9_check : ACheck (load (.slot .wide 9) (one .wide) 2 3) := by dsimp 
 theorem shapeB_check : ACheck (.block [.mov .eax (.mem (VG.Impl.Bignum.X86.PublicRt.argAt 0 3)), .store (sc curOff) .eax,
     .mov .eax (.mem (sc bitsOff)), .store (sc kOff) .eax]) := by dsimp only [ACheck]; taint_decide
 theorem cutSetLow9_check : PCheck [.ecx, .edx] (.seq (.seq Impl.Ffdh.X86.Candidate.maskLoop <|
-    .block (ptrTo (.slot .wide 9) .ebx .ecx ++ [.alu .add .ebx (.reg .edx), .mov .ecx (.mem (at_ .ebx 0)),
-      .alu .and .ecx (.reg .eax)] ++
-      [.mov .ebp (.reg .eax), .shift .shr .ebp 1, .alu .xor .eax (.reg .ebp), .alu .or .ecx (.reg .eax)] ++
-      [.store (at_ .ebx 0) .ecx])) (.block (setLow (.slot .wide 9)))) := by
+    .block (ptrTo (.slot .wide 9) .ebx .ecx ++ ([.alu .add .ebx (.reg .edx), .mov .ecx (.mem (at_ .ebx 0)),
+      .alu .and .ecx (.reg .eax)] : List Instr) ++
+      ([.mov .ebp (.reg .eax), .shift .shr .ebp 1, .alu .xor .eax (.reg .ebp), .alu .or .ecx (.reg .eax)] : List Instr) ++
+      ([.store (at_ .ebx 0) .ecx] : List Instr))) (.block (setLow (.slot .wide 9)))) := by
   dsimp only [PCheck]; taint_decide
 theorem setLow9_check : ACheck (.block (setLow (.slot .wide 9))) := by dsimp only [ACheck]; taint_decide
 theorem testEax_check : ACheck testEax := by dsimp only [ACheck]; taint_decide
 theorem half_check : ACheck half := by dsimp only [ACheck]; taint_decide
-theorem oddQ_check : ACheck (.block (lowWord (.slot .wide 10) ++ [.alu .and .eax (.imm 1)])) := by
+theorem oddQ_check : ACheck (.block (lowWord (.slot .wide 10) ++ ([.alu .and .eax (.imm 1)] : List Instr))) := by
   dsimp only [ACheck]; taint_decide
 theorem sieveHead9_check : ACheck (.block (bounds (.slot .wide 9) ++ countBlock)) := by
   dsimp only [ACheck]; taint_decide

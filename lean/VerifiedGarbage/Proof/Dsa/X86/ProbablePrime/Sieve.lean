@@ -61,7 +61,7 @@ theorem Environment.Valid.sieve_valid {E : Environment} (v : E.Valid) : E.sieveG
     rw [BitVec.toNat_add]
     change (E.workspace.toNat + 256) % 2 ^ 32 = E.workspace.toNat + 256
     omega
-  refine ⟨by change 0 < E.width; exact Nat.lt_of_lt_of_le (by decide) width, high, ?_, ?_, ?_, v.tableFit, ?_, ?_⟩
+  refine ⟨by change 0 < E.width; exact Nat.lt_of_lt_of_le (by decide) width, by change E.width ≤ 128; omega, ?_, ?_, ?_, v.tableFit, ?_, ?_⟩
   · change 0 < VG.Impl.RsaKeyGen.X86.Sieve.tableCount E.width
     unfold VG.Impl.RsaKeyGen.X86.Sieve.tableCount
     split <;> decide

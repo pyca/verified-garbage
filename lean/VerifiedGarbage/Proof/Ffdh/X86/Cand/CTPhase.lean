@@ -29,8 +29,9 @@ open VG.Impl.Ffdh.X86.Candidate
 
 theorem prepHead9_check : ACheck (prepHead 9) := by dsimp only [ACheck]; taint_decide
 theorem prepHead10_check : ACheck (prepHead 10) := by dsimp only [ACheck]; taint_decide
-theorem halveBody_check : ACheck (.seq (halve (.slot .wide 11)) (.block ([.mov .eax (.mem (sc twoOff)),
-    .alu .add .eax (.imm 1), .store (sc twoOff) .eax] ++ lowWord (.slot .wide 11) ++ [.alu .and .eax (.imm 1)]))) := by
+theorem halveBody_check : ACheck (.seq (halve (.slot .wide 11)) (.block (([.mov .eax (.mem (sc twoOff)),
+    .alu .add .eax (.imm 1), .store (sc twoOff) .eax] : List Instr) ++ lowWord (.slot .wide 11) ++
+    ([.alu .and .eax (.imm 1)] : List Instr)))) := by
   dsimp only [ACheck]; taint_decide
 theorem setSt0_check : ACheck (.block [.mov .eax (.imm 0), .store (sc stOff) .eax]) := by
   dsimp only [ACheck]; taint_decide

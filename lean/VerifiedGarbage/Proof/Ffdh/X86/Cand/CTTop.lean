@@ -34,7 +34,7 @@ theorem fill_check :
     (VG.Taint.check taint (τr [.esp]) (.block (Impl.Ffdh.X86.fill Impl.Ffdh.X86.Candidate.args)) (.block [])).isSome =
       true := by
   taint_decide
-theorem bodyHead_check : ACheck (.block (entryWords ++ [.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))])) := by
+theorem bodyHead_check : ACheck (.block (entryWords ++ ([.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))] : List Instr))) := by
   dsimp only [ACheck]; taint_decide
 
 variable {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}

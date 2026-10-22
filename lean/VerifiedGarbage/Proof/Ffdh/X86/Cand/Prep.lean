@@ -169,8 +169,8 @@ theorem hdr_two : Hdr twoOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
 /-- One halving of the split. -/
 theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args s w k t)
     (hx : ((w - 1) / 2 ^ k) % 2 = 0) (hp : 0 < (w - 1) / 2 ^ k) (hwl : w < 2 ^ (32 * cwc len .wide)) :
-    WP isa (.seq (halve (.slot .wide 11)) (.block ([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
-      .store (sc twoOff) .eax] ++ lowWord (.slot .wide 11) ++ [.alu .and .eax (.imm 1)]))) t fun u =>
+    WP isa (.seq (halve (.slot .wide 11)) (.block (([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
+      .store (sc twoOff) .eax] : List Instr) ++ lowWord (.slot .wide 11) ++ ([.alu .and .eax (.imm 1)] : List Instr)))) t fun u =>
       Halving Ex base bytes len args s w (k + 1) u ∧
         isa.eval .e u = some (decide (((w - 1) / 2 ^ (k + 1)) % 2 = 0)) := by
   have ht := H.step.inp
@@ -267,8 +267,8 @@ abbrev Halved (Ex : List Region → List Region → Prop) (base : Addr) (bytes l
 /-- A halving, and whether to halve again. -/
 theorem halveRound_ok {w x : Nat} {t : State} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) (hwl : w < 2 ^ (32 * cwc len .wide))
     (H : Halved Ex base bytes len args s w x t) :
-    WP isa (.seq (halve (.slot .wide 11)) (.block ([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
-      .store (sc twoOff) .eax] ++ lowWord (.slot .wide 11) ++ [.alu .and .eax (.imm 1)]))) t fun u =>
+    WP isa (.seq (halve (.slot .wide 11)) (.block (([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
+      .store (sc twoOff) .eax] : List Instr) ++ lowWord (.slot .wide 11) ++ ([.alu .and .eax (.imm 1)] : List Instr)))) t fun u =>
       (isa.eval .e u = some false ∧ Step Ex base bytes len args s u ∧ Prepped Ex base bytes len args w u ∧
         Kept base len [11, 14, 15] [twoOff] s.mem u.mem) ∨
       (isa.eval .e u = some true ∧ ∃ x' < x, Halved Ex base bytes len args s w x' u) := by

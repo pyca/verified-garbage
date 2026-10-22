@@ -115,7 +115,7 @@ theorem Fin.after {u t : State} {up : BitVec 32} {r used : Nat} {out : List Byte
 theorem finish_ok (h : In Ex base bytes len args s) {up : BitVec 32}
     (U : UsedAt base bytes up (s.gpr .esp) ⟨byteAddr (args 0), len⟩ s.wr) (hu : w32 s.mem base usedOff = up.toNat)
     {k r : Nat} (hk : k < 2 ^ 32) (he : s.gpr .eax = BitVec.ofNat 32 k) :
-    WP isa (.block (storeUsed ++ [.mov .eax (.imm (BitVec.ofNat 32 r))])) s fun t =>
+    WP isa (.block (storeUsed ++ ([.mov .eax (.imm (BitVec.ofNat 32 r))] : List Instr))) s fun t =>
       t.gpr .eax = BitVec.ofNat 32 r ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 0)) len ∧
       t.mem.readW (byteAddr up) 64 = BitVec.ofNat 64 k ∧ Frame [⟨byteAddr up, 8⟩] s.mem t.mem ∧
@@ -180,7 +180,8 @@ theorem short_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes l
 theorem curTail_ok (h : In Ex base bytes len args s) {up : BitVec 32}
     (U : UsedAt base bytes up (s.gpr .esp) ⟨byteAddr (args 0), len⟩ s.wr) (hu : w32 s.mem base usedOff = up.toNat)
     {c r : Nat} (hc : w32 s.mem base curOff = c) :
-    WP isa (.block ([.mov .eax (.mem (sc curOff))] ++ storeUsed ++ [.mov .eax (.imm (BitVec.ofNat 32 r))])) s
+    WP isa (.block (([.mov .eax (.mem (sc curOff))] : List Instr) ++ storeUsed ++
+      ([.mov .eax (.imm (BitVec.ofNat 32 r))] : List Instr))) s
       fun t => t.gpr .eax = BitVec.ofNat 32 r ∧
         Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 0)) len ∧
         t.mem.readW (byteAddr up) 64 = BitVec.ofNat 64 c ∧ Frame [⟨byteAddr up, 8⟩] s.mem t.mem ∧

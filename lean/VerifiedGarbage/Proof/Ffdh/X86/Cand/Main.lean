@@ -274,7 +274,7 @@ theorem testEax_ok {b : Bool} (he : s.gpr .eax = BitVec.ofNat 32 b.toNat) :
 
 /-- q's lowest bit: ZF if q is even. -/
 theorem oddQ_ok (h : In Ex base bytes len args s) {q : Nat} (hq : sv s.mem base len .wide 10 = q) :
-    WP isa (.block (lowWord (.slot .wide 10) ++ [.alu .and .eax (.imm 1)])) s fun t =>
+    WP isa (.block (lowWord (.slot .wide 10) ++ ([.alu .and .eax (.imm 1)] : List Instr))) s fun t =>
       Step Ex base bytes len args s t ∧ t.mem = s.mem ∧ isa.eval .e t = some (decide (q % 2 = 0)) :=
   lowWord_ok h (j := 10) (by decide) fun u m K e => wp_andZ fun t U z => WP.block_nil
     ⟨Step.regs h (by rw [U.mem, m]) (K.trans (U.keeps.mono (by decide))), by rw [U.mem, m], by

@@ -290,10 +290,10 @@ theorem cutTail_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes 
         (w32 s.mem base (lo len (.slot .wide j) + 4 * wi) &&& (2 ^ r - 1)) |||
           (if top then 2 ^ (r - 1) else 0) →
       Keeps [.eax, .ebx, .ecx, .ebp] s t → WP isa (.block is) t Q) :
-    WP isa (.block ((ptrTo (.slot .wide j) .ebx .ecx ++ [.alu .add .ebx (.reg .edx), .mov .ecx (.mem (at_ .ebx 0)),
-      .alu .and .ecx (.reg .eax)] ++
+    WP isa (.block ((ptrTo (.slot .wide j) .ebx .ecx ++ ([.alu .add .ebx (.reg .edx), .mov .ecx (.mem (at_ .ebx 0)),
+      .alu .and .ecx (.reg .eax)] : List Instr) ++
       (if top then [.mov .ebp (.reg .eax), .shift .shr .ebp 1, .alu .xor .eax (.reg .ebp), .alu .or .ecx (.reg .eax)]
-        else []) ++ [.store (at_ .ebx 0) .ecx]) ++ is)) s Q := by
+        else []) ++ ([.store (at_ .ebx 0) .ecx] : List Instr)) ++ is)) s Q := by
   have bl := h.bytes_lt
   have f := slot_fit1 h hj
   rw [cb1] at f
@@ -369,9 +369,9 @@ theorem cutHead_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes 
     (hk : w32 s.mem base kOff = k) (hk1 : 1 ≤ k)
     (kk : ∀ t, t.mem = s.mem → Keeps [.ecx, .edx] s t → t.gpr .ecx = BitVec.ofNat 32 ((k - 1) % 32 + 1) →
       t.gpr .edx = BitVec.ofNat 32 (4 * ((k - 1) / 32)) → WP isa (.block is) t Q) :
-    WP isa (.block ([.mov .ecx (.mem (sc kOff)), .alu .sub .ecx (.imm 1), .mov .edx (.reg .ecx), .shift .shr .edx 5,
+    WP isa (.block (([.mov .ecx (.mem (sc kOff)), .alu .sub .ecx (.imm 1), .mov .edx (.reg .ecx), .shift .shr .edx 5,
       .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx), .alu .and .ecx (.imm 31),
-      .alu .add .ecx (.imm 1)] ++ is)) s Q := by
+      .alu .add .ecx (.imm 1)] : List Instr) ++ is)) s Q := by
   have kl : k < 2 ^ 32 := by rw [← hk]; exact (s.mem.readW _ 32).isLt
   simp only [List.cons_append, List.nil_append]
   refine wp_movS (hdr_read h (d := kOff) ⟨.inr ⟨by decide, by decide⟩, by decide⟩) fun u₁ U₁ _ => ?_

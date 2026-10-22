@@ -57,7 +57,7 @@ theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = 
     (dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩)
     (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 40))
     (hb2 : bits ≤ 8192) (hg25 : g = 2 ∨ g = 5) :
-    WP isa (.block (entryWords ++ [.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))])) s fun t =>
+    WP isa (.block (entryWords ++ ([.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))] : List Instr))) s fun t =>
       Step Ex base bytes len args s t ∧ w32 t.mem base bitsOff = bits ∧ w32 t.mem base genOff = g ∧
       w32 t.mem base usedOff = up.toNat ∧ Kept base len [] [bitsOff, genOff, usedOff] s.mem t.mem ∧
       t.cf = some (decide (n < len)) := by
