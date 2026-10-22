@@ -1,0 +1,471 @@
+module
+
+public import VerifiedGarbage.Spec.Sm4.Gcm
+public import VerifiedGarbage.Spec.Gcm.Contract
+
+/-!
+# SM4-GCM: the contracts of the whole AEAD, on every target
+
+**Trusted** (as every file in `Spec/`). The functions of SM4-GCM
+(`Spec/Sm4/Gcm.lean`: GCM, NIST SP 800-38D, with SM4 as `CIPH_K`, RFC 8998
+§3.5.1's `AEAD_SM4_GCM`), as AES-GCM's (`Spec/Gcm/Contract.lean`, "AES-GCM"),
+whose definitions of GCM-AE and GCM-AD on a given hash subkey
+(`Gcm.encryptWith`, `Gcm.decryptWith`), of a streaming state
+(`Gcm.StreamRepr`), of the untruncated tag (`Gcm.fullTag`), of the result of
+a decryption (`Gcm.openResult`) and of the supported tag lengths
+(`Gcm.tagLenOk`) they use unchanged. They differ from AES-GCM's in the key
+context, which holds SM4's 128-byte schedule (with a key of 16 bytes there is
+no number of rounds to pass), and in the cipher computed with it:
+
+* `vg_sm4_gcm_init` writes a key context (`KeyRepr`): the schedule that
+  `vg_sm4_expand_key` writes, and the hash subkey `H = CIPH_K(0¹²⁸)`. The
+  others read one, and compute with the cipher and the hash subkey it holds
+  (`ctxCiph`, `ctxH`): with a context `vg_sm4_gcm_init` wrote, that is
+  SM4-GCM with its key (`encryptWith_ctx`, `decryptWith_ctx`).
+* `vg_sm4_gcm_seal` is GCM-AE with a 16-byte tag, and `vg_sm4_gcm_open`
+  GCM-AD with a tag of any length `tagLenOk` allows; `open` decrypts only if
+  the tag is right, and otherwise leaves the data as it was. Whether the tag
+  is right is public: `open` may leak it (it is the result), and nothing else
+  secret.
+* The streaming functions, on a state that `vg_sm4_gcm_stream_init` starts:
+  `vg_sm4_gcm_stream_aad` absorbs additional data,
+  `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` encrypt or
+  decrypt text in place, `vg_sm4_gcm_stream_finish` writes the 16-byte tag,
+  and `vg_sm4_gcm_stream_verify` compares it with a received tag. The caller
+  keeps the lengths of the additional data and the text so far, which are
+  public, and passes them.
+
+None of the functions checks the lengths of §5.2.1.1 (`Gcm.supported`),
+which concern a whole message: the caller checks them. Only the length of a
+received tag is checked, by the function given the tag, which rejects
+lengths outside 4 through 16 bytes as it rejects a wrong tag.
+
+Everything but the pointers and the lengths is secret: keys, schedules, hash
+subkeys, IVs, additional data, texts, tags and states. Every contract takes
+the bytes of stack below the stack pointer that an implementation's calls
+and frames use (`stack`); the functions may overwrite their arguments passed
+in memory, where the calling convention allows it (`writeArgs`), to pass
+arguments to the functions they call.
+-/
+
+@[expose] public section
+
+namespace VG.Spec.Sm4.Gcm
+
+open VG.Spec.Gcm (encryptWith decryptWith StreamRepr fullTag openResult tagLenOk gctr inc32
+  j0)
+
+/-! ## The key context
+
+`vg_sm4_gcm_init` stores what SM4-GCM needs of a key in a 144-byte key
+context, which the other SM4-GCM functions read:
+
+* bytes 0–127: SM4's key schedule, as `vg_sm4_expand_key` writes it
+  (32 little-endian round keys, `Sm4.scheduleAt`);
+* bytes 128–143: the hash subkey `H = CIPH_K(0¹²⁸)` (§7.1 step 1). -/
+
+/-- The cipher of the key context at `p`: SM4 under the schedule in its first
+128 bytes, on GCM's blocks. -/
+def ctxCiph (m : Mem) (p : Addr) : Spec.Gcm.Block → Spec.Gcm.Block := gcmCipher (scheduleAt m p)
+
+/-- The hash subkey of the key context at `p`: its bytes 128–143. -/
+def ctxH (m : Mem) (p : Addr) : Spec.Gcm.Block := Spec.Gcm.blockAt m (p + 128)
+
+/-- The key context at `p` is that of the 16-byte SM4 key `key`: it holds the
+key schedule of `key` and the hash subkey `CIPH_K(0¹²⁸)`. -/
+def KeyRepr (m : Mem) (p : Addr) (key : List Byte) : Prop :=
+  scheduleAt m p = expandKey (Vector.ofFn fun i => key.getD i.val 0) ∧ ctxH m p = gcmCipherOfKey key 0
+
+/-- GCM-AE with the key context of `key` is SM4-GCM's with `key`. -/
+theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
+    (t : Nat) (iv pt a : List Byte) :
+    encryptWith (ctxCiph m p) (ctxH m p) t iv pt a = gcmEncrypt key t iv pt a := by
+  unfold ctxCiph
+  rw [hk.1, hk.2]
+  rfl
+
+/-- GCM-AD with the key context of `key` is SM4-GCM's with `key`, for
+lengths that step 1 accepts. -/
+theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
+    (t : Nat) (iv c a tag : List Byte)
+    (hs : Spec.Gcm.supported iv.length c.length a.length = true) (ht : tag.length = t) :
+    decryptWith (ctxCiph m p) (ctxH m p) t iv c a tag = gcmDecrypt key t iv c a tag := by
+  unfold ctxCiph
+  rw [hk.1, hk.2, gcmDecrypt, Spec.Gcm.decrypt_eq, hs, ht]
+  simp only [Bool.not_true, Bool.false_or, ne_eq, not_true_eq_false, decide_false,
+    Bool.false_eq_true, ↓reduceIte]
+  rfl
+
+/-- `vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 18])`. -/
+def initSig : Sig where
+  params := [("key", .array false .u8 16), ("ctx", .array true .u64 18)]
+
+/-- Makes the 144 bytes at `ctx` the key context of the key at `key`. -/
+def initPost (pb : Nat) : initSig.Post pb := fun key ctx m m' _ =>
+  KeyRepr m' ctx (Aes.bytesAt m key 16)
+
+/-- `initPost`. -/
+def initContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  initSig.contract A (post := initPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_init` on every target. -/
+def initApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_init"
+  sig := initSig
+  writeArgs := true
+  contracts := some fun A stack => initContract A stack
+  summary := "The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to \
+    `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in \
+    bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes \
+    128–143. The other `vg_sm4_gcm_*` functions read it.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. \
+    Constant time: only the pointers may affect timing, not the key."
+  safety := []
+
+/-! ## One-shot -/
+
+/-- `vg_sm4_gcm_seal(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`. -/
+def sealSig : Sig where
+  params := [("ctx", .array false .u64 18), ("nonce", .slice false .u8 "nonce_len"),
+    ("aad", .slice false .u8 "aad_len"), ("data", .slice true .u8 "len"), ("tag", .array true .u8 16)]
+
+/-- With the key context at `ctx`: the `len` bytes at `data` are encrypted,
+with the IV the `nonce_len` bytes at `nonce` and the `aad_len` bytes of
+additional data at `aad` (GCM-AE, `encryptWith`), and the 16-byte tag is at
+`tag`. -/
+def sealPost (pb : Nat) : sealSig.Post pb :=
+  fun ctx nonce nonceLen aad aadLen data len tag m m' _ =>
+    encryptWith (ctxCiph m ctx) (ctxH m ctx) 16 (Aes.bytesAt m nonce nonceLen.toNat)
+        (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat) =
+      (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag 16)
+
+/-- `sealPost`. -/
+def sealContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealSig.contract A (post := sealPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_seal` on every target. -/
+def sealApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_seal"
+  sig := sealSig
+  writeArgs := true
+  contracts := some fun A stack => sealContract A stack
+  summary := "SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; \
+    RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the \
+    `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the \
+    tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A \
+    shorter tag is the first bytes of this one.\n\n\
+    The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at \
+    most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), \
+    which the caller must ensure; and a nonce must never be used twice with the same key.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths \
+    may affect timing, not the key context, the nonce, the additional data or the data."
+  safety := []
+
+/-- `vg_sm4_gcm_open(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`.
+`tag_len` is public. -/
+def openSig : Sig where
+  params := [("ctx", .array false .u64 18), ("nonce", .slice false .u8 "nonce_len"),
+    ("aad", .slice false .u8 "aad_len"), ("data", .slice true .u8 "len"),
+    ("tag", .slice false .u8 "tag_len")]
+  ret := some .u32
+
+/-- With the key context at `ctx` and the received tag the `tag_len` bytes at
+`tag`: if `tag_len` is a tag length `tagLenOk` allows and the tag is that
+of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of
+additional data at `aad`, with the IV the `nonce_len` bytes at `nonce`
+(GCM-AD, `decryptWith`), the result is 1 and the plaintext is at `data`;
+otherwise the result is 0 and the bytes at `data` are as they were. -/
+def openPost (pb : Nat) : openSig.Post pb :=
+  fun ctx nonce nonceLen aad aadLen data len tag tagLen m m' r =>
+    match openResult (ctxCiph m ctx) (ctxH m ctx) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat) with
+    | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
+    | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = Aes.bytesAt m data len.toNat
+
+/-- What `vg_sm4_gcm_open` may leak: whether it returns 1 (`openResult`'s
+outcome). -/
+def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
+  fun ctx nonce nonceLen aad aadLen data len tag tagLen m =>
+    [if (openResult (ctxCiph m ctx) (ctxH m ctx) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat)).isSome
+      then 1 else 0]
+
+/-- `openPost`, leaking `openLeak`. -/
+def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openSig.contract A (post := openPost A.ptrBits) (writeArgs := true) (stack := stack)
+    (leak := some (openLeak A.ptrBits))
+
+/-- `vg_sm4_gcm_open` on every target. -/
+def openApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_open"
+  sig := openSig
+  writeArgs := true
+  contracts := some fun A stack => openContract A stack
+  summary := "SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): \
+    with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` \
+    bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` \
+    bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of \
+    additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then \
+    decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are \
+    unchanged. The tags are compared without a branch.\n\n\
+    The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most \
+    `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), \
+    which the caller must check.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the \
+    pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, \
+    not the key context, the nonce, the additional data, the data or the tag."
+  safety := []
+
+/-! ## Streaming -/
+
+/-- `vg_sm4_gcm_stream_init(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10])`. -/
+def streamInitSig : Sig where
+  params := [("ctx", .array false .u64 18), ("nonce", .slice false .u8 "nonce_len"),
+    ("state", .array true .u64 10)]
+
+/-- With the key context at `ctx`: makes the streaming state at `state`
+represent the message with the IV the `nonce_len` bytes at `nonce`, no
+additional data and no text yet, for any cipher (which only the text
+needs). -/
+def streamInitPost (pb : Nat) : streamInitSig.Post pb := fun ctx nonce nonceLen state m m' _ =>
+  ∀ ciph, StreamRepr m' state ciph (ctxH m ctx) (Aes.bytesAt m nonce nonceLen.toNat) [] []
+
+/-- `streamInitPost`. -/
+def streamInitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamInitSig.contract A (post := streamInitPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_stream_init` on every target. -/
+def streamInitApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_stream_init"
+  sig := streamInitSig
+  writeArgs := true
+  contracts := some fun A stack => streamInitContract A stack
+  summary := "Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with \
+    the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` \
+    represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data \
+    or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or \
+    `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, \
+    with the same key context.\n\n\
+    The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), \
+    which the caller must check.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH \
+    accumulator, a partial block, the next counter block and a keystream block \
+    (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect \
+    timing, not the key context or the nonce."
+  safety := []
+
+/-- `vg_sm4_gcm_stream_aad(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize)`.
+`aad_len` is public. -/
+def streamAadSig : Sig where
+  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("data", .slice false .u8 "len")]
+
+/-- With the key context at `ctx`: if the streaming state at `state`
+represents a message with additional data `a` of `aad_len` bytes (modulo
+2⁶⁴) and no text yet, for its hash subkey, then afterwards it represents
+that message with `a` followed by the `len` bytes at `data` as its
+additional data. -/
+def streamAadPost (pb : Nat) : streamAadSig.Post pb := fun ctx state aadLen data len m m' _ =>
+  ∀ ciph iv a, StreamRepr m state ciph (ctxH m ctx) iv a [] →
+    aadLen = BitVec.ofNat 64 a.length →
+    StreamRepr m' state ciph (ctxH m ctx) iv (a ++ Aes.bytesAt m data len.toNat) []
+
+/-- `streamAadPost`. -/
+def streamAadContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamAadSig.contract A (post := streamAadPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_stream_aad` on every target. -/
+def streamAadApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_stream_aad"
+  sig := streamAadSig
+  writeArgs := true
+  contracts := some fun A stack => streamAadContract A stack
+  summary := "Absorbs additional data into an incremental SM4-GCM encryption or decryption: with \
+    the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` \
+    bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with \
+    the `len` bytes at `data` appended to its additional data. All of the additional data comes \
+    before the text (§7.1 step 5): after text, the state represents no message.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` \
+    and `len` may affect timing, not the key context, the state or the data."
+  safety := []
+
+/-- `vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize)`,
+and `vg_sm4_gcm_stream_decrypt` with the same signature. `aad_len` and
+`text_len` are public. -/
+def streamCryptSig : Sig where
+  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("data", .slice true .u8 "len")]
+
+/-- With the key context at `ctx`: if the streaming state at `state`
+represents a message with the IV `iv`, additional data `a` of `aad_len`
+bytes and the ciphertext of a plaintext `p` of exactly `text_len` bytes (and
+`aad_len` modulo 2⁶⁴) so far, then afterwards it represents the message with
+the ciphertext of `p` followed by the `len` bytes at `data`, whose
+encryption is written to `data`: the last `len` bytes of
+`GCTR_K(inc₃₂(J₀), p ‖ data)`. -/
+def streamEncryptPost (pb : Nat) : streamCryptSig.Post pb :=
+  fun ctx state aadLen textLen data len m m' _ =>
+    let ciph := ctxCiph m ctx
+    let h := ctxH m ctx
+    ∀ iv a p, StreamRepr m state ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = p.length →
+      let c := gctr ciph (inc32 (j0 h iv)) (p ++ Aes.bytesAt m data len.toNat)
+      StreamRepr m' state ciph h iv a c ∧ Aes.bytesAt m' data len.toNat = c.drop p.length
+
+/-- `streamEncryptPost`. -/
+def streamEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptSig.contract A (post := streamEncryptPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_stream_encrypt` on every target. -/
+def streamEncryptApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_stream_encrypt"
+  sig := streamCryptSig
+  writeArgs := true
+  contracts := some fun A stack => streamEncryptContract A stack
+  summary := "Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP \
+    800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming \
+    state `*state` represents a message with `aad_len` bytes of additional data and the \
+    ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at \
+    `data` in place, as the continuation of that plaintext, and the state then represents the \
+    message with them appended.\n\n\
+    The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most \
+    `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, \
+    `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the \
+    data."
+  safety := []
+
+/-- With the key context at `ctx`: if the streaming state at `state`
+represents a message with the IV `iv`, additional data `a` of `aad_len`
+bytes and the ciphertext `c` of `text_len` bytes (exactly, and `aad_len`
+modulo 2⁶⁴) so far, then afterwards it represents the message with the
+ciphertext `c` followed by the `len` bytes at `data`, whose decryption is
+written to `data`: the last `len` bytes of `GCTR_K(inc₃₂(J₀), c ‖ data)`. -/
+def streamDecryptPost (pb : Nat) : streamCryptSig.Post pb :=
+  fun ctx state aadLen textLen data len m m' _ =>
+    let ciph := ctxCiph m ctx
+    let h := ctxH m ctx
+    ∀ iv a c, StreamRepr m state ciph h iv a c →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
+      let c' := c ++ Aes.bytesAt m data len.toNat
+      StreamRepr m' state ciph h iv a c' ∧
+        Aes.bytesAt m' data len.toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
+
+/-- `streamDecryptPost`. -/
+def streamDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptSig.contract A (post := streamDecryptPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_stream_decrypt` on every target. -/
+def streamDecryptApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_stream_decrypt"
+  sig := streamCryptSig
+  writeArgs := true
+  contracts := some fun A stack => streamDecryptContract A stack
+  summary := "Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP \
+    800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming \
+    state `*state` represents a message with `aad_len` bytes of additional data and exactly \
+    `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in \
+    place, as the continuation of that ciphertext, and the state then represents the message \
+    with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has \
+    returned 1.\n\n\
+    The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most \
+    `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, \
+    `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the \
+    data."
+  safety := []
+
+/-- `vg_sm4_gcm_stream_finish(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16])`.
+`aad_len` and `text_len` are public; `state` is left unspecified. -/
+def streamFinishSig : Sig where
+  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("tag", .array true .u8 16)]
+
+/-- With the key context at `ctx`: if the streaming state at `state`
+represents a message with the IV `iv`, additional data `a` of `aad_len`
+bytes and the ciphertext `c` of `text_len` bytes (exactly, and `aad_len`
+modulo 2⁶⁴), its 16-byte tag (`fullTag`) is at `tag`. -/
+def streamFinishPost (pb : Nat) : streamFinishSig.Post pb :=
+  fun ctx state aadLen textLen tag m m' _ =>
+    let ciph := ctxCiph m ctx
+    let h := ctxH m ctx
+    ∀ iv a c, StreamRepr m state ciph h iv a c →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
+      Aes.bytesAt m' tag 16 = fullTag ciph h iv a c
+
+/-- `streamFinishPost`. -/
+def streamFinishContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamFinishSig.contract A (post := streamFinishPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_stream_finish` on every target. -/
+def streamFinishApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_stream_finish"
+  sig := streamFinishSig
+  writeArgs := true
+  contracts := some fun A stack => streamFinishContract A stack
+  summary := "Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 \
+    steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the \
+    streaming state `*state` represents a message with `aad_len` bytes of additional data and \
+    exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is \
+    the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, \
+    `aad_len` and `text_len` may affect timing, not the key context or the state."
+  safety := ["The contents of `state` on return are unspecified."]
+
+/-- `vg_sm4_gcm_stream_verify(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32`.
+`aad_len`, `text_len` and `tag_len` are public; `state` is left
+unspecified. -/
+def streamVerifySig : Sig where
+  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("tag", .slice false .u8 "tag_len")]
+  ret := some .u32
+
+/-- With the key context at `ctx` and the received tag the `tag_len` bytes at
+`tag`: if the streaming state at `state` represents a message with the IV
+`iv`, additional data `a` of `aad_len` bytes and the ciphertext `c` of
+`text_len` bytes (both modulo 2⁶⁴), and `T` is its 16-byte tag (`fullTag`):
+the result is 1 if `tag_len` is a supported length and the received tag is
+the first `tag_len` bytes of `T` (§7.2 step 8), and 0 otherwise. -/
+def streamVerifyPost (pb : Nat) : streamVerifySig.Post pb :=
+  fun ctx state aadLen textLen tag tagLen m _ r =>
+    let ciph := ctxCiph m ctx
+    let h := ctxH m ctx
+    ∀ iv a c, StreamRepr m state ciph h iv a c →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
+      let t := fullTag ciph h iv a c
+      if tagLenOk tagLen.toNat ∧ t.take tagLen.toNat = Aes.bytesAt m tag tagLen.toNat then r = 1
+      else r = 0
+
+/-- `streamVerifyPost`. -/
+def streamVerifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamVerifySig.contract A (post := streamVerifyPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_gcm_stream_verify` on every target. -/
+def streamVerifyApi : Api where
+  module := "sm4_gcm"
+  name := "vg_sm4_gcm_stream_verify"
+  sig := streamVerifySig
+  writeArgs := true
+  contracts := some fun A stack => streamVerifyContract A stack
+  summary := "Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D \
+    §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received \
+    tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with \
+    `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if \
+    `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the \
+    message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.\n\n\
+    Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, \
+    `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the \
+    tags."
+  safety := ["The contents of `state` on return are unspecified."]
+
+end VG.Spec.Sm4.Gcm
