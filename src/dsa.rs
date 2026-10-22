@@ -320,7 +320,7 @@ impl PrivateKey {
 mod keygen;
 mod parameters;
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 pub use parameters::Parameters;
 
 #[cfg(test)]
