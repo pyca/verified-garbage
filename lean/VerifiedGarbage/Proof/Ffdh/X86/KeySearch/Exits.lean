@@ -21,8 +21,10 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 /-- A run's state, with the words a finished search leaves. -/
 theorem St.done {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) {r : KeySearchResult}
     (hs : ∀ d ∈ doneDs, d ∈ ds) (he : ∀ d ∈ doneDs, f d = doneF (ofState o) (o.gpr .esi) r d)
-    (hout : Output (ofState o) r s.mem) : Done (ofState o) o r s :=
-  ⟨⟨h.abi, rfl⟩, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, (h.words.sub hs).congr he, hout⟩
+    (hout : Output (ofState o) r s.mem)
+    (hsm : r.retries.keys ≤ 128 ∧ r.retries.scalars ≤ 128 ∧ r.used ≤ (ofState o).randLen) :
+    Done (ofState o) o r s :=
+  ⟨⟨h.abi, rfl⟩, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, (h.words.sub hs).congr he, hout, hsm⟩
 
 /-- The width's word: `p_len`, below `2³²`. -/
 theorem len_ofNat {o : State} : BitVec.ofNat 32 (ofState o).len = arg o 7 := by
@@ -53,7 +55,7 @@ theorem exhausted_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Liv
       keysOff]) (by simp [upd, liveF, ofState, yOff, statusOff, requestOff, scalarsOff, keysOff])
     (by simp [upd, liveF, ofState, lenOff, statusOff, requestOff, scalarsOff, keysOff]) (by decide) (by decide)
     (by decide)) fun u ⟨Su, Zx, Zy, _, _⟩ => ?_
-  refine Su.done (by decide) ?_ ⟨Zx, Zy⟩
+  refine Su.done (by decide) ?_ ⟨Zx, Zy⟩ ⟨Nat.zero_le _, Nat.zero_le _, h.used_le⟩
   simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp [upd, liveF, doneF, statusOff, requestOff, scalarsOff, keysOff, KeySearchResult.retries,
@@ -77,7 +79,7 @@ theorem request_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live 
     (by simp [upd, liveF, ofState, yOff, statusOff, requestOff])
     (by simp [upd, liveF, ofState, lenOff, statusOff, requestOff]) (by decide) (by decide)
     (by decide)) fun u ⟨Su, Zx, Zy, _, _⟩ => ?_
-  refine Su.done (by decide) ?_ ⟨Zx, Zy⟩
+  refine Su.done (by decide) ?_ ⟨Zx, Zy⟩ ⟨h.keys_le, h.scalars_le, h.used_le⟩
   simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp [upd, liveF, doneF, statusOff, requestOff, lenOff, KeySearchResult.retries, KeySearchResult.status,

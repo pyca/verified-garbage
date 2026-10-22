@@ -34,7 +34,8 @@ theorem Done.congr {p : KPub} {o s : State} {r₁ r₂ : KeySearchResult} (h : D
     Done p o r₂ s := by
   have es : r₁.status = r₂.status := by simp only [KeySearchResult.status, e.1]
   have er : r₁.retries = r₂.retries := by simp only [KeySearchResult.retries, e.1]
-  refine ⟨h.input, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words.congr fun d _ => ?_, ?_⟩
+  refine ⟨h.input, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words.congr fun d _ => ?_, ?_,
+    by rw [← er, ← e.2]; exact h.small⟩
   · simp only [doneF, es, er, e.2]
   · have := h.output; unfold Output at this ⊢; rw [← e.1]; exact this
 
@@ -218,7 +219,7 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     refine WP.mono (S''.terminal hA 1) fun v ⟨Sv, Fv⟩ => Or.inl ?_
     show Done _ _ (keyTail _ _ _ _ _ _) v
     rw [keyTail_accepted hk hs hr' h1]
-    refine Sv.done (by decide) ?_ ?_
+    refine Sv.done (by decide) ?_ ?_ ⟨Nat.zero_le _, Nat.zero_le _, by simp only [ofState] at hr ⊢; omega⟩
     · simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
         simp [upd, liveF, doneF, statusOff, requestOff, scalarsOff, keysOff, KeySearchResult.retries,

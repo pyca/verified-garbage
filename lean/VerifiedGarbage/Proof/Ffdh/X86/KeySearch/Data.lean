@@ -140,5 +140,6 @@ structure Done (p : KPub) (o : State) (result : KeySearchResult) (s : State) : P
   frame : Frame (frameR o) o.mem s.mem
   words : Ctl s.mem p.S doneDs (doneF p (o.gpr .esi) result)
   output : Output p result s.mem
+  small : result.retries.keys ≤ 128 ∧ result.retries.scalars ≤ 128 ∧ result.used ≤ p.randLen
 
 end VG.Proof.Ffdh.X86.KeySearch
