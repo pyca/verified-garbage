@@ -27,6 +27,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Fast
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split (BodyRel FinRel body_ct fixTlen_check fixTlen_oneS)
@@ -58,13 +60,13 @@ theorem lenTest_check :
       hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- `Fast.run`'s code after `prefix`, in two runs. -/
-theorem fbody_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) (B : BlkFn CtxMode.prepared) {fin : Prog isa}
-    (hfin : FinRel CtxMode.prepared fin) :
-    BodyRel CtxMode.prepared (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
+theorem fbody_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) (B : BlkFn (CtxMode.preparedN np hnp)) {fin : Prog isa}
+    (hfin : FinRel (CtxMode.preparedN np hnp) fin) :
+    BodyRel (CtxMode.preparedN np hnp) (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
       (.ite .b (Impl.AesGcm.X86_64.Fast.tail ks)
         (.frame (.push [.rax]) (.seq (oneBlocks B.enc) (.seq (.block SealSplit.fixTlen) fin)) (.pop .rax 1)))) := by
   intro Ctx W SP A D R al n L kw kd kM ka sp N
-  let G : State → Prop := fun s => OneS CtxMode.prepared Ctx W SP R A al D n none s ∧
+  let G : State → Prop := fun s => OneS (CtxMode.preparedN np hnp) Ctx W SP R A al D n none s ∧
     s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N
   have hw : ∀ s, G s → WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)]) s
       fun t => t.cf = some (decide (n < 17)) ∧ G t := fun s g =>

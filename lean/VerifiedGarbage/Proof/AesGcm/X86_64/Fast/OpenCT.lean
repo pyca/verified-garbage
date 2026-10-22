@@ -53,6 +53,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.FastOpen
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Short VG.WriteBytes
 open VG.Impl.AesGcm.X86_64.FastOpen (incJ tagP lenTest)
 open VG.Proof.AesGcm.X86_64
@@ -210,7 +212,7 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
       (e₀.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
       (e₁.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)))))))
 
-theorem tagRel_tagP {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) : TagRel CtxMode.prepared (tagP ks) :=
+theorem tagRel_tagP {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) : TagRel (CtxMode.preparedN np hnp) (tagP ks) :=
   fun {_ _ _} _ {R _ _ _ _ _} hDW h16 =>
   StreamTo.RelCT.of_imp (R = 10 ∨ R = 12 ∨ R = 14) (fun _ _ h => h.1.rounds.2)
     fun hR => (tagP_rel hks hkr hR h16 hDW).mono (fun _ _ h =>
@@ -283,9 +285,9 @@ theorem crRel_tailK : CrRel Impl.AesGcm.X86_64.FastOpen.tailK := by
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {ks : Prog isa} (hks : KsOk ks)
-    (hkr : KsRel ks) {other : Prog isa} (ho : LongRel CtxMode.prepared other) :
-    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks any) := by
+theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hnp)) {ks : Prog isa} (hks : KsOk ks)
+    (hkr : KsRel ks) {other : Prog isa} (ho : LongRel (CtxMode.preparedN np hnp) other) :
+    LongRel (CtxMode.preparedN np hnp) (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks any) := by
   intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
@@ -307,7 +309,7 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
     subst h12
     have L := C.lay
     exact (openOkW_rel v B (tagRel_tagP hks hkr) (tagP_ok hF hks) crRel_tailK C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
-      hres hok ((Fast.aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
+      hres hok ((Fast.aad_rel L C.dE (M := (CtxMode.preparedN np hnp)) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
         (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
         (fun _ _ g => ⟨g.1.1.aadPre C X hNp hnl hal hR, g.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)
       (fun _ h => Fast.aad_mid hF C X h.1 hNp hnl hal (by omega))

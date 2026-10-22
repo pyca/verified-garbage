@@ -27,6 +27,8 @@ alone; the other path is `prefix`'s (`prefixNRel`).
 
 namespace VG.Proof.AesGcm.X86_64.Split
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn step)
@@ -52,7 +54,7 @@ theorem encN_check :
 
 section
 variable {Ctx W SP D S : Addr} {R n sl : Nat} {σ σ' : State}
-  (h : PP CtxMode.prepared Ctx W SP D S R n sl σ) (h' : PP CtxMode.prepared Ctx W SP D S R n sl σ')
+  (h : PP (CtxMode.preparedN np hnp) Ctx W SP D S R n sl σ) (h' : PP (CtxMode.preparedN np hnp) Ctx W SP D S R n sl σ')
 include h h'
 
 /-- After `nTest`. -/
@@ -131,8 +133,8 @@ end
 
 /-- `prefixN` in two runs. -/
 theorem prefixNRel {c : Prog isa} (hE : EncNOk c)
-    (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (T : BlkToFn CtxMode.prepared) :
-    PreRel CtxMode.prepared (SealSplit.prefixN T.fn c) := by
+    (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (T : BlkToFn (CtxMode.preparedN np hnp)) :
+    PreRel (CtxMode.preparedN np hnp) (SealSplit.prefixN T.fn c) := by
   intro Ctx W SP D S R n sl σ σ' h h'
   unfold SealSplit.prefixN
   refine RelCT.seq (step [.r15] nTest_check (F₁ := (· = σ)) (F₂ := (· = σ'))

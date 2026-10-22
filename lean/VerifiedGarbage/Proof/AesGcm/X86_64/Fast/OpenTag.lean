@@ -31,6 +31,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.FastOpen
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Short VG.WriteBytes
 open VG.Impl.AesGcm.X86_64.FastOpen (incJ tagP)
 open VG.Proof.AesGcm.X86_64
@@ -244,10 +246,10 @@ theorem endTail_ok {Ctx W SP : Addr} {H : Block} {u : State} (he : Env Ctx (W + 
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
 the keystream of the counter block. -/
-theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP CtxMode.prepared KOk (tagP ks) := by
+theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (CtxMode.preparedN np hnp) KOk (tagP ks) := by
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW hCD X
   -- `H'` and `H'²`.
-  have hX : Spec.Gcm.PreparedPowersRepr s.mem Ctx := X.ok
+  have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.ok
   have p0 := hX 0 (by decide)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   rw [show ctxH s.mem Ctx = H by rw [ctxH_eq, hH]] at p0
@@ -462,7 +464,7 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP CtxM
     rfl
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
-theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMode.prepared (tagP ks) :=
+theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk (CtxMode.preparedN np hnp) (tagP ks) :=
   TagOkP.tagOk (tagP_okP hF hks)
 
 end VG.Proof.AesGcm.X86_64.FastOpen

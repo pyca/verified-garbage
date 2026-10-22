@@ -33,6 +33,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Fast
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split (FinOk)
@@ -45,7 +47,7 @@ open VG.Proof.Gcm (Absorbed xorKs lensBlock padded)
 /-- `finishP ks` after `oneBlocks`, with a prepared key context: what
 `finishWith ks` does (`Short.finishF_ok`). -/
 theorem finOk_finishP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
-    FinOk CtxMode.prepared (Short.finishP ks) := by
+    FinOk (CtxMode.preparedN np hnp) (Short.finishP ks) := by
   intro Ctx W SP L R D n al N H icb a s s₃ h he₃ rd₃ wr₃ fr₃ tl₃ _ dat₃ len₃ o hH hcb hal habs
   have hD := h.data.ok.w
   have hlt := h.data.ok.lt
@@ -66,8 +68,8 @@ theorem finOk_finishP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
       (kept_oneFrameB L hD h.t_w (.inl ⟨by decide, by decide⟩)) (by decide), hal]
   -- `H'` and `H'²`, from the prepared key context.
   have X := h.ext
-  have hX : Spec.Gcm.PreparedPowersRepr s₃.mem Ctx :=
-    CtxMode.prepared.frame f₃ (fun r hr => by
+  have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s₃.mem Ctx :=
+    (CtxMode.preparedN np hnp).frame f₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact X.cw.sub_right (by simpa using Offset.sub_base W (d := 0) (n := 128) (k := 2560) (by decide))
@@ -154,10 +156,10 @@ additional data absorbed by `aadP`, which leaves what `oneAad` does: `aadP`
 (which branches alike in both runs), `oneBlocks` and `finishP ks`, as
 `Short.sealRunW_rel` for `finishWith ks`. -/
 theorem sealRunP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks)
-    (B : BlkFn CtxMode.prepared) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
+    (B : BlkFn (CtxMode.preparedN np hnp)) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
     (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 4 Ctx W SP Np A D nl al n)
-    (X : CtxExt CtxMode.prepared Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
-    (X' : CtxExt CtxMode.prepared Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
+    (X : CtxExt (CtxMode.preparedN np hnp) Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
+    (X' : CtxExt (CtxMode.preparedN np hnp) Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
@@ -174,11 +176,11 @@ theorem sealRunP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks)
   have hn := C.data.ok.lt
   have hRr : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have w : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n)
-      (X : CtxExt CtxMode.prepared Ctx (W + BitVec.ofNat 64 16) W SP D n s₀), s₀.gpr .rdx = Np →
+      (X : CtxExt (CtxMode.preparedN np hnp) Ctx (W + BitVec.ofNat 64 16) W SP D n s₀), s₀.gpr .rdx = Np →
       (s₀.gpr .rcx).toNat = nl → (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
       ∀ s, OneEntry s₀ Ctx W SP A D n s →
       WP isa aadP s (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem) →
-      WP isa aadP s (OneS CtxMode.prepared Ctx W SP R A al D n none) :=
+      WP isa aadP s (OneS (CtxMode.preparedN np hnp) Ctx W SP R A al D n none) :=
     fun C X hNp hnl hal hR _ h ha => WP.mono ha fun _ Mi =>
       (h.aadPre C X hNp hnl hal hR).1.frame L Mi.env (Mi.rd.trans h.rd.symm) (Mi.wr.trans h.wr.symm)
         C.dE (wFrame_one (.inl rfl) (wFrame_cons Mi.fr))
@@ -186,7 +188,7 @@ theorem sealRunP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks)
     (fun s h => w C' X' hNp' hnl' hal' hR' s h (ha' s h))
   have bl := oneBlocksE_rel B L (R := R) (A := A) (al := al) (T := none) C.t_c C.t_w C.t_d C.sp24
   have fi : ∀ {s : State},
-      OneS CtxMode.prepared Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s →
+      OneS (CtxMode.preparedN np hnp) Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s →
       FinI Ctx W SP (D + BitVec.ofNat 64 (16 * (n / 16))) R (n - 16 * (n / 16)) s ∧
         Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) :=
     fun h => ⟨⟨h.env, h.rounds.1, h.dat, h.len⟩, h.ext.cov⟩

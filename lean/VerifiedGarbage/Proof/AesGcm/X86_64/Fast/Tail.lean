@@ -29,6 +29,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Fast
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split (fixTlen_ok splitFrame BodyOk FinOk body_ok)
@@ -97,8 +99,8 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n) (h16 : n ≤ 16)
     (hd : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n)
     (kw : (below SP 56).Disjoint ⟨W, 2560⟩) (kd : (below SP 56).Disjoint ⟨D, n⟩)
-    (kM : (below SP 56).Disjoint ⟨Ctx, CtxMode.prepared.len⟩) (sp : 56 ≤ SP.toNat)
-    (X : CtxExt CtxMode.prepared Ctx (W + BitVec.ofNat 64 16) W SP D n s)
+    (kM : (below SP 56).Disjoint ⟨Ctx, (CtxMode.preparedN np hnp).len⟩) (sp : 56 ≤ SP.toNat)
+    (X : CtxExt (CtxMode.preparedN np hnp) Ctx (W + BitVec.ofNat 64 16) W SP D n s)
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hcb : blockAt s.mem (cbA W) = icb)
     (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
     (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
@@ -111,8 +113,8 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
         [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
   have hD := hd.ok.w
   have b24 : Region.Sub (below SP 24) (below SP 56) := below_sub (by decide) (by decide)
-  have kc : (below SP 56).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix CtxMode.prepared.ge)
-  have h : ObPre CtxMode.prepared Ctx W SP R D n s :=
+  have kc : (below SP 56).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix (CtxMode.preparedN np hnp).ge)
+  have h : ObPre (CtxMode.preparedN np hnp) Ctx W SP R D n s :=
     ⟨he, hR, hdat, hlen, hd, kc.sub_left b24, kw.sub_left b24, kd.sub_left b24, by omega, X⟩
   -- The total length put back.
   unfold Impl.AesGcm.X86_64.Fast.tail
@@ -161,8 +163,8 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
   -- `H'` and `H'²`.
   have cov₁ := X.cov
   rw [← rd₁, ← wr₁] at cov₁
-  have hX : Spec.Gcm.PreparedPowersRepr s₁.mem Ctx :=
-    CtxMode.prepared.frame fW (one (X.cw.sub_right (Lay.wSub (by decide)))) X.w X.ok
+  have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s₁.mem Ctx :=
+    (CtxMode.preparedN np hnp).frame fW (one (X.cw.sub_right (Lay.wSub (by decide)))) X.w X.ok
   have p0 := hX 0 (by decide)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   have hH₁ : ctxH s₁.mem Ctx = H := by
@@ -212,9 +214,9 @@ theorem lenTest_ok {Ctx St W SP : Addr} {n : Nat} (hn : n < 2 ^ 64) (s : State) 
 
 /-- `Fast.run`'s code after `prefix`: `tail` for at most 16 bytes left, and
 `SealSplit.body` otherwise. -/
-theorem fbody_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (B : BlkFn CtxMode.prepared) {fin : Prog isa}
-    (hfin : FinOk CtxMode.prepared fin) :
-    BodyOk CtxMode.prepared (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
+theorem fbody_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (B : BlkFn (CtxMode.preparedN np hnp)) {fin : Prog isa}
+    (hfin : FinOk (CtxMode.preparedN np hnp) fin) :
+    BodyOk (CtxMode.preparedN np hnp) (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
       (.ite .b (Impl.AesGcm.X86_64.Fast.tail ks)
         (.frame (.push [.rax]) (.seq (oneBlocks B.enc) (.seq (.block SealSplit.fixTlen) fin)) (.pop .rax 1)))) := by
   intro Ctx W SP L R D n al N H icb a s he hR hdat hlen hd kw kd kM sp X hH hcb hal habs haux hN

@@ -106,7 +106,7 @@ theorem encR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 
 
 /-- Both in-place loops, for a prepared key context, for any number of
 blocks from 1 on. -/
-theorem stitchR_okN (np : Nat) (hn : np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
+theorem stitchR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
     StitchOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 1 1 :=
   ⟨fun _ hp _ => encR_ok hp.toPrepared h8, fun _ hp _ => decR_ok hp.toPrepared h8⟩
 
@@ -115,7 +115,7 @@ theorem stitchR_ok :
   stitchR_okN 24
 
 /-- The out-of-place setup, as `StitchTo.setupTo_ok`. -/
-theorem setupTo_ok {s₀ : State} {np : Nat} {hn : np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
+theorem setupTo_ok {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
     (h8 : 8 ≤ np := by decide) :
     WP isa (.block Impl.Gcm.X86_64.StitchR.setupTo) s₀ fun s => ∃ P, ReadyTo s₀ P s ∧
       ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l) := by
@@ -126,14 +126,14 @@ theorem setupTo_ok {s₀ : State} {np : Nat} {hn : np ≤ 24} (hp : SPreTo (CtxM
 
 /-- The out-of-place loop, for a prepared key context, for any number of
 blocks from 16 on. -/
-theorem stitchTo_okN (np : Nat) (hn : np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
+theorem stitchTo_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
     StitchToOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchR.encToR 1 := fun _ hp _ =>
   WP.seq (WP.mono (setupTo_ok hp h8) fun _ ⟨_, hR, hpw⟩ => encTailRTo_ok hp (finE hpw) (remLaw hpw) hR)
 
 /-- The setup's powers give the products of an encryption body. -/
 theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encToR 1 := stitchTo_okN 24
 
-theorem setupFinN (np : Nat) (hn : np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) : SetupFin np hn := fun hp =>
+theorem setupFinN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) : SetupFin np hn := fun hp =>
   WP.mono (setupTo_ok hp h8) fun _ ⟨P, hR, hpw⟩ => ⟨P, hR, finE hpw⟩
 
 theorem setupFin : SetupFin := setupFinN 24

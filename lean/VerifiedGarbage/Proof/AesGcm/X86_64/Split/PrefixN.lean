@@ -31,6 +31,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Split
 
+variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
@@ -41,8 +43,8 @@ blocks at `dst` after them, `N` in all (`StitchR.NPost`), from a state that
 the out-of-place loops could start from (`SPreTo`) with what `StitchR.NPre`
 adds. -/
 def EncNOk (c : Prog isa) : Prop :=
-  ∀ {s₀ : State} {N : Nat}, Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀ → Gcm.X86_64.Stitch.nb s₀ % 16 = 0 →
-    Gcm.X86_64.StitchR.NPre CtxMode.prepared s₀ N → WP isa c s₀ (Gcm.X86_64.StitchR.NPost s₀ N)
+  ∀ {s₀ : State} {N : Nat}, Gcm.X86_64.Stitch.SPreTo (CtxMode.preparedN np hnp) s₀ → Gcm.X86_64.Stitch.nb s₀ % 16 = 0 →
+    Gcm.X86_64.StitchR.NPre (CtxMode.preparedN np hnp) s₀ N → WP isa c s₀ (Gcm.X86_64.StitchR.NPost s₀ N)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 open VG.Proof.Gcm (Ctr xorKs)
 
@@ -270,7 +272,7 @@ structure NC (t : State) : Prop where
 end
 
 section
-variable {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : PP CtxMode.prepared Ctx W SP D S R n sl s)
+variable {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : PP (CtxMode.preparedN np hnp) Ctx W SP D S R n sl s)
 include h
 
 /-- `nCopyArgs`. -/
@@ -332,7 +334,7 @@ theorem nC_ok {t : State} (hB : NB D S sl s t) : WP isa (.block SealSplit.nArgs)
 
 /-- The loop's start, from `nArgs`'s state. -/
 theorem nLoop (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC Ctx W D S R n sl s t) :
-    Gcm.X86_64.Stitch.SPreTo CtxMode.prepared t ∧ Gcm.X86_64.StitchR.NPre CtxMode.prepared t (16 * (n / 256)) ∧
+    Gcm.X86_64.Stitch.SPreTo (CtxMode.preparedN np hnp) t ∧ Gcm.X86_64.StitchR.NPre (CtxMode.preparedN np hnp) t (16 * (n / 256)) ∧
       Gcm.X86_64.Stitch.nb t % 16 = 0 := by
   have L := h.lay
   have hn := h.data.ok.lt
@@ -356,10 +358,10 @@ theorem nLoop (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC 
   have sC : Region.Sub ⟨S, 16 * (16 * C)⟩ ⟨S, sl⟩ := Region.sub_prefix (by omega)
   have dC : Region.Sub ⟨D, 16 * (16 * C)⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
   have dG : Region.Sub ⟨D, 16 * (16 * G)⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
-  have kD : (⟨Ctx, CtxMode.prepared.len⟩ : Region).Disjoint ⟨D, n⟩ := h.ext.cd
-  have hok : CtxMode.prepared.ok t.mem Ctx := by
+  have kD : (⟨Ctx, (CtxMode.preparedN np hnp).len⟩ : Region).Disjoint ⟨D, n⟩ := h.ext.cd
+  have hok : (CtxMode.preparedN np hnp).ok t.mem Ctx := by
     rw [hN.mem]
-    exact CtxMode.prepared.frame fr₂ (fun r hr => by
+    exact (CtxMode.preparedN np hnp).frame fr₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact kD.sub_right dR₂) h.ext.w h.ext.ok
   have hnb : (t.gpr .r9).toNat = 16 * C := by rw [r9₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hR : (t.gpr .rsi).toNat = R := by
@@ -433,7 +435,7 @@ theorem nE_ok (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t₃ s₄ : State} (
   have pW : Region.Sub ⟨W + BitVec.ofNat 64 448, 1024⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
   have pS : Region.Sub ⟨W + BitVec.ofNat 64 448, 1024⟩ (scR W) := Offset.sub _ (by decide) (by decide)
   have dG : Region.Sub ⟨D, 16 * (16 * G)⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
-  have kD : (⟨Ctx, CtxMode.prepared.len⟩ : Region).Disjoint ⟨D, n⟩ := h.ext.cd
+  have kD : (⟨Ctx, (CtxMode.preparedN np hnp).len⟩ : Region).Disjoint ⟨D, n⟩ := h.ext.cd
   -- What the loop writes: the counter block, `Y`, the first `256 G` bytes at `dst` and the powers.
   have f₄ : Frame [cbR W, yR W, ⟨D, 16 * (16 * G)⟩, ⟨W + BitVec.ofNat 64 448, 1024⟩] (nMemC D S sl s) s₄.mem := by
     have := hP.frame
@@ -601,8 +603,8 @@ theorem PPostG.of_eq {Ctx W SP D S : Addr} {R n sl q : Nat} {s t s' : State}
 
 /-- `prefixN` meets `PreOk`: in one pass for the texts `nTest` takes, by
 `prefix` for the others. -/
-theorem prefixNOk {c : Prog isa} (hE : EncNOk c) (T : BlkToFn CtxMode.prepared) :
-    PreOk CtxMode.prepared (SealSplit.prefixN T.fn c)
+theorem prefixNOk {c : Prog isa} (hE : EncNOk c) (T : BlkToFn (CtxMode.preparedN np hnp)) :
+    PreOk (CtxMode.preparedN np hnp) (SealSplit.prefixN T.fn c)
     fun n sl => if 1 ≤ sl / 256 ∧ sl / 256 < n / 256 then 16 * (n / 256) else sl / 16 := by
   intro Ctx W SP D S R n sl s h
   unfold SealSplit.prefixN
