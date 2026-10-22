@@ -1569,7 +1569,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AES_FEATURES: crate::cpu::Features = crate:
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and computes POLYVAL with `vg_ghash_aes`.
 ///
-/// With the interleaved loops, it decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL products, their sums and their reduction (with `eor`), from a table of the powers of the key; the rest of the data goes as without them.
+/// With the interleaved loops, it decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL products, their sums and their reduction, with `eor`, from a table of the powers of the key; the rest of the data goes as without them.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -5932,7 +5932,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES: crate::cpu::Features = c
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and computes POLYVAL with `vg_ghash_aes`.
 ///
-/// With the interleaved loops, it decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL products, their sums and their reduction (with `eor3` (which needs `FEAT_SHA3`)), from a table of the powers of the key; the rest of the data goes as without them.
+/// With the interleaved loops, it decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL products, their sums and their reduction, with `eor3` (which needs `FEAT_SHA3`), from a table of the powers of the key; the rest of the data goes as without them.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
