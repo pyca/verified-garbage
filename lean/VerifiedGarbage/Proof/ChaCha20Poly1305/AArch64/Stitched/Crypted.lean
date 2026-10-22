@@ -42,7 +42,7 @@ open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64
 open VG.Proof.ChaCha20Poly1305.AArch64.Stitch (Bulked Acc rebase rebase_of)
 open VG.Proof.ChaCha20 (ctr)
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
-open VG.Proof.ChaCha20.AArch64.Xor (wp_addImm wp_mov)
+open VG.Proof.ChaCha20.AArch64.Xor (wp_addImm wp_mov wp_str32)
 open VG.Proof.Poly1305 (absorbAll)
 open VG.Spec.Poly1305 (Repr bytesAt)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -200,6 +200,50 @@ theorem setup_ok {s₀ : State} {w : State} (hx21 : w.gpr .x21 = cx s₀) :
       ⟨fun r hr _ => g r (by rintro rfl; exact absurd hr (by decide)) (by rintro rfl; exact absurd hr (by decide))
         (by rintro rfl; exact absurd hr (by decide)) (by rintro rfl; exact absurd hr (by decide))
         (by rintro rfl; exact absurd hr (by decide)), sp, rd, wr, by rw [m]; exact Frame.refl _ _⟩, m, hv⟩
+
+/-- `counterOne`: the counter set to 1. -/
+theorem counterOne_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
+    WP isa (.block counterOne) s fun s' =>
+      s'.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32) ∧ Kept [sub s₀ 64 64] s s' ∧
+      ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := by
+  have o := hp.in_ctx (a := 112) (w := 4) (by lit_omega)
+  rw [← h.wr] at o
+  have core : WP isa (.block counterOne) s fun s' =>
+      s'.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+    refine wp_movz32 fun s₁ u₁ => ?_
+    refine wp_str32 (a := off (cx s₀) 112) (by decide) (by rw [u₁.other _ (by decide), h.x21])
+      (by rw [u₁.wr]; exact o) fun s₂ g₂ => ?_
+    exact WP.block_nil ⟨by rw [g₂.mem, u₁.gpr, u₁.mem, one32], by rw [g₂.rd, u₁.rd], by rw [g₂.wr, u₁.wr]⟩
+  refine WP.mono (WP.preservedV (WP.kept core rfl) (by lit_decide))
+    fun s' ⟨⟨⟨hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ => ⟨hm, Kept.of hg hsp hrd hwr ?_, hv⟩
+  rw [hm]
+  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+    (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+
+/-- The ChaCha20 state after `counterOne`: counter 1. -/
+theorem setup_cnt {s₀ : State} {s : State}
+    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)) :
+    stateAt (s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32)) (off (cx s₀) 64) =
+      Spec.ChaCha20.initState (K s₀) 1 (N s₀) := by
+  rw [show off (cx s₀) 112 = off (cx s₀) 64 + BitVec.ofNat 64 48 from (off_off _ 64 48).symm,
+    VG.Proof.ChaCha20.AArch64.Xor.stateAt_writeW_counter, hst, set12_initState]
+
+/-- After the lengths and `counterOne`, `cryptStitched` starts from the data's
+first byte. -/
+theorem entry_zero (enc : Bool) {s₀ : State} {s w : State} (h : Inv s₀ s)
+    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
+    {key msg : List Byte} (hr : Repr s.mem (off (cx s₀) 448) key msg)
+    (hm : w.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32)) (hk : Kept [sub s₀ 64 64] s w) :
+    Entry enc 0 s₀ w key msg w := by
+  refine ⟨(h.step1 hk (by lit_omega) (by lit_omega) (by lit_omega)).inv0, by decide, Nat.zero_le _, ?_, ?_,
+    ?_, fun k _ => by rw [ite_eq_right (Nat.not_lt_zero k)], ?_, fun _ _ => rfl⟩
+  · rw [hk.cs _ (pres .x22) (pres30 .x22), h.x22, Poly1305.AArch64.add_ofNat_zero]
+  · rw [hk.cs _ (pres .x23) (pres30 .x23), h.x23, Nat.sub_zero, hL]
+  · rw [hm, setup_cnt hst, Nat.zero_div, VG.Proof.ChaCha20.ctr_zero]
+  · rw [Stitch.bytesAt_zero, List.append_nil]
+    exact Repr.frame hk.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)) hr
 
 theorem Inv0.kept {s₀ s s' : State} (h : Inv0 s₀ s) (hk : Kept [] s s') : Inv0 s₀ s' :=
   h.step hk (fun _ hr => absurd hr List.not_mem_nil) (fun _ hr => absurd hr List.not_mem_nil)

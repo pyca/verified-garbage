@@ -65,8 +65,9 @@ postcondition mentions (`Agree`).
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Short
 
 open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64 VG.Impl.ChaCha20Poly1305.AArch64.Short
-open VG.Proof.ChaCha20.AArch64.Xor (Upd wp_subImm wp_lsr eval_zero ofNat_beq_zero sub_ofNat)
-open VG.Proof.ChaCha20Poly1305.AArch64 (wp_orr)
+open VG.Proof.ChaCha20.AArch64.Xor (Upd wp_subImm wp_lsr wp_movz eval_zero eval_nonzero ofNat_beq_zero
+  sub_ofNat)
+open VG.Proof.ChaCha20Poly1305.AArch64 (wp_orr wp_lsl)
 open VG.Proof.ChaCha20.AArch64 (toNat_ofNat_lt)
 
 variable {e : Bool}
@@ -184,35 +185,79 @@ theorem check_eval {sve : Bool} {s₀ s₁ : State} (h : s₁.gpr .x9 = checkVal
   have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) := eval_zero s₁ .x9
   rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, checkVal_eq sve (s₀.gpr .x5).isLt]
 
-/-- `x9`, zero iff there are fewer than 512 bytes (`wide`). -/
-theorem wide_ok (s₀ : State) :
-    WP isa (.block wide) s₀ fun s₁ => Agree s₀ s₁ ∧ s₁.gpr .x9 = s₀.gpr .x5 >>> 9 := by
-  have h : WP isa (.block wide) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = s₀.gpr .x5 >>> 9 ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
-    wp_lsr (by decide) fun s₁ u₁ => WP.block_nil
-      ⟨fun r h9 _ => u₁.other r h9, u₁.gpr, u₁.mem, u₁.rd, u₁.wr⟩
-  exact WP.mono (WP.preservedV (WP.withSp h) (by lit_decide))
+/-- `x10` written `n` times. -/
+theorem pad_ok (n : Nat) (s : State) :
+    WP isa (.block (List.replicate n (.movz .x .x10 0 0))) s fun s' =>
+      (∀ r, r ≠ .x10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  induction n generalizing s with
+  | zero => exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+  | succ n ih =>
+    rw [List.replicate_succ]
+    exact wp_movz fun s₁ u₁ => (ih s₁).mono fun s' ⟨g, m, rd, wr⟩ =>
+      ⟨fun r h => by rw [g r h, u₁.other r h], by rw [m, u₁.mem], by rw [rd, u₁.rd], by rw [wr, u₁.wr]⟩
+
+/-- The value `route sve enc` leaves in `x9`. -/
+abbrev routeVal (sve enc : Bool) (x : BitVec 64) : BitVec 64 :=
+  ((x <<< 55 >>> 55) - BitVec.ofNat 64 (wideLo sve enc)) >>> wideSh sve enc
+
+/-- `x9`, zero iff the length takes the wide code. -/
+theorem route_ok (sve enc : Bool) (s₀ : State) :
+    WP isa (.block (route sve enc)) s₀ fun s₁ => Agree s₀ s₁ ∧ s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5) := by
+  have hlo : wideLo sve enc < 4096 := by cases sve <;> cases enc <;> decide
+  have hsh : wideSh sve enc < 64 := by cases sve <;> cases enc <;> decide
+  have h : WP isa (.block (route sve enc)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
+      s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
+    have c₄ : WP isa (.block [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
+        .lsr .x .x9 .x9 (wideSh sve enc)]) s₀ fun s₄ =>
+        (∀ r, r ≠ .x9 → s₄.gpr r = s₀.gpr r) ∧ s₄.gpr .x9 = routeVal sve enc (s₀.gpr .x5) ∧
+          s₄.mem = s₀.mem ∧ s₄.rd = s₀.rd ∧ s₄.wr = s₀.wr :=
+      wp_lsl (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ =>
+        wp_subImm hlo fun s₃ u₃ => wp_lsr hsh fun s₄ u₄ => WP.block_nil
+          ⟨fun r h9 => by rw [u₄.other r h9, u₃.other r h9, u₂.other r h9, u₁.other r h9],
+            by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr],
+            by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+            by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
+    unfold route
+    refine WP.block_append (c₄.mono fun s₄ ⟨g₄, x9₄, m₄, rd₄, wr₄⟩ => ?_)
+    exact (pad_ok 11 s₄).mono fun s' ⟨g, m, rd, wr⟩ =>
+      ⟨fun r h9 h10 => by rw [g r h10, g₄ r h9], by rw [g _ (by decide), x9₄], by rw [m, m₄],
+        by rw [rd, rd₄], by rw [wr, wr₄]⟩
+  exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> cases enc <;> lit_decide))
     fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
-/-- The branch: to the code without the prologue of five blocks iff fewer
-than 512 bytes. -/
-theorem wide_eval {s₀ s₁ : State} (h : s₁.gpr .x9 = s₀.gpr .x5 >>> 9) :
-    isa.eval (.zero .x .x9) s₁ = some (decide (L s₀ < 512)) := by
-  have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) := eval_zero s₁ .x9
-  rw [e, h]
-  refine congrArg some ?_
-  by_cases hz : s₀.gpr .x5 >>> 9 = 0
-  · rw [hz]
-    have := congrArg BitVec.toNat hz
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
-    have hp : 0 < 2 ^ 9 := by decide
-    simp only [beq_self_eq_true, L]
-    exact (decide_eq_true (by simp at this; omega)).symm
-  · rw [show (s₀.gpr .x5 >>> 9 == 0) = false from beq_eq_false_iff_ne.mpr hz]
-    refine (decide_eq_false fun hl => hz ?_).symm
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    simp only [L] at hl
-    simp; omega
+/-- Whether a length takes the wide code: its rest after whole chunks in
+`[wideLo, wideLo + 2 ^ wideSh)`. -/
+abbrev inRoute (sve enc : Bool) (L : Nat) : Prop :=
+  wideLo sve enc ≤ L % 512 ∧ L % 512 - wideLo sve enc < 2 ^ wideSh sve enc
+
+theorem routeVal_eq (sve enc : Bool) {L : Nat} (h : L < 2 ^ 64) :
+    (routeVal sve enc (BitVec.ofNat 64 L) == 0) = decide (inRoute sve enc L) := by
+  have hz : ∀ x : BitVec 64, (x == 0) = decide (x.toNat = 0) := fun x => by
+    by_cases hx : x = 0
+    · subst hx; simp
+    · have : x.toNat ≠ 0 := fun h' => hx (BitVec.eq_of_toNat_eq (by simpa using h'))
+      rw [show (x == 0) = false from beq_eq_false_iff_ne.mpr hx]
+      simp [this]
+  have hr : (BitVec.ofNat 64 L <<< 55 >>> 55).toNat = L % 512 := by
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
+      Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow,
+      show (2 : Nat) ^ 64 = 512 * 2 ^ 55 by rw [show (512 : Nat) = 2 ^ 9 from rfl, ← Nat.pow_add],
+      Nat.mul_mod_mul_right, Nat.mul_div_cancel _ (Nat.two_pow_pos 55)]
+  rw [hz]
+  congr 1
+  apply propext
+  simp only [inRoute]
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, hr, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  have h512 : L % 512 < 512 := Nat.mod_lt _ (by decide)
+  generalize L % 512 = r at h512 ⊢
+  cases sve <;> cases enc <;> simp only [wideLo, wideSh, Bool.false_eq_true, Bool.or_false,
+    Bool.or_true, ite_true, ite_false] <;> omega
+
+/-- The branch: to the code without the pass of five blocks iff the length
+does not take the wide code. -/
+theorem route_eval {sve enc : Bool} {s₀ s₁ : State} (h : s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5)) :
+    isa.eval (.nonzero .x .x9) s₁ = some (decide (¬ inRoute sve enc (L s₀))) := by
+  have e : isa.eval (.nonzero .x .x9) s₁ = some (!(s₁.gpr .x9 == 0)) := eval_nonzero s₁ .x9
+  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, routeVal_eq sve enc (s₀.gpr .x5).isLt, decide_not]
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Short

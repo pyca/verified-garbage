@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the first 256 bytes
 
-From 512 bytes, `Short.lean`'s pass of five blocks computes the one-time key
+For the lengths `route` picks, `Short.lean`'s pass of five blocks computes the one-time key
 with the keystream of the first 256 bytes, which `ShortRest.first` XORs in
 (`ShortRest.lean`'s proofs); `absorbFirst` absorbs them (`absorbFirst_ok`), and
 `skipFirst` points `x22` and `x23` at the data after them (`skipFirst_ok`),
