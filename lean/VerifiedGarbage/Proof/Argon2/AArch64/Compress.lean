@@ -12,6 +12,14 @@ import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Finish
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Argon2.Permutation
@@ -95,7 +103,8 @@ theorem initial_agree {s t : State} (hp : compressLocal.pub s t) :
 
 theorem compress_ct : ConstantTime isa compressLocal.pre compressLocal.pub
     Impl.Argon2.AArch64.compress :=
-  VG.Taint.constantTime (A := taint) initialTaint (fun _ _ _ _ hp => initial_agree hp)
+  VG.Taint.constantTime (A := VectorTaint.taint) (initialTaint, RegSet.ofList [])
+    (fun _ _ _ _ hp => ⟨initial_agree hp, fun _ hv => absurd hv (by simp [RegSet.mem_ofList])⟩)
     (by taint_decide)
 end VG.Proof.Argon2.AArch64
 
@@ -103,82 +112,86 @@ end
 
 /-! Merged from `Proof.Argon2.AArch64.Round`. -/
 section
-/-! # The row and column permutations in scratch -/
+/-! # The row and column permutations, in registers -/
 
 namespace VG.Proof.Argon2.AArch64
 
 open VG VG.AArch64 VG.Spec.Argon2
+open VG.Impl.Argon2.AArch64 (lane)
 open VG.Proof.Argon2
+
+/-- The sixteen words of a row or column, in their registers. -/
+def InRegs (s : State) (v : Vector Word 16) : Prop := ∀ j : Fin 16, s.gpr (lane j) = v[j]
 
 /-- Registers and permissions preserved throughout a scratch permutation. -/
 def Keeps (s t : State) : Prop :=
-  (∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x6 → r ≠ .x7 →
-    r ≠ .x8 → r ≠ .x9 → r ≠ .x10 → t.gpr r = s.gpr r) ∧
-  t.rd = s.rd ∧ t.wr = s.wr
+  (∀ r, (∀ j, lane j ≠ r) → r ≠ .x17 → t.gpr r = s.gpr r) ∧
+  t.rd = s.rd ∧ t.wr = s.wr ∧ t.v = s.v
 
-theorem Keeps.refl (s : State) : Keeps s s := ⟨fun _ _ _ _ _ _ _ _ => rfl, rfl, rfl⟩
+theorem Keeps.refl (s : State) : Keeps s s := ⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩
 
 theorem Keeps.trans {s t u : State} (h : Keeps s t) (h' : Keeps t u) : Keeps s u :=
-  ⟨fun r h8 h9 h10 h11 h0 hdx hsi =>
-    (h'.1 r h8 h9 h10 h11 h0 hdx hsi).trans (h.1 r h8 h9 h10 h11 h0 hdx hsi),
-    h'.2.1.trans h.2.1, h'.2.2.trans h.2.2⟩
+  ⟨fun r hl ht => (h'.1 r hl ht).trans (h.1 r hl ht),
+    h'.2.1.trans h.2.1, h'.2.2.1.trans h.2.2.1, h'.2.2.2.trans h.2.2.2⟩
 
 theorem Scratch.of_keeps {s t : State} {p : Addr} (hs : Scratch s p)
     (hk : Keeps s t) : Scratch t p :=
-  ⟨(hk.1 .x3 (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide)).trans hs.reg, hk.2.2 ▸ hs.wr⟩
+  ⟨(hk.1 .x3 lane_ne_x3 (by decide)).trans hs.reg, hk.2.2.1 ▸ hs.wr⟩
 
-/-- The selected sixteen words and the unchanged words outside them. -/
-def Holds (index : Fin 16 → Fin 128) (b : Block) (v : Vector Word 16)
-    (m : Mem) (p : Addr) : Prop :=
-  gather index (working m p) = v ∧
-  ∀ k : Fin 128, (∀ j, index j ≠ k) → (working m p)[k] = b[k]
-
-theorem holds_self (index : Fin 16 → Fin 128) (m : Mem) (p : Addr) :
-    Holds index (working m p) (gather index (working m p)) m p :=
-  ⟨rfl, fun _ _ => rfl⟩
-
-/-- One GB advances the selected row or column and preserves its complement. -/
-theorem step_ok (index : Fin 16 → Fin 128) (hi : Function.Injective index)
-    (s : State) {p : Addr} (hs : Scratch s p) (base : Block) (v : Vector Word 16)
-    (hv : Holds index base v s.mem p) (a b c d : Fin 16)
+/-- One GB on registers advances the row or column. -/
+theorem gbOn_ok (a b c d : Fin 16)
     (hab : a.val ≠ b.val) (hac : a.val ≠ c.val) (had : a.val ≠ d.val)
-    (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val) :
-    WP isa (Impl.Argon2.AArch64.gbAt (index a).val (index b).val (index c).val (index d).val)
-      s fun t => Holds index base (GB v a b c d) t.mem p ∧
-        Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ Keeps s t := by
-  refine (gbAt_words s hs (index a) (index b) (index c) (index d)).mono ?_
-  rintro t ⟨hw, hf, hk⟩
-  refine ⟨⟨?_, ?_⟩, hf, hk⟩
-  · rw [hw, gather_mixWords index hi, hv.1, GB_eq_mixWords v hab hac had hbc hbd hcd]
-  · intro k hn
-    rw [hw]
-    have ne (j : Fin 16) : (index j).val ≠ k.val := fun h => hn j (Fin.ext h)
-    simp only [mixWords, Fin.getElem_fin, Vector.getElem_set, ne, ite_false]
-    exact hv.2 k hn
+    (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val)
+    (s : State) (v : Vector Word 16) (hv : InRegs s v) :
+    WP isa (Impl.Argon2.AArch64.gbOn a b c d) s fun t =>
+      InRegs t (GB v a b c d) ∧ Keeps s t ∧ t.mem = s.mem := by
+  have ne {i j : Fin 16} (h : i.val ≠ j.val) : lane i ≠ lane j :=
+    fun e => h (congrArg Fin.val (lane_injective e))
+  have dist : Distinct (lane a) (lane b) (lane c) (lane d) .x17 :=
+    ⟨ne hab, ne hac, ne had, lane_ne_x17 a, ne hbc, ne hbd, lane_ne_x17 b, ne hcd,
+      lane_ne_x17 c, lane_ne_x17 d⟩
+  refine (gb_ok dist s).mono ?_
+  rintro t ⟨ha, hb, hc, hd, hk, hm, hr, hw, hvv⟩
+  refine ⟨?_, ⟨fun r hl ht => hk r (hl a).symm (hl b).symm (hl c).symm (hl d).symm ht,
+    hr, hw, hvv⟩, hm⟩
+  intro j
+  rw [GB_eq_mixWords v hab hac had hbc hbd hcd]
+  simp only [mixWords, Fin.getElem_fin, Vector.getElem_set, ← hv a, ← hv b, ← hv c, ← hv d]
+  by_cases hdj : d.val = j.val
+  · obtain rfl := Fin.ext hdj
+    simpa only [↓reduceIte] using hd
+  simp only [hdj, ite_false]
+  by_cases hcj : c.val = j.val
+  · obtain rfl := Fin.ext hcj
+    simpa only [↓reduceIte] using hc
+  simp only [hcj, ite_false]
+  by_cases hbj : b.val = j.val
+  · obtain rfl := Fin.ext hbj
+    simpa only [↓reduceIte] using hb
+  simp only [hbj, ite_false]
+  by_cases haj : a.val = j.val
+  · obtain rfl := Fin.ext haj
+    simpa only [↓reduceIte] using ha
+  simp only [haj, ite_false]
+  rw [hk _ (ne (Ne.symm haj)) (ne (Ne.symm hbj)) (ne (Ne.symm hcj))
+    (ne (Ne.symm hdj)) (lane_ne_x17 j), hv j, Fin.getElem_fin]
 
-/-- P on any injectively selected row or column, with a cumulative memory frame. -/
-theorem permuteAt_holds (index : Fin 16 → Fin 128) (hi : Function.Injective index)
-    (s : State) {p : Addr} (hs : Scratch s p) (base : Block) (v : Vector Word 16)
-    (hv : Holds index base v s.mem p) :
-    WP isa (Impl.Argon2.AArch64.permuteAt index) s fun t =>
-      Holds index base (permute v) t.mem p ∧
-      Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ Keeps s t := by
+/-- P on the sixteen registers. -/
+theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
+    WP isa Impl.Argon2.AArch64.permute s fun t =>
+      InRegs t (permute v) ∧ Keeps s t ∧ t.mem = s.mem := by
   have advance (t : State) (v' : Vector Word 16)
-      (h : Holds index base v' t.mem p ∧ Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ Keeps s t)
-      (a b c d : Fin 16)
+      (h : InRegs t v' ∧ Keeps s t ∧ t.mem = s.mem) (a b c d : Fin 16)
       (hab : a.val ≠ b.val) (hac : a.val ≠ c.val) (had : a.val ≠ d.val)
       (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val) :
-      WP isa (Impl.Argon2.AArch64.gbAt (index a).val (index b).val (index c).val (index d).val)
-        t fun u => Holds index base (GB v' a b c d) u.mem p ∧
-          Frame [⟨off p 1024, 1024⟩] s.mem u.mem ∧ Keeps s u := by
-    refine (step_ok index hi t (hs.of_keeps h.2.2) base v' h.1 a b c d
-      hab hac had hbc hbd hcd).mono ?_
-    rintro u ⟨hu, hf, hk⟩
-    exact ⟨hu, h.2.1.trans hf, h.2.2.trans hk⟩
-  unfold Impl.Argon2.AArch64.permuteAt
+      WP isa (Impl.Argon2.AArch64.gbOn a b c d) t fun u =>
+        InRegs u (GB v' a b c d) ∧ Keeps s u ∧ u.mem = s.mem := by
+    refine (gbOn_ok a b c d hab hac had hbc hbd hcd t v' h.1).mono ?_
+    rintro u ⟨hu, hk, hm⟩
+    exact ⟨hu, h.2.1.trans hk, hm.trans h.2.2⟩
+  unfold Impl.Argon2.AArch64.permute
   apply WP.seq
-  refine (advance s _ ⟨hv, Frame.refl _ _, Keeps.refl s⟩ 0 4 8 12
+  refine (advance s _ ⟨hv, Keeps.refl s, rfl⟩ 0 4 8 12
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
   intro s1 h1
   apply WP.seq
@@ -209,19 +222,33 @@ theorem permuteAt_holds (index : Fin 16 → Fin 128) (hi : Function.Injective in
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
 
 /-- The row/column code meets the specification's gather, P, scatter definition. -/
-theorem permuteAt_ok (index : Fin 16 → Fin 128) (hi : Function.Injective index)
-    (s : State) {p : Addr} (hs : Scratch s p) :
+theorem permuteAt_ok (index : Fin 16 → Fin 128) (s : State) {p : Addr} (hs : Scratch s p) :
     WP isa (Impl.Argon2.AArch64.permuteAt index) s fun t =>
       working t.mem p = Spec.Argon2.permuteAt index (working s.mem p) ∧
       Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ Keeps s t := by
-  refine (permuteAt_holds index hi s hs (working s.mem p)
-    (gather index (working s.mem p)) (holds_self index s.mem p)).mono ?_
-  rintro t ⟨ht, hf, hk⟩
-  exact ⟨eq_scatter index hi _ _ _ ht.1 ht.2, hf, hk⟩
+  unfold Impl.Argon2.AArch64.permuteAt
+  apply WP.seq
+  refine (loads_ok index (List.finRange 16) (List.nodup_finRange 16) s hs).mono ?_
+  rintro s1 ⟨hl, hk1, hm1, hr1, hw1, hv1⟩
+  have k1 : Keeps s s1 := ⟨fun r hl' _ => hk1 r (fun j _ => hl' j), hr1, hw1, hv1⟩
+  have in1 : InRegs s1 (gather index (working s.mem p)) := by
+    intro j
+    rw [hl j (List.mem_finRange j)]
+    simp only [gather, working, Fin.getElem_fin, Vector.getElem_ofFn]
+  apply WP.seq
+  refine (permute_ok s1 _ in1).mono ?_
+  rintro s2 ⟨in2, k2, hm2⟩
+  refine (stores_ok index (List.finRange 16) s2 ((hs.of_keeps k1).of_keeps k2)).mono ?_
+  rintro t ⟨hw, hf, hg, hr, hwr, hv⟩
+  refine ⟨?_, ?_, (k1.trans k2).trans ⟨fun r _ _ => congrFun hg r, hr, hwr, hv⟩⟩
+  · rw [hw, hm2, hm1]
+    simp only [in2 _]
+    rfl
+  · rw [hm2, hm1] at hf
+    exact hf
 
 /-- Compose a list of row or column permutations without re-executing any GB proof. -/
-theorem rounds_ok (index : Fin 8 → Fin 16 → Fin 128)
-    (hi : ∀ i, Function.Injective (index i)) (is : List (Fin 8))
+theorem rounds_ok (index : Fin 8 → Fin 16 → Fin 128) (is : List (Fin 8))
     (s : State) {p : Addr} (hs : Scratch s p) :
     WP isa (is.foldr (fun i rest => .seq (Impl.Argon2.AArch64.permuteAt (index i)) rest)
       (.block [])) s fun t =>
@@ -231,7 +258,7 @@ theorem rounds_ok (index : Fin 8 → Fin 16 → Fin 128)
   | nil => exact WP.block_nil ⟨rfl, Frame.refl _ _, Keeps.refl s⟩
   | cons i is ih =>
     apply WP.seq
-    refine (permuteAt_ok (index i) (hi i) s hs).mono ?_
+    refine (permuteAt_ok (index i) s hs).mono ?_
     rintro t ⟨ht, hf, hk⟩
     refine (ih t (hs.of_keeps hk)).mono ?_
     rintro u ⟨hu, hf', hk'⟩
@@ -267,6 +294,26 @@ theorem round_frame {m m' : Mem} {p out : Addr}
   subst r
   exact ⟨⟨p, 4096⟩, by simp, Offset.sub_base p (by decide)⟩
 
+/-- Keep the output pointer in v16 while x2 holds a word. -/
+theorem stash_ok (s : State) :
+    WP isa (.block [.vop (.dup .d2 .v16 .x2)]) s fun t =>
+      t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      vdword (t.v .v16) 0 = s.gpr .x2 := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.eval, Option.map_some,
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV,
+    RegUpd.wr_setV, RegUpd.v_setV_self, vdword_ofVDwords_0]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+/-- Restore the output pointer. -/
+theorem unstash_ok (s : State) :
+    WP isa (.block [.umov .x .x2 .v16 0]) s fun t =>
+      t.gpr .x2 = vdword (s.v .v16) 0 ∧ (∀ r, r ≠ .x2 → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  WP.of_runBlock ⟨s.write .x .x2 (vdword (s.v .v16) 0), rfl,
+    by simp only [RegUpd.gpr_write_self, BitVec.setWidth_eq],
+    fun _ hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl⟩
+
 theorem compress_wp (s : State) (hs : compressLocal.pre s) :
     WP isa Impl.Argon2.AArch64.compress s fun t => compressLocal.post s t := by
   obtain ⟨hrd, hwr, hout, hx, hy⟩ := hs
@@ -280,24 +327,31 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   obtain ⟨horig, hwork⟩ := initialized_blocks hinit
   have scr1 := scr.of_copy hk1
   apply WP.seq
-  refine (rounds_ok rowIndex Proof.Argon2.rowIndex_injective (List.finRange 8) s1 scr1).mono ?_
-  rintro s2 ⟨hrow, hf2, hk2⟩
+  refine (stash_ok s1).mono ?_
+  rintro s2 ⟨hg2, hm2, -, hw2, hst⟩
+  have scr2 : Scratch s2 (s.gpr .x3) := ⟨by rw [hg2]; exact scr1.reg, by rw [hw2]; exact scr1.wr⟩
   apply WP.seq
-  refine (rounds_ok colIndex Proof.Argon2.colIndex_injective (List.finRange 8)
-    s2 (scr1.of_keeps hk2)).mono ?_
-  rintro s3 ⟨hcol, hf3, hk3⟩
-  have hout3 : s3.gpr .x2 = s.gpr .x2 := by
-    rw [hk3.1 .x2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      hk2.1 .x2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      hk1.1 .x2 (by decide) (by decide)]
-  have hw3 : s3.wr = s.wr := hk3.2.2.trans (hk2.2.2.trans hk1.2.2)
-  refine (finish_prefix 128 (by decide) s3 ((scr1.of_keeps hk2).of_keeps hk3) hout3
-    (by rw [hw3, hwr]; simp) hout.symm).mono ?_
-  rintro t ⟨hfinish, _hf4, _hk4⟩
-  have ho3 := original_preserved (hf2.trans hf3)
-  rw [horig] at ho3
+  refine (rounds_ok rowIndex (List.finRange 8) s2 scr2).mono ?_
+  rintro s3 ⟨hrow, hf3, hk3⟩
+  apply WP.seq
+  refine (rounds_ok colIndex (List.finRange 8) s3 (scr2.of_keeps hk3)).mono ?_
+  rintro s4 ⟨hcol, hf4, hk4⟩
+  have scr4 := (scr2.of_keeps hk3).of_keeps hk4
+  apply WP.seq
+  refine (unstash_ok s4).mono ?_
+  rintro s5 ⟨h2, hk5, hm5, -, hw5⟩
+  have hout5 : s5.gpr .x2 = s.gpr .x2 := by
+    rw [h2, hk4.2.2.2, hk3.2.2.2, hst, hk1.1 .x2 (by decide) (by decide)]
+  have scr5 : Scratch s5 (s.gpr .x3) :=
+    ⟨by rw [hk5 .x3 (by decide)]; exact scr4.reg, by rw [hw5]; exact scr4.wr⟩
+  have hw5' : s5.wr = s.wr := hw5.trans (hk4.2.2.1.trans (hk3.2.2.1.trans (hw2.trans hk1.2.2)))
+  refine (finish_prefix 128 (by decide) s5 scr5 hout5
+    (by rw [hw5', hwr]; simp) hout.symm).mono ?_
+  rintro t ⟨hfinish, _hf, _hk⟩
+  have ho := original_preserved (hf3.trans hf4)
+  rw [hm2, horig] at ho
   have he := written_block hfinish
-  rw [hcol, hrow, hwork, ho3] at he
+  rw [hm5, hcol, hrow, hm2, hwork, ho] at he
   exact he
 
 theorem compress_correct (s : State) (hs : compressLocal.pre s) :
