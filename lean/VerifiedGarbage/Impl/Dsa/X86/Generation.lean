@@ -176,9 +176,9 @@ def hash (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst : Nat) : P
 witnesses left: its result into `fRes`, and the octets it read added to
 `fUsed` unless it ran out. -/
 def test (name : String) (callee : Prog isa) : Prog isa := seqs [
-  .block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords)),
-    .mov .edx (.mem (sc fWit)), .alu .add .edx (.mem (sc fUsed)),
-    .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.mem (sc fUsed))] ++ scr .ebp fUsedOut),
+  .block ([.mov .ecx (.mem (sc fUsed)), .mov .edx (.mem (sc fWit)), .alu .add .edx (.reg .ecx),
+    .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.reg .ecx)] ++ scr .eax sPP ++
+    [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut),
   .frame (.push [.ebp, .ebx, .edx, .ecx, .eax]) (.call name callee) (.pop .ecx 5),
   .block [.store (sc fRes) .eax, .alu .cmp .eax (.imm 0)],
   .ite .e (.block [])
