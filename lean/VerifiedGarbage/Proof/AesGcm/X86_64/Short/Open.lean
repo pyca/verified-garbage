@@ -7,12 +7,14 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
@@ -120,15 +122,35 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
   have dWD : ∀ {d j : Nat}, d + j ≤ 2560 → (⟨D, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, j⟩ :=
     fun h => dD.sub_right (Lay.wSub h)
   -- The ciphertext copied to `G`.
-  refine WP.seq (WP.seq ?_)
-  obtain ⟨s₁, run₁, di₁, si₁, cx₁, g₁, m₁, rd₁, wr₁, z₁⟩ := copyCArgs_ok s S.env.r15 S.env.perm.w S.r296 S.r272
-    S.r200 S.r208 (by omega_arith)
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have cp : CopyPre s₁ D (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al))) n :=
-    ⟨si₁, di₁, cx₁, by omega_arith, by rw [rd₁, wr₁, S.rd, S.wr]; exact C.data.ok.rd,
-      by rw [wr₁]; exact S.env.perm.wC (by omega_arith), dWD (by omega_arith)⟩
-  refine WP.mono (copyBytes_ok s₁ cp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_
-  rw [m₁, F.dat] at m₂
+  have hz : ∀ j, 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) ≤ j → j < 512 →
+      s.mem (W + BitVec.ofNat 64 (512 + j)) = 0 := by
+    intro j hj hj5
+    obtain ⟨mZ, hZ, fK⟩ := F.gz
+    have hx : W + BitVec.ofNat 64 (512 + j) = W + BitVec.ofNat 64 512 + BitVec.ofNat 64 j := (Offset.add_add _ _ _).symm
+    have e₁ : bytesAt s.mem (W + BitVec.ofNat 64 (512 + j)) 1 =
+        bytesAt (writeBytes mZ (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1))))
+          (bytesAt s₀.mem A al)) (W + BitVec.ofNat 64 (512 + j)) 1 :=
+      bytesAt_frame fK (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)
+    have e₂ : bytesAt (writeBytes mZ (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1))))
+          (bytesAt s₀.mem A al)) (W + BitVec.ofNat 64 (512 + j)) 1 = bytesAt mZ (W + BitVec.ofNat 64 (512 + j)) 1 :=
+      bytesAt_frame (writeBytes_frame' _ (length_bytesAt _ _ _)) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint W (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)
+    have e₃ : bytesAt mZ (W + BitVec.ofNat 64 (512 + j)) 1 = zeros 1 := by
+      rw [hx]; exact bytesAt_zeros hZ (by omega_arith)
+    have := e₁.trans (e₂.trans e₃)
+    rw [bytesAt_one] at this
+    simpa [zeros] using this
+  have dW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ := by
+    have := dWD (d := 0) (j := 2560) (by decide)
+    simpa only [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] using this
+  refine WP.seq (WP.mono (copyCG_ok s (lead := 4 * grp al n - (nb16 al + nb16 n + 1)) (na := nb16 al) (n := n)
+    S.env.r15 S.env.perm.w S.r296 S.r272 S.r200 S.r208 (by omega_arith)
+    (by rw [S.rd, S.wr]; exact C.data.ok.rd) dW hz)
+    fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_)
+  rw [F.dat] at m₂
   have fC : Frame [⟨W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)), n⟩]
       s.mem s₂.mem := by
     rw [m₂]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
@@ -136,8 +158,8 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;>
-        rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)])
-    (rd₂.trans rd₁) (wr₂.trans wr₁)
+        rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)])
+    rd₂ wr₂
   -- The lengths block.
   refine WP.seq ?_
   obtain ⟨s₃, run₃, fL, hL, g₃, rd₃, wr₃, z₃⟩ := lensG_ok s₂ S₂.env.r15 S₂.env.perm.w S₂.r288 (by omega_arith) (by omega_arith)
@@ -149,10 +171,10 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide)) rd₃ wr₃
   -- `GHASH` of `G`.
-  have zz : ∀ r, r ≠ .xmm4 → ∀ l < 4, s₃.zlane r l = s.zlane r l := fun r h l hl => by
-    rw [z₃ r l, z₂ r (by simp [h]) l hl, z₁ r l]
+  have zz : ∀ r, r ≠ .xmm4 → r ≠ .xmm6 → ∀ l < 4, s₃.zlane r l = s.zlane r l := fun r h h' l hl => by
+    rw [z₃ r l, z₂ r (by simp [h, h']) l hl]
   refine WP.seq (WP.mono (hgh s₃ S₃.env S₃.r288 hg1 hg8
-    (fun l hl => by rw [zz _ (by decide) l hl, F.z0 l hl]) (fun l hl => by rw [zz _ (by decide) l hl, F.z1 l hl])
+    (fun l hl => by rw [zz _ (by decide) (by decide) l hl, F.z0 l hl]) (fun l hl => by rw [zz _ (by decide) (by decide) l hl, F.z1 l hl])
     S₃.rd S₃.wr)
     fun s₄ ⟨y0, y1, g₄, m₄, rd₄, wr₄, z₄⟩ => ?_)
   have S₄ := S₃.keep dD (rs := []) (by rw [m₄]; exact Frame.refl _ _) (by simp)
@@ -161,7 +183,7 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₄ _ (by decide) (by decide) (by decide)) rd₄ wr₄
   -- The tag, at `W + 112`.
   have x0 : s₄.xmm .xmm0 = revMask := by
-    rw [show s₄.xmm .xmm0 = s₄.zlane .xmm0 0 from rfl, z₄ _ (by decide) 0 (by decide), zz _ (by decide) 0 (by decide),
+    rw [show s₄.xmm .xmm0 = s₄.zlane .xmm0 0 from rfl, z₄ _ (by decide) 0 (by decide), zz _ (by decide) (by decide) 0 (by decide),
       F.z0 0 (by decide)]
   refine WP.seq (WP.block_append ?_)
   obtain ⟨s₅, run₅, tag₅, fU, g₅, rd₅, wr₅⟩ := tagK_ok (o := 112) s₄ S₄.env.r15 S₄.env.perm.w (by decide) x0
