@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
@@ -14,6 +14,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Stitch
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Steps
+public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
+public import VerifiedGarbage.Proof.Framework.Interleave
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 
 /-!
 # AES-GCM-SIV on AArch64, eight blocks at a time: the functions are constant time

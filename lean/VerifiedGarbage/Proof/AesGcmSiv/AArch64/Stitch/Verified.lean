@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Fn
 
 /-!
 # AES-GCM-SIV on AArch64, eight blocks at a time: `Verified`

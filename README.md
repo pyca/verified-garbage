@@ -1174,7 +1174,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, SHA extensions</td>
 
 <td>✅</td>
 
