@@ -2354,7 +2354,7 @@ bx lr",
     )
 }
 
-/// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 128–143. The other `vg_sm4_gcm_*` functions read it.
+/// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
 ///
@@ -2363,11 +2363,11 @@ bx lr",
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
-/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the 2288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 18]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #768
 add r2, sp, #0
@@ -2384,17 +2384,17 @@ mov r11, r2
 mov r9, r1
 bl {vg_sm4_expand_key}
 mov r0, #0
-str r0, [r9, #128]
-str r0, [r9, #132]
-str r0, [r9, #136]
-str r0, [r9, #140]
+str r0, [r9, #240]
+str r0, [r9, #244]
+str r0, [r9, #248]
+str r0, [r9, #252]
 str r0, [r11, #96]
 str r0, [r11, #100]
 str r0, [r11, #104]
 str r0, [r11, #108]
 mov r0, r9
 add r2, r11, #96
-add r3, r9, #128
+add r3, r9, #240
 mov r12, #1
 mov r1, r2
 mov r2, r3
@@ -2426,7 +2426,7 @@ bx lr",
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -2434,7 +2434,7 @@ bx lr",
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #800
 add r12, sp, #0
@@ -2507,7 +2507,7 @@ cmp r6, #16
 beq 29f
 b 210f
 29:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r10, #32
 mov r3, #1
@@ -2527,7 +2527,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 211f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r12, r11, #512
 push {{r12, lr}}
@@ -2572,7 +2572,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 218b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
 mov r3, #1
@@ -2601,7 +2601,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
 mov r3, #1
@@ -2671,7 +2671,7 @@ cmp r6, #16
 beq 226f
 b 227f
 226:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -2691,7 +2691,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 228f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -2737,7 +2737,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 235b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -2868,7 +2868,7 @@ cmp r6, #16
 beq 255f
 b 256f
 255:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -2888,7 +2888,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 257f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -2934,7 +2934,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 264b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -2963,7 +2963,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -3022,7 +3022,7 @@ bx lr",
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -3030,7 +3030,7 @@ bx lr",
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #800
 add r12, sp, #0
@@ -3112,7 +3112,7 @@ cmp r6, #16
 beq 211f
 b 212f
 211:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r10, #32
 mov r3, #1
@@ -3132,7 +3132,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 213f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r12, r11, #512
 push {{r12, lr}}
@@ -3177,7 +3177,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 220b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
 mov r3, #1
@@ -3206,7 +3206,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
 mov r3, #1
@@ -3276,7 +3276,7 @@ cmp r6, #16
 beq 228f
 b 229f
 228:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -3296,7 +3296,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 230f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -3342,7 +3342,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 237b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -3388,7 +3388,7 @@ cmp r6, #16
 beq 245f
 b 246f
 245:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -3408,7 +3408,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 247f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -3454,7 +3454,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 254b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -3483,7 +3483,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -3675,19 +3675,19 @@ bx lr",
 ///
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
 ///
-/// Contract: `VG.Spec.Sm4.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+/// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
 /// Baseline ARMv7: calls `vg_ghash` for GHASH.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #784
 add r12, sp, #0
@@ -3751,7 +3751,7 @@ cmp r6, #16
 beq 29f
 b 210f
 29:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r10, #32
 mov r3, #1
@@ -3771,7 +3771,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 211f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r12, r11, #512
 push {{r12, lr}}
@@ -3816,7 +3816,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 218b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
 mov r3, #1
@@ -3845,7 +3845,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
 mov r3, #1
@@ -3897,19 +3897,19 @@ bx lr",
 
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
-/// Contract: `VG.Spec.Sm4.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// Baseline ARMv7: calls `vg_ghash` for GHASH.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx`, `data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #784
 add r12, sp, #0
@@ -3969,7 +3969,7 @@ cmp r6, #16
 beq 27f
 b 28f
 27:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -3989,7 +3989,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 29f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -4041,13 +4041,13 @@ bx lr",
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #800
 add r12, sp, #0
@@ -4191,7 +4191,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 218b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -4239,7 +4239,7 @@ cmp r6, #16
 beq 226f
 b 227f
 226:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -4259,7 +4259,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 228f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -4315,13 +4315,13 @@ bx lr",
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #800
 add r12, sp, #0
@@ -4379,7 +4379,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 26b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -4427,7 +4427,7 @@ cmp r6, #16
 beq 214f
 b 215f
 214:
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
 mov r3, #1
@@ -4447,7 +4447,7 @@ add r4, r4, r0
 mov r5, r12
 cmp r3, #0
 beq 216f
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
@@ -4587,14 +4587,14 @@ bx lr",
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #800
 add r12, sp, #0
@@ -4651,7 +4651,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 24b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -4680,7 +4680,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -4737,14 +4737,14 @@ bx lr",
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 144 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #800
 add r12, sp, #0
@@ -4825,7 +4825,7 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 27b
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
@@ -4854,7 +4854,7 @@ str r0, [r11, #104]
 lsl r0, r6, #3
 rev r0, r0
 str r0, [r11, #108]
-add r0, r9, #128
+add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
 mov r3, #1
