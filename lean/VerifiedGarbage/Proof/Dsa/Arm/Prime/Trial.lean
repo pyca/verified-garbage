@@ -92,7 +92,7 @@ theorem trialStep_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State} {k :
     apply BitVec.eq_of_toNat_eq
     rw [v4.gpr, v3.gpr, lo16, r10, ofNat_toNat_lt (tabWord32_lt hk512), tabWord32_lo hk512,
       ofNat_toNat_lt (by omega)]
-  refine prime_ok (f := tr (2 * k) c) (hw2.rest k4) (by omega) hWe hzc (by rw [v4.mem, v3.mem, v2.mem, v1.mem, mem]) r34
+  refine trialPrime_ok (f := tr (2 * k) c) (hw2.rest k4) (by omega) hWe hzc (by rw [v4.mem, v3.mem, v2.mem, v1.mem, mem]) r34
     ⟨e0.1, e0.2.1, e0.2.2⟩ (ninv_tab (by omega)) (by rw [k4.gpr _ (by decide), k2.gpr _ (by decide), r11])
     fun u5 k5 m5 r115 => ?_
   -- The second prime.
@@ -104,7 +104,7 @@ theorem trialStep_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State} {k :
     rw [v6.gpr, hi16, k5.gpr _ (by decide), k4.gpr _ (by decide), r10, ofNat_toNat_lt (tabWord32_lt hk512),
       tabWord32_hi hk512, ofNat_toNat_lt (by omega)]
   have hw5 : Ws u5 B Z W nArr := (hw2.rest k4).rest k5
-  refine prime_ok (f := tr (2 * k) c || decide (c % tabEntry (2 * k) = 0)) (hw5.rest k6) (by omega) hWe hzc
+  refine trialPrime_ok (f := tr (2 * k) c || decide (c % tabEntry (2 * k) = 0)) (hw5.rest k6) (by omega) hWe hzc
     (by rw [v6.mem, m5]) r36 ⟨e1.1, e1.2.1, e1.2.2⟩ (ninv_tab (by omega)) (by rw [k6.gpr _ (by decide), r115])
     fun u7 k7 m7 r117 => ?_
   -- The count.

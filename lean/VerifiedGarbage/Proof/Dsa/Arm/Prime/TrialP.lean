@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
-/-! # A candidate on ARMv7: trial division by one prime (`prime_ok`)
+/-! # A candidate on ARMv7: trial division by one prime (`trialPrime_ok`)
 
 For the prime `s` in `r3`: `−s⁻¹ mod 2^16` by Newton's iteration
 (`entryS_ok`), the Montgomery reduction of `c`'s 16-bit halves
@@ -256,7 +256,7 @@ theorem trialFlag_ok {u : State} {a s : Nat} {f : Bool} (r2 : u.gpr .r2 = BitVec
 
 /-- Trial division by the prime `s` in `r3`: `r11 |= s ∣ c`, for `c` the
 `W − 2` words at the key array `aC`. -/
-theorem prime_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u : State} {s : Nat} {f : Bool} {rest : Prog isa}
+theorem trialPrime_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u : State} {s : Nat} {f : Bool} {rest : Prog isa}
     {Q : State → Prop} (hw : Ws u B Z W nArr) (hW : 3 ≤ W) (hWe : W % 2 = 0) (hZ : arr W aC + 4 * W ≤ Z)
     (mem : u.mem = m) (r3 : u.gpr .r3 = BitVec.ofNat 32 s) (hs : s % 2 = 1 ∧ 3 ≤ s ∧ s < 8162)
     (hinv : (s * (ninv (BitVec.ofNat 32 s)).toNat + 1) % 2 ^ 16 = 0) (r11 : u.gpr .r11 = BitVec.ofNat 32 (b2n f))

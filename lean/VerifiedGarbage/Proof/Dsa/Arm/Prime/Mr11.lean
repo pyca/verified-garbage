@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 
 /-! # A candidate on ARMv7: Miller–Rabin (`millerRabin_vp`)
 
-An iteration (`body_vp`): Z iff it goes on, which the branches decide; and
+An iteration (`mrBody_vp`): Z iff it goes on, which the branches decide; and
 the loop of iterations from `mrInit`, to the stage `QS`.
 -/
 
@@ -51,7 +51,7 @@ theorem cmp4_vp {n : Nat} : VP (GQ P E n) (.block [.ldr .r1 .r8 sStat, .cmp .r1 
       rfl
 
 /-- An iteration of Miller–Rabin, `n + 1` of them left. -/
-theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n : Nat) :
+theorem mrBody_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n : Nat) :
     VP (MRI P E (n + 1)) (Impl.Dsa.Arm.ProbablePrime.mrBody v.name v.code)
       (fun σ s => isa.eval .eq s = some (decide (0 < n)) ∧ (n = 0 → QS P E σ s) ∧ (0 < n → MRI P E n σ s)) := by
   refine VP.ofImp (p := n ≤ Nt P) (fun σ s h => by have := h.2.1; omega) fun hn => ?_
@@ -92,7 +92,7 @@ theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n :
 /-- Miller–Rabin on the candidate, from its Montgomery forms of 1 and −1. -/
 theorem millerRabin_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
     VP (SM P E) (Impl.Dsa.Arm.ProbablePrime.millerRabin v.name v.code) (QS P E) :=
-  (mrInit_vp hE).seq (VP.loop (I := MRI P E) (body_vp v hE) (Nt P))
+  (mrInit_vp hE).seq (VP.loop (I := MRI P E) (mrBody_vp v hE) (Nt P))
 
 end
 
