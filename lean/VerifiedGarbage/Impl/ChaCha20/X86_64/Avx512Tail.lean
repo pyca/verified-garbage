@@ -247,8 +247,10 @@ def finish3 : List Instr :=
 
 /-! ## The tail -/
 
-/-- XOR the `rdx` bytes of keystream in `buf` into the data. -/
-def fromBuf : Prog isa := XorBuf.xorBuf .rsi .r9
+/-- XOR the `rdx` bytes of keystream in `buf` into the data: from 64 bytes
+on, 64 at a time through `zmm` first (`XorBuf.fromBufX`); below, eight and
+one at a time (`XorBuf.xorBufS`), as `XorBuf.xorBuf` does. -/
+def fromBuf : Prog isa := XorBuf.xorBufS (XorBuf.fromBufX 6) .rsi .r9
 
 /-- Eight blocks into the next 512 bytes of data; the counter, the data and
 the length advanced. -/

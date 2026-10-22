@@ -281,104 +281,171 @@ structure Post (d b : Reg) (D B : Addr) (n : Nat) (s₀ s : State) : Prop where
   ymmHi : s.ymmHi = s₀.ymmHi
   zmmHi : s.zmmHi = s₀.zmmHi
 
+/-- The vector registers as at the start. -/
+abbrev VKeep (s₀ s : State) : Prop := s.xmm = s₀.xmm ∧ s.ymmHi = s₀.ymmHi ∧ s.zmmHi = s₀.zmmHi
+
+section
+variable {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 ∧ d ≠ .rcx) (hbx : b ≠ .rax ∧ b ≠ .r8 ∧ b ≠ .rcx)
+  {D B : Addr} {n : Nat} {s₀ : State}
+
+include hdx hbx in
+/-- `xorBuf`'s prologue: `rcx = 0` and `rax = n / 8`, ZF set if it is 0. -/
+theorem pro_ok (hD : s₀.gpr d = D) (hB : s₀.gpr b = B) (hrdx : s₀.gpr .rdx = BitVec.ofNat 64 n)
+    (hn : n < 2 ^ 64) :
+    WP isa (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax 3]) s₀
+      fun s => Inv D B n s₀ 0 s ∧ Regs d b D B n s₀ 0 s ∧ s.gpr .rax = BitVec.ofNat 64 (n / 8) ∧
+        s.zf = some (decide (n / 8 = 0)) ∧ VKeep s₀ s ∧ s.mem = s₀.mem := by
+  have hI0 : Inv D B n s₀ 0 s₀ :=
+    ⟨fun k hk => by simp, Frame.refl _ _, rfl, rfl⟩
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some,
+    runBlock_nil, exec, readSrc, readSrc32, execShift, State.setReg, State.setReg32, State.setFlags,
+    Option.map_some, Option.some.injEq, exists_eq_left', hrdx]
+  have hs : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
+      Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+  refine ⟨⟨hI0.data, hI0.frame, rfl, rfl⟩, ⟨by simp [hdx.1, hdx.2.2, hD],
+    by simp [hbx.1, hbx.2.2, hB], by simp [hrdx],
+    by simp, fun r h₁ _ h₃ => by simp [h₁, h₃]⟩,
+    by simp [hs], ?_, ⟨by simp, by simp, by simp⟩, by simp⟩
+  have hz : (BitVec.ofNat 64 (n / 8) == 0) = decide (n / 8 = 0) := by
+    rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+    constructor
+    · intro h
+      have := congrArg BitVec.toNat h
+      rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+    · intro h; rw [h]; rfl
+  rw [hs, hz]
+
+include hdx hbx in
+/-- `xorBuf`'s quadwords, when there are some. -/
+theorem qloop_ok (hd : (⟨D, n⟩ : Region).Disjoint ⟨B, n⟩) (hn : n < 2 ^ 64)
+    (hw : InRegions s₀.wr D n) (hr : InRegions (s₀.rd ++ s₀.wr) B n) (h : ¬ n / 8 = 0) {s : State}
+    (hI : Inv D B n s₀ 0 s) (hR : Regs d b D B n s₀ 0 s) (hax : s.gpr .rax = BitVec.ofNat 64 (n / 8))
+    (hV : VKeep s₀ s) :
+    WP isa (.loop (.block (qBody d b)) .ne) s fun s =>
+      Inv D B n s₀ (8 * (n / 8)) s ∧ Regs d b D B n s₀ (8 * (n / 8)) s ∧ VKeep s₀ s := by
+  let Q : State → Prop := fun s => Inv D B n s₀ (8 * (n / 8)) s ∧ Regs d b D B n s₀ (8 * (n / 8)) s ∧ VKeep s₀ s
+  let Inv' : Nat → State → Prop := fun c s => ∃ j, c = n / 8 - j ∧ j < n / 8 ∧
+    Inv D B n s₀ (8 * j) s ∧ Regs d b D B n s₀ (8 * j) s ∧ s.gpr .rax = BitVec.ofNat 64 (n / 8 - j) ∧ VKeep s₀ s
+  have hstep : ∀ c s, Inv' c s → WP isa (.block (qBody d b)) s (fun s' =>
+      (eval .ne s' = some false ∧ Q s') ∨ (eval .ne s' = some true ∧ ∃ c' < c, Inv' c' s')) := by
+    rintro c s ⟨j, rfl, hj, hI, hR, hax, hV⟩
+    refine WP.mono (q_step hdx hbx hd hn hw hr hj hI hR hax)
+      fun s' ⟨hI', hR', hax', hz', x₁, x₂, x₃⟩ => ?_
+    have hV' : VKeep s₀ s' := ⟨x₁.trans hV.1, x₂.trans hV.2.1, x₃.trans hV.2.2⟩
+    by_cases hl : n / 8 - (j + 1) = 0
+    · have e : j + 1 = n / 8 := by omega
+      exact .inl ⟨by simp [eval, hz', hl], cast (congrArg (fun i => Inv D B n s₀ (8 * i) s') e) hI',
+        cast (congrArg (fun i => Regs d b D B n s₀ (8 * i) s') e) hR', hV'⟩
+    · exact .inr ⟨by simp [eval, hz', hl], n / 8 - (j + 1), by omega, j + 1, rfl, by omega,
+        hI', hR', hax', hV'⟩
+  exact WP.loop (M := isa) Inv' hstep (n / 8 - 0) s ⟨0, rfl, by omega, hI, hR, by simpa using hax, hV⟩
+
+include hdx hbx in
+/-- `xorBuf`'s bytes, after the quadwords. -/
+theorem bytes_ok (hd : (⟨D, n⟩ : Region).Disjoint ⟨B, n⟩) (hn : n < 2 ^ 64)
+    (hw : InRegions s₀.wr D n) (hr : InRegions (s₀.rd ++ s₀.wr) B n) {s : State}
+    (hI : Inv D B n s₀ (8 * (n / 8)) s) (hR : Regs d b D B n s₀ (8 * (n / 8)) s) (hV : VKeep s₀ s) :
+    WP isa (bytes d b) s fun s => Inv D B n s₀ n s ∧ Regs d b D B n s₀ n s ∧ VKeep s₀ s := by
+  let F : State → Prop := fun s => Inv D B n s₀ n s ∧ Regs d b D B n s₀ n s ∧ VKeep s₀ s
+  have hle : 8 * (n / 8) ≤ n := by omega
+  have hc : WP isa (.block [.alu .cmp .rcx (.reg .rdx)]) s fun s' =>
+      Inv D B n s₀ (8 * (n / 8)) s' ∧ Regs d b D B n s₀ (8 * (n / 8)) s' ∧ VKeep s₀ s' ∧
+        s'.zf = some (decide (8 * (n / 8) = n)) := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+      State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
+    refine ⟨⟨hI.data, hI.frame, hI.rd, hI.wr⟩, ⟨hR.rd, hR.rb, hR.rdx, hR.rcx, hR.keep⟩, hV, ?_⟩
+    rw [hR.rcx, hR.rdx, Offset.ofNat_sub_ofNat_beq (by omega) hn]
+  refine WP.seq (WP.mono hc fun s₁ ⟨hI₁, hR₁, hV₁, hz₁⟩ => ?_)
+  refine WP.ite (decide (8 * (n / 8) = n)) (by simp [eval, hz₁]) (fun h => ?_) (fun h => ?_)
+  · simp only [decide_eq_true_eq] at h
+    exact WP.block_nil (M := isa) ⟨cast (congrArg (fun i => Inv D B n s₀ i s₁) h) hI₁,
+      cast (congrArg (fun i => Regs d b D B n s₀ i s₁) h) hR₁, hV₁⟩
+  · simp only [decide_eq_false_iff_not] at h
+    let Inv' : Nat → State → Prop := fun c s => ∃ i, c = n - i ∧ i < n ∧
+      Inv D B n s₀ i s ∧ Regs d b D B n s₀ i s ∧ VKeep s₀ s
+    have hstep : ∀ c s, Inv' c s → WP isa (.block (bBody d b)) s (fun s' =>
+        (eval .ne s' = some false ∧ F s') ∨ (eval .ne s' = some true ∧ ∃ c' < c, Inv' c' s')) := by
+      rintro c s ⟨i, rfl, hi, hI, hR, hV⟩
+      refine WP.mono (b_step hdx hbx hd hn hw hr hi hI hR)
+        fun s' ⟨hI', hR', hz', x₁, x₂, x₃⟩ => ?_
+      have hV' : VKeep s₀ s' := ⟨x₁.trans hV.1, x₂.trans hV.2.1, x₃.trans hV.2.2⟩
+      by_cases hl : i + 1 = n
+      · exact .inl ⟨by simp [eval, hz', hl], cast (congrArg (fun i => Inv D B n s₀ i s') hl) hI',
+          cast (congrArg (fun i => Regs d b D B n s₀ i s') hl) hR', hV'⟩
+      · exact .inr ⟨by simp [eval, hz', hl], n - (i + 1), by omega, i + 1, rfl, by omega, hI', hR', hV'⟩
+    exact WP.loop (M := isa) Inv' hstep (n - 8 * (n / 8)) s₁ ⟨8 * (n / 8), rfl, by omega, hI₁, hR₁, hV₁⟩
+
+end
+
+/-- The loops' result is `Post`. -/
+theorem post_of {d b : Reg} {D B : Addr} {n : Nat} {s₀ s : State} (hI : Inv D B n s₀ n s)
+    (hR : Regs d b D B n s₀ n s) (hV : VKeep s₀ s) : Post d b D B n s₀ s :=
+  ⟨fun k hk => by rw [hI.data k hk, ite_eq_left hk], hI.frame, hR.keep, hI.rd, hI.wr, hV.1, hV.2.1, hV.2.2⟩
+
 theorem xorBuf_ok {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 ∧ d ≠ .rcx)
     (hbx : b ≠ .rax ∧ b ≠ .r8 ∧ b ≠ .rcx) {D B : Addr} {n : Nat} {s₀ : State}
     (hD : s₀.gpr d = D) (hB : s₀.gpr b = B) (hrdx : s₀.gpr .rdx = BitVec.ofNat 64 n)
     (hn : n < 2 ^ 64) (hd : (⟨D, n⟩ : Region).Disjoint ⟨B, n⟩)
     (hw : InRegions s₀.wr D n) (hr : InRegions (s₀.rd ++ s₀.wr) B n) :
     WP isa (xorBuf d b) s₀ (Post d b D B n s₀) := by
-  -- The registers and vector state at each point.
-  let V : State → Prop := fun s => s.xmm = s₀.xmm ∧ s.ymmHi = s₀.ymmHi ∧ s.zmmHi = s₀.zmmHi
-  have hwr : InRegions s₀.wr D n := hw
-  have hI0 : Inv D B n s₀ 0 s₀ :=
-    ⟨fun k hk => by simp, Frame.refl _ _, rfl, rfl⟩
-  -- The prologue.
-  have h₁ : WP isa (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax 3]) s₀
-      fun s => Inv D B n s₀ 0 s ∧ Regs d b D B n s₀ 0 s ∧ s.gpr .rax = BitVec.ofNat 64 (n / 8) ∧
-        s.zf = some (decide (n / 8 = 0)) ∧ V s := by
+  refine WP.seq (WP.mono (pro_ok hdx hbx hD hB hrdx hn) fun s ⟨hI, hR, hax, hz, hV, _⟩ => ?_)
+  refine WP.seq (WP.mono (?_ : WP isa (.ite .e (.block []) (.loop (.block (qBody d b)) .ne)) s fun s =>
+      Inv D B n s₀ (8 * (n / 8)) s ∧ Regs d b D B n s₀ (8 * (n / 8)) s ∧ VKeep s₀ s)
+    fun s' ⟨hI', hR', hV'⟩ => WP.mono (bytes_ok hdx hbx hd hn hw hr hI' hR' hV')
+      fun _ ⟨a, b', c⟩ => post_of a b' c)
+  refine WP.ite (decide (n / 8 = 0)) (by simp [eval, hz]) (fun h => ?_) (fun h => ?_)
+  · simp only [decide_eq_true_eq] at h
+    exact WP.block_nil (M := isa) ⟨cast (congrArg (fun i => Inv D B n s₀ (8 * i) s) h.symm) hI,
+      cast (congrArg (fun i => Regs d b D B n s₀ (8 * i) s) h.symm) hR, hV⟩
+  · simp only [decide_eq_false_iff_not] at h
+    exact qloop_ok hdx hbx hd hn hw hr h hI hR hax hV
+
+/-- `xorBufS big`: `xorBuf`'s `Post` below 64 bytes, and from 64 on what
+`big` gives from the state it starts in, which has the data's memory and
+every register but `rax`, `r8` and `rcx` as at the start. -/
+theorem xorBufS_ok {big : Prog isa} {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 ∧ d ≠ .rcx)
+    (hbx : b ≠ .rax ∧ b ≠ .r8 ∧ b ≠ .rcx) {D B : Addr} {n : Nat} {s₀ : State}
+    (hD : s₀.gpr d = D) (hB : s₀.gpr b = B) (hrdx : s₀.gpr .rdx = BitVec.ofNat 64 n)
+    (hn : n < 2 ^ 64) (hd : (⟨D, n⟩ : Region).Disjoint ⟨B, n⟩)
+    (hw : InRegions s₀.wr D n) (hr : InRegions (s₀.rd ++ s₀.wr) B n) {Q : State → Prop}
+    (hbig : ∀ s, 64 ≤ n → s.mem = s₀.mem → s.rd = s₀.rd → s.wr = s₀.wr →
+      (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → s.gpr r = s₀.gpr r) → WP isa big s Q)
+    (hpost : ∀ s, Post d b D B n s₀ s → Q s) :
+    WP isa (xorBufS big d b) s₀ Q := by
+  refine WP.seq (WP.mono (pro_ok hdx hbx hD hB hrdx hn) fun s ⟨hI, hR, hax, hz, hV, hm⟩ => ?_)
+  have fin : ∀ s', Inv D B n s₀ (8 * (n / 8)) s' → Regs d b D B n s₀ (8 * (n / 8)) s' → VKeep s₀ s' →
+      WP isa (bytes d b) s' Q := fun s' a b' c =>
+    WP.mono (bytes_ok hdx hbx hd hn hw hr a b' c) fun _ ⟨x, y, z⟩ => hpost _ (post_of x y z)
+  refine WP.ite (decide (n / 8 = 0)) (by simp [eval, hz]) (fun h => ?_) (fun h => ?_)
+  · simp only [decide_eq_true_eq] at h
+    exact fin s (cast (congrArg (fun i => Inv D B n s₀ (8 * i) s) h.symm) hI)
+      (cast (congrArg (fun i => Regs d b D B n s₀ (8 * i) s) h.symm) hR) hV
+  simp only [decide_eq_false_iff_not] at h
+  -- `rax = n / 8` compared with 8.
+  have hc : WP isa (.block [.alu .cmp .rax (.imm 8)]) s fun s' =>
+      s'.cf = some (decide (n / 8 < 8)) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+        s'.wr = s.wr ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.zmmHi = s.zmmHi := by
     apply WP.of_runBlock
-    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some,
-      runBlock_nil, exec, readSrc, readSrc32, execShift, State.setReg, State.setReg32, State.setFlags,
-      Option.map_some, Option.some.injEq, exists_eq_left', hrdx]
-    have hs : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
-      apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-        Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
-    refine ⟨⟨hI0.data, hI0.frame, rfl, rfl⟩, ⟨by simp [hdx.1, hdx.2.2, hD],
-      by simp [hbx.1, hbx.2.2, hB], by simp [hrdx],
-      by simp, fun r h₁ _ h₃ => by simp [h₁, h₃]⟩,
-      by simp [hs], ?_, rfl, rfl, rfl⟩
-    have hz : (BitVec.ofNat 64 (n / 8) == 0) = decide (n / 8 = 0) := by
-      rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-      constructor
-      · intro h
-        have := congrArg BitVec.toNat h
-        rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      · intro h; rw [h]; rfl
-    rw [hs, hz]
-  -- After the quadwords.
-  let Q : State → Prop := fun s => Inv D B n s₀ (8 * (n / 8)) s ∧ Regs d b D B n s₀ (8 * (n / 8)) s ∧ V s
-  have h₂ : ∀ s, (Inv D B n s₀ 0 s ∧ Regs d b D B n s₀ 0 s ∧ s.gpr .rax = BitVec.ofNat 64 (n / 8) ∧
-      s.zf = some (decide (n / 8 = 0)) ∧ V s) →
-      WP isa (.ite .e (.block []) (.loop (.block (qBody d b)) .ne)) s Q := by
-    rintro s ⟨hI, hR, hax, hz, hV⟩
-    refine WP.ite (decide (n / 8 = 0)) (by simp [eval, hz]) (fun h => ?_) (fun h => ?_)
-    · simp only [decide_eq_true_eq] at h
-      exact WP.block_nil (M := isa) ⟨cast (congrArg (fun i => Inv D B n s₀ (8 * i) s) h.symm) hI,
-        cast (congrArg (fun i => Regs d b D B n s₀ (8 * i) s) h.symm) hR, hV⟩
-    · simp only [decide_eq_false_iff_not] at h
-      let Inv' : Nat → State → Prop := fun c s => ∃ j, c = n / 8 - j ∧ j < n / 8 ∧
-        Inv D B n s₀ (8 * j) s ∧ Regs d b D B n s₀ (8 * j) s ∧ s.gpr .rax = BitVec.ofNat 64 (n / 8 - j) ∧ V s
-      have hstep : ∀ c s, Inv' c s → WP isa (.block (qBody d b)) s (fun s' =>
-          (eval .ne s' = some false ∧ Q s') ∨ (eval .ne s' = some true ∧ ∃ c' < c, Inv' c' s')) := by
-        rintro c s ⟨j, rfl, hj, hI, hR, hax, hV⟩
-        refine WP.mono (q_step hdx hbx hd hn hw hr hj hI hR hax)
-          fun s' ⟨hI', hR', hax', hz', x₁, x₂, x₃⟩ => ?_
-        have hV' : V s' := ⟨x₁.trans hV.1, x₂.trans hV.2.1, x₃.trans hV.2.2⟩
-        by_cases hl : n / 8 - (j + 1) = 0
-        · have e : j + 1 = n / 8 := by omega
-          exact .inl ⟨by simp [eval, hz', hl], cast (congrArg (fun i => Inv D B n s₀ (8 * i) s') e) hI',
-            cast (congrArg (fun i => Regs d b D B n s₀ (8 * i) s') e) hR', hV'⟩
-        · exact .inr ⟨by simp [eval, hz', hl], n / 8 - (j + 1), by omega, j + 1, rfl, by omega,
-            hI', hR', hax', hV'⟩
-      exact WP.loop (M := isa) Inv' hstep (n / 8 - 0) s ⟨0, rfl, by omega, hI, hR, by simpa using hax, hV⟩
-  -- The bytes.
-  let F : State → Prop := fun s => Inv D B n s₀ n s ∧ Regs d b D B n s₀ n s ∧ V s
-  have h₃ : ∀ s, Q s → WP isa (.seq (.block [.alu .cmp .rcx (.reg .rdx)])
-      (.ite .e (.block []) (.loop (.block (bBody d b)) .ne))) s F := by
-    rintro s ⟨hI, hR, hV⟩
-    have hle : 8 * (n / 8) ≤ n := by omega
-    have hc : WP isa (.block [.alu .cmp .rcx (.reg .rdx)]) s fun s' =>
-        Inv D B n s₀ (8 * (n / 8)) s' ∧ Regs d b D B n s₀ (8 * (n / 8)) s' ∧ V s' ∧
-          s'.zf = some (decide (8 * (n / 8) = n)) := by
-      apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
-        State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
-      refine ⟨⟨hI.data, hI.frame, hI.rd, hI.wr⟩, ⟨hR.rd, hR.rb, hR.rdx, hR.rcx, hR.keep⟩, hV, ?_⟩
-      rw [hR.rcx, hR.rdx, Offset.ofNat_sub_ofNat_beq (by omega) hn]
-    refine WP.seq (WP.mono hc fun s₁ ⟨hI₁, hR₁, hV₁, hz₁⟩ => ?_)
-    refine WP.ite (decide (8 * (n / 8) = n)) (by simp [eval, hz₁]) (fun h => ?_) (fun h => ?_)
-    · simp only [decide_eq_true_eq] at h
-      exact WP.block_nil (M := isa) ⟨cast (congrArg (fun i => Inv D B n s₀ i s₁) h) hI₁,
-        cast (congrArg (fun i => Regs d b D B n s₀ i s₁) h) hR₁, hV₁⟩
-    · simp only [decide_eq_false_iff_not] at h
-      let Inv' : Nat → State → Prop := fun c s => ∃ i, c = n - i ∧ i < n ∧
-        Inv D B n s₀ i s ∧ Regs d b D B n s₀ i s ∧ V s
-      have hstep : ∀ c s, Inv' c s → WP isa (.block (bBody d b)) s (fun s' =>
-          (eval .ne s' = some false ∧ F s') ∨ (eval .ne s' = some true ∧ ∃ c' < c, Inv' c' s')) := by
-        rintro c s ⟨i, rfl, hi, hI, hR, hV⟩
-        refine WP.mono (b_step hdx hbx hd hn hw hr hi hI hR)
-          fun s' ⟨hI', hR', hz', x₁, x₂, x₃⟩ => ?_
-        have hV' : V s' := ⟨x₁.trans hV.1, x₂.trans hV.2.1, x₃.trans hV.2.2⟩
-        by_cases hl : i + 1 = n
-        · exact .inl ⟨by simp [eval, hz', hl], cast (congrArg (fun i => Inv D B n s₀ i s') hl) hI',
-            cast (congrArg (fun i => Regs d b D B n s₀ i s') hl) hR', hV'⟩
-        · exact .inr ⟨by simp [eval, hz', hl], n - (i + 1), by omega, i + 1, rfl, by omega, hI', hR', hV'⟩
-      exact WP.loop (M := isa) Inv' hstep (n - 8 * (n / 8)) s₁ ⟨8 * (n / 8), rfl, by omega, hI₁, hR₁, hV₁⟩
-  refine WP.seq (WP.mono h₁ fun s h => WP.seq (WP.mono (h₂ s h) fun s' hq =>
-    WP.mono (h₃ s' hq) fun s'' hf => ?_))
-  obtain ⟨hI, hR, hV⟩ := hf
-  exact ⟨fun k hk => by rw [hI.data k hk, ite_eq_left hk], hI.frame, hR.keep, hI.rd, hI.wr,
-    hV.1, hV.2.1, hV.2.2⟩
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+      State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
+    refine ⟨?_, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+    rw [hax, se8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rfl
+  refine WP.seq (WP.mono hc fun s₁ ⟨cf₁, g₁, m₁, rd₁, wr₁, x₁, y₁, z₁⟩ => ?_)
+  have hI₁ : Inv D B n s₀ 0 s₁ :=
+    ⟨fun k hk => by rw [m₁]; exact hI.data k hk, by rw [m₁]; exact hI.frame, rd₁.trans hI.rd, wr₁.trans hI.wr⟩
+  have hR₁ : Regs d b D B n s₀ 0 s₁ := ⟨by rw [g₁]; exact hR.rd, by rw [g₁]; exact hR.rb,
+    by rw [g₁]; exact hR.rdx, by rw [g₁]; exact hR.rcx, fun r a b' c => by rw [g₁]; exact hR.keep r a b' c⟩
+  have hV₁ : VKeep s₀ s₁ := ⟨x₁.trans hV.1, y₁.trans hV.2.1, z₁.trans hV.2.2⟩
+  refine WP.ite (decide (n / 8 < 8)) (by simp [eval, cf₁]) (fun h8 => ?_) (fun h8 => ?_)
+  · exact WP.seq (WP.mono (qloop_ok hdx hbx hd hn hw hr h hI₁ hR₁ (by rw [g₁, hax]) hV₁)
+      fun s₂ ⟨a, b', c⟩ => fin s₂ a b' c)
+  · simp only [decide_eq_false_iff_not] at h8
+    exact hbig s₁ (by omega) (by rw [m₁, hm]) (by rw [rd₁, hI.rd]) (by rw [wr₁, hI.wr])
+      (fun r a b' c => by rw [g₁]; exact hR.keep r a b' c)
 
 end VG.Proof.ChaCha20.X86_64.XorBuf

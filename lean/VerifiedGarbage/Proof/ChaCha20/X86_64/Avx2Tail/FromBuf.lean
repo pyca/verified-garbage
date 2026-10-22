@@ -75,7 +75,7 @@ theorem fromBufY_ok' {s₀ : State} (hp : APre s₀) {p n : Nat} (hn : p + n = e
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨edR s₀, by simp, win_sub (by omega_arith)⟩
 
-/-- `fromBuf vl`: by `fromBufY_ok'`, or, with `vl`, `xorBuf` as `Avx512Tail.fromBuf_ok` proves it. -/
+/-- `fromBuf vl`: by `fromBufY_ok'`, or, with `vl`, `xorBuf` (`Avx512Tail.xorBufT_ok`). -/
 theorem fromBufY_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p n : Nat} (hn : p + n = eL s₀) (hn256 : n ≤ 256) {s : State}
     (hrsi : s.gpr .rsi = edp s₀ + BitVec.ofNat 64 p) (hr9 : s.gpr .r9 = ebp s₀)
     (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
@@ -87,6 +87,6 @@ theorem fromBufY_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p n : Nat} (hn 
     WP isa (Impl.ChaCha20.X86_64.Avx2Tail.fromBuf vl) s (Done s₀) := by
   cases vl
   · exact fromBufY_ok' hp hn hn256 hrsi hr9 hrdx hrd hwr hkeep hdone hrest hks hframe
-  · exact Avx512Tail.fromBuf_ok hp hn hn256 hrsi hr9 hrdx hrd hwr hkeep hdone hrest hks hframe
+  · exact Avx512Tail.xorBufT_ok hp hn hn256 hrsi hr9 hrdx hrd hwr hkeep hdone hrest hks hframe
 
 end VG.Proof.ChaCha20.X86_64.Avx2Tail

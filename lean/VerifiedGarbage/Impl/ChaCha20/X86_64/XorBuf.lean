@@ -42,6 +42,20 @@ def xorBuf (d b : Reg) : Prog isa :=
   (.seq (.block [.alu .cmp .rcx (.reg .rdx)])
     (.ite .e (.block []) (.loop (.block (bBody d b)) .ne))))
 
+/-- The bytes `xorBuf` leaves after its quadwords: from `rcx` to `rdx`, one at a time. -/
+def bytes (d b : Reg) : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (.reg .rdx)]) (.ite .e (.block []) (.loop (.block (bBody d b)) .ne))
+
+/-- `xorBuf`, with `big` from 64 bytes on: its prologue, then fewer than 8
+bytes one at a time, fewer than 64 by its quadwords and bytes, otherwise
+`big` (with `rcx`, `rax` and the flags written). Below 8 bytes it runs
+`xorBuf`'s instructions, and from 8 to 63 two more (`cmp rax, 8`, `jb`). -/
+def xorBufS (big : Prog isa) (d b : Reg) : Prog isa :=
+  .seq (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax 3])
+  (.ite .e (bytes d b)
+    (.seq (.block [.alu .cmp .rax (.imm 8)])
+      (.ite .b (.seq (.loop (.block (qBody d b)) .ne) (bytes d b)) big)))
+
 /-- XOR the `2 ^ w` bytes at `rsi + rcx` into those at `d + rcx`, through
 `xmm0` and `xmm1` (or `ymm`, `zmm`), for `w` = 4, 5 or 6. -/
 def xData : Nat → Reg → List Instr
@@ -67,5 +81,11 @@ def xorBufX (w : Nat) (d : Reg) : Prog isa :=
   (.seq (.block [.mov .rdi (.reg d), .alu .add .rdi (.reg .rcx), .alu .add .rsi (.reg .rcx),
     .alu .sub .rdx (.reg .rcx)])
     (xorBuf .rdi .rsi)))
+
+/-- The `rdx` bytes of keystream in a buffer at `r9` XORed into the data at
+`rsi`, by `xorBufX w` with the data's address in `r10`: `2 ^ w` bytes at a
+time while at least that many remain, then eight and one at a time. -/
+def fromBufX (w : Nat) : Prog isa :=
+  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .r9)]) (xorBufX w .r10)
 
 end VG.Impl.ChaCha20.X86_64.XorBuf
