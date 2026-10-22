@@ -16,17 +16,6 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)
 
-private theorem xor_low_mask (x y : BitVec 64) :
-    0 - ((x ^^^ y) &&& 1) = mask (x.toNat % 2 ≠ y.toNat % 2) := by
-  have hlow : (x ^^^ y) &&& 1 = if x.toNat % 2 = y.toNat % 2 then 0 else 1 := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_and, BitVec.toNat_xor, show (1 : BitVec 64).toNat = 1 from rfl,
-      Nat.and_one_is_mod, show 2 = 2 ^ 1 from rfl, Nat.xor_mod_two_pow]
-    rcases Nat.mod_two_eq_zero_or_one x.toNat with hx | hx <;>
-      rcases Nat.mod_two_eq_zero_or_one y.toNat with hy | hy <;> simp [hx, hy]
-  rw [hlow]
-  by_cases h : x.toNat % 2 = y.toNat % 2 <;> simp [h, mask]
-
 theorem parityMask_ok {c : Cfg} {s : State} {base : Addr}
     (hs : Scr s base size) (hn : 0 < c.n)
     (hy : c.sl Impl.Ecdh.X86_64.QY + 8 ≤ size) (ht : c.sl D + 8 ≤ size) :

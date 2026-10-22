@@ -15,7 +15,6 @@ pub const USES: &[&str] = &[
     "ec_brainpoolp512r1_compressed",
 ];
 
-#[cfg(target_arch = "x86_64")]
 pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
@@ -77,6 +76,3 @@ pub fn bench(c: &mut Criterion) {
     curve!(BrainpoolP384r1, "brainpoolp384r1", 48, BRAINPOOL_P384R1);
     curve!(BrainpoolP512r1, "brainpoolp512r1", 64, BRAINPOOL_P512R1);
 }
-
-#[cfg(not(target_arch = "x86_64"))]
-pub fn bench(_: &mut Criterion) {}

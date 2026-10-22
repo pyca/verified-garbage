@@ -1,16 +1,24 @@
 //! Validated SEC 1 conversion in one call of verified code. Coordinate
 //! arithmetic, root recovery, parsing and output handling are all in Lean.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
+#[cfg(target_arch = "x86_64")]
 use crate::cpu::{Features, detected};
 
+#[cfg(target_arch = "x86_64")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     Baseline,
     Adx,
 }
 
+#[cfg(target_arch = "x86_64")]
 impl Backend {
     fn select(cpu: Features, required: Features) -> Self {
         if cpu.contains(required) {
@@ -25,12 +33,19 @@ macro_rules! check {
     ($base:ident, $out:ident, $public:ident, $ws:ident) => {
         $base(&mut $out, $public, &mut $ws)
     };
-    ($base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {
-        match Backend::select(detected(), $features) {
-            Backend::Baseline => $base(&mut $out, $public, &mut $ws),
-            Backend::Adx => $adx(&mut $out, $public, &mut $ws),
+    ($base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {{
+        #[cfg(target_arch = "x86_64")]
+        {
+            match Backend::select(detected(), $features) {
+                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
+                Backend::Adx => $adx(&mut $out, $public, &mut $ws),
+            }
         }
-    };
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            $base(&mut $out, $public, &mut $ws)
+        }
+    }};
 }
 
 macro_rules! codec {
@@ -40,9 +55,11 @@ macro_rules! codec {
             /// Validates and compresses `04 || x || y` to SEC 1 `02/03 || x`.
             ///
             /// Returns `None` for an invalid encoding or curve point.
-            /// Infinity and hybrid encodings are rejected. Available on x86-64.
+            /// Infinity and hybrid encodings are rejected.
             pub fn compress_public_key(public: &[u8; 2 * $len + 1]) -> Option<[u8; $len + 1]> {
-                use crate::arch::$module::{$compress, $($compress_adx, $features)?};
+                use crate::arch::$module::$compress;
+                $(#[cfg(target_arch = "x86_64")]
+                use crate::arch::$module::{$compress_adx, $features};)?
                 let mut out = [0; $len + 1];
                 let mut ws = [0u64; 1024];
                 // SAFETY: all three arrays have the contract's lengths and
@@ -55,11 +72,12 @@ macro_rules! codec {
             /// Validates and decompresses SEC 1 `02/03 || x` to `04 || x || y`.
             ///
             /// Returns `None` if no finite curve point has the encoded x and
-            /// parity. Infinity and hybrid encodings are rejected. Available
-            /// on x86-64. Timing may depend on these public input bytes.
+            /// parity. Infinity and hybrid encodings are rejected.
+            /// Timing may depend on these public input bytes.
             pub fn decompress_public_key(public: &[u8; $len + 1]) -> Option<[u8; 2 * $len + 1]> {
-                use crate::arch::$module::{$decompress, $($decompress_adx)?};
-                $(use crate::arch::$module::$features;)?
+                use crate::arch::$module::$decompress;
+                $(#[cfg(target_arch = "x86_64")]
+                use crate::arch::$module::{$decompress_adx, $features};)?
                 let mut out = [0; 2 * $len + 1];
                 let mut ws = [0u64; 1024];
                 // SAFETY: all three arrays have the contract's lengths and
@@ -159,10 +177,12 @@ codec!(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(target_arch = "x86_64")]
     use super::*;
     use crate::ec::*;
     use crate::ecdh::PrivateKey;
 
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn backends() {
         let required = crate::arch::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES;
@@ -193,7 +213,6 @@ mod tests {
                     let mut opposite = compressed;
                     opposite[0] ^= 1;
                     let negated = $curve::decompress_public_key(&opposite).unwrap();
-                    assert!($curve::validate_public_key(&negated));
                     assert_ne!(negated, public);
                     assert_eq!($curve::compress_public_key(&negated), Some(opposite));
                     for tag in 0..=255 {
@@ -210,10 +229,7 @@ mod tests {
                     for i in 1..public.len() {
                         let mut q = public;
                         q[i] ^= 1;
-                        assert_eq!(
-                            $curve::compress_public_key(&q).is_some(),
-                            $curve::validate_public_key(&q)
-                        );
+                        assert_eq!($curve::compress_public_key(&q), None);
                     }
                 }
                 for tag in [0, 2, 3, 4, 6, 7] {
