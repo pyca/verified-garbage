@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Mont.Arm.Ops
+import VerifiedGarbage.Proof.Mont.Arm.PackedOps
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 public import VerifiedGarbage.TCB.Arm.Target
@@ -271,9 +272,9 @@ def Entered.ptrs {n m : Nat} {rb : Reg} {s s₁ : State} (E : Entered n m rb s s
   ⟨_, _, _, E.ra, E.rb, E.ro, rfl, rfl, rfl⟩
 
 /-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
+theorem mulFn16_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
     (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
-    WP isa (mulFn n m) s fun s' => abiPreserved s s' ∧
+    WP isa (mulFn16 n m) s fun s' => abiPreserved s s' ∧
       Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
       (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
       wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
@@ -289,6 +290,32 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
   have e : (mod n m).n = n := rfl
   rw [e, E.val hM hp.a, E.val hM hp.b] at C
   exact C
+
+set_option exponentiation.threshold 1024 in
+theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
+    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
+    WP isa (mulFn n m) s fun s' => abiPreserved s s' ∧
+      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
+      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
+      s'.gpr .r12 = s.gpr .r0 := by
+  unfold mulFn
+  split
+  · rename_i hn
+    subst n
+    refine fn_ok (R := fun mem => wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat 9 < m ∧
+      wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat 9 * 2 ^ (64 * 9) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat 9 *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat 9 % m)
+      hM (by decide) hp fun s1 e => ?_
+    refine WP.mono (Packed.mulR_ok e.scr e.mod rfl (opLay hM hp) e.ra e.rb e.ro
+      (by change wordsVal _ _ _ 9 < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
+    have eq : (mod 9 m).n = 9 := rfl
+    rw [eq, e.val hM hp.a, e.val hM hp.b] at value
+    exact ⟨keep, bound, value⟩
+  · exact mulFn16_ok hM hp hb
 
 /-- `vg_<curve>_add_mod_<p|n>`: `[o] = [a] + [b] mod m`. -/
 theorem addFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)

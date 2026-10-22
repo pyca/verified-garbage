@@ -114,7 +114,7 @@ theorem mulCallR_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) :
         wordsVal s.mem base (enc a) S.k * wordsVal s.mem base (enc b) S.k % S.m :=
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k < S.m ∧
       wordsVal m' base (enc o) S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base (enc a) S.k * wordsVal m base (enc b) S.k % S.m)
-    rfl hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
+    (by unfold mulFn; split <;> rfl) hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
     (by have := own_le S.k hM.n9; omega) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
       refine WP.mono (mulFn_ok hM hp (by rw [e0, h6, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_

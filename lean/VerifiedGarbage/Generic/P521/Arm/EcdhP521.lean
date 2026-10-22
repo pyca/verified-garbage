@@ -79,7 +79,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
     notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` \
-      during the calls); field elements are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit \
+      during the calls); field elements are eighteen packed 32-bit words in Montgomery form, multiplied by packed-word \
       Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
       `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \

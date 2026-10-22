@@ -131,7 +131,7 @@ theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
         wordsVal s.mem base a S.k * wordsVal s.mem base b S.k % S.m :=
   callOp_ok (V := fun m m' => wordsVal m' base o S.k < S.m ∧
       wordsVal m' base o S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base a S.k * wordsVal m base b S.k % S.m)
-    rfl hf fun t h1 h2 h3 h4 h5 h6 h7 => by
+    (by unfold mulFn; split <;> rfl) hf fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0, e1, e2, e3⟩ := pre_of_call hM hs hf ho ha hb h1 h2 h3 h4 h5 h6 (m := S.m)
       refine WP.mono (mulFn_ok hM hp (by rw [e0, e3, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
       rw [e0, e1, e2, e3] at *

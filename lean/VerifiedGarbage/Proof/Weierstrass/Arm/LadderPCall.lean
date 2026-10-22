@@ -70,7 +70,30 @@ theorem copyPt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
 def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) : Fin m :=
   toM m (2 ^ (64 * k)) (wordsVal mem base (enc k dbl x) k)
 
-theorem fn_noFrames (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : (fn S dbl).noFrames = true := rfl
+theorem fn_noFrames (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : (fn S dbl).noFrames = true := by
+  have mul : (Mont.mulFn S.k S.m).noFrames = true := by
+    unfold Mont.mulFn
+    split <;> rfl
+  have fields (op : FOp) : (opCodeR (enc S.k dbl) S op).noFrames = true := by
+    cases op <;> simp only [opCodeR, callR, Code.noFrames, Bool.true_and, mul] <;> rfl
+  have seqs : ∀ ps : List (Prog isa), (∀ p ∈ ps, p.noFrames = true) → (progs ps).noFrames = true := by
+    intro ps
+    induction ps with
+    | nil => intro _; rfl
+    | cons p ps ih =>
+      intro hp
+      cases ps with
+      | nil => exact hp p (by simp)
+      | cons q qs =>
+        change p.noFrames && (progs (q :: qs)).noFrames = true
+        rw [hp p (by simp), ih (fun r hr => hp r (by simp [hr]))]
+        rfl
+  have prog : (fprogR (enc S.k dbl) S (rcb sId pId qId oId)).noFrames = true := by
+    apply seqs
+    intro p hp
+    obtain ⟨op, _, rfl⟩ := List.mem_map.mp hp
+    exact fields op
+  simpa only [Impl.Weierstrass.Arm.Point.fn, Code.noFrames, Bool.true_and, Bool.and_true] using prog
 
 /-- A call of a point function, from the working space at `r12`: only
 `r0`–`r3`, `r10`, `O` and the own working space change, and `O` holds

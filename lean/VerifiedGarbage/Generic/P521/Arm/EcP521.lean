@@ -74,8 +74,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
     notes := ["The function is `vg_ecdsa_p521_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in \
-      `lr` (in `r10` during the calls); field elements are thirty-six 16-bit digits in Montgomery form, multiplied by \
-      digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in \
+      `lr` (in `r10` during the calls); field elements are eighteen packed 32-bit words in Montgomery form, multiplied by \
+      packed-word Montgomery multiplication (CIOS, with `mul` and the accumulator in \
       `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) \
       with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
       all 528 bits of the 66-byte encoding of `d`, with the complete addition formulas of Renes, \
