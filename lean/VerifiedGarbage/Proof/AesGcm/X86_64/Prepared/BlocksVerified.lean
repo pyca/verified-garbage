@@ -24,7 +24,7 @@ theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowersRepr (fun _ 
   constructor <;> decide
 
 theorem encryptBlocksPrepared_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.prepared true)) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) true (encFull st) (encSmall st) (encSmall4 st))
+    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) true (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS)))
       (Spec.Gcm.encryptBlocksPreparedContract X86_64.abi 8) :=
   Verified.of_correct (encryptBlocksM_correct v st) (Blocks.encrypt_ct v st)
     { pre := by
@@ -53,7 +53,7 @@ theorem encryptBlocksPrepared_verified (v : GcmImpl) (st : Option (StitchCode Ct
           | exact Region.disjoint_of_sep (by decide)⟩ }
 
 theorem decryptBlocksPrepared_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.prepared true)) :
-    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) true (decFull st) (decSmall st) (decSmall4 st))
+    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) true (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS)))
       (Spec.Gcm.decryptBlocksPreparedContract X86_64.abi 8) :=
   Verified.of_correct (decryptBlocksM_correct v st) (Blocks.decrypt_ct v st)
     { pre := by

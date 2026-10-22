@@ -301,7 +301,7 @@ def decRest (nr : Nat) (rem : Bool) : Prog isa :=
 
 /-! ## Fewer blocks than the pipeline takes
 
-With a prepared key context, `encR` and `decR` take fewer than 16 blocks,
+With a prepared key context, `encRS` and `decRS` take fewer than 16 blocks,
 from 1 on, without the pipeline: as `tailT` takes the blocks after it, but
 for all `t = r9` blocks from the start, with the keystream of up to 16
 counters at `scratch + 384` and the powers `H'ᵗ` … `H'` below `H'⁸`. -/
@@ -352,14 +352,20 @@ def dispatch (su : List Instr) (a b c : Prog isa) : Prog isa :=
     (.ite .e a (.seq (.block [.alu .add .rax (.imm 32), .alu .cmp .r10 (.reg .rax)]) (.ite .e b c)))
 
 def enc : Prog isa := dispatch setup (encRest 10) (encRest 12) (encRest 14)
+/-- Encryption with a prepared key context: the powers loaded from it. -/
+def encR : Prog isa := dispatch setupR (encRest 10) (encRest 12) (encRest 14)
 /-- Encryption with a prepared key context, of any number of blocks from 1
-on: the powers loaded from it. -/
-def encR : Prog isa :=
+on: `encR`, and `small` below 16 blocks. `Blocks.fullBody` runs it for
+fewer than 16 blocks only, after `encR`'s code, which keeps the addresses of
+`encR`'s loops wherever it runs from 16 blocks on. -/
+def encRS : Prog isa :=
   dispatch setupR (orSmall 10 false (encRest 10)) (orSmall 12 false (encRest 12)) (orSmall 14 false (encRest 14))
 def dec : Prog isa := dispatch setup (decRest 10 false) (decRest 12 false) (decRest 14 false)
+/-- Decryption with a prepared key context: the powers loaded from it. -/
+def decR : Prog isa := dispatch setupR (decRest 10 true) (decRest 12 true) (decRest 14 true)
 /-- Decryption with a prepared key context, of any number of blocks from 1
-on: the powers loaded from it. -/
-def decR : Prog isa := dispatch setupR (orSmall 10 true (decRest 10 true)) (orSmall 12 true (decRest 12 true))
+on: `decR`, and `small` below 16 blocks (see `encRS`). -/
+def decRS : Prog isa := dispatch setupR (orSmall 10 true (decRest 10 true)) (orSmall 12 true (decRest 12 true))
   (orSmall 14 true (decRest 14 true))
 
 /-! ## Out of place

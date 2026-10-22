@@ -95,8 +95,23 @@ def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
 
+/-- The encryption loop named `n` for a prepared context that
+`Blocks.fullBody` runs on fewer than 16 blocks (with `smallR`): `encR`, or,
+for the AES-NI loops, `encR` with its own code for them, which runs after
+`encR`'s code, so that `encR`'s loops keep their addresses. -/
+def encRS : StitchName → Prog isa
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encRS
+  | n => n.encR
+
+/-- The decryption loop named `n` for a prepared context that
+`Blocks.fullBody` runs on fewer than 16 blocks (see `encRS`). -/
+def decRS : StitchName → Prog isa
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decRS
+  | n => n.decR
+
 /-- Whether the loops named `n` for a prepared context also take fewer
-blocks than a group, from 1 on (`Blocks.fullBody`'s `small`). -/
+blocks than a group, from 1 on (`Blocks.fullBody`'s `small`): `encRS` and
+`decRS`. -/
 def smallR : StitchName → Bool
   | .vaes => true
   | .vaesAvx512 => false

@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # The pipeline's loops on fewer blocks than it takes
 
-With a prepared key context, `StitchAvx8.encR` and `decR` take fewer than 16
+With a prepared key context, `StitchAvx8.encRS` and `decRS` take fewer than 16
 blocks, from 1 on, without the pipeline (`StitchAvx8.small`): from the state
 the setup leaves (`Ready`), `ksTail` stores the keystream of the eight
 counters it prepared at `scratch + 384`; from 9 blocks on, the next eight

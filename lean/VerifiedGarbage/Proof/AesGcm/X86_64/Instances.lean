@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
@@ -73,7 +74,8 @@ theorem StitchName.okP : (n : StitchName) →
 /-- The loops `p` names for a key context of `vg_aes_gcm_init_precomputed`,
 with their proof, if they read the powers of the hash subkey from it. -/
 def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, false, false, false, p.name.okP, q.enc, q.dec⟩
+  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, false, false, false, p.name.encP, p.name.decP,
+    p.name.okP, p.name.okP, q.enc, q.dec, q.enc, q.dec⟩
 
 /-- The out-of-place loops named `n` interleave counter mode and GHASH
 correctly. -/
@@ -109,16 +111,33 @@ def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
 number of blocks from 16 on if `fullR`). -/
 theorem StitchName.okR : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
+      (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16)
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok.weaken (by decide) (by decide)
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok.weaken (by decide) (by decide)
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
+
+/-- The loops `fullBody` runs on fewer than 16 blocks (from 1 on if
+`smallR`). -/
+theorem StitchName.okRS : (n : StitchName) →
+    Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encRS n.decRS
       (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16) (if n.smallR then 1 else 16)
       (if n.smallR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
-  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchRS_ok
+
+/-- The static and constant-time facts of `encRS` and `decRS`: `encR`'s and
+`decR`'s, but for the AES-NI loops'. -/
+theorem StitchName.pieceRS : (n : StitchName) → PieceR n →
+    Piece n.encRS true n.fullR ∧ Piece n.decRS true n.fullDR
+  | .vaes, q => ⟨q.enc, q.dec⟩
+  | .vaesAvx512, q => ⟨q.enc, q.dec⟩
+  | .aesniAvx, _ => ⟨Proof.Gcm.X86_64.StitchAvx8.encRS_piece, Proof.Gcm.X86_64.StitchAvx8.decRS_piece⟩
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   v.stitch.bind fun p => p.pieceR.map fun q =>
-    ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.smallR, p.name.smallR, p.name.small4R, p.name.okR,
-      q.enc, q.dec⟩
+    ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.smallR, p.name.smallR, p.name.small4R,
+      p.name.encRS, p.name.decRS, p.name.okR, p.name.okRS, q.enc, q.dec, (p.name.pieceRS q).1, (p.name.pieceRS q).2⟩
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
