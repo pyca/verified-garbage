@@ -175,12 +175,14 @@ def callWith (name : String) (callee : Prog isa) : Prog isa :=
 its result into `fRes`, and the octets it read added to `fUsed` unless it ran
 out. -/
 def test (pLen : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
-  .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8)), ld .r4 fUsed, ld .r2 fWit,
-    .dp .add .r2 .r2 (.reg .r4), ld .r3 fWitLen, .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut]),
+  .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8))]),
+  .block [ld .r4 fUsed, ld .r2 fWit, ld .r3 fWitLen],
+  .block [.dp .add .r2 .r2 (.reg .r4), .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut],
   callWith name callee,
-  .block (st .r0 fRes ++ [.cmp .r0 (.imm 0)]),
+  .block (st .r0 fRes),
+  .block [.cmp .r0 (.imm 0)],
   .ite .eq (.block [])
-    (.block ([ld .r1 fUsedOut, ld .r2 fUsed, .dp .add .r2 .r2 (.reg .r1)] ++ st .r2 fUsed))]
+    (seqs [.block [ld .r1 fUsedOut, ld .r2 fUsed], .block [.dp .add .r2 .r2 (.reg .r1)], .block (st .r2 fUsed)])]
 
 /-! ## Arithmetic, in the key working space -/
 
@@ -293,7 +295,8 @@ def qPart : Prog isa := seqs [
 /-- The hash of `seed + offset + j`, into its place in `X`. -/
 def pHash (j : Nat) : Prog isa := seqs [
   copyN (scr g.pLen .r0 sMsg) [ld .r1 fSeed] g.qLen,
-  .block (scr g.pLen .r0 (sMsg + g.qLen - 1) ++ [ld .r1 fOffset, .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 j))]),
+  .block (scr g.pLen .r0 (sMsg + g.qLen - 1)), .block [ld .r1 fOffset],
+  .block [.dp .add .r1 .r1 (.imm (BitVec.ofNat 32 j))],
   addBE g.qLen,
   hash g.pLen g.G (sX + g.pLen - (j + 1) * g.qLen)]
 
@@ -312,22 +315,22 @@ def pAttempt : Prog isa := seqs [
       .block (cmpF fRes 0), .ite .eq (.block (stImm fP 0))
         (seqs [.block (cmpF fRes 1), .ite .eq (.block (stImm fP 1)) (.block [])])])]
 
-/-- The next counter: 2 when the `4 L` are done. -/
-def pAdvance : List Instr :=
-  [ld .r1 fCounter, .dp .add .r1 .r1 (.imm 1)] ++ st .r1 fCounter ++
-  [ld .r2 fOffset, .dp .add .r2 .r2 (.imm (BitVec.ofNat 32 (g.count + 1)))] ++ st .r2 fOffset ++
-  [.movw .r2 (BitVec.ofNat 16 (32 * g.pLen)), .cmp .r1 (.reg .r2)]
+/-- The next counter: Z when the `4 L` are done. -/
+def pAdvance : Prog isa := seqs [
+  .block [ld .r1 fCounter], .block [.dp .add .r1 .r1 (.imm 1)], .block (st .r1 fCounter),
+  .block [ld .r2 fOffset], .block [.dp .add .r2 .r2 (.imm (BitVec.ofNat 32 (g.count + 1)))],
+  .block (st .r2 fOffset), .block [.movw .r2 (BitVec.ofNat 16 (32 * g.pLen)), .cmp .r1 (.reg .r2)]]
 
 /-- p: `fP` := 0, 1 or 2 (none found). -/
 def pPart : Prog isa := seqs [
-  .block (stImm fCounter 0 ++ stImm fOffset 1 ++ stImm fP 4),
+  .block (stImm fCounter 0), .block (stImm fOffset 1), .block (stImm fP 4),
   .loop (seqs [g.pAttempt, .block (cmpF fP 4),
-    .ite .eq (seqs [.block g.pAdvance, .ite .eq (.block (stImm fP 2)) (.block [])]) (.block []),
+    .ite .eq (seqs [g.pAdvance, .ite .eq (.block (stImm fP 2)) (.block [])]) (.block []),
     .block (cmpF fP 4)]) .eq]
 
 /-- An `h`: `fG` := 1 with `g` at `sG` if `1 < h < p − 1` and `g > 1`. -/
 def gStep : Prog isa := seqs [
-  .block [ld .r4 fH, .movw .r6 (BitVec.ofNat 16 g.pLen)],
+  .block [ld .r4 fH], .block [.movw .r6 (BitVec.ofNat 16 g.pLen)],
   VG.Impl.Rsa.Arm.CrtValues.load aH,
   seqs (ltS slLo aOne aH), seqs (ltS slHi aH aPm1),
   .block (andS slLo slLo slHi ++ [.ldr .r1 .r8 slLo, .cmp .r1 (.imm 0)]),
@@ -347,11 +350,12 @@ def gStep : Prog isa := seqs [
 
 /-- g: `fG` := 1, or 2 if no `h` gives one. -/
 def gPart : Prog isa := seqs [
-  .block ([ld .r1 (arg 2)] ++ st .r1 fH ++ [ld .r1 (arg 3)] ++ st .r1 fHLeft ++ stImm fG 4),
+  .block [ld .r1 (arg 2)], .block (st .r1 fH), .block [ld .r1 (arg 3)], .block (st .r1 fHLeft),
+  .block (stImm fG 4),
   .loop (seqs [.block (cmpF fHLeft 0),
     .ite .eq (.block (stImm fG 2))
-      (seqs [g.gStep, .block ([ld .r1 fH, .movw .r2 (BitVec.ofNat 16 g.pLen), .dp .add .r1 .r1 (.reg .r2)] ++
-        st .r1 fH ++ [ld .r1 fHLeft, .dp .sub .r1 .r1 (.reg .r2)] ++ st .r1 fHLeft)]),
+      (seqs [g.gStep, .block [ld .r1 fH], .block [.movw .r2 (BitVec.ofNat 16 g.pLen), .dp .add .r1 .r1 (.reg .r2)],
+        .block (st .r1 fH), .block [ld .r1 fHLeft], .block [.dp .sub .r1 .r1 (.reg .r2)], .block (st .r1 fHLeft)]),
     .block (cmpF fG 4)]) .eq]
 
 /-- p||q||g, checked: `fStatus` := 1 if it passes. -/
@@ -382,17 +386,18 @@ def search : Prog isa := seqs [
   .block (ksRegs g.pLen ++ padInit g.pLen g.qLen),
   .loop (seqs [.block (cmpF fSeedLeft 0),
     .ite .eq (.block (stImm fStatus 2))
-      (seqs [g.attempt, .block ([ld .r1 fSeed, .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 g.qLen))] ++
-        st .r1 fSeed ++ [ld .r1 fSeedLeft, .dp .sub .r1 .r1 (.imm (BitVec.ofNat 32 g.qLen))] ++
-        st .r1 fSeedLeft)]),
+      (seqs [g.attempt, .block [ld .r1 fSeed], .block [.dp .add .r1 .r1 (.imm (BitVec.ofNat 32 g.qLen))],
+        .block (st .r1 fSeed), .block [ld .r1 fSeedLeft], .block [.dp .sub .r1 .r1 (.imm (BitVec.ofNat 32 g.qLen))],
+        .block (st .r1 fSeedLeft)]),
     .block (cmpF fStatus 0)]) .eq]
 
 /-- The result: p||q||g to `out` and 1, or zeros and 0. -/
 def finish : Prog isa := seqs [
   .block (cmpF fStatus 1),
   .ite .eq
-    (seqs [copyN [ld .r0 fOut] (scr g.pLen .r1 sPacked) (2 * g.pLen + g.qLen), .block [.mov .r0 (.imm 1)]])
-    (seqs [.block [ld .r0 fOut, .mov .r3 (.imm 0), .movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))],
+    (seqs [.block [ld .r0 fOut], .block (scr g.pLen .r1 sPacked ++ [.movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))]),
+      copyBytes, .block [.mov .r0 (.imm 1)]])
+    (seqs [.block [ld .r0 fOut], .block [.mov .r3 (.imm 0), .movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))],
       .loop (.block zeroStep) .ne, .block [.mov .r0 (.imm 0)]])]
 
 def generate : Prog isa := .seq g.search g.finish

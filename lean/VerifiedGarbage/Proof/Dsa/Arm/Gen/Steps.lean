@@ -164,6 +164,50 @@ theorem GI.of_scr {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws 
     rw [frame_readW f hd hb]; exact h.fixed p hp
   · rw [frame_readW f hd (h.ls o ho).2.1]; exact h.slots o ho
 
+/-- The 8 bytes a test writes its count to. -/
+abbrev GP.rU (G : GP) : Region := ⟨State.addr G.sp + BitVec.ofNat 64 fUsedOut, 8⟩
+
+/-- A frame word through writes apart from it. -/
+theorem frame_readW' {G : GP} {m m' : Mem} {rs : List Region} (f : Frame rs m m') {o : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩ r) : fw m' G o = fw m G o :=
+  f.readW (r := ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) hd (by decide)
+
+/-- A state of the search through a call: `scratch`, the count's 8 bytes and
+the stack below the frame written, the count's words not among `LS`. -/
+theorem GI.of_used {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws s t)
+    (f : Frame [G.rScr, G.rU, G.rBelow] s.mem t.mem) (h88 : fUsedOut ∉ LS) (h92 : fUsedOut + 4 ∉ LS) :
+    GI G σ V LS t := by
+  have spHi := h.spHi
+  have word : ∀ o, o + 4 ≤ F → o % 4 = 0 → o ≠ fUsedOut → o ≠ fUsedOut + 4 →
+      ∀ r' ∈ [G.rScr, G.rU, G.rBelow], Region.Disjoint ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩ r' := by
+    intro o ho h4 h1 h2 r' hr'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl | rfl
+    · exact h.frame_scr.sub_left (Offset.sub_base _ ho)
+    · exact Offset.disjoint _ (by simp only [fUsedOut, F] at *; omega) (by simp only [F] at *; omega)
+        (by simp only [fUsedOut, F] at *; omega)
+    · exact h.frame_below.sub_left (Offset.sub_base _ ho)
+  refine ⟨h.pre, h.hG, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, fun p hp => ?_, fun p hp => ?_,
+    fun o ho => ?_, h.ls, h.frame.trans (f.sub fun r hr => ?_)⟩
+  · have hb : p.2 + 4 ≤ 40 ∧ p.2 % 4 = 0 := by
+      simp only [VG.Impl.Dsa.Arm.Generation.saved, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    show fw t.mem G p.2 = _
+    rw [frame_readW' f (word _ (by simp only [F]; omega) hb.2 (by simp only [fUsedOut]; omega)
+      (by simp only [fUsedOut]; omega))]
+    exact h.saved p hp
+  · have hb : p.1 + 4 ≤ F ∧ p.1 % 4 = 0 ∧ p.1 ≠ fUsedOut ∧ p.1 ≠ fUsedOut + 4 := by
+      simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl | rfl <;> (dsimp only; decide)
+    rw [frame_readW' f (word _ hb.1 hb.2.1 hb.2.2.1 hb.2.2.2)]; exact h.fixed p hp
+  · obtain ⟨_, l2, l3, _⟩ := h.ls o ho
+    rw [frame_readW' f (word _ l2 l3 (fun e => h88 (e ▸ ho)) (fun e => h92 (e ▸ ho)))]; exact h.slots o ho
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨G.rScr, by simp, fun _ h => h⟩
+    · exact ⟨G.rFrame, List.mem_cons_self, Offset.sub_base _ (by simp only [fUsedOut, F]; omega)⟩
+    · exact ⟨G.rBelow, by simp, fun _ h => h⟩
+
 theorem fixed_ok (G : GP) : ∀ p ∈ fixedWords G, 40 ≤ p.1 ∧ p.1 + 4 ≤ F ∧ p.1 % 4 = 0 := by
   intro p hp
   simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
