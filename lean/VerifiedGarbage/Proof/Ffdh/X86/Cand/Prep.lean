@@ -85,8 +85,8 @@ structure Ready (Ex : List Region → List Region → Prop) (base : Addr) (bytes
   one : sv t.mem base len .wide 3 = 1
   r2 : sv t.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % w
 
-/-- A write into a wide slot from 9 to 27 keeps a context ready. -/
-theorem Ready.slot {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {a : Nat} (ha9 : 9 ≤ a)
+/-- A write into a wide slot from 5 to 27 keeps a context ready. -/
+theorem Ready.slot {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {a : Nat} (ha9 : 5 ≤ a)
     (ha : a ≤ 27) {rs : List Reg} (K : Keeps rs s t) (di : .edi ∉ rs) (sp : .esp ∉ rs)
     (O : Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem t.mem) : Ready Ex base bytes len args w t := by
   have h := R.ctx.inp
