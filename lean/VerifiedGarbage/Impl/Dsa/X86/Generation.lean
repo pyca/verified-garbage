@@ -383,6 +383,6 @@ def dispatch (g1 g2 g3 : Geo) : Prog isa :=
 
 def code (g1 g2 g3 : Geo) : Prog isa :=
   .frame (.push [.ebx, .ebp, .esi, .edi])
-    (.seq (.block entry) (.seq (dispatch g1 g2 g3) (.block Compact.restoreRegs))) (.pop .ebx 4)
+    (.seq (.seq (.block entry) (dispatch g1 g2 g3)) (.block Compact.restoreRegs)) (.pop .ebx 4)
 
 end VG.Impl.Dsa.X86.Generation

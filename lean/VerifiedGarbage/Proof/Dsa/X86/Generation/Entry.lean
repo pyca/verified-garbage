@@ -25,10 +25,11 @@ structure EInv (s t : State) : Prop where
   wr : t.wr = below (s.gpr .esp) 16 :: s.wr
   syms : t.syms = s.syms
   fr : Frame [(callEnv s).scratchRegion, below (s.gpr .esp) 16] s.mem t.mem
+  fe : Frame [(callEnv s).scratchRegion] (entered s).mem t.mem
 
 theorem entered_inv {s : State} (F : CallFacts s) : EInv s (entered s) := by
   have fit : 16 ≤ (s.gpr .esp).toNat := by have := F.low; omega
-  refine ⟨by rw [entered, pushed_esp]; rfl, pushed_rd _ _, pushed_wr _ _, pushRegs_syms _ _, ?_⟩
+  refine ⟨by rw [entered, pushed_esp]; rfl, pushed_rd _ _, pushed_wr _ _, pushRegs_syms _ _, ?_, Frame.refl _ _⟩
   exact Frame.mono (pushed_frame (rs := savedRegisters) (s := s) (by decide) fit)
     fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact List.mem_cons_of_mem _ List.mem_cons_self
 
@@ -78,9 +79,11 @@ theorem EInv.store {s t t' : State} (F : CallFacts s) (I : EInv s t) {o : Nat} (
   have v := F.valid
   have := v.size_ge
   have := v.scratchFit
-  refine ⟨esp.trans I.esp, rd.trans I.rd, wr.trans I.wr, sy.trans I.syms, ?_⟩
-  rw [hm]
-  exact Frame.writeW I.fr List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  refine ⟨esp.trans I.esp, rd.trans I.rd, wr.trans I.wr, sy.trans I.syms, ?_, ?_⟩
+  · rw [hm]
+    exact Frame.writeW I.fr List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  · rw [hm]
+    exact Frame.writeW I.fe List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
 
 /-- `copyArg`: an argument into a state word. -/
 theorem copyArg_ok {s t : State} (F : CallFacts s) (I : EInv s t) (hs : Scr t (callEnv s).base (callEnv s).size)
@@ -101,7 +104,7 @@ theorem copyArg_ok {s t : State} (F : CallFacts s) (I : EInv s t) (hs : Scr t (c
 
 theorem EInv.regs {s t t' : State} (I : EInv s t) (hm : t'.mem = t.mem) (esp : t'.gpr .esp = t.gpr .esp)
     (rd : t'.rd = t.rd) (wr : t'.wr = t.wr) (sy : t'.syms = t.syms) : EInv s t' :=
-  ⟨esp.trans I.esp, rd.trans I.rd, wr.trans I.wr, sy.trans I.syms, by rw [hm]; exact I.fr⟩
+  ⟨esp.trans I.esp, rd.trans I.rd, wr.trans I.wr, sy.trans I.syms, by rw [hm]; exact I.fr, by rw [hm]; exact I.fe⟩
 
 theorem readW_off_other (m : Mem) (b : Addr) {o o' : Nat} (v : BitVec 32) (h : o + 4 ≤ o' ∨ o' + 4 ≤ o)
     (h₁ : o + 4 ≤ 2 ^ 64) (h₂ : o' + 4 ≤ 2 ^ 64) :
