@@ -38,6 +38,11 @@ theorem both_mono {α : Type} {Φ Φ' : α → State → Prop} (h : ∀ a s, Φ 
     (hp : Both Φ s t) : Both Φ' s t :=
   let ⟨a, h₁, h₂⟩ := hp; ⟨a, h a _ h₁, h a _ h₂⟩
 
+/-- A fact that every related pair of states gives. -/
+theorem relct_of_fact {P : Prop} {Φ : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
+    (hP : ∀ s t, Φ s t → P) (h : P → RelCT isa Φ c Q) : RelCT isa Φ c Q :=
+  fun s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂ => h (hP _ _ hp) s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+
 /-- For each value of the parameters. -/
 theorem both_exists {α : Type} {Φ : α → State → Prop} {c : Prog isa} {Q : State → State → Prop}
     (h : ∀ a, RelCT isa (fun s t => Φ a s ∧ Φ a t) c Q) : RelCT isa (Both Φ) c Q :=

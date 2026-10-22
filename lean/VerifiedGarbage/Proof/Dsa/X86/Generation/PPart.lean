@@ -273,22 +273,19 @@ theorem pBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
       fun t₃ g₃ m₃ rd₃ wr₃ sy₃ z₃ => .inl ⟨by rw [show t₃.zf = _ from z₃]; simp [F4],
         K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, by rw [m₃, m₂]; exact res⟩
 
-/-- p's search: the counters from 0, until one gives p, the witnesses run
-out, or `4 L` are done. -/
-theorem pPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) {s : State} (B : Base E s)
-    {k : Nat} (hk : (k + 1) * E.qLen ≤ E.seedsLen)
-    (hS : s.mem.readW (off E.base fSeed) 32 = (E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32) {Q : Nat}
-    (hQ : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off E.base (sPk + g.pLen)) g.qLen) = Q) (hQ0 : 0 < Q)
+/-- p's search's state words: counter 0, its offset, still searching. -/
+theorem pInit_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B : Base E s)
+    {k : Nat} (hS : s.mem.readW (off E.base fSeed) 32 = (E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32) {Q : Nat}
+    (hQ : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off E.base (sPk + g.pLen)) g.qLen) = Q)
     {used : Nat} (hU : s.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used) (hu : used ≤ E.witLen) :
-    WP isa g.pPart s fun t => PKeep E g k Q s t ∧
-      PRes E g Q t.mem (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) := by
+    WP isa (.block (stImm fCounter 0 ++ stImm fOffset 1 ++ stImm fP 4)) s
+      (PLoop E g k Q (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) s 0 used) := by
   have sz := v.size_ge
   have bd := G.bounds
-  unfold Geo.pPart
-  show WP isa (.seq (.block _) (.loop _ .e)) s _
+  simp only [List.append_assoc]
   have K₀ : PKeep E g k Q s s := ⟨B, hS, hQ, Env.Chg.refl _ _, rfl, rfl, rfl⟩
-  refine WP.seq (stImm_ok B.scr (o := fCounter) (v := 0) (by simp only [fCounter, hdr]; omega)
-    fun t₁ g₁ m₁ rd₁ wr₁ sy₁ => ?_)
+  refine stImm_ok B.scr (o := fCounter) (v := 0) (by simp only [fCounter, hdr]; omega)
+    fun t₁ g₁ m₁ rd₁ wr₁ sy₁ => ?_
   have K₁ := K₀.store G v (d := fCounter) (by simp [ppRanges]) (by simp only [fSeed, fCounter, hdr]; omega)
     (by simp only [fCounter, sState, hdr]; omega) _ m₁ (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ sy₁
   refine stImm_ok K₁.base.scr (o := fOffset) (v := 1) (by simp only [fOffset, hdr]; omega)
@@ -303,20 +300,35 @@ theorem pPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
       (m.writeW (off E.base e) x).readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
     fun m d e h₁ h₂ h x => word_store_other v m (by simp only [sState] at h₁; omega)
       (by simp only [sState] at h₂; omega) h x
-  have L₀ : PLoop E g k Q (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) s
-      0 used t₃ := by
-    refine ⟨K₃, ?_, ?_, by rw [m₃, Mem.readW_writeW_self32], ?_, hu, primeSearch_start _ _ _ _ _⟩
-    · rw [m₃, ws _ (by simp only [fCounter, sState, hdr]; omega) (by simp only [fP, sState, hdr]; omega)
-        (by simp only [fCounter, fP, hdr]; omega), m₂, ws _ (by simp only [fCounter, sState, hdr]; omega)
-        (by simp only [fOffset, sState, hdr]; omega) (by simp only [fCounter, fOffset, hdr]; omega), m₁,
-        Mem.readW_writeW_self32]
-    · rw [m₃, ws _ (by simp only [fOffset, sState, hdr]; omega) (by simp only [fP, sState, hdr]; omega)
-        (by simp only [fOffset, fP, hdr]; omega), m₂, Mem.readW_writeW_self32, Nat.zero_mul]
-    · rw [m₃, ws _ (by simp only [fUsed, sState, hdr]; omega) (by simp only [fP, sState, hdr]; omega)
-        (by simp only [fUsed, fP, hdr]; omega), m₂, ws _ (by simp only [fUsed, sState, hdr]; omega)
-        (by simp only [fOffset, sState, hdr]; omega) (by simp only [fUsed, fOffset, hdr]; omega), m₁,
-        ws _ (by simp only [fUsed, sState, hdr]; omega) (by simp only [fCounter, sState, hdr]; omega)
-        (by simp only [fUsed, fCounter, hdr]; omega), hU]
+  show PLoop E g k Q (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) s
+      0 used t₃
+  refine ⟨K₃, ?_, ?_, by rw [m₃, Mem.readW_writeW_self32], ?_, hu, primeSearch_start _ _ _ _ _⟩
+  · rw [m₃, ws _ (by simp only [fCounter, sState, hdr]; omega) (by simp only [fP, sState, hdr]; omega)
+      (by simp only [fCounter, fP, hdr]; omega), m₂, ws _ (by simp only [fCounter, sState, hdr]; omega)
+      (by simp only [fOffset, sState, hdr]; omega) (by simp only [fCounter, fOffset, hdr]; omega), m₁,
+      Mem.readW_writeW_self32]
+  · rw [m₃, ws _ (by simp only [fOffset, sState, hdr]; omega) (by simp only [fP, sState, hdr]; omega)
+      (by simp only [fOffset, fP, hdr]; omega), m₂, Mem.readW_writeW_self32, Nat.zero_mul]
+  · rw [m₃, ws _ (by simp only [fUsed, sState, hdr]; omega) (by simp only [fP, sState, hdr]; omega)
+      (by simp only [fUsed, fP, hdr]; omega), m₂, ws _ (by simp only [fUsed, sState, hdr]; omega)
+      (by simp only [fOffset, sState, hdr]; omega) (by simp only [fUsed, fOffset, hdr]; omega), m₁,
+      ws _ (by simp only [fUsed, sState, hdr]; omega) (by simp only [fCounter, sState, hdr]; omega)
+      (by simp only [fUsed, fCounter, hdr]; omega), hU]
+
+/-- p's search: the counters from 0, until one gives p, the witnesses run
+out, or `4 L` are done. -/
+theorem pPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) {s : State} (B : Base E s)
+    {k : Nat} (hk : (k + 1) * E.qLen ≤ E.seedsLen)
+    (hS : s.mem.readW (off E.base fSeed) 32 = (E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32) {Q : Nat}
+    (hQ : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off E.base (sPk + g.pLen)) g.qLen) = Q) (hQ0 : 0 < Q)
+    {used : Nat} (hU : s.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used) (hu : used ≤ E.witLen) :
+    WP isa g.pPart s fun t => PKeep E g k Q s t ∧
+      PRes E g Q t.mem (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) := by
+  have sz := v.size_ge
+  have bd := G.bounds
+  unfold Geo.pPart
+  show WP isa (.seq (.block _) (.loop _ .e)) s _
+  refine WP.seq (WP.mono (pInit_ok G v B hS hQ hU hu) fun t₃ L₀ => ?_)
   refine WP.loop (M := isa) (fun m t => ∃ c u, c + m = 4 * (8 * g.pLen) ∧ c < 4 * (8 * g.pLen) ∧
       PLoop E g k Q (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) s c u t)
     (fun m t ⟨c, u, hm, hc, L⟩ => WP.mono (pBody_ok G v hq hk hQ0 L hc) fun t' h => ?_) (4 * (8 * g.pLen)) t₃
