@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Rsa.X86.Chain
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
@@ -115,12 +116,9 @@ def selectLoop : Prog isa :=
     .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
     .alu .sub .edi (.imm 4)]) .ne
 
-/-- `[edi] = [ebp] op [ebx]` with the carry (or borrow) as a mask in `ecx`; `edx` bytes. -/
-def chainLoop (op : AluOp) : Prog isa :=
-  .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx),
-    .alu op .eax (.mem (at_ .ebx 0)), .store (at_ .edi 0) .eax, .alu .sbb .ecx (.reg .ecx),
-    .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4), .alu .add .edi (.imm 4),
-    .alu .sub .edx (.imm 4)]) .ne
+/-- `[edi] = [ebp] op [ebx]` with the carry (or borrow) as a mask in `ecx`; `edx` bytes.
+Reuse the key-workspace loop: eight words per iteration, then scalar tails. -/
+def chainLoop (op : AluOp) : Prog isa := VG.Impl.Rsa.X86.Chain.loop op
 
 /-- `ecx` all ones if `[esi]` is below `[ebp]`, `edx` bytes. -/
 def compareLoop : Prog isa :=
