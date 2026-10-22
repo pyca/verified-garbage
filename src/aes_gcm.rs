@@ -235,11 +235,9 @@ use crate::arch::gcm::{
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
-#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-use alloc::boxed::Box;
 use core::mem::MaybeUninit;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
+use core::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 /// A 16-byte block.
 type Block = [u8; 16];
@@ -573,12 +571,6 @@ fn store_ok(nonce: &[u8], aad: &[u8]) -> bool {
     nonce.len() == 12 && aad.len() <= 16
 }
 
-/// A new buffer for the powers, for a `_store_powers` instance to write.
-#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-fn new_powers() -> Box<Ctx> {
-    Box::new([0; size_of::<Ctx>() / 8])
-}
-
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 type StreamPrepared =
     unsafe extern "sysv64" fn(*const [u64; 128], usize, *mut [u64; 10], u64, u64, *mut u8, usize);
@@ -681,15 +673,17 @@ const POWERS_MIN_LEN: usize = 128;
 /// On AArch64, how many calls of at least `POWERS_MIN_LEN` bytes a key
 /// makes with the key context of `vg_aes_gcm_init` before it computes the
 /// powers of its hash subkey (`Powers::get`): 2. The call that computes
-/// them stores them while it hashes the text, and costs about the box (some
-/// 4.5% of a two-record TLS connection on Neoverse N2); every later one
-/// saves 4–14%. (On x86-64, `AesGcm::new` computes them.)
+/// them stores them while it hashes the text; every later one saves 4–14%. (On x86-64, `AesGcm::new` computes them.)
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 2;
 
 /// `Powers::calls` once the powers are published.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const SHORT_READY: u32 = u32::MAX;
+
+/// `Powers::calls` while a call stores the powers.
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+const CLAIMED: u32 = u32::MAX - 1;
 
 /// On AArch64, a message of at most this many bytes is sealed and opened by
 /// the plain instances even once the powers are published, as before them:
@@ -712,25 +706,25 @@ enum Got<'a> {
 /// On AArch64, the powers of the hash subkey for a key (`H¹` to `H⁸`,
 /// written by a `_store_powers` instance), which the `_with_powers`
 /// instances read, computed once the key has been used enough
-/// ([`Powers::get`]). They are allocated only then, so that a key that never
-/// computes them stays small (it is moved whole when it is created).
+/// ([`Powers::get`]).
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 struct Powers {
     /// The `_with_powers` instances of the key's backend, if this CPU runs
     /// them (`Backend::prepared`).
     fns: Option<&'static Prepared>,
     /// The calls that could have read the powers, before they were ready
-    /// (counted without a read-modify-write: one lost to a race only
-    /// delays the powers); once they are published, `SHORT_READY`, so
+    /// (counted by a compare-and-swap that may fail: one lost to a race
+    /// only delays the powers); `CLAIMED` while the call that won the
+    /// last swap stores them; once they are published, `SHORT_READY`, so
     /// that messages shorter than `POWERS_MIN_LEN` take the
     /// `_prepared` instances too. That test comes after the length's, so
     /// longer messages pay nothing for it, and such messages never count
     /// (`Powers::get` finds the powers ready).
     calls: AtomicU32,
-    /// Null, or the key context, from `Box::into_raw`: written before it is
-    /// published here (with release ordering), never written again while it
-    /// is shared, and freed only by `drop`.
-    ctx: AtomicPtr<Ctx>,
+    /// The powers: written only by the one call that set `calls` to
+    /// `CLAIMED`, through `ctx_ptr`, before it publishes them (with release
+    /// ordering); read only once they are published.
+    ctx: [AtomicU64; 16],
 }
 
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -740,8 +734,14 @@ impl Powers {
         Powers {
             fns: backend.prepared(),
             calls: AtomicU32::new(0),
-            ctx: AtomicPtr::new(core::ptr::null_mut()),
+            ctx: [const { AtomicU64::new(0) }; 16],
         }
+    }
+
+    /// The powers, as the functions that write and read them take them.
+    #[inline(always)]
+    fn ctx_ptr(&self) -> *mut Ctx {
+        self.ctx.as_ptr().cast::<Ctx>().cast_mut()
     }
 
     /// The powers and the backend's `_with_powers` instances, for a call
@@ -750,22 +750,27 @@ impl Powers {
     /// key has made `POWERS_AFTER` such calls, `Got::Store` if `store`
     /// (the call is one the `_store_powers` instances take: a 12-byte nonce
     /// and at most 16 bytes of additional data), for the caller to compute
-    /// them (`AesGcm::new_powers`); otherwise none, and the call does not
-    /// count.
+    /// them (`AesGcm::seal_store`), unless another call is storing them;
+    /// otherwise none, and the call does not count.
     fn get(&self, store: bool) -> Option<(Got<'_>, &'static Prepared)> {
         let fns = self.fns?;
-        let p = self.ctx.load(Ordering::Acquire);
-        if !p.is_null() {
+        let calls = self.calls.load(Ordering::Acquire);
+        if calls == SHORT_READY {
             // SAFETY: published powers (see `ctx`), which the acquire load
-            // orders after their writes; they live as long as `self`.
-            return Some((Got::Ready(unsafe { &*p }), fns));
+            // orders after their writes, and which nothing writes again.
+            return Some((Got::Ready(unsafe { &*self.ctx_ptr() }), fns));
         }
-        let calls = self.calls.load(Ordering::Relaxed);
-        if calls < POWERS_AFTER - 1 {
-            self.calls.store(calls + 1, Ordering::Relaxed);
+        let next = if calls < POWERS_AFTER - 1 {
+            calls + 1
+        } else if calls == POWERS_AFTER - 1 && store {
+            CLAIMED
+        } else {
             return None;
-        }
-        store.then_some((Got::Store, fns))
+        };
+        let swapped =
+            self.calls
+                .compare_exchange(calls, next, Ordering::Relaxed, Ordering::Relaxed);
+        (swapped.is_ok() && next == CLAIMED).then_some((Got::Store, fns))
     }
 
     /// Whether messages shorter than `POWERS_MIN_LEN` take the `_prepared`
@@ -775,72 +780,43 @@ impl Powers {
         self.calls.load(Ordering::Relaxed) == SHORT_READY
     }
 
-    /// Publishes `ctx`, unless another thread has published a key context
-    /// first: the one published. Kept out of `get`, whose ready path it
-    /// would otherwise cost a register move.
-    #[cold]
-    #[inline(never)]
-    fn publish(&self, ctx: Box<Ctx>) -> &Ctx {
-        let p = Box::into_raw(ctx);
-        let q = match self.ctx.compare_exchange(
-            core::ptr::null_mut(),
-            p,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        ) {
-            Ok(_) => p,
-            Err(q) => {
-                // SAFETY: `p`, from `Box::into_raw`, was not published.
-                unsafe { free(p) };
-                q
-            }
-        };
-        self.calls.store(SHORT_READY, Ordering::Relaxed);
-        // SAFETY: as in `get`.
-        unsafe { &*q }
+    /// Publishes the powers, which the call that `get` gave `Got::Store`
+    /// has written.
+    fn publish(&self) {
+        self.calls.store(SHORT_READY, Ordering::Release);
     }
-}
-
-/// Wipes and frees the powers `p`.
-///
-/// # Safety
-///
-/// `p` must come from `Box::into_raw`, and nothing may use it afterwards.
-#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-unsafe fn free(p: *mut Ctx) {
-    // SAFETY: the caller's.
-    let mut ctx = unsafe { Box::from_raw(p) };
-    zeroize(&mut *ctx);
 }
 
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 impl Clone for Powers {
-    /// The same key, with a copy of the powers if they are ready.
+    /// The same key, with a copy of the powers if they are ready (if a call
+    /// is storing them, none, as for a new key).
     fn clone(&self) -> Self {
-        let p = self.ctx.load(Ordering::Acquire);
-        let ctx = if p.is_null() {
-            p
-        } else {
-            // SAFETY: as in `get`.
-            Box::into_raw(Box::new(unsafe { *p }))
-        };
+        let calls = self.calls.load(Ordering::Acquire);
+        let ready = calls == SHORT_READY;
         Powers {
             fns: self.fns,
-            calls: AtomicU32::new(self.calls.load(Ordering::Relaxed)),
-            ctx: AtomicPtr::new(ctx),
+            calls: AtomicU32::new(if calls == CLAIMED { 0 } else { calls }),
+            // Read only once published (see `ctx`).
+            ctx: core::array::from_fn(|i| {
+                AtomicU64::new(if ready {
+                    self.ctx[i].load(Ordering::Relaxed)
+                } else {
+                    0
+                })
+            }),
         }
     }
 }
 
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 impl Drop for Powers {
-    /// Wipes and frees the powers.
+    /// Wipes the powers, if a call stored them.
     fn drop(&mut self) {
-        let p = *self.ctx.get_mut();
-        if !p.is_null() {
-            // SAFETY: `p` was published (see `ctx`), and `self` is no longer
-            // shared.
-            unsafe { free(p) };
+        if *self.calls.get_mut() == SHORT_READY {
+            // SAFETY: `self` is no longer shared, so nothing else reads or
+            // writes the powers.
+            zeroize(unsafe { &mut *self.ctx_ptr() });
         }
     }
 }
@@ -1357,7 +1333,7 @@ impl AesGcm {
     }
 
     /// `seal_with`'s call that computes the powers: `seal`'s
-    /// `_store_powers` instance, into a new box that it publishes. Out of
+    /// `_store_powers` instance, into the key's powers, which it publishes. Out of
     /// line, so that the calls that find the powers ready keep no more
     /// registers than they need.
     #[cfg(target_arch = "aarch64")]
@@ -1371,12 +1347,14 @@ impl AesGcm {
         data: &mut [u8],
         tag: &mut Block,
     ) {
-        let mut pw = new_powers();
         let seal_store = fns.seal_store;
-        // SAFETY: as in `seal_with`, with `pw` (a new allocation) valid for
-        // writes of 128 bytes and overlapping nothing else, and the nonce
-        // and additional data as `seal_store` needs them (`store_ok`, which
-        // `Powers::get` gave `Got::Store` for).
+        // SAFETY: as in `seal_with`, with the powers valid for writes of 128
+        // bytes and overlapping nothing else, and the nonce and additional
+        // data as `seal_store` needs them (`store_ok`, which `Powers::get`
+        // gave `Got::Store` for). This call alone writes the powers, and
+        // nothing reads them meanwhile: its `Got::Store` is from the one
+        // swap of `calls` to `CLAIMED`, which no other call can make, and
+        // nothing reads them before `publish` sets `SHORT_READY`.
         unsafe {
             seal_store(
                 self.key(),
@@ -1388,10 +1366,10 @@ impl AesGcm {
                 data.as_mut_ptr(),
                 data.len(),
                 tag,
-                &mut *pw,
+                self.powers.ctx_ptr(),
             )
         };
-        self.powers.publish(pw);
+        self.powers.publish();
     }
 
     /// On x86-64, `open` with the key's `_prepared` instances and the
@@ -1488,7 +1466,6 @@ impl AesGcm {
         data: &mut [u8],
         tag: &[u8],
     ) -> u32 {
-        let mut pw = new_powers();
         let open_store = fns.open_store;
         // SAFETY: as in `seal_store`, with the received tag `tag` valid for
         // reads of its length, between 4 and 16, as `open_store` needs
@@ -1505,10 +1482,10 @@ impl AesGcm {
                 data.len(),
                 tag.as_ptr(),
                 tag.len(),
-                &mut *pw,
+                self.powers.ctx_ptr(),
             )
         };
-        self.powers.publish(pw);
+        self.powers.publish();
         ok
     }
 
@@ -2717,13 +2694,12 @@ mod tests {
     /// computes the powers of its hash subkey after `POWERS_AFTER` calls
     /// long enough to use them, and then encrypts and decrypts as the
     /// baseline does; shorter calls never count, and a key whose backend has
-    /// no such instances never computes them. Of two threads computing them
-    /// at once, the second to publish them uses the first's.
+    /// no such instances never computes them. While one call computes them,
+    /// the others take the plain instances.
     #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
     #[test]
     fn powers() {
-        use super::{POWERS_AFTER, POWERS_MIN_LEN};
-        use alloc::boxed::Box;
+        use super::{Got, POWERS_AFTER, POWERS_MIN_LEN, SHORT_READY};
         use core::sync::atomic::Ordering;
         let msg: [u8; 700] = core::array::from_fn(|i| (i * 11 + 5) as u8);
         let aad = [3u8; 5];
@@ -2739,7 +2715,7 @@ mod tests {
                     continue;
                 }
                 let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap().with_backend(b);
-                let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
+                let ready = |k: &AesGcm| k.powers.calls.load(Ordering::Acquire) == SHORT_READY;
                 // Short calls neither use nor count toward the powers.
                 let mut short = msg;
                 let tag = k
@@ -2816,22 +2792,23 @@ mod tests {
                 assert!(k.powers.short_ready());
                 // A clone copies the powers if they are ready, and not otherwise.
                 let copy = k.clone();
-                let (p, q) = (
-                    k.powers.ctx.load(Ordering::Acquire),
-                    copy.powers.ctx.load(Ordering::Acquire),
-                );
                 // SAFETY: published powers (`ready(&k)`, and so the copy's).
-                let (powers, copied) = unsafe { (&*p, &*q) };
+                let (powers, copied) = unsafe { (&*k.powers.ctx_ptr(), &*copy.powers.ctx_ptr()) };
                 assert_eq!(copied, powers);
-                assert!(!core::ptr::eq(copied, powers));
+                assert_ne!(powers, &[0; 16]);
                 assert!(!ready(&fresh.clone()));
-                // A key context published second is dropped for the first.
-                let first = fresh.powers.publish(Box::new(*powers));
-                let second = fresh
-                    .powers
-                    .publish(Box::new([0; size_of::<super::Ctx>() / 8]));
-                assert!(core::ptr::eq(first, second));
-                assert_eq!(second, powers);
+                // Once a call has claimed the powers, the others (and a
+                // clone) take the plain instances until it publishes them.
+                for _ in 0..POWERS_AFTER - 1 {
+                    assert!(fresh.powers.get(true).is_none());
+                }
+                assert!(fresh.powers.get(false).is_none());
+                assert!(matches!(fresh.powers.get(true), Some((Got::Store, _))));
+                assert!(fresh.powers.get(true).is_none());
+                assert!(fresh.powers.get(false).is_none());
+                assert_eq!(fresh.clone().powers.calls.load(Ordering::Relaxed), 0);
+                fresh.powers.publish();
+                assert!(matches!(fresh.powers.get(false), Some((Got::Ready(_), _))));
             }
         }
     }
@@ -2844,7 +2821,7 @@ mod tests {
     #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
     #[test]
     fn store_powers() {
-        use super::{POWERS_AFTER, POWERS_MIN_LEN};
+        use super::{POWERS_AFTER, POWERS_MIN_LEN, SHORT_READY};
         use core::sync::atomic::Ordering;
         let msg: [u8; 300] = core::array::from_fn(|i| (i * 13 + 1) as u8);
         let nonce = [9u8; 13];
@@ -2858,7 +2835,7 @@ mod tests {
                 let base = AesGcm::new(key).unwrap().with_backend(Backend::Scalar);
                 for open in [false, true] {
                     let k = AesGcm::new(key).unwrap().with_backend(b);
-                    let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
+                    let ready = |k: &AesGcm| k.powers.calls.load(Ordering::Acquire) == SHORT_READY;
                     for _ in 1..POWERS_AFTER {
                         k.encrypt_in_place(&nonce[..12], &[], &mut [0; POWERS_MIN_LEN])
                             .unwrap();
