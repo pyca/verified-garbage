@@ -101,6 +101,7 @@ mod pbkdf2_sha512;
 mod pbkdf2_sha512_224;
 mod pbkdf2_sha512_256;
 mod poly1305;
+mod quic_hp;
 mod rc2_cbc;
 mod rc4;
 mod rsa;
@@ -481,6 +482,7 @@ benches! {
     (pbkdf2_sha512_224::USES, pbkdf2_sha512_224::bench),
     (pbkdf2_sha512_256::USES, pbkdf2_sha512_256::bench),
     (poly1305::USES, poly1305::bench),
+    (quic_hp::USES, quic_hp::bench),
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
