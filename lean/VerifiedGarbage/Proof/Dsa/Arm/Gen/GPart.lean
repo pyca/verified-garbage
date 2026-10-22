@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.GStep
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Intro
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -21,13 +22,6 @@ open VG.Impl.Dsa.Arm.Generation
 open VG.Proof.X25519.Arm (Rest Upd wp_dp wp_movw op2_reg dpVal)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Impl.Mont.Arm.Dynamic (modS baseS expS resS contextBytes)
-
-/-- A stage's pure facts, as hypotheses. -/
-theorem VP.intro {P : Prop} {F Q : State → State → Prop} {c : Prog isa} (h : P → VP F c Q) :
-    VP (fun σ s => P ∧ F σ s) c Q := by
-  by_cases hp : P
-  · exact (h hp).mono (fun σ s h => h.2) fun _ _ h => h
-  · exact VP.of_false fun σ s h => hp h.1
 
 
 /-- The search's frame words at the `k`-th h. -/
@@ -144,7 +138,7 @@ theorem gBody_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
         .block (cmpF fG 4)])
       (fun σ s => isa.eval .eq s = some (decide (0 < r)) ∧ (r = 0 → St G (gFin c G (gRes G pv qv 0)) X σ s) ∧
         (0 < r → gInv c G pv ev qv N X r σ s)) := by
-  refine VP.intro fun ⟨hr, hk, hc, hres⟩ => ?_
+  refine VG.Proof.Dsa.Arm.Gen.VP.intro fun ⟨hr, hk, hc, hres⟩ => ?_
   have hpL : 0 < G.pLen := by omega
   generalize hMM : G.hsLen / G.pLen = M at hk hc
   generalize hkk : N - (r + 1) = k at hk hc hres
