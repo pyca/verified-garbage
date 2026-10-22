@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -65,6 +66,15 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.GenerateKey.code
     verified := Proof.Ffdh.X86.KeyGen.verified
     spSafe := Proof.Ffdh.X86.Shape.generateKey_spSafe
-    stack := 116 }]
+    stack := 116 },
+  Spec.Ffdh.keySearchApi.artifact X86.target {
+    notes := ["The whole key search runs in verified code: both rejection budgets, the octets each attempt \
+      consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with its eleven \
+      arguments in a 44-byte frame. The controller's words live in the state; timing depends on the domain, \
+      the controller's public words and the attempts' statuses."]
+    code := Impl.Ffdh.X86.KeySearch.code
+    verified := Proof.Ffdh.X86.KeySearch.verified
+    spSafe := Proof.Ffdh.X86.Shape.keySearch_spSafe
+    stack := 164 }]
 
 end VG.Artifacts.Ffdh.X86
