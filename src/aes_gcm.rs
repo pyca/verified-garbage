@@ -1221,33 +1221,14 @@ impl AesGcm {
         if let Some(fns) = self.prepared {
             return Ok(self.seal_gather_with(fns, nonce, aad, src, plaintext.len(), out));
         }
-        let f = match self.backend {
-            Backend::Scalar => vg_aes_gcm_seal_gather,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Backend::AesNi => vg_aes_gcm_seal_gather_aesni,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Backend::Pclmul => vg_aes_gcm_seal_gather_pclmul,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Backend::AesNiPclmul => vg_aes_gcm_seal_gather_aesni_pclmul,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => vg_aes_gcm_seal_gather_vaes,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Vpclmul => vg_aes_gcm_seal_gather_vpclmul,
-            #[cfg(target_arch = "x86_64")]
-            Backend::VaesPclmul => vg_aes_gcm_seal_gather_vaes_pclmul,
-            #[cfg(target_arch = "x86_64")]
-            Backend::AesNiVpclmul => vg_aes_gcm_seal_gather_aesni_vpclmul,
-            #[cfg(target_arch = "x86_64")]
-            Backend::VaesVpclmul => vg_aes_gcm_seal_gather_vaes_vpclmul,
-            #[cfg(target_arch = "x86_64")]
-            Backend::VaesVpclmulAvx512 => vg_aes_gcm_seal_gather_vaes_vpclmul_avx512,
-            #[cfg(target_arch = "x86_64")]
-            Backend::AesNiPclmulAvx => vg_aes_gcm_seal_gather_aesni_pclmul_avx,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Aes => vg_aes_gcm_seal_gather_aes,
-            #[cfg(target_arch = "aarch64")]
-            Backend::AesSha3 => vg_aes_gcm_seal_gather_aes_sha3,
-        };
+        let f = instance!(self.backend, vg_aes_gcm_seal_gather,
+            x86_64: [vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_pclmul,
+                vg_aes_gcm_seal_gather_aesni_pclmul],
+            vaes: [vg_aes_gcm_seal_gather_vaes, vg_aes_gcm_seal_gather_vpclmul,
+                vg_aes_gcm_seal_gather_vaes_pclmul, vg_aes_gcm_seal_gather_aesni_vpclmul,
+                vg_aes_gcm_seal_gather_vaes_vpclmul, vg_aes_gcm_seal_gather_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_seal_gather_aesni_pclmul_avx],
+            aarch64: [vg_aes_gcm_seal_gather_aes, vg_aes_gcm_seal_gather_aes_sha3]);
         let mut tag: Block = [0; 16];
         // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
         // writes of `out.len()` bytes; `src` points to `plaintext.len()`
