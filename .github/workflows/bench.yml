@@ -86,7 +86,7 @@ jobs:
           persist-credentials: false
       - name: Record hardware and compiler
         run: |
-          git rev-parse HEAD
+          echo "$GITHUB_SHA"
           python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
           rustc -Vv
       - name: Build and benchmark existing kernels
