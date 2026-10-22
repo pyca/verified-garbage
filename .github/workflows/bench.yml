@@ -172,7 +172,7 @@ jobs:
           head -40 /proc/cpuinfo
       - name: Validate and measure the isolated prototype
         run: |
-          python3 ci/experiments/arm_rsa_recover/run.py --work /tmp/arm-rsa-recovery
+          python3 ci/experiments/arm_rsa_recover/run.py --work /tmp/arm-rsa-recovery --revision "$GITHUB_SHA"
           python3 ci/experiments/arm_rsa_recover/summarize.py /tmp/arm-rsa-recovery >> "$GITHUB_STEP_SUMMARY"
       - uses: ./.github/actions/upload-artifact
         if: always()
