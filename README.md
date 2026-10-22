@@ -1408,6 +1408,8 @@ yours to keep:
 
 <td>✅ PCLMULQDQ</td>
 
+<td>❌</td>
+
 </tr>
 
 </table>
@@ -1747,6 +1749,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
