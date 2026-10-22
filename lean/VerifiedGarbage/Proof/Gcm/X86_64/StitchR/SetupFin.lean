@@ -23,8 +23,8 @@ open VG.Proof.Gcm.X86_64.StitchTo (ReadyTo)
 
 /-- `setupTo` leaves the powers of the key context ready, and their products
 those of an encryption body. -/
-def SetupFin : Prop :=
-  ∀ {s₀ : State}, SPreTo CtxMode.prepared s₀ →
+def SetupFin (np : Nat := 24) (hn : np ≤ 24 := by decide) : Prop :=
+  ∀ {s₀ : State}, SPreTo (CtxMode.preparedN np hn) s₀ →
     WP isa (.block Impl.Gcm.X86_64.StitchR.setupTo) s₀ fun s => ∃ P, ReadyTo s₀ P s ∧
       Stitch.FinOk Impl.Gcm.X86_64.Stitch.ordE (hk s₀) P
 
