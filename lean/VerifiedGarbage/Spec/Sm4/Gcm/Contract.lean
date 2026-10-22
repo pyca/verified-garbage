@@ -14,8 +14,13 @@ whose definitions of GCM-AE and GCM-AD on a given hash subkey
 (`Gcm.StreamRepr`), of the untruncated tag (`Gcm.fullTag`), of the result of
 a decryption (`Gcm.openResult`) and of the supported tag lengths
 (`Gcm.tagLenOk`) they use unchanged. They differ from AES-GCM's in the key
-context, which holds SM4's 128-byte schedule (with a key of 16 bytes there is
-no number of rounds to pass), and in the cipher computed with it:
+context, which holds SM4's 128-byte schedule in place of AES's 240-byte one
+(with a key of 16 bytes there is no number of rounds to pass), and in the
+cipher computed with it. The key context has AES-GCM's layout otherwise, the
+hash subkey in its last 16 bytes (`Gcm.ctxH`), so that an implementation can
+share AES-GCM's GHASH code; `vg_sm4_gcm_stream_init` and
+`vg_sm4_gcm_stream_aad`, which read only the hash subkey, have AES-GCM's
+contracts (`Gcm.streamInitContract`, `Gcm.streamAadContract`).
 
 * `vg_sm4_gcm_init` writes a key context (`KeyRepr`): the schedule that
   `vg_sm4_expand_key` writes, and the hash subkey `H = CIPH_K(0¹²⁸)`. The
@@ -53,23 +58,23 @@ arguments to the functions they call.
 namespace VG.Spec.Sm4.Gcm
 
 open VG.Spec.Gcm (encryptWith decryptWith StreamRepr fullTag openResult tagLenOk gctr inc32
-  j0)
+  j0 ctxH)
 
 /-! ## The key context
 
-`vg_sm4_gcm_init` stores what SM4-GCM needs of a key in a 144-byte key
-context, which the other SM4-GCM functions read:
+`vg_sm4_gcm_init` stores what SM4-GCM needs of a key in a 256-byte key
+context, which the other SM4-GCM functions read, laid out as AES-GCM's
+(`Spec/Gcm.lean`):
 
 * bytes 0–127: SM4's key schedule, as `vg_sm4_expand_key` writes it
   (32 little-endian round keys, `Sm4.scheduleAt`);
-* bytes 128–143: the hash subkey `H = CIPH_K(0¹²⁸)` (§7.1 step 1). -/
+* bytes 128–239: not used;
+* bytes 240–255: the hash subkey `H = CIPH_K(0¹²⁸)` (§7.1 step 1),
+  `Gcm.ctxH`. -/
 
 /-- The cipher of the key context at `p`: SM4 under the schedule in its first
 128 bytes, on GCM's blocks. -/
 def ctxCiph (m : Mem) (p : Addr) : Spec.Gcm.Block → Spec.Gcm.Block := gcmCipher (scheduleAt m p)
-
-/-- The hash subkey of the key context at `p`: its bytes 128–143. -/
-def ctxH (m : Mem) (p : Addr) : Spec.Gcm.Block := Spec.Gcm.blockAt m (p + 128)
 
 /-- The key context at `p` is that of the 16-byte SM4 key `key`: it holds the
 key schedule of `key` and the hash subkey `CIPH_K(0¹²⁸)`. -/
@@ -96,11 +101,11 @@ theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p
     Bool.false_eq_true, ↓reduceIte]
   rfl
 
-/-- `vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 18])`. -/
+/-- `vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32])`. -/
 def initSig : Sig where
-  params := [("key", .array false .u8 16), ("ctx", .array true .u64 18)]
+  params := [("key", .array false .u8 16), ("ctx", .array true .u64 32)]
 
-/-- Makes the 144 bytes at `ctx` the key context of the key at `key`. -/
+/-- Makes the 256 bytes at `ctx` the key context of the key at `key`. -/
 def initPost (pb : Nat) : initSig.Post pb := fun key ctx m m' _ =>
   KeyRepr m' ctx (Aes.bytesAt m key 16)
 
@@ -118,16 +123,16 @@ def initApi : Api where
   summary := "The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to \
     `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in \
     bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes \
-    128–143. The other `vg_sm4_gcm_*` functions read it.\n\n\
+    240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.\n\n\
     Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. \
     Constant time: only the pointers may affect timing, not the key."
   safety := []
 
 /-! ## One-shot -/
 
-/-- `vg_sm4_gcm_seal(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`. -/
+/-- `vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`. -/
 def sealSig : Sig where
-  params := [("ctx", .array false .u64 18), ("nonce", .slice false .u8 "nonce_len"),
+  params := [("ctx", .array false .u64 32), ("nonce", .slice false .u8 "nonce_len"),
     ("aad", .slice false .u8 "aad_len"), ("data", .slice true .u8 "len"), ("tag", .array true .u8 16)]
 
 /-- With the key context at `ctx`: the `len` bytes at `data` are encrypted,
@@ -163,10 +168,10 @@ def sealApi : Api where
     may affect timing, not the key context, the nonce, the additional data or the data."
   safety := []
 
-/-- `vg_sm4_gcm_open(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`.
+/-- `vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`.
 `tag_len` is public. -/
 def openSig : Sig where
-  params := [("ctx", .array false .u64 18), ("nonce", .slice false .u8 "nonce_len"),
+  params := [("ctx", .array false .u64 32), ("nonce", .slice false .u8 "nonce_len"),
     ("aad", .slice false .u8 "aad_len"), ("data", .slice true .u8 "len"),
     ("tag", .slice false .u8 "tag_len")]
   ret := some .u32
@@ -223,29 +228,15 @@ def openApi : Api where
 
 /-! ## Streaming -/
 
-/-- `vg_sm4_gcm_stream_init(ctx: *const [u64; 18], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10])`. -/
-def streamInitSig : Sig where
-  params := [("ctx", .array false .u64 18), ("nonce", .slice false .u8 "nonce_len"),
-    ("state", .array true .u64 10)]
-
-/-- With the key context at `ctx`: makes the streaming state at `state`
-represent the message with the IV the `nonce_len` bytes at `nonce`, no
-additional data and no text yet, for any cipher (which only the text
-needs). -/
-def streamInitPost (pb : Nat) : streamInitSig.Post pb := fun ctx nonce nonceLen state m m' _ =>
-  ∀ ciph, StreamRepr m' state ciph (ctxH m ctx) (Aes.bytesAt m nonce nonceLen.toNat) [] []
-
-/-- `streamInitPost`. -/
-def streamInitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamInitSig.contract A (post := streamInitPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `vg_sm4_gcm_stream_init` on every target. -/
+/-- `vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10])`:
+AES-GCM's (`Gcm.streamInitContract`), which reads only the hash subkey of the
+key context. -/
 def streamInitApi : Api where
   module := "sm4_gcm"
   name := "vg_sm4_gcm_stream_init"
-  sig := streamInitSig
+  sig := Spec.Gcm.streamInitSig
   writeArgs := true
-  contracts := some fun A stack => streamInitContract A stack
+  contracts := some fun A stack => Spec.Gcm.streamInitContract A stack
   summary := "Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with \
     the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` \
     represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data \
@@ -254,53 +245,36 @@ def streamInitApi : Api where
     with the same key context.\n\n\
     The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), \
     which the caller must check.\n\n\
-    Contract: `VG.Spec.Sm4.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH \
-    accumulator, a partial block, the next counter block and a keystream block \
-    (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect \
-    timing, not the key context or the nonce."
+    Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of \
+    the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the \
+    next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the \
+    pointers and `nonce_len` may affect timing, not the key context or the nonce."
   safety := []
 
-/-- `vg_sm4_gcm_stream_aad(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize)`.
-`aad_len` is public. -/
-def streamAadSig : Sig where
-  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
-    ("aad_len", .int .u64 true), ("data", .slice false .u8 "len")]
-
-/-- With the key context at `ctx`: if the streaming state at `state`
-represents a message with additional data `a` of `aad_len` bytes (modulo
-2⁶⁴) and no text yet, for its hash subkey, then afterwards it represents
-that message with `a` followed by the `len` bytes at `data` as its
-additional data. -/
-def streamAadPost (pb : Nat) : streamAadSig.Post pb := fun ctx state aadLen data len m m' _ =>
-  ∀ ciph iv a, StreamRepr m state ciph (ctxH m ctx) iv a [] →
-    aadLen = BitVec.ofNat 64 a.length →
-    StreamRepr m' state ciph (ctxH m ctx) iv (a ++ Aes.bytesAt m data len.toNat) []
-
-/-- `streamAadPost`. -/
-def streamAadContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamAadSig.contract A (post := streamAadPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `vg_sm4_gcm_stream_aad` on every target. -/
+/-- `vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize)`:
+AES-GCM's (`Gcm.streamAadContract`), which reads only the hash subkey of the
+key context. -/
 def streamAadApi : Api where
   module := "sm4_gcm"
   name := "vg_sm4_gcm_stream_aad"
-  sig := streamAadSig
+  sig := Spec.Gcm.streamAadSig
   writeArgs := true
-  contracts := some fun A stack => streamAadContract A stack
+  contracts := some fun A stack => Spec.Gcm.streamAadContract A stack
   summary := "Absorbs additional data into an incremental SM4-GCM encryption or decryption: with \
     the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` \
     bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with \
     the `len` bytes at `data` appended to its additional data. All of the additional data comes \
     before the text (§7.1 step 5): after text, the state represents no message.\n\n\
-    Contract: `VG.Spec.Sm4.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` \
-    and `len` may affect timing, not the key context, the state or the data."
+    Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of \
+    the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, \
+    not the key context, the state or the data."
   safety := []
 
-/-- `vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize)`,
+/-- `vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize)`,
 and `vg_sm4_gcm_stream_decrypt` with the same signature. `aad_len` and
 `text_len` are public. -/
 def streamCryptSig : Sig where
-  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
     ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("data", .slice true .u8 "len")]
 
 /-- With the key context at `ctx`: if the streaming state at `state`
@@ -384,10 +358,10 @@ def streamDecryptApi : Api where
     data."
   safety := []
 
-/-- `vg_sm4_gcm_stream_finish(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16])`.
+/-- `vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16])`.
 `aad_len` and `text_len` are public; `state` is left unspecified. -/
 def streamFinishSig : Sig where
-  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
     ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("tag", .array true .u8 16)]
 
 /-- With the key context at `ctx`: if the streaming state at `state`
@@ -422,11 +396,11 @@ def streamFinishApi : Api where
     `aad_len` and `text_len` may affect timing, not the key context or the state."
   safety := ["The contents of `state` on return are unspecified."]
 
-/-- `vg_sm4_gcm_stream_verify(ctx: *const [u64; 18], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32`.
+/-- `vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32`.
 `aad_len`, `text_len` and `tag_len` are public; `state` is left
 unspecified. -/
 def streamVerifySig : Sig where
-  params := [("ctx", .array false .u64 18), ("state", .array true .u64 10),
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
     ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("tag", .slice false .u8 "tag_len")]
   ret := some .u32
 

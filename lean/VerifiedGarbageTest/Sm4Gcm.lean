@@ -83,16 +83,16 @@ def checkExample (ex : String) : Except String Unit := do
   let j := Gcm.j0 (ciph 0) iv
   unless Gcm.ctr32 ciph (Gcm.inc32 j) (Gcm.blocks pt) == Gcm.blocks ct do throw "ctr32 differs"
   unless Gcm.ctr32 ciph 0 [0] == [ciph 0] do throw "H differs"
-  -- The key context `vg_sm4_gcm_init` writes: the schedule, then `H`, from
-  -- which GCM-AE and GCM-AD give the example.
+  -- The key context `vg_sm4_gcm_init` writes: the schedule, then `H` in its
+  -- last 16 bytes, from which GCM-AE and GCM-AD give the example.
   let hb := Gcm.toBytes (ciph 0)
   let ctxMem : Mem := fun p =>
-    if p.toNat < 128 then scheduleMem p else hb.getD (p.toNat - 128) 0
-  unless Sm4.scheduleAt ctxMem 0 == k && Sm4.Gcm.ctxH ctxMem 0 == Sm4.gcmCipherOfKey key 0 do
+    if p.toNat < 128 then scheduleMem p else if 240 ≤ p.toNat then hb.getD (p.toNat - 240) 0 else 0
+  unless Sm4.scheduleAt ctxMem 0 == k && Gcm.ctxH ctxMem 0 == Sm4.gcmCipherOfKey key 0 do
     throw "key context differs"
-  unless Gcm.encryptWith (Sm4.Gcm.ctxCiph ctxMem 0) (Sm4.Gcm.ctxH ctxMem 0) 16 iv pt aad == (ct, tag) do
+  unless Gcm.encryptWith (Sm4.Gcm.ctxCiph ctxMem 0) (Gcm.ctxH ctxMem 0) 16 iv pt aad == (ct, tag) do
     throw "encryption with the key context differs"
-  unless Gcm.openResult (Sm4.Gcm.ctxCiph ctxMem 0) (Sm4.Gcm.ctxH ctxMem 0) 16 iv ct aad tag == some pt do
+  unless Gcm.openResult (Sm4.Gcm.ctxCiph ctxMem 0) (Gcm.ctxH ctxMem 0) 16 iv ct aad tag == some pt do
     throw "decryption with the key context differs"
 
 run_cmd do
@@ -112,8 +112,6 @@ run_cmd do
 #assert_standard_axioms VG.Spec.Sm4.Gcm.initContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.sealContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.openContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.streamInitContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.streamAadContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.streamEncryptContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.streamDecryptContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.streamFinishContract
