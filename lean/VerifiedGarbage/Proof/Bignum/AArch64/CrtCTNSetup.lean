@@ -102,7 +102,7 @@ theorem r2_minv {B : Addr} {Z w : Nat} {N : Nat} {m₁ m₂ : BitVec 64} {s₁ s
 /-- `n`'s setup leaks the same in runs that agree on the public data. -/
 theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
   rw [nSetup_eq]
-  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [nInput]) (RelCT.seq (R := Two NS1) (two_post
+  refine RelCT.seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [nInput]) (RelCT.seq (R := Two NS1) (two_post
     (two_map (fun p : CrtPub => (⟨p.B, p.Z, p.k, p.op, p.np, p.nb⟩ : PcPub)) (fun _ _ h => stage0_pcl h) pcLoad_ct)
     fun _ _ h => ns1_ok h) ?_)
   refine RelCT.seqs_append (by simp [nInput]) (by simp [r2StepsPub]) (RelCT.seq (R := Two NS2) (two_post

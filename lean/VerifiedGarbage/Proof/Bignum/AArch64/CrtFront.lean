@@ -255,7 +255,7 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have hN0 := hdr_lt_slot ((k + 7) / 8) Public.aN (show 31 < 32 by decide)
   rw [nSetup_eq]
   -- The modulus and `-n⁻¹`.
-  refine wp_seqs_append (by simp [pcLoad]) (by simp [nInput])
+  refine wp_seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [nInput])
     (WP.mono (pcLoad_ok h.scr h.x0 hZ (by omega_using [hk1]) (by omega_using [hk2]) h.hK h.hN h.n h.nl hodd)
       fun t₁ ⟨minv, hg₁, hn₁, hi₁, f₁, k₁⟩ => ?_)
   have f₁' : Frm B (setupRanges ((k + 7) / 8)) s.mem t₁.mem :=

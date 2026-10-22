@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import VerifiedGarbage.Proof.Bignum.AArch64.WordIOStore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
@@ -64,12 +65,13 @@ structure PdPre (s : State) (B : Addr) (Z k : Nat) (op ep ip : Addr) (L : Nat) (
   n1 : 1 < N
   rlt : R < N
   x : Src s B Z ip xb
+  xspan : InRegions (s.rd ++ s.wr) ip k
   e : Src s B Z ep eb
   xl : xb.length = k
   el : eb.length = L
   L1 : 1 ≤ L
   L2 : L ≤ k
-  out : ∀ j < k, InRegions s.wr (op + BitVec.ofNat 64 j) 1
+  out : InRegions s.wr op k
   outSep : ∀ j < k, Z ≤ ofs B (op + BitVec.ofNat 64 j)
 
 /-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
@@ -84,8 +86,8 @@ theorem pdIn_ok {s : State} {B : Addr} {Z k : Nat} {ip : Addr} {xb : List Byte} 
     (h0 : s.gpr .x0 = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
     (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hIn : word s.mem B (8 * sIn) = ip)
     (hb : ∀ j < 8, word s.mem B (8 * sArr j) = off B (slot ((k + 7) / 8) j)) (hx : Src s B Z ip xb)
-    (hxl : xb.length = k) :
-    WP isa (.seq (.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)]) loadBE) s fun t =>
+    (hxspan : InRegions (s.rd ++ s.wr) ip k) (hxl : xb.length = k) :
+    WP isa (.seq (.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)]) loadW) s fun t =>
       wv t.mem B (slot ((k + 7) / 8) aX) ((k + 7) / 8) = Spec.Rsa.os2ip xb ∧
       Arrays B ((k + 7) / 8) [aX] s.mem t.mem ∧ Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x8] s t := by
   have hn := hs.nowrap
@@ -102,8 +104,9 @@ theorem pdIn_ok {s : State} {B : Addr} {Z k : Nat} {ip : Addr} {xb : List Byte} 
       hs.ld (d := 8 * sArr aX) (by omega_using [hZ, h8, h0', eAX]), hIn, hK,
           hb aX (by decide)]) (by decide) (by decide) (by decide +kernel))
     fun t₁ ⟨⟨h1, h2, h8', hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (loadArr_ok (hs.congr k₁.wr) (by decide) hZ
-    (hx.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hxl (by omega_using [hk1]) hk h1 h2 h8')
+  refine WP.mono (loadArrW_ok (hs.congr k₁.wr) (by decide) hZ
+    (hx.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) (by rw [k₁.rd, k₁.wr]; exact hxspan) hxl
+    (by omega_using [hk1]) hk h1 h2 h8')
     fun t ⟨hv, ha, k₂⟩ => ⟨hv, by rw [hm₁] at ha; exact ha, (k₁.trans k₂).mono (by decide)⟩
 
 /-- After the setup: the modulus `N`, `-N⁻¹` in the header, the input `X`,
@@ -252,7 +255,7 @@ theorem scr_ne_out {B out : Addr} {Z k : Nat} (hsep : ∀ j < k, Z ≤ ofs B (ou
 /-- The steps of the result. -/
 def outSteps : List (Prog isa) := [
   .block [ldh .x8 (sArr aY), ldh .x1 sOut, ldh .x9 sK, .add .x .x1 .x1 .x9, ldh .x15 sMask],
-  storeBE,
+  storeW,
   .block [ldh .x0 sMask, movi .x3 1, .logic .and .x .x0 .x0 .x3]]
 
 /-- The result: `i2osp (c ? Y : 0)` to `out`, and `c` returned. -/
@@ -261,7 +264,7 @@ theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : N
     (hY : wv s.mem B (slot ((k + 7) / 8) aY) ((k + 7) / 8) = Y)
     (hO : word s.mem B (8 * sOut) = out) (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k)
     (hM : word s.mem B (8 * sMask) = mask c)
-    (hout : ∀ j < k, InRegions s.wr (out + BitVec.ofNat 64 j) 1)
+    (hout : InRegions s.wr out k)
     (hsep : ∀ j < k, Z ≤ ofs B (out + BitVec.ofNat 64 j)) :
     WP isa (seqs outSteps) s fun t =>
       (List.range k).map (fun i => t.mem (out + BitVec.ofNat 64 i)) = Spec.Rsa.i2osp (if c then Y else 0) k ∧
@@ -283,9 +286,9 @@ theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : N
       hl sMask (by decide), hg.hdr.harr aY (by decide), hO, hK, hM]) (by decide) (by decide) (by decide +kernel))
     fun t₁ ⟨⟨h8, h1, h9, h15, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
-  refine WP.seq (WP.mono (storeBE_ok hs₁ h8 h1 h9 h15 hk1 hk' rfl
+  refine WP.seq (WP.mono (WordIO.storeW_ok hs₁ h8 h1 h9 h15 hk1 hk' rfl
     (by have := slot_le (w := (k + 7) / 8) (show aY < 8 by decide); omega_using [hZ, this])
-    (fun j hj => by rw [k₁.wr]; exact hout j hj) hsep) fun t₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
+    (by rw [k₁.wr]; exact hout) hsep) fun t₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
   rw [hm₁, hY] at hb₂
   have hw₂ : ∀ i < 32, word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     apply Mem.readW_congr
@@ -307,13 +310,13 @@ theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : N
 def pdExp (M : Mont) : List (Prog isa) := [M.mm aXm aX aR2, Precomputed.expLoop M.mm, Precomputed.finish M.mm]
 
 theorem pdRest_eq (M : Mont) : Precomputed.rest M.mm =
-    seqs ((([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadBE] : List (Prog isa)) ++ setupSteps) ++ (pdExp M ++ outSteps)) :=
+    seqs ((([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadW] : List (Prog isa)) ++ setupSteps) ++ (pdExp M ++ outSteps)) :=
   rfl
 
 /-- The input, the mask, `-m⁻¹` and 1. -/
 theorem pdSetupAll_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat} {eb xb : List Byte} {N R : Nat}
     (h : PdPre s B Z k op ep ip L eb xb N R) :
-    WP isa (seqs (([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadBE] : List (Prog isa)) ++ setupSteps)) s fun t => ∃ minv,
+    WP isa (seqs (([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadW] : List (Prog isa)) ++ setupSteps)) s fun t => ∃ minv,
       SetupOut t B Z ((k + 7) / 8) minv N (Spec.Rsa.os2ip xb) ∧ Frm B (pdAll ((k + 7) / 8)) s.mem t.mem ∧
       Keep mmRegs s t ∧ wv t.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) = R := by
   have hk1 := h.k1
@@ -323,7 +326,7 @@ theorem pdSetupAll_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : 
   have hn := hs.nowrap
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
   refine wp_seqs_append (by simp) (by simp [setupSteps])
-    (WP.mono (pdIn_ok hs h.x0 hZ (by omega_using [hk1]) (by omega_using [hk2]) h.hK h.hIn h.hb h.x h.xl) fun t₁ ⟨hX₁, ha₁, k₁⟩ => ?_)
+    (WP.mono (pdIn_ok hs h.x0 hZ (by omega_using [hk1]) (by omega_using [hk2]) h.hK h.hIn h.hb h.x h.xspan h.xl) fun t₁ ⟨hX₁, ha₁, k₁⟩ => ?_)
   have f₁ : Frm B (pdAll ((k + 7) / 8)) s.mem t₁.mem := Frm.of_arrays ha₁ (by simp [pdAll])
   refine WP.mono (pdSetup_ok (hs.congr k₁.wr) ((k₁.gpr .x0 (by decide)).trans h.x0) hZ (by omega_arith) (by omega_using [hk2])
       (by rw [ha₁.hslot (by decide)]; exact h.hW) (fun j hj => by rw [ha₁.hslot (by unfold sArr; omega_arith)]; exact h.hb j hj)
@@ -417,7 +420,7 @@ theorem pdRest_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat}
       ha₃.hslot (by decide)]
     exact so.mask
   refine WP.mono (outPhase_ok hg₅ hZ (by omega_using [hw]) (by omega_using [hk2]) hY₅ (by rw [x₁₅ sOut (by decide)]; exact h.hO)
-    (by rw [x₁₅ sK (by decide)]; exact h.hK) hM₅ (fun j hj => by rw [k₁₅.wr]; exact h.out j hj) h.outSep)
+    (by rw [x₁₅ sK (by decide)]; exact h.hK) hM₅ (by rw [k₁₅.wr]; exact h.out) h.outSep)
     fun t ⟨hb, hx0, hfr, k₆⟩ => ⟨x, fun hRR => ?_, ⟨?_, hx0,
       fun y hy hy' => by rw [hfr y hy', InScr.of_frm f₁₅ hle' y hy], (k₁₅.trans k₆).mono (by decide)⟩⟩
   · apply VG.Proof.Bignum.mont_cancel hR

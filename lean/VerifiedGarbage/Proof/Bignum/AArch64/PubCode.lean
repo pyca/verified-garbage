@@ -80,7 +80,9 @@ structure PubCtx (s : State) : Prop where
     (Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
   hxb : Src s (stackArg s 0) ((stackArg s 1).toNat * 8) (s.gpr .x6)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x3).toNat)
+  hxspan : InRegions (s.rd ++ s.wr) (s.gpr .x6) (s.gpr .x3).toNat
   hout : ∀ j < (s.gpr .x3).toNat, InRegions s.wr (s.gpr .x0 + BitVec.ofNat 64 j) 1
+  houtSpan : InRegions s.wr (s.gpr .x0) (s.gpr .x3).toNat
   houts : ∀ j < (s.gpr .x3).toNat, (stackArg s 1).toNat * 8 ≤ ofs (stackArg s 0) (s.gpr .x0 + BitVec.ofNat 64 j)
 
 theorem pubCtx_of {s : State} (h : pubContract.pre s) : PubCtx s := by
@@ -96,7 +98,9 @@ theorem pubCtx_of {s : State} (h : pubContract.pre s) : PubCtx s := by
     src_of_region (by rw [hrd]; simp) (by omega) dns,
     src_of_region (by rw [hrd]; simp) (by omega) des,
     src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
+    span_of_region (by rw [hrd, ← hil]; simp),
     fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
+    ⟨_, by rw [hwr]; exact List.mem_cons_self .., by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
     fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega))⟩
 
 /-! ## The entry -/
@@ -202,7 +206,7 @@ theorem pubCode_correct (s : State) (h : pubContract.pre s) :
         (s.gpr .x3).toNat = true := by simpa using hb
     obtain ⟨hodd, hN1, hlo⟩ := valid_facts hv hk1
     have hn' : (stackArg s 0).toNat + slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ 2 ^ 64 := by omega
-    refine wp_seqs_append (by simp [pcLoad]) (by simp [r2Steps])
+    refine wp_seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [r2Steps])
       (WP.mono (pcLoad_ok hs₂ h0₂ hz (by omega) (by omega) hK₂ (by rw [hm₂]; exact hN)
         (c.hnb.congrK i₂ kk) (bytesAt_length _ _ _) hodd) fun t₃ ⟨minv, hg₃, hn₃, hinv₃, f₃, k₃⟩ => ?_)
     refine wp_seqs_append (by simp [r2Steps]) (by simp)
@@ -225,9 +229,10 @@ theorem pubCode_correct (s : State) (h : pubContract.pre s) :
         hL := by rw [x₂₄ sElen (by decide), hm₂, hL, ofNat_toNat64],
         hIn := by rw [x₂₄ sIn (by decide), hm₂]; exact hIn, hW := hg₄.hdr.hw, hb := hg₄.hdr.harr,
         n := by rw [f₄.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact hn₃, r := rfl,
-        odd := hodd, n1 := hN1, rlt := hlt₄, x := c.hxb.congrK i₂₄ k₂₄, e := c.heb.congrK i₂₄ k₂₄,
+        odd := hodd, n1 := hN1, rlt := hlt₄, x := c.hxb.congrK i₂₄ k₂₄,
+        xspan := by rw [k₂₄.rd, k₂₄.wr]; exact c.hxspan, e := c.heb.congrK i₂₄ k₂₄,
         xl := bytesAt_length _ _ _, el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2,
-        out := fun j hj => by rw [k₂₄.wr]; exact c.hout j hj, outSep := c.houts }
+        out := by rw [k₂₄.wr]; exact c.houtSpan, outSep := c.houts }
     refine WP.mono (pdRest_ok (M := Mont.base) hpre) fun t ⟨x, hx, hp⟩ =>
       fin t _ _ ((k₃.trans k₄).trans hp.keep) (by decide) hp.bytes hp.x0 (fun _ => ⟨rfl, ?_⟩)
         fun h => absurd h (by rw [hv]; decide)

@@ -67,7 +67,7 @@ def PcM (p : PcPub) (s : State) : Prop :=
     word s.mem p.B (8 * sOut) = p.op ∧ word s.mem p.B (8 * sK) = BitVec.ofNat 64 p.k ∧
     word s.mem p.B (8 * sN) = p.np ∧ Src s p.B p.Z p.np p.nb ∧ p.nb.length = p.k ∧
     Spec.Rsa.modulusValid p.N p.k = true ∧ (∀ i < 2 * p.w, InRegions s.wr (off p.op (8 * i)) 8) ∧
-    (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i))
+    (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i)) ∧ InRegions (s.rd ++ s.wr) p.np p.k
 
 /-- `PcM` after code that changes only memory in the working space outside
 the header's arguments, and not `x0`. -/
@@ -75,12 +75,12 @@ theorem PcM.congr {p : PcPub} {s t : State} (h : PcM p s) {rs : List (Nat × Nat
     (hf : Frm p.B rs s.mem t.mem) (hz : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z)
     (hx : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16))
     {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : PcM p t := by
-  obtain ⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hn, hnl, hv, hpw, hps⟩ := h
+  obtain ⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hn, hnl, hv, hpw, hps, hsp⟩ := h
   have hi := InScr.of_frm hf hz
   have hfx := Fixed.of_frm hf hx
   exact ⟨hs.congr k.wr, (k.gpr .x0 hr).trans h0, hZ, hk1, hk2, (hfx sOut (by decide)).trans hO,
     (hfx sK (by decide)).trans hK, (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv,
-    fun i hi => by rw [k.wr]; exact hpw i hi, hps⟩
+    fun i hi => by rw [k.wr]; exact hpw i hi, hps, by rw [k.rd, k.wr]; exact hsp⟩
 
 theorem pins_PcM : Pins PcM [.x0] := fun _ _ _ h₁ h₂ r hr => by
   simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
@@ -95,6 +95,13 @@ theorem PcM.load {p : PcPub} {s : State} (h : PcM p s) : PcL p s :=
   let ⟨hs, h0, hZ, hk1, hk2, _, hK, hN, hn, hnl, hv, _⟩ := h
   ⟨hs, h0, hZ, hk1, hk2, hK, hN, hn, hnl, hv⟩
 
+/-- `PcL`, with `m` in one region: what the load of `m` a word at a time
+needs. -/
+def PcLW (p : PcPub) (s : State) : Prop := PcL p s ∧ InRegions (s.rd ++ s.wr) p.np p.k
+
+theorem PcM.loadW {p : PcPub} {s : State} (h : PcM p s) : PcLW p s :=
+  ⟨h.load, h.2.2.2.2.2.2.2.2.2.2.2.2.2⟩
+
 /-- `PcL` after code that changes only memory in the working space outside
 the header's arguments, and not `x0`. -/
 theorem PcL.congr {p : PcPub} {s t : State} (h : PcL p s) {rs : List (Nat × Nat)}
@@ -106,6 +113,12 @@ theorem PcL.congr {p : PcPub} {s t : State} (h : PcL p s) {rs : List (Nat × Nat
   have hfx := Fixed.of_frm hf hx
   exact ⟨hs.congr k.wr, (k.gpr .x0 hr).trans h0, hZ, hk1, hk2, (hfx sK (by decide)).trans hK,
     (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv⟩
+
+theorem PcLW.congr {p : PcPub} {s t : State} (h : PcLW p s) {rs : List (Nat × Nat)}
+    (hf : Frm p.B rs s.mem t.mem) (hz : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z)
+    (hx : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16))
+    {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : PcLW p t :=
+  ⟨h.1.congr hf hz hx k hr, by rw [k.rd, k.wr]; exact h.2⟩
 
 theorem pins_PcL : Pins PcL [.x0] := fun _ _ _ h₁ h₂ r hr => by
   simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
@@ -168,6 +181,58 @@ theorem pcLoad_r2 {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte
     fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega, by dsimp only; omega, hn, hinv,
       hodd, hlo⟩, f, k⟩
 
+/-- After the first block of `pcLoadW`. -/
+def Pc1W (p : PcPub) (s : State) : Prop :=
+  PcLW p s ∧ s.gpr .x1 = p.np ∧ s.gpr .x2 = BitVec.ofNat 64 p.k ∧ s.gpr .x8 = off p.B (slot p.w aN)
+
+theorem pins_Pc1W : Pins Pc1W [.x0, .x1, .x2, .x8] :=
+  fun p s₁ s₂ h₁ h₂ => pins_Pc1 p s₁ s₂ ⟨h₁.1.1, h₁.2⟩ ⟨h₂.1.1, h₂.2⟩
+
+/-- The load of `m` a word at a time and `-m⁻¹` leak the same in runs that
+agree on `m`. -/
+theorem pcLoadW_ct : RelCT isa (Two PcLW) (seqs pcLoadW) fun _ _ => True := by
+  unfold pcLoadW pcLoadWith
+  -- `w`, the bases, and `m`'s registers.
+  refine RelCT.seq (two_piece (Ψ := Pc1W) [.x0] (fun p s₁ s₂ h₁ h₂ => pins_PcL p s₁ s₂ h₁.1 h₂.1)
+    (by taint_decide) ?_) ?_
+  · intro p s h
+    have h' := h.1
+    obtain ⟨hs, h0, hZ, hk1, hk2, hK, hN, -⟩ := h'
+    obtain ⟨g0, g8⟩ := slot0_ge p.w
+    refine WP.mono (pcHead_ok hs h0 hZ (by omega) hK hN) fun t ⟨h1, h2, h8, _, _, hf, k⟩ =>
+      ⟨h.congr hf (fun r hr => ?_) (fun r hr => ?_) k (by decide), h1, h2, h8⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+  -- `m`.
+  refine RelCT.seq (two_piece (Ψ := fun (p : PcPub) s => s.gpr .x0 = p.B ∧ s.gpr .x8 = off p.B (slot p.w aN)) _
+    pins_Pc1W (by taint_decide) ?_) ?_
+  · intro p s ⟨⟨h, hsp⟩, h1, h2, h8⟩
+    obtain ⟨hs, h0, hZ, hk1, hk2, -, -, hn, hnl, -⟩ := h
+    exact WP.mono (loadArrW_ok hs (by decide) hZ hn hsp hnl (by omega) (by omega) h1 h2 h8) fun t ⟨_, _, k⟩ =>
+      ⟨(k.gpr .x0 (by decide)).trans h0, (k.gpr .x8 (by decide)).trans h8⟩
+  -- `-m⁻¹`.
+  exact two_taint [.x0, .x8] (fun p s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [h₁.1, h₂.1]
+    · rw [h₁.2, h₂.2]) (by taint_decide)
+
+/-- `R² mod m`'s hypotheses after the load of `m` a word at a time and
+`-m⁻¹`. -/
+theorem pcLoadW_r2 {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte} (hs : Scr s B Z)
+    (h0 : s.gpr .x0 = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 64 ≤ k) (hk2 : k ≤ 1024)
+    (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hN : word s.mem B (8 * sN) = np)
+    (hnb : Src s B Z np nb) (hsp : InRegions (s.rd ++ s.wr) np k) (hnl : nb.length = k)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
+    WP isa (seqs pcLoadW) s fun t => ∃ minv, R2Pre ⟨⟨B, Z, (k + 7) / 8, minv⟩, Spec.Rsa.os2ip nb⟩ t ∧
+      Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t := by
+  obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
+  exact WP.mono (pcLoadW_ok hs h0 hZ (by omega) (by omega) hK hN hnb hsp hnl hodd)
+    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega, by dsimp only; omega, hn, hinv,
+      hodd, hlo⟩, f, k⟩
+
 /-! ## `R² mod m` -/
 
 /-- `main`'s public data with `-m⁻¹`. -/
@@ -203,7 +268,7 @@ theorem pcR2_ct (M : Mont) : RelCT isa (Two Pc3) (seqs (r2StepsPub M.mm)) (Two P
   dsimp only at hg hw hw' hn hinv hodd hlo
   refine WP.mono (r2Pub_ok M hg.1 hg.2 hw hw' hn hinv hodd hlo) fun t ⟨hg', _, _, f, k⟩ =>
     ⟨⟨hg', hg.2⟩, hw, hw', ?_, fun i hi => by rw [k.wr]; exact hm.2.2.2.2.2.2.2.2.2.2.2.1 i hi,
-      hm.2.2.2.2.2.2.2.2.2.2.2.2⟩
+      hm.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   rw [(Fixed.of_frm f (r2Ranges_fixed _)) sOut (by decide)]
   exact hm.2.2.2.2.2.1
 
@@ -328,12 +393,12 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs Precompute.pcOut) fun _ _ => True :
 /-- `main` leaks the same in runs that agree on the public data and `n`. -/
 theorem pcMain_ct (M : Mont) : RelCT isa (Two PcM) (Precompute.main M.mm) fun _ _ => True := by
   rw [pcMain_eq M]
-  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2StepsPub]) (RelCT.seq (R := Two Pc3)
-    (two_post (pcLoad_ct.mono (fun _ _ h => two_mono (fun _ _ h => PcM.load h) h) fun _ _ _ => trivial)
+  refine RelCT.seqs_append (by simp [pcLoadW, pcLoadWith]) (by simp [r2StepsPub]) (RelCT.seq (R := Two Pc3)
+    (two_post (pcLoadW_ct.mono (fun _ _ h => two_mono (fun _ _ h => PcM.loadW h) h) fun _ _ _ => trivial)
       fun p s h => ?_) ?_)
   · have h' := h
-    obtain ⟨hs, h0, hZ, hk1, hk2, -, hK, hN, hn, hnl, hv, -⟩ := h'
-    refine WP.mono (pcLoad_r2 hs h0 hZ hk1 hk2 hK hN hn hnl hv) fun t ⟨mi, hr, f, k⟩ =>
+    obtain ⟨hs, h0, hZ, hk1, hk2, -, hK, hN, hn, hnl, hv, -, -, hsp⟩ := h'
+    refine WP.mono (pcLoadW_r2 hs h0 hZ hk1 hk2 hK hN hn hsp hnl hv) fun t ⟨mi, hr, f, k⟩ =>
       ⟨mi, h.congr f (fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ) (pcLoadRanges_fixed _) k (by decide), hr⟩
   exact RelCT.seqs_append (by simp [r2StepsPub]) (by simp [Precompute.pcOut]) (RelCT.seq (pcR2_ct M) pcOut_ct)
 
@@ -351,7 +416,7 @@ def PcC3 (p : PcPub) (t : State) : Prop :=
     word t.mem p.B (8 * sN) = p.np ∧ Src t p.B p.Z p.np p.nb ∧ p.nb.length = p.k ∧
     (∀ i < 2 * p.w, InRegions t.wr (off p.op (8 * i)) 8) ∧
     (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i)) ∧
-    t.gpr .x9 = BitVec.ofNat 64 (Spec.Rsa.modulusValid p.N p.k).toNat
+    t.gpr .x9 = BitVec.ofNat 64 (Spec.Rsa.modulusValid p.N p.k).toNat ∧ InRegions (t.rd ++ t.wr) p.np p.k
 
 /-- `vg_rsa_public_precompute` leaks the same in runs that agree on the public
 data and `n`. -/
@@ -386,9 +451,9 @@ theorem pcCode_ct (M : Mont) : RelCT isa (Two PcC) (Precompute.code M.mm) fun _ 
       show slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (s.gpr .x5).toNat * 8 by unfold slot hdrBytes; omega, hk1, hk2,
       by rw [hm₂]; exact hO, by rw [hm₂, hK, ofNat_toNat64], by rw [hm₂]; exact hN,
       c.hnb.congrK (by rw [hm₂]; exact i₁) kk, bytesAt_length _ _ _,
-      fun i hi => by rw [kk.wr]; exact c.hpw i hi, c.hps, hz₂⟩
+      fun i hi => by rw [kk.wr]; exact c.hpw i hi, c.hps, hz₂, by rw [kk.rd, kk.wr]; exact c.hnspan⟩
   refine two_ite (fun p s₁ s₂ h₁ h₂ => by
-    rw [eval_zero, eval_zero, h₁.2.2.2.2.2.2.2.2.2.2.2.2, h₂.2.2.2.2.2.2.2.2.2.2.2.2]) ?_ ?_
+    rw [eval_zero, eval_zero, h₁.2.2.2.2.2.2.2.2.2.2.2.2.1, h₂.2.2.2.2.2.2.2.2.2.2.2.2.1]) ?_ ?_
   · -- `fail`.
     unfold Precompute.fail
     refine RelCT.seq (two_piece (Ψ := fun p t => t.gpr .x1 = off p.op 0 ∧
@@ -408,8 +473,8 @@ theorem pcCode_ct (M : Mont) : RelCT isa (Two PcC) (Precompute.code M.mm) fun _ 
         hl sK (by decide), hO, hK, two_w p.k (by omega)]) (by decide) (by decide) (by decide +kernel))
       fun t' ⟨h, _⟩ => h
   · -- `main`.
-    refine two_map id (fun p t ⟨⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, hpw, hps, hz⟩, he⟩ =>
-      ⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, ?_, hpw, hps⟩) (pcMain_ct M)
+    refine two_map id (fun p t ⟨⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, hpw, hps, hz, hsp⟩, he⟩ =>
+      ⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, ?_, hpw, hps, hsp⟩) (pcMain_ct M)
     rw [eval_zero, hz] at he
     cases hv : Spec.Rsa.modulusValid p.N p.k
     · rw [hv] at he; simp at he
