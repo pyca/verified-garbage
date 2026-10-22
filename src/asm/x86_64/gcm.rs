@@ -29606,7 +29606,7 @@ mov rsi, QWORD PTR [r11+800]
 23:
 jmp 21f
 20:
-cmp r9, 2
+cmp r9, 4
 jb 239f
 add r11, 127
 and r11, -64
@@ -37438,7 +37438,7 @@ mov rsi, QWORD PTR [r11+800]
 23:
 jmp 21f
 20:
-cmp r9, 2
+cmp r9, 4
 jb 233f
 add r11, 127
 and r11, -64
