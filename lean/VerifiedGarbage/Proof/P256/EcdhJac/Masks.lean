@@ -51,14 +51,14 @@ theorem doubleCounter_ok (s : State) {q j : Nat} (hq : 1≤q) (hq5 : q≤5) (hj 
     simp only [RegUpd.gpr_write,hr.1,hr.2,ite_false]
 
 theorem doubleCounter_start (s : State) {j : Nat} (h19 : s.gpr .x19=BitVec.ofNat 64 j) :
-    WP isa (.block [.movz .x .x4 10240 0,.add .x .x19 .x19 .x4]) s fun t =>
-      t.gpr .x19=BitVec.ofNat 64 (2048*5+j) ∧ Keeps [.x4,.x19] s t := by
+    WP isa (.block [.movz .x .x4 8192 0,.add .x .x19 .x19 .x4]) s fun t =>
+      t.gpr .x19=BitVec.ofNat 64 (2048*4+j) ∧ Keeps [.x4,.x19] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,Size.bits,
     show 16*0<64 by decide,ite_true,RegUpd.gpr_write,BitVec.setWidth_eq,
     reduceCtorEq,ite_false,h19,Option.some.injEq,exists_eq_left']
   refine ⟨?_,fun r hr => ?_,rfl,rfl,rfl,rfl⟩
-  · change BitVec.ofNat 64 j+BitVec.ofNat 64 10240=BitVec.ofNat 64 (2048*5+j)
+  · change BitVec.ofNat 64 j+BitVec.ofNat 64 8192=BitVec.ofNat 64 (2048*4+j)
     rw [BitVec.ofNat_add_ofNat,Nat.add_comm]
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_write,hr.1,hr.2,ite_false]

@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
 
-import VerifiedGarbage.Proof.P256.EcdhJac.Select
+public import VerifiedGarbage.Proof.P256.EcdhJac.Select
 import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
@@ -29,18 +29,25 @@ def selected : List Nat := [704,736,768,5400,5432]
 
 theorem selected_mem : ∀ i<5,selectedSlot i∈selected := by decide
 
-theorem select_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
+/-- What a selection of entry `a` gives, from code `c` that stores the
+entry's words and keeps the registers but `R` (`x5`, `x17`). -/
+theorem selectBlock_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
     {V : List Nat} (hV : ∀ x∈V,x∈live)
     (hi : Inv M base 8192 C.p Sl V (tmv C 4 base s) s)
     (hf : Fixed base P k s) (ht : TblOk base P 16 s)
-    (ha : a≤16) (hmag : s.gpr .x2=BitVec.ofNat 64 a) :
-    WP isa (.block (Impl.P256.EcdhSelect.neon 2816 704 5400)) s fun t=>
+    (ha : a≤16) {c : List Instr} {R : List Reg} (hR : ∀ r∈R,r∈[.x5,.x17])
+    (hc : WP isa (.block c) s fun t=>
+      (∀ j<20,word t.mem base (Select.output j)=if a=0 then 0 else
+        word s.mem base (2816+160*(a-1)+8*j)) ∧
+      KeepRegs R s t ∧ Unch base Select.outputRanges s.mem t.mem) :
+    WP isa (.block c) s fun t=>
       Frame base work s t ∧ t.gpr .x19=s.gpr .x19 ∧
       Inv M base 8192 C.p Sl (selected++V) (tmv C 4 base t) t ∧
       (1≤a→JPt base t selectedSlot (mul a P)) ∧
       (a=0→∀ i<5,wordsVal t.mem base (selectedSlot i) 4=0) ∧
       (∀ x∈V,wordsVal t.mem base x 4=wordsVal s.mem base x 4) := by
-  refine WP.mono (Select.neon_ok hi.scr ha hmag) fun t ⟨hw,hkeep,ho⟩=>?_
+  refine WP.mono hc fun t ⟨hw,hkeep',ho⟩=>?_
+  have hkeep : KeepRegs [.x5,.x17] s t := hkeep'.mono hR
   have fr : Frame base work s t := ⟨hkeep.mono (by decide),ho.cover (by decide)⟩
   have hv : ∀ i<5,wordsVal t.mem base (selectedSlot i) 4=
       if a=0 then 0 else wordsVal s.mem base (entrySlot a i) 4 := by
@@ -96,6 +103,34 @@ theorem select_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
       change wordsVal t.mem base x 4<C.p
       rw [hwv]; exact hi.lt x hx
 
+theorem select_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
+    {V : List Nat} (hV : ∀ x∈V,x∈live)
+    (hi : Inv M base 8192 C.p Sl V (tmv C 4 base s) s)
+    (hf : Fixed base P k s) (ht : TblOk base P 16 s)
+    (ha : a≤16) (hmag : s.gpr .x2=BitVec.ofNat 64 a) :
+    WP isa (.block (Impl.P256.EcdhSelect.neon 2816 704 5400)) s fun t=>
+      Frame base work s t ∧ t.gpr .x19=s.gpr .x19 ∧
+      Inv M base 8192 C.p Sl (selected++V) (tmv C 4 base t) t ∧
+      (1≤a→JPt base t selectedSlot (mul a P)) ∧
+      (a=0→∀ i<5,wordsVal t.mem base (selectedSlot i) 4=0) ∧
+      (∀ x∈V,wordsVal t.mem base x 4=wordsVal s.mem base x 4) :=
+  selectBlock_field_ok hV hi hf ht ha (fun _ h=>h) (Select.neon_ok hi.scr ha hmag)
+
+/-- The selection's rows and store, from its setup's broadcasts. -/
+theorem selectV_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
+    {V : List Nat} (hV : ∀ x∈V,x∈live)
+    (hi : Inv M base 8192 C.p Sl V (tmv C 4 base s) s)
+    (hf : Fixed base P k s) (ht : TblOk base P 16 s) (ha : a≤16)
+    (hidx : s.v .v28=dup2 0) (hinc : s.v .v31=dup2 1) (hmag : s.v .v30=dup2 (BitVec.ofNat 64 a))
+    (hz : ∀ i<10,s.v (Select.acc i)=0) :
+    WP isa (.block (Select.scan 2816 16++Select.store)) s fun t=>
+      Frame base work s t ∧ t.gpr .x19=s.gpr .x19 ∧
+      Inv M base 8192 C.p Sl (selected++V) (tmv C 4 base t) t ∧
+      (1≤a→JPt base t selectedSlot (mul a P)) ∧
+      (a=0→∀ i<5,wordsVal t.mem base (selectedSlot i) 4=0) ∧
+      (∀ x∈V,wordsVal t.mem base x 4=wordsVal s.mem base x 4) :=
+  selectBlock_field_ok hV hi hf ht ha (R := [.x17]) (by decide) (Select.scanStore_ok hi.scr ha hidx hinc hmag hz)
+
 def signedEntry : List Instr :=
   Impl.P256.EcdhSelect.neon 2816 704 5400++negYW M 5 K.neg K.zero K.E.y K.bits
 
@@ -110,16 +145,21 @@ structure EntryPost (base : Addr) (P : Point C) (k j : Nat) (V : List Nat) (s t 
   point : 1≤magH 16 (Window5.nib (k+offset) j) →
     JPt base t selectedSlot (Window5.winPt C P (k+offset) j)
 
-theorem signedEntry_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
+/-- A selection `c` of digit `j`'s entry, then its `y` negated for a
+negative digit. -/
+theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
     {V : List Nat} (hV : ∀ x∈V,x∈live) (hro : ∀ x∈ro,x∈V)
-    (hi : Inv M base 8192 C.p Sl V (tmv C 4 base s) s)
-    (hf : Fixed base P k s) (ht : TblOk base P 16 s) (hj : j<52)
-    (h19 : s.gpr .x19=BitVec.ofNat 64 j)
-    (hmag : s.gpr .x2=BitVec.ofNat 64 (magH 16 (Window5.nib (k+offset) j))) :
-    WP isa (.block signedEntry) s (EntryPost base P k j V s) := by
-  have hm : magH 16 (Window5.nib (k+offset) j)≤16 := magH_le (Nat.mod_lt _ (by decide))
-  rw [signedEntry,WP.block_append_iff]
-  refine WP.mono (select_field_ok hV hi hf ht hm hmag) fun s₁ ⟨fr₁,c₁,i₁,p₁,z₁,same₁⟩=>?_
+    (hf : Fixed base P k s) (hj : j<52)
+    (h19 : s.gpr .x19=BitVec.ofNat 64 j) {c : List Instr}
+    (hc : WP isa (.block c) s fun t=>
+      Frame base work s t ∧ t.gpr .x19=s.gpr .x19 ∧
+      Inv M base 8192 C.p Sl (selected++V) (tmv C 4 base t) t ∧
+      (1≤magH 16 (Window5.nib (k+offset) j)→JPt base t selectedSlot (mul (magH 16 (Window5.nib (k+offset) j)) P)) ∧
+      (magH 16 (Window5.nib (k+offset) j)=0→∀ i<5,wordsVal t.mem base (selectedSlot i) 4=0) ∧
+      (∀ x∈V,wordsVal t.mem base x 4=wordsVal s.mem base x 4)) :
+    WP isa (.block (c++negYW M 5 K.neg K.zero K.E.y K.bits)) s (EntryPost base P k j V s) := by
+  rw [WP.block_append_iff]
+  refine WP.mono hc fun s₁ ⟨fr₁,c₁,i₁,p₁,z₁,same₁⟩=>?_
   have f₁ := hf.keep (frame_build fr₁)
   have hz : tmv C 4 base s₁ K.zero=0 := by unfold tmv; rw [f₁.zero,toM_zero]
   have hy : K.E.y∈selected++V := by apply List.mem_append_left; decide
@@ -190,6 +230,30 @@ theorem signedEntry_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
   · rw [he 2 (by decide) (by decide)]; exact p.z
   · rw [he 3 (by decide) (by decide),he 2 (by decide) (by decide)]; exact p.z2
   · rw [he 4 (by decide) (by decide),he 3 (by decide) (by decide),he 2 (by decide) (by decide)]; exact p.z3
+
+theorem signedEntry_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
+    {V : List Nat} (hV : ∀ x∈V,x∈live) (hro : ∀ x∈ro,x∈V)
+    (hi : Inv M base 8192 C.p Sl V (tmv C 4 base s) s)
+    (hf : Fixed base P k s) (ht : TblOk base P 16 s) (hj : j<52)
+    (h19 : s.gpr .x19=BitVec.ofNat 64 j)
+    (hmag : s.gpr .x2=BitVec.ofNat 64 (magH 16 (Window5.nib (k+offset) j))) :
+    WP isa (.block signedEntry) s (EntryPost base P k j V s) :=
+  signedBlock_ok hV hro hf hj h19
+    (select_field_ok hV hi hf ht (magH_le (Nat.mod_lt _ (by decide))) hmag)
+
+/-- `signedEntry` but its setup, from the setup's broadcasts. -/
+theorem signedEntryV_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
+    {V : List Nat} (hV : ∀ x∈V,x∈live) (hro : ∀ x∈ro,x∈V)
+    (hi : Inv M base 8192 C.p Sl V (tmv C 4 base s) s)
+    (hf : Fixed base P k s) (ht : TblOk base P 16 s) (hj : j<52)
+    (h19 : s.gpr .x19=BitVec.ofNat 64 j)
+    (hidx : s.v .v28=dup2 0) (hinc : s.v .v31=dup2 1)
+    (hmag : s.v .v30=dup2 (BitVec.ofNat 64 (magH 16 (Window5.nib (k+offset) j))))
+    (hz : ∀ i<10,s.v (Select.acc i)=0) :
+    WP isa (.block (Select.scan 2816 16++Select.store++negYW M 5 K.neg K.zero K.E.y K.bits)) s
+      (EntryPost base P k j V s) :=
+  signedBlock_ok hV hro hf hj h19
+    (selectV_field_ok hV hi hf ht (magH_le (Nat.mod_lt _ (by decide))) hidx hinc hmag hz)
 
 def entry : List Instr := tc.digit++signedEntry
 
