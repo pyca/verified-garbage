@@ -104,17 +104,20 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
       signed 5-bit windows in Jacobian coordinates, P-384 having prime order: `d` is recoded as \
       `d + 16 Σ_{j<78} 32^j`, whose 78 5-bit windows less 16 are digits in `[-16, 15]`; a table \
-      of `[1 … 16]P`, each entry with its `Z²` and `Z³`, is built in `scratch` by a co-Z \
-      doubling and co-Z additions (each keeping `P` with the new entry's `Z`); then, from the \
-      top digit's entry (the point at infinity for the digit zero), for each further digit, five \
-      doublings in place in Jacobian coordinates (dbl-2001-b, for `a = -3`, with the product \
-      `2YZ`) and the addition of the digit's entry, selected in constant time by loading all \
-      sixteen entries, " ++
-      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time, in two passes") ++
+      of `[1 … 16]P` is built in `scratch` by a co-Z doubling and co-Z additions (each keeping \
+      `P` with the new entry's `Z`) and made affine by one inversion; then, from the top digit's \
+      entry (the point at infinity for the digit zero), for each further digit, five doublings \
+      in place in Jacobian coordinates (dbl-2001-b, for `a = -3`, with the product `2YZ`) and \
+      the mixed addition of the digit's entry, selected in constant time by loading the `x` \
+      and `y` of all sixteen entries, " ++
+      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time with SSE2") ++
       ", and keeping (by masks) the one of the digit's magnitude, its `y` negated by a mask of its \
-      sign, by Jacobian addition with the entry's `Z²` and `Z³`, whose exceptional cases (equal \
-      or opposite points) do not arise for `d < n`; the sum is kept, by masks, unless the digit \
-      is zero, and the entry in its place where the accumulator is the point at infinity; \
+      sign; each digit's selection after the second runs during the previous digit's addition, \
+      its loads spread among the addition's field operations (whose products are written out) \
+      and kept in vector registers until the addition has read the entry before it; the \
+      addition's exceptional cases (equal or opposite points) do not arise for `d < n`; the sum \
+      is kept, by masks, unless the digit is zero, and the entry in its place where the \
+      accumulator is the point at infinity; \
       `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
       (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of the \
       checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
