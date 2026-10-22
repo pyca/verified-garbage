@@ -24,6 +24,37 @@ open VG.Impl.Ffdh.X86.Candidate
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
   {args : Nat → BitVec 32}
 
+/-- A phase's start: the modulus `w` in wide slot `j` prepared and the status 0, the first draw's
+state. -/
+theorem phaseStart_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args s)
+    (G : TapeGeo Ex args base bytes (s.gpr .esp) T.length)
+    (hT : Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) T.length = T) (hj9 : 9 ≤ j) (hj : j ≤ 10)
+    (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1)
+    (ho : w32 s.mem base octOff = Spec.Ffdh.witnessOctets w)
+    (hk : w32 s.mem base kOff = Spec.RsaKeyGen.bitLength (w - 1))
+    (hn : w32 s.mem base cntOff = n) (hc : w32 s.mem base curOff = c) :
+    WP isa (.seq (prepPhase j) (.block [.mov .eax (.imm 0), .store (sc stOff) .eax])) s fun u =>
+      Step Ex base bytes len args s u ∧ DrawAt Ex base bytes len args u w T n c u ∧
+      Kept base len [11, 14, 15] [twoOff, stOff] s.mem u.mem := by
+  refine WP.seq (WP.mono (prepPhase_ok h hj9 hj hw hw3 hodd) fun u₁ ⟨S₁, P₁, k₁⟩ => ?_)
+  refine wp_movi fun u₂ U₂ => hdr_store (S₁.inp.regs U₂.keeps U₂.mem) hdr_st
+    fun u₃ S₃ W₃ k₃ O₃ _ _ _ => WP.block_nil ?_
+  have S₂ : Step Ex base bytes len args u₁ u₂ := Step.regs S₁.inp U₂.mem U₂.keeps
+  have S₀ : Step Ex base bytes len args s u₃ := S₁.trans (S₂.trans S₃)
+  have k₀ : Kept base len [11, 14, 15] [twoOff, stOff] s.mem u₃.mem :=
+    k₁.mono.trans ((by rw [U₂.mem]; exact (Kept.refl _).mono : Kept base len [11, 14, 15] [twoOff, stOff] u₁.mem u₂.mem).trans
+      k₃.mono)
+  have P₀ : Prepped Ex base bytes len args w u₃ :=
+    P₁.keep ((P₁.toReady.regs U₂.keeps (by decide) (by decide) U₂.mem).hdr hdr_st S₃.keeps (by decide) (by decide) O₃)
+      ((by rw [U₂.mem]; exact (Kept.refl _).mono : Kept base len [] [stOff] u₁.mem u₂.mem).trans k₃) (by decide)
+  refine ⟨S₀, ⟨⟨Step.regs S₀.inp rfl (rs := []) ⟨fun _ _ => rfl, rfl, rfl⟩, P₀, by rw [tape_keep G S₀, hT],
+    (Kept.refl _).mono⟩, ?_, ?_, ?_, ?_, ?_⟩, k₀⟩
+  · rw [k₀.word_eq, ho]
+  · rw [k₀.word_eq, hk]
+  · rw [k₀.word_eq, hc]
+  · rw [k₀.word_eq, hn]
+  · rw [W₃, U₂.gpr]; rfl
+
 /-- A phase for the modulus `w` in wide slot `j`, with `n` witnesses to go and the tape `T` read
 from `c`: its status, the cursor where its result leaves the tape, and the words it changes. -/
 theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args s)
@@ -43,26 +74,8 @@ theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args 
     change sv s.mem base len .wide j < _ at this
     omega
   unfold phase
-  refine WP.seq (WP.mono (prepPhase_ok h hj9 hj hw hw3 hodd) fun u₁ ⟨S₁, P₁, k₁⟩ => ?_)
-  refine WP.seq (wp_movi fun u₂ U₂ => hdr_store (S₁.inp.regs U₂.keeps U₂.mem) hdr_st
-    fun u₃ S₃ W₃ k₃ O₃ _ _ _ => WP.block_nil ?_)
-  have S₂ : Step Ex base bytes len args u₁ u₂ := Step.regs S₁.inp U₂.mem U₂.keeps
-  have S₀ : Step Ex base bytes len args s u₃ := S₁.trans (S₂.trans S₃)
-  have k₀ : Kept base len [11, 14, 15] [twoOff, stOff] s.mem u₃.mem :=
-    k₁.mono.trans ((by rw [U₂.mem]; exact (Kept.refl _).mono : Kept base len [11, 14, 15] [twoOff, stOff] u₁.mem u₂.mem).trans
-      k₃.mono)
-  have P₀ : Prepped Ex base bytes len args w u₃ :=
-    P₁.keep ((P₁.toReady.regs U₂.keeps (by decide) (by decide) U₂.mem).hdr hdr_st S₃.keeps (by decide) (by decide) O₃)
-      ((by rw [U₂.mem]; exact (Kept.refl _).mono : Kept base len [] [stOff] u₁.mem u₂.mem).trans k₃) (by decide)
+  refine WP.assoc (WP.seq (WP.mono (phaseStart_ok h G hT hj9 hj hw hw3 hodd ho hk hn hc) fun u₃ ⟨S₀, A₀, k₀⟩ => ?_))
   have G₀ : TapeGeo Ex args base bytes (u₃.gpr .esp) T.length := by rw [S₀.esp]; exact G
-  have A₀ : DrawAt Ex base bytes len args u₃ w T n c u₃ := by
-    refine ⟨⟨Step.regs S₀.inp rfl (rs := []) ⟨fun _ _ => rfl, rfl, rfl⟩, P₀, by rw [tape_keep G S₀, hT],
-      (Kept.refl _).mono⟩, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [k₀.word_eq, ho]
-    · rw [k₀.word_eq, hk]
-    · rw [k₀.word_eq, hc]
-    · rw [k₀.word_eq, hn]
-    · rw [W₃, U₂.gpr]; rfl
   refine WP.seq (WP.mono (WP.loop (M := isa) (Q := DrawEnd Ex base bytes len args u₃ w T
       (ParameterCandidate.checkWitnesses w n (T.drop c)))
     (fun m t => ∃ n' c', m = T.length - c' ∧ DrawAt Ex base bytes len args u₃ w T n' c' t ∧ 1 ≤ n' ∧

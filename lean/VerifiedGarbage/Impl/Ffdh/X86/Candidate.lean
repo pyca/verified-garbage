@@ -205,10 +205,13 @@ def half : Prog isa := .seq (copy (sl 9) (sl 10) n1) (halve (sl 10))
 
 /-- The context of the modulus in slot `j`, one in slot 14, `w − 1` in 15, and `d` and `s`
 (slot 11, header) with `w − 1 = 2^s d`, `d` odd. -/
-def prepPhase (j : Nat) : Prog isa :=
+def prepHead (j : Nat) : Prog isa :=
   .seq (copy (sl j) (sl 0) n1) <| .seq (prepare .wide) <|
   .seq (setSmall (sl 14) n1 1) <| .seq (chain .sbb (sl 15) (sl j) (sl 14) n1) <|
-  .seq (copy (sl 15) (sl 11) n1) <| .seq (.block [.mov .eax (.imm 0), .store (sc twoOff) .eax]) <|
+  .seq (copy (sl 15) (sl 11) n1) (.block [.mov .eax (.imm 0), .store (sc twoOff) .eax])
+
+def prepPhase (j : Nat) : Prog isa :=
+  .seq (prepHead j) <|
   .loop (.seq (halve (sl 11)) (.block ([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1), .store (sc twoOff) .eax] ++
     lowWord (sl 11) ++ [.alu .and .eax (.imm 1)]))) .e
 

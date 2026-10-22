@@ -224,13 +224,14 @@ theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args
   · show u.zf = _
     rw [z, e₅, sv₄, and_one_zero _ (by omega), half, Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 2 ^ 32)]
 
-theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
+
+/-- The context of `w`, one, `w − 1` and its copy, and the count of halvings zero. -/
+theorem prepHead_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
     (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
-    WP isa (prepPhase j) s fun t => Step Ex base bytes len args s t ∧ Prepped Ex base bytes len args w t ∧
-      Kept base len [11, 14, 15] [twoOff] s.mem t.mem := by
+    WP isa (prepHead j) s (Halving Ex base bytes len args s w 0) := by
   have bl := h.bytes_lt
   have bw := bc_eq_cwc len .wide
-  unfold prepPhase
+  unfold prepHead
   refine WP.assoc (WP.seq (WP.mono (ready_ok h hj9 (by omega) hw (by omega) hodd) fun u₁ ⟨S₁, R₁, k₁⟩ => ?_))
   have h₁ := S₁.inp
   refine WP.seq (WP.mono (setW_ok h₁ (a := 14) (v := 1) (by decide) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
@@ -246,22 +247,32 @@ theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ 
   refine WP.seq (WP.mono (copyO_ok S₃.inp (a := 15) (b := 11) (by decide) (by decide) (by decide))
     fun u₄ ⟨S₄, V₄, k₄, O₄, K₄⟩ => ?_)
   have R₄ := R₃.slot (a := 11) (by decide) (by decide) K₄ (by decide) (by decide) O₄
-  refine WP.seq (wp_movi fun u₅ U₅ => hdr_store (S₄.inp.regs U₅.keeps U₅.mem) hdr_two fun u₆ S₆ W₆ k₆ O₆ G₆ _ _ =>
-    WP.block_nil ?_)
-  have H₀ : Halving Ex base bytes len args s w 0 u₆ := by
-    have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp U₅.mem U₅.keeps
-    refine ⟨S₂.trans (S₃.trans (S₄.trans (S₅.trans S₆))), ((R₄.regs U₅.keeps (by decide) (by decide) U₅.mem).hdr hdr_two
-      S₆.keeps (by decide) (by decide) O₆), ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega), ?_⟩
-    · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, k₃.slot_eq, V₂]
-    · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, V₃]
-    · rw [k₆.slot_eq, U₅.mem, V₄, V₃, Nat.pow_zero, Nat.div_one]
-    · rw [W₆, U₅.gpr]; rfl
-    · exact k₂.trans (k₃.mono.trans (k₄.mono.trans ((by rw [U₅.mem]; exact Kept.refl _ : Kept base len [] [] u₄.mem u₅.mem).mono.trans
-        k₆.mono)))
-  have hwl : w < 2 ^ (32 * cwc len .wide) := by rw [← hw]; exact val32_lt _ _ _ _
-  refine WP.loop (M := isa) (fun x t => ∃ k, x = (w - 1) / 2 ^ k ∧ x % 2 = 0 ∧ 0 < x ∧
-    Halving Ex base bytes len args s w k t) ?_ (w - 1) u₆ ⟨0, by simp, by omega, by omega, H₀⟩
-  rintro x t ⟨k, rfl, hx, hp, H⟩
+  refine wp_movi fun u₅ U₅ => hdr_store (S₄.inp.regs U₅.keeps U₅.mem) hdr_two fun u₆ S₆ W₆ k₆ O₆ G₆ _ _ =>
+    WP.block_nil ?_
+  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp U₅.mem U₅.keeps
+  refine ⟨S₂.trans (S₃.trans (S₄.trans (S₅.trans S₆))), ((R₄.regs U₅.keeps (by decide) (by decide) U₅.mem).hdr hdr_two
+    S₆.keeps (by decide) (by decide) O₆), ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega), ?_⟩
+  · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, k₃.slot_eq, V₂]
+  · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, V₃]
+  · rw [k₆.slot_eq, U₅.mem, V₄, V₃, Nat.pow_zero, Nat.div_one]
+  · rw [W₆, U₅.gpr]; rfl
+  · exact k₂.trans (k₃.mono.trans (k₄.mono.trans ((by rw [U₅.mem]; exact Kept.refl _ : Kept base len [] [] u₄.mem u₅.mem).mono.trans
+      k₆.mono)))
+
+/-- The halving loop's invariant: `k` halvings done, `(w − 1) / 2^k` still even. -/
+abbrev Halved (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (s : State) (w x : Nat) (t : State) : Prop :=
+  ∃ k, x = (w - 1) / 2 ^ k ∧ x % 2 = 0 ∧ 0 < x ∧ Halving Ex base bytes len args s w k t
+
+/-- A halving, and whether to halve again. -/
+theorem halveRound_ok {w x : Nat} {t : State} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) (hwl : w < 2 ^ (32 * cwc len .wide))
+    (H : Halved Ex base bytes len args s w x t) :
+    WP isa (.seq (halve (.slot .wide 11)) (.block ([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
+      .store (sc twoOff) .eax] ++ lowWord (.slot .wide 11) ++ [.alu .and .eax (.imm 1)]))) t fun u =>
+      (isa.eval .e u = some false ∧ Step Ex base bytes len args s u ∧ Prepped Ex base bytes len args w u ∧
+        Kept base len [11, 14, 15] [twoOff] s.mem u.mem) ∨
+      (isa.eval .e u = some true ∧ ∃ x' < x, Halved Ex base bytes len args s w x' u) := by
+  obtain ⟨k, rfl, hx, hp, H⟩ := H
   refine WP.mono (halveIter_ok H hx hp hwl) fun u ⟨Hu, z⟩ => ?_
   have half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
   by_cases ev : ((w - 1) / 2 ^ (k + 1)) % 2 = 0
@@ -270,5 +281,20 @@ theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ 
     have sp := splitTwos_of (k + 1) (w - 1) (by omega) Hu.even od
     refine .inl ⟨by rw [z]; simp [ev], Hu.step, ⟨Hu.ready, Hu.one14, Hu.m1, by rw [Hu.exp, sp], by rw [Hu.two, sp]⟩,
       Hu.kept⟩
+
+/-- The context of the modulus `w` in wide slot `j`, and the split `w − 1 = 2^s d`. -/
+theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
+    (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
+    WP isa (prepPhase j) s fun t => Step Ex base bytes len args s t ∧ Prepped Ex base bytes len args w t ∧
+      Kept base len [11, 14, 15] [twoOff] s.mem t.mem := by
+  have hwl : w < 2 ^ (32 * cwc len .wide) := by rw [← hw]; exact val32_lt _ _ _ _
+  unfold prepPhase
+  refine WP.seq (WP.mono (prepHead_ok h hj9 hj hw hw3 hodd) fun u₆ H₀ => ?_)
+  refine WP.loop (M := isa) (Halved Ex base bytes len args s w) ?_ (w - 1) u₆ ⟨0, by simp, by omega, by omega, H₀⟩
+  intro x t H
+  refine WP.mono (halveRound_ok hw3 hodd hwl H) fun u o => ?_
+  rcases o with ⟨e, r⟩ | ⟨e, r⟩
+  · exact .inl ⟨e, r⟩
+  · exact .inr ⟨e, r⟩
 
 end VG.Proof.Ffdh.X86.Cand
