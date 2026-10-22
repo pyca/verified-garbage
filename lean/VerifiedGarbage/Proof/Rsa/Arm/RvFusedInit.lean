@@ -25,7 +25,7 @@ open VG.Proof.Rsa.Arm.Keys
 open VG.Impl.Rsa.Arm.RecoverFused
 
 abbrev FCS (P : RP) (E : State → Prop) (j : Nat) : State → State → Prop :=
-  St P E (fun _ => AM P) liveM (fun σ => AWh P σ P.c) [wR, wM]
+  St P E (fun _ => AM P) liveM (fun σ => fusedAW P σ) [wM]
     (fun _ => upd (fun _ => 0) sCand j) [sCand] P.w nArr
 
 section
@@ -66,7 +66,7 @@ theorem fusedInit_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (h101 : 101 < P.n) (hj : j <
         (St.pconstant (d := sByte) (v := 0) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩))) ?_
   refine St.pfusedByteInit.mono (fun _ _ h => h) fun σ s h => h.mono
     (A' := fun σ => fusedA P j (fusedEval P j (P.el + P.dl) σ)) (L' := fusedKeep)
-    (AW' := fun σ => AWh P σ P.c) (LW' := [wR, wM])
+    (AW' := fun σ => fusedAW P σ) (LW' := [wM])
     (V' := fun σ => fusedV (fusedMeta P j (P.el + P.dl)) (fusedEval P j (P.el + P.dl) σ))
     (LS' := fusedSlots) ?_ (fun k hk => ⟨hk, rfl⟩) ?_
   · intro k hk

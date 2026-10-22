@@ -39,11 +39,11 @@ variable {P : RP} {E : State → Prop} {j : Nat} {st : State → VG.Proof.Rsa.Fu
 theorem fusedValue_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hj : j < 100)
     (cand : ∀ σ, E σ → V σ sCand = j) :
     VP (St P E (fun σ => fusedRootA P j (V σ) (st σ)) (mX :: fusedKeep)
-      (fun σ => AWh P σ P.c) [wR, wM] (fun σ => fusedSquareV P (V σ) (st σ))
+      (fun σ => fusedAW P σ) [wM] (fun σ => fusedSquareV P (V σ) (st σ))
       fusedSquareSlots P.w nArr)
       (.seq multiply (sel mY mX mXm sBit))
       (St P E (fun σ => fusedValueA P j (V σ) (st σ)) (mX :: fusedKeep)
-        (fun σ => AWh P σ P.c) [wR, wM] (fun σ => fusedSquareV P (V σ) (st σ))
+        (fun σ => fusedAW P σ) [wM] (fun σ => fusedSquareV P (V σ) (st σ))
         fusedSquareSlots P.w nArr) := by
   have pos : 0 < P.n := by omega
   refine VP.seq (St.pfusedMultiply hn hj (by decide) (by decide) (by decide) (by decide)

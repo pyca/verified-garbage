@@ -68,7 +68,7 @@ theorem fusedByte_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hj : j < 100)
   refine (St.pfusedByteTail (by decide) (by decide) (fun σ _ => ?_) (fun σ _ => ?_)).mono
     (fun _ _ h => h) fun σ s h => ⟨h.1.mono
       (A' := fun σ => fusedA P j (fusedEval P j i σ)) (L' := fusedKeep)
-      (AW' := fun σ => AWh P σ P.c) (LW' := [wR, wM])
+      (AW' := fun σ => fusedAW P σ) (LW' := [wM])
       (V' := fun σ => fusedV (fusedMeta P j i) (fusedEval P j i σ)) (LS' := fusedSlots)
       (fun k hk => ⟨hk, rfl⟩) (fun k hk => ⟨hk, rfl⟩) ?_, ?_⟩
   · change 1 ≤ fusedV (fusedMeta P j (i + 1)) (fusedEval P j i σ) sPtr ∧

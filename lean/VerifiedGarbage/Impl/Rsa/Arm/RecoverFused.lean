@@ -103,8 +103,9 @@ def candidate : Prog isa := seqs [init, .loop byte .ne, copy mY aRoot, .block ca
 def candidates : Prog isa :=
   .seq (.block [.mov .r1 (.imm 0), .str .r1 .r8 sCand]) (.loop candidate .ne)
 
-/-- Reuse setup and factor extraction around the fused candidate search. -/
-def rest : Prog isa := seqs [halving, mont, candidates, fin]
+/-- The fused search scans the full exponent and needs no preliminary
+halving. Reuse Montgomery setup and factor extraction directly. -/
+def rest : Prog isa := seqs [mont, candidates, fin]
 
 def valid : Prog isa := .seq numbers (.ite .eq rest fail)
 
