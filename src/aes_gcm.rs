@@ -696,10 +696,11 @@ const SHORT_READY: u32 = u32::MAX;
 /// measured on Neoverse N2 (#2865), `vg_aes_gcm_seal_with_powers` and
 /// `vg_aes_gcm_open_with_powers` cost 1.5–8% more there (seal through the
 /// same path as `vg_aes_gcm_seal`, for reasons its layout and calls did not
-/// explain; open through `openShort`'s eight blocks, for AES-256). Longer
-/// messages gain from their path for TLS records.
+/// explain; open through `openShort`'s eight blocks, for AES-256), and up
+/// to three blocks take 6–13% more instructions than the plain instances.
+/// Longer messages gain from their path for TLS records.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-const PLAIN_MAX: usize = 16;
+const PLAIN_MAX: usize = 48;
 
 /// What `Powers::get` gives a call on AArch64 with the `_with_powers`
 /// instances: the powers, or that the call computes them.
@@ -2793,7 +2794,7 @@ mod tests {
                 // `PLAIN_MAX` bytes), in place and out of place, sealing and
                 // opening, and do not count; either way they match.
                 assert!(k.powers.short_ready());
-                for len in [0, 1, 15, 16, 17, 63, 64, POWERS_MIN_LEN - 1] {
+                for len in [0, 1, 15, 16, 17, 48, 49, 63, 64, POWERS_MIN_LEN - 1] {
                     let mut want = msg;
                     let want_tag = base
                         .encrypt_in_place(&nonce, &aad, &mut want[..len])
