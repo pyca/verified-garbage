@@ -16,6 +16,10 @@ name: Benchmarks
 on:
   workflow_dispatch:
     inputs:
+      arm_rsa_recovery_prototype:
+        description: Run only the isolated, unproven ARMv7 RSA recovery experiment
+        type: boolean
+        default: false
       base_commit:
         description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
@@ -41,6 +45,7 @@ env:
 
 jobs:
   arches:
+    if: ${{ !inputs.arm_rsa_recovery_prototype }}
     name: Choose architectures
     runs-on: ubuntu-26.04
     timeout-minutes: 5
@@ -147,3 +152,30 @@ jobs:
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
           python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+
+  arm-rsa-recovery-prototype:
+    if: ${{ inputs.arm_rsa_recovery_prototype }}
+    name: Unproven ARMv7 RSA recovery experiment
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 10
+    container:
+      image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require native ARMv7 execution
+        run: |
+          # Emulation is useful for correctness; it cannot measure native speed.
+          /lib/ld-linux-armhf.so.3 --version
+          openssl version -a
+          head -40 /proc/cpuinfo
+      - name: Validate and measure the isolated prototype
+        run: |
+          python3 ci/experiments/arm_rsa_recover/run.py --work /tmp/arm-rsa-recovery
+          python3 ci/experiments/arm_rsa_recover/summarize.py /tmp/arm-rsa-recovery >> "$GITHUB_STEP_SUMMARY"
+      - uses: ./.github/actions/upload-artifact
+        if: always()
+        with:
+          name: arm-rsa-recovery-prototype
+          path: /tmp/arm-rsa-recovery
