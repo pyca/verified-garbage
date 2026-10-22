@@ -84,15 +84,43 @@ def mulTo (lo hi a b : Reg) : List Instr :=
 def mulAdd (lo hi a b : Reg) : List Instr :=
   [.mov .rax (.reg a), .mul b, .alu .add lo (.reg .rax), .alu .adc hi (.reg .rdx)]
 
-/-- `x = h0 r0 + h1 s1`, `y = h0 r1 + h1 r0 + h2 s1`, `rax = h2 r0`. -/
+/-- `h2 · c` (one word: `h2` is small) added to `lo:hi`, through `rbx`. -/
+def imulAdd (lo hi c : Reg) : List Instr :=
+  [.mov .rbx (.reg .rbp), .imul .rbx c, .alu .add lo (.reg .rbx), .alu .adc hi (.imm 0)]
+
+/-- The products of `h` and `r`, in the order their factors are ready (`h0`
+before `h1` before `h2`, as OpenSSL's `poly1305_blocks` does): `y = h0 r1 + h1
+r0 + h2 s1` into `r14, r15`, `x = h0 r0 + h1 s1` into `r11, r13`, with `h2 s1`
+and `h2 r0`, which fit one word, by `imul`. Then the top word `t = y1 + h2 r0
++ c` into `r15`, where `c` is the carry of `x1 + y0` (into `rbx`): `r11 +
+2⁶⁴ rbx + 2¹²⁸ r15 = x + 2⁶⁴ y + 2¹²⁸ h2 r0`. -/
 def products : List Instr :=
+  mulTo .r14 .r15 .r11 .r9 ++ mulTo .r11 .r13 .r11 .r8 ++ mulAdd .r14 .r15 .rbx .r8 ++
+  mulAdd .r11 .r13 .rbx .r10 ++ imulAdd .r14 .r15 .r10 ++
+  ([.mov .rbx (.reg .r13), .imul .rbp .r8, .alu .add .rbx (.reg .r14), .alu .adc .r15 (.reg .rbp)] :
+    List Instr)
+
+/-- `h = r11 + 2⁶⁴ rbx + 2¹²⁸ t`, with its top word `t` (in `r15`) replaced by
+`t mod 4` and `5 ⌊t / 4⌋ = (t - t mod 4) + ⌊t / 4⌋` added to the bottom. -/
+def carry : List Instr := [
+  .mov .rax (.reg .r15), .alu .and .rax (.imm (-4)),
+  .mov .rbp (.reg .r15), .alu .and .rbp (.imm 3), .shift .shr .r15 2,
+  .alu .add .rax (.reg .r15),
+  .alu .add .r11 (.reg .rax), .alu .adc .rbx (.imm 0), .alu .adc .rbp (.imm 0)]
+
+/-- The products in the other order: `x = h0 r0 + h1 s1` into `r12, r13`
+first, then `y = h0 r1 + h1 r0 + h2 s1` into `r14, r15`, and `h2 r0` into
+`rax`, with full `mul`s for `h2`. ChaCha20-Poly1305's stitched AVX2 pieces
+(`Stitch.addProd`) keep it: with `products` there, its 16 KiB records were 9%
+slower on Zen 3 (EPYC 7763, benchmark run 39691559560). -/
+def productsS : List Instr :=
   mulTo .r12 .r13 .r11 .r8 ++ mulAdd .r12 .r13 .rbx .r10 ++
   mulTo .r14 .r15 .r11 .r9 ++ mulAdd .r14 .r15 .rbx .r8 ++ mulAdd .r14 .r15 .rbp .r10 ++
   ([.mov .rax (.reg .rbp), .mul .r8] : List Instr)
 
-/-- `h = x + 2⁶⁴ y + 2¹²⁸ h2 r0`, with its top word `t` replaced by `t mod 4`
-and `5 ⌊t / 4⌋` added to the bottom. -/
-def carry : List Instr := [
+/-- `carry` for `productsS`: `h = x + 2⁶⁴ y + 2¹²⁸ h2 r0`, with its top word
+`t` replaced by `t mod 4` and `5 ⌊t / 4⌋` added to the bottom. -/
+def carryS : List Instr := [
   .alu .add .r14 (.reg .r13), .alu .adc .r15 (.reg .rax),
   .mov .r11 (.reg .r12), .mov .rbx (.reg .r14),
   .mov .rbp (.reg .r15), .alu .and .rbp (.imm 3),

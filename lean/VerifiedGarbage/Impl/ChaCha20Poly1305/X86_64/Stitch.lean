@@ -87,9 +87,9 @@ def firstBlock (pre : Bool) (n : Nat) : Nat :=
 
 /-- The first piece of block `j` of the 512 bytes at `rsi`: the block added
 to the accumulator, and the products of the sum. Its second piece is
-`Poly1305.X86_64.carry`. -/
+`Poly1305.X86_64.carryS`. -/
 def addProd (j : Nat) : List Instr :=
-  Poly1305.X86_64.addBlockAt .rsi (16 * j) 1 ++ Poly1305.X86_64.products
+  Poly1305.X86_64.addBlockAt .rsi (16 * j) 1 ++ Poly1305.X86_64.productsS
 
 section
 open ChaCha20.X86_64.Avx2 (quarter swap)
@@ -98,25 +98,25 @@ open ChaCha20.X86_64.Avx2 (quarter swap)
 piece after each quarter round. -/
 def sround4 (j : Nat) : Prog isa :=
   .seq (quarter 0 4 8 12) <| .seq (.block (addProd j)) <|
-  .seq (quarter 1 5 9 13) <| .seq (.block Poly1305.X86_64.carry) <| .seq (swap 8 10) <|
+  .seq (quarter 1 5 9 13) <| .seq (.block Poly1305.X86_64.carryS) <| .seq (swap 8 10) <|
   .seq (quarter 2 6 10 14) <| .seq (.block (addProd (j + 1))) <|
-  .seq (quarter 3 7 11 15) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarter 3 7 11 15) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarter 0 5 10 15) <| .seq (.block (addProd (j + 2))) <|
-  .seq (quarter 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <| .seq (swap 10 8) <|
+  .seq (quarter 1 6 11 12) <| .seq (.block Poly1305.X86_64.carryS) <| .seq (swap 10 8) <|
   .seq (quarter 2 7 8 13) <| .seq (.block (addProd (j + 3))) <|
-  .seq (quarter 3 4 9 14) (.block Poly1305.X86_64.carry)
+  .seq (quarter 3 4 9 14) (.block Poly1305.X86_64.carryS)
 
 /-- A double round absorbing blocks `j` to `j + 2`: a piece after each
 quarter round but the first of each half. -/
 def sround3 (j : Nat) : Prog isa :=
   .seq (quarter 0 4 8 12) <|
   .seq (quarter 1 5 9 13) <| .seq (.block (addProd j)) <| .seq (swap 8 10) <|
-  .seq (quarter 2 6 10 14) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarter 2 6 10 14) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarter 3 7 11 15) <| .seq (.block (addProd (j + 1))) <|
   .seq (quarter 0 5 10 15) <|
-  .seq (quarter 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <| .seq (swap 10 8) <|
+  .seq (quarter 1 6 11 12) <| .seq (.block Poly1305.X86_64.carryS) <| .seq (swap 10 8) <|
   .seq (quarter 2 7 8 13) <| .seq (.block (addProd (j + 2))) <|
-  .seq (quarter 3 4 9 14) (.block Poly1305.X86_64.carry)
+  .seq (quarter 3 4 9 14) (.block Poly1305.X86_64.carryS)
 
 end
 
@@ -138,24 +138,24 @@ open ChaCha20.X86_64.Avx2 (quarterV)
 nothing swapped. -/
 def sround4V (j : Nat) : Prog isa :=
   .seq (quarterV 0 4 8 12) <| .seq (.block (addProd j)) <|
-  .seq (quarterV 1 5 9 13) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 1 5 9 13) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarterV 2 6 10 14) <| .seq (.block (addProd (j + 1))) <|
-  .seq (quarterV 3 7 11 15) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 3 7 11 15) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarterV 0 5 10 15) <| .seq (.block (addProd (j + 2))) <|
-  .seq (quarterV 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 1 6 11 12) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarterV 2 7 8 13) <| .seq (.block (addProd (j + 3))) <|
-  .seq (quarterV 3 4 9 14) (.block Poly1305.X86_64.carry)
+  .seq (quarterV 3 4 9 14) (.block Poly1305.X86_64.carryS)
 
 /-- `sround3` with `vprold`. -/
 def sround3V (j : Nat) : Prog isa :=
   .seq (quarterV 0 4 8 12) <|
   .seq (quarterV 1 5 9 13) <| .seq (.block (addProd j)) <|
-  .seq (quarterV 2 6 10 14) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 2 6 10 14) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarterV 3 7 11 15) <| .seq (.block (addProd (j + 1))) <|
   .seq (quarterV 0 5 10 15) <|
-  .seq (quarterV 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 1 6 11 12) <| .seq (.block Poly1305.X86_64.carryS) <|
   .seq (quarterV 2 7 8 13) <| .seq (.block (addProd (j + 2))) <|
-  .seq (quarterV 3 4 9 14) (.block Poly1305.X86_64.carry)
+  .seq (quarterV 3 4 9 14) (.block Poly1305.X86_64.carryS)
 
 end
 
@@ -242,7 +242,7 @@ does, with `rbx`, `rbp` the bytes left (the ciphertext not yet absorbed),
 and the keystream, computed into `buf`, is XORed into them. -/
 
 /-- Block `j` of the 512 bytes at `rsi` absorbed. -/
-def piece (j : Nat) : List Instr := addProd j ++ Poly1305.X86_64.carry
+def piece (j : Nat) : List Instr := addProd j ++ Poly1305.X86_64.carryS
 
 /-- `Avx2Tail`'s double round `n`, on one set (`two = false`) or two,
 absorbing the `bl n` blocks from `fb n` (a schedule: 0, 3 or 4 blocks a
