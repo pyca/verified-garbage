@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
 import VerifiedGarbage.Proof.Framework.ContractPost
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
 meta import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -56,6 +56,7 @@ number, loaded from memory, public by correctness (`TailMid`). `bulk_rel` is sta
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Proof.ChaCha20.X86_64.Avx2 (Consts)
 open VG.Proof.Poly1305.X86_64 (hval off)
 open VG.Spec.Poly1305 (P bytesAt leNum clamp accumulate Repr)
@@ -169,7 +170,7 @@ theorem tailAB_taint (two pre : Bool) :
   cases two <;> cases pre <;> taint_decide_sum []
 
 theorem tailXE_taint : ∃ h, (taintS.check (τR [.rbx, .rsi, .rdx, .r9, .rsp])
-    (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.seq (Impl.ChaCha20Poly1305.X86_64.xorBufX 5 .rbx)
+    (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.seq (Impl.ChaCha20.X86_64.XorBuf.xorBufX 5 .rbx)
       (.block [.vop .vzeroupper, .mov .rcx (.reg .r9), .mov32 .rdx (.imm 0)]))) h).isSome = true := by
   taint_decide_sum []
 
@@ -3324,7 +3325,7 @@ theorem xorTail_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre
   refine WP.seq (WP.mono (xtArgs_ok h (o := o) (by omega)) fun s₁ ⟨d₁, a₁, rsi₁, g₁, rd₁, wr₁, m₁⟩ => ?_)
   rw [hm] at d₁ a₁
   rw [Nat.sub_sub_self hEL] at a₁
-  refine WP.seq (WP.mono (XorBufX.xorBufX_ok (wide_of v) (d := .r10) (by decide) a₁ rsi₁ d₁ (by omega)
+  refine WP.seq (WP.mono (ChaCha20.X86_64.XorBufX.xorBufX_ok (wide_of v) (d := .r10) (by decide) a₁ rsi₁ d₁ (by omega)
     ((hp.c_d.symm.sub_right (sub_ctx s₀ (k := o) (n := L s₀ - E) (by omega))).sub_left dsub)
     ⟨dR s₀, by rw [wr₁, h.wr]; exact hp.d_wr, Offset.contains_base _ (show E + (L s₀ - E) ≤ L s₀ by omega) (by omega)⟩
     ⟨ctxR s₀, by rw [rd₁, wr₁, h.rd, h.wr]; simp [hp.ctx_wr], by

@@ -27,6 +27,7 @@ calls use 24 bytes below the frame.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 /-- A state satisfying `seal`'s precondition (with no additional data and no
 data, `tag` at `0x3000` and `work` at 0). -/

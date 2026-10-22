@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.FromBuf
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -29,7 +30,7 @@ open VG.Proof.ChaCha20
 open VG.Proof.ChaCha20.X86_64.Avx2 (APre est edp eL ebp edR eret estk D0 KS frR eL_lt xorAvx2X86_64
   add_ofNat in_dR calleeSaved_ne ctr_add plus hiR hiR_contains hiR_sub Consts)
 open VG.Proof.ChaCha20.X86_64.Avx512Tail (Done win win_sub not_win ea_win ks_at ctx_of Ctx wregs S0
-  r9_not_calleeSaved data_step fromBuf_ok fin_ok Fin SInv Done.fin scalarT_ok)
+  r9_not_calleeSaved data_step fin_ok Fin SInv Done.fin scalarT_ok)
 
 /-! ## The invariant -/
 
@@ -152,7 +153,7 @@ theorem fromBufT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hn : eL s₀ - p 
     rcases hr with rfl | rfl
     · exact fun hc => hp.d_b _ (in_dR hk) (Region.sub_prefix (by omega) _ hc)
     · simp only [Region.Contains]; omega
-  refine fromBuf_ok hp (p := p) (n := eL s₀ - p) (by have := h.le; omega) hn (by rw [g₃]; exact h.rsi)
+  refine fromBufY_ok hp (p := p) (n := eL s₀ - p) (by have := h.le; omega) hn (by rw [g₃]; exact h.rsi)
     (by rw [g₃]; exact hr9) (by rw [g₃]; exact h.rdx) (rd₃.trans h.rd) (wr₃.trans h.wr)
     (fun r hr => by rw [g₃]; exact h.keep r hr) (fun k hk => ?_) (fun k hk => ?_) hb ?_
   · rw [f₃ _ (nd k (by omega)), h.data k (by omega), ite_eq_left hk]
@@ -281,7 +282,7 @@ theorem last3T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 2
     · have x := d₃ k hk
       rw [g₂, h.rsi, m₂, hS] at x
       rw [x, ks_at h.dvd (by omega) (by omega), Nat.add_sub_cancel_left, ← hS']
-  refine fromBuf_ok hp (p := p + 256) (n := eL s₀ - (p + 256)) (by omega) (by omega) e₁
+  refine fromBufY_ok hp (p := p + 256) (n := eL s₀ - (p + 256)) (by omega) (by omega) e₁
     (by rw [gk _ (by decide) (by decide)]; exact hr9) e₂ (by rw [rd₄, rd₃, rd₂, h.rd])
     (by rw [wr₄, wr₃, wr₂, h.wr]) (fun r hr => ?_) (fun k hk => ?_) (fun k hk => ?_) (fun k hk => ?_) ?_
   · obtain ⟨_, b, c⟩ := calleeSaved_ne hr

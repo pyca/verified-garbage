@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
-# ChaCha20-Poly1305 on x86-64: XORing keystream from a buffer, `2 ^ w` bytes at a time
+# ChaCha20 on x86-64: XORing keystream from a buffer, `2 ^ w` bytes at a time
 
 `xorBufX w d` XORs the `n` bytes at `B` (in `rsi`) into the `n` bytes at `D`
 (in `d`), `n` being in `rdx` (`xorBufX_ok`): `N = 2 ^ w` bytes at a time
@@ -24,9 +24,9 @@ are written.
 
 set_option linter.unusedSimpArgs false
 
-namespace VG.Proof.ChaCha20Poly1305.X86_64.XorBufX
+namespace VG.Proof.ChaCha20.X86_64.XorBufX
 
-open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20.X86_64.XorBuf
+open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.XorBuf
 open VG.Proof.ChaCha20.X86_64.XorBuf (Inv Post inRegions_offset buf_not_data contains_byte xorBuf_ok)
 
 /-! ## Words of `N` bytes -/
@@ -298,4 +298,4 @@ theorem xorBufX_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d : Reg}
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, hsub⟩)
   · rw [hp'.keep r h₁ h₂ h₃, g₃ r h₆ h₅ h₄, hR₂.keep r h₁ h₃]
 
-end VG.Proof.ChaCha20Poly1305.X86_64.XorBufX
+end VG.Proof.ChaCha20.X86_64.XorBufX
