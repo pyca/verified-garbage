@@ -182,26 +182,21 @@ theorem sqTail_ct : RelCT isa (Two SQM) (seqs [.block sqLogic, wordLoop 0 selBod
 /-- A squaring leaks the same in runs that agree on the public data. -/
 theorem sqBody_ct (M : Mont) : RelCT isa (Two (SQ true)) (sqBody M.mm) fun _ _ => True := by
   have hB : ∀ (hy : Bool) p s, SQ hy p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ h => h.ws
-  rw [show sqBody M.mm = seqs ([copyA aX aY, M.mm aX aX aY] ++ (eqA aX aO ++ ([.block (eqStore sMask)] ++
+  rw [show sqBody M.mm = seqs ([M.mm aX aY aY] ++ (eqA aX aO ++ ([.block (eqStore sMask)] ++
     (eqA aX aNg ++ [.block sqLogic, wordLoop 0 selBody, .block sqNext])))) by
       simp only [sqBody, List.append_assoc]]
   refine RelCT.seqs_append (by simp) (by simp [eqA]) (RelCT.seq (R := Two (SQ false)) ?_ ?_)
   · simp only [seqs]
-    refine RelCT.seq (R := Two (SQ true)) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hB true) (by taint_decide)
-      fun p s h => ?_) (mm_gct RpP.B RpP.Z (fun p => wk p.k) (hB true) M (by unfold MmUse; decide) fun p s h => ?_)
-    · have hw := h.ws
-      exact WP.mono (copyA_ok hw (o := aX) (a := aY) (by decide) (by decide) (by decide)) fun u ⟨_, o, k⟩ =>
-        h.step (Frm.rg_of_out o (by omega) [aX] [] (by decide)) (by decide) (by simp) (by simp) (by decide) k
-          (by decide)
-    · obtain ⟨minv, N, r, t, kk, done, ok, hc, hk, h1, h2, h3, hyl⟩ := h
-      have hg := hc.good
-      have hw2 := hc.ws.w2
-      exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega) (o := aX) (a := aX) (b := aY) (by decide)
-        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.hinv
-        (by rw [hc.hn]; exact hyl rfl)) fun u ⟨_, _, _, ha, k⟩ =>
-        (show SQ false p s from ⟨minv, N, r, t, kk, done, ok, hc, hk, h1, h2, h3, fun e => by cases e⟩).step
-          (Frm.rg_of_arrays ha [aX, aAcc, aTmp] [] (by decide)) (by decide) (by simp) (by simp) (by simp) k
-          (by decide)
+    refine mm_gct RpP.B RpP.Z (fun p => wk p.k) (hB true) M (by unfold MmUse; decide) fun p s h => ?_
+    obtain ⟨minv, N, r, t, kk, done, ok, hc, hk, h1, h2, h3, hyl⟩ := h
+    have hg := hc.good
+    have hw2 := hc.ws.w2
+    exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega) (o := aX) (a := aY) (b := aY) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.hinv
+      (by rw [hc.hn]; exact hyl rfl)) fun u ⟨_, _, _, ha, k⟩ =>
+      (show SQ false p s from ⟨minv, N, r, t, kk, done, ok, hc, hk, h1, h2, h3, fun e => by cases e⟩).step
+        (Frm.rg_of_arrays ha [aX, aAcc, aTmp] [] (by decide)) (by decide) (by simp) (by simp) (by simp) k
+        (by decide)
   refine RelCT.seqs_append (by simp [eqA]) (by simp) (RelCT.seq (R := Two (SQ false))
     (eqA_gct RpP.B RpP.Z (fun p => wk p.k) (hB false) (by taint_decide) fun p s h => ?_) ?_)
   · exact WP.mono (eqA_ok h.ws (a := aX) (b := aO) (by decide) (by decide)) fun u ⟨_, m, k⟩ =>

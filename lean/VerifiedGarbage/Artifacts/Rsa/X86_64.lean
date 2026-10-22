@@ -132,7 +132,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_recover_primes`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`."]
+        `vg_rsa_mont_mul_adx`. The repeated squarings pass the same operand index twice, \
+        using the triangular square tiles when the word count is a multiple of 8, \
+        without copying the operand."]
     code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.adx.mm
     stack := 8
     verified := Proof.Rsa.X86_64.Instances.recoverAdx_verified
