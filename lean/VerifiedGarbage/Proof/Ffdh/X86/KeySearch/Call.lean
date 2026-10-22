@@ -115,6 +115,37 @@ theorem below_eq {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .es
 theorem keyStatus_le3 (a : Parameters) (x : Nat) : keyStatus a x ≤ 3 := by
   rcases keyStatus_cases a x with h | h | h <;> rw [h] <;> decide
 
+/-- The callee's domain and tape, on its entry. -/
+theorem entry_bytes {o t : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Nat} (h : Fr o ds f t)
+    (hu : used + (arg o 7).toNat ≤ (arg o 9).toNat) (v : BitVec 32) :
+    Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v) (argumentPointer o 5) (arg o 6).toNat =
+      (ofState o).dom ∧
+    Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v) ((arg o 8 + BitVec.ofNat 32 used).setWidth 64)
+      (arg o 7).toNat = ((randOf o).drop used).take (arg o 7).toNat := by
+  have A := h.abi
+  have hpl := A.pLen
+  unfold Spec.Ffdh.pLenValid at hpl
+  have hb := A.dBound
+  have hrb := A.rBound
+  have fe : ∀ v : BitVec 32, Frame [⟨low o + BitVec.ofNat 64 116, 4⟩] t.mem
+      (t.mem.writeW (low o + BitVec.ofNat 64 116) v) := fun v =>
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 116, 4⟩ (lowR o) := low_sub (by decide)
+  have dE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v) (argumentPointer o 5)
+      (arg o 6).toNat = (ofState o).dom := fun v => by
+    rw [bytes_frame (fe v) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (A.lowD.sub_left Rs).symm) (by omega),
+      bytes_frame h.frame (dom_apart A) (by omega)]; rfl
+  have rE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v)
+      ((arg o 8 + BitVec.ofNat 32 used).setWidth 64) (arg o 7).toNat =
+      ((randOf o).drop used).take (arg o 7).toNat := fun v => by
+    have W := win_sub A hu
+    rw [bytes_frame (fe v) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ((A.lowRand.sub_left Rs).sub_right W).symm)
+      (by omega), bytes_frame h.frame (fun r hr => (rand_apart A r hr).sub_left W) (by omega),
+      win_base A hu, bytes_window _ _ hu]
+  exact ⟨dE v, rE v⟩
+
 theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     (h : Fr o liveDs (liveF (ofState o) e used keys scalars) t)
     (hu : used + (arg o 7).toNat ≤ (arg o 9).toNat) (ha : ArgsAt o used 11 t.mem) :
@@ -138,23 +169,8 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     ce_arg A h.esp ha _ _ (show 8 < 11 by decide), callArg, Nat.reduceEqDiff, ↓reduceIte, ret_eq A h.esp] at hp
   have hpl := A.pLen
   unfold Spec.Ffdh.pLenValid at hpl
-  have fe : ∀ v : BitVec 32, Frame [⟨low o + BitVec.ofNat 64 116, 4⟩] t.mem
-      (t.mem.writeW (low o + BitVec.ofNat 64 116) v) := fun v =>
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 116, 4⟩ (lowR o) := low_sub (by decide)
-  have dE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v) (argumentPointer o 5)
-      (arg o 6).toNat = (ofState o).dom := fun v => by
-    rw [bytes_frame (fe v) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (A.lowD.sub_left Rs).symm) (by omega),
-      bytes_frame h.frame (dom_apart A) (by omega)]; rfl
-  have rE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v)
-      ((arg o 8 + BitVec.ofNat 32 used).setWidth 64) (arg o 7).toNat =
-      ((randOf o).drop used).take (arg o 7).toNat := fun v => by
-    have W := win_sub A hu
-    rw [bytes_frame (fe v) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ((A.lowRand.sub_left Rs).sub_right W).symm)
-      (by omega), bytes_frame h.frame (fun r hr => (rand_apart A r hr).sub_left W) (by omega),
-      win_base A hu, bytes_window _ _ hu]
+  have dE := fun v => (entry_bytes h hu v).1
+  have rE := fun v => (entry_bytes h hu v).2
   simp only [dE, rE] at hp
   obtain ⟨hr, hout⟩ := hp A.domValid
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
