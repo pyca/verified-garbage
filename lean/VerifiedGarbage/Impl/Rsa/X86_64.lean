@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
 
 /-!
 # RSA with a precomputed modulus on x86-64
@@ -59,12 +60,13 @@ def fail : Prog isa :=
     (.seq (.loop (.block [.store8 (at0 .rsi) .rax, .alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) .ne)
       (.block exit))
 
-/-- The computation, once `m` is known valid: `m` into its array, `-m⁻¹`,
+/-- The computation, once `m` is known valid: `m` into its array (eight bytes
+at a time when its length is a multiple of eight: `WordIO.load`), `-m⁻¹`,
 `R² mod m` (`r2`: `R2Words.choice`, or another computation of it, such as
 `R2Adx.choice` with ADX), then `m` and `R² mod m` to `pre`, and 1 returned. -/
 def main (r2 : Prog isa := R2Words.choice mul) : Prog isa := seqs [
   .block head,
-  loadBE,
+  WordIO.load,
   .block (([.mov .r10 (.reg .rbx), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .rbx))] : List Instr) ++
     minv ++ ([.store (hdr sMinv) .r15] : List Instr)),
   -- `R² mod m`, by word steps when `m`'s top bit is set and `w` a multiple of 4.

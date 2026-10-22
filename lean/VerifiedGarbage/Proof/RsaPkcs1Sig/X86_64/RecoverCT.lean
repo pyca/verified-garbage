@@ -458,17 +458,17 @@ theorem compare_two : RelCT isa (Two (At J7)) compare (Two (At J8)) :=
       have hp := S.1
       have hk1 := hp.k1
       have hk2 := hp.k2
-      have hr : ∀ i < (s.gpr .rcx).toNat, InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
-          InRegions (t.rd ++ t.wr) (t.gpr .rsi + BitVec.ofNat 64 i) 1 := fun i hi => by
+      have hr : InRegions (t.rd ++ t.wr) (t.gpr .rdi) (s.gpr .rcx).toNat ∧
+          InRegions (t.rd ++ t.wr) (t.gpr .rsi) (s.gpr .rcx).toNat := by
         rw [hdi, hsi, he.wr]
-        obtain ⟨r₁, h₁, c₁⟩ := frame_bytes' hp (d := oEM1) (n := (s.gpr .rcx).toNat)
-          (by unfold oEM1 frameBytes; omega) i hi
-        obtain ⟨r₂, h₂, c₂⟩ := frame_bytes' hp (d := oEM2) (n := (s.gpr .rcx).toNat)
-          (by unfold oEM2 frameBytes; omega) i hi
+        obtain ⟨r₁, h₁, c₁⟩ := frame_span' hp (d := oEM1) (n := (s.gpr .rcx).toNat)
+          (by unfold oEM1 frameBytes; omega)
+        obtain ⟨r₂, h₂, c₂⟩ := frame_span' hp (d := oEM2) (n := (s.gpr .rcx).toNat)
+          (by unfold oEM2 frameBytes; omega)
         exact ⟨⟨r₁, List.mem_append_right _ h₁, c₁⟩, ⟨r₂, List.mem_append_right _ h₂, c₂⟩⟩
       refine WP.mono (compare_ok (by rw [hcx]) (by omega) hr) fun u ⟨hK, hm, hdx⟩ =>
         ⟨s, S, he.regs (hK.gpr (by decide)) hm hK.2.1 hK.2.2, by rw [hK.gpr (by decide), hcx], ?_, hg⟩
-      rw [hdx, hdi, hsi, Ver.setWidth_byte_eq_zero, VG.Proof.Ct.diff_zero, ← Ver.bytesAt_eq_iff, h1, h2]
+      rw [hdx, hdi, hsi, EqBytes, ← Ver.bytesAt_eq_iff, h1, h2]
 
 theorem test_two : RelCT isa (Two (At J8)) (.block [.alu .test .rdx (.reg .rdx)]) (Two (At J9)) :=
   two_piece [] (fun _ _ _ _ _ _ h => absurd h List.not_mem_nil) (by taint_decide)

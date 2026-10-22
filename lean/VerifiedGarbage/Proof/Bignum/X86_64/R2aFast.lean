@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
 
 /-!
 # `R² mod m` by word steps with ADX on x86-64
@@ -188,7 +189,7 @@ theorem fast_eq : fast = .seq (.block [.mov .rbx (.mem (hdr (sArr aR2))),
     (.seq (wordLoop 0 R2Words.negBody) (.seq (.block [.mov .r8 (.reg .rbx), .mov .rbx (.mem (hdr (sArr aAcc)))])
       (.seq R2Words.copyBack
         (.seq (.block [.mov .rbx (.mem (hdr (sArr aR2))), .mov .r8 (.mem (hdr (sArr aTmp)))])
-          (.seq R2Words.recip (.seq (.block [.mov .rcx (.mem (hdr sW))]) steps)))))) := rfl
+          (.seq recipN (.seq (.block [.mov .rcx (.mem (hdr sW))]) steps)))))) := rfl
 
 /-- `fast`: `R² mod m`, for the odd `m` of `w` words (a multiple of 4), its
 top word at least `2^63`. -/
@@ -293,7 +294,7 @@ theorem fast_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
     rw [hm₆, ho₅.wv (by omega_using [sMA]) (by omega_using [hnw, e2]), ho₂.wv (by omega_using [sM]) (by omega_using [hnw, e2]), hm₁, hn]
   have hT₆ : 2 ^ 63 ≤ (word t₆.mem B (slot w aN + 8 * (w - 1))).toNat := by
     rw [hm₆, ho₅.word (by omega_using [sMA]) (by omega_using [hnw, sMA, sAV, eV]), ho₂.word (by omega_using [sXA, sMA]) (by omega_using [hnw, sMA, sAV, eV]), hm₁]; exact hT
-  refine WP.seq (WP.mono (R2w.recip_ok hs₆ h610 h612 h68 (by omega_using [hw]) e2 eV hT₆) fun t₇ ⟨hm₇, k₇⟩ => ?_)
+  refine WP.seq (WP.mono (recipN_ok hs₆ h610 h612 h68 (by omega_using [hw]) e2 eV hT₆) fun t₇ ⟨hm₇, k₇⟩ => ?_)
   have hvlt : (2 ^ 128 - 1) / (word t₆.mem B (slot w aN + 8 * (w - 1))).toNat - 2 ^ 64 < 2 ^ 64 := by
     have : (2 ^ 128 - 1) / (word t₆.mem B (slot w aN + 8 * (w - 1))).toNat < 2 ^ 65 := by
       rw [Nat.div_lt_iff_lt_mul (by omega_using [hT₆])]; omega_using [hT₆]

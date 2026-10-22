@@ -214,6 +214,7 @@ structure PcCtx (s : State) : Prop where
     (s.gpr .r9).toNat * 8 ≤ ofs (s.gpr .r8) (s.gpr .rdi + BitVec.ofNat 64 j)
   hret : ∀ b < 8, (s.gpr .r9).toNat * 8 ≤ ofs (s.gpr .r8) (s.gpr .rsp + BitVec.ofNat 64 b) ∧
     16 * (((s.gpr .rcx).toNat + 7) / 8) ≤ ofs (s.gpr .rdi) (s.gpr .rsp + BitVec.ofNat 64 b)
+  inSpan : InRegions (s.rd ++ s.wr) (s.gpr .rdx) (s.gpr .rcx).toNat
 
 theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   simp only [pcContract] at h
@@ -228,7 +229,9 @@ theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   refine ⟨hk1, hk2, hpl, by omega_arith, hs, src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
     fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj => ⟨_, hpre, contains_byte _ (by omega_arith) (by omega_arith)⟩,
-    fun j hj => out_scr dPs (contains_byte _ (by omega_arith) (by omega_arith)), fun b hb => ?_⟩
+    fun j hj => out_scr dPs (contains_byte _ (by omega_arith) (by omega_arith)), fun b hb => ?_,
+    ⟨⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, by rw [hrd]; simp,
+      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩⟩
   have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
   exact ⟨out_scr dRs hc, hp8 ▸ out_scr dRp hc⟩
 
@@ -299,7 +302,8 @@ theorem pcCode_correct (M : Mont) (r : R2Impl M)
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = true := by simpa using hb
     refine WP.mono (pcMain_ok M r hs₂ hdi₂ hz hk1 hk2 (by rw [hm₂]; exact hO) (by rw [hm₂, hK, ofNat_toNat64])
-      (by rw [hm₂]; exact hN) (c.hnb.congrK i₂ kk) (bytesAt_length _ _ _) hv hw c.hps)
+      (by rw [hm₂]; exact hN) (c.hnb.congrK i₂ kk) (bytesAt_length _ _ _) hv
+      (by rw [kk.2.1, kk.2.2]; exact c.inSpan) hw c.hps)
       fun t ⟨ws, hws, hp⟩ => fin t ws true hp (by rw [hws]; rfl) fun h => absurd h (by decide)
 
 end VG.Proof.Bignum.X86_64

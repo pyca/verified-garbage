@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.WordStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
 
 /-!
 # `R² mod m` by word steps with ADX: constant time but for `m`
@@ -221,7 +223,7 @@ theorem t_eq {T q R W V : Nat} (hT : T < W) (hR : R ≤ W) (h : (T + q * R) % W 
   exact e
 
 theorem sf_ok {p : SPub} {s : State} (h : SH p s) :
-    WP isa (.seq (.loop (.block tile) .ne) (.block mulTop)) s (SF p.t1 p) := by
+    WP isa (.seq tiles (.block mulTop)) s (SF p.t1 p) := by
   obtain ⟨hp, hbx, h10, h12, hsi, hdx, h8, h9, h14, h15⟩ := h
   have hp' := hp
   obtain ⟨hg, hw, hw4, hw', _, _, hX, hM, hXM, hC⟩ := hp'
@@ -403,6 +405,95 @@ theorem steps_ct : RelCT isa (Two StepsPre) steps (Two fun p s => StepsAt p p.c 
       fun t ⟨hz, hI'⟩ => ⟨eval_ne_count hj hz, fun _ => ⟨σ, T, hI', hZ, hw, hw4, hw', hc', hM, hT⟩,
         fun e => e ▸ ⟨σ, T, hI', hZ, hw, hw4, hw', hc', hM, hT⟩⟩
 
+/-! ## The reciprocal's corrections
+
+`recipN`'s loops branch on `v` and `d`, which agree in both runs: `d` is
+`m`'s top word, and `v` starts as `guessV d`. -/
+
+section Recip
+variable {α : Type} (Φ : α → State → Prop) (D : α → Nat)
+
+/-- `Φ`, `d = D a` in `rsi` and the word `v` in `rcx`. -/
+def RD (q : α × Nat) (s : State) : Prop :=
+  Φ q.1 s ∧ s.gpr .rsi = BitVec.ofNat 64 (D q.1) ∧ s.gpr .rcx = BitVec.ofNat 64 q.2 ∧ q.2 < 2 ^ 64
+
+theorem pins_RD (n : Nat) : Pins (fun a s => RD Φ D (a, n) s) [.rcx, .rsi] := by
+  intro a s₁ s₂ h₁ h₂ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [h₁.2.2.1, h₂.2.2.1]
+  · rw [h₁.2.1, h₂.2.1]
+
+/-- With `(2^64 + v) d < 2^128`. -/
+def RU (q : α × Nat) (s : State) : Prop := RD Φ D q s ∧ over q.2 (D q.1) = false
+
+theorem pins_RU (n : Nat) : Pins (fun a s => RU Φ D (a, n) s) [.rcx, .rsi] :=
+  fun a s₁ s₂ h₁ h₂ => pins_RD Φ D n a s₁ s₂ h₁.1 h₂.1
+
+theorem downLoop_ct (hΦ : ∀ a s t, Φ a s → t.mem = s.mem → Keep [.rdx, .r14, .rax, .rcx] s t → Φ a t)
+    (hD : ∀ a, D a < 2 ^ 64) :
+    RelCT isa (Two (RD Φ D)) (.loop (.block recipDown) .ne) (Two (RU Φ D)) := by
+  have key : ∀ n, RelCT isa (fun s₁ s₂ => ∃ a, RD Φ D (a, n) s₁ ∧ RD Φ D (a, n) s₂)
+      (.loop (.block recipDown) .ne) (Two (RU Φ D)) := by
+    refine RelCT.loop (M := isa) (fun n s₁ s₂ => ∃ a, RD Φ D (a, n) s₁ ∧ RD Φ D (a, n) s₂) fun n => ?_
+    refine (two_post (Φ := fun a s => RD Φ D (a, n) s)
+      (Ψ := fun a s => RD Φ D (a, n - (over n (D a)).toNat) s ∧ s.zf = some (!over n (D a)))
+      (two_taint [.rcx, .rsi] (pins_RD Φ D n) (by taint_decide)) fun a s h => ?_).mono (fun _ _ h => h) ?_
+    · exact WP.mono (down_ok h.2.2.1 h.2.2.2 h.2.1 (hD a)) fun t ⟨hcx, hz, hm, k⟩ =>
+        ⟨⟨hΦ _ _ _ h.1 hm k, (k.gpr (by decide)).trans h.2.1, hcx, by omega_using [h.2.2.2]⟩, hz⟩
+    · rintro s₁ s₂ ⟨a, ⟨h₁, z₁⟩, h₂, z₂⟩
+      refine ⟨by simp only [eval, z₁, z₂], fun hf => ?_, fun ht => ?_⟩
+      · have ho : over n (D a) = false := by
+          simpa only [eval, z₁, Option.map_some, Bool.not_not, Option.some.injEq] using hf
+        rw [ho, Bool.toNat_false, Nat.sub_zero] at h₁ h₂
+        exact ⟨(a, n), ⟨h₁, ho⟩, h₂, ho⟩
+      · have ho : over n (D a) = true := by
+          simpa only [eval, z₁, Option.map_some, Bool.not_not, Option.some.injEq] using ht
+        rw [ho, Bool.toNat_true] at h₁ h₂
+        exact ⟨n - 1, by have := over_pos (hD a) ho; omega_using [this], a, h₁, h₂⟩
+  exact fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, h₁, h₂⟩ e₁ e₂ => key q.2 s₁ s₂ t₁ t₂ s₁' s₂' ⟨q.1, h₁, h₂⟩ e₁ e₂
+
+theorem upLoop_ct (hΦ : ∀ a s t, Φ a s → t.mem = s.mem → Keep [.rdx, .r11, .r14, .rax, .rcx] s t → Φ a t)
+    (hD : ∀ a, D a < 2 ^ 64) :
+    RelCT isa (Two (RU Φ D)) (.loop (.block recipUp) .ne)
+      (Two fun q s => RU Φ D q s ∧ up q.2 (D q.1) = false) := by
+  have key : ∀ n, RelCT isa (fun s₁ s₂ => ∃ a v, n = 2 ^ 64 - v ∧ RU Φ D (a, v) s₁ ∧ RU Φ D (a, v) s₂)
+      (.loop (.block recipUp) .ne) (Two fun q s => RU Φ D q s ∧ up q.2 (D q.1) = false) := by
+    refine RelCT.loop (M := isa) (fun n s₁ s₂ => ∃ a v, n = 2 ^ 64 - v ∧ RU Φ D (a, v) s₁ ∧ RU Φ D (a, v) s₂)
+      fun n => ?_
+    refine RelCT.mono (P := Two fun (q : α × Nat) s => n = 2 ^ 64 - q.2 ∧ RU Φ D q s) ?_
+      (fun s₁ s₂ ⟨a, v, hn, h₁, h₂⟩ => ⟨(a, v), ⟨hn, h₁⟩, hn, h₂⟩) (fun _ _ h => h)
+    refine (two_post (Φ := fun (q : α × Nat) s => n = 2 ^ 64 - q.2 ∧ RU Φ D q s)
+      (Ψ := fun q s => n = 2 ^ 64 - q.2 ∧ RD Φ D (q.1, q.2 + (up q.2 (D q.1)).toNat) s ∧
+        over q.2 (D q.1) = false ∧ s.zf = some (!up q.2 (D q.1)))
+      (two_taint [.rcx, .rsi] (fun q s₁ s₂ h₁ h₂ => pins_RU Φ D q.2 q.1 s₁ s₂ h₁.2 h₂.2) (by taint_decide))
+      fun q s h => ?_).mono (fun _ _ h => h) ?_
+    · obtain ⟨hn, ⟨hΦ', hsi, hcx, hv⟩, ho⟩ := h
+      have hb : q.2 + (up q.2 (D q.1)).toNat < 2 ^ 64 := by
+        cases hu : up q.2 (D q.1)
+        · rw [Bool.toNat_false, Nat.add_zero]; exact hv
+        · unfold up at hu
+          rw [Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not] at hu
+          rw [Bool.toNat_true]; omega_using [hv, hu.1]
+      exact WP.mono (up_ok hcx hv hsi (hD q.1)) fun t ⟨hcx', hz, hm, k⟩ =>
+        ⟨hn, ⟨hΦ _ _ _ hΦ' hm k, (k.gpr (by decide)).trans hsi, hcx', hb⟩, ho, hz⟩
+    · rintro s₁ s₂ ⟨⟨a, v⟩, ⟨hn, h₁, ho, z₁⟩, -, h₂, -, z₂⟩
+      refine ⟨by simp only [eval, z₁, z₂], fun hf => ?_, fun ht => ?_⟩
+      · have hu : up v (D a) = false := by
+          simpa only [eval, z₁, Option.map_some, Bool.not_not, Option.some.injEq] using hf
+        rw [hu, Bool.toNat_false, Nat.add_zero] at h₁ h₂
+        exact ⟨(a, v), ⟨⟨h₁, ho⟩, hu⟩, ⟨h₂, ho⟩, hu⟩
+      · have hu : up v (D a) = true := by
+          simpa only [eval, z₁, Option.map_some, Bool.not_not, Option.some.injEq] using ht
+        rw [hu, Bool.toNat_true] at h₁ h₂
+        unfold up at hu
+        rw [Bool.and_eq_true, Bool.not_eq_true', Bool.not_eq_true', decide_eq_false_iff_not] at hu
+        exact ⟨2 ^ 64 - (v + 1), by omega_using [hn, h₁.2.2.2, hu.1], a, v + 1, rfl, ⟨h₁, hu.2⟩, h₂, hu.2⟩
+  exact fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, h₁, h₂⟩ e₁ e₂ =>
+    key (2 ^ 64 - q.2) s₁ s₂ t₁ t₂ s₁' s₂' ⟨q.1, q.2, rfl, h₁, h₂⟩ e₁ e₂
+
+end Recip
+
 /-! ## `fast` -/
 
 /-- What `fast` keeps from `R - m` on, `x = R - m`. -/
@@ -467,6 +558,100 @@ theorem FX.congr {p : R2Pub} {s t : State} (h : FX p s) (hm : t.mem = s.mem) (hw
     (hdi : t.gpr .rdi = s.gpr .rdi) : FX p t := by
   obtain ⟨hg, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨GoodL.congr hg hm hw hdi, h1, h2, h3, hm ▸ h4, hm ▸ h5, hm ▸ h6, h7⟩
+
+/-- `m`'s top word, a word under `FX`. -/
+def topW (p : R2Pub) : Nat := p.top % 2 ^ 64
+
+theorem FX.top {p : R2Pub} {s : State} (h : FX p s) :
+    word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) = BitVec.ofNat 64 (topW p) := by
+  obtain ⟨-, hw, -, -, hn, -⟩ := h
+  have hsplit : p.N = p.N % 2 ^ (64 * (p.L.w - 1)) +
+      2 ^ (64 * (p.L.w - 1)) * (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat := by
+    have e : wv s.mem p.L.B (slot p.L.w aN) (p.L.w - 1 + 1) = p.N := by
+      rw [Nat.sub_add_cancel (by omega_using [hw])]; exact hn
+    rw [wv] at e
+    have hlt := wv_lt s.mem p.L.B (slot p.L.w aN) (p.L.w - 1)
+    rw [← e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
+  have hT : (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat = p.top := by
+    unfold R2Pub.top
+    have hP := Nat.two_pow_pos (64 * (p.L.w - 1))
+    have := Nat.mod_lt p.N hP
+    rw [Nat.div_eq_of_lt_le (k := (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat) ?_ ?_]
+    · rw [Nat.mul_comm]; omega
+    · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]; omega
+  apply BitVec.eq_of_toNat_eq
+  rw [hT, BitVec.toNat_ofNat, topW, Nat.mod_mod]
+  exact (Nat.mod_eq_of_lt (hT ▸ BitVec.isLt _)).symm
+
+theorem FX5.keep {p : R2Pub} {s t : State} {rs : List Reg} (h : FX5 p s) (hm : t.mem = s.mem) (k : Keep rs s t)
+    (h10 : .r10 ∉ rs) (h12 : .r12 ∉ rs) (h8 : .r8 ∉ rs) (hdi : .rdi ∉ rs) : FX5 p t :=
+  ⟨⟨FX.congr h.1.1 hm k.2.2 (k.gpr hdi), hm ▸ h.1.2.1, (k.gpr h10).trans h.1.2.2.1, (k.gpr h12).trans h.1.2.2.2⟩,
+    (k.gpr h8).trans h.2⟩
+
+/-- `recipN` leaks the same in runs that agree on `m`: its loops branch on
+`m`'s top word and on `v`, which starts as `guessV` of it. -/
+theorem recipN_ct : RelCT isa (Two FX5) recipN (Two FX6) := by
+  have hD : ∀ p, topW p < 2 ^ 64 := fun p => Nat.mod_lt _ (by decide)
+  unfold recipN
+  simp only [seqs]
+  -- The guess.
+  have hguess : RelCT isa (Two FX5) (.block recipGuess) (Two (RD FX5 topW)) := by
+    refine (two_piece (Ψ := fun p s => RD FX5 topW (p, (guessV (BitVec.ofNat 64 (topW p))).toNat) s)
+      _ pins_FX5 (by taint_decide) fun p s h => ?_).mono (fun _ _ h => h)
+        fun s₁ s₂ ⟨p, h₁, h₂⟩ => ⟨(p, (guessV (BitVec.ofNat 64 (topW p))).toNat), h₁, h₂⟩
+    have hg := h.1.1.1
+    have hs := hg.1.scr
+    have hZ := hg.2
+    have hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
+    refine WP.mono (recipGuess_ok hs h.1.2.2.1 h.1.2.2.2 (by have := h.1.1.2.1; omega_using [this])
+      (by omega_using [hZ, hsm])) fun t ⟨hsi, hcx, hm, k⟩ => ?_
+    rw [FX.top h.1.1] at hsi hcx
+    exact ⟨FX5.keep h hm k (by decide) (by decide) (by decide) (by decide), hsi,
+      by rw [hcx, BitVec.ofNat_toNat, BitVec.setWidth_eq], BitVec.isLt _⟩
+  refine RelCT.seq hguess ?_
+  -- The corrections.
+  refine RelCT.seq (downLoop_ct FX5 topW (fun p s t h hm k => FX5.keep h hm k (by decide) (by decide)
+    (by decide) (by decide)) hD) ?_
+  refine RelCT.seq (upLoop_ct FX5 topW (fun p s t h hm k => FX5.keep h hm k (by decide) (by decide)
+    (by decide) (by decide)) hD) ?_
+  -- `v` to the temporary.
+  refine (two_piece (Ψ := fun q s => FX6 q.1 s) [.r8] (fun q s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [h₁.1.1.1.2, h₂.1.1.1.2])
+    (by taint_decide) fun q s h => ?_).mono (fun _ _ h => h) fun s₁ s₂ ⟨q, h₁, h₂⟩ => ⟨q.1, h₁, h₂⟩
+  obtain ⟨⟨⟨hfx, hsi, hcx, hv⟩, ho⟩, hu⟩ := h
+  obtain ⟨⟨⟨hg, hw, hw', h4, hN, hT, hX, hO⟩, hc, h10, h12⟩, h8⟩ := hfx
+  have hs := hg.1.scr
+  have hnw := hs.nowrap
+  have hZ := hg.2
+  have hsx := slot_le (w := q.1.L.w) (show aR2 < 8 by decide)
+  have hsm := slot_le (w := q.1.L.w) (show aN < 8 by decide)
+  have hsv := slot_le (w := q.1.L.w) (show aTmp < 8 by decide)
+  have hsa := slot_le (w := q.1.L.w) (show aAcc < 8 by decide)
+  have sXV := slot_sep (w := q.1.L.w) (show aR2 ≠ aTmp by decide)
+  have sMV := slot_sep (w := q.1.L.w) (show aN ≠ aTmp by decide)
+  have sAV := slot_sep (w := q.1.L.w) (show aAcc ≠ aTmp by decide)
+  have eT : (word s.mem q.1.L.B (slot q.1.L.w aN + 8 * (q.1.L.w - 1))).toNat = topW q.1 := by
+    rw [FX.top ⟨hg, hw, hw', h4, hN, hT, hX, hO⟩, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (hD _)]
+  have hvx := recip_exact (by rw [← eT]; exact hT) (hD q.1) ho hu
+  refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off q.1.L.B (slot q.1.L.w aTmp))
+      (BitVec.ofNat 64 ((2 ^ 128 - 1) / (word s.mem q.1.L.B (slot q.1.L.w aN + 8 * (q.1.L.w - 1))).toNat - 2 ^ 64)))
+    (by
+      xrun [State.ea, at0, h8, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
+        hs.st (show slot q.1.L.w aTmp + 8 ≤ q.1.L.Z by omega_using [hZ, hsv])]
+      rw [hcx, hvx, eT]) rfl) fun t ⟨hm, k⟩ => ?_
+  have o : Outside q.1.L.B (slot q.1.L.w aTmp) 8 s.mem t.mem := by rw [hm]; exact writeW_outside _ _ _ (by omega_using [hnw, hZ, hsv])
+  have ha : Arrays q.1.L.B q.1.L.w [aTmp] s.mem t.mem :=
+    Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega_using [])
+  have hvlt : (2 ^ 128 - 1) / (word s.mem q.1.L.B (slot q.1.L.w aN + 8 * (q.1.L.w - 1))).toNat - 2 ^ 64 < 2 ^ 64 := by
+    have : (2 ^ 128 - 1) / (word s.mem q.1.L.B (slot q.1.L.w aN + 8 * (q.1.L.w - 1))).toNat < 2 ^ 65 := by
+      rw [Nat.div_lt_iff_lt_mul (by omega_using [hT])]; omega_using [hT]
+    omega_using [this]
+  have hT₁ : word t.mem q.1.L.B (slot q.1.L.w aN + 8 * (q.1.L.w - 1)) =
+      word s.mem q.1.L.B (slot q.1.L.w aN + 8 * (q.1.L.w - 1)) := o.word (by omega_using [sMV]) (by omega_using [hnw, hZ, hsm])
+  refine ⟨⟨⟨hs.congr k.2.2, (k.gpr (by decide)).trans hg.1.rdi, ha.hdr hg.1.hdr⟩, hZ⟩, hw, hw', h4,
+    by rw [o.wv (by omega_using [sMV]) (by omega_using [hnw, hZ, hsm])]; exact hN, by rw [hT₁]; exact hT,
+    by rw [o.wv (by omega_using [sXV]) (by omega_using [hnw, hZ, hsx])]; exact hX, hO, by rw [o.wv (by omega_using [sAV]) (by omega_using [hnw, hZ, hsa])]; exact hc, ?_⟩
+  rw [hT₁, hm, word_writeW_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hvlt]
 
 /-- `fast` leaks the same in runs that agree on `m`. -/
 theorem fast_ct : RelCT isa (Two R2w.FPre) fast fun _ _ => True := by
@@ -577,32 +762,7 @@ theorem fast_ct : RelCT isa (Two R2w.FPre) fast fun _ _ => True := by
       fun t ⟨⟨h8, hm⟩, k⟩ => ⟨⟨FX.congr hx hm k.2.2 (k.gpr (by decide)), hm ▸ hc, (k.gpr (by decide)).trans h10,
         (k.gpr (by decide)).trans h12⟩, h8⟩
   -- `v`.
-  refine RelCT.seq (two_piece (Ψ := FX6) _ pins_FX5 (by taint_decide) ?_) ?_
-  · rintro p s ⟨⟨⟨hg, hw, hw', h4, hN, hT, hX, hO⟩, hc, h10, h12⟩, h8⟩
-    have hs := hg.1.scr
-    have hnw := hs.nowrap
-    have hZ := hg.2
-    have hsx := slot_le (w := p.L.w) (show aR2 < 8 by decide)
-    have hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
-    have hsv := slot_le (w := p.L.w) (show aTmp < 8 by decide)
-    have hsa := slot_le (w := p.L.w) (show aAcc < 8 by decide)
-    have sXV := slot_sep (w := p.L.w) (show aR2 ≠ aTmp by decide)
-    have sMV := slot_sep (w := p.L.w) (show aN ≠ aTmp by decide)
-    have sAV := slot_sep (w := p.L.w) (show aAcc ≠ aTmp by decide)
-    refine WP.mono (R2w.recip_ok hs h10 h12 h8 (by omega_using [hw]) (by omega_using [hZ, hsm]) (by omega_using [hZ, hsv]) hT) fun t ⟨hm, k⟩ => ?_
-    have o : Outside p.L.B (slot p.L.w aTmp) 8 s.mem t.mem := by rw [hm]; exact writeW_outside _ _ _ (by omega_using [hnw, hZ, hsv])
-    have ha : Arrays p.L.B p.L.w [aTmp] s.mem t.mem :=
-      Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega_using [])
-    have hvlt : (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat - 2 ^ 64 < 2 ^ 64 := by
-      have : (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat < 2 ^ 65 := by
-        rw [Nat.div_lt_iff_lt_mul (by omega_using [hT])]; omega_using [hT]
-      omega_using [this]
-    have hT₁ : word t.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) =
-        word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) := o.word (by omega_using [sMV]) (by omega_using [hnw, hZ, hsm])
-    refine ⟨⟨⟨hs.congr k.2.2, (k.gpr (by decide)).trans hg.1.rdi, ha.hdr hg.1.hdr⟩, hZ⟩, hw, hw', h4,
-      by rw [o.wv (by omega_using [sMV]) (by omega_using [hnw, hZ, hsm])]; exact hN, by rw [hT₁]; exact hT,
-      by rw [o.wv (by omega_using [sXV]) (by omega_using [hnw, hZ, hsx])]; exact hX, hO, by rw [o.wv (by omega_using [sAV]) (by omega_using [hnw, hZ, hsa])]; exact hc, ?_⟩
-    rw [hT₁, hm, word_writeW_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hvlt]
+  refine RelCT.seq recipN_ct ?_
   -- The count.
   refine RelCT.seq (two_piece (Ψ := fun p s => FX6 p s ∧ s.gpr .rcx = BitVec.ofNat 64 p.L.w) _
     (pins_rdi_of (·.L) fun _ _ h => h.1) (by taint_decide) ?_) ?_

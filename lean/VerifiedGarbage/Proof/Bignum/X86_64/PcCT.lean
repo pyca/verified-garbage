@@ -6,12 +6,14 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: constant time but for `n`
@@ -50,7 +52,7 @@ def PcM (p : PcPub) (s : State) : Prop :=
     word s.mem p.B (8 * sOut) = p.op ∧ word s.mem p.B (8 * sK) = BitVec.ofNat 64 p.k ∧
     word s.mem p.B (8 * sN) = p.np ∧ Src s p.B p.Z p.np p.nb ∧ p.nb.length = p.k ∧
     Spec.Rsa.modulusValid p.N p.k = true ∧ (∀ i < 2 * p.w, InRegions s.wr (off p.op (8 * i)) 8) ∧
-    (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i))
+    (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i)) ∧ InRegions (s.rd ++ s.wr) p.np p.k
 
 /-- `PcM` after code that changes only memory in the working space outside
 the header's arguments, and not `rdi`. -/
@@ -58,12 +60,12 @@ theorem PcM.congr {p : PcPub} {s t : State} (h : PcM p s) {rs : List (Nat × Nat
     (hf : Frm p.B rs s.mem t.mem) (hz : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z)
     (hx : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16))
     {regs : List Reg} (k : Keep regs s t) (hr : .rdi ∉ regs) : PcM p t := by
-  obtain ⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hn, hnl, hv, hpw, hps⟩ := h
+  obtain ⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hn, hnl, hv, hpw, hps, hsp⟩ := h
   have hi := InScr.of_frm hf hz
   have hfx := Fixed.of_frm hf hx
   exact ⟨hs.congr k.2.2, (k.gpr hr).trans hdi, hZ, hk1, hk2, (hfx sOut (by decide)).trans hO,
     (hfx sK (by decide)).trans hK, (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv,
-    fun i hi => by rw [k.2.2]; exact hpw i hi, hps⟩
+    fun i hi => by rw [k.2.2]; exact hpw i hi, hps, by rw [k.2.1, k.2.2]; exact hsp⟩
 
 theorem pins_PcM : Pins PcM [.rdi] := fun _ _ _ h₁ h₂ r hr => by
   simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
@@ -119,9 +121,15 @@ theorem pcLoad_ct : RelCT isa (Two PcM) (seqs pcLoad) (Two Pc3) := by
   refine RelCT.seq (two_piece (Ψ := Pc2) _ pins_Pc1 (by taint_decide) ?_) ?_
   · intro p s ⟨h, hW, hb, hsi, hcx, hbx⟩
     have h' := h
-    obtain ⟨hs, -, hZ, hk1, hk2, -, -, -, hn, hnl, -⟩ := h'
+    obtain ⟨hs, -, hZ, hk1, hk2, -, -, -, hn, hnl, -, -, -, hsp⟩ := h'
     have := slot_le (w := p.w) (show aN < 8 by decide)
-    refine WP.mono (loadArr_ok hs (by decide) hZ hn hnl (by omega) (by omega) hsi hcx hbx) fun t ⟨hv, ha, k⟩ =>
+    have hn' := hs.nowrap
+    have hw8 : p.w = (p.k + 7) / 8 := rfl
+    refine WP.mono (WordIO.load_ok hs hsi hcx hbx hnl (by omega) (by omega) rfl (by omega) hsp
+      (fun i hi => hn.val i (by omega)) (fun i hi => Or.inr (by have := hn.out i (by omega); omega)))
+      fun t ⟨hv, ho, k⟩ =>
+      have ha : Arrays p.B p.w [aN] s.mem t.mem :=
+        Arrays.of_outside (List.mem_singleton_self _) ho (Nat.le_refl _) (by omega)
       ⟨h.congr (Frm.of_arrays1 ha (List.mem_singleton_self _)) (fun r hr => ?_) (fun r hr => ?_) k (by decide),
         by rw [ha.hslot (by decide)]; exact hW, fun j hj => by rw [ha.hslot (by unfold sArr; omega)]; exact hb j hj,
         hv, (k.gpr (by decide)).trans hbx⟩
@@ -208,7 +216,7 @@ theorem pcR2_ct (M : Mont) (r : R2Impl M) : RelCT isa (Two Pc3) r.code (Two PcO)
   dsimp only at hg hw hw' hn hinv h12 h10 hodd hlo
   refine WP.mono (r.ok hg.1 hg.2 hw hw' hn hinv h12 h10 hodd hlo) fun t ⟨hg', _, _, f, k⟩ =>
     ⟨⟨hg', hg.2⟩, hw, hw', ?_, fun i hi => by rw [k.2.2]; exact hm.2.2.2.2.2.2.2.2.2.2.2.1 i hi,
-      hm.2.2.2.2.2.2.2.2.2.2.2.2⟩
+      hm.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   rw [(Fixed.of_frm f (r2Ranges_fixed _)) sOut (by decide)]
   exact hm.2.2.2.2.2.1
 
@@ -360,7 +368,7 @@ def PcC3 (p : PcPub) (t : State) : Prop :=
     word t.mem p.B (8 * sN) = p.np ∧ Src t p.B p.Z p.np p.nb ∧ p.nb.length = p.k ∧
     (∀ i < 2 * p.w, InRegions t.wr (off p.op (8 * i)) 8) ∧
     (∀ j < 16 * p.w, InRegions t.wr (p.op + BitVec.ofNat 64 j) 1) ∧
-    (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i)) ∧
+    (∀ i < 16 * p.w, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 i)) ∧ InRegions (t.rd ++ t.wr) p.np p.k ∧
     t.zf = some (Spec.Rsa.modulusValid p.N p.k)
 
 /-- `vg_rsa_public_precompute` leaks the same in runs that agree on the public
@@ -396,10 +404,11 @@ theorem pcCode_ct (M : Mont) (r : R2Impl M) :
       show slot (((s.gpr .rcx).toNat + 7) / 8) 8 ≤ (s.gpr .r9).toNat * 8 by unfold slot hdrBytes; omega, hk1, hk2,
       by rw [hm₂]; exact hO, by rw [hm₂, hK, ofNat_toNat64], by rw [hm₂]; exact hN,
       c.hnb.congrK (by rw [hm₂]; exact i₁) kk, bytesAt_length _ _ _,
-      fun i hi => by rw [kk.2.2]; exact c.hpw i hi, fun j hj => by rw [kk.2.2]; exact c.hpb j hj, c.hps, hz₂⟩
+      fun i hi => by rw [kk.2.2]; exact c.hpw i hi, fun j hj => by rw [kk.2.2]; exact c.hpb j hj, c.hps,
+      by rw [kk.2.1, kk.2.2]; exact c.inSpan, hz₂⟩
   refine two_ite (fun p s₁ s₂ h₁ h₂ => by
-    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, z₁⟩ := h₁
-    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, z₂⟩ := h₂
+    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, z₁⟩ := h₁
+    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, z₂⟩ := h₂
     simp only [eval, z₁, z₂]) ?_ ?_
   · -- `fail`.
     unfold Precompute.fail
@@ -423,8 +432,8 @@ theorem pcCode_ct (M : Mont) (r : R2Impl M) :
         shr3_w p.k (by omega), sixteen_w _ rfl]) rfl)
       fun t' ⟨⟨hsi, hcx⟩, k'⟩ => ⟨hsi, hcx, (k'.gpr (by decide)).trans hdi⟩
   · -- `main`.
-    refine two_map id (fun p t ⟨⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, hpw, _, hps, hz⟩, he⟩ =>
-      ⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, ?_, hpw, hps⟩) (pcMain_ct M r)
+    refine two_map id (fun p t ⟨⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, hpw, _, hps, hsp, hz⟩, he⟩ =>
+      ⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, ?_, hpw, hps, hsp⟩) (pcMain_ct M r)
     simp only [eval, hz] at he; simpa using he
 
 /-- The public data of a state. -/

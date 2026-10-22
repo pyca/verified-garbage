@@ -136,13 +136,19 @@ theorem head_ok {s₀ t : State} {B : Addr} {Z ex ec w J : Nat} (hI : TI s₀ B 
       by omega] at hv
     exact hv
 
-/-- The carries out of the flags, and the next tile: `ZF` after the last of `N`. -/
-theorem tail_ok {s₀ t : State} {B : Addr} {Z ex ec w J N : Nat} (hI : WI s₀ B Z ex ec w (4 * J) (4 * J + 4) .r8 .r9 t)
-    (h12 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N)) (hJ : J < N) (hN : N < 2 ^ 60) :
-    WP isa (.block tileTail) t fun t' => t'.zf = some (decide (J + 1 = N)) ∧ TI s₀ B Z ex ec w (J + 1) t' := by
+/-- The carries out of the flags, and the next group (`inc = 4 g`): `ZF` after
+the last of `N` tiles. -/
+theorem groupTail_ok {s₀ t : State} {B : Addr} {Z ex ec w J g N : Nat} {inc : BitVec 32}
+    (hI : WI s₀ B Z ex ec w (4 * J) (4 * J + 4 * g) .r8 .r9 t)
+    (hinc : BitVec.signExtend 64 inc = BitVec.ofNat 64 (4 * g))
+    (h12 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N)) (hJ : J + g ≤ N) (hN : N < 2 ^ 60) :
+    WP isa (.block ([.adox .r9 (.reg .rcx), .alu .sbb .r14 (.reg .r14), .alu .add .r15 (.imm inc),
+      .alu .cmp .r15 (.reg .r12)] : List Instr)) t fun t' =>
+      t'.zf = some (decide (J + g = N)) ∧ TI s₀ B Z ex ec w (J + g) t' := by
   obtain ⟨c, o, hc, ho, hb, hv⟩ := hI.val
-  rw [show tileTail = ([.adox .r9 (.reg .rcx)] : List Instr) ++
-    ([.alu .sbb .r14 (.reg .r14), .alu .add .r15 (.imm 4), .alu .cmp .r15 (.reg .r12)] : List Instr) from rfl,
+  rw [show ([.adox .r9 (.reg .rcx), .alu .sbb .r14 (.reg .r14), .alu .add .r15 (.imm inc),
+      .alu .cmp .r15 (.reg .r12)] : List Instr) = ([.adox .r9 (.reg .rcx)] : List Instr) ++
+    ([.alu .sbb .r14 (.reg .r14), .alu .add .r15 (.imm inc), .alu .cmp .r15 (.reg .r12)] : List Instr) from rfl,
     WP.block_append_iff]
   refine WP.mono (adox_ok t (src := .reg .rcx) rfl (fun _ h => nomatch h) ho) fun t₁ ⟨o', ho₁, hc₁, e₁, k₁⟩ => ?_
   have hcx : (t.gpr .rcx).toNat = 0 := by rw [hI.rcx]; rfl
@@ -153,17 +159,20 @@ theorem tail_ok {s₀ t : State} {B : Addr} {Z ex ec w J N : Nat} (hI : WI s₀ 
   subst ho'
   have h15 : t₁.gpr .r15 = BitVec.ofNat 64 (4 * J) := (k₁.gpr (by decide)).trans hI.r15
   have h12' : t₁.gpr .r12 = BitVec.ofNat 64 (4 * N) := (k₁.gpr (by decide)).trans ((hI.regs _ (by decide)).trans h12)
-  have hadd : BitVec.ofNat 64 (4 * J) + 4 = BitVec.ofNat 64 (4 * (J + 1)) := by
-    rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat]
+  have hadd : BitVec.ofNat 64 (4 * J) + BitVec.ofNat 64 (4 * g) = BitVec.ofNat 64 (4 * (J + g)) := by
+    rw [BitVec.ofNat_add_ofNat]
     congr 1
-  have hcmp : (BitVec.ofNat 64 (4 * (J + 1)) - BitVec.ofNat 64 (4 * N) == 0) = decide (J + 1 = N) := by
+    omega
+  have hcmp : (BitVec.ofNat 64 (4 * (J + g)) - BitVec.ofNat 64 (4 * N) == 0) = decide (J + g = N) := by
     rw [ofNat_sub_beq (by omega) (by omega)]; exact decide_eq_decide.mpr (by omega)
   refine WP.mono (WP.keep [.r14, .r15] (Q := fun t' => t'.gpr .r14 = mask c ∧
-      t'.gpr .r15 = BitVec.ofNat 64 (4 * (J + 1)) ∧ t'.zf = some (decide (J + 1 = N)) ∧ t'.mem = t₁.mem) (by
-    xrun [hc₁.trans hc, h15, h12']
+      t'.gpr .r15 = BitVec.ofNat 64 (4 * (J + g)) ∧ t'.zf = some (decide (J + g = N)) ∧ t'.mem = t₁.mem) (by
+    xrun [hc₁.trans hc, h15, h12', hinc]
     exact ⟨rfl, hadd, by rw [hadd]; exact hcmp⟩) rfl) fun t' ⟨⟨h14, h15', hz, hm⟩, k⟩ => ⟨hz, ?_⟩
+  have hout : Outside B ex (8 * (4 * (J + g))) s₀.mem t'.mem := by
+    rw [hm, k₁.2.1, show 4 * (J + g) = 4 * J + 4 * g by omega]; exact hI.out
   refine ⟨hI.scr.congr (k.2.2.trans k₁.2.2.2), fun r hr => ?_, h15', k.2.1.trans (k₁.2.2.1.trans hI.rd),
-    k.2.2.trans (k₁.2.2.2.trans hI.wr), ⟨c, h14, ?_⟩, by rw [hm, k₁.2.1]; exact hI.out⟩
+    k.2.2.trans (k₁.2.2.2.trans hI.wr), ⟨c, h14, ?_⟩, hout⟩
   · rw [k.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro (rfl | rfl) <;> exact hr (by decide)),
       k₁.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro rfl; exact hr (by decide)),
       hI.regs r hr]
@@ -172,45 +181,116 @@ theorem tail_ok {s₀ t : State} {B : Addr} {Z ex ec w J N : Nat} (hI : WI s₀ 
     rw [hm, k₁.2.1, g9, g8]
     rw [hcx, Nat.add_zero] at e₁
     simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at e₁
-    rw [show 4 * (J + 1) = 4 * J + 4 by omega, e₁]
+    rw [show 4 * (J + g) = 4 * J + 4 * g by omega, e₁]
     omega
 
-/-- A tile: four words of `t`, and `ZF` after the last of `N`. -/
-theorem tile_ok {s₀ t : State} {B : Addr} {Z ex ec w J N : Nat} (hI : TI s₀ B Z ex ec w J t)
-    (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N))
-    (hw : w = 4 * N) (hJ : J < N) (hN : N < 2 ^ 60) (hX : ex + 8 * w ≤ Z) (hC : ec + 8 * w ≤ Z)
-    (sep : ex + 8 * w ≤ ec ∨ ec + 8 * w ≤ ex) :
-    WP isa (.block tile) t fun t' => t'.zf = some (decide (J + 1 = N)) ∧ TI s₀ B Z ex ec w (J + 1) t' := by
-  unfold tile
+/-- Tile `i` of a group at tile `J`: words `4 J + 4 i` to `4 J + 4 i + 3`. -/
+theorem tileWords_ok {s₀ t : State} {B : Addr} {Z ex ec w J i : Nat}
+    (hI : WI s₀ B Z ex ec w (4 * J) (4 * J + 4 * i) .r8 .r9 t)
+    (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec) (hi : 4 * J + 4 * i + 4 ≤ w)
+    (hX : ex + 8 * w ≤ Z) (hC : ec + 8 * w ≤ Z) (sep : ex + 8 * w ≤ ec ∨ ec + 8 * w ≤ ex) :
+    WP isa (.block (tileWords i)) t (WI s₀ B Z ex ec w (4 * J) (4 * J + 4 * (i + 1)) .r8 .r9) := by
+  unfold tileWords
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (head_ok hI) fun t₀ h₀ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 0) h₀ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i) hI hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₁ h₁ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 1) h₁ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i + 1) h₁ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₂ h₂ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 2) h₂ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i + 2) h₂ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₃ h₃ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 3) h₃ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i + 3) h₃ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₄ h₄ => ?_
-  exact tail_ok h₄ h12 hJ hN
+  rwa [show 4 * J + (4 * i + 3) + 1 = 4 * J + 4 * (i + 1) by omega] at h₄
 
-/-- The tiles: the low `w = 4 N` words of `t`. -/
+/-- The `g` tiles of a group at tile `J`. -/
+theorem groupWords_ok {s₀ t : State} {B : Addr} {Z ex ec w J : Nat}
+    (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec)
+    (hX : ex + 8 * w ≤ Z) (hC : ec + 8 * w ≤ Z) (sep : ex + 8 * w ≤ ec ∨ ec + 8 * w ≤ ex) :
+    ∀ g, 4 * J + 4 * g ≤ w → WI s₀ B Z ex ec w (4 * J) (4 * J + 0) .r8 .r9 t →
+      WP isa (.block (groupWords g)) t (WI s₀ B Z ex ec w (4 * J) (4 * J + 4 * g) .r8 .r9)
+  | 0, _, hI => WP.block_nil hI
+  | g + 1, hg, hI => by
+    rw [groupWords, WP.block_append_iff]
+    exact WP.mono (groupWords_ok hbx hsi hX hC sep g (by omega) hI) fun t' h' =>
+      tileWords_ok h' hbx hsi (by omega) hX hC sep
+
+/-- A group of `g` tiles at tile `J` (`inc = 4 g`), and `ZF` after the last of `N`. -/
+theorem group_ok {s₀ t : State} {B : Addr} {Z ex ec w J g N : Nat} {inc : BitVec 32} (hI : TI s₀ B Z ex ec w J t)
+    (hinc : BitVec.signExtend 64 inc = BitVec.ofNat 64 (4 * g))
+    (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N))
+    (hw : w = 4 * N) (hJ : J + g ≤ N) (hN : N < 2 ^ 60) (hX : ex + 8 * w ≤ Z) (hC : ec + 8 * w ≤ Z)
+    (sep : ex + 8 * w ≤ ec ∨ ec + 8 * w ≤ ex) :
+    WP isa (.block (group g inc)) t fun t' => t'.zf = some (decide (J + g = N)) ∧ TI s₀ B Z ex ec w (J + g) t' := by
+  unfold group
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (head_ok hI) fun t₀ h₀ => ?_
+  rw [WP.block_append_iff]
+  exact WP.mono (groupWords_ok hbx hsi hX hC sep g (by omega) h₀) fun t₁ h₁ => groupTail_ok h₁ hinc h12 hJ hN
+
+/-- Groups of `g` tiles, `N = g K` tiles in all. -/
+theorem groups_ok {s₀ t : State} {B : Addr} {Z ex ec w g K N : Nat} {inc : BitVec 32}
+    (h0 : TI s₀ B Z ex ec w 0 t) (hinc : BitVec.signExtend 64 inc = BitVec.ofNat 64 (4 * g))
+    (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N))
+    (hw : w = 4 * N) (hg : 0 < g) (hK : N = g * K) (hK0 : 0 < K) (hN : N < 2 ^ 60) (hX : ex + 8 * w ≤ Z)
+    (hC : ec + 8 * w ≤ Z) (sep : ex + 8 * w ≤ ec ∨ ec + 8 * w ≤ ex) :
+    WP isa (.loop (.block (group g inc)) .ne) t (TI s₀ B Z ex ec w N) := by
+  have e : ∀ i, g * i + g = N ↔ i + 1 = K := fun i => by
+    rw [hK, ← Nat.mul_add_one]; exact Nat.mul_left_cancel_iff hg
+  refine wp_upto (a := 0) (N := K) hK0 (fun i => TI s₀ B Z ex ec w (g * i)) (fun i _ hi _ hI => ?_)
+    (fun _ h => by rw [hK]; exact h) (by rw [Nat.mul_zero]; exact h0)
+  refine WP.mono (group_ok hI hinc hbx hsi h12 hw (by rw [hK, ← Nat.mul_add_one]; exact Nat.mul_le_mul_left g hi)
+    hN hX hC sep) fun t' ⟨hz, hI'⟩ => ⟨by rw [hz]; exact congrArg some (decide_eq_decide.mpr (e i)), ?_⟩
+  rw [Nat.mul_add_one]; exact hI'
+
+/-- `wTest k`: ZF set iff `w` is a multiple of `k + 1 = 2^j`; the tiles' state kept. -/
+theorem wTest_ok {s₀ t : State} {B : Addr} {Z ex ec w N j : Nat} {k : BitVec 32} (hI : TI s₀ B Z ex ec w N t)
+    (h12 : s₀.gpr .r12 = BitVec.ofNat 64 w) (hw : w < 2 ^ 64)
+    (hk : (BitVec.signExtend 64 k).toNat = 2 ^ j - 1) :
+    WP isa (.block (wTest k)) t fun t' => t'.zf = some (decide (w % 2 ^ j = 0)) ∧ TI s₀ B Z ex ec w N t' := by
+  have t12 : t.gpr .r12 = BitVec.ofNat 64 w := (hI.regs _ (by decide)).trans h12
+  refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.zf = some (decide (w % 2 ^ j = 0)) ∧ t'.mem = t.mem) (by
+    unfold wTest
+    xrun [t12]
+    rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_eq]
+    constructor
+    · intro h
+      have e := congrArg BitVec.toNat h
+      rwa [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw, hk, Nat.and_two_pow_sub_one_eq_mod] at e
+    · intro h
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw, hk, Nat.and_two_pow_sub_one_eq_mod, h]
+      rfl) rfl) fun t' ⟨⟨hz, hm⟩, k'⟩ => ⟨hz, ?_⟩
+  obtain ⟨c, h14, hv⟩ := hI.val
+  refine ⟨hI.scr.congr k'.2.2, fun r hr => ?_, (k'.gpr (by decide)).trans hI.r15, k'.2.1.trans hI.rd,
+    k'.2.2.trans hI.wr, ⟨c, (k'.gpr (by decide)).trans h14, ?_⟩, by rw [hm]; exact hI.out⟩
+  · rw [k'.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro rfl; exact hr (by decide)),
+      hI.regs r hr]
+  · rw [hm, k'.gpr (by decide), k'.gpr (by decide)]; exact hv
+
+/-- The tiles: the low `w = 4 N` words of `t`, in groups of 8, 4 or 1. -/
 theorem tiles_ok {s₀ : State} {B : Addr} {Z ex ec w N : Nat} (h0 : TI s₀ B Z ex ec w 0 s₀)
     (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N))
     (hw : w = 4 * N) (hN0 : 0 < N) (hN : N < 2 ^ 60) (hX : ex + 8 * w ≤ Z) (hC : ec + 8 * w ≤ Z)
     (sep : ex + 8 * w ≤ ec ∨ ec + 8 * w ≤ ex) :
-    WP isa (.loop (.block tile) .ne) s₀ (TI s₀ B Z ex ec w N) :=
-  wp_upto (a := 0) (N := N) hN0 (TI s₀ B Z ex ec w) (fun _ _ hJ _ hI =>
-    tile_ok hI hbx hsi h12 hw hJ hN hX hC sep) (fun _ h => h) h0
+    WP isa tiles s₀ (TI s₀ B Z ex ec w N) := by
+  have h12w : s₀.gpr .r12 = BitVec.ofNat 64 w := by rw [h12, hw]
+  unfold tiles
+  refine WP.seq (WP.mono (wTest_ok (j := 5) h0 h12w (by omega) rfl) fun t ⟨hz, hI⟩ => ?_)
+  refine WP.ite (decide (w % 2 ^ 5 = 0)) (by simp only [eval, hz]) (fun h => ?_) (fun h => ?_)
+  · rw [decide_eq_true_eq] at h
+    exact groups_ok (g := 8) (K := N / 8) hI (by rw [VG.Proof.MlKem.X86_64.sx32]; rfl) hbx hsi h12 hw (by decide) (by omega) (by omega) hN hX hC sep
+  refine WP.seq (WP.mono (wTest_ok (j := 4) hI h12w (by omega) rfl) fun t ⟨hz, hI⟩ => ?_)
+  refine WP.ite (decide (w % 2 ^ 4 = 0)) (by simp only [eval, hz]) (fun h => ?_) (fun _ => ?_)
+  · rw [decide_eq_true_eq] at h
+    exact groups_ok (g := 4) (K := N / 4) hI (by rw [VG.Proof.MlKem.X86_64.sx16]; rfl) hbx hsi h12 hw (by decide) (by omega) (by omega) hN hX hC sep
+  · exact groups_ok (g := 1) (K := N) hI (by rw [VG.Proof.MlKem.X86_64.sx4]; rfl) hbx hsi h12 hw (by decide) (by omega) hN0 hN hX hC sep
 
 /-- `q̂` into `rdx`, `mc` into `rsi`, no carries: a tile's start. -/
 theorem mulHead_ok {s : State} {B : Addr} {Z ec : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
@@ -295,7 +375,7 @@ theorem mulBody_ok {s₀ : State} {B : Addr} {Z w ex ec N : Nat} (hs : Scr s₀ 
     (h8 : s₀.gpr .r8 = 0) (h9 : s₀.gpr .r9 = 0) (h14 : s₀.gpr .r14 = 0) (h15 : s₀.gpr .r15 = 0)
     (hw : w = 4 * N) (hN0 : 0 < N) (hN : N < 2 ^ 60) (hX : ex + 8 * (w + 1) ≤ Z) (hC : ec + 8 * w ≤ Z)
     (sep : ex + 8 * (w + 1) ≤ ec ∨ ec + 8 * w ≤ ex) :
-    WP isa (.seq (.loop (.block tile) .ne) (.block mulTop)) s₀ fun t =>
+    WP isa (.seq tiles (.block mulTop)) s₀ fun t =>
       (wv t.mem B ex (w + 1) + (s₀.gpr .rdx).toNat * 2 ^ (64 * w)) % 2 ^ (64 * (w + 1)) =
         (wv s₀.mem B ex w * 2 ^ 64 + (s₀.gpr .rdx).toNat * wv s₀.mem B ec w) % 2 ^ (64 * (w + 1)) ∧
       Outside B ex (8 * (w + 1)) s₀.mem t.mem ∧ Keep chRegs s₀ t := by

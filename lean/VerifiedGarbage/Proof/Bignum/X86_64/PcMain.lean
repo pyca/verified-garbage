@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: the computation for a valid modulus
@@ -27,7 +28,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 open VG.Proof.MlKem.X86_64
 
 /-- `m` into its array, and `-m⁻¹`. -/
-def pcLoad : List (Prog isa) := [.block head, loadBE,
+def pcLoad : List (Prog isa) := [.block head, WordIO.load,
   .block ([.mov .r10 (.reg .rbx), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .rbx))] ++
     minv ++ [.store (hdr sMinv) .r15])]
 
@@ -48,7 +49,8 @@ theorem pcMain_eq (M : Mont) (r : R2Impl M) : Precompute.main M.mm r.code = seqs
 theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
     (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hN : word s.mem B (8 * sN) = np)
-    (hnb : Src s B Z np nb) (hnl : nb.length = k) (hodd : Spec.Rsa.os2ip nb % 2 = 1) :
+    (hnb : Src s B Z np nb) (hnl : nb.length = k) (hodd : Spec.Rsa.os2ip nb % 2 = 1)
+    (hspan : InRegions (s.rd ++ s.wr) np k) :
     WP isa (seqs pcLoad) s fun t => ∃ minv, Good t B Z ((k + 7) / 8) minv ∧
       wv t.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8) = Spec.Rsa.os2ip nb ∧
       ((word t.mem B (slot ((k + 7) / 8) aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 ∧
@@ -69,8 +71,14 @@ theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte
     fun t₁ ⟨h12, hcx, hsi, hbx, hW₁, hb₁, hf₁, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have hf₁' : Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t₁.mem := hf₁.mono (by simp [pcLoadRanges])
-  refine WP.seq (WP.mono (loadArr_ok hs₁ (by decide) hZ (hnb.congrK (InScr.of_frm hf₁' hsl) k₁) hnl (by omega_arith)
-    hk hsi hcx hbx) fun t₂ ⟨hv₂, ha₂, k₂⟩ => ?_)
+  have hsrc₁ := hnb.congrK (InScr.of_frm hf₁' hsl) k₁
+  have hsN := slot_le (w := (k + 7) / 8) (show aN < 8 by decide)
+  refine WP.seq (WP.mono (WordIO.load_ok hs₁ hsi hcx hbx hnl (by omega_arith) hk rfl (by omega_arith)
+    (by rw [k₁.2.1, k₁.2.2]; exact hspan) (fun i hi => hsrc₁.val i (by omega_arith))
+    (fun i hi => Or.inr (by have := hsrc₁.out i (by omega_arith); omega_arith)))
+    fun t₂ ⟨hv₂, ho₂, k₂⟩ => ?_)
+  have ha₂ : Arrays B ((k + 7) / 8) [aN] t₁.mem t₂.mem :=
+    Arrays.of_outside (List.mem_singleton_self _) ho₂ (Nat.le_refl _) (by omega_arith)
   have hs₂ := hs₁.congr k₂.2.2
   have hf₂ : Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t₂.mem :=
     hf₁'.trans (Frm.of_arrays1 ha₂ (by simp [pcLoadRanges]))
@@ -231,7 +239,7 @@ theorem pcMain_ok (M : Mont) (r : R2Impl M) {s : State} {B : Addr} {Z k : Nat} {
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 64 ≤ k) (hk2 : k ≤ 1024)
     (hO : word s.mem B (8 * sOut) = op) (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k)
     (hN : word s.mem B (8 * sN) = np) (hnb : Src s B Z np nb) (hnl : nb.length = k)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) (hspan : InRegions (s.rd ++ s.wr) np k)
     (hpw : ∀ i < 2 * ((k + 7) / 8), InRegions s.wr (off op (8 * i)) 8)
     (hps : ∀ i < 16 * ((k + 7) / 8), Z ≤ ofs B (op + BitVec.ofNat 64 i)) :
     WP isa (Precompute.main M.mm r.code) s fun t => ∃ ws, Spec.Rsa.publicPrecompute nb = some ws ∧
@@ -241,7 +249,7 @@ theorem pcMain_ok (M : Mont) (r : R2Impl M) {s : State} {B : Addr} {Z k : Nat} {
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
   rw [pcMain_eq M r]
   refine wp_seqs_append (by simp [pcLoad]) (by simp)
-    (WP.mono (pcLoad_ok hs hdi hZ (by omega_arith) (by omega_arith) hK hN hnb hnl hodd)
+    (WP.mono (pcLoad_ok hs hdi hZ (by omega_arith) (by omega_arith) hK hN hnb hnl hodd hspan)
       fun t₁ ⟨minv, hg₁, hn₁, hinv₁, h12₁, h10₁, f₁, k₁⟩ => ?_)
   refine wp_seqs_append (by simp) (by simp [pcOut])
     (WP.mono (r.ok hg₁ hZ (by omega_arith) (by omega_arith) hn₁ hinv₁ h12₁ h10₁ hodd hlo)
