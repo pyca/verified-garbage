@@ -191,6 +191,8 @@ structure Regs (d b : Reg) (D B : Addr) (n : Nat) (s₀ : State) (i : Nat) (s : 
   keep : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → s.gpr r = s₀.gpr r
 
 theorem se8 : BitVec.signExtend 64 (8 : BitVec 32) = 8 := by decide
+
+theorem se64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
 theorem se1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
 
 include hdx hbx in
@@ -426,14 +428,14 @@ theorem xorBufS_ok {big : Prog isa} {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 
       (cast (congrArg (fun i => Regs d b D B n s₀ (8 * i) s) h.symm) hR) hV
   simp only [decide_eq_false_iff_not] at h
   -- `rax = n / 8` compared with 8.
-  have hc : WP isa (.block [.alu .cmp .rax (.imm 8)]) s fun s' =>
-      s'.cf = some (decide (n / 8 < 8)) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+  have hc : WP isa (.block [.alu .cmp .rax (.imm 64)]) s fun s' =>
+      s'.cf = some (decide (n / 8 < 64)) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
         s'.wr = s.wr ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.zmmHi = s.zmmHi := by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
       State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
     refine ⟨?_, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
-    rw [hax, se8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hax, se64, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
     rfl
   refine WP.seq (WP.mono hc fun s₁ ⟨cf₁, g₁, m₁, rd₁, wr₁, x₁, y₁, z₁⟩ => ?_)
   have hI₁ : Inv D B n s₀ 0 s₁ :=
@@ -441,7 +443,7 @@ theorem xorBufS_ok {big : Prog isa} {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 
   have hR₁ : Regs d b D B n s₀ 0 s₁ := ⟨by rw [g₁]; exact hR.rd, by rw [g₁]; exact hR.rb,
     by rw [g₁]; exact hR.rdx, by rw [g₁]; exact hR.rcx, fun r a b' c => by rw [g₁]; exact hR.keep r a b' c⟩
   have hV₁ : VKeep s₀ s₁ := ⟨x₁.trans hV.1, y₁.trans hV.2.1, z₁.trans hV.2.2⟩
-  refine WP.ite (decide (n / 8 < 8)) (by simp [eval, cf₁]) (fun h8 => ?_) (fun h8 => ?_)
+  refine WP.ite (decide (n / 8 < 64)) (by simp [eval, cf₁]) (fun h8 => ?_) (fun h8 => ?_)
   · exact WP.seq (WP.mono (qloop_ok hdx hbx hd hn hw hr h hI₁ hR₁ (by rw [g₁, hax]) hV₁)
       fun s₂ ⟨a, b', c⟩ => fin s₂ a b' c)
   · simp only [decide_eq_false_iff_not] at h8

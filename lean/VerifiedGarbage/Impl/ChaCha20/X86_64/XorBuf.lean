@@ -53,7 +53,7 @@ bytes one at a time, fewer than 64 by its quadwords and bytes, otherwise
 def xorBufS (big : Prog isa) (d b : Reg) : Prog isa :=
   .seq (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax 3])
   (.ite .e (bytes d b)
-    (.seq (.block [.alu .cmp .rax (.imm 8)])
+    (.seq (.block [.alu .cmp .rax (.imm 64)])
       (.ite .b (.seq (.loop (.block (qBody d b)) .ne) (bytes d b)) big)))
 
 /-- XOR the `2 ^ w` bytes at `rsi + rcx` into those at `d + rcx`, through

@@ -9602,7 +9602,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 223f
-cmp rax, 8
+cmp rax, 64
 jb 225f
 mov r10, rsi
 mov rsi, r9
@@ -10708,7 +10708,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 243f
-cmp rax, 8
+cmp rax, 64
 jb 245f
 mov r10, rsi
 mov rsi, r9
@@ -12147,7 +12147,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 267f
-cmp rax, 8
+cmp rax, 64
 jb 269f
 mov r10, rsi
 mov rsi, r9
@@ -12572,7 +12572,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 289f
-cmp rax, 8
+cmp rax, 64
 jb 291f
 mov r10, rsi
 mov rsi, r9
@@ -15054,7 +15054,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 225f
-cmp rax, 8
+cmp rax, 64
 jb 227f
 mov r10, rsi
 mov rsi, r9
@@ -16160,7 +16160,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 245f
-cmp rax, 8
+cmp rax, 64
 jb 247f
 mov r10, rsi
 mov rsi, r9
@@ -17599,7 +17599,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 269f
-cmp rax, 8
+cmp rax, 64
 jb 271f
 mov r10, rsi
 mov rsi, r9
@@ -18024,7 +18024,7 @@ mov ecx, 0
 mov rax, rdx
 shr rax, 3
 je 291f
-cmp rax, 8
+cmp rax, 64
 jb 293f
 mov r10, rsi
 mov rsi, r9
