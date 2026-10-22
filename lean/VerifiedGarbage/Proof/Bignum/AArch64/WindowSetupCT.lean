@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightProducts
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSetup
