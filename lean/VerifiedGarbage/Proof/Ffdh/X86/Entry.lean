@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -273,15 +274,15 @@ theorem fR_saved {base : Addr} {len size : Nat} (hn : base.toNat + size ≤ 2 ^ 
       (by decide) (by omega)
 
 /-- `wrap a body`: what `body` leaves in memory and `eax`, run from the state `In` of private CRT's
-operations, with the ABI preserved. `body` may also write the regions `Out`, apart from the return
-address and the working space. -/
-theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block (fill a)) body))
+operations, with the ABI preserved and the statics where they were. `body` may also write the regions
+`Out`, apart from the return address and the working space. -/
+theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block (fill a)) body))
     {Ex : List Region → List Region → Prop} (hx : Ex s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
     {Out : List Region} (outRet : ∀ r ∈ Out, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
     (outWs : ∀ r ∈ Out, Region.Disjoint ⟨wsBase a s, wsSize a s⟩ r) {P : Mem → BitVec 32 → Prop}
     (hb : ∀ f, In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f →
       f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame →
-      Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem →
+      Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem → f.syms = s.syms →
       WP isa body f fun t => P t.mem (t.gpr .eax) ∧
         Frame (Out ++ CrtRt.frameR (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
         Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t) :
@@ -299,7 +300,7 @@ theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block 
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega)
   unfold wrap
-  refine WP.seq (WP.mono (entry_ok A) fun s₁ ⟨S, Sv, K, O⟩ => ?_)
+  refine WP.seq (WP.mono_syms (entry_ok A) fun s₁ ⟨S, Sv, K, O⟩ sy₁ => ?_)
   have sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   -- The saved registers and the return address, kept by what the frame changes.
   have retWs := A.retScratch
@@ -311,8 +312,15 @@ theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block 
   refine WP.seq (WP.mono (Q := R) (WP.frameAlloc (bytes := argsFrame) (by decide) (by decide) (by decide)
     (by rw [sp]; omega) hsp ?_) fun s₂ R₂ => ?_)
   · rw [show Impl.Ffdh.X86.fill a = Impl.Ffdh.X86.fill a ++ [] from (List.append_nil _).symm]
-    refine WP.seq (frameIn_ok A S K O hx fun f I espf _ wrf Ft Ff₁ regs => WP.block_nil ?_)
-    refine WP.mono (hb f I espf Ft) fun t ⟨Pt, Fb, Kt⟩ => ?_
+    refine WP.seq (WP.mono_syms (frameIn_ok A S K O hx (Q := fun f =>
+        In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f ∧
+        f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame ∧ f.wr = ⟨frameAt s, argsFrame⟩ :: s.wr ∧
+        Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem ∧
+        Frame [⟨frameAt s, argsFrame⟩] s₁.mem f.mem ∧
+        (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esp → f.gpr r = s₁.gpr r))
+      fun f I espf _ wrf Ft Ff₁ regs => WP.block_nil ⟨I, espf, wrf, Ft, Ff₁, regs⟩)
+      fun f ⟨I, espf, wrf, Ft, Ff₁, regs⟩ syf => ?_)
+    refine WP.mono (hb f I espf Ft (syf.trans sy₁)) fun t ⟨Pt, Fb, Kt⟩ => ?_
     have espt : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := (Kt.1 _ (by decide)).trans espf
     have ediT : t.gpr .edi = s₁.gpr .edi := (Kt.1 _ (by decide)).trans (regs _ (by decide) (by decide) (by decide))
     have espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
@@ -374,6 +382,20 @@ theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block 
     · exact Rs.gpr (.edi, 44) (by decide)
     · exact Rs.gpr (.ebp, 36) (by decide)
     · exact (Rs.other _ (by decide)).trans esp₂
+
+
+theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block (fill a)) body))
+    {Ex : List Region → List Region → Prop} (hx : Ex s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
+    {Out : List Region} (outRet : ∀ r ∈ Out, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
+    (outWs : ∀ r ∈ Out, Region.Disjoint ⟨wsBase a s, wsSize a s⟩ r) {P : Mem → BitVec 32 → Prop}
+    (hb : ∀ f, In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f →
+      f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame →
+      Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem →
+      WP isa body f fun t => P t.mem (t.gpr .eax) ∧
+        Frame (Out ++ CrtRt.frameR (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
+        Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t) :
+    WP isa (wrap a body) s fun u => P u.mem (u.gpr .eax) ∧ abiPreserved s u :=
+  wrap_syms_ok A hsp hx outRet outWs fun f I e F _ => hb f I e F
 
 end
 
