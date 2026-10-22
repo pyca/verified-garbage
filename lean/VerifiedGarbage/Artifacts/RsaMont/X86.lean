@@ -16,7 +16,7 @@ namespace VG.Artifacts.RsaMont.X86
 
 def runtime : Artifact :=
   Spec.Rsa.MontMul.mulApi.artifact X86.target {
-    notes := ["Equal public input offsets select a symmetric product-scanning square. At 2048, 3072 and 4096 bits, \
+    notes := ["Equal public input offsets select a symmetric product-scanning square. At 1024, 1536, 2048, 3072 and 4096 bits, \
       fixed scalar MUL columns use 96-bit accumulators; other widths retain SSE2 low/high sums. Other \
       products use coarsely integrated operand scanning. Pointers address the working \
       space; byte counts and pointer comparisons control the loops. Every public value is in a register or \

@@ -73,7 +73,7 @@ open VG VG.X86 VG.Impl.Mont.X86.Rt.StaticSquare
   unfold VG.Impl.Mont.X86.Rt.body dispatch
   apply seq_noSp (by rfl)
   apply ite_noSp
-  · exact selectSize_noSp 64 (selectSize_noSp 96 (selectSize_noSp 128 (by decide)))
+  · exact selectSize_noSp 32 (selectSize_noSp 48 (selectSize_noSp 64 (selectSize_noSp 96 (selectSize_noSp 128 (by decide)))))
   · decide
 
  theorem body_NoSp : NoSp VG.Impl.Mont.X86.Rt.body := NoSp.of_all body_noSp
@@ -94,9 +94,9 @@ open VG VG.X86 VG.Impl.Mont.X86.Rt.StaticSquare
  theorem body_stack : stackUse VG.Impl.Mont.X86.Rt.body=0 := by
   unfold VG.Impl.Mont.X86.Rt.body dispatch
   change max 0 (max
-    (stackUse (selectSize 64 (selectSize 96 (selectSize 128 VG.Impl.Mont.X86.Rt.Square.square))))
+    (stackUse (selectSize 32 (selectSize 48 (selectSize 64 (selectSize 96 (selectSize 128 VG.Impl.Mont.X86.Rt.Square.square))))))
     (stackUse VG.Impl.Mont.X86.Rt.scalarBody))=0
-  rw [selectSize_stack 64 (selectSize_stack 96 (selectSize_stack 128 rfl))]
+  rw [selectSize_stack 32 (selectSize_stack 48 (selectSize_stack 64 (selectSize_stack 96 (selectSize_stack 128 rfl))))]
   rfl
 
  theorem body_spSafe : VG.Impl.Mont.X86.Rt.body.all (fun i => !isa.writesSp i)=true := by
