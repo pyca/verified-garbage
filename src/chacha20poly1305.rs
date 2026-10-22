@@ -619,13 +619,22 @@ mod tests {
         let ifma_open = Features::all(&[ifma, VG_CHACHA20_XOR_AVX512VL_FEATURES]);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
-        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES, ifma);
+        // `seal_split_ifma` runs `vg_chacha20_xor_avx512`'s code, without
+        // AVX-512VL.
+        let split_ifma = Features::all(&[
+            VG_CHACHA20_XOR_AVX512_FEATURES,
+            VG_POLY1305_BLOCKS_IFMA_FEATURES,
+        ]);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES, split_ifma);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         assert_eq!(select(avx512vl), Backend::Avx512Vl);
         assert_eq!(select(ifma_open), Backend::Ifma);
         assert_eq!(select(Features::all(&[avx512vl, ifma])), Backend::Ifma);
-        assert_ne!(select(ifma), Backend::Ifma);
+        // `seal_ifma` needs AVX-512VL too (`vg_chacha20_xor_ifma`), as
+        // `open_ifma` does; `seal_split_ifma`'s features are not enough.
+        assert_eq!(select(ifma), Backend::Ifma);
+        assert_ne!(select(split_ifma), Backend::Ifma);
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
