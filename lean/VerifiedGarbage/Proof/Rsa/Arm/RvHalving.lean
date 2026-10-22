@@ -72,8 +72,10 @@ theorem halfInit_vp {E : State → Prop} :
       omega
     rw [c] at ht
     refine ht.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ?_) (fun d hd => ?_)
-    · simp only [List.mem_singleton] at hj; subst hj
-      exact ⟨by simp, by simp [AWh, hvs, upd_self]⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+      rcases hj with rfl | rfl
+      · exact ⟨by simp, by simp [AWh, hvs, upd, wR, wM]⟩
+      · exact ⟨by simp, by simp [AWh, AWs, upd, wR, wM]⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl
       · exact ⟨by simp, by rw [upd_ne _ _ (by decide), upd_self]; simp [Vh, hvs, upd, sTc, sCnt]⟩

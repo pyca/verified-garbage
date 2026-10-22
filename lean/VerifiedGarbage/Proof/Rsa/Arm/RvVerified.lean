@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Rsa.Arm.RvTop5
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.RvTop1
+public import VerifiedGarbage.Proof.Rsa.Arm.RvBody
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
@@ -16,9 +17,9 @@ import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Impl.Rsa.Arm.Recover
 
-theorem rv_contract_correct (s : State) (h : (Spec.Rsa.recoverPrimesContract abi 56).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.recoverPrimesContract abi 56).post s t := by
-  obtain ⟨tr, t, run, preserved, post⟩ := rv_ok (cin_of_pre s h)
+theorem rv_contract_correctWith (body : Prog isa) (bodyProof : BodyVerified body) (s : State) (h : (Spec.Rsa.recoverPrimesContract abi 56).pre s) :
+    ∃ tr t, Exec isa (codeWith body) s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.recoverPrimesContract abi 56).post s t := by
+  obtain ⟨tr, t, run, preserved, post⟩ := rv_okWith body bodyProof (cin_of_pre s h)
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, reduceClassify, Loc.val,
     State.addr]
@@ -45,8 +46,8 @@ theorem mkP_eq {s t : State} (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t.gpr .r0) (p2
   unfold mkP
   rw [ht, hn, he, sp, p0, p2, a0, a1, a2, a3, a4, a5, a6, a7]
 
-theorem rv_contract_ct : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 56).pre
-    (Spec.Rsa.recoverPrimesContract abi 56).pub code := by
+theorem rv_contract_ctWith (body : Prog isa) (bodyProof : BodyVerified body) : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 56).pre
+    (Spec.Rsa.recoverPrimesContract abi 56).pub (codeWith body) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cin_of_pre s hs
   have it := cin_of_pre t ht
@@ -61,7 +62,7 @@ theorem rv_contract_ct : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 56
   have b3 := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 b1
   obtain ⟨hn, he⟩ := List.append_inj b3 (by
     simp only [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; rw [a1])
-  exact (rv_ct s t tr1 tr2 u v ⟨is, it, sp,
+  exact (rv_ctWith body bodyProof s t tr1 tr2 u v ⟨is, it, sp,
     mkP_eq sp p0 p2 a0 a1 a2 a3 a4 a5 a6 a7 hn he (List.singleton_inj.1 b2), a0, a1⟩ e1 e2).1
 
 /-- A 64-byte modulus, one-byte exponents, the outputs at `0x1000` and
@@ -87,8 +88,13 @@ theorem rv_contract_sat : ∃ s, (Spec.Rsa.recoverPrimesContract abi 56).pre s :
     [rvSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords]
     using rvSatState
 
+/-- Either search is verified through the same ABI and public contract. -/
+theorem recover_primesWith_verified (body : Prog isa) (bodyProof : BodyVerified body) :
+    Verified target (codeWith body) (Spec.Rsa.recoverPrimesContract abi 56) :=
+  ⟨rv_contract_correctWith body bodyProof, rv_contract_ctWith body bodyProof, rv_contract_sat⟩
+
 /-- `vg_rsa_recover_primes`. -/
 theorem recover_primes_verified : Verified target code (Spec.Rsa.recoverPrimesContract abi 56) :=
-  ⟨rv_contract_correct, rv_contract_ct, rv_contract_sat⟩
+  recover_primesWith_verified (.ite .eq valid fail) body_vp
 
 end VG.Proof.Rsa.Arm.Recover

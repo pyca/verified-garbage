@@ -1,9 +1,10 @@
 # ARMv7 RSA recovery experiment
 
-**Unproven prototype, outside the library.** No generated Rust, specification,
-ISA model or artifact registration changes. The C program is not verified and
-must not be linked into the library. Its compiler output is not certified
-constant time.
+**The C prototype remains unproven and outside the library.** It must not be
+linked into the library; its compiler output is not certified constant time.
+The production implementation is generated separately from
+`Impl/Rsa/Arm/RecoverFused.lean` and verified by
+`Proof/Rsa/Arm/FusedVerified.lean` against the unchanged RSA contract.
 
 The CI metrics identified `wycheproof::rsa_keys::rsa_keys_from_components` as
 an expensive ARMv7 test: median 70 s in Linux stable and 143 s in the forced
@@ -12,7 +13,7 @@ and other operations. They are not isolated timings of this experiment.
 
 ## Target and source comparison
 
-ARMv7 `Impl/Rsa/Arm/Recover.lean` currently computes a candidate's odd power
+The prior ARMv7 `Impl/Rsa/Arm/Recover.lean` baseline computed a candidate's odd power
 with a square and a product for each public-width exponent bit, then makes a
 second fixed-width squaring pass to find a nontrivial square root of one.
 That is three Montgomery operations per bit, plus setup and final gcd/division.
@@ -54,7 +55,7 @@ chains). Fixtures are recorded so each run can be reproduced.
 Only the recovery candidate's arithmetic core is timed. Both sides include
 candidate setup; modulus/context setup, factor-of-two extraction on the real
 baseline, final gcd/division, and the Rust API's surrounding checks are not a
-whole-API comparison. The C baseline follows the current two-pass schedule,
+whole-API comparison. The C baseline follows the prior two-pass schedule,
 not the complete emitted recovery function. In particular, both sides use the
 callable Montgomery helper's specialized square. **Do not translate these
 ratios into a claimed `from_components` or CI speedup.**
@@ -84,20 +85,28 @@ gh workflow run bench.yml --ref BRANCH -f arm_rsa_recovery_prototype=true
 That job refuses a host without native AArch32 rather than timing emulation.
 It uploads the inputs, samples, binaries, source hashes and CSVs.
 
-## Proof progress and remaining work
+## Production proof
 
-Kernel-checked, with standard-axiom audits:
+`Proof/Rsa/Arm/FusedVerified.lean` proves the emitted ARM implementation
+against the unchanged recovery contract, including invalid-key behavior,
+memory safety, termination, the ABI and constant-time traces. The UMAAL
+variant reuses the same verified row transformation as private RSA.
 
-- `Proof/Rsa/RecoverFusedMont.lean` lifts the existing fused algorithm into
-  Montgomery representation and reuses its exact root/none result theorem.
-  It assumes the multiplication kernel's contract and does not verify C.
-- `Impl/Rsa/Arm/RecoverScalar.lean` and its proof reuse the existing modular
-  addition to prove arithmetic, allowed memory changes, memory safety, and
-  constant time for multiplication by candidates 2 and 3. They are unregistered.
+The implementation reads the preserved `ed - 1` a byte at a time and uses
+one specialized Montgomery square per bit. Candidate multiplication reuses
+the modular-addition proofs for 2 and 3 and the existing Montgomery proof
+for later candidates. A set bit clears the saved root through a masked
+selection, making its state exact even when recovery fails.
 
-Before production integration: implement the fixed-width exponent-byte loop,
-prove each ARM state transition and its memory/ABI obligations, prove trace
-equality under the existing leakage contract, connect factor extraction and
-all unsuccessful/invalid-key paths, run the emitter audits and ARM tests,
-and measure the public API against the base revision on native hardware.
-No new trusted spec or ISA instruction is needed for this approach.
+The shared architecture-independent fused theory supplies the result.
+Both ARM recovery schedules reuse the same generalized factor-extraction,
+output, validation and ABI proofs. No specification, ISA model, contract,
+leakage allowance or proof-resource limit changes are needed.
+
+Use the regular scoped benchmark matrix to measure the emitted public API;
+the prototype input above measures only the historical C experiment:
+
+```sh
+gh workflow run bench.yml --ref BRANCH -f base_commit=BASE \
+  -f arches=arm -f cpu_features='none umaal' -f modules=rsa
+```

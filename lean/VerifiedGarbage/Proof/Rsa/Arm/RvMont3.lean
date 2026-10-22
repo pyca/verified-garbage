@@ -30,7 +30,7 @@ abbrev live01 : List Nat := [aOne, aZ, aN]
 
 /-- The stage of the numbers 0, 1 and `n`, of `r` and of `t`. -/
 abbrev K01 (P : RP) (σ : State) (s : State) : Prop :=
-  KS P σ (A01 P σ) live01 (AWh P σ P.c) [wR] (Vh P σ P.c) [sTc] s
+  KS P σ (A01 P σ) live01 (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc] s
 
 section
 variable {P : RP}
@@ -58,11 +58,11 @@ theorem montA_vp {E : State → Prop} :
       (fun σ s => E σ ∧ K01 P σ s ∧ s.gpr .r0 = P.M0 ∧ s.gpr .r7 = BitVec.ofNat 32 P.w6 ∧ s.gpr .r3 = 0 ∧
         s.mem.readW (State.addr P.sp) 32 = P.M0) := by
   simp only [montA, seqs]
-  let K1 := fun σ s => E σ ∧ KS P σ (Aload P σ) [aN] (AWh P σ P.c) [wR] (Vh P σ P.c) [sTc, sCnt] s ∧
+  let K1 := fun σ s => E σ ∧ KS P σ (Aload P σ) [aN] (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc, sCnt] s ∧
     Ws s P.B P.Z P.w nArr
-  let K2 := fun σ s => E σ ∧ KS P σ (upd (Aload P σ) aZ 0) [aZ, aN] (AWh P σ P.c) [wR] (Vh P σ P.c) [sTc, sCnt] s ∧
+  let K2 := fun σ s => E σ ∧ KS P σ (upd (Aload P σ) aZ 0) [aZ, aN] (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc, sCnt] s ∧
     Ws s P.B P.Z P.w nArr
-  let K3 := fun σ s => E σ ∧ KS P σ (upd (upd (Aload P σ) aZ 0) aOne 0) [aOne, aZ, aN] (AWh P σ P.c) [wR]
+  let K3 := fun σ s => E σ ∧ KS P σ (upd (upd (Aload P σ) aZ 0) aOne 0) [aOne, aZ, aN] (AWh P σ P.c) [wR, wM]
     (Vh P σ P.c) [sTc, sCnt] s ∧ Ws s P.B P.Z P.w nArr
   let K4 := fun σ s => E σ ∧ K01 P σ s ∧ Ws s P.B P.Z P.w nArr ∧ s.gpr .r0 = P.M0
   refine VP.seq (G := K1) ?_ (VP.seq (G := K2) ?_ (VP.seq (G := K3) ?_ ?_))
@@ -73,7 +73,7 @@ theorem montA_vp {E : State → Prop} :
   -- `[aZ] := n - n`.
   · refine VP.ctx zeroZ_taint (fun σ s h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
     refine WP.mono (h.sub3_w hw (o := aZ) (a := aN) (b := aN) (by decide) (by simp) (by simp) (by decide)
-      (by decide) (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun t ⟨X, ht, hwt, _, hx, hb⟩ => ⟨e, ?_, hwt⟩
+      (by decide) (by decide)) fun t ⟨X, ht, hwt, _, hx, hb⟩ => ⟨e, ?_, hwt⟩
     have hX : X < 2 ^ (32 * P.w) := by
       rw [← show num t.mem P.B P.w aZ = X by rw [ht.arrs aZ (by simp), upd_self]]
       exact val32_lt _ _ _ _
@@ -82,20 +82,20 @@ theorem montA_vp {E : State → Prop} :
   -- `[aOne] := 0`.
   · refine VP.ctx oneZ_taint (fun σ s h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
     refine WP.mono (h.copy_w hw (o := aOne) (a := aZ) (by decide) (by simp) (by decide)
-      (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun t ⟨ht, hwt, _⟩ => ⟨e, ?_, hwt⟩
+      (by decide)) fun t ⟨ht, hwt, _⟩ => ⟨e, ?_, hwt⟩
     rwa [upd_self] at ht
   -- `[aOne] := 1`, and `r0 := M0`.
   · rw [montSet_eq]
     refine VP.block_append (G := K4) (VP.ctx montHead_taint (fun σ s h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_) ?_
     · have sz := h.sizes
       have hf := h.bs.pre.fS
-      refine h.setOne_w hw (j := aOne) (by simp) (by simp only [List.mem_singleton]; rintro j rfl; decide)
+      refine h.setOne_w hw (j := aOne) (by simp) (by decide)
         fun s1 h1 hw1 _ => ?_
       refine ptr_ok hw1 (r := .r0) (by decide) (j := mBase) (by decide) fun s2 p2 r2 m2 hw2 => ?_
       refine wp_dp (op2_imm (by decide)) fun t u => WP.block_nil ⟨e, ?_, ?_, ?_⟩
       · have r := (r2.trans (u.rest (ws := [.r0]) (by simp)))
         have h2 := (h1.of_rest r (u.mem.trans m2) (by decide)).mono (A' := A01 P σ) (live' := live01)
-          (AW' := AWh P σ P.c) (liveW' := [wR]) (V' := Vh P σ P.c) (ls' := [sTc])
+          (AW' := AWh P σ P.c) (liveW' := [wR, wM]) (V' := Vh P σ P.c) (ls' := [sTc])
           (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩)
         · exact h2
         · simp only [live01, List.mem_cons, List.not_mem_nil, or_false] at hj

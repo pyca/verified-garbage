@@ -28,7 +28,7 @@ abbrev R2v (P : RP) : Nat := 2 ^ (128 * P.w6) % P.n
 
 /-- The stage `K01` but for `r8`. -/
 abbrev R01 (P : RP) (σ : State) (s : State) : Prop :=
-  KR P σ (A01 P σ) live01 (AWh P σ P.c) [wR] (Vh P σ P.c) [sTc] s
+  KR P σ (A01 P σ) live01 (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc] s
 
 section
 variable {P : RP}

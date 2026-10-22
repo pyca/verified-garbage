@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvTop2
 
 import VerifiedGarbage.Proof.Rsa.Arm.RvTop3
-import VerifiedGarbage.Proof.Rsa.Arm.RvBody
+public import VerifiedGarbage.Proof.Rsa.Arm.RvBody
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
@@ -49,8 +49,8 @@ theorem CIn.savedE (h : CIn s) : Spill.Saved (entryMem s) (State.addr (s.sp - 56
       exact Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))
 
 /-- A call's result. -/
-theorem rv_ok (h : CIn s) :
-    WP isa code s fun t => abiPreserved s t ∧
+theorem rv_okWith (body : Prog isa) (bodyProof : BodyVerified body) (h : CIn s) :
+    WP isa (codeWith body) s fun t => abiPreserved s t ∧
       Spec.Rsa.writtenAll t.mem [(State.addr (s.gpr .r0), (stackArg s 1).toNat),
         (State.addr (s.gpr .r2), (stackArg s 1).toNat)] (t.gpr .r0)
         ((Spec.Rsa.primesKey (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
@@ -59,14 +59,14 @@ theorem rv_ok (h : CIn s) :
           fun v => [v.1, v.2]) := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
-  unfold code
+  unfold codeWith
   refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (entry_run h) fun u ⟨usp, urd, uwr, umem, uz⟩ => ?_
   rw [WP.seq_iff]
   have pre := in_x h usp urd umem
   have sz := pre.sizes
-  obtain ⟨tr, v, run, bo, res⟩ := body_vp.wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
+  obtain ⟨tr, v, run, bo, res⟩ := bodyProof.wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
   have cov := h.xCovers sz
   have run' := Exec.widen (rd := u.rd) (wr := u.wr) run
     (Covers.append (Covers.refl _) (by rw [uwr]; exact cov)) (by rw [uwr]; exact cov)
@@ -120,5 +120,15 @@ theorem rv_ok (h : CIn s) :
     exact res
 
 end
+
+theorem rv_ok {s : State} (h : CIn s) :
+    WP isa code s fun t => abiPreserved s t ∧
+      Spec.Rsa.writtenAll t.mem [(State.addr (s.gpr .r0), (stackArg s 1).toNat),
+        (State.addr (s.gpr .r2), (stackArg s 1).toNat)] (t.gpr .r0)
+        ((Spec.Rsa.primesKey (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
+          (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat)
+          (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat)).1.map
+          fun v => [v.1, v.2]) :=
+  rv_okWith (.ite .eq valid fail) body_vp h
 
 end VG.Proof.Rsa.Arm.Recover

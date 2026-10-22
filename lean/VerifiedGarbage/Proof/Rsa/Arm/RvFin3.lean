@@ -75,22 +75,22 @@ theorem KS.same1 {o : Nat} (h : KS P σ A live AW liveW V ls s) (k : Keep P.B P.
 end
 
 /-- The divisor `p`. -/
-abbrev qF (P : RP) (σ : State) : Nat := P.n / pF P σ
+abbrev qF (P : RP) (σ : State) (F : FinishInputs P := legacyFinish P) : Nat := P.n / pF (F := F) P σ
 
 /-- The header words after `p`. -/
-abbrev VM (P : RP) (σ : State) : Nat → Nat := upd (fun _ => 0) sMask (b2n (okF P σ))
+abbrev VM (P : RP) (σ : State) (F : FinishInputs P := legacyFinish P) : Nat → Nat := upd (fun _ => 0) sMask (b2n (okF (F := F) P σ))
 
 /-- The division's start. -/
-abbrev Fd (P : RP) (E : State → Prop) (σ s : State) : Prop :=
-  Sk P E (fun σ => upd (upd (upd (upd (fun _ => 0) aN P.n) 1 (pF P σ)) aQ P.n) aDv (pF P σ)) [aDv, aQ, 1, aN]
-    (fun _ _ => 0) [] (VM P) [sMask] P.w nArr σ s ∧
+abbrev Fd (P : RP) (E : State → Prop) (σ s : State) (F : FinishInputs P := legacyFinish P) : Prop :=
+  Sk P E (fun σ => upd (upd (upd (upd (fun _ => 0) aN P.n) 1 (pF (F := F) P σ)) aQ P.n) aDv (pF (F := F) P σ)) [aDv, aQ, 1, aN]
+    (fun _ _ => 0) [] (VM (F := F) P) [sMask] P.w nArr σ s ∧
     DivHdr s.mem P.B P.w aQ aRm aDv aDt ∧ w32 s.mem (State.addr P.B) (arr P.w aDv + 4 * P.w) = 0
 
 section
 variable {P : RP}
 
 /-- The division set up. -/
-theorem divSet_vp {E : State → Prop} : VP (Fp P E) divSet (Fd P E) := by
+theorem divSet_vp {E : State → Prop} (F : FinishInputs P := legacyFinish P) : VP (Fp (F := F) P E) divSet (Fd (F := F) P E) := by
   simp only [divSet, seqs]
   refine VP.seq (Sk.pcopy qN_taint (o := aQ) (a := aN) (by decide) (by decide) (by decide) (by decide)) ?_
   refine VP.seq (Sk.pcopy dvP_taint (o := aDv) (a := 1) (by decide) (by decide) (by decide) (by decide)) ?_
@@ -110,12 +110,12 @@ theorem divSet_vp {E : State → Prop} : VP (Fp P E) divSet (Fd P E) := by
     rw [k2.word (by omega) (by simp) (by decide) fD, z1]
 
 /-- After `q = n / p`. -/
-abbrev Fq (P : RP) (E : State → Prop) (σ s : State) : Prop :=
-  E σ ∧ KS P σ (upd (upd (upd (fun _ => 0) aN P.n) 1 (pF P σ)) aQ (qF P σ)) [aQ, 1, aN] (fun _ => 0) [] (VM P σ)
+abbrev Fq (P : RP) (E : State → Prop) (σ s : State) (F : FinishInputs P := legacyFinish P) : Prop :=
+  E σ ∧ KS P σ (upd (upd (upd (fun _ => 0) aN P.n) 1 (pF (F := F) P σ)) aQ (qF (F := F) P σ)) [aQ, 1, aN] (fun _ => 0) [] (VM (F := F) P σ)
     [sMask] s
 
 /-- `q = n / p`. -/
-theorem div_vp (hn0 : 0 < P.n) {E : State → Prop} : VP (Fd P E) VG.Impl.Rsa.Arm.Div.code (Fq P E) := by
+theorem div_vp (hn0 : 0 < P.n) {E : State → Prop} (F : FinishInputs P := legacyFinish P) : VP (Fd (F := F) P E) VG.Impl.Rsa.Arm.Div.code (Fq (F := F) P E) := by
   refine VP.of_ct (fun σ₁ σ₂ => (VG.Proof.Rsa.Arm.Div.code_ct (g := divGeom P.B P.Z P.w aQ aRm aDv aDt)).mono
     (fun s t h => ⟨divGeom_ctx h.1.1.2.2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) h.1.2.1,
@@ -126,10 +126,10 @@ theorem div_vp (hn0 : 0 < P.n) {E : State → Prop} : VP (Fd P E) VG.Impl.Rsa.Ar
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hh top)
     fun t ⟨k, r, v⟩ => ⟨e, ?_⟩
   have g : ∀ j ∈ [aDv, aQ, 1, aN], num s.mem P.B P.w j =
-      upd (upd (upd (upd (fun _ => 0) aN P.n) 1 (pF P σ)) aQ P.n) aDv (pF P σ) j := fun j hj => h.arrs j hj
-  have vD : num s.mem P.B P.w aDv = pF P σ := by rw [g aDv (by simp)]; simp [upd]
+      upd (upd (upd (upd (fun _ => 0) aN P.n) 1 (pF (F := F) P σ)) aQ P.n) aDv (pF (F := F) P σ) j := fun j hj => h.arrs j hj
+  have vD : num s.mem P.B P.w aDv = pF (F := F) P σ := by rw [g aDv (by simp)]; simp [upd]
   have vQ : num s.mem P.B P.w aQ = P.n := by rw [g aQ (by simp)]; simp [upd, aQ, aDv]
-  have hp : 0 < pF P σ := Nat.gcd_pos_of_pos_right _ hn0
+  have hp : 0 < pF (F := F) P σ := Nat.gcd_pos_of_pos_right _ hn0
   have hq := (v (by rw [vD]; exact hp)).2
   rw [vQ, vD] at hq
   have hjs : ∀ j ∈ ([aQ, aRm, aDt] : List Nat), arr P.w j + S P.w ≤ P.Z := fun j hj => fitZ_w sz (by

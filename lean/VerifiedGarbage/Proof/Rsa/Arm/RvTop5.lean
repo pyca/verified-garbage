@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvTop2
 
 import VerifiedGarbage.Proof.Rsa.Arm.RvTop4
 import VerifiedGarbage.Proof.Rsa.Arm.RvTop3
-import VerifiedGarbage.Proof.Rsa.Arm.RvBody
+public import VerifiedGarbage.Proof.Rsa.Arm.RvBody
 import VerifiedGarbage.Proof.Rsa.Arm.RvTaint5
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -44,13 +44,13 @@ theorem entry_ct {s₀ t₀ : State} (hs : CIn s₀) (ht : CIn t₀) (sp : s₀.
   · rw [a6, b6, a1]
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide {s u : State} (h : CIn s) (usp : u.sp = s.sp - BitVec.ofNat 32 56) (urd : u.rd = s.rd)
+theorem body_wideWith (body : Prog isa) (bodyProof : BodyVerified body) {s u : State} (h : CIn s) (usp : u.sp = s.sp - BitVec.ofNat 32 56) (urd : u.rd = s.rd)
     (uwr : u.wr = (pcPushed s).wr) (umem : u.mem = entryMem s)
     (uz : u.z = Spec.Rsa.modulusValid (mkP s).n (mkP s).K) :
-    ∃ tr v, Exec isa (.ite .eq valid fail) (u.withRegions u.rd (xRegs s)) tr v ∧
-      Exec isa (.ite .eq valid fail) u tr (v.withRegions u.rd u.wr) ∧ v.sp = s.sp - BitVec.ofNat 32 56 := by
+    ∃ tr v, Exec isa body (u.withRegions u.rd (xRegs s)) tr v ∧
+      Exec isa body u tr (v.withRegions u.rd u.wr) ∧ v.sp = s.sp - BitVec.ofNat 32 56 := by
   have pre := in_x h usp urd umem
-  obtain ⟨tr, v, run, bo, _⟩ := body_vp.wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
+  obtain ⟨tr, v, run, bo, _⟩ := bodyProof.wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
   have cov := h.xCovers pre.sizes
   have run' := Exec.widen (rd := u.rd) (wr := u.wr) run
     (Covers.append (Covers.refl _) (by rw [uwr]; exact cov)) (by rw [uwr]; exact cov)
@@ -58,9 +58,9 @@ theorem body_wide {s u : State} (h : CIn s) (usp : u.sp = s.sp - BitVec.ofNat 32
   exact ⟨tr, v, run, run', bo.sp.trans usp⟩
 
 /-- Two calls with the same public parameters. -/
-theorem rv_ct : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t ∧
-    stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1) code (fun _ _ => True) := by
-  unfold code
+theorem rv_ctWith (body : Prog isa) (bodyProof : BodyVerified body) : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t ∧
+    stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1) (codeWith body) (fun _ _ => True) := by
+  unfold codeWith
   apply RelCT.frame (fun _ _ h => h.2.2.1)
   intro s t tr1 tr2 u v hp e1 e2
   obtain ⟨s0, t0, ⟨hs, ht, sp, hP, a0, a1⟩, ps, pt⟩ := hp
@@ -84,8 +84,8 @@ theorem rv_ct : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s 
       | seq body1 rest1 =>
         cases tail2 with
         | seq body2 rest2 =>
-          obtain ⟨trB1, w1, runB1, wide1, wsp1⟩ := body_wide hs usp1 urd1 uwr1 umem1 uz1
-          obtain ⟨trB2, w2, runB2, wide2, wsp2⟩ := body_wide ht usp2 urd2 uwr2 umem2 uz2
+          obtain ⟨trB1, w1, runB1, wide1, wsp1⟩ := body_wideWith body bodyProof hs usp1 urd1 uwr1 umem1 uz1
+          obtain ⟨trB2, w2, runB2, wide2, wsp2⟩ := body_wideWith body bodyProof ht usp2 urd2 uwr2 umem2 uz2
           obtain ⟨rfl, rfl⟩ := Exec.det body1 wide1
           obtain ⟨rfl, rfl⟩ := Exec.det body2 wide2
           have pre1 := in_x hs usp1 urd1 umem1
@@ -93,12 +93,17 @@ theorem rv_ct : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s 
           rw [← hP] at pre2
           have uz2' := uz2.trans (by rw [hP] : Spec.Rsa.modulusValid (mkP t0).n (mkP t0).K =
             Spec.Rsa.modulusValid (mkP s0).n (mkP s0).K)
-          have trB := ((body_vp (P := mkP s0)).ct _ _ _ _ _ _
+          have trB := ((bodyProof (P := mkP s0)).ct _ _ _ _ _ _
             ⟨_, _, ⟨⟨pre1, rfl, rfl, rfl, Frame.refl _ _⟩, uz1⟩, ⟨⟨pre2, rfl, rfl, rfl, Frame.refl _ _⟩, uz2'⟩⟩
             runB1 runB2).1
           have trR := ((stackLoads_ct pcCalleeSaved : RelCT isa (fun s t => s.sp = t.sp)
             (.block VG.Impl.Bignum.Arm.PcFn.restore) (fun s t => s.sp = t.sp)) _ _ _ _ _ _
             (by show w1.sp = w2.sp; rw [wsp1, wsp2, sp]) rest1 rest2).1
           exact ⟨by rw [trE, trB, trR], trivial⟩
+
+/-- The original search also uses the shared ABI trace proof. -/
+theorem rv_ct : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t ∧
+    stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1) code (fun _ _ => True) :=
+  rv_ctWith (.ite .eq valid fail) body_vp
 
 end VG.Proof.Rsa.Arm.Recover
