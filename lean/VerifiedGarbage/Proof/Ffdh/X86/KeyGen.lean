@@ -15,9 +15,12 @@ import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Dsa.PackedBytes
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
+import VerifiedGarbage.Proof.Ffdh.ScanAt
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
+public import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
 
 /-!
 # `vg_ffdh_generate_key` on i686: the key pair

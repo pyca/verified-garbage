@@ -10,10 +10,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
-public import VerifiedGarbage.Proof.Ffdh.X86.Stages
+public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 
 /-! # `vg_ffdh_generate_key` on i686 against its contract: the key pair -/
 

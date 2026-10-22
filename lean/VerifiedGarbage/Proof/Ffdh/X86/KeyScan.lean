@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Ffdh.X86.Ops
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 
 /-!
 # FFDH key generation on i686: the scan of the bound's octets

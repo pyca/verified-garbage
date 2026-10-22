@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenTop
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
+import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeyGenTop
 meta import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateCT
 import VerifiedGarbage.Proof.Framework.Sig
@@ -16,6 +16,12 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
+meta import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Proof.Ffdh.X86.Dom
+public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
+public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 
 /-!
 # `vg_ffdh_generate_key` on i686 in time that depends on the domain and the status only

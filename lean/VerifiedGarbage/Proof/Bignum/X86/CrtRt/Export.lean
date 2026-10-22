@@ -64,7 +64,7 @@ theorem writeTo_ok (h : In Ex base bytes len args s) {p l : Nat} (hp : p < 18) (
     (lenArg : args l = BitVec.ofNat 32 len) (outFit : (args p).toNat + len ≤ 2 ^ 32)
     (outWrite : InRegions s.wr (byteAddr (args p)) len)
     (outApart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr (args p), len⟩) :
-    WP isa (.seq (.block ([.mov .ebx (.mem (PublicRt.argAt 0 p)), .mov .ecx (.mem (PublicRt.argAt 0 l))] ++
+    WP isa (.seq (.block (([.mov .ebx (.mem (PublicRt.argAt 0 p)), .mov .ecx (.mem (PublicRt.argAt 0 l))] : List Instr) ++
       ptrTo (.slot .wide 19) .esi .edx ++ ([.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)] : List Instr)))
       (.seq reverseBytes (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)]))) s fun t =>
       (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) < 2 ^ (8 * len) →

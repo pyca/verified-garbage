@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
-public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # FFDH on i686: key generation

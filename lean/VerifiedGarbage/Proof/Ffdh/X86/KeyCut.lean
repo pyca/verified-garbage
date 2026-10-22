@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
-public import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
+import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,6 +9,12 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
 import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Dsa
 
 /-!
 # FFDH key generation on i686: the random octets cut to the bound

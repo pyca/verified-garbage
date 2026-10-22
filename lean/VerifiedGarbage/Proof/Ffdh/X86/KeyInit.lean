@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
@@ -34,6 +34,9 @@ meta import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.Artifact
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # `vg_ffdh_key_generation_init` on i686 -/
 
@@ -56,7 +59,7 @@ theorem flag_zero (c₁ c₂ : Bool) :
 theorem validate_ok {s : State} {S L : BitVec 32}
     (r0 : readSrc s (.mem (PublicFn.argument 0)) = some S)
     (r1 : readSrc s (.mem (PublicFn.argument 1)) = some L) :
-    WP isa (.block (validate ++ [.alu .test .edx (.reg .edx)])) s fun t =>
+    WP isa (.block (validate ++ ([.alu .test .edx (.reg .edx)] : List Instr))) s fun t =>
       t.gpr .ecx = S ∧ t.zf = some (!(decide (64 ≤ L.toNat) && decide (L.toNat ≤ 1024))) ∧
         t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
   refine wp_movS r0 fun u1 a1 _ => ?_
@@ -173,7 +176,7 @@ theorem words_ok {s : State} {S : BitVec 32} {ks ss ws rs : Src} {K Sv W R V : B
     (hs : ∀ t : State, t.gpr .edx = s.gpr .edx → readSrc t ss = some Sv)
     (hw' : ∀ t : State, t.gpr .edx = s.gpr .edx → readSrc t ws = some W)
     (hr : ∀ t : State, t.gpr .edx = s.gpr .edx → readSrc t rs = some R) :
-    WP isa (.block (words ks ss ws rs ++ [.mov .eax (.imm V)])) s fun t =>
+    WP isa (.block (words ks ss ws rs ++ ([.mov .eax (.imm V)] : List Instr))) s fun t =>
       t.gpr .eax = V ∧ t.mem = stored s.mem (S.setWidth 64) K Sv W R ∧ Keeps [.eax] s t := by
   have E {u : State} (k : Keeps [.eax] s u) : u.gpr .edx = s.gpr .edx := k.1 _ (by decide)
   have C {u : State} (k : Keeps [.eax] s u) : u.gpr .ecx = S := (k.1 _ (by decide)).trans hc
