@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Isa
 
-/-! # A 128-bit big-endian counter increment on x86 -/
+/-! # Big-endian counter increments on x86: of 128 bits, and of GCM's last 32 -/
 
 @[expose] public section
 
@@ -21,5 +21,10 @@ def incAt (base : Reg) (off : Nat) : List Instr :=
    .bswap .eax, .store ⟨base, off + 4⟩ .eax,
    .mov .eax (.mem ⟨base, off⟩), .bswap .eax, .alu .adc .eax (.imm 0),
    .bswap .eax, .store ⟨base, off⟩ .eax]
+
+/-- Increment the 32-bit big-endian word at `base + off` modulo 2³² (GCM's
+`inc₃₂` on a counter block's last word), using only `eax` and the flags. -/
+def inc32At (base : Reg) (off : Nat) : List Instr :=
+  [.mov .eax (.mem ⟨base, off⟩), .bswap .eax, .alu .add .eax (.imm 1), .bswap .eax, .store ⟨base, off⟩ .eax]
 
 end VG.Impl.Modes.X86

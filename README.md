@@ -1252,13 +1252,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ</td>
 
 <td>❌</td>
 
 <td>❌</td>
 
-<td>❌</td>
+<td>✅ PCLMULQDQ</td>
 
 </tr>
 

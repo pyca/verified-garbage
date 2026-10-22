@@ -51,6 +51,8 @@ mod rfc7914;
 mod rfc8032;
 #[path = "rfc8439/main.rs"]
 mod rfc8439;
+#[path = "rfc8998/main.rs"]
+mod rfc8998;
 #[path = "rfc9106/main.rs"]
 mod rfc9106;
 #[path = "rsa_guidance/main.rs"]

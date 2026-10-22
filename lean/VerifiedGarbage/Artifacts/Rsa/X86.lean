@@ -68,8 +68,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
-      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
-      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit \
+      without computing an unused final square; the input acceptance mask is applied after it. \
+      Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PrecomputedRt.code
     verified := Proof.Bignum.X86.PrecomputedRt.verified
     spSafe := Proof.Rsa.X86.RtShape.precomputed_spSafe
@@ -85,8 +86,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
-      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
-      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit \
+      without computing an unused final square; the input acceptance mask is applied after it. \
+      Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PublicRt.code
     verified := Proof.Bignum.X86.PublicRt.verified
     spSafe := Proof.Rsa.X86.RtShape.public_spSafe

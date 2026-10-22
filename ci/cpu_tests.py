@@ -444,6 +444,10 @@ GROUPS = {
             "rfc8032::signing_with_aliased_read_only_inputs",
         ],
     },
+    "sm4_gcm": {
+        "lib": ["sm4_gcm"],
+        "tests": ["rfc8998::sm4_gcm"],
+    },
     "triple_des_ecb": {
         "lib": ["triple_des_ecb"],
         "tests": ["cavp::triple_des_ecb"],
