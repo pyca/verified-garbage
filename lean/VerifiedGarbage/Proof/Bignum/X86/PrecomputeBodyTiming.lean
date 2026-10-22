@@ -48,9 +48,10 @@ theorem precomputeBody_relCT (base : Addr) (bytes len : Nat) (args : Nat → Bit
         refine ⟨Next, _, Zs, ?_, ?_⟩
         · rw [N]; exact Zt
         · intro V
-          refine ⟨Next, ?_, ?_⟩
+          refine ⟨Next, ?_, ?_, ?_⟩
           · rw [Ms]; exact V
           · rw [Mt, ← N]; exact V
+          · rw [Ms,Mt];exact N
       have T2 := (Branch _ _ _ _ _ _ Relation E2 F2).1
       exact ⟨by rw [T1, T2], trivial⟩
 

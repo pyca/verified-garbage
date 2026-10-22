@@ -233,7 +233,7 @@ mod tests {
                 assert!(r2[1..].iter().all(|&word| word == 0));
             }
         }
-        // Non-multiple-of-eight lengths use the original setup. For n =
+        // Non-multiple-of-eight lengths exercise padded moduli. For n =
         // 2^(8k)-1, powers of two repeat with period 8k.
         for k in [65, 129] {
             let n = vec![0xff; k];

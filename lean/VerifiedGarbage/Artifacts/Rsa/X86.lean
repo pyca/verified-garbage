@@ -74,6 +74,10 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.RtShape.precomputed_spSafe
     stack := 40 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
+    notes := ["The public modulus's high bit selects a reduced seed reached by n+1 modular \
+      doublings; padded moduli use 65n doublings. Six Montgomery squares then produce R². \
+      The seed and fixed-count squaring loop are shared with DSA; one multiplication body \
+      serves all six squares, within the existing scratch and stack bounds."]
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
     stack := 20 },
