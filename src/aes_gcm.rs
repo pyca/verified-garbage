@@ -2050,18 +2050,21 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
-            // The powers, if the backend `new` chose has no `_prepared`
-            // instances but `backend` has (on x86-64, VAES without VPCLMULQDQ
-            // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs).
             #[cfg(all(
                 any(target_arch = "x86_64", target_arch = "aarch64"),
                 feature = "alloc"
             ))]
             {
                 k.prepared = backend.prepared();
-                if let (Some(fns), None) = (k.prepared, self.prepared) {
-                    k.prepare(fns);
-                }
+            }
+            // The powers, if the backend `new` chose has no `_prepared`
+            // instances but `backend` has (VAES without VPCLMULQDQ chooses
+            // `VaesPclmul`, and `AesNiPclmulAvx` runs). On AArch64 every
+            // backend the CPU runs but the baseline has them, and `new`
+            // chooses one of those.
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            if let (Some(fns), None) = (k.prepared, self.prepared) {
+                k.prepare(fns);
             }
             k
         }
