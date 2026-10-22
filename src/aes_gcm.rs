@@ -2345,12 +2345,13 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
+            // On x86-64 the key context already holds the powers if the CPU
+            // runs any backend with `_prepared` instances: `new` chose the
+            // best backend, which has them then.
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             {
                 k.prepared = backend.prepared();
-                if let (Some(fns), None) = (k.prepared, self.prepared) {
-                    k.prepare(fns);
-                }
+                assert!(k.prepared.is_none() || self.prepared.is_some());
             }
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
             {
