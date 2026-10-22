@@ -1330,3 +1330,5880 @@ ret
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
     )
 }
+
+/// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
+///
+/// This implementation expands the key with `vg_sm4_expand_key` and computes the hash subkey with `vg_sm4_ctr32`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 5792 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov rdx, rsp
+add rdx, 8
+mov QWORD PTR [rdx+128], rbx
+mov QWORD PTR [rdx+136], rbp
+mov QWORD PTR [rdx+144], r12
+mov QWORD PTR [rdx+152], r13
+mov QWORD PTR [rdx+160], r14
+mov QWORD PTR [rdx+168], r15
+mov r15, rdx
+mov r13, rsi
+call {vg_sm4_expand_key}
+mov eax, 0
+mov QWORD PTR [r13+240], rax
+mov QWORD PTR [r13+248], rax
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+mov rsi, r15
+add rsi, 96
+mov rdx, r13
+add rdx, 240
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_seal_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_pclmul`.
+///
+/// It encrypts the data and then hashes the ciphertext, in two passes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 5816 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_seal_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2592]
+mov rax, QWORD PTR [rsp+2600]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+2608]
+mov QWORD PTR [rsp+16], rax
+mov rax, rsp
+add rax, 32
+mov QWORD PTR [rsp+24], rax
+mov rax, QWORD PTR [rsp+24]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, r15
+add r14, 16
+mov r13, rdi
+mov QWORD PTR [r15+232], rcx
+mov QWORD PTR [r15+184], r8
+mov QWORD PTR [r15+200], r9
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [r15+208], rax
+mov QWORD PTR [r15+192], rax
+mov r12, rsi
+mov rbp, rdx
+cmp rbp, 12
+je 20f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 22f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+23:
+mov rcx, rbp
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 21f
+20:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+21:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov r12, QWORD PTR [r15+232]
+mov rbp, QWORD PTR [r15+184]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 27f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 28f
+27:
+28:
+mov rcx, rbp
+test rcx, rcx
+je 29f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+211:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 211b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 212f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 213f
+212:
+213:
+test rbp, rbp
+je 214f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+216:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 216b
+jmp 215f
+214:
+215:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 217f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 218f
+217:
+218:
+mov rcx, rbp
+test rcx, rcx
+je 219f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+221:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 221b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 220f
+219:
+220:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, QWORD PTR [rsp+16]
+mov rax, QWORD PTR [r15]
+mov rdx, QWORD PTR [r15+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rdx
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2592]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_open_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_pclmul`.
+///
+/// It hashes the ciphertext and compares the tags without a branch on the bytes, then decrypts the data only if they are equal.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 5824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_open_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2600]
+mov rax, QWORD PTR [rsp+2608]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+2616]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+2624]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, r15
+add r14, 16
+mov r13, rdi
+mov QWORD PTR [r15+232], rcx
+mov QWORD PTR [r15+184], r8
+mov QWORD PTR [r15+200], r9
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [r15+208], rax
+mov QWORD PTR [r15+192], rax
+mov r12, rsi
+mov rbp, rdx
+mov rbx, QWORD PTR [rsp+24]
+mov QWORD PTR [r15+224], rbx
+mov ecx, 0
+cmp rbx, 4
+jb 20f
+cmp rbx, 17
+jb 22f
+jmp 23f
+22:
+mov ecx, 1
+23:
+jmp 21f
+20:
+21:
+test rcx, rcx
+je 24f
+cmp rbp, 12
+je 26f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 28f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 29f
+28:
+29:
+mov rcx, rbp
+test rcx, rcx
+je 210f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+212:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 212b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 211f
+210:
+211:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 27f
+26:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+27:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov r12, QWORD PTR [r15+232]
+mov rbp, QWORD PTR [r15+184]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 213f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 214f
+213:
+214:
+mov rcx, rbp
+test rcx, rcx
+je 215f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+217:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 217b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 216f
+215:
+216:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 218f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 219f
+218:
+219:
+mov rcx, rbp
+test rcx, rcx
+je 220f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+222:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 222b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 221f
+220:
+221:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15+112], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+120], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 112
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+224]
+mov rsi, QWORD PTR [rsp+16]
+mov eax, 0
+mov QWORD PTR [r15+256], rax
+mov QWORD PTR [r15+264], rax
+mov rdi, r15
+add rdi, 256
+mov rcx, rbx
+cmp rcx, 16
+je 223f
+mov r10d, 0
+225:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 225b
+jmp 224f
+223:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+224:
+mov eax, 0
+mov QWORD PTR [r15+240], rax
+mov QWORD PTR [r15+248], rax
+mov rdi, r15
+add rdi, 240
+mov rsi, r15
+add rsi, 112
+mov rcx, rbx
+cmp rcx, 16
+je 226f
+mov r10d, 0
+228:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 228b
+jmp 227f
+226:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+227:
+mov rax, QWORD PTR [r15+240]
+xor rax, QWORD PTR [r15+256]
+mov rdx, QWORD PTR [r15+248]
+xor rdx, QWORD PTR [r15+264]
+or rax, rdx
+cmp rax, 1
+mov eax, 0
+adc eax, 0
+mov QWORD PTR [r15+216], rax
+test rax, rax
+je 229f
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 231f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 232f
+231:
+232:
+test rbp, rbp
+je 233f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+235:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 235b
+jmp 234f
+233:
+234:
+jmp 230f
+229:
+230:
+mov rax, QWORD PTR [r15+216]
+jmp 25f
+24:
+mov eax, 0
+25:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2600]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_init_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// This implementation hashes with `vg_ghash_pclmul`.
+///
+/// It is `vg_aes_gcm_stream_init`'s code, which reads only the hash subkey of the key context.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+128], rbx
+mov QWORD PTR [r8+136], rbp
+mov QWORD PTR [r8+144], r12
+mov QWORD PTR [r8+152], r13
+mov QWORD PTR [r8+160], r14
+mov QWORD PTR [r8+168], r15
+mov r15, r8
+mov r14, rcx
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+cmp rbp, 12
+je 20f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 22f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+23:
+mov rcx, rbp
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 21f
+20:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+21:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_aad_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation hashes with `vg_ghash_pclmul`.
+///
+/// It is `vg_aes_gcm_stream_aad`'s code, which reads only the hash subkey of the key context.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r9, rsp
+add r9, 8
+mov QWORD PTR [r9+128], rbx
+mov QWORD PTR [r9+136], rbp
+mov QWORD PTR [r9+144], r12
+mov QWORD PTR [r9+152], r13
+mov QWORD PTR [r9+160], r14
+mov QWORD PTR [r9+168], r15
+mov r15, r9
+mov r14, rsi
+mov r13, rdi
+mov r12, rcx
+mov rbp, r8
+mov rbx, rdx
+and rbx, 15
+test rbp, rbp
+je 20f
+test rbx, rbx
+je 22f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 24f
+jmp 25f
+24:
+mov rcx, rbp
+25:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 27f
+jmp 28f
+27:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+28:
+jmp 23f
+22:
+23:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 29f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+mov rcx, rbp
+test rcx, rcx
+je 211f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+jmp 212f
+211:
+212:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_encrypt_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_pclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbp, r9
+mov QWORD PTR [r15+208], rbp
+mov r12, r8
+mov rbx, rcx
+and rbx, 15
+test rbp, rbp
+je 20f
+mov rax, QWORD PTR [r15+192]
+test rax, rax
+je 22f
+jmp 23f
+22:
+mov rbx, QWORD PTR [r15+184]
+and rbx, 15
+test rbx, rbx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+23:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 27f
+test rbx, rbx
+je 29f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 211f
+jmp 212f
+211:
+mov rcx, rbp
+212:
+mov rdi, r12
+mov rsi, r14
+add rsi, rbx
+add rsi, 64
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+add r12, rcx
+sub rbp, rcx
+jmp 210f
+29:
+210:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 214f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 215f
+214:
+215:
+test rbp, rbp
+je 216f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+218:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 218b
+jmp 217f
+216:
+217:
+jmp 28f
+27:
+28:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 219f
+test rbx, rbx
+je 221f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 223f
+jmp 224f
+223:
+mov rcx, rbp
+224:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+225:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 225b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 226f
+jmp 227f
+226:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+227:
+jmp 222f
+221:
+222:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 228f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 229f
+228:
+229:
+mov rcx, rbp
+test rcx, rcx
+je 230f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+232:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+jmp 231f
+230:
+231:
+jmp 220f
+219:
+220:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_decrypt_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_pclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbp, r9
+mov QWORD PTR [r15+208], rbp
+mov r12, r8
+mov rbx, rcx
+and rbx, 15
+test rbp, rbp
+je 20f
+mov rax, QWORD PTR [r15+192]
+test rax, rax
+je 22f
+jmp 23f
+22:
+mov rbx, QWORD PTR [r15+184]
+and rbx, 15
+test rbx, rbx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+23:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 27f
+test rbx, rbx
+je 29f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 211f
+jmp 212f
+211:
+mov rcx, rbp
+212:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 214f
+jmp 215f
+214:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+215:
+jmp 210f
+29:
+210:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 216f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 217f
+216:
+217:
+mov rcx, rbp
+test rcx, rcx
+je 218f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+220:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 220b
+jmp 219f
+218:
+219:
+jmp 28f
+27:
+28:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 221f
+test rbx, rbx
+je 223f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 225f
+jmp 226f
+225:
+mov rcx, rbp
+226:
+mov rdi, r12
+mov rsi, r14
+add rsi, rbx
+add rsi, 64
+mov r10d, 0
+227:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 227b
+add r12, rcx
+sub rbp, rcx
+jmp 224f
+223:
+224:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 228f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 229f
+228:
+229:
+test rbp, rbp
+je 230f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+232:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+jmp 231f
+230:
+231:
+jmp 222f
+221:
+222:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_finish_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_pclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5792 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_finish_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r9, rsp
+add r9, 8
+mov QWORD PTR [r9+128], rbx
+mov QWORD PTR [r9+136], rbp
+mov QWORD PTR [r9+144], r12
+mov QWORD PTR [r9+152], r13
+mov QWORD PTR [r9+160], r14
+mov QWORD PTR [r9+168], r15
+mov r15, r9
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbx, QWORD PTR [r15+192]
+mov rax, QWORD PTR [r15+184]
+test rbx, rbx
+je 20f
+jmp 21f
+20:
+mov rbx, rax
+21:
+and rbx, 15
+test rbx, rbx
+je 22f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+24:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 24b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+23:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, QWORD PTR [r15+200]
+mov rax, QWORD PTR [r15]
+mov rdx, QWORD PTR [r15+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rdx
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_verify_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_pclmul`.
+///
+/// It compares the tags without a branch on their bytes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_verify_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov rbx, r9
+mov QWORD PTR [r15+224], rbx
+mov rsi, r8
+mov ecx, 0
+cmp rbx, 4
+jb 20f
+cmp rbx, 17
+jb 22f
+jmp 23f
+22:
+mov ecx, 1
+23:
+jmp 21f
+20:
+21:
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+256], rax
+mov QWORD PTR [r15+264], rax
+mov rdi, r15
+add rdi, 256
+mov rcx, rbx
+cmp rcx, 16
+je 26f
+mov r10d, 0
+28:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 28b
+jmp 27f
+26:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+27:
+mov rbx, QWORD PTR [r15+192]
+mov rax, QWORD PTR [r15+184]
+test rbx, rbx
+je 29f
+jmp 210f
+29:
+mov rbx, rax
+210:
+and rbx, 15
+test rbx, rbx
+je 211f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+jmp 212f
+211:
+212:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_pclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+224]
+mov eax, 0
+mov QWORD PTR [r15+240], rax
+mov QWORD PTR [r15+248], rax
+mov rdi, r15
+add rdi, 240
+mov rsi, r15
+add rsi, 0
+mov rcx, rbx
+cmp rcx, 16
+je 214f
+mov r10d, 0
+216:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 216b
+jmp 215f
+214:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+215:
+mov rax, QWORD PTR [r15+240]
+xor rax, QWORD PTR [r15+256]
+mov rdx, QWORD PTR [r15+248]
+xor rdx, QWORD PTR [r15+264]
+or rax, rdx
+cmp rax, 1
+mov eax, 0
+adc eax, 0
+jmp 25f
+24:
+mov eax, 0
+25:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
+///
+/// It encrypts the data and then hashes the ciphertext, in two passes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 5816 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2592]
+mov rax, QWORD PTR [rsp+2600]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+2608]
+mov QWORD PTR [rsp+16], rax
+mov rax, rsp
+add rax, 32
+mov QWORD PTR [rsp+24], rax
+mov rax, QWORD PTR [rsp+24]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, r15
+add r14, 16
+mov r13, rdi
+mov QWORD PTR [r15+232], rcx
+mov QWORD PTR [r15+184], r8
+mov QWORD PTR [r15+200], r9
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [r15+208], rax
+mov QWORD PTR [r15+192], rax
+mov r12, rsi
+mov rbp, rdx
+cmp rbp, 12
+je 20f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 22f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 23f
+22:
+23:
+mov rcx, rbp
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 25f
+24:
+25:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 21f
+20:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+21:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov r12, QWORD PTR [r15+232]
+mov rbp, QWORD PTR [r15+184]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 27f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 28f
+27:
+28:
+mov rcx, rbp
+test rcx, rcx
+je 29f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+211:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 211b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 210f
+29:
+210:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 212f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 213f
+212:
+213:
+test rbp, rbp
+je 214f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+216:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 216b
+jmp 215f
+214:
+215:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 217f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 218f
+217:
+218:
+mov rcx, rbp
+test rcx, rcx
+je 219f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+221:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 221b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 220f
+219:
+220:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, QWORD PTR [rsp+16]
+mov rax, QWORD PTR [r15]
+mov rdx, QWORD PTR [r15+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rdx
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2592]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
+///
+/// It hashes the ciphertext and compares the tags without a branch on the bytes, then decrypts the data only if they are equal.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 5824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2600]
+mov rax, QWORD PTR [rsp+2608]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+2616]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+2624]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, r15
+add r14, 16
+mov r13, rdi
+mov QWORD PTR [r15+232], rcx
+mov QWORD PTR [r15+184], r8
+mov QWORD PTR [r15+200], r9
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [r15+208], rax
+mov QWORD PTR [r15+192], rax
+mov r12, rsi
+mov rbp, rdx
+mov rbx, QWORD PTR [rsp+24]
+mov QWORD PTR [r15+224], rbx
+mov ecx, 0
+cmp rbx, 4
+jb 20f
+cmp rbx, 17
+jb 22f
+jmp 23f
+22:
+mov ecx, 1
+23:
+jmp 21f
+20:
+21:
+test rcx, rcx
+je 24f
+cmp rbp, 12
+je 26f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 28f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 29f
+28:
+29:
+mov rcx, rbp
+test rcx, rcx
+je 210f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+212:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 212b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 211f
+210:
+211:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 27f
+26:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+27:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov r12, QWORD PTR [r15+232]
+mov rbp, QWORD PTR [r15+184]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 213f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 214f
+213:
+214:
+mov rcx, rbp
+test rcx, rcx
+je 215f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+217:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 217b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 216f
+215:
+216:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 218f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 219f
+218:
+219:
+mov rcx, rbp
+test rcx, rcx
+je 220f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+222:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 222b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 221f
+220:
+221:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15+112], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+120], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 112
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+224]
+mov rsi, QWORD PTR [rsp+16]
+mov eax, 0
+mov QWORD PTR [r15+256], rax
+mov QWORD PTR [r15+264], rax
+mov rdi, r15
+add rdi, 256
+mov rcx, rbx
+cmp rcx, 16
+je 223f
+mov r10d, 0
+225:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 225b
+jmp 224f
+223:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+224:
+mov eax, 0
+mov QWORD PTR [r15+240], rax
+mov QWORD PTR [r15+248], rax
+mov rdi, r15
+add rdi, 240
+mov rsi, r15
+add rsi, 112
+mov rcx, rbx
+cmp rcx, 16
+je 226f
+mov r10d, 0
+228:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 228b
+jmp 227f
+226:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+227:
+mov rax, QWORD PTR [r15+240]
+xor rax, QWORD PTR [r15+256]
+mov rdx, QWORD PTR [r15+248]
+xor rdx, QWORD PTR [r15+264]
+or rax, rdx
+cmp rax, 1
+mov eax, 0
+adc eax, 0
+mov QWORD PTR [r15+216], rax
+test rax, rax
+je 229f
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 231f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 232f
+231:
+232:
+test rbp, rbp
+je 233f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+235:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 235b
+jmp 234f
+233:
+234:
+jmp 230f
+229:
+230:
+mov rax, QWORD PTR [r15+216]
+jmp 25f
+24:
+mov eax, 0
+25:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2600]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// This implementation hashes with `vg_ghash`.
+///
+/// It is `vg_aes_gcm_stream_init`'s code, which reads only the hash subkey of the key context.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+128], rbx
+mov QWORD PTR [r8+136], rbp
+mov QWORD PTR [r8+144], r12
+mov QWORD PTR [r8+152], r13
+mov QWORD PTR [r8+160], r14
+mov QWORD PTR [r8+168], r15
+mov r15, r8
+mov r14, rcx
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+cmp rbp, 12
+je 20f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 22f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 23f
+22:
+23:
+mov rcx, rbp
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 25f
+24:
+25:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 21f
+20:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+21:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation hashes with `vg_ghash`.
+///
+/// It is `vg_aes_gcm_stream_aad`'s code, which reads only the hash subkey of the key context.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r9, rsp
+add r9, 8
+mov QWORD PTR [r9+128], rbx
+mov QWORD PTR [r9+136], rbp
+mov QWORD PTR [r9+144], r12
+mov QWORD PTR [r9+152], r13
+mov QWORD PTR [r9+160], r14
+mov QWORD PTR [r9+168], r15
+mov r15, r9
+mov r14, rsi
+mov r13, rdi
+mov r12, rcx
+mov rbp, r8
+mov rbx, rdx
+and rbx, 15
+test rbp, rbp
+je 20f
+test rbx, rbx
+je 22f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 24f
+jmp 25f
+24:
+mov rcx, rbp
+25:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 27f
+jmp 28f
+27:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+28:
+jmp 23f
+22:
+23:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 29f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 210f
+29:
+210:
+mov rcx, rbp
+test rcx, rcx
+je 211f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+jmp 212f
+211:
+212:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbp, r9
+mov QWORD PTR [r15+208], rbp
+mov r12, r8
+mov rbx, rcx
+and rbx, 15
+test rbp, rbp
+je 20f
+mov rax, QWORD PTR [r15+192]
+test rax, rax
+je 22f
+jmp 23f
+22:
+mov rbx, QWORD PTR [r15+184]
+and rbx, 15
+test rbx, rbx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 25f
+24:
+25:
+23:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 27f
+test rbx, rbx
+je 29f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 211f
+jmp 212f
+211:
+mov rcx, rbp
+212:
+mov rdi, r12
+mov rsi, r14
+add rsi, rbx
+add rsi, 64
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+add r12, rcx
+sub rbp, rcx
+jmp 210f
+29:
+210:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 214f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 215f
+214:
+215:
+test rbp, rbp
+je 216f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+218:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 218b
+jmp 217f
+216:
+217:
+jmp 28f
+27:
+28:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 219f
+test rbx, rbx
+je 221f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 223f
+jmp 224f
+223:
+mov rcx, rbp
+224:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+225:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 225b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 226f
+jmp 227f
+226:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+227:
+jmp 222f
+221:
+222:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 228f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 229f
+228:
+229:
+mov rcx, rbp
+test rcx, rcx
+je 230f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+232:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+jmp 231f
+230:
+231:
+jmp 220f
+219:
+220:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbp, r9
+mov QWORD PTR [r15+208], rbp
+mov r12, r8
+mov rbx, rcx
+and rbx, 15
+test rbp, rbp
+je 20f
+mov rax, QWORD PTR [r15+192]
+test rax, rax
+je 22f
+jmp 23f
+22:
+mov rbx, QWORD PTR [r15+184]
+and rbx, 15
+test rbx, rbx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 25f
+24:
+25:
+23:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 27f
+test rbx, rbx
+je 29f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 211f
+jmp 212f
+211:
+mov rcx, rbp
+212:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 214f
+jmp 215f
+214:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+215:
+jmp 210f
+29:
+210:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 216f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 217f
+216:
+217:
+mov rcx, rbp
+test rcx, rcx
+je 218f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+220:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 220b
+jmp 219f
+218:
+219:
+jmp 28f
+27:
+28:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 221f
+test rbx, rbx
+je 223f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 225f
+jmp 226f
+225:
+mov rcx, rbp
+226:
+mov rdi, r12
+mov rsi, r14
+add rsi, rbx
+add rsi, 64
+mov r10d, 0
+227:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 227b
+add r12, rcx
+sub rbp, rcx
+jmp 224f
+223:
+224:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 228f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 229f
+228:
+229:
+test rbp, rbp
+je 230f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+232:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+jmp 231f
+230:
+231:
+jmp 222f
+221:
+222:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5792 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r9, rsp
+add r9, 8
+mov QWORD PTR [r9+128], rbx
+mov QWORD PTR [r9+136], rbp
+mov QWORD PTR [r9+144], r12
+mov QWORD PTR [r9+152], r13
+mov QWORD PTR [r9+160], r14
+mov QWORD PTR [r9+168], r15
+mov r15, r9
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbx, QWORD PTR [r15+192]
+mov rax, QWORD PTR [r15+184]
+test rbx, rbx
+je 20f
+jmp 21f
+20:
+mov rbx, rax
+21:
+and rbx, 15
+test rbx, rbx
+je 22f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+24:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 24b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 23f
+22:
+23:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, QWORD PTR [r15+200]
+mov rax, QWORD PTR [r15]
+mov rdx, QWORD PTR [r15+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rdx
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
+///
+/// It compares the tags without a branch on their bytes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov rbx, r9
+mov QWORD PTR [r15+224], rbx
+mov rsi, r8
+mov ecx, 0
+cmp rbx, 4
+jb 20f
+cmp rbx, 17
+jb 22f
+jmp 23f
+22:
+mov ecx, 1
+23:
+jmp 21f
+20:
+21:
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+256], rax
+mov QWORD PTR [r15+264], rax
+mov rdi, r15
+add rdi, 256
+mov rcx, rbx
+cmp rcx, 16
+je 26f
+mov r10d, 0
+28:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 28b
+jmp 27f
+26:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+27:
+mov rbx, QWORD PTR [r15+192]
+mov rax, QWORD PTR [r15+184]
+test rbx, rbx
+je 29f
+jmp 210f
+29:
+mov rbx, rax
+210:
+and rbx, 15
+test rbx, rbx
+je 211f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+jmp 212f
+211:
+212:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+224]
+mov eax, 0
+mov QWORD PTR [r15+240], rax
+mov QWORD PTR [r15+248], rax
+mov rdi, r15
+add rdi, 240
+mov rsi, r15
+add rsi, 0
+mov rcx, rbx
+cmp rcx, 16
+je 214f
+mov r10d, 0
+216:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 216b
+jmp 215f
+214:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+215:
+mov rax, QWORD PTR [r15+240]
+xor rax, QWORD PTR [r15+256]
+mov rdx, QWORD PTR [r15+248]
+xor rdx, QWORD PTR [r15+264]
+or rax, rdx
+cmp rax, 1
+mov eax, 0
+adc eax, 0
+jmp 25f
+24:
+mov eax, 0
+25:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_seal_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_vpclmul`.
+///
+/// It encrypts the data and then hashes the ciphertext, in two passes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 5816 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_seal_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2592]
+mov rax, QWORD PTR [rsp+2600]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+2608]
+mov QWORD PTR [rsp+16], rax
+mov rax, rsp
+add rax, 32
+mov QWORD PTR [rsp+24], rax
+mov rax, QWORD PTR [rsp+24]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, r15
+add r14, 16
+mov r13, rdi
+mov QWORD PTR [r15+232], rcx
+mov QWORD PTR [r15+184], r8
+mov QWORD PTR [r15+200], r9
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [r15+208], rax
+mov QWORD PTR [r15+192], rax
+mov r12, rsi
+mov rbp, rdx
+cmp rbp, 12
+je 20f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 22f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+23:
+mov rcx, rbp
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 21f
+20:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+21:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov r12, QWORD PTR [r15+232]
+mov rbp, QWORD PTR [r15+184]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 27f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 28f
+27:
+28:
+mov rcx, rbp
+test rcx, rcx
+je 29f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+211:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 211b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 212f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 213f
+212:
+213:
+test rbp, rbp
+je 214f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+216:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 216b
+jmp 215f
+214:
+215:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 217f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 218f
+217:
+218:
+mov rcx, rbp
+test rcx, rcx
+je 219f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+221:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 221b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 220f
+219:
+220:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, QWORD PTR [rsp+16]
+mov rax, QWORD PTR [r15]
+mov rdx, QWORD PTR [r15+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rdx
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2592]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_open_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_vpclmul`.
+///
+/// It hashes the ciphertext and compares the tags without a branch on the bytes, then decrypts the data only if they are equal.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 5824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_open_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2600]
+mov rax, QWORD PTR [rsp+2608]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+2616]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+2624]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, r15
+add r14, 16
+mov r13, rdi
+mov QWORD PTR [r15+232], rcx
+mov QWORD PTR [r15+184], r8
+mov QWORD PTR [r15+200], r9
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [r15+208], rax
+mov QWORD PTR [r15+192], rax
+mov r12, rsi
+mov rbp, rdx
+mov rbx, QWORD PTR [rsp+24]
+mov QWORD PTR [r15+224], rbx
+mov ecx, 0
+cmp rbx, 4
+jb 20f
+cmp rbx, 17
+jb 22f
+jmp 23f
+22:
+mov ecx, 1
+23:
+jmp 21f
+20:
+21:
+test rcx, rcx
+je 24f
+cmp rbp, 12
+je 26f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 28f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 29f
+28:
+29:
+mov rcx, rbp
+test rcx, rcx
+je 210f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+212:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 212b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 211f
+210:
+211:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+27:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov r12, QWORD PTR [r15+232]
+mov rbp, QWORD PTR [r15+184]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 213f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 214f
+213:
+214:
+mov rcx, rbp
+test rcx, rcx
+je 215f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+217:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 217b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 216f
+215:
+216:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 218f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 219f
+218:
+219:
+mov rcx, rbp
+test rcx, rcx
+je 220f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+222:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 222b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 221f
+220:
+221:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15+112], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+120], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 112
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+224]
+mov rsi, QWORD PTR [rsp+16]
+mov eax, 0
+mov QWORD PTR [r15+256], rax
+mov QWORD PTR [r15+264], rax
+mov rdi, r15
+add rdi, 256
+mov rcx, rbx
+cmp rcx, 16
+je 223f
+mov r10d, 0
+225:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 225b
+jmp 224f
+223:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+224:
+mov eax, 0
+mov QWORD PTR [r15+240], rax
+mov QWORD PTR [r15+248], rax
+mov rdi, r15
+add rdi, 240
+mov rsi, r15
+add rsi, 112
+mov rcx, rbx
+cmp rcx, 16
+je 226f
+mov r10d, 0
+228:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 228b
+jmp 227f
+226:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+227:
+mov rax, QWORD PTR [r15+240]
+xor rax, QWORD PTR [r15+256]
+mov rdx, QWORD PTR [r15+248]
+xor rdx, QWORD PTR [r15+264]
+or rax, rdx
+cmp rax, 1
+mov eax, 0
+adc eax, 0
+mov QWORD PTR [r15+216], rax
+test rax, rax
+je 229f
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 231f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 232f
+231:
+232:
+test rbp, rbp
+je 233f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+235:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 235b
+jmp 234f
+233:
+234:
+jmp 230f
+229:
+230:
+mov rax, QWORD PTR [r15+216]
+jmp 25f
+24:
+mov eax, 0
+25:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2600]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_init_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// This implementation hashes with `vg_ghash_vpclmul`.
+///
+/// It is `vg_aes_gcm_stream_init`'s code, which reads only the hash subkey of the key context.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+128], rbx
+mov QWORD PTR [r8+136], rbp
+mov QWORD PTR [r8+144], r12
+mov QWORD PTR [r8+152], r13
+mov QWORD PTR [r8+160], r14
+mov QWORD PTR [r8+168], r15
+mov r15, r8
+mov r14, rcx
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+cmp rbp, 12
+je 20f
+mov eax, 0
+mov QWORD PTR [r14], rax
+mov QWORD PTR [r14+8], rax
+mov QWORD PTR [r15+216], rbp
+mov ebx, 0
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 22f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+23:
+mov rcx, rbp
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+mov ebx, 0
+mov rbp, QWORD PTR [r15+216]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 0
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 21f
+20:
+mov eax, DWORD PTR [r12]
+mov ecx, DWORD PTR [r12+4]
+mov edx, DWORD PTR [r12+8]
+mov esi, 16777216
+mov DWORD PTR [r14], eax
+mov DWORD PTR [r14+4], ecx
+mov DWORD PTR [r14+8], edx
+mov DWORD PTR [r14+12], esi
+21:
+mov eax, DWORD PTR [r14]
+mov ecx, DWORD PTR [r14+4]
+mov edx, DWORD PTR [r14+8]
+mov esi, DWORD PTR [r14+12]
+bswap esi
+add esi, 1
+bswap esi
+mov DWORD PTR [r14+48], eax
+mov DWORD PTR [r14+52], ecx
+mov DWORD PTR [r14+56], edx
+mov DWORD PTR [r14+60], esi
+mov eax, 0
+mov QWORD PTR [r14+16], rax
+mov QWORD PTR [r14+24], rax
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_aad_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation hashes with `vg_ghash_vpclmul`.
+///
+/// It is `vg_aes_gcm_stream_aad`'s code, which reads only the hash subkey of the key context.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r9, rsp
+add r9, 8
+mov QWORD PTR [r9+128], rbx
+mov QWORD PTR [r9+136], rbp
+mov QWORD PTR [r9+144], r12
+mov QWORD PTR [r9+152], r13
+mov QWORD PTR [r9+160], r14
+mov QWORD PTR [r9+168], r15
+mov r15, r9
+mov r14, rsi
+mov r13, rdi
+mov r12, rcx
+mov rbp, r8
+mov rbx, rdx
+and rbx, 15
+test rbp, rbp
+je 20f
+test rbx, rbx
+je 22f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 24f
+jmp 25f
+24:
+mov rcx, rbp
+25:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 27f
+jmp 28f
+27:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+28:
+jmp 23f
+22:
+23:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 29f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+mov rcx, rbp
+test rcx, rcx
+je 211f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+jmp 212f
+211:
+212:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_encrypt_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_vpclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_encrypt_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbp, r9
+mov QWORD PTR [r15+208], rbp
+mov r12, r8
+mov rbx, rcx
+and rbx, 15
+test rbp, rbp
+je 20f
+mov rax, QWORD PTR [r15+192]
+test rax, rax
+je 22f
+jmp 23f
+22:
+mov rbx, QWORD PTR [r15+184]
+and rbx, 15
+test rbx, rbx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+23:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 27f
+test rbx, rbx
+je 29f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 211f
+jmp 212f
+211:
+mov rcx, rbp
+212:
+mov rdi, r12
+mov rsi, r14
+add rsi, rbx
+add rsi, 64
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+add r12, rcx
+sub rbp, rcx
+jmp 210f
+29:
+210:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 214f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 215f
+214:
+215:
+test rbp, rbp
+je 216f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+218:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 218b
+jmp 217f
+216:
+217:
+jmp 28f
+27:
+28:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 219f
+test rbx, rbx
+je 221f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 223f
+jmp 224f
+223:
+mov rcx, rbp
+224:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+225:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 225b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 226f
+jmp 227f
+226:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+227:
+jmp 222f
+221:
+222:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 228f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 229f
+228:
+229:
+mov rcx, rbp
+test rcx, rcx
+je 230f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+232:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+jmp 231f
+230:
+231:
+jmp 220f
+219:
+220:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_decrypt_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_vpclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_decrypt_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbp, r9
+mov QWORD PTR [r15+208], rbp
+mov r12, r8
+mov rbx, rcx
+and rbx, 15
+test rbp, rbp
+je 20f
+mov rax, QWORD PTR [r15+192]
+test rax, rax
+je 22f
+jmp 23f
+22:
+mov rbx, QWORD PTR [r15+184]
+and rbx, 15
+test rbx, rbx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+26:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 26b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+23:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 27f
+test rbx, rbx
+je 29f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 211f
+jmp 212f
+211:
+mov rcx, rbp
+212:
+mov rdi, r14
+add rdi, rbx
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+add r12, rcx
+sub rbp, rcx
+add rbx, rcx
+cmp rbx, 16
+je 214f
+jmp 215f
+214:
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r14
+add rdx, 32
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+215:
+jmp 210f
+29:
+210:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 216f
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 217f
+216:
+217:
+mov rcx, rbp
+test rcx, rcx
+je 218f
+mov rdi, r14
+add rdi, 32
+mov rsi, r12
+mov r10d, 0
+220:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 220b
+jmp 219f
+218:
+219:
+jmp 28f
+27:
+28:
+mov r12, QWORD PTR [r15+200]
+mov rbp, QWORD PTR [r15+208]
+mov rbx, QWORD PTR [r15+192]
+and rbx, 15
+test rbp, rbp
+je 221f
+test rbx, rbx
+je 223f
+mov ecx, 16
+sub rcx, rbx
+cmp rbp, rcx
+jb 225f
+jmp 226f
+225:
+mov rcx, rbp
+226:
+mov rdi, r12
+mov rsi, r14
+add rsi, rbx
+add rsi, 64
+mov r10d, 0
+227:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 227b
+add r12, rcx
+sub rbp, rcx
+jmp 224f
+223:
+224:
+mov rdx, r12
+mov rcx, rbp
+shr rcx, 4
+mov rax, rbp
+and rbp, 15
+sub rax, rbp
+add r12, rax
+test rcx, rcx
+je 228f
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+call {vg_sm4_ctr32}
+jmp 229f
+228:
+229:
+test rbp, rbp
+je 230f
+mov eax, 0
+mov QWORD PTR [r14+64], rax
+mov QWORD PTR [r14+72], rax
+mov rdi, r13
+mov rsi, r14
+add rsi, 48
+mov rdx, r14
+add rdx, 64
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, r12
+mov rsi, r14
+add rsi, 64
+mov rcx, rbp
+mov r10d, 0
+232:
+movzx eax, BYTE PTR [rdi+r10*1]
+movzx r11d, BYTE PTR [rsi+r10*1]
+xor rax, r11
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+jmp 231f
+230:
+231:
+jmp 222f
+221:
+222:
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_finish_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_vpclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5792 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2568]
+mov r9, rsp
+add r9, 8
+mov QWORD PTR [r9+128], rbx
+mov QWORD PTR [r9+136], rbp
+mov QWORD PTR [r9+144], r12
+mov QWORD PTR [r9+152], r13
+mov QWORD PTR [r9+160], r14
+mov QWORD PTR [r9+168], r15
+mov r15, r9
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov QWORD PTR [r15+200], r8
+mov rbx, QWORD PTR [r15+192]
+mov rax, QWORD PTR [r15+184]
+test rbx, rbx
+je 20f
+jmp 21f
+20:
+mov rbx, rax
+21:
+and rbx, 15
+test rbx, rbx
+je 22f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+24:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 24b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+23:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rdi, QWORD PTR [r15+200]
+mov rax, QWORD PTR [r15]
+mov rdx, QWORD PTR [r15+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rdx
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2568]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}
+
+/// The CPU features `vg_sm4_gcm_stream_verify_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_SM4_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_vpclmul`.
+///
+/// It compares the tags without a branch on their bytes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-2576]
+mov rax, rsp
+add rax, 16
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+128], rbx
+mov QWORD PTR [rax+136], rbp
+mov QWORD PTR [rax+144], r12
+mov QWORD PTR [rax+152], r13
+mov QWORD PTR [rax+160], r14
+mov QWORD PTR [rax+168], r15
+mov r15, rax
+mov r14, rsi
+mov r13, rdi
+mov QWORD PTR [r15+184], rdx
+mov QWORD PTR [r15+192], rcx
+mov rbx, r9
+mov QWORD PTR [r15+224], rbx
+mov rsi, r8
+mov ecx, 0
+cmp rbx, 4
+jb 20f
+cmp rbx, 17
+jb 22f
+jmp 23f
+22:
+mov ecx, 1
+23:
+jmp 21f
+20:
+21:
+test rcx, rcx
+je 24f
+mov eax, 0
+mov QWORD PTR [r15+256], rax
+mov QWORD PTR [r15+264], rax
+mov rdi, r15
+add rdi, 256
+mov rcx, rbx
+cmp rcx, 16
+je 26f
+mov r10d, 0
+28:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 28b
+jmp 27f
+26:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+27:
+mov rbx, QWORD PTR [r15+192]
+mov rax, QWORD PTR [r15+184]
+test rbx, rbx
+je 29f
+jmp 210f
+29:
+mov rbx, rax
+210:
+and rbx, 15
+test rbx, rbx
+je 211f
+mov eax, 0
+mov QWORD PTR [r15+96], rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r15
+add rdi, 96
+mov rsi, r14
+add rsi, 32
+mov rcx, rbx
+mov r10d, 0
+213:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 213b
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+jmp 212f
+211:
+212:
+mov rbx, QWORD PTR [r15+184]
+mov rbp, QWORD PTR [r15+192]
+mov rax, rbx
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+96], rax
+mov rax, rbp
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [r15+104], rax
+mov rdi, r13
+add rdi, 240
+mov rsi, r14
+add rsi, 16
+mov rdx, r15
+add rdx, 96
+mov ecx, 1
+mov r8, r15
+add r8, 512
+call {vg_ghash_vpclmul}
+mov rax, QWORD PTR [r14+16]
+mov QWORD PTR [r15], rax
+mov rax, QWORD PTR [r14+24]
+mov QWORD PTR [r15+8], rax
+mov rdi, r13
+mov rsi, r14
+mov rdx, r15
+add rdx, 0
+mov ecx, 1
+call {vg_sm4_ctr32}
+mov rbx, QWORD PTR [r15+224]
+mov eax, 0
+mov QWORD PTR [r15+240], rax
+mov QWORD PTR [r15+248], rax
+mov rdi, r15
+add rdi, 240
+mov rsi, r15
+add rsi, 0
+mov rcx, rbx
+cmp rcx, 16
+je 214f
+mov r10d, 0
+216:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 216b
+jmp 215f
+214:
+mov rax, QWORD PTR [rsi]
+mov r10, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], r10
+215:
+mov rax, QWORD PTR [r15+240]
+xor rax, QWORD PTR [r15+256]
+mov rdx, QWORD PTR [r15+248]
+xor rdx, QWORD PTR [r15+264]
+or rax, rdx
+cmp rax, 1
+mov eax, 0
+adc eax, 0
+jmp 25f
+24:
+mov eax, 0
+25:
+mov rbx, QWORD PTR [r15+128]
+mov rbp, QWORD PTR [r15+136]
+mov r12, QWORD PTR [r15+144]
+mov r13, QWORD PTR [r15+152]
+mov r14, QWORD PTR [r15+160]
+mov r15, QWORD PTR [r15+168]
+lea rsp, [rsp+2576]
+ret
+.p2align 6",
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+    )
+}

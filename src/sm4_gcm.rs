@@ -47,12 +47,11 @@ use crate::arch::sm4_gcm::{
     vg_sm4_gcm_open, vg_sm4_gcm_open_pclmul, vg_sm4_gcm_open_vpclmul, vg_sm4_gcm_seal,
     vg_sm4_gcm_seal_pclmul, vg_sm4_gcm_seal_vpclmul, vg_sm4_gcm_stream_aad,
     vg_sm4_gcm_stream_aad_pclmul, vg_sm4_gcm_stream_aad_vpclmul, vg_sm4_gcm_stream_decrypt,
-    vg_sm4_gcm_stream_decrypt_pclmul, vg_sm4_gcm_stream_decrypt_vpclmul,
-    vg_sm4_gcm_stream_encrypt, vg_sm4_gcm_stream_encrypt_pclmul,
-    vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish, vg_sm4_gcm_stream_finish_pclmul,
-    vg_sm4_gcm_stream_finish_vpclmul, vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_init_pclmul,
-    vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify, vg_sm4_gcm_stream_verify_pclmul,
-    vg_sm4_gcm_stream_verify_vpclmul,
+    vg_sm4_gcm_stream_decrypt_pclmul, vg_sm4_gcm_stream_decrypt_vpclmul, vg_sm4_gcm_stream_encrypt,
+    vg_sm4_gcm_stream_encrypt_pclmul, vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish,
+    vg_sm4_gcm_stream_finish_pclmul, vg_sm4_gcm_stream_finish_vpclmul, vg_sm4_gcm_stream_init,
+    vg_sm4_gcm_stream_init_pclmul, vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify,
+    vg_sm4_gcm_stream_verify_pclmul, vg_sm4_gcm_stream_verify_vpclmul,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
