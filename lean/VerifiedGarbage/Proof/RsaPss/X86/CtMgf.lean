@@ -209,20 +209,20 @@ abbrev Yz (scr : BitVec 32) (m : Mem) : Prop := ∀ i < h.B, m (sa scr (oY + i))
 abbrev Ys (scr : BitVec 32) (sd : List Byte) (m : Mem) : Prop :=
   ∀ i < h.B, m (sa scr (oY + i)) = if i < h.D then sd.getD i 0 else 0
 
-/-- The first block cleared. -/
-theorem mgfA_vp (P : MP h L scr lo db seed Inv) (c : Nat) :
+/-- The first block cleared, then `k`. -/
+theorem mgfA_vp (P : MP h L scr lo db seed Inv) (c : Nat) {c' : Prog isa} {Q : State → State → Prop}
+    (k : VP (fun σ s => Ctx L scr σ s ∧ MI h L scr lo db c dbv seed Inv σ s.mem ∧ Yz h scr s.mem) c' Q) :
     VP (fun σ s => Ctx L scr σ s ∧ MI h L scr lo db c dbv seed Inv σ s.mem)
-      (.seq (.block (clrArgs oY h.H.B)) zeroLoop)
-      (fun σ s => Ctx L scr σ s ∧ MI h L scr lo db c dbv seed Inv σ s.mem ∧ Yz h scr s.mem) := by
+      (.seq (.block (clrArgs oY h.H.B)) (.seq zeroLoop c')) Q := by
   have hB := h.B_le
   have hB64 := h.B_ge
   have hg := P.hg
   refine VP.seq (VP.taint [.esp, .ebp] h.certs.clrY (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hm⟩ => ?_)
-    ((zero_vp (hg.wbuf (o := oY) (n := h.B) (by pomega) (by omega)) (by omega)
+    (VP.seq ((zero_vp (hg.wbuf (o := oY) (n := h.B) (by pomega) (by omega)) (by omega)
       (Inv := MI h L scr lo db c dbv seed Inv) fun σ m m' hm hf => P.keep h hm (by rwa [hg.scrA (by pomega)] at hf)
         (by simp) fun r hr => P.ctW_away h r (by simp only [List.mem_singleton] at hr; subst hr; simp)).mono
       (fun _ _ h => h) fun σ s ⟨hc, hm, hz⟩ => ⟨hc, hm, fun i hi => by
-        rw [← hg.byteAt_scr (by pomega)]; exact hz i hi⟩)
+        rw [← hg.byteAt_scr (by pomega)]; exact hz i hi⟩) k)
   simp only [clrArgs, atS, addi, mi, List.cons_append, List.nil_append]
   refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => wp_movi fun t3 u3 => wp_movi fun t4 u4 => WP.block_nil ?_
   refine ⟨(((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).upd u3 (by decide)
@@ -231,11 +231,11 @@ theorem mgfA_vp (P : MP h L scr lo db seed Inv) (c : Nat) :
   · rw [u4.other _ (by decide), u3.gpr]
   · rw [u4.gpr]; rfl
 
-/-- The seed to `Y`. -/
-theorem mgfB_vp (P : MP h L scr lo db seed Inv) (c : Nat) :
+/-- The seed to `Y`, then `k`. -/
+theorem mgfB_vp (P : MP h L scr lo db seed Inv) (c : Nat) {c' : Prog isa} {Q : State → State → Prop}
+    (k : VP (fun σ s => Ctx L scr σ s ∧ MI h L scr lo db c dbv seed Inv σ s.mem ∧ Ys h scr (seed σ) s.mem) c' Q) :
     VP (fun σ s => Ctx L scr σ s ∧ MI h L scr lo db c dbv seed Inv σ s.mem ∧ Yz h scr s.mem)
-      (.seq (.block (mgfSeed h.H)) Impl.Bignum.X86.copyBytes)
-      (fun σ s => Ctx L scr σ s ∧ MI h L scr lo db c dbv seed Inv σ s.mem ∧ Ys h scr (seed σ) s.mem) := by
+      (.seq (.block (mgfSeed h.H)) (.seq Impl.Bignum.X86.copyBytes c')) Q := by
   have hB := h.B_le
   have hB64 := h.B_ge
   have hD := h.D_le
@@ -252,10 +252,11 @@ theorem mgfB_vp (P : MP h L scr lo db seed Inv) (c : Nat) :
       s.gpr .esi = scr + BitVec.ofNat 32 (oEm + lo + db) ∧ s.gpr .ecx = BitVec.ofNat 32 h.D ∧
       ∀ i < h.D, s.mem (byteAt (scr + BitVec.ofNat 32 (oEm + lo + db)) i) = (seed σ).getD i 0)
     (VP.taint [.esp, .ebp] h.certs.mgfSeed (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hm, hz⟩ => ?_)
-    ((copy_vp (hg.wbuf (o := oY) (n := h.D) (by pomega) hD0) (hg.rbuf (o := oEm + lo + db) (n := h.D) (by pomega) hD0)
+    (VP.seq ((copy_vp (hg.wbuf (o := oY) (n := h.D) (by pomega) hD0)
+      (hg.rbuf (o := oEm + lo + db) (n := h.D) (by pomega) hD0)
       (by rw [hg.scrA (by pomega), hg.scrA (by pomega)]; exact Geo.sep (by pomega) (by pomega) (by pomega)) hD0
       (Inv := Z) (f := fun σ i => (seed σ).getD i 0) fun σ m m' ⟨hm, hz⟩ hf => ?_).mono (fun _ _ h => h)
-      fun σ s ⟨hc, ⟨hm, hz⟩, hy⟩ => ⟨hc, hm, fun i hi => ?_⟩)
+      fun σ s ⟨hc, ⟨hm, hz⟩, hy⟩ => ⟨hc, hm, fun i hi => ?_⟩) k)
   · simp only [mgfSeed, atDb, atS, addSlot, addi, mi, Impl.RsaPkcs1Sig.X86.stk, List.cons_append, List.nil_append]
     refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => ?_
     have c2 : Ctx L scr σ t2 := (hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)

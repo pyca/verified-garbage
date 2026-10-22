@@ -30,15 +30,23 @@ def ylist (yv : Nat → Byte) (T : Nat) : List Byte := (List.range T).map yv
 theorem ylist_getD {yv : Nat → Byte} {T j : Nat} (h : j < T) : (ylist yv T).getD j 0 = yv j := by
   simp [ylist, List.getD_eq_getElem?_getD, h]
 
-/-- `cmp d, [b + o]`, and the zero flag. -/
+/-- `cmp d, [b + o]`, and the carry and zero flags. -/
 theorem wp_cmpm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {B : BitVec 32} {o : Nat}
     (hb : s.gpr b = B) (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
-    (k : ∀ s', Fupd s s' → s'.zf = some (s.gpr d - s.mem.readW (addr B o) 32 == 0) → WP isa (.block is) s' Q) :
+    (k : ∀ s', Fupd s s' → s'.cf = some (decide ((s.gpr d).toNat < (s.mem.readW (addr B o) 32).toNat)) →
+      s'.zf = some (s.gpr d - s.mem.readW (addr B o) 32 == 0) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .cmp d (.mem ⟨b, o⟩) :: is)) s Q := by
   refine cons (s' := arithFlags s (s.gpr d - s.mem.readW (addr B o) 32)
     ((s.gpr d).toNat < (s.mem.readW (addr B o) 32).toNat)
     (subOverflow (s.gpr d) (s.mem.readW (addr B o) 32) (s.gpr d - s.mem.readW (addr B o) 32)))
-    (by simp [exec, execAlu, readSrc_mem hb hin]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
+    (by simp [exec, execAlu, readSrc_mem hb hin]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl rfl)
+
+/-- `sub d, [b + o]`. -/
+theorem wp_subm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {B : BitVec 32} {o : Nat}
+    (hb : s.gpr b = B) (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
+    (k : ∀ s', Upd s s' d (s.gpr d - s.mem.readW (addr B o) 32) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .sub d (.mem ⟨b, o⟩) :: is)) s Q :=
+  cons (by simp [exec, execAlu, readSrc_mem hb hin]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
 
 variable {L : Lay} {scr : BitVec 32} (h : PssHash)
 
@@ -275,7 +283,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     refine hc.wp_slot hg (by decide) (by decide) (by decide) fun t1 c1 u1 => wp_addi fun t2 u2 => ?_
     refine (c1.upd u2 (by decide) (by decide)).wp_st hg (by decide) fun t3 c3 u3 => ?_
     refine wp_cmpm (B := L.B) (by rw [c3.st.sp]) (by rw [hg.aFr ok sNb (by decide)]; exact c3.rFr hg sNb (by decide))
-      fun t4 u4 z => WP.block_nil ?_
+      fun t4 u4 _ z => WP.block_nil ?_
     have e2 : t2.gpr .eax = BitVec.ofNat 32 (b + 1) := by
       rw [u2.gpr, u1.gpr, hbi, BitVec.ofNat_add_ofNat]
     have m4 : t4.mem = s.mem.writeW (L.fr sBi) (BitVec.ofNat 32 (b + 1)) := by
