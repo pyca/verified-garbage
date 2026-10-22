@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 
 /-!
@@ -29,8 +30,17 @@ open VG.Proof.Ffdh.X86
 open VG.Proof.Bignum.X86.PublicRt (Both relCT_both)
 open VG.Impl.Ffdh.X86.Candidate
 
-theorem prepHead9_check : ACheck (prepHead 9) := by dsimp only [ACheck]; taint_decide
-theorem prepHead10_check : ACheck (prepHead 10) := by dsimp only [ACheck]; taint_decide
+/-- What `prepHead` runs after the context's setup. -/
+abbrev prepTail (j : Nat) : Prog isa :=
+  .seq (setSmall (.slot .wide 14) (one .wide) 1) <| .seq (chain .sbb (.slot .wide 15) (.slot .wide j)
+    (.slot .wide 14) (one .wide)) <| .seq (copy (.slot .wide 15) (.slot .wide 11) (one .wide))
+    (.block [.mov .eax (.imm 0), .store (sc twoOff) .eax])
+/-- The taint checks of `prepHead j`: the copy of the modulus before the context's setup, and what
+follows it. -/
+abbrev PrepHeadCk (j : Nat) : Prop :=
+  ACheck (copy (.slot .wide j) (.slot .wide 0) (one .wide)) ∧ ACheck (prepTail j)
+theorem prepHead9_check : PrepHeadCk 9 := by constructor <;> dsimp only [ACheck] <;> taint_decide
+theorem prepHead10_check : PrepHeadCk 10 := by constructor <;> dsimp only [ACheck] <;> taint_decide
 theorem halveBody_check : ACheck (.seq (halve (.slot .wide 11)) (.block (([.mov .eax (.mem (sc twoOff)),
     .alu .add .eax (.imm 1), .store (sc twoOff) .eax] : List Instr) ++ lowWord (.slot .wide 11) ++
     ([.alu .and .eax (.imm 1)] : List Instr)))) := by
@@ -48,12 +58,16 @@ abbrev HalvRun (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
   ∃ s₀, Run Ex base bytes len args sp s₀ ∧ Halving Ex base bytes len args s₀ w k x
 
 /-- Runs for the same modulus `w` prepare it alike. -/
-theorem prepPhase_trace {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hc : ACheck (prepHead j)) (hw3 : 3 ≤ w)
+theorem prepPhase_trace {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hc : PrepHeadCk j) (hw3 : 3 ≤ w)
     (hodd : w % 2 = 1) {P : State → Prop}
     (hP : ∀ x, P x → Run Ex base bytes len args sp x ∧ sv x.mem base len .wide j = w) :
     RelCT isa (Both P) (prepPhase j) (Both (Run Ex base bytes len args sp)) := by
   unfold prepPhase
-  refine RelCT.seq (aRel (F := HalvRun Ex base bytes len args sp w 0) (fun x h => (hP x h).1) hc fun x h =>
+  have trace : RelCT isa (Both P) (prepHead j) fun _ _ => True :=
+    RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun x h => (hP x h).1) hc.1 fun x h =>
+      copyDown_run hj9 (by omega) (by decide) (hP x h).1)
+      (RelCT.seq (prepare_relCT .wide) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.2))
+  refine RelCT.seq (relCT_both (F := HalvRun Ex base bytes len args sp w 0) trace fun x h =>
     WP.mono (prepHead_ok (hP x h).1.1 hj9 hj (hP x h).2 hw3 hodd) fun v H => ⟨x, (hP x h).1, H⟩) ?_
   refine (RelCT.loop (I := fun m x y => ∃ k, m = (w - 1) / 2 ^ k ∧ m % 2 = 0 ∧ 0 < m ∧
       HalvRun Ex base bytes len args sp w k x ∧ HalvRun Ex base bytes len args sp w k y) (fun m => ?_) (w - 1)).mono
@@ -120,7 +134,7 @@ theorem drawLoop_trace {w : Nat} {T : List Byte} (G : TapeGeo Ex args base bytes
     · exact ⟨by rw [ex, ey], fun _ => ⟨Rx, Ry⟩, fun e => (by rw [ex] at e; cases e)⟩
 
 /-- Runs of a phase for the same modulus, count of witnesses and tape cursor. -/
-theorem phase_trace {j w n c : Nat} {T : List Byte} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hck : ACheck (prepHead j))
+theorem phase_trace {j w n c : Nat} {T : List Byte} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hck : PrepHeadCk j)
     (G : TapeGeo Ex args base bytes sp T.length) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) (hn1 : 1 ≤ n)
     (hcT : c ≤ T.length) {P : State → Prop}
     (hP : ∀ x, P x → Run Ex base bytes len args sp x ∧

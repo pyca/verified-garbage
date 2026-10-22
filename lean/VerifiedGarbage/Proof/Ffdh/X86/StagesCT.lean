@@ -69,12 +69,15 @@ theorem gate_relCT {P : State → Prop} {C : Prop} (hg : ∀ x, P x → Gate x C
     have c : ¬ C := fun c => by have := i.mpr c; cases this
     exact ⟨⟨P₁, c⟩, P₂, c⟩
 
-theorem ctxP_check : ACheck Impl.Ffdh.X86.ctxP := by dsimp only [ACheck]; taint_decide
+theorem ctxP_check : ACheck (copy (.slot .wide 9) (.slot .wide 0) (one .wide)) := by
+  dsimp only [ACheck]; taint_decide
 
-theorem ctxP_wst {s : State} (R : Run Ex base bytes len args sp s) :
-    WP isa Impl.Ffdh.X86.ctxP s (WSt Ex base bytes len args sp .wide [3, 4] 0) :=
-  WP.seq (WP.mono (copyDown_run (j := 9) (d := 0) (by decide) (by decide) (by decide) R) fun _ R₁ =>
-    prepare_wst R₁ .wide)
+/-- The context of p: the copy of p checked by the taint analysis, and its setup by `prepare_relCT`. -/
+theorem ctxP_relCT :
+    RelCT isa (Both (Run Ex base bytes len args sp)) Impl.Ffdh.X86.ctxP
+      (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) :=
+  VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ ctxP_check fun _ R =>
+    copyDown_run (j := 9) (d := 0) (by decide) (by decide) (by decide) R) (prepare_relCT .wide)
 
 /-- A power modulo p: the base in slot `b`, the exponent in slot `e`. -/
 theorem powP_trace {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (he : e ≤ 17)
@@ -82,7 +85,7 @@ theorem powP_trace {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (
     (hce : ACheck (copy (.slot .wide e) (.slot .wide 8) (one .wide))) :
     RelCT isa (Both (Run Ex base bytes len args sp)) (Impl.Ffdh.X86.powP b e) (Both (Run Ex base bytes len args sp)) := by
   unfold Impl.Ffdh.X86.powP
-  refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ ctxP_check fun _ R => ctxP_wst R) ?_
+  refine VG.RelCT.seq ctxP_relCT ?_
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hcb fun _ W =>
     copyDown_wst hb9 hb (by decide) (by decide) (by decide) (by decide) W) ?_
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hce fun _ W =>
