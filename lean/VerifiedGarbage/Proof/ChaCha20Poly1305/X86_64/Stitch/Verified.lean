@@ -1680,7 +1680,7 @@ theorem sealS_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (h
 theorem sealSC_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealStitchedC { v.callee with pass := 512 } v.poly)
       fun _ _ => True :=
-  sealS_relK v hv (fun h => RelCT.iteCold (RelCT.ite_seq_swap (c := .b) (fun _ => rfl) h)) h₀ h₀' hq
+  sealS_relK v hv (fun h => RelCT.iteCold (RelCT.ite_seq_swap (c := VG.X86_64.Cond.b) (fun _ => rfl) h)) h₀ h₀' hq
 
 end
 
@@ -1782,7 +1782,7 @@ theorem sealS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
 theorem sealSC_of {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (sealStitched x b) s t s') : ∃ t', Exec isa (sealStitchedC x b) s t' s' :=
   Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of fun e =>
-    (Exec.ite_seq_swap_of (c := .b) (c' := .ae) (fun _ => rfl) e).imp fun _ e => Exec.iteCold_iff.mpr e)))
+    (Exec.ite_seq_swap_of (c := VG.X86_64.Cond.b) (c' := VG.X86_64.Cond.ae) (fun _ => rfl) e).imp fun _ e => Exec.iteCold_iff.mpr e)))
     (sealS_exec h)
 
 theorem sealSC_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
@@ -4905,7 +4905,7 @@ theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') 
 /-- As `sealSC_rel`. -/
 theorem openSC_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openStitchedC v.callee v.poly) fun _ _ => True :=
-  openS_relK v hv (fun h => RelCT.iteCold (RelCT.ite_seq_swap (c := .b) (fun _ => rfl) h)) h₀ h₀' hq
+  openS_relK v hv (fun h => RelCT.iteCold (RelCT.ite_seq_swap (c := VG.X86_64.Cond.b) (fun _ => rfl) h)) h₀ h₀' hq
 
 end
 
@@ -5035,7 +5035,7 @@ theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
 theorem openSC_of {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (openStitched x b) s t s') : ∃ t', Exec isa (openStitchedC x b) s t' s' :=
   Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of fun e =>
-    (Exec.ite_seq_swap_of (c := .b) (c' := .ae) (fun _ => rfl) e).imp fun _ e => Exec.iteCold_iff.mpr e)))
+    (Exec.ite_seq_swap_of (c := VG.X86_64.Cond.b) (c' := VG.X86_64.Cond.ae) (fun _ => rfl) e).imp fun _ e => Exec.iteCold_iff.mpr e)))
     (openS_exec h)
 
 theorem openSC_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
