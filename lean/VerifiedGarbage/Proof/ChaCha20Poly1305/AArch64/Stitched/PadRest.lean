@@ -243,6 +243,21 @@ theorem restAtMost_ok (k : Nat) (hk : k < 64) (w : State) :
     (by simp [atMost, Code.allInstrs, keepsV, vdstOf])) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
       ⟨h9, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hv⟩
 
+/-- `openRest`'s test of eight blocks: `x9 = 0` iff the rest is at least 321. -/
+theorem restAbove_ok (w : State) :
+    WP isa (.block above320) w fun u =>
+      u.gpr .x9 = (w.gpr .x23 - BitVec.ofNat 64 321) >>> 63 ∧ Kept [] w u ∧
+      ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64 := by
+  have core : WP isa (.block above320) w
+      fun u => u.gpr .x9 = (w.gpr .x23 - BitVec.ofNat 64 321) >>> 63 ∧ u.mem = w.mem ∧ u.rd = w.rd ∧
+        u.wr = w.wr :=
+    VG.Proof.ChaCha20.AArch64.Xor.wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ =>
+      WP.block_nil ⟨by rw [u₂.gpr, u₁.gpr], by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd],
+        by rw [u₂.wr, u₁.wr]⟩
+  exact WP.mono (WP.preservedV (WP.kept core (by simp [above320, clobbers, dstOf, preserved]))
+    (by simp [above320, Code.allInstrs, keepsV, vdstOf])) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
+      ⟨h9, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hv⟩
+
 theorem beq_zero_toNat (x : BitVec 64) : (x == 0) = decide (x.toNat = 0) := by
   by_cases hx : x = 0
   · subst hx; simp
@@ -267,6 +282,15 @@ theorem atMost_eq {r k : Nat} (h1 : 1 ≤ r) (h : r < 2 ^ 64) :
     Nat.mod_eq_of_lt h, Nat.shiftRight_eq_div_pow]
   have hp : 0 < 2 ^ k := Nat.two_pow_pos k
   rw [show (2 ^ 64 - 1 % 2 ^ 64 + r) % 2 ^ 64 = r - 1 by omega, Nat.div_eq_zero_iff_lt hp]
+  omega
+
+theorem above_eq {r : Nat} (h : r < 2 ^ 63) :
+    ((BitVec.ofNat 64 r - BitVec.ofNat 64 321) >>> 63 == 0) = decide (321 ≤ r) := by
+  rw [beq_zero_toNat]
+  refine decide_eq_decide.mpr ?_
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega : r < 2 ^ 64), Nat.shiftRight_eq_div_pow]
+  rw [Nat.div_eq_zero_iff_lt (Nat.two_pow_pos 63)]
   omega
 
 /-- `padRest` after code that kept everything but `x9`. -/
@@ -394,6 +418,14 @@ theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     fun r hr => (v₄ r hr).trans (v₃' r hr)
   refine WP.ite (decide (L s₀ - P ≤ 2 ^ 8))
     (by rw [evz, x9₄, x23k k₃']; exact congrArg some (atMost_eq h1 (by omega)))
-    (fun h4 => pad (by decide) (by simpa using h4) k₄' v₄') (fun _ => crypt k₄' v₄')
+    (fun h4 => pad (by decide) (by simpa using h4) k₄' v₄') (fun _ => ?_)
+  -- From 321 bytes: eight blocks of keystream; below, the stream.
+  refine WP.seq (WP.mono (restAbove_ok w₄) fun w₅ ⟨x9₅, k₅, v₅⟩ => ?_)
+  have k₅' : Kept [] w w₅ := k₄'.trans k₅
+  have v₅' : ∀ r ∈ preservedV, (w₅.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64 :=
+    fun r hr => (v₅ r hr).trans (v₄' r hr)
+  refine WP.ite (decide (321 ≤ L s₀ - P))
+    (by rw [evz, x9₅, x23k k₄']; exact congrArg some (above_eq (by omega)))
+    (fun _ => pad (by decide) (by omega) k₅' v₅') (fun _ => crypt k₅' v₅')
 
 end VG.Proof.ChaCha20Poly1305.AArch64

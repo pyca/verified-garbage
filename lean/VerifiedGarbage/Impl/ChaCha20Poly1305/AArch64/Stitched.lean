@@ -31,8 +31,8 @@ and only the rest with those calls:
 * the rest of the data is encrypted (`vg_chacha20_xor`, from where the
   chunks, or `Tail.rest`, stopped) and absorbed (from `x22`), in the order the
   direction needs; when decrypting more than `Pad.threshold` bytes, or
-  between 64 and 256 that are not whole blocks, the stream encrypts eight or
-  four blocks of zeros at `ctx[768, 1280)` instead, which the rest is XORed
+  between 64 and 256 or above 320 that are not whole blocks, the stream
+  encrypts eight or four blocks of zeros at `ctx[768, 1280)` instead, which the rest is XORed
   with (`openRest`).
 
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
@@ -184,14 +184,17 @@ def padRest (c : XorCallee) (n : Nat) : Prog isa :=
 /-- `x9 = 0` iff `1 ≤ x23 ≤ 2^k`: `(x23 - 1) >> k`. -/
 def atMost (k : Nat) : List Instr := [.subImm .x .x9 .x23 1, .lsr .x .x9 .x9 k]
 
+/-- `x9 = 0` iff `x23 ≥ 321` (for `x23` below `2^63`): `(x23 - 321) >> 63`. -/
+def above320 : List Instr := [.subImm .x .x9 .x23 321, .lsr .x .x9 .x9 63]
+
 /-- The rest when decrypting (`x22`, `x23` bytes, fewer than 512). Above
 `Pad.threshold`, through the keystream of eight blocks (`padRest c 512`).
-Otherwise with `cryptRest`, unless the rest is between 64 and 256 bytes and
-not whole blocks: there the stream (`Small.lean`) would compute two blocks,
-or a partial last block after its vector kernel, with the scalar block
-function, and the keystream of four blocks (`padRest c 256`) is faster.
-With a single scalar block (at most 64 bytes, or 257 to 320) the stream is
-the faster. -/
+Otherwise with `cryptRest`, unless the rest is not whole blocks and the
+stream (`Small.lean`) would compute two blocks with the scalar block
+function, or a partial last block after its vector kernel: from 65 to 255
+bytes, through the keystream of four blocks (`padRest c 256`), and from 321
+(only without SVE2, whose threshold is 320), of eight. With a single scalar
+block (at most 64 bytes, or 257 to 320) the stream is the faster. -/
 def openRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x9 .x23 (511 - Pad.threshold c.sve), .lsr .x .x9 .x9 9])
     (.ite (.zero .x .x9)
@@ -200,7 +203,9 @@ def openRest (c : XorCallee) : Prog isa :=
           (.seq (.block (atMost 6))
             (.ite (.zero .x .x9) (cryptRest c)
               (.seq (.block (atMost 8))
-                (.ite (.zero .x .x9) (padRest c 256) (cryptRest c)))))))
+                (.ite (.zero .x .x9) (padRest c 256)
+                  (.seq (.block above320)
+                    (.ite (.zero .x .x9) (padRest c 512) (cryptRest c)))))))))
       (padRest c 512))
 
 /-- `sealStitched` but for the tag. -/
