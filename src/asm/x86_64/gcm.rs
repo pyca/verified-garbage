@@ -76392,9 +76392,8 @@ jmp 27f
 26:
 27:
 mov rax, QWORD PTR [r15+192]
-shr rax, 4
-sub rax, 1
-cmp rax, 3
+sub rax, 16
+cmp rax, 48
 jb 213f
 mov rax, QWORD PTR [r15+192]
 shr rax, 8
@@ -77637,13 +77636,11 @@ mov r8, QWORD PTR [r15+192]
 shr r8, 4
 mov r9, r15
 add r9, 512
-mov rbx, rcx
 mov rbp, r8
+mov rbx, r8
+shl rbx, 4
+add rbx, rcx
 call {vg_aes_ctr32_vaes}
-cmp rbp, 2
-jb 274f
-cmp rbp, 3
-jb 276f
 lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
 lea rax, [rip + {VG_GCM_CONSTS}]
@@ -77653,9 +77650,12 @@ pshufb xmm12, xmm0
 pxor xmm8, xmm8
 pxor xmm9, xmm9
 pxor xmm10, xmm10
-movdqu xmm7, XMMWORD PTR [rbx]
+cmp rbp, 3
+jb 274f
+movdqu xmm7, XMMWORD PTR [rbx-48]
 pshufb xmm7, xmm0
 pxor xmm7, xmm12
+pxor xmm12, xmm12
 movdqu xmm6, XMMWORD PTR [r13+304]
 movdqa xmm11, xmm7
 pclmulqdq xmm11, xmm6, 0
@@ -77669,127 +77669,35 @@ pxor xmm9, xmm11
 movdqa xmm11, xmm7
 pclmulqdq xmm11, xmm6, 16
 pxor xmm9, xmm11
-movdqu xmm7, XMMWORD PTR [rbx+16]
-pshufb xmm7, xmm0
-movdqu xmm6, XMMWORD PTR [r13+256]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-movdqu xmm7, XMMWORD PTR [rbx+32]
-pshufb xmm7, xmm0
-movdqu xmm6, XMMWORD PTR [r13+272]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-movdqa xmm11, xmm9
-psrldq xmm11, 8
-pxor xmm10, xmm11
-pslldq xmm9, 8
-pxor xmm8, xmm9
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm2, xmm10
-pxor xmm2, xmm8
-pshufb xmm2, xmm0
-movdqu XMMWORD PTR [r14+16], xmm2
-jmp 277f
-276:
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm0, XMMWORD PTR [rax]
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm1, XMMWORD PTR [rax+16]
-movdqu xmm12, XMMWORD PTR [r14+16]
-pshufb xmm12, xmm0
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-movdqu xmm7, XMMWORD PTR [rbx]
-pshufb xmm7, xmm0
-pxor xmm7, xmm12
-movdqu xmm6, XMMWORD PTR [r13+256]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-movdqu xmm7, XMMWORD PTR [rbx+16]
-pshufb xmm7, xmm0
-movdqu xmm6, XMMWORD PTR [r13+272]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-movdqa xmm11, xmm9
-psrldq xmm11, 8
-pxor xmm10, xmm11
-pslldq xmm9, 8
-pxor xmm8, xmm9
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm2, xmm10
-pxor xmm2, xmm8
-pshufb xmm2, xmm0
-movdqu XMMWORD PTR [r14+16], xmm2
-277:
 jmp 275f
 274:
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm0, XMMWORD PTR [rax]
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm1, XMMWORD PTR [rax+16]
-movdqu xmm12, XMMWORD PTR [r14+16]
-pshufb xmm12, xmm0
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-movdqu xmm7, XMMWORD PTR [rbx]
+275:
+cmp rbp, 2
+jb 276f
+movdqu xmm7, XMMWORD PTR [rbx-32]
 pshufb xmm7, xmm0
 pxor xmm7, xmm12
+pxor xmm12, xmm12
+movdqu xmm6, XMMWORD PTR [r13+256]
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 0
+pxor xmm8, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 17
+pxor xmm10, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 1
+pxor xmm9, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 16
+pxor xmm9, xmm11
+jmp 277f
+276:
+277:
+movdqu xmm7, XMMWORD PTR [rbx-16]
+pshufb xmm7, xmm0
+pxor xmm7, xmm12
+pxor xmm12, xmm12
 movdqu xmm6, XMMWORD PTR [r13+272]
 movdqa xmm11, xmm7
 pclmulqdq xmm11, xmm6, 0
@@ -77820,7 +77728,6 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-275:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
