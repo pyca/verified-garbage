@@ -232,8 +232,8 @@ theorem main_ct :
   unfold verifyMain
   simp only [seqs]
   exact RelCT.assoc (dbPub_ct.seq ((call_ct hv hct hspC hdC).seq (acc0_ct.seq ((mgf_ct hH K lk hc.hash1).seq
-    (clearTop_ct.seq (posScan_ct.seq ((posCheck_ct hH hc.verify).seq
-      (saltBack_ct hH K lk hc))))))))
+    (clearTop_ct.seq ((scanCheck_ct hH hc.verify).seq
+      (saltBack_ct hH K lk hc)))))))
 
 
 theorem restore_ct : RelCT isa (Two (VAt (extra := extra) G (JR H))) (.block restoreRegs) fun _ _ => True := by

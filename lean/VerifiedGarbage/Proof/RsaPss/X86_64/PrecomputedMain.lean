@@ -28,10 +28,10 @@ variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : 
 
 include hH K in
 /-- What follows the call never loads MXCSR. -/
-theorem rest_mx : (seqs [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H, saltBack H]).allInstrs
+theorem rest_mx : (seqs [Code.block acc0, mgfXor H, .block clearTop, scanCheck H, saltBack H]).allInstrs
     (fun i => !loadsMxcsr i) = true := by
-  have h : (seqs [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H, saltBack H]).allInstrs safeI = true := by
-    simp only [seqs, Code.allInstrs, mgfXor_safe hH K, saltBack_safe hH K, rec_all, List.all_append, posScan, posCheck,
+  have h : (seqs [Code.block acc0, mgfXor H, .block clearTop, scanCheck H, saltBack H]).allInstrs safeI = true := by
+    simp only [seqs, Code.allInstrs, mgfXor_safe hH K, saltBack_safe hH K, rec_all, List.all_append, scanCheck, prefixCheck, prefixWords, prefixBytes, posScan, posCheck,
       byteLoop, step, Bool.and_true, Bool.true_and]
     rfl
   rw [safeI_eq, allInstrs_and, Bool.and_eq_true] at h
@@ -64,9 +64,9 @@ theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
   rw [Impl.RsaPss.X86_64.Precomputed.main, show [Code.block dbSlots, .block Impl.RsaPss.X86_64.Precomputed.pubArgs, .call v.name v.code, .block acc0, mgfXor H, .block clearTop,
-      posScan, posCheck H, saltBack H] =
-    [Code.block dbSlots, .block Impl.RsaPss.X86_64.Precomputed.pubArgs, .call v.name v.code] ++ [.block acc0, mgfXor H, .block clearTop, posScan,
-      posCheck H, saltBack H] from rfl]
+      scanCheck H, saltBack H] =
+    [Code.block dbSlots, .block Impl.RsaPss.X86_64.Precomputed.pubArgs, .call v.name v.code] ++ [.block acc0, mgfXor H, .block clearTop, scanCheck H,
+      saltBack H] from rfl]
   -- The public-key operation.
   refine WP.seqs_append (by simp) (by simp) (WP.mono (front_ok v hp L R hw hrd hM h17 h18 h19 h20 h22
     h26 h38 hax) fun u3 ⟨L3, wr3, rd3, cs3, hM3, hmx3, V1, W1, x, R1, hW1, h23, h24, hxl, hcache, hV1, hO1⟩ => ?_)

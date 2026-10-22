@@ -80,6 +80,7 @@ structure VerifyChecks (P : Params) (D : Nat) : Prop where
   shiftPass : ∃ hc, (taint.check (pT 1 [21, 24, 46] []) (shiftPass (ckH P D)) hc).isSome = true
   verifyNb : ∃ hc, (taint.check (pT 1 [24] []) (.block (verifyNb (ckH P D))) hc).isSome = true
   cmpH : ∃ hc, (taint.check (pT 1 [21, 23, 24] []) (cmpH (ckH P D)) hc).isSome = true
+  prefixCheck : ∃ hc, (taint.check (pT 1 [23, 24, 36] []) (prefixCheck (ckH P D)) hc).isSome = true
 
 /-- The pieces of signing. -/
 structure SignChecks (P : Params) (D : Nat) : Prop where

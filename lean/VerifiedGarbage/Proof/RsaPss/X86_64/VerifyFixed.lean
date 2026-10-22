@@ -54,10 +54,14 @@ structure VFixed : Prop where
   shiftPro : ∃ hc, (taint.check (pT 1 [] []) (.block shiftPro) hc).isSome = true
   nextPass : ∃ hc, (taint.check (pT 1 [] []) (.block nextPass) hc).isSome = true
   restore : ∃ hc, (taint.check (pT 1 [] []) (.block restoreRegs) hc).isSome = true
+  scanAny : ∃ hc, (taint.check (pT 1 [35] [])
+    (.block [.mov .rax (.mem (sp sAny)), .alu .test .rax (.reg .rax)]) hc).isSome = true
+  scanLen : ∃ hc, (taint.check (pT 1 [24, 36] [])
+    (.block [.mov .rax (.mem (sp sSlen)), .alu .cmp .rax (.mem (sp sDb))]) hc).isSome = true
 
 theorem vFixed : VFixed :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.RsaPss.X86_64
