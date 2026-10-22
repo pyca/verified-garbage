@@ -229,6 +229,124 @@ pub(crate) fn hash_group_sizes<const N: usize>(
     g.finish();
 }
 
+/// Benchmarks of a hash function as a TLS 1.3 transcript hash.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+mod transcript {
+    use std::hint::black_box;
+
+    use criterion::{BenchmarkId, Criterion};
+    use openssl::hash::{Hasher, MessageDigest};
+    use verified_garbage::hashes::HashFunction;
+
+    use crate::{AWS_LC, OPENSSL, VG};
+
+    /// A TLS 1.3 handshake's transcript, as rustls hashes it: each message in
+    /// turn (ClientHello, ServerHello, EncryptedExtensions, Certificate,
+    /// CertificateVerify, the server's and the client's Finished), with the
+    /// hash of the transcript so far taken, from a copy of the state, after
+    /// ServerHello, CertificateVerify and each Finished (the key schedule's and
+    /// Finished's inputs).
+    const TRANSCRIPT: [(usize, bool); 7] = [
+        (512, false),
+        (122, true),
+        (10, false),
+        (1300, false),
+        (264, true),
+        (52, true),
+        (52, true),
+    ];
+
+    /// The transcript's length, which names its benchmarks.
+    const TRANSCRIPT_LEN: usize = {
+        let mut n = 0;
+        let mut i = 0;
+        while i < TRANSCRIPT.len() {
+            n += TRANSCRIPT[i].0;
+            i += 1;
+        }
+        n
+    };
+
+    /// The last of the transcript's hashes with `H`, by `update` and a clone's
+    /// `finalize`.
+    fn vg_transcript<H: HashFunction>(msgs: &[Vec<u8>]) -> Vec<u8> {
+        let mut h = H::new();
+        let mut last = Vec::new();
+        for (m, &(_, fork)) in msgs.iter().zip(&TRANSCRIPT) {
+            h.update(black_box(m));
+            if fork {
+                last = h.clone().finalize().as_ref().to_vec();
+            }
+        }
+        last
+    }
+
+    /// As `vg_transcript`, with a clone of OpenSSL's `Hasher` for `md`,
+    /// finished.
+    fn openssl_transcript(md: MessageDigest, msgs: &[Vec<u8>]) -> Vec<u8> {
+        let mut h = Hasher::new(md).unwrap();
+        let mut last = Vec::new();
+        for (m, &(_, fork)) in msgs.iter().zip(&TRANSCRIPT) {
+            h.update(black_box(m)).unwrap();
+            if fork {
+                last = h.clone().finish().unwrap().to_vec();
+            }
+        }
+        last
+    }
+
+    /// As `vg_transcript`, with a clone of aws-lc-rs's `Context` for `alg`,
+    /// finished.
+    fn aws_lc_transcript(alg: &'static aws_lc_rs::digest::Algorithm, msgs: &[Vec<u8>]) -> Vec<u8> {
+        let mut h = aws_lc_rs::digest::Context::new(alg);
+        let mut last = Vec::new();
+        for (m, &(_, fork)) in msgs.iter().zip(&TRANSCRIPT) {
+            h.update(black_box(m));
+            if fork {
+                last = h.clone().finish().as_ref().to_vec();
+            }
+        }
+        last
+    }
+
+    /// The transcript's hashes with `H` against OpenSSL's `md` and aws-lc-rs's
+    /// `alg`, hashing incrementally.
+    pub(crate) fn transcript_group<H: HashFunction>(
+        c: &mut Criterion,
+        name: &str,
+        md: MessageDigest,
+        alg: &'static aws_lc_rs::digest::Algorithm,
+    ) {
+        let msgs: Vec<Vec<u8>> = TRANSCRIPT.iter().map(|&(n, _)| vec![0x5a; n]).collect();
+        assert_eq!(openssl_transcript(md, &msgs), vg_transcript::<H>(&msgs));
+        assert_eq!(aws_lc_transcript(alg, &msgs), vg_transcript::<H>(&msgs));
+        let mut g = c.benchmark_group(name);
+        g.bench_function(BenchmarkId::new(VG, TRANSCRIPT_LEN), |b| {
+            b.iter(|| vg_transcript::<H>(&msgs))
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, TRANSCRIPT_LEN), |b| {
+            b.iter(|| openssl_transcript(md, &msgs))
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, TRANSCRIPT_LEN), |b| {
+            b.iter(|| aws_lc_transcript(alg, &msgs))
+        });
+        g.finish();
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+pub(crate) use transcript::transcript_group;
+
 /// Benchmarks checking the digest of the data with `vg`, which computes it
 /// and compares it with the expected one in constant time, against
 /// OpenSSL's `md` and `CRYPTO_memcmp`.
@@ -269,10 +387,22 @@ pub(crate) fn hmac_group<O: AsRef<[u8]>>(
     md: MessageDigest,
     aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
 ) {
+    hmac_group_sizes(c, name, &SIZES, vg, md, aws_lc);
+}
+
+/// As `hmac_group`, at the message sizes `sizes`.
+pub(crate) fn hmac_group_sizes<O: AsRef<[u8]>>(
+    c: &mut Criterion,
+    name: &str,
+    sizes: &[usize],
+    vg: fn(&[u8], &[u8]) -> O,
+    md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
+) {
     let key = [0x0b; 32];
     let pkey = PKey::hmac(&key).unwrap();
     let mut g = c.benchmark_group(name);
-    for size in SIZES {
+    for &size in sizes {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         g.bench_function(BenchmarkId::new(VG, size), |b| {
