@@ -335,64 +335,68 @@ theorem in_of_covers64 {rs : List Region} {p : Addr} {n i : Nat} (h : Covers [�
     (hn : n < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 i) 64 :=
   h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base p hi (by omega)⟩
 
-theorem copyBytes_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) :
-    WP isa copyBytes s (CopyPost s S D n) := by
+/-- What `copyBytes`'s loop leaves: the first `64 q` bytes copied, and `r10 = 64 q`. -/
+def CopyMid (s : State) (S D : Addr) (q : Nat) (t : State) : Prop :=
+  t.gpr .r10 = BitVec.ofNat 64 (64 * q) ∧ t.mem = writeBytes s.mem D (bytesAt s.mem S (64 * q)) ∧
+    (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ ZKeep [.xmm4] s t
+
+/-- `copyBytes`'s loop, from `r10 = 0` and `r8 = 64 ⌊n / 64⌋` (not 0). -/
+theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) (t : State)
+    (r10 : t.gpr .r10 = BitVec.ofNat 64 0) (r8 : t.gpr .r8 = BitVec.ofNat 64 (64 * (n / 64)))
+    (g : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t.gpr r = s.gpr r) (m : t.mem = s.mem) (rd : t.rd = s.rd)
+    (wr : t.wr = s.wr) (z : ZKeep [.xmm4] s t) (hq : 0 < n / 64) :
+    WP isa (.loop (.block copy64Body) .ne) t (CopyMid s S D (n / 64)) := by
   have hn63 := h.lt
-  refine WP.seq (WP.mono (copySetup64_ok s h.rcx h.lt) fun s₁ ⟨r10₁, r8₁, zf₁, g₁, m₁, rd₁, wr₁, z₁⟩ => ?_)
-  -- After the 64-byte loop: the first `64 ⌊n / 64⌋` bytes copied.
   let q := n / 64
-  have mid : WP isa (.ite .e (.block []) (.loop (.block copy64Body) .ne)) s₁ fun t =>
-      t.gpr .r10 = BitVec.ofNat 64 (64 * q) ∧ t.mem = writeBytes s.mem D (bytesAt s.mem S (64 * q)) ∧
-      (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      ZKeep [.xmm4] s t := by
-    refine WP.ite (decide (64 * q = 0)) (by simp only [eval, zf₁, q]) (fun hz => ?_) (fun hz => ?_)
-    · have hq : 64 * q = 0 := of_decide_eq_true hz
-      refine WP.block_nil ⟨by rw [r10₁, hq], by rw [m₁, hq]; simp [bytesAt, writeBytes_nil],
-        fun r a b c => g₁ r b c, rd₁, wr₁, z₁.mono (by simp)⟩
-    · have hq : 0 < q := by have := of_decide_eq_false hz; omega
-      refine WP.loop (M := isa) (body := .block copy64Body) (c := .ne)
-        (fun (k : Nat) (t : State) => ∃ j, k = q - j ∧ j < q ∧ t.gpr .r10 = BitVec.ofNat 64 (64 * j) ∧
-          t.mem = writeBytes s.mem D (bytesAt s.mem S (64 * j)) ∧
-          (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t.gpr r = s.gpr r) ∧
-          t.gpr .r8 = BitVec.ofNat 64 (64 * q) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ ZKeep [.xmm4] s t) ?_ (q - 0) _
-        ⟨0, rfl, hq, by rw [r10₁], by rw [m₁]; simp [bytesAt, writeBytes_nil], fun r a b c => g₁ r b c,
-          r8₁, rd₁, wr₁, z₁.mono (by simp)⟩
-      rintro k t ⟨j, rfl, hj, r10, mem, g, r8, rd, wr, z⟩
-      have hj64 : 64 * j + 64 ≤ n := by omega
-      obtain ⟨t', run', mem', r10', zf', g', rd', wr', z'⟩ := copy64Step_ok t
-        (by rw [g _ (by decide) (by decide) (by decide), h.rsi])
-        (by rw [g _ (by decide) (by decide) (by decide), h.rdi]) r10 r8
-        (by rw [rd, wr]; exact in_of_covers64 h.rd hj64 (by omega))
-        (by rw [wr]; exact in_of_covers64 h.wr hj64 (by omega))
-      refine WP.of_runBlock ⟨t', run', ?_⟩
-      have hlen : (bytesAt s.mem S (64 * j)).length = 64 * j := length_bytesAt _ _ _
-      have hsrc : bytesAt t.mem (S + BitVec.ofNat 64 (64 * j)) 64 = bytesAt s.mem (S + BitVec.ofNat 64 (64 * j)) 64 := by
-        rw [mem]
-        refine bytesAt_frame (writeBytes_frame' s.mem hlen) (fun r hr => ?_) (by decide)
-        simp only [List.mem_singleton] at hr; subst hr
-        exact (h.disj.sub_left (Offset.sub_base S hj64)).sub_right (Region.sub_prefix (by omega))
-      have hmem : t'.mem = writeBytes s.mem D (bytesAt s.mem S (64 * (j + 1))) := by
-        rw [mem', hsrc, mem, show 64 * (j + 1) = 64 * j + 64 by omega, bytesAt_add]
-        conv => lhs; rw [show D + BitVec.ofNat 64 (64 * j) = D + BitVec.ofNat 64 (bytesAt s.mem S (64 * j)).length
-          by rw [hlen]]
-        exact writeBytes_append s.mem D (bytesAt s.mem S (64 * j)) (bytesAt s.mem (S + BitVec.ofNat 64 (64 * j)) 64)
-          (by rw [length_bytesAt, length_bytesAt]; omega)
-      have hz : t'.zf = some (decide (j + 1 = q)) := by
-        rw [zf', show (64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
-        congr 1; simp only [decide_eq_decide]; omega
-      have gg : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t'.gpr r = s.gpr r := fun r a b c => by
-        rw [g' r c, g r a b c]
-      have r10'' : t'.gpr .r10 = BitVec.ofNat 64 (64 * (j + 1)) := by
-        rw [r10', show (64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ofNat_add_ofNat]; congr 1
-      by_cases he : j + 1 = q
-      · left
-        refine ⟨by simp [eval, hz, he], by rw [r10'', he], by rw [hmem, he], gg, by rw [rd', rd],
-          by rw [wr', wr], z.trans z'⟩
-      · right
-        refine ⟨by simp [eval, hz, he], q - (j + 1), by omega, j + 1, rfl, by omega, r10'', hmem, gg,
-          by rw [g' _ (by decide), r8], by rw [rd', rd], by rw [wr', wr], z.trans z'⟩
-  refine WP.seq (WP.mono mid fun s₂ ⟨r10₂, m₂, g₂, rd₂, wr₂, z₂⟩ => ?_)
-  -- The last `n mod 64` bytes, in one masked move.
+  refine WP.loop (M := isa) (body := .block copy64Body) (c := .ne)
+    (fun (k : Nat) (t : State) => ∃ j, k = q - j ∧ j < q ∧ t.gpr .r10 = BitVec.ofNat 64 (64 * j) ∧
+      t.mem = writeBytes s.mem D (bytesAt s.mem S (64 * j)) ∧
+      (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t.gpr r = s.gpr r) ∧
+      t.gpr .r8 = BitVec.ofNat 64 (64 * q) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ ZKeep [.xmm4] s t) ?_ (q - 0) _
+    ⟨0, rfl, hq, by rw [r10], by rw [m]; simp [bytesAt, writeBytes_nil], g, r8, rd, wr, z⟩
+  rintro k t ⟨j, rfl, hj, r10, mem, g, r8, rd, wr, z⟩
+  have hj64 : 64 * j + 64 ≤ n := by omega
+  obtain ⟨t', run', mem', r10', zf', g', rd', wr', z'⟩ := copy64Step_ok t
+    (by rw [g _ (by decide) (by decide) (by decide), h.rsi])
+    (by rw [g _ (by decide) (by decide) (by decide), h.rdi]) r10 r8
+    (by rw [rd, wr]; exact in_of_covers64 h.rd hj64 (by omega))
+    (by rw [wr]; exact in_of_covers64 h.wr hj64 (by omega))
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  have hlen : (bytesAt s.mem S (64 * j)).length = 64 * j := length_bytesAt _ _ _
+  have hsrc : bytesAt t.mem (S + BitVec.ofNat 64 (64 * j)) 64 = bytesAt s.mem (S + BitVec.ofNat 64 (64 * j)) 64 := by
+    rw [mem]
+    refine bytesAt_frame (writeBytes_frame' s.mem hlen) (fun r hr => ?_) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (h.disj.sub_left (Offset.sub_base S hj64)).sub_right (Region.sub_prefix (by omega))
+  have hmem : t'.mem = writeBytes s.mem D (bytesAt s.mem S (64 * (j + 1))) := by
+    rw [mem', hsrc, mem, show 64 * (j + 1) = 64 * j + 64 by omega, bytesAt_add]
+    conv => lhs; rw [show D + BitVec.ofNat 64 (64 * j) = D + BitVec.ofNat 64 (bytesAt s.mem S (64 * j)).length
+      by rw [hlen]]
+    exact writeBytes_append s.mem D (bytesAt s.mem S (64 * j)) (bytesAt s.mem (S + BitVec.ofNat 64 (64 * j)) 64)
+      (by rw [length_bytesAt, length_bytesAt]; omega)
+  have hz : t'.zf = some (decide (j + 1 = q)) := by
+    rw [zf', show (64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
+    congr 1; simp only [decide_eq_decide]; omega
+  have gg : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → t'.gpr r = s.gpr r := fun r a b c => by
+    rw [g' r c, g r a b c]
+  have r10'' : t'.gpr .r10 = BitVec.ofNat 64 (64 * (j + 1)) := by
+    rw [r10', show (64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ofNat_add_ofNat]; congr 1
+  by_cases he : j + 1 = q
+  · left
+    refine ⟨by simp [eval, hz, he], by rw [r10'', he], by rw [hmem, he], gg, by rw [rd', rd],
+      by rw [wr', wr], z.trans z'⟩
+  · right
+    refine ⟨by simp [eval, hz, he], q - (j + 1), by omega, j + 1, rfl, by omega, r10'', hmem, gg,
+      by rw [g' _ (by decide), r8], by rw [rd', rd], by rw [wr', wr], z.trans z'⟩
+
+/-- `copyBytes`'s masked move of the last `n mod 64` bytes, after the loop. -/
+theorem copyTail_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) (s₂ : State)
+    (hm : CopyMid s S D (n / 64) s₂) : WP isa (.block tailMove) s₂ (CopyPost s S D n) := by
+  have hn63 := h.lt
+  let q := n / 64
+  obtain ⟨r10₂, m₂, g₂, rd₂, wr₂, z₂⟩ := hm
+  show WP isa (.block [.mov32 .rax (imm 1), .shiftCl .shl .rax, .alu .sub .rax (imm 1), .kLoad8 .rax .xmm4 srcB,
+    .kStore8 dstB .rax .xmm4]) s₂ _
   have hcx : s₂.gpr .rcx = BitVec.ofNat 64 n := by rw [g₂ _ (by decide) (by decide) (by decide), h.rcx]
   have hk : (s₂.gpr .rcx).toNat % 64 = n % 64 := by
     rw [hcx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n) (b := 2 ^ 64) (by omega)]
@@ -428,5 +432,18 @@ theorem copyBytes_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) :
   conv => lhs; rw [show D + BitVec.ofNat 64 (64 * q) = D + BitVec.ofNat 64 (bytesAt s.mem S (64 * q)).length
     by rw [hlen]]
   rw [writeBytes_append s.mem D _ _ (by rw [length_bytesAt, length_bytesAt]; omega), ← bytesAt_add, hqn]
+
+theorem copyBytes_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) :
+    WP isa copyBytes s (CopyPost s S D n) := by
+  have hn63 := h.lt
+  refine WP.seq (WP.mono (copySetup64_ok s h.rcx h.lt) fun s₁ ⟨r10₁, r8₁, zf₁, g₁, m₁, rd₁, wr₁, z₁⟩ => ?_)
+  refine WP.seq (WP.mono (?_ : WP isa (.ite .e (.block []) (.loop (.block copy64Body) .ne)) s₁
+    (CopyMid s S D (n / 64))) fun s₂ hm => copyTail_ok s h s₂ hm)
+  refine WP.ite (decide (64 * (n / 64) = 0)) (by simp only [eval, zf₁]) (fun hz => ?_) (fun hz => ?_)
+  · have hq : 64 * (n / 64) = 0 := of_decide_eq_true hz
+    exact WP.block_nil ⟨by rw [r10₁, hq], by rw [m₁, hq]; simp [bytesAt, writeBytes_nil],
+      fun r a b c => g₁ r b c, rd₁, wr₁, z₁.mono (by simp)⟩
+  · exact copyLoop_ok s h s₁ r10₁ r8₁ (fun r a b c => g₁ r b c) m₁ rd₁ wr₁ (z₁.mono (by simp))
+      (by have := of_decide_eq_false hz; omega)
 
 end VG.Proof.AesGcm.X86_64.Short

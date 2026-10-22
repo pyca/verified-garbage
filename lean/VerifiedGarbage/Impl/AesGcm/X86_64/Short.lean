@@ -124,16 +124,21 @@ def gText : List Instr :=
   [.mov .rdi (.mem (at_ .r15 leadO)), .alu .add .rdi (.mem (at_ .r15 naO)), .shift .shl .rdi 4,
    .alu .add .rdi (.reg .r15), .alu .add .rdi (imm gO)]
 
-/-- The text (the ciphertext, when decrypting) copied to `G`. -/
-def copyC : Prog isa :=
-  .seq (.block (gText ++ ([.mov .rsi (.mem (at_ .r15 dataO)), .mov .rcx (.mem (at_ .r15 lenO))] : List Instr))) copyBytes
+/-- The masked move of `copyBytes`: the last `rcx mod 64` bytes from `rsi + r10` to `rdi + r10`. -/
+def tailMove : List Instr :=
+  [.mov32 .rax (imm 1), .shiftCl .shl .rax, .alu .sub .rax (imm 1), .kLoad8 .rax .xmm4 srcB, .kStore8 dstB .rax .xmm4]
 
-/-! ## The ciphertext into `G` by its groups
+/-- `copyBytes`'s loop of 64 bytes at a time, from `r10` to `r8`. -/
+def loop64 : Prog isa :=
+  .loop (.block [.vmovdqu32Load .xmm4 srcB, .vmovdqu32Store dstB .xmm4, .alu .add .r10 (imm 64),
+    .alu .cmp .r10 (.reg .r8)]) .ne
 
-`copyC` stores the text 64 bytes at a time from where it starts in `G`,
-`16 t` bytes in (`t = lead + na`). `ghash` then loads `G` a group of four
-blocks at a time, right after those stores; unless `t` is a multiple of 4,
-each of its loads spans two of them, and the CPU forwards a load from one
+/-! ## The ciphertext into `G`
+
+`copyBytes` would store the text 64 bytes at a time from where it starts in
+`G`, `16 t` bytes in (`t = lead + na`). `ghash` then loads `G` a group of
+four blocks at a time, right after those stores; unless `t` is a multiple of
+4, each of its loads spans two of them, and the CPU forwards a load from one
 store only: it waits for both to leave the store buffer (on an Intel Xeon
 with AVX-512, `open` took 10–15 ns longer from 192 bytes on than with `t`
 a multiple of 4). `copyG` stores whole groups of `G` instead, from the one
@@ -146,13 +151,17 @@ loads of the text start `16 sh` bytes before it, and those of its first and
 last groups are masked to the text's bytes. It stores no masked bytes: AMD's
 Zen 4 runs masked 512-bit stores slowly. -/
 
-/-- `rdi = P`, `r8 = 16 sh`, `rsi = D - 16 sh` (`D` the text) and
-`r9 = E = 16 sh + n`, the bytes from `P` to the text's end. -/
+/-- `rax = sh = t mod 4` from `rdi = r15 + gO + 16 t` (`gO` a multiple of 64),
+and ZF set if it is 0. -/
+def gShift : List Instr :=
+  [.mov .rax (.reg .rdi), .alu .sub .rax (.reg .r15), .shift .shr .rax 4, .alu .and .rax (imm 3)]
+
+/-- From `rdi = G + 16 t`, `rsi = D` (the text), `rcx = n` and `rax = sh`:
+`rdi = P`, `r8 = 16 sh`, `rsi = D - 16 sh` and `r9 = E = 16 sh + n`, the
+bytes from `P` to the text's end. -/
 def gArgs : List Instr :=
-  [.mov .rdi (.mem (at_ .r15 leadO)), .alu .add .rdi (.mem (at_ .r15 naO)), .mov .r8 (.reg .rdi),
-   .alu .and .r8 (imm 3), .alu .sub .rdi (.reg .r8), .shift .shl .rdi 4, .alu .add .rdi (.reg .r15),
-   .alu .add .rdi (imm gO), .shift .shl .r8 4, .mov .rsi (.mem (at_ .r15 dataO)), .alu .sub .rsi (.reg .r8),
-   .mov .r9 (.mem (at_ .r15 lenO)), .alu .add .r9 (.reg .r8)]
+  [.mov .r8 (.reg .rax), .shift .shl .r8 4, .alu .sub .rdi (.reg .r8), .alu .sub .rsi (.reg .r8),
+   .mov .r9 (.reg .rcx), .alu .add .r9 (.reg .r8)]
 
 /-- The first group: the text's first `64 - 16 sh` bytes, read into bytes
 `16 sh` on of `zmm4` through the mask `-1 << 16 sh` (the others zero), ORed
@@ -177,18 +186,29 @@ def gTail : List Instr :=
 (so at least two whole groups after the first). -/
 def copyG : Prog isa := .seq (.block (gArgs ++ gHead)) (.seq (.loop (.block gBody) .ne) (.block gTail))
 
+/-- The arguments of the copy: `rdi` at the text's blocks in `G`, `rsi` the
+text, `rcx` its length; then `copyBytes`'s `r10 = 0` and
+`r8 = 64 ⌊n / 64⌋`, compared with 64. -/
+def copyArgs : List Instr :=
+  (gText ++ ([.mov .rsi (.mem (at_ .r15 dataO)), .mov .rcx (.mem (at_ .r15 lenO))] : List Instr)) ++
+    [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 6, .shift .shl .r8 6, .alu .cmp .r8 (imm 64)]
+
 /-- The ciphertext into `G`: by `copyG` from 192 bytes on unless the text
-starts at a group (`t` a multiple of 4), otherwise by `copyC`, which on an
-Intel Xeon with AVX-512 is as fast or faster there (by up to 10% at 16 to
-128 bytes). The branches are on the lengths only. Shorter texts fall
-through to `copyC` as before; the longer ones' code is out of line
-(`Code.iteCold`), after the function's return. -/
+starts at a group (`t` a multiple of 4), otherwise as `copyBytes` copies.
+The tests share `copyBytes`'s comparison of `r8`, so a text of fewer than 64
+bytes runs as many instructions as `copyBytes` (to its masked move), one of
+64 to 127 one more, and the test of 192 and of `t` (from `rdi`, with no
+load) are made from 128 bytes on, the longer ones' code out of line
+(`Code.iteCold`), after the function's return. The branches are on the
+lengths only. -/
 def copyCG : Prog isa :=
-  .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 192)])
-    (Code.iteCold .ae
-      (.seq (.block [.mov .rax (.mem (at_ .r15 leadO)), .alu .add .rax (.mem (at_ .r15 naO)), .alu .test .rax (imm 3)])
-        (.ite .e copyC copyG))
-      copyC)
+  .seq (.block copyArgs)
+  (.ite .b (.block tailMove)
+    (.ite .e (.seq loop64 (.block tailMove))
+      (.seq (.block [.alu .cmp .rcx (imm 192)])
+        (Code.iteCold .ae
+          (.seq (.block gShift) (.ite .e (.seq loop64 (.block tailMove)) copyG))
+          (.seq loop64 (.block tailMove))))))
 
 /-! ## The powers -/
 

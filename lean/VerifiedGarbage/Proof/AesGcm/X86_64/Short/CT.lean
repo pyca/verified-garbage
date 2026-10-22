@@ -320,9 +320,12 @@ theorem text_rel (g : Bool) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
         · rw [h₁.2.2.2, h₂.2.2.2]) (by cases g <;> exact ⟨_, by taint_decide⟩))
     (fun _ h => text_sj g C hn5 h32 h) (fun _ h => text_sj g C' hn5 h32 h)
 
-theorem copyC_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
+/-- `copyCG`: its arguments loaded from `W`, then its tests are on the
+length and on `rdi`, and every address comes from `rdi`, `rsi` and `rcx`,
+the same in both runs. -/
+theorem copyCG_rel (h32 : nb16 al + nb16 n < 32) :
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
-      copyC fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
+      copyCG fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
   have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
@@ -333,80 +336,14 @@ theorem copyC_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
     obtain ⟨t, run, di, si, cx, -⟩ := copyCArgs_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r296 h.sm.r272
       h.sm.r200 h.sm.r208 (by omega)
     exact WP.of_runBlock ⟨t, run, di, si, cx⟩
-  exact rel_next (rel_piece [.rdi, .rsi, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (keepsEnv (by decide +kernel))
-      ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · rw [h₁.1, h₂.1]
-        · rw [h₁.2.1, h₂.2.1]
-        · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩)
-    (fun _ h => copyC_sj C hn5 h32 h) (fun _ h => copyC_sj C' hn5 h32 h)
-
-/-- `copyCG`: its tests are on public lengths, and each copy addresses
-memory from them. -/
-theorem copyCG_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
-    RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
-      copyCG fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
-  have h32' := h32
-  simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
-  have dD := C.dE
-  have keep : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} {s t : State}, SJ s₀ Ctx W SP A D R al n J tl s →
-      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr →
-      (∀ r l, t.zlane r l = s.zlane r l) → SJ s₀ Ctx W SP A D R al n J tl t := fun S g m rd wr z =>
-    ⟨S.sm.keep dD (rs := []) (fun x _ => by rw [m]) (fun r hr => by cases hr)
-      (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide)) rd wr,
-      fun l hl => by rw [z, S.z0 l hl], fun l hl => by rw [z, S.z1 l hl]⟩
-  have w₁ : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
-      WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 192)]) s fun t =>
-        t.cf = some (decide (n < 192)) ∧ SJ s₀ Ctx W SP A D R al n J tl t := fun s S =>
-    WP.mono (guard1_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r208 (by omega))
-      fun _ ⟨c, g, m, rd, wr, z⟩ => ⟨c, keep S g m rd wr z⟩
-  have w₂ : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
-      WP isa (.block [.mov .rax (.mem (at_ .r15 leadO)), .alu .add .rax (.mem (at_ .r15 naO)),
-        .alu .test .rax (imm 3)]) s fun t =>
-        t.zf = some (decide ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4 = 0)) ∧
-          SJ s₀ Ctx W SP A D R al n J tl t := fun s S =>
-    WP.mono (guard2_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272 (by omega))
-      fun _ ⟨c, g, m, rd, wr, z⟩ => ⟨c, keep S g m rd wr z⟩
-  have wG : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
-      WP isa (.block gArgs) s fun t =>
-        t.gpr .rdi = W + BitVec.ofNat 64 (512 + 16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) -
-          (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4)) ∧
-        t.gpr .r8 = BitVec.ofNat 64 (16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4)) ∧
-        t.gpr .rsi = D - BitVec.ofNat 64 (16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4)) ∧
-        t.gpr .r9 = BitVec.ofNat 64 (16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4) + n) :=
-    fun s S => by
-      obtain ⟨t, run, di, r8, si, r9, -⟩ := gArgs_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272
-        S.sm.r200 S.sm.r208 (by omega)
-      exact WP.of_runBlock ⟨t, run, di, r8, si, r9⟩
   refine rel_next ?_ (fun _ h => copyCG_sj C h32 h) (fun _ h => copyCG_sj C' h32 h)
-  have cC : RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
-      copyC fun _ _ => True := (copyC_rel C C' hn5 h32).mono (fun _ _ h => h) fun _ _ _ => trivial
-  have b1 := rel_next (rel_taint (P := fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧
-      SJ s₀' Ctx W SP A D R al n J' tl' s₂) [.r15] (fun _ _ h r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.sm.env.r15, h.2.sm.env.r15]) ⟨_, by taint_decide⟩)
-    w₁ w₁
-  refine RelCT.seq b1 (RelCT.iteCold (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm) ?_
-    (cC.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)))
-  have b2 := rel_next (rel_taint (P := fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧
-      SJ s₀' Ctx W SP A D R al n J' tl' s₂) [.r15] (fun _ _ h r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.sm.env.r15, h.2.sm.env.r15]) ⟨_, by taint_decide⟩)
-    w₂ w₂
-  refine RelCT.seq (b2.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
-    (rel_ite_e (fun _ _ h => h.1.1.trans h.2.1.symm) (cC.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
-  refine (?_ : RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
-    copyG fun _ _ => True).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
-  exact rel_seq_block_split (rel_piece [.rdi, .r8, .rsi, .r9] (fun _ h => h.sm.env) (fun _ h => h.sm.env)
-    (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ wG wG (fun _ _ h₁ h₂ r hr => by
+  exact rel_seq_block_split (rel_piece [.rdi, .rsi, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env)
+    (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · rw [h₁.1, h₂.1]
       · rw [h₁.2.1, h₂.2.1]
-      · rw [h₁.2.2.1, h₂.2.2.1]
-      · rw [h₁.2.2.2, h₂.2.2.2]) ⟨_, by taint_decide⟩)
+      · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩)
 
 theorem lens_rel (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
@@ -755,7 +692,7 @@ theorem openShort_rel (hF : ShortFacts) {pw gh : Prog isa} {tm tm' : Mem → Mem
       (F₂ := fun u => SM s₀' Ctx W SP A D R al n (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np 12))
         (BitVec.ofNat 64 t) u ∧ bytesAt u.mem A al = bytesAt s₀'.mem A al ∧ bytesAt u.mem D n = bytesAt s₀'.mem D n)
     ((RelCT.seq (pw_rel C C' hpc hpw hpw' h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq
-      (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyCG_rel C C' hn5 h32)
+      (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyCG_rel C C' h32)
       (RelCT.seq (lens_rel C C' hal5 hn5 h32) (RelCT.seq (gh_rel C C' hpc.gh hpw.gh hpw'.gh h32)
       (chkTail_rel C C' hT hT' hTar hTar' oA)))))))).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
     (fun _ ⟨S, a, d⟩ => front_ok C hpw hR.symm hal5 hn5 h32 S a d fun _ F =>
