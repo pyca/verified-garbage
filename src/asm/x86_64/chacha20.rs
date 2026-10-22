@@ -6747,8 +6747,6 @@ jmp 226f
 225:
 test rdx, rdx
 je 236f
-cmp rdx, 65
-jb 238f
 vmovdqu ymm8, YMMWORD PTR [r9+128]
 vmovdqu ymm9, YMMWORD PTR [r9+160]
 vmovdqu ymm12, YMMWORD PTR [r9+224]
@@ -7160,18 +7158,18 @@ mov rsi, r9
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 240f
-242:
+je 238f
+240:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 242b
-jmp 241f
-240:
-241:
+jne 240b
+jmp 239f
+238:
+239:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -7179,36 +7177,30 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 243f
-245:
+je 241f
+243:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 245b
-jmp 244f
-243:
-244:
+jne 243b
+jmp 242f
+241:
+242:
 cmp rcx, rdx
-je 246f
-248:
+je 244f
+246:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 248b
-jmp 247f
-246:
-247:
-jmp 239f
-238:
-vzeroupper
-call {vg_chacha20_xor}
-mov r9, rsi
-239:
+jne 246b
+jmp 245f
+244:
+245:
 jmp 237f
 236:
 237:
@@ -7219,7 +7211,6 @@ mov rsi, r9
 24:
 ret
 .p2align 6",
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
     )
 }
 

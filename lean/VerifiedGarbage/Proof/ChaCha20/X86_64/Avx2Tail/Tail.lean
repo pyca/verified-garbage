@@ -219,10 +219,12 @@ theorem last1T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : e
 theorem smallT_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
     WP isa (small vl) s (Fin s₀) := by
+  cases vl
+  · exact WP.mono (last1T_ok false hp hle h hr9) fun _ d => d.fin hp
   refine WP.seq (WP.mono (cmp65_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.ite (decide (eL s₀ - p < 65)) (by simp [eval, c₁]) (fun _ => ?_) (fun _ => ?_)
   · exact scalarT_ok hp h₁.sinv
-  · exact WP.mono (last1T_ok vl hp hle h₁ r₁) fun _ d => d.fin hp
+  · exact WP.mono (last1T_ok true hp hle h₁ r₁) fun _ d => d.fin hp
 
 theorem adv3_ok {s₀ : State} {p : Nat} (hge : 256 ≤ eL s₀ - p) {s : State}
     (hrsi : s.gpr .rsi = edp s₀ + BitVec.ofNat 64 p) (hrdx : s.gpr .rdx = BitVec.ofNat 64 (eL s₀ - p)) :

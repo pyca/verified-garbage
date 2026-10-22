@@ -16,7 +16,8 @@ being word 12 of the state):
   (`XorBuf.xorBuf`);
 * if 129 to 256, four blocks are computed into `buf[0, 256)`, and the data
   XORed from there; if 65 to 128, two blocks into `buf[0, 128)`, the same;
-  if fewer, but some, `vg_chacha20_xor` XORs them (`scalar`).
+  if fewer, but some, the same two blocks (`vg_chacha20_xor_avx512vl`'s
+  `vg_chacha20_xor` XORs them, `scalar`).
 
 The rounds of a computation take about the same time for two, four or six
 blocks (they are bound by the latency of a quarter round, not by its
@@ -313,15 +314,18 @@ def last1 (vl : Bool) : Prog isa :=
   .seq (.block setup1) (.seq (roundsS vl 1 10) (.seq (.block (addIn1 ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))
     (fromBuf vl)))
 
-/-- At most 64 bytes, by `vg_chacha20_xor`, whose one block takes less time
-than several in vector registers (here and in `vg_chacha20_xor_avx512`); it
-returns with `rsi` pointing at `buf`, which goes back to `r9`. -/
+/-- At most 64 bytes, by `vg_chacha20_xor` (in `vg_chacha20_xor_avx512vl`);
+it returns with `rsi` pointing at `buf`, which goes back to `r9`. -/
 def scalar : Prog isa :=
   .seq (.block [.vop .vzeroupper]) (.seq (.call "vg_chacha20_xor" Xor.xor) (.block [.mov .r9 (.reg .rsi)]))
 
-/-- The last `rdx` bytes, from 1 to 128. -/
-def small (vl : Bool) : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar (last1 vl))
+/-- The last `rdx` bytes, from 1 to 128: two blocks (`last1`); with `vl`,
+at most 64 by `scalar`. On AMD Zen 3 one block of `vg_chacha20_xor` took
+about 110 ns (`chacha20/1025` against `chacha20/1024`), more than two in
+`ymm` registers. -/
+def small : Bool → Prog isa
+  | true => .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar (last1 true))
+  | false => last1 false
 
 /-- 257 to 384 bytes: six blocks, the first four XORed into the next 256
 bytes of data and the last two into `buf`, from which the rest is XORed. -/
