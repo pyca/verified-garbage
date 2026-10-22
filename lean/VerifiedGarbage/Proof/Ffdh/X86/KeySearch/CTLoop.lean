@@ -137,4 +137,104 @@ theorem branch_ct : RelCT isa (Two LiveCT) branch fun _ _ => True := by
   refine WP.mono (attempt_ok L hu) fun u ⟨Su, eu, _⟩ => ⟨o, hp, Su, by rw [eu, st], ?_, hu⟩
   dsimp only; rw [← st]; omega
 
+theorem Done.any {p : KPub} {o s : State} {r : KeySearchResult} (h : Done p o r s) : Any p s := by
+  obtain ⟨A, rfl⟩ := h.input
+  exact ⟨o, _, _, rfl, ⟨A, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words⟩⟩
+
+theorem iteration_ct : RelCT isa (Two LiveCT) iteration fun _ _ => True := by
+  unfold iteration
+  refine RelCT.seq (two_post (Ψ := fun q t => Any q.1.1 t) branch_ct fun q s ⟨o, L, _⟩ => WP.mono (branch_ok L)
+    fun v hv => ?_) (two_taint [.esi, .esp] (any_pins (fun q => q.1.1) fun _ _ h => h) (by taint_decide))
+  rcases hv with ⟨D, _⟩ | ⟨_, _, _, ⟨_, R, _⟩ | ⟨_, R, _⟩⟩
+  · exact D.any
+  · exact R.any
+  · exact R.any
+
+/-- Whether the loop goes on after an iteration from `q`: an attempt was made and rejected. -/
+def Kp.cont (q : Kp) : Prop :=
+  q.1.2.2.1 ≠ 0 ∧ q.1.2.2.2 ≠ 0 ∧ q.1.2.1 + q.1.1.len ≤ q.1.1.randLen ∧ (q.2.headD 0 = 2 ∨ q.2.headD 0 = 3)
+
+instance (q : Kp) : Decidable q.cont := inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The loop point after a rejection. -/
+def Kp.next (q : Kp) : Kp :=
+  if q.2.headD 0 = 2 then ((q.1.1, q.1.2.1 + q.1.1.len, q.1.2.2.1, q.1.2.2.2 - 1), q.2.tail)
+  else ((q.1.1, q.1.2.1 + q.1.1.len, q.1.2.2.1 - 1, 128), q.2.tail)
+
+def CTStep (q : Kp) (s : State) : Prop :=
+  if q.cont then isa.eval .e s = some true ∧ LiveCT q.next s else isa.eval .e s = some false
+
+theorem ct_step (q : Kp) (s : State) (h : LiveCT q s) : WP isa iteration s (CTStep q) := by
+  obtain ⟨⟨p, used, keys, scalars⟩, sts⟩ := q
+  obtain ⟨o, L, hs⟩ := h
+  dsimp only at L hs
+  have hp := L.input.2
+  have hlen : (randOf o).length = p.randLen := by rw [← hp, rand_length]
+  unfold iteration
+  refine WP.seq (WP.mono (branch_ok L) fun v hv => ?_)
+  rcases hv with ⟨D, stop⟩ | ⟨hk, hc, hr, ⟨h2, R⟩ | ⟨h3, R⟩⟩
+  · refine WP.mono (guard_done D) fun t ⟨he, _⟩ => ?_
+    have nc : ¬ Kp.cont ((p, used, keys, scalars), sts) := by
+      intro hco
+      obtain ⟨hk, hc, hr, h23⟩ := hco
+      dsimp only at hk hc hr h23
+      refine stop ⟨hk, hc, hr, ?_⟩
+      rw [head_status hs hk hc (by rw [hlen]; omega)]
+      exact h23
+    simp only [CTStep, nc, ite_false]
+    exact he
+  · refine WP.mono (guard_rej R) fun t ⟨he, Lt⟩ => ?_
+    have e2 : sts.headD 0 = 2 := by rw [← head_status hs hk hc (by rw [hlen]; omega)]; exact h2
+    have co : Kp.cont ((p, used, keys, scalars), sts) := ⟨hk, hc, hr, Or.inl e2⟩
+    simp only [CTStep, co, ite_true, Kp.next, e2]
+    refine ⟨he, o, Lt, ?_⟩
+    have := hs
+    show (keyTail _ _ _ _ _ _).statuses = sts.tail
+    rw [KPub.tail, keyTail_scalar hk hc (by rw [hlen]; omega) h2] at this
+    rw [← this]; rfl
+  · refine WP.mono (guard_rej R) fun t ⟨he, Lt⟩ => ?_
+    have e3 : sts.headD 0 = 3 := by rw [← head_status hs hk hc (by rw [hlen]; omega)]; exact h3
+    have co : Kp.cont ((p, used, keys, scalars), sts) := ⟨hk, hc, hr, Or.inr e3⟩
+    simp only [CTStep, co, ite_true, Kp.next, e3]
+    refine ⟨he, o, Lt, ?_⟩
+    have := hs
+    show (keyTail _ _ _ _ _ _).statuses = sts.tail
+    rw [KPub.tail, keyTail_public hk hc (by rw [hlen]; omega) h3] at this
+    rw [← this]; rfl
+
+/-- The loop's measure. -/
+def Kp.measure (q : Kp) : Nat := 129 * q.1.2.2.1 + q.1.2.2.2
+
+theorem Kp.next_measure {q : Kp} (h : q.cont) : q.next.measure < q.measure := by
+  obtain ⟨hk, hc, _, _⟩ := h
+  unfold Kp.next Kp.measure
+  split <;> dsimp only <;> omega
+
+private def LoopPair (n : Nat) (s t : State) : Prop := ∃ q : Kp, n = q.measure ∧ LiveCT q s ∧ LiveCT q t
+
+private theorem iteration_pair (n : Nat) :
+    RelCT isa (LoopPair n) iteration fun s t =>
+      isa.eval .e s = isa.eval .e t ∧ (isa.eval .e s = some false → True) ∧
+      (isa.eval .e s = some true → ∃ m < n, LoopPair m s t) := by
+  have hc := two_post (Φ := fun (q : Kp) s => n = q.measure ∧ LiveCT q s)
+    (Ψ := fun q t => n = q.measure ∧ CTStep q t) (iteration_ct.mono
+    (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.2, h₂.2⟩) fun _ _ h => h) fun q s h =>
+      WP.mono (ct_step q s h.2) fun _ ht => ⟨h.1, ht⟩
+  refine hc.mono (fun _ _ ⟨q, hn, h₁, h₂⟩ => ⟨q, ⟨hn, h₁⟩, hn, h₂⟩) ?_
+  rintro s t ⟨q, ⟨hn, h₁⟩, _, h₂⟩
+  by_cases hb : q.cont
+  · simp only [CTStep, hb, ite_true] at h₁ h₂
+    refine ⟨h₁.1.trans h₂.1.symm, fun _ => trivial, fun _ => ⟨q.next.measure, ?_, q.next, rfl, h₁.2, h₂.2⟩⟩
+    rw [hn]; exact Kp.next_measure hb
+  · simp only [CTStep, hb, ite_false] at h₁ h₂
+    refine ⟨h₁.trans h₂.symm, fun _ => trivial, fun ht => ?_⟩
+    have : isa.eval .e s = some false := h₁
+    rw [this] at ht
+    cases ht
+
+theorem loop_ct : RelCT isa (Two LiveCT) (.loop iteration .e) fun _ _ => True := by
+  intro s t tr₁ tr₂ u₁ u₂ ⟨q, hs, ht⟩ he₁ he₂
+  exact RelCT.loop (M := isa) (body := iteration) (c := .e) (Q := fun _ _ => True) LoopPair iteration_pair
+    q.measure _ _ _ _ _ _ ⟨q, rfl, hs, ht⟩ he₁ he₂
+
 end VG.Proof.Ffdh.X86.KeySearch
