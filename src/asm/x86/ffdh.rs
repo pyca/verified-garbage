@@ -36830,3 +36830,238 @@ ret
         VG_RSA_KEYGEN_TRIAL32 = sym super::consts::VG_RSA_KEYGEN_TRIAL32,
     )
 }
+
+/// Run native FFDH parameter generation with RSA's trial-division sieve. The routine owns candidate retries, witness selection, all primality rounds, attempt limits and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+///
+/// The whole parameter search runs in verified code: candidate retries, the 64-bit attempt count, the octets each candidate consumes, and the next entropy request, computed without a branch. Each attempt calls `vg_ffdh_parameter_candidate_sieved` with its nine arguments in a 36-byte frame; the candidate writes its `used` into the state. Timing depends on the tape and the controller's public words.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
+/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The last twelve controller words and the scratch contents are private workspace.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 156 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_parameters_sieved(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"mov eax, DWORD PTR [esp+40]
+mov DWORD PTR [eax+32], esi
+mov esi, eax
+mov eax, DWORD PTR [esp+4]
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [esp+12]
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [esp+16]
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [esp+28]
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [esp+32]
+mov DWORD PTR [esi+60], eax
+mov eax, DWORD PTR [esp+36]
+mov DWORD PTR [esi+64], eax
+mov eax, 0
+mov DWORD PTR [esi+72], eax
+mov DWORD PTR [esi+12], eax
+mov DWORD PTR [esi+20], eax
+mov DWORD PTR [esi+28], eax
+20:
+mov eax, DWORD PTR [esi]
+or eax, DWORD PTR [esi+4]
+test eax, eax
+je 21f
+mov eax, DWORD PTR [esi+56]
+mov ecx, DWORD PTR [esi+8]
+cmp eax, ecx
+jb 23f
+lea esp, [esp-36]
+mov eax, DWORD PTR [esi+36]
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esi+8]
+mov DWORD PTR [esp+4], eax
+mov eax, esi
+add eax, 80
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esi+44]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esi+48]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esi+52]
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esi+56]
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esi+60]
+mov DWORD PTR [esp+28], eax
+mov eax, DWORD PTR [esi+64]
+mov DWORD PTR [esp+32], eax
+call {vg_ffdh_parameter_candidate_sieved}
+lea esp, [esp+36]
+mov edx, eax
+mov ecx, DWORD PTR [esi+80]
+mov eax, DWORD PTR [esi+52]
+add eax, ecx
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [esi+56]
+sub eax, ecx
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [esi+72]
+add eax, ecx
+mov DWORD PTR [esi+72], eax
+cmp edx, 1
+je 25f
+cmp edx, 2
+je 27f
+mov eax, DWORD PTR [esi+56]
+mov ecx, DWORD PTR [esi+16]
+cmp eax, ecx
+jb 29f
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+4], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 3
+mov DWORD PTR [esi+68], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+8]
+mov eax, 0
+211:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 211b
+jmp 210f
+29:
+mov eax, DWORD PTR [esi+56]
+mov ecx, DWORD PTR [esi+8]
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+cmp eax, ecx
+sbb edx, edx
+xor ecx, eax
+and ecx, edx
+xor eax, ecx
+add eax, eax
+mov ecx, DWORD PTR [esi+16]
+cmp ecx, eax
+sbb edx, edx
+xor ecx, eax
+and ecx, edx
+xor eax, ecx
+mov DWORD PTR [esi+24], eax
+mov eax, 0
+mov DWORD PTR [esi+68], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+8]
+mov eax, 0
+212:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 212b
+210:
+jmp 28f
+27:
+mov eax, DWORD PTR [esi]
+sub eax, 1
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [esi+4]
+sbb eax, 0
+mov DWORD PTR [esi+4], eax
+mov eax, 4
+mov DWORD PTR [esi+68], eax
+28:
+jmp 26f
+25:
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+4], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 1
+mov DWORD PTR [esi+68], eax
+26:
+jmp 24f
+23:
+mov eax, DWORD PTR [esi+56]
+mov ecx, DWORD PTR [esi+8]
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+cmp eax, ecx
+sbb edx, edx
+xor ecx, eax
+and ecx, edx
+xor eax, ecx
+add eax, eax
+mov ecx, DWORD PTR [esi+16]
+cmp ecx, eax
+sbb edx, edx
+xor ecx, eax
+and ecx, edx
+xor eax, ecx
+mov DWORD PTR [esi+24], eax
+mov eax, 0
+mov DWORD PTR [esi+68], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+8]
+mov eax, 0
+213:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 213b
+24:
+jmp 22f
+21:
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+4], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 3
+mov DWORD PTR [esi+68], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+8]
+mov eax, 0
+214:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 214b
+22:
+mov eax, DWORD PTR [esi+68]
+cmp eax, 4
+je 20b
+mov ecx, DWORD PTR [esi+40]
+mov eax, DWORD PTR [esi+72]
+mov DWORD PTR [ecx], eax
+mov eax, 0
+mov DWORD PTR [ecx+4], eax
+mov eax, DWORD PTR [esi+68]
+mov esi, DWORD PTR [esi+32]
+ret
+.p2align 6",
+        vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved,
+    )
+}
