@@ -6,16 +6,17 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 # ChaCha20 keystream XOR with AVX-512: the last bytes
 
 `tail` XORs the last `rdx` bytes of data (fewer than 1024, at `rsi`) with the
-keystream of the state at `rdi`, for `vg_chacha20_xor_avx512`, in at most
-two computations of eight or four blocks:
+keystream of the state at `rdi`, for `vg_chacha20_xor_avx512` and
+`vg_chacha20_xor_ifma`, in at most two computations of eight or four blocks:
 
 * if at least 512 bytes remain, eight blocks (the counters `c, …, c + 7`
   modulo 2³², `c` being word 12 of the state) are XORed into the next 512
   bytes, and word 12 advanced by 8;
-* then, if 257 to 320 bytes remain, five (`part5`): the first four XORed
+* then, with AVX-512VL (`tail true`, for `vg_chacha20_xor_ifma`), if 257
+  to 320 bytes remain, five (`part5`): the first four XORed
   into the next 256 bytes, the fifth stored to `buf[0, 64)` and as many of
   its bytes as remain XORed into the data;
-* if 321 to 511 remain, eight blocks are computed: the first
+* if 257 (321 with `part5`) to 511 remain, eight blocks are computed: the first
   four XORed into the next 256 bytes, the other four stored to `buf[0, 256)`
   and as many of their bytes as remain XORed into the data
   (`XorBuf.xorBuf`);
@@ -328,13 +329,17 @@ Zen 4 (`chacha20/1025` against `chacha20/1024`), more than four blocks in
 `zmm` registers there and on Intel Emerald Rapids. -/
 def small : Prog isa := last
 
+/-- 257 to 511 bytes: `part`, or with `p5` (AVX-512VL) `part5` for at most
+320. -/
+def mid (p5 : Bool) : Prog isa :=
+  if p5 then .seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part) else part
+
 /-- The last `rdx` bytes (fewer than 1024); then `rsi` points at `buf`. -/
-def tail : Prog isa :=
+def tail (p5 : Bool) : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 512)])
   (.seq (.ite .b (.block []) full)
   (.seq (.block [.alu .cmp .rdx (.imm 257)])
-  (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small))
-    (.seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part)))
+  (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) (mid p5))
     (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
 
 end VG.Impl.ChaCha20.X86_64.Avx512Tail

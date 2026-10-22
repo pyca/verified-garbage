@@ -566,7 +566,7 @@ mod tests {
     fn features() {
         use crate::arch::chacha20::{
             VG_CHACHA20_XOR_AVX2_FEATURES, VG_CHACHA20_XOR_AVX512_FEATURES,
-            VG_CHACHA20_XOR_AVX512VL_FEATURES,
+            VG_CHACHA20_XOR_AVX512VL_FEATURES, VG_CHACHA20_XOR_IFMA_FEATURES,
         };
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES,
@@ -610,7 +610,7 @@ mod tests {
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES, avx512vl);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES, avx512vl);
         let ifma = Features::all(&[
-            VG_CHACHA20_XOR_AVX512_FEATURES,
+            VG_CHACHA20_XOR_IFMA_FEATURES,
             VG_POLY1305_BLOCKS_IFMA_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, ifma);

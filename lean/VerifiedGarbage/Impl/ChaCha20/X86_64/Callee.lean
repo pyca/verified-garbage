@@ -48,6 +48,9 @@ def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5, fals
 /-- Up to 1024 bytes in one computation of sixteen blocks (the loop, or
 `Avx512.last16`), as are the rest of the data's after the first call. -/
 def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6, false⟩
+/-- As `avx512`, with AVX-512VL's five blocks for 257 to 320 bytes left
+(`Avx512.xor5`), for the CPUs with IFMA. -/
+def Callee.ifma : Callee := ⟨"vg_chacha20_xor_ifma", Avx512.xor5, 960, 1024, 6, false⟩
 /-- As `avx512`, with fewer than 513 bytes in `ymm` registers (`Avx512VL.xorBy`). -/
 def Callee.avx512vl : Callee := ⟨"vg_chacha20_xor_avx512vl", Avx512VL.xorBy, 960, 1024, 6, true⟩
 

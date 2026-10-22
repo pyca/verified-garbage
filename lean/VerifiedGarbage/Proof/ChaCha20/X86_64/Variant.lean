@@ -131,7 +131,7 @@ def avx2 : XorImpl where
 
 theorem avx512_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx512.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
-  fun s hs => Avx512.xor_rsi s hs
+  fun s hs => Avx512.xor_rsi false s hs
 
 theorem avx512_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaCha20.X86_64.Callee.avx512.code :=
   Avx512.xor_ct
@@ -155,23 +155,36 @@ def avx512 : XorImpl where
   mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_avx512"
-  features := ["avx", "avx512f", "avx512vl"]
+  features := ["avx", "avx512f"]
   poly := .avx512
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
 
-/-- `vg_chacha20_xor_avx512`, for CPUs with AVX-512 IFMA too: its callers
-that also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call
+theorem ifma_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.ifma.code s t s' ∧
+    abiPreserved s s' ∧ (xorStack 16).post s s' :=
+  fun s hs => Avx512.xor_rsi true s hs
+
+theorem ifma_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaCha20.X86_64.Callee.ifma.code :=
+  Avx512.xor5_ct
+
+theorem ifma_nosp : NoSp Impl.ChaCha20.X86_64.Callee.ifma.code := by
+  have : ((instrs Impl.ChaCha20.X86_64.Callee.ifma.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_chacha20_xor_ifma`, for CPUs with AVX-512 IFMA (and AVX-512VL): the
+AVX-512 kernel with five blocks for 257 to 320 bytes left; its callers that
+also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call
 `vg_poly1305_blocks_ifma`. -/
 def ifma : XorImpl where
-  callee := .avx512
+  callee := .ifma
   fold_le := by decide
   stack := 16
   stack_le := by decide
   depth_le := by lit_decide
   xdepth := by lit_decide
-  ok := avx512_ok
-  ct := avx512_ct
-  nosp := avx512_nosp
+  ok := ifma_ok
+  ct := ifma_ct
+  nosp := ifma_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"

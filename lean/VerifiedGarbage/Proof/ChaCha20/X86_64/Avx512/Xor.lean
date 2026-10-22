@@ -383,16 +383,16 @@ theorem last12_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 512 < eL s₀
 
 /-! ## The whole function -/
 
-theorem xor_eq : Impl.ChaCha20.X86_64.Avx512.xor =
+theorem xor_eq (p5 : Bool) : Impl.ChaCha20.X86_64.Avx512.xorP p5 =
     .seq (.block (Impl.ChaCha20.X86_64.Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
     (.seq (.ite .b (.block []) (.loop body .ae))
-    (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Impl.ChaCha20.X86_64.Avx512Tail.tail
+    (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (Impl.ChaCha20.X86_64.Avx512Tail.tail p5)
       (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16))))) := rfl
 
 /-- After the loop: the last pass of twelve or sixteen blocks, or the tail. -/
-theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 * t < 1024) {s : State}
+theorem rest_ok (p5 : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 * t < 1024) {s : State}
     (h : LInv s₀ t s) :
-    WP isa (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Impl.ChaCha20.X86_64.Avx512Tail.tail
+    WP isa (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (Impl.ChaCha20.X86_64.Avx512Tail.tail p5)
       (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16)))) s
       fun s' => (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
   have hL := eL_lt s₀
@@ -406,7 +406,7 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 *
   have h₁ : LInv s₀ t s₁ := cong h g₁ m₁ rd₁ wr₁
   have hr : (s.gpr .rdx).toNat = eL s₀ - 1024 * t := by rw [h.rdx, toNat_ofNat_lt (by omega)]
   refine WP.ite (decide (eL s₀ - 1024 * t < 513)) (by simp [eval, c₁, hr]) (fun hs => ?_) (fun hs => ?_)
-  · exact Avx512Tail.tail_ok hp ht (tinv_of h₁)
+  · exact Avx512Tail.tail_ok p5 hp ht (tinv_of h₁)
   · simp only [decide_eq_false_iff_not] at hs
     refine WP.seq (WP.mono (cmp769_ok s₁) fun s₂ ⟨g₂, m₂, rd₂, wr₂, c₂⟩ => ?_)
     have h₂ : LInv s₀ t s₂ := cong h₁ g₂ m₂ rd₂ wr₂
@@ -417,13 +417,13 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 *
     · simp only [decide_eq_false_iff_not] at hs'
       exact Avx512Last.last16_ok hp (by omega) ht (tinv_of h₂) h₂.incs
 
-theorem correct {s₀ : State} (hp : APre s₀) :
-    WP isa Impl.ChaCha20.X86_64.Avx512.xor s₀ fun s' =>
+theorem correct (p5 : Bool) {s₀ : State} (hp : APre s₀) :
+    WP isa (Impl.ChaCha20.X86_64.Avx512.xorP p5) s₀ fun s' =>
       (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
-  rw [xor_eq]
+  rw [xor_eq p5]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨h₁, hc⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ t, eL s₀ - 1024 * t < 1024 ∧ LInv s₀ t s) ?_
-    fun s₂ ⟨t, ht, h₂⟩ => rest_ok hp ht h₂)
+    fun s₂ ⟨t, ht, h₂⟩ => rest_ok p5 hp ht h₂)
   refine WP.ite (decide (eL s₀ < 1024)) (by simp [eval, hc]) (fun h => ?_) (fun h => ?_)
   · simp only [decide_eq_true_eq] at h
     exact WP.block_nil (M := isa) ⟨0, by omega, h₁⟩
@@ -442,28 +442,43 @@ theorem correct {s₀ : State} (hp : APre s₀) :
 
 /-! ## Constant time and the contract -/
 
-/-- `vg_chacha20_xor_avx512` returns with `rsi` pointing at `buf`, as
-`vg_chacha20_xor` does, for a caller that recomputes pointers from it. -/
-theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx512.xor s t s' ∧ abiPreserved s s' ∧
+/-- `vg_chacha20_xor_avx512` (and `vg_chacha20_xor_ifma`) returns with `rsi`
+pointing at `buf`, as `vg_chacha20_xor` does, for a caller that recomputes
+pointers from it. -/
+theorem xor_rsi (p5 : Bool) (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa (Impl.ChaCha20.X86_64.Avx512.xorP p5) s t s' ∧ abiPreserved s s' ∧
       (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) := by
-  obtain ⟨t, s', he, ⟨h, hpost⟩, hr⟩ := correct (Avx2.APre.of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h, hpost, hr⟩
+  obtain ⟨t, s', he, ⟨h, hpost⟩, hr⟩ := correct p5 (Avx2.APre.of s hs)
+  refine ⟨t, s', he, abiPreserved_of_exec ?_ he h, hpost, hr⟩
+  cases p5 <;> lit_decide
 
-theorem xor_correct (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx512.xor s t s' ∧ abiPreserved s s' ∧
+theorem xor_correct (p5 : Bool) (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa (Impl.ChaCha20.X86_64.Avx512.xorP p5) s t s' ∧ abiPreserved s s' ∧
       xorAvx2X86_64.post s s' :=
-  (xor_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
+  (xor_rsi p5 s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
 
 theorem xor_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
     Impl.ChaCha20.X86_64.Avx512.xor :=
   VG.Taint.constantTime (A := taint) Avx2.τ₀ (fun _ _ h₁ h₂ hp => Avx2.agree₀ h₁ h₂ hp)
     (by taint_decide)
 
+theorem xor5_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
+    Impl.ChaCha20.X86_64.Avx512.xor5 :=
+  VG.Taint.constantTime (A := taint) Avx2.τ₀ (fun _ _ h₁ h₂ hp => Avx2.agree₀ h₁ h₂ hp)
+    (by taint_decide)
+
 theorem xor_verified :
     Verified X86_64.target Impl.ChaCha20.X86_64.Avx512.xor
       (Spec.ChaCha20.xorContract X86_64.abi 16) :=
-  Verified.of_correct xor_correct xor_ct
+  Verified.of_correct (xor_correct false) xor_ct
+    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
+      xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
+      [Avx2.sat] using Avx2.sat)
+
+theorem xor5_verified :
+    Verified X86_64.target Impl.ChaCha20.X86_64.Avx512.xor5
+      (Spec.ChaCha20.xorContract X86_64.abi 16) :=
+  Verified.of_correct (xor_correct true) xor5_ct
     (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
       xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
       [Avx2.sat] using Avx2.sat)

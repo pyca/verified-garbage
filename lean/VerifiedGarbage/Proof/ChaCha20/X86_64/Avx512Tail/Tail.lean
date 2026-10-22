@@ -910,18 +910,27 @@ theorem smallT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hpos : 0 < eL s₀ 
     WP isa small s (Fin s₀) :=
   WP.mono (lastT_ok hp hpos hle h hr9) fun _ d => d.fin hp
 
-theorem tail_eq : tail =
+theorem tail_eq (p5 : Bool) : tail p5 =
     .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 512)])
     (.seq (.ite .b (.block []) full)
     (.seq (.block [.alu .cmp .rdx (.imm 257)])
-    (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small))
-      (.seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part)))
+    (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) (mid p5))
       (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)])))) := rfl
 
-theorem rest_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 512) {s : State} (h : TInv s₀ p s)
-    (hr9 : s.gpr .r9 = ebp s₀) (hc : s.cf = some (decide (eL s₀ - p < 257))) :
-    WP isa (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small))
-      (.seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part))) s (Fin s₀) := by
+theorem mid_ok (p5 : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 256 < eL s₀ - p) (hlt : eL s₀ - p < 512)
+    {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) : WP isa (mid p5) s (Fin s₀) := by
+  cases p5
+  · exact WP.mono (partT_ok hp hgt hlt h hr9) fun _ d => d.fin hp
+  refine WP.seq (WP.mono (cmp321_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
+  refine WP.ite (decide (eL s₀ - p < 321)) (by simp [eval, c₁]) (fun h5 => ?_) (fun h5 => ?_)
+  · simp only [decide_eq_true_eq] at h5
+    exact WP.mono (part5T_ok hp hgt h5 h₁ r₁) fun _ d => d.fin hp
+  · exact WP.mono (partT_ok hp hgt hlt h₁ r₁) fun _ d => d.fin hp
+
+theorem rest_ok (p5 : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 512) {s : State}
+    (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) (hc : s.cf = some (decide (eL s₀ - p < 257))) :
+    WP isa (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) (mid p5)) s
+      (Fin s₀) := by
   refine WP.ite (decide (eL s₀ - p < 257)) (by simp [eval, hc]) (fun hs => ?_) (fun hs => ?_)
   · simp only [decide_eq_true_eq] at hs
     refine WP.seq (WP.mono (test_ok h hr9) fun s₂ ⟨h₂, r₂, z₂⟩ => ?_)
@@ -931,12 +940,7 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 5
     · simp only [decide_eq_false_iff_not] at he
       exact smallT_ok hp (by omega_arith) (by omega_arith) h₂ r₂
   · simp only [decide_eq_false_iff_not] at hs
-    refine WP.seq (WP.mono (cmp321_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
-    refine WP.ite (decide (eL s₀ - p < 321)) (by simp [eval, c₁]) (fun h5 => ?_) (fun h5 => ?_)
-    · simp only [decide_eq_true_eq] at h5
-      exact WP.mono (part5T_ok hp (by omega_arith) h5 h₁ r₁) fun _ d => d.fin hp
-    · simp only [decide_eq_false_iff_not] at h5
-      exact WP.mono (partT_ok hp (by omega_arith) hlt h₁ r₁) fun _ d => d.fin hp
+    exact mid_ok p5 hp (by omega_arith) hlt h hr9
 
 theorem fin_ok {s₀ s : State} (h : Fin s₀ s) :
     WP isa (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]) s fun s' =>
@@ -956,11 +960,11 @@ theorem fin_ok {s₀ s : State} (h : Fin s₀ s) :
     exact bytesAt_xor (length_keystream _ _) fun k hk => by rw [h.data k hk]
   · simp only [State.setReg, ite_true, g₁, h.r9]
 
-theorem tail_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 1024) {s : State}
+theorem tail_ok (p5 : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 1024) {s : State}
     (h : TInv s₀ p s) :
-    WP isa tail s fun s' =>
+    WP isa (tail p5) s fun s' =>
       (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
-  rw [tail_eq]
+  rw [tail_eq p5]
   refine WP.seq (WP.mono (start_ok h) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun (s : State) => ∃ p', eL s₀ - p' < 512 ∧ TInv s₀ p' s ∧
       s.gpr .r9 = ebp s₀) ?_
@@ -971,6 +975,6 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 1
     · simp only [decide_eq_false_iff_not] at hs
       exact WP.mono (fullT_ok hp (by omega_arith) h₁ r₁) fun s' ⟨h', r'⟩ => ⟨p + 512, by omega_arith, h', r'⟩
   · refine WP.seq (WP.mono (cmp_ok h₂ r₂) fun s₃ ⟨h₃, r₃, c₃⟩ => ?_)
-    exact WP.seq (WP.mono (rest_ok hp hp' h₃ r₃ c₃) fun s₄ d => fin_ok d)
+    exact WP.seq (WP.mono (rest_ok p5 hp hp' h₃ r₃ c₃) fun s₄ d => fin_ok d)
 
 end VG.Proof.ChaCha20.X86_64.Avx512Tail

@@ -40,11 +40,20 @@ def artifacts : List Artifact := [
     notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain; then \
         twelve blocks in three sets of `zmm` registers, four blocks to a set, for 513 to 768 \
         bytes left, one more pass of sixteen for 769 to 1023, and at most two computations of \
-        eight or four blocks for fewer; for 257 to 320 bytes left, five blocks: the second set \
-        on 128-bit registers (AVX-512VL's `vprold`)."]
+        eight or four blocks for fewer."]
     code := Impl.ChaCha20.X86_64.Avx512.xor
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512.xor_verified
+    features := ["avx", "avx512f"] },
+  Spec.ChaCha20.xorApi.artifact X86_64.target {
+    suffix := "_ifma"
+    notes := ["For CPUs with AVX512_IFMA (and AVX-512VL), whose callers in ChaCha20-Poly1305 \
+        call `vg_poly1305_blocks_ifma`: `vg_chacha20_xor_avx512`'s code, but for 257 to 320 \
+        bytes left five blocks rather than eight, the fifth on 128-bit registers with \
+        AVX-512VL's `vprold`."]
+    code := Impl.ChaCha20.X86_64.Avx512.xor5
+    stack := 16
+    verified := Proof.ChaCha20.X86_64.Avx512.xor5_verified
     features := ["avx", "avx512f", "avx512vl"] },
   Spec.ChaCha20.xorApi.artifact X86_64.target {
     suffix := "_avx512vl"
@@ -52,7 +61,7 @@ def artifacts : List Artifact := [
         (Skylake-SP, Cascade Lake): fewer than 513 bytes on `ymm` registers, as \
         `vg_chacha20_xor_avx2` does but with AVX-512VL's `vprold` for every rotation (eight \
         blocks with every word in a register, or at most six), so that the code after a short \
-        call keeps its speed; more as `vg_chacha20_xor_avx512` does."]
+        call keeps its speed; more as `vg_chacha20_xor_ifma` does."]
     code := Impl.ChaCha20.X86_64.Avx512VL.xorBy
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512VL.xor_verified

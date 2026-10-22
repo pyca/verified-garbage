@@ -25,6 +25,6 @@ open VG.X86_64
 def shortLim : Nat := 513
 
 def xorBy : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 shortLim))]) (.ite .b Avx2.xorVL Avx512.xor)
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 shortLim))]) (.ite .b Avx2.xorVL Avx512.xor5)
 
 end VG.Impl.ChaCha20.X86_64.Avx512VL

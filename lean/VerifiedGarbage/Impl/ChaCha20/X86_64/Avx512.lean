@@ -250,10 +250,18 @@ def last16 : Prog isa :=
 def last12 : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx)]) (.seq Avx512Tail.part3 (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))
 
-def xor : Prog isa :=
+/-- The kernel; with `p5` (AVX-512VL), five blocks for 257 to 320 bytes
+left (`Avx512Tail.mid`). -/
+def xorP (p5 : Bool) : Prog isa :=
   .seq (.block (Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop body .ae))
-  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Avx512Tail.tail
+  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (Avx512Tail.tail p5)
     (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16)))))
+
+/-- `vg_chacha20_xor_avx512`: AVX-512F alone. -/
+def xor : Prog isa := xorP false
+
+/-- `vg_chacha20_xor_ifma`, for the CPUs with AVX-512VL (and IFMA). -/
+def xor5 : Prog isa := xorP true
 
 end VG.Impl.ChaCha20.X86_64.Avx512

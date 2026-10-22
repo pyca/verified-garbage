@@ -51,7 +51,7 @@ theorem correct {s₀ : State} (hp : APre s₀) :
   subst e
   refine WP.ite (decide (eL s₀ < shortLim)) (by simp [eval, hc]) (fun _ => ?_) (fun _ => ?_)
   · exact Avx2.correct true (apre_setFlags hp cf of zf sf)
-  · exact Avx512.correct (apre_setFlags hp cf of zf sf)
+  · exact Avx512.correct true (apre_setFlags hp cf of zf sf)
 
 theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
     ∃ t s', Exec isa xorBy s t s' ∧ abiPreserved s s' ∧
