@@ -8,12 +8,14 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 # DSA's probable-prime test at a fixed offset of a working space
 
 **Trusted.** A callable piece of DSA parameter generation:
-`vg_dsa_probable_prime_{n}` runs `Spec.Dsa.probablePrime` (trial division,
-then RSA's blinded Miller–Rabin loop with DSA's round policy) on the number
-of `8 n` bytes, little-endian, at a fixed offset of a working space, drawing
-its witnesses from the front of a tape of random octets. Parameter
-generation tests q and every p candidate this way, with one tape threaded
-through all of them.
+`vg_dsa_probable_prime_{bits}` runs `Spec.Dsa.probablePrime` (trial
+division, then RSA's blinded Miller–Rabin loop with DSA's round policy) on
+an odd number of exactly `bits` bits, stored in `8 n` bytes, little-endian,
+at a fixed offset of a working space, drawing its witnesses from the front
+of a tape of random octets. Parameter generation tests q and every p
+candidate this way, with one tape threaded through all of them; each has
+its size's exact bit length and is odd by construction, so the test's
+trial division, witness width and round count are fixed by its layout.
 
 It returns 1 for a probable prime, 2 for a composite, and 0 if the tape ran
 out; for 1 and 2 it writes to `used` the number of octets it read. Its
@@ -33,7 +35,9 @@ open VG.Spec.Dsa.ModPow (numAt Keeps rangesDoc)
 
 /-- The width and byte offsets of a test in its working space. -/
 structure Layout where
-  /-- The 64-bit words of the candidate. -/
+  /-- The candidate's exact bit length. -/
+  bits : Nat
+  /-- The 64-bit words that hold the candidate. -/
   n : Nat
   /-- The candidate's byte offset in the working space. -/
   candidate : Nat
@@ -56,13 +60,15 @@ def sig : Sig where
     ("used", .array true .u64 1)]
   ret := some .u32
 
-/-- For a working space of at least `L.size` bytes: the status of
-`probablePrime w rand` for the candidate `w` at `L.candidate` and the tape
-`rand`, and when the tape sufficed, the octets read into `used`. Only the
+/-- For a working space of at least `L.size` bytes and an odd candidate `w`
+at `L.candidate` of exactly `L.bits` bits: the status of `probablePrime w
+rand` for the tape `rand`, and when the tape sufficed, the octets read into `used`. Only the
 bytes of `L.scratch` may change. The candidate and the tape are public. -/
 def contract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
-    (pre := fun _ws wsLen _rand _randLen _used _ => L.size ≤ 8 * wsLen.toNat)
+    (pre := fun ws wsLen _rand _randLen _used m =>
+      let w := numAt m ws L.candidate (8 * L.n)
+      L.size ≤ 8 * wsLen.toNat ∧ w % 2 = 1 ∧ Spec.Dsa.bitLength w = L.bits)
     (post := fun ws wsLen rand randLen used m m' r =>
       let res := Spec.Dsa.probablePrime (numAt m ws L.candidate (8 * L.n)) (bytesAt m rand randLen.toNat)
       r.toNat = status res ∧ Keeps ws wsLen.toNat L.scratch m m' ∧
@@ -76,20 +82,22 @@ def contract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I 
 registers it. -/
 def api (L : Layout) : Api where
   module := "dsa"
-  name := s!"vg_dsa_probable_prime_{L.n}"
+  name := s!"vg_dsa_probable_prime_{L.bits}"
   sig := sig
   writeArgs := true
   contracts := some fun A stack => contract L A stack
   summary := s!"DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then \
     RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) \
-    of the number of {8 * L.n} bytes, little-endian, at byte {L.candidate} of `ws`, with \
-    witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a \
+    of the odd {L.bits}-bit number of {8 * L.n} bytes, little-endian, at byte {L.candidate} \
+    of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a \
     composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every \
     byte of `ws` but those of the ranges {rangesDoc L.scratch} keeps its value. Acceptance \
     is probable primality, not a certificate.\n\n\
     Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: \
     timing may depend on both."
   safety := [s!"`ws_len` must be at least {(L.size + 7) / 8}.",
+    s!"The {8 * L.n} bytes at byte {L.candidate} of `ws` must hold an odd number of exactly \
+      {L.bits} bits.",
     "`rand` must contain independent uniform random octets for the probabilistic \
       interpretation. They are not secret under this contract.",
     s!"The bytes {rangesDoc L.scratch} of `ws` are unspecified on return."]
