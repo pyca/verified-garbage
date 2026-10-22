@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
 
 /-!
 # Scalar multiplication by odd 5-bit windows in Jacobian coordinates on x86-64

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
 public import VerifiedGarbage.Proof.Weierstrass.OddWin
 import VerifiedGarbage.Proof.Weierstrass.X86_64.OddScalar
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
@@ -12,6 +11,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 
 /-!
 # ECDH on x86-64: `[d]P` by odd 5-bit windows in Jacobian coordinates

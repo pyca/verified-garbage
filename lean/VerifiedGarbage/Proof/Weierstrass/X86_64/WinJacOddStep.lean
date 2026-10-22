@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOps
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOps
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 
@@ -14,11 +14,18 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.OddWin
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 
 /-!
 # The odd window method on x86-64: an iteration
