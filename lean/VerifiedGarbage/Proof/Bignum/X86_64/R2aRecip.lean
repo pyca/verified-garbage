@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Bignum.Recip
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 
@@ -15,7 +16,7 @@ proven but that it is a word (`recipGuess_ok`); `recipDown` then lowers it while
 `(2^64 + v) d ≥ 2^128` (`down_ok`, `downLoop_ok`), and `recipUp` raises it
 while `(2^64 + v + 1) d < 2^128` (`up_ok`, `upLoop_ok`), which leaves the
 largest `v` with `(2^64 + v) d < 2^128`: `v` itself (`recipN_ok`, with
-`R2Words.recip`'s statement, `R2w.recip_ok`).
+`R2Words.recip`'s statement, `R2w.recip_ok`), by `Recip.recip_exact`.
 -/
 
 @[expose] public section
@@ -23,7 +24,7 @@ largest `v` with `(2^64 + v) d < 2^128`: `v` itself (`recipN_ok`, with
 namespace VG.Proof.Bignum.X86_64.R2ax
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.R2Adx
-open VG.Proof.MlKem.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.Recip
 
 /-! ## The guess -/
 
@@ -87,10 +88,6 @@ theorem hi_lt {v D : Nat} (hv : v < 2 ^ 64) (hD : D < 2 ^ 64) : v * D / 2 ^ 64 <
   rw [Nat.div_lt_iff_lt_mul (by decide)]
   exact Nat.mul_lt_mul'' hv hD
 
-/-- Whether `(2^64 + v) d ≥ 2^128`, as `recipDown` and `recipUp` test it: the
-carry of `d + ⌊v d / 2^64⌋`. -/
-def over (v D : Nat) : Bool := decide (2 ^ 64 ≤ v * D / 2 ^ 64 + D)
-
 theorem down_ok {t : State} {v D : Nat} (hcx : t.gpr .rcx = BitVec.ofNat 64 v) (hv : v < 2 ^ 64)
     (hsi : t.gpr .rsi = BitVec.ofNat 64 D) (hD : D < 2 ^ 64) :
     WP isa (.block recipDown) t fun t' => t'.gpr .rcx = BitVec.ofNat 64 (v - (over v D).toNat) ∧
@@ -118,9 +115,6 @@ theorem down_ok {t : State} {v D : Nat} (hcx : t.gpr .rcx = BitVec.ofNat 64 v) (
     rw [show BitVec.setWidth 64 (BitVec.ofBool false) = 0#64 from rfl, BitVec.sub_zero, BitVec.add_zero,
       BitVec.and_self]
     exact ⟨rfl, rfl⟩
-
-/-- Whether `recipUp` raises `v`: `v + 1` is a word and `(2^64 + v + 1) d < 2^128`. -/
-def up (v D : Nat) : Bool := !decide (v + 1 = 2 ^ 64) && !over (v + 1) D
 
 theorem upA_ok {t : State} {v : Nat} (hcx : t.gpr .rcx = BitVec.ofNat 64 v) (hv : v < 2 ^ 64) :
     WP isa (.block [.mov .rdx (.reg .rcx), .alu .add .rdx (.imm 1), .alu .sbb .r11 (.reg .r11)]) t fun t' =>
@@ -201,12 +195,6 @@ theorem up_ok {t : State} {v D : Nat} (hcx : t.gpr .rcx = BitVec.ofNat 64 v) (hv
 
 /-! ## The loops -/
 
-theorem over_pos {v D : Nat} (hD : D < 2 ^ 64) (h : over v D = true) : 1 ≤ v := by
-  refine Nat.pos_of_ne_zero fun h0 => ?_
-  unfold over at h
-  rw [h0, Nat.zero_mul, Nat.zero_div, Nat.zero_add, decide_eq_true_eq] at h
-  omega_using [h, hD]
-
 /-- `recipDown` while it lowers `v`: then `(2^64 + v) d < 2^128`. -/
 theorem downLoop_ok {t : State} {v D : Nat} (hcx : t.gpr .rcx = BitVec.ofNat 64 v) (hv : v < 2 ^ 64)
     (hsi : t.gpr .rsi = BitVec.ofNat 64 D) (hD : D < 2 ^ 64) :
@@ -247,37 +235,6 @@ theorem upLoop_ok {t : State} {v D : Nat} (hcx : t.gpr .rcx = BitVec.ofNat 64 v)
       hm'.trans h3, (k.trans k').mono (by decide)⟩
 
 /-! ## The reciprocal -/
-
-/-- `over v d` is false iff `(2^64 + v) d < 2^128`. -/
-theorem over_false {v D : Nat} (hD : D < 2 ^ 64) (h : over v D = false) : 2 ^ 64 * D + v * D < 2 ^ 128 := by
-  unfold over at h
-  rw [decide_eq_false_iff_not, Nat.not_le, ← Nat.lt_sub_iff_add_lt, Nat.div_lt_iff_lt_mul (by decide)] at h
-  have : (2 ^ 64 - D) * 2 ^ 64 = 2 ^ 128 - 2 ^ 64 * D := by
-    rw [Nat.sub_mul, Nat.mul_comm D]
-  omega_using [h, this, hD]
-
-theorem over_true {v D : Nat} (hD : D < 2 ^ 64) (h : over v D = true) : 2 ^ 128 ≤ 2 ^ 64 * D + v * D := by
-  unfold over at h
-  rw [decide_eq_true_eq, ← Nat.sub_le_iff_le_add, Nat.le_div_iff_mul_le (by decide)] at h
-  have : (2 ^ 64 - D) * 2 ^ 64 = 2 ^ 128 - 2 ^ 64 * D := by
-    rw [Nat.sub_mul, Nat.mul_comm D]
-  omega_using [h, this, hD]
-
-/-- The largest `v` with `(2^64 + v) d < 2^128` is `v = ⌊(2^128 - 1) / d⌋ - 2^64`. -/
-theorem recip_exact {v D : Nat} (hd : 2 ^ 63 ≤ D) (hD : D < 2 ^ 64) (ho : over v D = false) (hu : up v D = false) : v = (2 ^ 128 - 1) / D - 2 ^ 64 := by
-  have h1 := over_false hD ho
-  have h2 : 2 ^ 128 ≤ 2 ^ 64 * D + (v + 1) * D := by
-    unfold up at hu
-    rw [Bool.and_eq_false_iff, Bool.not_eq_false', Bool.not_eq_false', decide_eq_true_eq] at hu
-    rcases hu with h | h
-    · rw [h]; omega_using [hd]
-    · exact over_true hD h
-  rw [Nat.add_mul, Nat.one_mul] at h2
-  have e : (2 ^ 128 - 1) / D = 2 ^ 64 + v := by
-    refine Nat.div_eq_of_lt_le ?_ ?_
-    · rw [Nat.add_mul]; omega_using [h1]
-    · rw [Nat.add_mul, Nat.add_mul, Nat.one_mul]; omega_using [h2]
-  omega_using [e]
 
 /-- `recipN`: `v` for `d = m[w - 1] ≥ 2^63` into the word at `r8`, for `m` at
 `r10` of `w` words, as `R2Words.recip` (`R2w.recip_ok`). -/
