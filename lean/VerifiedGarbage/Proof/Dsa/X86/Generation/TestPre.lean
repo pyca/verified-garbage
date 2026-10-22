@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A probable-prime test's call meets the test's contract -/
 
@@ -45,6 +46,99 @@ theorem packed_len : VG.Impl.RsaKeyGen.TrialTable32.packed.length = 1024 := by
 /-- A part of a region, by its start and length. -/
 theorem sub_of_contains {R : Region} {a : Addr} {n : Nat} (h : R.Contains a n) : Region.Sub ⟨a, n⟩ R :=
   fun _ hx => h.byte (by simp only [Region.Contains] at hx; omega)
+
+theorem randPtr_toNat {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
+    (randPtr (E.wit.setWidth 32) E.witLen used).toNat = (randAddr E used).toNat := by
+  have witLt := v.ptrs.2.2.2
+  have wf := v.witFit
+  have w32 : (E.wit.setWidth 32).toNat = E.wit.toNat := by
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt witLt]
+  by_cases h0 : E.witLen - used = 0
+  · simp only [randPtr, randAddr, h0, ↓reduceIte, w32]
+  · have e1 : (E.wit.setWidth 32 + BitVec.ofNat 32 used).toNat = E.wit.toNat + used := by
+      rw [BitVec.toNat_add, w32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
+        Nat.mod_eq_of_lt (by omega)]
+    have e2 : (E.wit + BitVec.ofNat 64 used).toNat = E.wit.toNat + used := by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
+        Nat.mod_eq_of_lt (by omega)]
+    simp only [randPtr, randAddr, h0, ↓reduceIte, e1, e2]
+
+theorem randPtr_wide {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
+    (randPtr (E.wit.setWidth 32) E.witLen used).setWidth 64 = randAddr E used :=
+  BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_setWidth, randPtr_toNat v hu, Nat.mod_eq_of_lt (by
+    have := (randPtr (E.wit.setWidth 32) E.witLen used).isLt; rw [randPtr_toNat v hu] at this; omega)])
+
+theorem randAddr_fit {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
+    (randAddr E used).toNat + (E.witLen - used) ≤ 2 ^ 32 := by
+  have wf := v.witFit
+  by_cases h0 : E.witLen - used = 0
+  · simp only [randAddr, h0, ↓reduceIte]; omega
+  · have e2 : (E.wit + BitVec.ofNat 64 used).toNat = E.wit.toNat + used := by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
+        Nat.mod_eq_of_lt (by omega)]
+    simp only [randAddr, h0, ↓reduceIte, e2]; omega
+
+theorem randAddr_sub {E : Env} {used : Nat} (hu : used ≤ E.witLen) :
+    Region.Sub ⟨randAddr E used, E.witLen - used⟩ E.witRegion := by
+  by_cases h0 : E.witLen - used = 0
+  · intro x hx; simp only [Region.Contains, h0] at hx; omega
+  · simp only [randAddr, h0, ↓reduceIte]
+    exact Offset.sub_base E.wit (by omega)
+
+/-- The witnesses left, in memory that holds the tape. -/
+theorem rand_bytes {E : Env} {used : Nat} {m : Mem}
+    (hm : Spec.Rsa.bytesAt m E.wit E.witLen = E.witT) :
+    Spec.Rsa.bytesAt m (randAddr E used) (E.witLen - used) = E.witT.drop used := by
+  rw [← hm]
+  by_cases h0 : E.witLen - used = 0
+  · simp only [randAddr, h0, ↓reduceIte, Spec.Rsa.bytesAt, List.range_zero, List.map_nil]
+    exact (List.drop_eq_nil_of_le (by simp; omega)).symm
+  · simp only [randAddr, h0, ↓reduceIte, Spec.Rsa.bytesAt]
+    apply List.ext_getElem (by simp)
+    intro i h₁ h₂
+    simp only [List.getElem_map, List.getElem_range, List.getElem_drop]
+    rw [VG.Offset.add_add]
+
+/-- The test's arguments, from the registers pushed. -/
+theorem testEntry_arg {E : Env} {used : Nat} {s : State} (fit : 24 ≤ (s.gpr .esp).toNat) :
+    arg (testEntry E used s) 0 = s.gpr .eax ∧ arg (testEntry E used s) 1 = s.gpr .ecx ∧
+      arg (testEntry E used s) 2 = s.gpr .edx ∧ arg (testEntry E used s) 3 = s.gpr .ebx ∧
+      arg (testEntry E used s) 4 = s.gpr .ebp := by
+  have fit' : 4 * testRegs.length + 4 ≤ (s.gpr .esp).toNat := by simpa using fit
+  have hrs : Reg.esp ∉ testRegs := by decide
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
+    (rw [testEntry, arg_withRegions, callEntry_arg fit' hrs (by decide)]; rfl)
+
+theorem testEntry_mem {E : Env} {used : Nat} {s : State} (fit : 24 ≤ (s.gpr .esp).toNat) :
+    Frame [below (s.gpr .esp) 24] s.mem (testEntry E used s).mem :=
+  callEntry_frame (rs := testRegs) (by simpa using fit) (by decide)
+
+/-- A test's candidate keeps its value through writes to the stack. -/
+theorem cand_frame {E : Env} (v : E.Valid) {bits : Nat}
+    (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords) {k : Nat} (hk : k ≤ 160)
+    {m m' : Mem} (F : Frame [below E.sp k] m m') :
+    Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m' (off E.base sPP) =
+      Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) := by
+  have sz := v.size_ge
+  have low := v.low
+  have lay' : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate + bits / 8 ≤ ppWords * 8 := by
+    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega
+  unfold Spec.Dsa.ProbablePrime.candidateAt
+  refine congrArg Spec.Dsa.decodeBE ?_
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  simp only [List.mem_range] at hi
+  have subWS : Region.Sub ⟨off E.base sPP, ppWords * 8⟩ E.scratchRegion :=
+    Offset.sub_base _ (by simp only [sPP, ppWords]; omega)
+  have sub : Region.Sub ⟨off E.base sPP + BitVec.ofNat 64 (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate,
+      bits / 8⟩ ⟨off E.base sPP, ppWords * 8⟩ := Offset.sub_base _ (by simpa using lay')
+  have lb : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).bits = bits := rfl
+  rw [lb] at hi
+  refine Frame.bytes F (R := ⟨_, bits / 8⟩) ?_ (by
+      show bits / 8 ≤ 2 ^ 64; simp only [VG.Impl.Dsa.X86.ProbablePrime.layout, ppWords] at lay; omega)
+    (by simpa using hi)
+  intro r hr; simp only [List.mem_singleton] at hr; subst hr
+  exact ((v.scratchStack.sub_left subWS).sub_left sub).sub_right (below_sub hk (by omega))
 
 theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base E s₀) {used : Nat}
     (A : TestArgs E.base (E.wit.setWidth 32) E.witLen used s₀ s) (hu : used ≤ E.witLen)
@@ -100,33 +194,10 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
   have uoW := Scr.wide hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega)
   have wsN := Scr.toNat_add hs (d := sPP) (by simp only [sPP]; omega)
   have uoN := Scr.toNat_add hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega)
-  have w32 : (E.wit.setWidth 32).toNat = E.wit.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt witLt]
-  have randN : (randPtr (E.wit.setWidth 32) E.witLen used).toNat = (randAddr E used).toNat := by
-    by_cases h0 : E.witLen - used = 0
-    · simp only [randPtr, randAddr, h0, ↓reduceIte, w32]
-    · have e1 : (E.wit.setWidth 32 + BitVec.ofNat 32 used).toNat = E.wit.toNat + used := by
-        rw [BitVec.toNat_add, w32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-          Nat.mod_eq_of_lt (by omega)]
-      have e2 : (E.wit + BitVec.ofNat 64 used).toNat = E.wit.toNat + used := by
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-          Nat.mod_eq_of_lt (by omega)]
-      simp only [randPtr, randAddr, h0, ↓reduceIte, e1, e2]
-  have randW : (randPtr (E.wit.setWidth 32) E.witLen used).setWidth 64 = randAddr E used :=
-    BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_setWidth, randN, Nat.mod_eq_of_lt (by
-      have := (randPtr (E.wit.setWidth 32) E.witLen used).isLt; omega)])
-  have randFit : (randAddr E used).toNat + (E.witLen - used) ≤ 2 ^ 32 := by
-    by_cases h0 : E.witLen - used = 0
-    · simp only [randAddr, h0, ↓reduceIte]; omega
-    · have e2 : (E.wit + BitVec.ofNat 64 used).toNat = E.wit.toNat + used := by
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-          Nat.mod_eq_of_lt (by omega)]
-      simp only [randAddr, h0, ↓reduceIte, e2]; omega
-  have randSub : Region.Sub ⟨randAddr E used, E.witLen - used⟩ E.witRegion := by
-    by_cases h0 : E.witLen - used = 0
-    · intro x hx; simp only [Region.Contains, h0] at hx; omega
-    · simp only [randAddr, h0, ↓reduceIte]
-      exact Offset.sub_base E.wit (by omega)
+  have randW := randPtr_wide v (used := used) hu
+  have randN := randPtr_toNat v (used := used) hu
+  have randFit := randAddr_fit v (used := used) hu
+  have randSub := randAddr_sub (E := E) (used := used) hu
   have lenN : (BitVec.ofNat 32 (E.witLen - used)).toNat = E.witLen - used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have ppN : (BitVec.ofNat 32 ppWords).toNat = ppWords := by decide
@@ -167,24 +238,8 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
       (by simp only [fUsedOut, hdr]; omega)
   have candEq : ∀ m : Mem, Frame [below (s.gpr .esp) (4 * testRegs.length + 4)] s.mem m →
       Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) =
-        Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) := by
-    intro m F
-    have lay' : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate + bits / 8 ≤ ppWords * 8 := by
-      simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega
-    unfold Spec.Dsa.ProbablePrime.candidateAt
-    refine congrArg Spec.Dsa.decodeBE ?_
-    simp only [Spec.Rsa.bytesAt]
-    refine List.map_congr_left fun i hi => ?_
-    simp only [List.mem_range] at hi
-    have sub : Region.Sub ⟨off E.base sPP + BitVec.ofNat 64 (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate,
-        bits / 8⟩ ⟨off E.base sPP, ppWords * 8⟩ := Offset.sub_base _ (by simpa using lay')
-    have lb : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).bits = bits := rfl
-    rw [lb] at hi
-    refine Frame.bytes F (R := ⟨_, bits / 8⟩) ?_ (by
-        show bits / 8 ≤ 2 ^ 64; simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay; omega)
-      (by simpa using hi)
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact ((ss.sub_left subWS).sub_left sub).sub_right subPush
+        Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) :=
+    fun m F => cand_frame v lay (k := 24) (by decide) (by simpa [spU] using F)
   refine ⟨by omega, by omega, by rw [symT]; rfl, ?_, ?_, trivial, by rw [Nat.mul_comm 8 ppWords],
     (ws.symm.sub_left subWS).sub_right randSub, wsUO, (ss.sub_left subWS).sub_right subArgs,
     (ws.sub_left randSub).sub_right subUO, (wk.sub_left randSub).sub_right subArgs,

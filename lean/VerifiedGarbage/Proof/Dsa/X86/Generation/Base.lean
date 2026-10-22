@@ -70,7 +70,20 @@ theorem Chg.bytesAt {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {R
   simp only [List.mem_range] at hi
   exact Frame.bytes h (far_all hR hS hos) hl hi
 
+/-- A store of a word into one of the ranges. -/
+theorem Chg.store {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat} (ho : (d, n) ∈ os)
+    (hn : 4 ≤ n) (v : BitVec 32) : E.Chg os m (m'.writeW (off E.base d) v) :=
+  Frame.writeW h (r := ⟨off E.base d, n⟩) (List.mem_append_left _ (List.mem_map.mpr ⟨_, ho, rfl⟩)) v
+    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+
 end Env
+
+/-- A store into a word of `scratch` leaves the words apart from it. -/
+theorem word_store_other {E : Env} (v : E.Valid) (m : Mem) {d e : Nat} (hd : d + 4 ≤ E.size) (he : e + 4 ≤ E.size)
+    (h : d + 4 ≤ e ∨ e + 4 ≤ d) (x : BitVec 32) :
+    (m.writeW (off E.base e) x).readW (off E.base d) 32 = m.readW (off E.base d) 32 := by
+  have := v.scratchFit
+  exact Mem.readW_writeW_sep (Offset.sep E.base h (by omega) (by omega)) (by decide)
 
 theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : List (Nat × Nat)}
     (F : E.Chg os s.mem t.mem) (A : E.Apart os) (edi : t.gpr .edi = s.gpr .edi) (sp : t.gpr .esp = s.gpr .esp)

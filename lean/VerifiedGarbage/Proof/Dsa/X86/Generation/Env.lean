@@ -102,9 +102,9 @@ arguments. -/
 structure Base (E : Env) (s : State) : Prop where
   scr : Scr s E.base E.size
   sp : s.gpr .esp = E.sp
-  tapes : ∀ r ∈ [E.seedsRegion, E.hsRegion, E.witRegion], InRegions s.rd r.base r.len
+  tapes : E.seedsRegion ∈ s.rd ∧ E.hsRegion ∈ s.rd ∧ E.witRegion ∈ s.rd
   table : E.tableRegion ∈ s.rd
-  out : InRegions s.wr E.out E.outLen
+  out : E.outRegion ∈ s.wr
   syms : (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64 = E.table
   held : Abi.constsHeld s.mem (fun n => (s.syms n).setWidth 64) VG.Impl.RsaKeyGen.TrialTable32.consts
   seeds : Spec.Rsa.bytesAt s.mem E.seeds E.seedsLen = E.seedT

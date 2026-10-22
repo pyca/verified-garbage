@@ -37,12 +37,13 @@ theorem testArgs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     {W : BitVec 32} {witLen used : Nat} (hW : s.mem.readW (off base fWit) 32 = W)
     (hWL : s.mem.readW (off base fWitLen) 32 = BitVec.ofNat 32 witLen)
     (hU : s.mem.readW (off base fUsed) 32 = BitVec.ofNat 32 used) (hu : used ≤ witLen)
-    (hwl : witLen < 2 ^ 32) :
+    (hwl : witLen < 2 ^ 32) {rest : Prog isa} {Q : State → Prop}
+    (k : ∀ t, TestArgs base W witLen used s t → WP isa rest t Q) :
     WP isa (.seq (.block [.mov .ecx (.mem (sc fUsed)), .mov .edx (.mem (sc fWit)), .alu .add .edx (.reg .ecx),
         .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.reg .ecx)])
       (.seq (.ite .e (.block [.mov .edx (.mem (sc fWit))]) (.block []))
-        (.block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut)))) s
-      (TestArgs base W witLen used s) := by
+        (.seq (.block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut)) rest))) s
+      Q := by
   have szs : fWitLen + 4 ≤ size ∧ fUsed + 4 ≤ size ∧ fWit + 4 ≤ size := by
     simp only [fWitLen, fUsed, fWit, hdr, sPP] at hsz ⊢; omega
   refine WP.seq (ld_ok hs (by omega) fun s₁ u₁ => ld_ok (Scr.of_eq hs (u₁.other _ (by decide))
@@ -73,11 +74,11 @@ theorem testArgs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .ebp → x.gpr r = s.gpr r) →
       x.mem = s.mem → x.rd = s.rd → x.wr = s.wr → x.syms = s.syms →
       WP isa (.block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut)) x
-        (TestArgs base W witLen used s) := by
+        (fun t => WP isa rest t Q) := by
     intro x xd xdx xbx xo xm xrd xwr xsy
     simp only [List.append_assoc]
     refine scr_ok fun s₆ e₆ g₆ m₆ rd₆ wr₆ sy₆ => wp_movi fun s₇ u₇ => scr_ok fun s₈ e₈ g₈ m₈ rd₈ wr₈ sy₈ => ?_
-    refine WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine WP.block_nil (k s₈ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩)
     · rw [g₈ _ (by decide), u₇.other _ (by decide), e₆, xd]
     · rw [g₈ _ (by decide), u₇.gpr]
     · rw [g₈ _ (by decide), u₇.other _ (by decide), g₆ _ (by decide), xdx]
@@ -95,7 +96,7 @@ theorem testArgs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have rd₅ : s₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   have sy₅ : s₅.syms = s.syms := by rw [u₅.syms, u₄.syms, u₃.syms, u₂.syms, u₁.syms]
   refine WP.seq (WP.ite (decide (witLen - used = 0)) z (fun hz => ld_ok hs₅ (by omega) fun s₆ u₆ =>
-    WP.block_nil (tail s₆ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_)) (fun hz => WP.block_nil (tail s₅ edi₅ ?_ b₅ o₅ m₅ rd₅ wr₅ sy₅)))
+    WP.block_nil (WP.seq (tail s₆ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_))) (fun hz => WP.block_nil (WP.seq (tail s₅ edi₅ ?_ b₅ o₅ m₅ rd₅ wr₅ sy₅))))
   · rw [u₆.other _ (by decide), edi₅]
   · have h0 : witLen - used = 0 := by simpa using hz
     rw [u₆.gpr, m₅, hW]; simp only [randPtr, h0, ↓reduceIte]
