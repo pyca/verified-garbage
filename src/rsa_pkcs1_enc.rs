@@ -29,8 +29,9 @@
 //! its contents if it can) in constant time. Whether the padding is valid,
 //! the length of the message and which of the two messages is returned do
 //! not affect the timing of the verified function. On an x86-64 CPU with the
-//! SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and AVX512_IFMA), and on
-//! an AArch64 CPU with the SHA-2 instructions, it uses the faster SHA-256
+//! SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and AVX512_IFMA), on an
+//! i686 CPU with the SHA extensions, and on an AArch64 CPU with the SHA-2
+//! instructions, it uses the faster SHA-256
 //! compression functions and private-key operations, as
 //! [`hashes::sha256`](crate::hashes::sha256) and [`rsa`](crate::rsa) do.
 //!
@@ -38,7 +39,12 @@
 //! allocates the memory the functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -49,14 +55,15 @@ use core::fmt;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
     vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
     vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
-    vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
-    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
-    vg_rsa_pkcs1_encrypt_precomputed_ifma,
+    vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx, vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
+    vg_rsa_pkcs1_encrypt_precomputed_adx, vg_rsa_pkcs1_encrypt_precomputed_ifma,
 };
 #[cfg(all(
     target_arch = "arm",
@@ -239,7 +246,7 @@ type DecryptFn = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
-#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type DecryptFn = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -275,7 +282,7 @@ fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
         (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_pkcs1_decrypt_crt_adx,
         #[cfg(target_arch = "x86_64")]
         (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_pkcs1_decrypt_crt_ifma,
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_shani,
         #[cfg(target_arch = "x86_64")]
         (Sha256Backend::ShaNi, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
@@ -450,6 +457,11 @@ mod tests {
             ]
             .as_slice(),
             [Backend::Baseline, Backend::Adx, Backend::Ifma].as_slice(),
+        );
+        #[cfg(target_arch = "x86")]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar, Sha256Backend::ShaNi].as_slice(),
+            [Backend::Baseline].as_slice(),
         );
         #[cfg(target_arch = "aarch64")]
         let (shas, crts) = (
