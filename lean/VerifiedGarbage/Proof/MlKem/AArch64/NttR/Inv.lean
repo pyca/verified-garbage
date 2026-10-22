@@ -17,11 +17,10 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.LitI
 /-!
 # ML-KEM on AArch64: the 16-bit inverse NTTs, by the machine
 
-`invW` (`invW_run`), with the table at its symbol, and `nttInv` (`nttInv_run`), which first
-stores the table in the working space (`halves_ok`), transform the polynomial at `x0` in place:
-the machine's state at the start holds of the caller's (`initU_rel`, `initW_rel`), with the
-inverse's model (`modelI`), and its runs (`checkIW_ok`, `checkIN_ok`) leave the reduced
-coefficients of `NTT⁻¹` in the polynomial.
+`nttInv` (`nttInv_run`), which first stores the table in the working space (`halves_ok`),
+transforms the polynomial at `x0` in place: the machine's state at the start holds of the
+caller's (`initU_rel`), with the inverse's model (`modelI`), and its run (`checkIN_ok`) leaves
+the reduced coefficients of `NTT⁻¹` in the polynomial.
 -/
 
 @[expose] public section
@@ -30,18 +29,6 @@ namespace VG.Proof.MlKem.AArch64.NttR
 
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Ntt16 (halves_ok)
-
-theorem invW_run (s₀ : State) (hi : InW "VG_MLKEM_INTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.invTableHalves s₀) :
-    WP isa Impl.MlKem.AArch64.Ntt16.Readonly.invW s₀ fun s' =>
-      s'.sp = s₀.sp ∧ PolyIsW 16 s'.mem (s₀.gpr .x0) (nttInv (polyAtW 16 s₀.mem (s₀.gpr .x0))) := by
-  have hc := checkIW_ok
-  generalize hx : initIW.runP invRules rsIW 16 Impl.MlKem.AArch64.Ntt16.Readonly.invW = x at hc
-  cases x with
-  | none => cases hc
-  | some σ =>
-    refine WP.mono (runP_ok (modelI (Wi s₀)) (ctxW hi) 16 _ (initW_rel hi (fun _ => rfl) itabT_get) hx)
-      fun s' h' => ⟨h'.sp, ?_⟩
-    exact polyIsW_of_outW h' hc fun p hp => Oi_nttInv (Wi s₀) _ (fun p hp => lrep_red hi.red hp) hp
 
 theorem nttInv_split : Impl.MlKem.AArch64.Ntt16.nttInv =
     .seq (.block (Impl.MlKem.AArch64.Ntt16.halves Impl.MlKem.AArch64.Ntt16.invTableHalves .x1 512 ++ invHead))

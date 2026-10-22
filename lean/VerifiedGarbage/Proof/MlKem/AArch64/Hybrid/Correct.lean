@@ -37,11 +37,11 @@ structure TStk (s : State) : Prop where
   shuffle : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint (frame s.sp)
   gamma : (Region.mk (s.syms "VG_MLKEM_GAMMA") 512).Disjoint (frame s.sp)
   forward : (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint (frame s.sp)
-  inverse : (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint (frame s.sp)
+  inverse : (NttR.fastInvRegion s).Disjoint (frame s.sp)
   fast : (NttR.fastRegion s).Disjoint (frame s.sp)
 
 theorem TStk.of {s t : State} (h : TStk s) (hs : t.syms = s.syms) (hp : t.sp = s.sp) : TStk t := by
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [NttR.fastRegion, hs, hp]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [NttR.fastRegion, NttR.fastInvRegion, NttR.sRegion, hs, hp]
   exacts [h.shuffle, h.gamma, h.forward, h.inverse, h.fast]
 
 theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
@@ -65,12 +65,11 @@ theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
     by simpa only [hs,hp] using h.gammaStack,
     ⟨⟨?_,by simpa only [hs,hr,hw] using h.transforms.forward.2.1,
       by simpa only [hs,hw] using h.transforms.forward.2.2⟩,
-     ⟨?_,by simpa only [hs,hr,hw] using h.transforms.inverse.2.1,
-      by simpa only [hs,hw] using h.transforms.inverse.2.2⟩,
+     h.transforms.inverse.frameFar hs hr hw hf iv,
      by simpa only [hs,hp] using h.transforms.forwardStack,
-     by simpa only [hs,hp] using h.transforms.inverseStack,
+     by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hp] using h.transforms.inverseStack,
      h.transforms.fast.frameFar hs hr hw hf fa,
-     by simpa only [NttR.fastRegion,hs,hp] using h.transforms.fastStack⟩⟩
+     by simpa only [NttR.fastRegion,NttR.sRegion,hs,hp] using h.transforms.fastStack⟩⟩
   · rw [hs]; exact h.shuffle.frame hf sh
   · rw [hs]; intro i hi
     rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
@@ -80,10 +79,6 @@ theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
     rw [hf.readW (r:=⟨s.syms "VG_MLKEM_NTT16_ZETAS",512⟩)
       (Offset.contains_base _ (by omega) (by omega)) fw (by decide)]
     exact h.transforms.forward.1 i hi
-  · rw [hs]; intro i hi
-    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_INTT16_ZETAS",512⟩)
-      (Offset.contains_base _ (by omega) (by omega)) iv (by decide)]
-    exact h.transforms.inverse.1 i hi
 
 theorem WP.tables128 {s : State} {c : Prog isa} {Q : State→Prop}
     (h : WP isa c s Q) (ht : Tables s) (hk : TStk s) (hn : c.aarch64Depth≤8) :

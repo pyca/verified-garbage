@@ -77,7 +77,7 @@ theorem consts16 {s : State} (h : ConstsOk constants 128 s) : ConstsOk constants
     subst hr
     exact (st t ht).sub_right sub
   · have mem : ∀ {r : Region}, r ∈ constRegs constants s → r.Disjoint (frame s.sp) := fun hr => st _ hr
-    refine ⟨mem ?_, mem ?_, mem ?_, mem ?_, mem ?_⟩ <;> rw [constants_regions] <;> simp [Impl.MlKem.AArch64.Ntt16.Fast.name]
+    refine ⟨mem ?_, mem ?_, mem ?_, mem ?_, mem ?_⟩ <;> rw [constants_regions] <;> simp [Impl.MlKem.AArch64.Ntt16.Fast.name, Impl.MlKem.AArch64.Ntt16.FastInv.name]
 
 theorem entryS_tables {base : Contract isa} {s : State} (h : (entryContractS base).pre s) :
     Tables s ∧ TStk s :=

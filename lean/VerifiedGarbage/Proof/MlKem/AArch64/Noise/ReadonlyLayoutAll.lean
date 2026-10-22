@@ -36,7 +36,7 @@ theorem readonly_noiseAll_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Ro
   · intro i hi t kt ts
     have table (j : Nat) (hj : j<2*L.k) := (ht j hj).frame ts kt.rd kt.wr kt.frame hfar
     have far : ∀r∈writes L kg B (2*i),(NttR.fastRegion t).Disjoint r := by
-      intro r hr; rw [NttR.fastRegion, ts]; exact hfar r (List.mem_flatMap.mpr ⟨i,List.mem_range.mpr hi,hr⟩)
+      intro r hr; simp only [NttR.fastRegion, NttR.sRegion, ts]; exact hfar r (List.mem_flatMap.mpr ⟨i,List.mem_range.mpr hi,hr⟩)
     refine WP.mono (readonly_noisePair_layout (B := B) wf room kg (by omega : 2*i+1<2*L.k)
       (by rw [kt.cs .x28 (by decide) (by decide)]; exact hB)
       (by rw [kt.wr]; exact hc) (table _ (by omega)) (table _ (by omega)) far) fun u ⟨ku,pu,qu⟩ => ?_

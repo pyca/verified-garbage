@@ -9,11 +9,9 @@ open VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.Ntt16
 open VG.Impl.MlKem.AArch64.Ntt16.Readonly
 
 theorem forward_length : (words 16 tableHalves).length = 64 := by decide +kernel
-theorem inverse_length : (words 16 invTableHalves).length = 64 := by decide +kernel
 theorem gamma_length : (words 32 gammaTable).length = 64 := by decide +kernel
 
 theorem forward_words : ∀ i < 64, (words 16 tableHalves).getD i 0 = hw4 tableHalves i := by decide +kernel
-theorem inverse_words : ∀ i < 64, (words 16 invTableHalves).getD i 0 = hw4 invTableHalves i := by decide +kernel
 
 theorem gamma_low : ∀ i < 64,
     ((words 32 gammaTable).getD i 0).extractLsb' 0 32 = BitVec.ofNat 32 (gammaTable.getD (2*i) 0) := by decide +kernel

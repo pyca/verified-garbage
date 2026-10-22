@@ -15,9 +15,10 @@ def TransformTable (s : State) (symbol : String) (H : List Nat) : Prop :=
 
 structure TransformTables (s : State) : Prop where
  forward : TransformTable s "VG_MLKEM_NTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.tableHalves
- inverse : TransformTable s "VG_MLKEM_INTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.invTableHalves
+ /-- The table of `vg_mlkem16_inv_ntt`. -/
+ inverse : NttR.FastInvTable s
  forwardStack : (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint (below s.sp 16)
- inverseStack : (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint (below s.sp 16)
+ inverseStack : (NttR.fastInvRegion s).Disjoint (below s.sp 16)
  /-- The table of `vg_mlkem16_ntt`. -/
  fast : NttR.FastTable s
  fastStack : (NttR.fastRegion s).Disjoint (below s.sp 16)
@@ -60,18 +61,18 @@ theorem TransformTables.frame {s t : State} {rs : List Region} (h : TransformTab
  (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hsp : t.sp=s.sp)
  (hf : Frame rs s.mem t.mem) (hc : Covers rs s.wr) : TransformTables t :=
  ⟨h.forward.frame hs hr hw hf hc,h.inverse.frame hs hr hw hf hc,
-   by simpa only [hs,hsp] using h.forwardStack,by simpa only [hs,hsp] using h.inverseStack,
-   h.fast.frame hs hr hw hf hc,by simpa only [NttR.fastRegion,hs,hsp] using h.fastStack⟩
+   by simpa only [hs,hsp] using h.forwardStack,by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hsp] using h.inverseStack,
+   h.fast.frame hs hr hw hf hc,by simpa only [NttR.fastRegion,NttR.sRegion,hs,hsp] using h.fastStack⟩
 theorem TransformTables.frameFar {s t : State} {rs : List Region} (h : TransformTables s)
  (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hsp : t.sp=s.sp)
  (hf : Frame rs s.mem t.mem)
  (hd : ∀r∈rs,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r ∧
-   (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint r ∧ (NttR.fastRegion s).Disjoint r) :
+   (NttR.fastInvRegion s).Disjoint r ∧ (NttR.fastRegion s).Disjoint r) :
  TransformTables t :=
  ⟨h.forward.frameFar hs hr hw hf (fun r hr=>(hd r hr).1),
    h.inverse.frameFar hs hr hw hf (fun r hr=>(hd r hr).2.1),
-   by simpa only [hs,hsp] using h.forwardStack,by simpa only [hs,hsp] using h.inverseStack,
+   by simpa only [hs,hsp] using h.forwardStack,by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hsp] using h.inverseStack,
    h.fast.frameFar hs hr hw hf (fun r hr=>(hd r hr).2.2),
-   by simpa only [NttR.fastRegion,hs,hsp] using h.fastStack⟩
+   by simpa only [NttR.fastRegion,NttR.sRegion,hs,hsp] using h.fastStack⟩
 
 end VG.Proof.MlKem.AArch64.Optimized

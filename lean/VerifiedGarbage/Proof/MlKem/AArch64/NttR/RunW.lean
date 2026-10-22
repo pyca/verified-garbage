@@ -13,11 +13,9 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # ML-KEM on AArch64: the runs of the 16-bit NTTs of a polynomial stored with 16 bits
 
-The regions of a transform of a polynomial stored with 16 bits (`rsWs`: the
-polynomial at `x0`, the working space at `x1`, the table at a symbol), the
-terms it starts from (`initWs`: coefficient `p` of the input in halfword `p`,
-the table's halfwords as constants), and what its run leaves in the polynomial
-(`outW`: the reduced coefficients). `RunI` checks `invW`'s run.
+The terms a transform of a polynomial stored with 16 bits starts from (`fInW`:
+coefficient `p` of the input in halfword `p`; `tabT`'s halfwords as constants),
+and what its run leaves in the polynomial (`outW`: the reduced coefficients).
 -/
 
 @[expose] public section
@@ -30,17 +28,10 @@ open VG VG.AArch64
 def packY (f : Nat → Nat → T) (n : Nat) : Nat :=
   (List.range n).foldr (fun j acc => Y.ofFn (f j) + 2 ^ yw * acc) 0
 
-/-- The polynomial at `x0`, the working space at `x1`, the table at `sym`. -/
-def rsWs (sym : String) : List Rg := [⟨.reg .x0, 0, 32, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.sym sym, 0, 32, false⟩]
-
 /-- The input, coefficient `p` in halfword `p`. -/
 def fInW : Nat := packY (fun j e => lvT 0 (8 * j + e)) 32
 
 materialize_value fInW
-
-/-- Nothing followed but the input, the table `tab` and the pointers to the polynomial and the
-working space. -/
-def initWs (tab : Nat) : St := ((⟨0, 0, [fInW, 0, tab]⟩ : St).setG .x0 (.ptr 0 0)).setG .x1 (.ptr 1 0)
 
 /-- The polynomial's halfwords are the reduced coefficients of `NTT`. -/
 def outW (σ : St) : Bool :=

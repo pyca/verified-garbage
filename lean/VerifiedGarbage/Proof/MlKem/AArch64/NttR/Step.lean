@@ -314,6 +314,9 @@ theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel
     refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) fun e he => ?_⟩
     rw [Y.get_dup _ he, Nat.mod_eq_of_lt (cT_lt 0), vhalf_zero']
     exact Hd.cT 0
+  | mov d n =>
+    simp only [St.vop, Option.some.injEq] at hs; subst hs
+    exact ⟨_, exec_vop rfl, h.setV (slot_bound _ _ _) (h.v n)⟩
   | dup a d n =>
     cases a <;> simp only [St.vop, reduceCtorEq] at hs
     split at hs

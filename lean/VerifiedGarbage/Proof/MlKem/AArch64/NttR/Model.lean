@@ -57,7 +57,8 @@ theorem div_sub_len {p len : Nat} (hpos : 0 < len) (hm : ¬ p % (2 * len) < len)
     omega
 
 theorem model (W : Nat → BitVec 16) : Model (Lf W) (Of W) fwdRules := by
-  refine ⟨by decide, fun _ st p p' z t hb => ?_, nofun, nofun, nofun, nofun, fun p _ => rfl⟩
+  refine ⟨by decide, fun _ _ st p p' z t hb => ?_, nofun, nofun, nofun, nofun, fun p _ => rfl, nofun, nofun,
+    nofun, nofun, nofun⟩
   unfold bflyOk fwdRules at hb
   simp only [Bool.and_eq_true, Nat.blt_eq, Nat.beq_eq] at hb
   obtain ⟨⟨⟨⟨⟨hst, rfl⟩, hm⟩, -⟩, rfl⟩, rfl⟩ := hb

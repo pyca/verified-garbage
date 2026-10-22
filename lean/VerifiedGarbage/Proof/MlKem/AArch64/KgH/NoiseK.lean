@@ -273,6 +273,9 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
   have ffar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (NttR.fastRegion t).Disjoint q :=
     away (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fS)) (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fN))
       (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fO)) (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fO'))
+  have ifar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (NttR.fastInvRegion t).Disjoint q :=
+    away (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fS)) (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fN))
+      (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fO)) (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fO'))
   have sc (o l : Nat) (hf : o + l ≤ kL P 3) (hs : o + l ≤ KG.SS) :
       ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (R (kA s₀) 3 o l).Disjoint q :=
     away (sdisjK hp hf fS (.inl hs)) (sdisjK hp hf fN (.inl (by omega_using [hs, lim])))
@@ -308,7 +311,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
     ?_, ?_, fun N hN => ?_, fun N hN => ?_⟩
   · rw [sy]; exact H.syms
   · exact H.tt.frameFar sy ku.rd ku.wr ku.sp ku.frame fun r hr' =>
-      ⟨tfar _ _ H.tt.forward r hr', tfar _ _ H.tt.inverse r hr', ffar r hr'⟩
+      ⟨tfar _ _ H.tt.forward r hr', ifar r hr', ffar r hr'⟩
   · rw [bytesAt_frame ku.frame (hi (TP P + 168 * N) 128 (by omega_using [hsv, sv, hN]) (by omega_using [tp, sh, cst])
       (by omega_using [oB, oH, sv, tp, hN]) (by omega_using [oB', oH', sv, tp, hN])) (by decide)]
     exact H.buf N hN
