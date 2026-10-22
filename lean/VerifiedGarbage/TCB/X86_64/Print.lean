@@ -190,6 +190,7 @@ def HReg.zname (r : HReg) : String := "z" ++ (r.name.drop 1).toString
 
 def ZKeyOp.name : ZKeyOp → String
   | .vpxord => "vpxord" | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast"
+  | .vpaddd => "vpaddd"
 
 def ZOp.asm : ZOp → String
   | .zbinH op d a b => s!"{op.name} {d.zname}, {a.zname}, {b.zname}"

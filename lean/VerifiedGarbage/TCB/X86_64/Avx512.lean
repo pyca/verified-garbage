@@ -31,17 +31,21 @@ inductive ZBinOp
 inductive ZShiftOp | vpsllq | vpsrlq
   deriving DecidableEq, Repr
 
-/-- The EVEX.512 operations needed to keep AES round keys in `zmm16`–`zmm31`.
+/-- The EVEX.512 operations with their second source in `zmm16`–`zmm31`, as
+needed to keep AES round keys and constants there.
 Intel SDM Vol. 2, "PXOR" (`EVEX.512.66.0F.W0 EF /r`), "AESENC" and
-"AESENCLAST" (`EVEX.512.66.0F38.WIG DC/DD /r`): the register source is
-selected by the five-bit EVEX register specifier (Vol. 2 §2.7.1).
-The unmasked operations apply PXOR, AESENC or AESENCLAST independently to
-each 128-bit lane, exactly as `ZBinOp` does for registers 0–15. -/
-inductive ZKeyOp | vpxord | vaesenc | vaesenclast
+"AESENCLAST" (`EVEX.512.66.0F38.WIG DC/DD /r`), "PADDB/PADDW/PADDD/PADDQ"
+(VPADDD, `EVEX.512.66.0F.W0 FE /r`: `DEST[i+31:i] := SRC1[i+31:i] +
+SRC2[i+31:i]` for each doubleword, no write mask nor embedded broadcast, a
+register second source): the register source is selected by the five-bit
+EVEX register specifier (Vol. 2 §2.7.1).
+The unmasked operations apply PXOR, AESENC, AESENCLAST or PADDD independently
+to each 128-bit lane, exactly as `ZBinOp` does for registers 0–15. -/
+inductive ZKeyOp | vpxord | vaesenc | vaesenclast | vpaddd
   deriving DecidableEq, Repr
 
 def ZKeyOp.sse : ZKeyOp → XBinOp
-  | .vpxord => .pxor | .vaesenc => .aesenc | .vaesenclast => .aesenclast
+  | .vpxord => .pxor | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vpaddd => .paddd
 
 /-- AVX-512 instructions with 512-bit operands that write only vector
 registers. None is masked: the opmask is `k0` (`EVEX.aaa = 000`), so every
