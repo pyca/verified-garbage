@@ -546,6 +546,10 @@ theorem Gate.keep {u v : State} {C : Prop} (G : Gate u C) (z : v.zf = u.zf) : Ga
   obtain ⟨b, h, hb⟩ := G
   exact ⟨b, by show v.zf = _; rw [z]; exact h, hb⟩
 
+theorem Gate.congr {u : State} {C C' : Prop} (G : Gate u C) (h : C ↔ C') : Gate u C' :=
+  let ⟨b, e, i⟩ := G
+  ⟨b, e, i.trans h⟩
+
 /-- Two states that tell the same condition branch alike. -/
 theorem Gate.agree {u v : State} {C : Prop} (G₁ : Gate u C) (G₂ : Gate v C) : isa.eval .e u = isa.eval .e v := by
   obtain ⟨b₁, h₁, i₁⟩ := G₁

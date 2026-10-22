@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -29,6 +30,16 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.CheckPublic.code
     verified := Proof.Ffdh.X86.CheckPublic.verified
     spSafe := Proof.Ffdh.X86.Shape.checkPublic_spSafe
+    stack := 116 },
+  Spec.Ffdh.checkPrivateApi.artifact X86.target {
+    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
+      The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power \
+      over all of p's width, and its comparison with y is masked. Powers of a checked generator \
+      remain in its q subgroup, so the generated power needs only its range check. Callee-saved \
+      registers reside in scratch."]
+    code := Impl.Ffdh.X86.CheckPrivate.code
+    verified := Proof.Ffdh.X86.CheckPrivate.verified
+    spSafe := Proof.Ffdh.X86.Shape.checkPrivate_spSafe
     stack := 116 }]
 
 end VG.Artifacts.Ffdh.X86

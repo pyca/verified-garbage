@@ -261,4 +261,98 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   · rw [kk (by decide), v14]
   · rw [kk (by decide), v15]
 
+/-- y in range and `g^x mod M = y`, as a status. -/
+theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem base len .wide 9 = p)
+    (h10 : sv s.mem base len .wide 10 = g) (h12 : sv s.mem base len .wide 12 = y)
+    (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
+    (h15 : sv s.mem base len .wide 15 = pm1 len p) :
+    WP isa Impl.Ffdh.X86.CheckPrivate.pair s (Res base len s
+      ((decide (g ^ x % safeM p = y) && (decide (y < pm1 len p) && decide (1 < y))).toNat)) := by
+  have ao : accOff = 8 := rfl
+  have mo : maskOff = 12 := rfl
+  have nb : numBase = 3336 := rfl
+  unfold Impl.Ffdh.X86.CheckPrivate.pair
+  refine WP.seq (WP.mono (rangeMask_ok h (a := 12) (by decide)) fun u₁ ⟨I₁, e₁, O₁, K₁⟩ => ?_)
+  rw [h12, h15, h14] at e₁
+  have S₁ : Step Ex base bytes len args s u₁ := Step.word h (by decide) O₁ K₁
+  have k₁ := kept_word h (d := maskOff) (by decide) (by decide) O₁
+  refine WP.seq (WP.mono (storeMask_ok I₁ (d := accOff) (by omega) e₁) fun u₂ ⟨_, O₂, W₂, _, K₂⟩ => ?_)
+  have S₂ : Step Ex base bytes len args u₁ u₂ := Step.word I₁ (by omega) O₂ K₂
+  have k₂ := kept_word I₁ (d := accOff) (by omega) (by decide) O₂
+  have k₁₂ : Kept base len [] [maskOff, accOff] s.mem u₂.mem := k₁.mono.trans k₂.mono
+  refine WP.seq (WP.mono (powP_ok S₂.inp (P := safeM p) (b := 10) (e := 13) (by decide) (by decide) (by decide)
+    (by decide) (by rw [k₁₂.slot_eq, h9])) fun u₃ ⟨C₃, Y₃, _, F₃, k₃, K₃⟩ => ?_)
+  rw [k₁₂.slot_eq, k₁₂.slot_eq, h10, h13] at Y₃
+  have S₃ : Step Ex base bytes len args u₂ u₃ := Step.ops S₂.inp F₃ K₃
+  refine WP.seq (WP.mono (eqW_ok C₃.inp (a := 6) (b := 12) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
+  rw [Y₃, k₃.slot_eq, k₁₂.slot_eq, h12] at e₄
+  have S₄ : Step Ex base bytes len args u₃ u₄ := Step.regs C₃.inp m₄ K₄
+  refine WP.seq (WP.mono (andMask_ok S₄.inp (d := accOff)
+    (c' := decide (y < pm1 len p) && decide (1 < y)) (by omega) e₄ (by rw [m₄, k₃.word_eq]; exact W₂))
+    fun u₅ ⟨e₅, m₅, K₅⟩ => ?_)
+  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp m₅ K₅
+  refine WP.mono (retMask_ok e₅) fun t ⟨E, M, K⟩ => ((((S₁.trans S₂).trans S₃).trans S₄).trans S₅).res
+    ⟨E, by rw [M]; exact Frame.refl _ _, K.mono (by decide)⟩
+
+/-- The status the contract asks for, for a valid domain. -/
+abbrev expected (len dlen xl : Nat) (m : Mem) (args : Nat → BitVec 32) : Nat :=
+  Spec.Ffdh.privateStatus (params m args len dlen) (yv m args len) (xv m args xl)
+
+/-- `vg_ffdh_check_private`'s body: a status, `expected` for a valid domain. -/
+theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
+    (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) :
+    WP isa Impl.Ffdh.X86.CheckPrivate.body s fun t => ∃ r, Res base len s r t ∧
+      (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen xl s.mem args) := by
+  have dl := G.dl
+  have h2 : 2 * len ≤ dlen := by omega
+  have hpa := comp_p s.mem args h2
+  have hga := comp_g s.mem args h2
+  rw [body_eq]
+  refine WP.chain_split (front_ok h G Y X hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, V13, V14, V15⟩ => ?_
+  refine WP.gate Gt (fun inval => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨2, S.res R, ?_⟩)
+    (fun val => WP.mono (pair_ok S.inp V9 V10 V12 V13 V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
+  · intro _
+    simp only [expected, Spec.Ffdh.privateStatus, inval, Bool.not_false, ↓reduceIte]
+  · intro v
+    have pv : Spec.Ffdh.parametersValid (params s.mem args len dlen) = true := by
+      have := v; unfold Spec.Ffdh.domainValid at this
+      simp only [Bool.and_eq_true] at this
+      exact this.1
+    have mv := VG.Proof.Ffdh.domainValid_mod v
+    rw [← comp_p s.mem args h2] at mv
+    unfold Spec.Rsa.modulusValid at mv
+    simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
+    have gt : 1 < comp s.mem args len 0 := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega
+    have val : Spec.Ffdh.privateValid (params s.mem args len dlen) (xv s.mem args xl) = true := by
+      cases e : Spec.Ffdh.privateValid (params s.mem args len dlen) (xv s.mem args xl)
+      · exact absurd e val
+      · rfl
+    rw [expected, VG.Proof.Ffdh.privateStatus_eq pv, val, ite_eq_right_iff.mpr (fun h' => by cases h')]
+    rw [safeM_of gt mv.1.1.1, pm1_of (by omega)]
+    rw [show (params s.mem args len dlen).p = comp s.mem args len 0 from hpa.symm,
+      show (params s.mem args len dlen).g = comp s.mem args len 1 from hga.symm]
+    generalize comp s.mem args len 0 = p at *
+    generalize comp s.mem args len 1 = g at *
+    generalize yv s.mem args len = y
+    generalize xv s.mem args xl = x
+    have key : (Spec.Ffdh.publicValid ⟨params s.mem args len dlen, y⟩ = true ∧ g ^ x % p = y) ↔
+        ((1 < y ∧ y < p - 1) ∧ g ^ x % p = y) := by
+      constructor
+      · rintro ⟨pvy, e⟩
+        have r := ((VG.Proof.Ffdh.publicValid_eq _ _).mp pvy).1
+        rw [← hpa] at r
+        exact ⟨r, e⟩
+      · rintro ⟨r, e⟩
+        refine ⟨?_, e⟩
+        have pw := (VG.Proof.Ffdh.publicValid_power pv x).mpr
+        rw [← hpa, ← hga, e] at pw
+        exact pw r
+    simp only [key]
+    by_cases a1 : 1 < y <;> by_cases a2 : y < p - 1 <;> by_cases a3 : g ^ x % p = y <;>
+      simp only [a1, a2, a3, and_self, and_true, and_false, ↓reduceIte, decide_true, decide_false,
+        Bool.and_true, Bool.and_false, Bool.toNat_true, Bool.toNat_false]
+
 end VG.Proof.Ffdh.X86.CheckPrivate

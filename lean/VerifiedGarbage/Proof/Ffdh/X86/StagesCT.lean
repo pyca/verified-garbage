@@ -29,6 +29,11 @@ open VG.Proof.Bignum.X86.PublicRt (Both relCT_both)
 variable {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
   {sp : BitVec 32}
 
+/-- A run after a stage. -/
+theorem run_step {s u : State} (R : Run Ex base bytes len args sp s) (S : Step Ex base bytes len args s u) :
+    Run Ex base bytes len args sp u :=
+  ⟨S.inp, R.2.1.keep S.keeps, S.esp.trans R.2.2⟩
+
 /-- Code the taint analysis checks from the arguments, with what each run reaches. -/
 theorem aRel {P F : State → Prop} {c : Prog isa} (hP : ∀ x, P x → Run Ex base bytes len args sp x)
     (hc : ACheck c) (hw : ∀ x, P x → WP isa c x F) : RelCT isa (Both P) c (Both F) :=

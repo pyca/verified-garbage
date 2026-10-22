@@ -70,4 +70,37 @@ theorem checkPublicABI_of {s : State} (h : (Spec.Ffdh.checkPublicContract abi st
   sig_split h
   constructor <;> with_reducible assumption
 
+structure CheckPrivateABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 4 + 36 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 3, (arg s 4).toNat⟩,
+    ⟨argumentPointer s 5, (arg s 6).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 7, (arg s 8).toNat * 8⟩, ⟨argAddr s 0, 36⟩]
+  domScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  yScratch : (⟨argumentPointer s 3, (arg s 4).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  xScratch : (⟨argumentPointer s 5, (arg s 6).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  scratchArgs : (⟨argumentPointer s 7, (arg s 8).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  yBound : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
+  xBound : (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 7).toNat + (arg s 8).toNat * 8 ≤ 2 ^ 32
+  pLen : Spec.Ffdh.pLenValid (arg s 2).toNat
+  dLen : Spec.Ffdh.domainLenValid (arg s 2).toNat (arg s 1).toNat
+  yLen : (arg s 4).toNat = (arg s 2).toNat
+  xPos : 1 ≤ (arg s 6).toNat
+  xLen : (arg s 6).toNat ≤ (arg s 2).toNat
+  scratchLength : Spec.Rsa.scratchWords (arg s 2).toNat ≤ (arg s 8).toNat
+
+theorem checkPrivateABI_of {s : State} (h : (Spec.Ffdh.checkPrivateContract abi stack).pre s) :
+    CheckPrivateABI s := by
+  sig_pre [Spec.Ffdh.checkPrivateContract, Spec.Ffdh.checkPrivateSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
 end VG.Proof.Ffdh.X86
