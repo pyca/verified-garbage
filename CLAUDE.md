@@ -806,8 +806,9 @@ gh workflow run bench.yml --ref my-branch -f base_commit=$(git rev-parse origin/
 ```
 
 `--ref` is the branch (or tag) measured, at its tip; `base_commit` is any
-commit to compare it with (empty to run the branch alone, next to OpenSSL
-and aws-lc-rs). `arches`, `cpu_features` (space-separated configurations,
+commit to compare it with, as a full or abbreviated SHA, a branch or a tag,
+which the workflow resolves to the full SHA (empty to run the branch alone,
+next to OpenSSL and aws-lc-rs). `arches`, `cpu_features` (space-separated configurations,
 `-` for none; empty for those choosing among the modules' implementations)
 and `modules` narrow the run (`python3 ci/bench_arches.py --choices` lists
 their values); `openssl=true` adds OpenSSL's and aws-lc-rs's times to a
