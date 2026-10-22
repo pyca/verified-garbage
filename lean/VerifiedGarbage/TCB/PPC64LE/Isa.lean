@@ -207,8 +207,6 @@ def store (s : State) (a : Addr) (n : Nat) (v : BitVec (8 * n)) : Option State :
 
 end State
 
-theorem Size.bits_eq (sz : Size) : sz.bits = 8 * sz.bytes := by cases sz <;> rfl
-
 /-- The effective address `(RA) + D` of `D(RA)` for an access of `bytes`
 bytes, if the displacement is encodable and `RA ≠ 0` (Book I §3.3.2, "Load
 Word and Zero", `EA ← b + EXTS(D)` with `b ← (RA)`, and likewise for the
