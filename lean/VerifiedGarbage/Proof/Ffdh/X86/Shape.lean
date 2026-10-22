@@ -24,4 +24,7 @@ theorem checkPublic_spSafe : (Impl.Ffdh.X86.CheckPublic.code).all (fun i => !isa
 theorem checkPrivate_spSafe : (Impl.Ffdh.X86.CheckPrivate.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
 
+theorem exchange_spSafe : (Impl.Ffdh.X86.Exchange.code).all (fun i => !isa.writesSp i) = true :=
+  VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
+
 end VG.Proof.Ffdh.X86.Shape
