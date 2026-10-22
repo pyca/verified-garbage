@@ -51,6 +51,7 @@ mod cmac_aes;
 mod cmac_triple_des;
 mod dsa;
 mod dsa_parameters;
+mod ec_compressed;
 mod ecdh_brainpoolp256r1;
 mod ecdh_brainpoolp384r1;
 mod ecdh_brainpoolp512r1;
@@ -507,7 +508,8 @@ benches! {
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
     (ed448::USES, ed448::bench),
-    (ecdsa_p192::USES, ecdsa_p192::bench),
+    (ec_compressed::USES, ec_compressed::bench),
+        (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
     (ecdsa_brainpoolp256r1::USES, ecdsa_brainpoolp256r1::bench),

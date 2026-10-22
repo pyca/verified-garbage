@@ -1,8 +1,9 @@
 //! The elliptic curves of [`ecdsa`](crate::ecdsa) and [`ecdh`](crate::ecdh):
 //! the encodings of their keys and signatures.
 //!
-//! On x86-64, each curve exposes `validate_public_key`, checking an
-//! uncompressed SEC 1 encoding without a scalar multiplication.
+//! On x86-64, each curve exposes `validate_public_key`, `compress_public_key`
+//! and `decompress_public_key`. Each validates the SEC 1 point in verified
+//! code without a scalar multiplication.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,6 +12,7 @@
     target_arch = "arm"
 ))]
 
+mod compressed;
 pub(crate) mod p256;
 pub(crate) mod p384;
 pub(crate) mod p521;

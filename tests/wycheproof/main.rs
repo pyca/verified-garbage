@@ -22,6 +22,7 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod dsa;
+mod ec_compressed;
 mod ecdh_brainpoolp256r1;
 mod ecdh_brainpoolp384r1;
 mod ecdh_brainpoolp512r1;

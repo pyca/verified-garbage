@@ -81,6 +81,16 @@ theorem outPlus_ok (s : State) :
   simp only [List.mem_singleton] at hr
   exact RegUpd.gpr_write_of_ne _ _ _ hr
 
+theorem finishWith_eq (c : Cfg) (x y : Nat) : Impl.EcKey.AArch64.Cfg.finishWith c x y =
+    ([ld .x3 (c.sl FLAG)] : List Instr) ++
+    (([.movz .x .x1 4 0, .logic .and .x .x1 .x1 .x3, .strb .x1 .x20 0] : List Instr) ++
+    (([.addImm .x .x6 .x20 1] : List Instr) ++
+    (storeBytes c.C.len c.n .x6 0 (c.sl x) ++ (storeBytes c.C.len c.n .x6 c.C.len (c.sl y) ++
+    (Spill.restoreCode .x0 Cfg.saved ++
+    ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)))))) := by
+  simp only [Impl.EcKey.AArch64.Cfg.finishWith, List.append_assoc]; rfl
+
+/-- The result, the return value and the callee-saved registers. -/
 theorem finish_eq (c : Cfg) : Impl.EcKey.AArch64.Cfg.finish c =
     ([ld .x3 (c.sl FLAG)] : List Instr) ++
     (([.movz .x .x1 4 0, .logic .and .x .x1 .x1 .x3, .strb .x1 .x20 0] : List Instr) ++
@@ -88,18 +98,18 @@ theorem finish_eq (c : Cfg) : Impl.EcKey.AArch64.Cfg.finish c =
     (storeBytes c.C.len c.n .x6 0 (c.sl X) ++ (storeBytes c.C.len c.n .x6 c.C.len (c.sl Impl.EcKey.AArch64.Y) ++
     (Spill.restoreCode .x0 Cfg.saved ++
     ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)))))) := by
-  simp only [Impl.EcKey.AArch64.Cfg.finish, List.append_assoc]; rfl
+  simp only [Impl.EcKey.AArch64.Cfg.finish, Impl.EcKey.AArch64.Cfg.finishWith, List.append_assoc]; rfl
 
 /-- The result, the return value and the callee-saved registers. -/
-theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
+theorem pointFinish_ok {c : Cfg} (hc : BaseCfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
     (hx20 : s.gpr .x20 = out) (hfit : out.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64)
     (hw : (⟨out, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 1 + 2 * c.C.len⟩ ⟨base, size⟩)
     {g : Reg → BitVec 64} (hsv : Spill.Saved base g Cfg.saved s.mem) (b : Bool)
     (hf : word s.mem base (c.sl FLAG) = if b then BitVec.allOnes 64 else 0) :
-    WP isa (.block (Impl.EcKey.AArch64.Cfg.finish c)) s fun s' =>
+    WP isa (.block (Impl.EcKey.AArch64.Cfg.finishWith c x y)) s fun s' =>
       Spec.Ecdsa.bytesAt s'.mem out (1 + 2 * c.C.len) =
-        (if b then 4 :: (toBytes c.C.len (sv c base s X) ++ toBytes c.C.len (sv c base s Impl.EcKey.AArch64.Y))
+        (if b then 4 :: (toBytes c.C.len (sv c base s x) ++ toBytes c.C.len (sv c base s y))
           else List.replicate (1 + 2 * c.C.len) 0) ∧
       (s'.gpr .x0).setWidth 32 = (if b then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) := by
@@ -109,8 +119,8 @@ theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs :
   have hl8 := hc.len8
   have hlo := hc.len_lo
   have hhi := hc.len_hi
-  have hX := sl_le c h7 (i := X) (by decide)
-  have hY := sl_le c h7 (i := Impl.EcKey.AArch64.Y) (by decide)
+  have hX := sl_le c h7 (i := x) hx
+  have hY := sl_le c h7 (i := y) hy
   have hF := sl_le c h7 (i := FLAG) (by decide)
   have h1 : ∀ e, out + BitVec.ofNat 64 1 + BitVec.ofNat 64 0 + BitVec.ofNat 64 e =
       out + BitVec.ofNat 64 (1 + e) := fun e => by
@@ -128,7 +138,7 @@ theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs :
   have h10 : out + BitVec.ofNat 64 1 + BitVec.ofNat 64 0 = out + BitVec.ofNat 64 1 := BitVec.add_zero _
   have h18 : out + BitVec.ofNat 64 1 + BitVec.ofNat 64 c.C.len = out + BitVec.ofNat 64 (1 + c.C.len) := by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [finish_eq, WP.block_append_iff]
+  rw [finishWith_eq, WP.block_append_iff]
   refine WP.mono (ld_ok hs (d := c.sl FLAG) (by omega_arith) (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.mem
@@ -147,12 +157,12 @@ theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs :
   have hx6 : s₂'.gpr .x6 = out + BitVec.ofNat 64 1 := by rw [e₂', k₂.gpr _ (by decide), hx20₁]
   have hx3₂ : s₂'.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₂'.gpr _ (by decide), k₂.gpr _ (by decide), e₁, hf]
-  have x₂ : wordsVal s₂'.mem base (c.sl X) c.n = sv c base s X := by
+  have x₂ : wordsVal s₂'.mem base (c.sl x) c.n = sv c base s x := by
     rw [k₂'.mem, U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith),
       hm₁]
   rw [WP.block_append_iff]
-  refine WP.mono (storeBytes_ok hs₂' (dst := .x6) (d := 0) (a := c.sl X) (by decide) (by decide) (by decide) b
-    hx3₂ hX (sl_mod8 c X) (by omega_arith) hlo hhi (by omega_arith)
+  refine WP.mono (storeBytes_ok hs₂' (dst := .x6) (d := 0) (a := c.sl x) (by decide) (by decide) (by decide) b
+    hx3₂ hX (sl_mod8 c x) (by omega_arith) hlo hhi (by omega_arith)
     (by rw [hx6, h10, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide),
       Nat.mod_eq_of_lt (by omega_arith)]; omega_arith)
     (fun e m he => ⟨_, by rw [k₂'.wr, k₂.wr, k₁.wr]; exact hw, by
@@ -164,11 +174,11 @@ theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs :
   have hx6₃ : s₃.gpr .x6 = out + BitVec.ofNat 64 1 := by rw [k₃.gpr _ (by decide), hx6]
   have hx3₃ : s₃.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₃.gpr _ (by decide), hx3₂]
-  have y₃ : wordsVal s₃.mem base (c.sl Impl.EcKey.AArch64.Y) c.n = sv c base s Impl.EcKey.AArch64.Y := by
+  have y₃ : wordsVal s₃.mem base (c.sl y) c.n = sv c base s y := by
     rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith),
       k₂'.mem, U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₁]
   rw [WP.block_append_iff]
-  refine WP.mono (storeBytes_ok hs₃ (dst := .x6) (d := c.C.len) (a := c.sl Impl.EcKey.AArch64.Y) (by decide)
+  refine WP.mono (storeBytes_ok hs₃ (dst := .x6) (d := c.C.len) (a := c.sl y) (by decide)
     (by decide) (by decide) b hx3₃ hY (sl_mod8 c _) (by omega_arith) hlo hhi (by omega_arith)
     (by rw [hx6₃, h18, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show 1 + c.C.len < 2 ^ 64 by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]; omega_arith)
@@ -185,7 +195,7 @@ theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs :
       bytesAt_keep O₃ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith)]
     simp only [Spec.Ecdsa.bytesAt, List.range_one, List.map_cons, List.map_nil, hout, k₂'.mem, e₂]
   have first : Spec.Ecdsa.bytesAt s₄.mem (out + BitVec.ofNat 64 1) c.C.len =
-      if b then toBytes c.C.len (sv c base s X) else List.replicate c.C.len 0 := by
+      if b then toBytes c.C.len (sv c base s x) else List.replicate c.C.len 0 := by
     rw [bytesAt_keep O₄ (Offset.disjoint out (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith), e₃, x₂]
   have hsv₄ : Spill.Saved base g Cfg.saved s₄.mem := by
     have h16 : ∀ w ∈ [(size, 2 ^ 64)], 64 ≤ w.1 := fun w hw => by
@@ -210,6 +220,20 @@ theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs :
     rw [k₆.gpr r this]
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
     exact R₅.gpr p hp
+
+theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
+    (hx20 : s.gpr .x20 = out) (hfit : out.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64)
+    (hw : (⟨out, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
+    (hd : Region.Disjoint ⟨out, 1 + 2 * c.C.len⟩ ⟨base, size⟩)
+    {g : Reg → BitVec 64} (hsv : Spill.Saved base g Cfg.saved s.mem) (b : Bool)
+    (hf : word s.mem base (c.sl FLAG) = if b then BitVec.allOnes 64 else 0) :
+    WP isa (.block (Impl.EcKey.AArch64.Cfg.finish c)) s fun s' =>
+      Spec.Ecdsa.bytesAt s'.mem out (1 + 2 * c.C.len) =
+        (if b then 4 :: (toBytes c.C.len (sv c base s X) ++ toBytes c.C.len (sv c base s Impl.EcKey.AArch64.Y))
+          else List.replicate (1 + 2 * c.C.len) 0) ∧
+      (s'.gpr .x0).setWidth 32 = (if b then 1 else 0) ∧
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) :=
+  pointFinish_ok hc (by decide) (by decide) hs hx20 hfit hw hd hsv b hf
 
 end VG.Proof.EcKey.AArch64
 

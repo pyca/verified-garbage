@@ -137,28 +137,55 @@ pub(crate) mod dsa;
 pub(crate) mod ec_brainpoolp256r1;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp256r1_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_brainpoolp384r1_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ec_brainpoolp512r1;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp512r1_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p192_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ec_p224;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p224_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p256_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ec_p384;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p384_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p521_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_secp256k1_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_brainpoolp256r1;
