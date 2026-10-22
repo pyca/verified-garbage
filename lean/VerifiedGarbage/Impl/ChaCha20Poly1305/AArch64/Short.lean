@@ -92,12 +92,17 @@ def xor1 : Prog isa :=
   .loop (.block [.ldrb .x12 .x9 0, .ldrb .x13 .x10 0, .logic .eor .w .x12 .x12 .x13, .strb .x12 .x9 0,
     .addImm .x .x9 .x9 1, .addImm .x .x10 .x10 1, .subImm .x .x11 .x11 1]) (.nonzero .x .x11)
 
-/-- The data (`x22`, `x23` bytes) XORed with its keystream, at `ctx + k`. -/
-def xorKsFrom (k : Nat) : Prog isa :=
-  .seq (.block [mov .x9 .x22, .addImm .x .x10 .x21 k, .lsr .x .x11 .x23 4])
+/-- The data (`x22`, `x23` bytes) XORed with its keystream, at the address
+`setup` puts in `x10` (with the data's in `x9` and `x23 >> 4` in `x11`). -/
+def xorKsWith (setup : List Instr) : Prog isa :=
+  .seq (.block setup)
   (.seq (.ite (.zero .x .x11) (.block []) xor16)
   (.seq (.block [.lsl .x .x11 .x23 60, .lsr .x .x11 .x11 60])
     (.ite (.zero .x .x11) (.block []) xor1)))
+
+/-- The data (`x22`, `x23` bytes) XORed with its keystream, at `ctx + k`. -/
+def xorKsFrom (k : Nat) : Prog isa :=
+  xorKsWith [mov .x9 .x22, .addImm .x .x10 .x21 k, .lsr .x .x11 .x23 4]
 
 /-- The data XORed with its keystream, at `ctx + 128`. -/
 def xorKs : Prog isa := xorKsFrom 128

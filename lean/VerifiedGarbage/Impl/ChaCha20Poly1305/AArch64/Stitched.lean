@@ -208,10 +208,82 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
 
 def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
+/-! ## Decrypting 449 to 511 bytes
+
+`OpenPad.openMain` is `open` up to the tag for 449 to 511 bytes: as
+`Pad.openMain`, the kernel computes the keystream of eight blocks into the
+context, but in one chunk with Poly1305 absorbing the data's first 448 bytes
+(`Stitch.bulkPad`) rather than in a pass of its own:
+
+* after the lengths, `ctx[704, 1280)` is zeroed, and the stream's arguments
+  set: the counter to 1, the keystream's buffer of 512 bytes at
+  `ctx + 256 + len` (`ctx[705, 1279)`), and the data's address in `x2`,
+  which the chunk keeps in `x19`, where its phases read it; then, as
+  before the chunks, the clamped key is stored and the accumulator loaded
+  (`polyIn`);
+* the chunk (`Stitch.bulkPad`), and the accumulator stored (`polyOut`); the
+  analysis knows registers only, so the length is recovered from the
+  buffer's address (`recover`), and the data's from `x2`;
+* the rest of the data (1 to 63 bytes after the first 448) absorbed with its
+  padding, then the lengths; the data XORed with the keystream (`xorKs`)
+  and `ctx[704, 1280)` zeroed again.
+
+Every address is the context, the data or the additional data plus
+constants and the lengths, and every branch is on the lengths.
+-/
+
+namespace OpenPad
+
+/-- `ctx[704, 1280)` zeroed, through `v0`. -/
+def zero : List Instr :=
+  .vop (.logic .eor .v0 .v0 .v0) :: (List.range 36).map fun i => .strq .v0 .x21 (704 + 16 * i)
+
+/-- The counter set to 1, and the stream's arguments: the state, the buffer at
+`ctx + 256 + len`, the data's address, and the working space. -/
+def args : List Instr :=
+  [.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, .add .x .x1 .x21 .x23,
+   .addImm .x .x1 .x1 256, mov .x2 .x22, .addImm .x .x3 .x21 128]
+
+/-- From `polyOut false`'s `x22` (the buffer) and `x23` (the data): the data in
+`x22`, its length in `x23`, and the rest after 448 bytes in `x24`, `x25`. -/
+def recover : List Instr :=
+  [.sub .x .x25 .x22 .x21, .subImm .x .x25 .x25 704, mov .x22 .x23, .addImm .x .x24 .x22 448,
+   .addImm .x .x23 .x25 448]
+
+/-- The data XORed with the keystream at `ctx + 256 + len`. -/
+def xorKs : Prog isa :=
+  Short.xorKsWith [mov .x9 .x22, .add .x .x10 .x21 .x23, .addImm .x .x10 .x10 256, .lsr .x .x11 .x23 4]
+
+/-- `open` up to the tag computed, for 449 to 511 bytes. -/
+def openMain (sve : Bool) : Prog isa :=
+  .seq prologue
+  (.seq (macPad .x24 .x25)
+  (.seq (.block lengths)
+  (.seq (.block (zero ++ args ++ polyIn))
+  (.seq (Stitch.bulkPad sve)
+  (.seq (.block (polyOut false ++ recover))
+  (.seq (macPad .x24 .x25)
+  (.seq absorbLengths
+  (.seq xorKs
+  (.seq (.block zero)
+    (finalizeTo 48))))))))))
+
+end OpenPad
+
+/-- `open` from `Short.lo` to 511 bytes: `ShortRest.lean`'s code up to
+`Pad.threshold`, then from 449 bytes `OpenPad.openMain`, and between them
+(with SVE2) `Pad.openMain`. -/
+def openRoute (c : XorCallee) : Prog isa :=
+  .seq (.block (Pad.split c.sve)) (.ite (.zero .x .x9) (ShortRest.openMain c)
+    (if c.sve then
+      .seq (.block (Pad.split false)) (.ite (.zero .x .x9) (Pad.openMain c) (OpenPad.openMain true))
+    else OpenPad.openMain false))
+
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
-checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route (to
-`ShortRest.lean`'s code, which runs `Short.lean`'s up to 256, or `Pad.lean`'s),
-and otherwise stitched with the eight-block kernel or not. -/
+checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route when
+encrypting and `openRoute` when decrypting (to `ShortRest.lean`'s code, which
+runs `Short.lean`'s up to 256, or `Pad.lean`'s, or `OpenPad`'s), and
+otherwise stitched with the eight-block kernel or not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (Pad.sealRoute c)
@@ -219,7 +291,7 @@ def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
-    (.ite (.zero .x .x9) (Pad.openRoute c)
+    (.ite (.zero .x .x9) (openRoute c)
       (if stitched then openStitchedMain c else openMain c))
 
 /-- The code for a stream backend. -/

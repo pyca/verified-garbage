@@ -21,9 +21,10 @@ the data:
 
 `sealMain` and `openMain` are `sealMainWith` and `openMainWith` (the
 one-time key from the scalar block function) with `cryptPad`. They take the
-lengths above `threshold` up to 511 (`sealRoute`, `openRoute`): `ShortRest.lean`'s code, whose
-pass of five blocks computes the key and 256 bytes of keystream together, is
-faster below it. The branch is on the length only, and the addresses are the
+lengths above `threshold` (`sealRoute`; `Stitched.lean`'s `openRoute`, which
+from 449 bytes decrypts with `OpenPad.openMain` instead) up to 511:
+`ShortRest.lean`'s code, whose pass of five blocks computes the key and 256
+bytes of keystream together, is faster below it. The branch is on the length only, and the addresses are the
 context and the data plus constants: only the pointers and the lengths can
 affect timing.
 -/
@@ -69,12 +70,9 @@ def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptPad c)
 
 def openMain (c : XorCallee) : Prog isa := openMainWith (cryptPad c)
 
-/-- From `lo` to 511 bytes: `ShortRest.lean`'s code up to `threshold`, then
-this file's. -/
+/-- From `lo` to 511 bytes when encrypting: `ShortRest.lean`'s code up to
+`threshold`, then this file's. -/
 def sealRoute (c : XorCallee) : Prog isa :=
   .seq (.block (split c.sve)) (.ite (.zero .x .x9) (ShortRest.sealMain c) (sealMain c))
-
-def openRoute (c : XorCallee) : Prog isa :=
-  .seq (.block (split c.sve)) (.ite (.zero .x .x9) (ShortRest.openMain c) (openMain c))
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Pad

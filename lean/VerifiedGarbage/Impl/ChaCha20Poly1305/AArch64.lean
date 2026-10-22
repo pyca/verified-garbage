@@ -26,7 +26,9 @@ The working space (`workLen` = 1280 bytes, called the context below):
 * `[624, 632)`: the address of `tag`;
 * `[632, 760)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`);
 * `[768, 1280)`: the keystream of eight blocks, for 257 to 511 bytes
-  (`Pad.lean`), zeroed after it is used.
+  (`Pad.lean`), zeroed after it is used; when decrypting 449 to 511 bytes,
+  at `[256 + len, 768 + len)` instead, in `[704, 1280)`
+  (`Stitched.lean`'s `OpenPad`).
 
 `x21` holds the context, `x22` the data, `x23` its length, `x24` the
 additional data and `x25` its length throughout: they are callee-saved, and

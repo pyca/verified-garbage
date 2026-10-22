@@ -18,11 +18,15 @@ saves in its working space. Each function keeps its working space (1280
 bytes, `work`) in a frame of 1280 bytes on the stack
 (`withStackScratchWiped`), whose first 760 bytes are zeroed after the code,
 as they hold the one-time Poly1305 key and keystream; the code for 257 to 511
-bytes zeroes the keystream it keeps in the rest itself. With the eight-block stream
-(`XorImpl.stitched`), the integer units absorb the data's whole chunks of 512
-bytes into Poly1305 while the stream computes their keystream
-(`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`), and `seal` also absorbs
-the last chunk while it computes the keystream of the four blocks after it. `seal_gather` gathers its
+bytes zeroes the keystream it keeps in the rest itself. Every backend's `open`
+(the scalar one's too) decrypts 449 to 511 bytes with one chunk of the
+eight-block NEON kernel, whose integer units absorb the first 448 bytes into
+Poly1305 while it computes the keystream (`OpenPad.openMain`,
+`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`). With the eight-block stream
+(`XorImpl.stitched`), the same kernel computes the keystream of the data's
+whole chunks of 512 bytes while the integer units absorb them, and `seal`
+also absorbs the last chunk while it computes the keystream of the four
+blocks after it. `seal_gather` gathers its
 slices to its output and calls this `seal` on them there.
 -/
 
@@ -44,6 +48,12 @@ def sealNotes (v : Proof.ChaCha20.AArch64.XorImpl) : List String :=
     "the chunks while absorbing the last chunk, and encrypts up to 256 bytes of the rest with it."]
   else []
 
+/-- `open`'s notes: also 449 to 511 bytes in one stitched chunk
+(`OpenPad.openMain`), with every backend. -/
+def openNotes (v : Proof.ChaCha20.AArch64.XorImpl) : List String :=
+  notes v ++ ["From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON " ++
+    "ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions."]
+
 /-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
 def gatherNote (fn : String) : String :=
   "This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then \
@@ -62,7 +72,7 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.openApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    notes := notes v
+    notes := openNotes v
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95
       (Impl.ChaCha20Poly1305.AArch64.openCode v.callee v.stitched)
     stack := 1280
