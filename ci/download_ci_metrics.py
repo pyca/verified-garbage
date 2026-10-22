@@ -194,7 +194,7 @@ def join(manifest_path, output):
     if manifest.get("version") != 1 or not manifest.get("parts"):
         raise ValueError("unsupported or empty split manifest")
     name = manifest["file"]
-    if not isinstance(name, str) or name in ("", ".", "..") or "/" in name or "\\" in name:
+    if not isinstance(name, str) or name in ("", ".", "..") or "/" in name or "\\" in name or ":" in name:
         raise ValueError("manifest file must be a basename")
     # Match generated names, rather than treating uploaded paths as filesystem authority.
     for index, part in enumerate(manifest["parts"]):

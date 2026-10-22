@@ -52,7 +52,7 @@ class Transport(unittest.TestCase):
         self.assertEqual(len(json.loads((directory / "manifest.json").read_text())["parts"]), 1)
 
     def test_invalid_parts_never_leave_a_partial_output(self):
-        for problem in ("missing", "corrupt", "reordered", "total_checksum", "path"):
+        for problem in ("missing", "corrupt", "reordered", "total_checksum", "path", "drive_path"):
             with self.subTest(problem=problem):
                 directory = self.root / problem
                 download.split(self.source(), directory, 7)
@@ -67,6 +67,8 @@ class Transport(unittest.TestCase):
                     manifest["parts"].reverse()
                 elif problem == "total_checksum":
                     manifest["sha256"] = "0" * 64
+                elif problem == "drive_path":
+                    manifest["file"] = "C:outside"
                 else:
                     manifest["parts"][0]["name"] = "../outside"
                 path.write_text(json.dumps(manifest))
