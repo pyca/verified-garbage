@@ -968,8 +968,109 @@ b 28f
 28:
 b 21f
 20:
-cbz x3, 29f
+lsr x6, x3, #2
+cbz x6, 29f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #64
+sub x3, x3, #4
+lsr x5, x3, #3
+b 210f
+29:
+210:
+lsr x6, x3, #1
+cbz x6, 211f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #32
+sub x3, x3, #2
+lsr x5, x3, #3
+b 212f
 211:
+212:
+cbz x3, 213f
 movi v3.2d, #0
 movi v4.2d, #0
 movi v5.2d, #0
@@ -996,10 +1097,9 @@ eor v0.16b, v5.16b, v7.16b
 add x2, x2, #16
 sub x3, x3, #1
 lsr x5, x3, #3
-cbnz x3, 211b
-b 210f
-29:
-210:
+b 214f
+213:
+214:
 21:
 rev64 v0.16b, v0.16b
 str q0, [x1, #0]
@@ -1446,8 +1546,109 @@ b 28f
 28:
 b 21f
 20:
-cbz x3, 29f
+lsr x6, x3, #2
+cbz x6, 29f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #64
+sub x3, x3, #4
+lsr x5, x3, #3
+b 210f
+29:
+210:
+lsr x6, x3, #1
+cbz x6, 211f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #32
+sub x3, x3, #2
+lsr x5, x3, #3
+b 212f
 211:
+212:
+cbz x3, 213f
 movi v3.2d, #0
 movi v4.2d, #0
 movi v5.2d, #0
@@ -1474,10 +1675,9 @@ eor v0.16b, v5.16b, v7.16b
 add x2, x2, #16
 sub x3, x3, #1
 lsr x5, x3, #3
-cbnz x3, 211b
-b 210f
-29:
-210:
+b 214f
+213:
+214:
 21:
 rev64 v0.16b, v0.16b
 str q0, [x1, #0]
