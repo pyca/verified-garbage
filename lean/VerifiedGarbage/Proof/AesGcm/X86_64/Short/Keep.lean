@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -154,34 +155,28 @@ theorem text_sj (g : Bool) (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hn5 : n 
   WP.mono (text_sm g C hn5 h32 S.sm) fun _ ⟨S', z⟩ =>
     ⟨S', fun l hl => by rw [z _ (by decide) l hl, S.z0 l hl], fun l hl => by rw [z _ (by decide) l hl, S.z1 l hl]⟩
 
-theorem copyC_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hn5 : n < 512)
+theorem copyCG_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n)
     (h32 : nb16 al + nb16 n < 32) (S : SJ s₀ Ctx W SP A D R al n J tl s) :
-    WP isa copyC s (SJ s₀ Ctx W SP A D R al n J tl) := by
+    WP isa copyCG s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have dD := C.dE
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
   have hmp : 4 * grp al n = (4 * grp al n - (nb16 al + nb16 n + 1)) + nb16 al + nb16 n + 1 := by
     simp only [grp, nb16]; omega
   have hnc : n ≤ 16 * nb16 n := by simp only [nb16]; omega
   have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
-  refine WP.seq ?_
-  obtain ⟨s₁, run₁, di₁, si₁, cx₁, g₁, m₁, rd₁, wr₁, z₁⟩ := copyCArgs_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r296
-    S.sm.r272 S.sm.r200 S.sm.r208 (by omega)
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have cp : CopyPre s₁ D (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al))) n :=
-    ⟨si₁, di₁, cx₁, by omega, by rw [rd₁, wr₁, S.sm.rd, S.sm.wr]; exact C.data.ok.rd,
-      by rw [wr₁]; exact S.sm.env.perm.wC (by omega), dD.sub_right (Lay.wSub (by omega))⟩
-  refine WP.mono (copyBytes_ok s₁ cp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ⟨S.sm.keep dD (rs :=
-      [⟨W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)), n⟩])
-      (by rw [m₂, m₁]; exact writeBytes_frame' _ (length_bytesAt _ _ _))
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_G (by omega))
+  have dW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ := dD
+  refine WP.mono (copyCG_ok s (lead := 4 * grp al n - (nb16 al + nb16 n + 1)) (na := nb16 al) (n := n)
+    S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272 S.sm.r200 S.sm.r208 (by simp only [nb16] at hmp ⊢; omega)
+    (by rw [S.sm.rd, S.sm.wr]; exact C.data.ok.rd) dW) fun s₂ ⟨f₂, _, g₂, rd₂, wr₂, z₂⟩ =>
+    ⟨S.sm.keep dD f₂ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact wk_G (o := 0) (k := 512) (by decide))
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;>
-          rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)])
-      (rd₂.trans rd₁) (wr₂.trans wr₁),
-    fun l hl => by rw [z₂ _ (by decide) l hl, z₁, S.z0 l hl], fun l hl => by rw [z₂ _ (by decide) l hl, z₁, S.z1 l hl]⟩
+          rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)])
+      rd₂ wr₂,
+    fun l hl => by rw [z₂ _ (by decide) l hl, S.z0 l hl], fun l hl => by rw [z₂ _ (by decide) l hl, S.z1 l hl]⟩
 
 theorem lens_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (hn5 : n < 512)
     (h32 : nb16 al + nb16 n < 32) (S : SJ s₀ Ctx W SP A D R al n J tl s) :

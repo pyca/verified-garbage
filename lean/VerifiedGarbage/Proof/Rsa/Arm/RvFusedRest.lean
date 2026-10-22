@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvFusedSearch
 public import VerifiedGarbage.Proof.Rsa.Arm.RvBody
 import VerifiedGarbage.Proof.Rsa.Arm.RvRest
 import VerifiedGarbage.Proof.Rsa.RecoverTries
-import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFusedCandidate
 
 /-! Connect the fused search to shared factor extraction and the public result. -/
@@ -42,11 +41,24 @@ theorem fusedRest_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
   obtain ⟨odd, large, above⟩ := valid_facts hv hk
   have hn : P.n % 2 = 1 ∧ 1 < P.n := ⟨odd, large⟩
   simp only [VG.Impl.Rsa.Arm.RecoverFused.rest, seqs]
-  refine (VP.seq (halving_vp (fun _ _ => by simp only [RP.c]; omega))
-    (VP.seq (montFull_vp hn sz)
-      (VP.seq (fusedCandidates_vp hn above sz nowrap lengths positive nt1 nt100
-        (fun σ e => ⟨e.1, e.2, (rest_facts hv e.1 e.2).2.2.2⟩))
-        (fusedFin_vp hn nl)))).mono (fun _ _ h => h) fun σ s h => ?_
+  have setup : VP (RestStart P) mont
+      (fun σ s => (In P σ ∧ goOn P σ = true) ∧
+        KM P σ (fusedAW P σ) [wM] (fun _ => 0) [] s) := by
+    refine (montFull_vp hn sz false).mono (fun σ s ⟨e, h, hw⟩ => ⟨e, ?_, hw⟩)
+      (fun σ s ⟨e, h, hm, hw⟩ => ⟨e, ?_, hm, hw⟩)
+    · exact h.mono (fun k hk => ⟨hk, rfl⟩) (fun k hk => by
+        simp only [montWide, Bool.false_eq_true, ite_false, List.mem_singleton] at hk
+        subst hk
+        exact ⟨by simp, by simp [AWh, AWs, upd]⟩)
+        (fun d hd => by simp [montInitSlots] at hd)
+    · exact h.mono (fun k hk => ⟨hk, rfl⟩) (fun k hk => by
+        simp only [List.mem_singleton] at hk; subst hk
+        exact ⟨by simp [montWide], by simp [AWh, fusedAW, upd]⟩)
+        (fun d hd => by simp at hd)
+  refine (VP.seq setup
+    (VP.seq (fusedCandidates_vp hn above sz nowrap lengths positive nt1 nt100
+      (fun σ e => ⟨e.1, e.2, (rest_facts hv e.1 e.2).2.2.2⟩))
+      (fusedFin_vp hn nl))).mono (fun _ _ h => h) fun σ s h => ?_
   obtain ⟨⟨pre, go⟩, previous⟩ := h.1
   refine finish_resWith h (resultWith_eq hv large nl pre go previous nt1 (fusedFinish P (Jl P)) ?_)
   calc

@@ -122,28 +122,55 @@ pub(crate) mod dsa;
 pub(crate) mod ec_brainpoolp256r1;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp256r1_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_brainpoolp384r1_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ec_brainpoolp512r1;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp512r1_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p192_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ec_p224;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p224_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p256_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ec_p384;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p384_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p521_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_secp256k1_compressed;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_brainpoolp256r1;
@@ -237,6 +264,9 @@ pub(crate) mod ed25519_r32;
 
 #[rustfmt::skip]
 pub(crate) mod ed448;
+
+#[rustfmt::skip]
+pub(crate) mod ffdh;
 
 #[rustfmt::skip]
 pub(crate) mod gcm;
@@ -377,7 +407,73 @@ pub(crate) mod rsa_keygen;
 pub(crate) mod rsa_mont;
 
 #[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha1_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha224_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha224_mgf1_sha224;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha256_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha256_mgf1_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha384_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha384_mgf1_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha512_224_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha512_224_mgf1_sha512_224;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha512_256_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha512_256_mgf1_sha512_256;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha512_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_oaep_sha512_mgf1_sha512;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pkcs1_enc;
+
+#[rustfmt::skip]
 pub(crate) mod rsa_pkcs1_sig;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_md5_mgf1_md5;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha1_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha224_mgf1_sha224;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha256_mgf1_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha384_mgf1_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha512_224_mgf1_sha512_224;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha512_256_mgf1_sha512_256;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha512_mgf1_sha512;
 
 #[rustfmt::skip]
 pub(crate) mod scrypt;
@@ -426,6 +522,9 @@ pub(crate) mod sm4_cfb;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_ctr;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_gcm;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_ofb;

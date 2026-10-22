@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
+import VerifiedGarbage.Proof.Rsa.X86.Chain
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -62,8 +63,8 @@ theorem chainSub_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N
   have ce := cb_eq (len := len) N
   unfold VG.Impl.Bignum.X86.CrtRt.chain
   refine WP.seq (chainSetup_ok h N ho ha hb fun w K m pa pb po c e => ?_)
-  refine WP.seq (WP.mono (reduceLoop_ok (h.ws.of_keeps K) (a := lo len a) (m := lo len b) (d := lo len o)
-    (N := cw len n) (cw_pos h.lower') (by omega) (by omega) (by omega) (by omega) (by omega) pa pb po c e)
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Chain.subLoop_ok (h.ws.of_keeps K) (a := lo len a) (b := lo len b) (d := lo len o)
+    (n := cw len n) (cw_pos h.lower') (by omega) (by omega) (by omega) (by omega) (by omega) pa pb po c e)
     fun t ⟨O, P, V, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K.trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega)
@@ -85,8 +86,8 @@ theorem chainAdd_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N
   have ce := cb_eq (len := len) N
   unfold VG.Impl.Bignum.X86.CrtRt.chain
   refine WP.seq (chainSetup_ok h N ho ha hb fun w K m pa pb po c e => ?_)
-  refine WP.seq (WP.mono (addLoop_ok (h.ws.of_keeps K) (a := lo len a) (m := lo len b) (d := lo len o)
-    (N := cw len n) (cw_pos h.lower') (by omega) (by omega) (by omega) (by omega) (by omega) pa pb po c e)
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Chain.addLoop_ok (h.ws.of_keeps K) (a := lo len a) (b := lo len b) (d := lo len o)
+    (n := cw len n) (cw_pos h.lower') (by omega) (by omega) (by omega) (by omega) (by omega) pa pb po c e)
     fun t ⟨O, P, _, V, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K.trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega)

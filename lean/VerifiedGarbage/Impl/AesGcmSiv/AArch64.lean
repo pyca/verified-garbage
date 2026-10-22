@@ -266,12 +266,23 @@ def cmp : List Instr :=
     .logic .orr .x .x9 .x9 .x10, imm .x11 0, .subImm .x .x12 .x11 1, .adds .x .x9 .x9 .x12,
     .adcs .x .x10 .x11 .x11, imm .x27 1, .sub .x .x27 .x27 .x10]
 
-/-- Every byte of the data ANDed with `0 − x27`. -/
+/-- Sixteen bytes at `x12` ANDed with `v16`. -/
+def maskV : List Instr :=
+  [.ldrq .v17 .x12 0, .vop (.logic .and .v17 .v17 .v16), .strq .v17 .x12 0, ptr .x12 .x12 16,
+    .subImm .x .x14 .x14 1]
+
+/-- The byte at `x12` ANDed with `x11`. -/
+def maskB : List Instr :=
+  [.ldrb .x14 .x12 0, .logic .and .w .x14 .x14 .x11, .strb .x14 .x12 0, ptr .x12 .x12 1, .subImm .x .x13 .x13 1]
+
+/-- Every byte of the data ANDed with `0 − x27`: sixteen at a time, with
+`0 − x27`'s low byte in each byte of `v16`, then the last `len mod 16` one
+at a time. -/
 def mask : Prog isa :=
-  .seq (.block [imm .x9 0, .sub .x .x11 .x9 .x27, mov .x12 .x25, mov .x13 .x26])
-    (.ite (.zero .x .x13) (.block [])
-      (.loop (.block [.ldrb .x14 .x12 0, .logic .and .w .x14 .x14 .x11, .strb .x14 .x12 0,
-        ptr .x12 .x12 1, .subImm .x .x13 .x13 1]) (.nonzero .x .x13)))
+  .seq (.block [imm .x9 0, .sub .x .x11 .x9 .x27, mov .x12 .x25, .vop (.dup .b16 .v16 .x11),
+      .lsr .x .x14 .x26 4, .lsl .x .x9 .x14 4, .sub .x .x13 .x26 .x9])
+    (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block maskV) (.nonzero .x .x14)))
+      (.ite (.zero .x .x13) (.block []) (.loop (.block maskB) (.nonzero .x .x13))))
 
 /-! ## The functions -/
 

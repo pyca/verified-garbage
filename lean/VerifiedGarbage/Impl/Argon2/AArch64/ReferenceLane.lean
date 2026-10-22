@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-public import VerifiedGarbage.Impl.Argon2.AArch64.Divide
+public import VerifiedGarbage.Impl.Argon2.AArch64.Remainder
 
-/-! # Selecting a lane from J₂ with fixed-time division
+/-! # Selecting a lane from J₂ with a fixed-time remainder
 
 `x0` contains the full address word and `x1` the positive lane count.
 `x4` receives J₂ modulo the lane count; `x7` retains the address word
@@ -20,6 +20,6 @@ open VG.Impl.Argon2.AArch64.Instructions
 
 def highArgs : List Instr := [mov .x7 .x0, shr .x0 32].flatten
 
-def code : Prog isa := .seq (.block highArgs) Divide.code
+def code : Prog isa := .seq (.block highArgs) Remainder.code
 
 end VG.Impl.Argon2.AArch64.ReferenceLane

@@ -104,8 +104,8 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
         (tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl ONEP)) P := by
       rw [h1]
       exact peerPt_rep hC _ _ _ hM.px hM.py
-    have hu : sv c (ptr s₀ .r3) s₂ U < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-    have hv : sv c (ptr s₀ .r3) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
+    have hu : sv c (ptr s₀ .r3) s₂ U < 2 ^ (8 * c.C.len) := Nat.lt_trans hM.u_lt hc.n_enc
+    have hv : sv c (ptr s₀ .r3) s₂ V < 2 ^ (8 * c.C.len) := Nat.lt_trans hM.v_lt hc.n_enc
     refine pointsWith_ok hc hM
       (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ U >>> j) (G c.C)))
       (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ V >>> j) P))

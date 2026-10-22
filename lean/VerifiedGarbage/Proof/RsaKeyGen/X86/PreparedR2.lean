@@ -17,20 +17,20 @@ open VG.Impl.Bignum.X86.PublicContext
 
 def ranges (g : Geometry) : List (Nat × Nat) := coreRanges g ++ [(g.array 4, 4 * g.words)]
 
-theorem code_ok {mont : Prog isa} {name : String}
+theorem code_okAt {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (bound : g.w ≤ 64)
-    (odd : c % 2 = 1) (top : 2 ^ (64 * g.w - 1) ≤ c) :
-    WP isa (VG.Impl.RsaKeyGen.X86.PreparedR2.code g.w name mont) s fun t =>
+    (odd : c % 2 = 1) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) (top : 2 ^ e ≤ c) :
+    WP isa (VG.Impl.RsaKeyGen.X86.PreparedR2.codeAt e g.w name mont) s fun t =>
       Ready g c capacity p t ∧
       val32 t.mem g.W (g.array 4) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c ∧
       Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧
       Keeps VG.Proof.Mont.X86.Dynamic.powerClob s t ∧ WorkspaceFrame g (ranges g) s.mem t.mem := by
-  unfold VG.Impl.RsaKeyGen.X86.PreparedR2.code
+  unfold VG.Impl.RsaKeyGen.X86.PreparedR2.codeAt
   rw [Prepared.slot_eq, Prepared.slot_eq]
-  refine WP.seq (WP.mono (core_ok verified noSp stack v length S bound odd top)
+  refine WP.seq (WP.mono (core_okAt verified noSp stack v length S bound odd positive eLt top)
     fun a ⟨A, value, F, K, W⟩ => ?_)
   refine WP.mono (copy_ok v A.context 4 6 (by decide) (by decide)) fun t ⟨copy, O, Kt, C⟩ => ?_
   have Ot := WorkspaceFrame.of_outs A.scratch.nowrap (Outs.of_outside O (List.mem_singleton_self _))
@@ -48,5 +48,19 @@ theorem code_ok {mont : Prog isa} {name : String}
     copy.trans value, F.trans Ft, K.widen Kt,
     (W.mono (fun r mem => List.mem_append_left _ mem)).trans
       (Ot.mono (fun r mem => List.mem_append_right _ mem))⟩
+
+theorem code_ok {mont : Prog isa} {name : String}
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (bound : g.w ≤ 64)
+    (odd : c % 2 = 1) (top : 2 ^ (64 * g.w - 1) ≤ c) :
+    WP isa (VG.Impl.RsaKeyGen.X86.PreparedR2.code g.w name mont) s fun t =>
+      Ready g c capacity p t ∧
+      val32 t.mem g.W (g.array 4) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c ∧
+      Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧
+      Keeps VG.Proof.Mont.X86.Dynamic.powerClob s t ∧ WorkspaceFrame g (ranges g) s.mem t.mem :=
+  code_okAt verified noSp stack v length S bound odd (e := 64 * g.w - 1)
+    (by have := v.minWidth; omega) (by have := v.minWidth; omega) top
 
 end VG.Proof.RsaKeyGen.X86.PreparedR2

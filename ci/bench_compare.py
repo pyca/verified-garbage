@@ -39,7 +39,10 @@ OpenSSL's and aws-lc-rs's code is the same on both sides, so their
 benchmarks are only a reference point for HEAD's times, not part of the
 comparison: they run once, with HEAD's binary, with `--openssl` or when BASE
 does not exist; and only without `VG_CPU_FEATURES`, which does not change
-their code either. aws-lc-rs has no benchmark where it lacks the primitive.
+their code either, unless `--openssl-with-features` asks for them under it
+too (`OPENSSL_ia32cap` in the environment then masks their own x86 CPU
+features: OpenSSL and aws-lc both read it). aws-lc-rs has no benchmark where
+it lacks the primitive.
 
 `VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
 features both sides use, and is named in the report. Each side is passed
@@ -461,6 +464,8 @@ def main():
     p.add_argument("--measurement-time", type=float, default=0.3)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
+    p.add_argument("--openssl-with-features", action="store_true",
+                   help="run them even under VG_CPU_FEATURES (with --openssl, or without a base)")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
@@ -581,7 +586,8 @@ def main():
         keep_fastest(runs)
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
     references = {}
-    with_references = (args.openssl or binaries["base"] is None) and not cpu_features
+    with_references = (args.openssl or binaries["base"] is None) and (not cpu_features or args.openssl_with_features)
+    ia32cap = os.environ.get("OPENSSL_ia32cap", "")
     if with_references:
         for library, name in REFERENCES.items():
             print(name, file=sys.stderr)
@@ -597,7 +603,9 @@ def main():
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference." if with_references
+        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference"
+           + (f", with OPENSSL_ia32cap={ia32cap}" if ia32cap
+              else ", with all of this CPU's features" if cpu_features else "") + "." if with_references
            else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
            else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, the workflow's `openssl` input)."),
         *(

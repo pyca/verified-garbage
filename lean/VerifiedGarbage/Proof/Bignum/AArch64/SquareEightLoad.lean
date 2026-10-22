@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEight
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -51,14 +50,5 @@ theorem inputs_cross {s : State} {m : Mem} {B : Addr} {e n : Nat}
   | succ n ih =>
     rw [Square.cross, Square.crossValue_succ, ih (fun i h => hi i (by omega)),
       inputs_value (fun i h => hi i (by omega)), hi n (by omega), ← Nat.pow_mul]
-
-def clearAcc : List Instr := [movi .x19 0, movi .x20 0, movi .x21 0]
-
-theorem clearAcc_ok (s : State) :
-    WP isa (.block clearAcc) s fun t =>
-      (accValue t = 0 ∧ t.mem = s.mem) ∧ Keep [.x19, .x20, .x21] s t := by
-  refine WP.keep [.x19, .x20, .x21] ?_ rfl rfl rfl
-  unfold clearAcc accValue
-  brun []
 
 end VG.Proof.Bignum.AArch64.SquareEight

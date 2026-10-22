@@ -16,6 +16,7 @@ theorem iterations_eq {E : Environment} (v : E.Valid) {rBytes sBytes : List Byte
     (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
       shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
     (E.parameters rBytes).iterations = (E.parameters sBytes).iterations := by
+  rw [MillerRabinLoop.Parameters.iterations, MillerRabinLoop.Parameters.iterations, v.test_eq, v.test_eq]
   change itersOf (8 * E.width) rBytes.length
       (shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop (8 * E.width)))) (8 * E.width) - 1 =
     itersOf (8 * E.width) sBytes.length
@@ -29,10 +30,12 @@ theorem result_status_eq {E : Environment} (v : E.Valid) {rBytes sBytes : List B
       shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
     s.mem.readW (off E.base 168) 32 = t.mem.readW (off E.base 168) 32 := by
   apply BitVec.eq_of_toNat_eq
+  rw [MillerRabinLoop.Result, v.test_eq] at left
   change (match Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop (8 * E.width)) with
     | none => w32 s.mem E.base 168 = 0
     | some (prime, rest) => w32 s.mem E.base 168 = (if prime then 1 else 3) ∧
       w32 s.mem E.base 152 = rBytes.length - rest.length) at left
+  rw [MillerRabinLoop.Result, v.test_eq] at right
   change (match Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop (8 * E.width)) with
     | none => w32 t.mem E.base 168 = 0
     | some (prime, rest) => w32 t.mem E.base 168 = (if prime then 1 else 3) ∧

@@ -48,8 +48,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.crtValuesApi.artifact X86.target {
     notes := ["The modulus and prime lengths are public. Balanced 2048/3072/4096-bit keys use \
       thirty-step batched inversion at the prime width; other lengths use the general inverse. \
-      Each batch updates signed GCD rows and Montgomery-reduced coefficient rows. Private values \
-      select no branch. Callee-saved registers reside in scratch."]
+      Each batch updates signed GCD rows and Montgomery-reduced coefficient rows. The shared \
+      key-workspace carry chains process eight words per iteration, then scalar tails, preserving \
+      carry between words. Private values select no branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.CrtValuesRt.code
     verified := Proof.Rsa.X86.CrtValues.verified
     spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe
@@ -67,21 +68,27 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
-      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
-      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit \
+      without computing an unused final square; the input acceptance mask is applied after it. \
+      Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PrecomputedRt.code
     verified := Proof.Bignum.X86.PrecomputedRt.verified
     spSafe := Proof.Rsa.X86.RtShape.precomputed_spSafe
     stack := 40 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
+    notes := ["The public modulus's high bit selects a reduced seed reached by n+1 modular \
+      doublings; padded moduli use 65n doublings. Six Montgomery squares then produce R². \
+      The seed and fixed-count squaring loop are shared with DSA; one multiplication body \
+      serves all six squares, within the existing scratch and stack bounds."]
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
     stack := 20 },
   Spec.Rsa.publicCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
-      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
-      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit \
+      without computing an unused final square; the input acceptance mask is applied after it. \
+      Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PublicRt.code
     verified := Proof.Bignum.X86.PublicRt.verified
     spSafe := Proof.Rsa.X86.RtShape.public_spSafe

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// The function is `vg_ecdsa_p521_sign`'s setup, field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls); field elements are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction. The peer's key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a double-and-add ladder over all 576 bits of the nine words of `d`, with the complete addition formulas of Renes, Costello and Batina and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
+/// The function is `vg_ecdsa_p521_sign`'s setup, field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls); field elements are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction. The peer's key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a double-and-add ladder over all 528 bits of the 66-byte encoding of `d`, with the complete addition formulas of Renes, Costello and Batina and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -2226,7 +2226,7 @@ eor r5, r5, r4
 and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #3228]
-mov r11, #576
+mov r11, #528
 23:
 sub r11, r11, #1
 mov r10, lr

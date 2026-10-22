@@ -228,14 +228,11 @@ mov r11, #0
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
-mov r4, #0
+mov r4, #1
 adc r4, r4, #0
-eor r4, r4, #1
 subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
+adc r4, r4, #0
+eor r11, r4, #3
 str r3, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
@@ -576,14 +573,11 @@ mov r11, #0
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
-mov r4, #0
+mov r4, #1
 adc r4, r4, #0
-eor r4, r4, #1
 subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
+adc r4, r4, #0
+eor r11, r4, #3
 str r3, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
@@ -1103,14 +1097,11 @@ mov r11, #0
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
-mov r4, #0
+mov r4, #1
 adc r4, r4, #0
-eor r4, r4, #1
 subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
+adc r4, r4, #0
+eor r11, r4, #3
 str r3, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4

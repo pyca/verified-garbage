@@ -6,7 +6,12 @@
 //! of the RSA operation.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -38,6 +43,12 @@ use crate::arch::rsa_pss_sha1_mgf1_sha1::{
     vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_sha2,
     vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_sha2,
 };
+#[cfg(target_arch = "x86")]
+use crate::arch::rsa_pss_sha1_mgf1_sha1::{
+    VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_FEATURES,
+    VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHANI_FEATURES,
+    vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani, vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_shani,
+};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -68,6 +79,11 @@ super::pss_hash!(20, Sha1Backend {
         ifma: vg_rsa_pss_sha1_mgf1_sha1_sign_crt_ifma [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_CRT_IFMA_FEATURES],
         umaal: vg_rsa_pss_sha1_mgf1_sha1_sign_umaal [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_UMAAL_FEATURES],
         verify_umaal: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_umaal [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_UMAAL_FEATURES],
+    },
+    #[cfg(target_arch = "x86")]
+    ShaNi => {
+        verify: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_shani [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHANI_FEATURES],
+        sign: vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     ShaNi => {

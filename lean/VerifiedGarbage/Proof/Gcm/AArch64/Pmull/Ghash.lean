@@ -944,15 +944,14 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom mul)
 
 /-- The loops of `ghashAll`, from all eight powers. -/
 theorem loopsPart_ok {s₀ : State} (hp : Pm s₀) {s₁ : State} (hI₁ : Inv s₀ 8 0 s₁) :
-    WP isa (.ite (.zero .x .x5)
-        (.ite (.zero .x .x3) (.block []) (.loop (.block (Impl.Gcm.AArch64.Pmull.body 1)) (.nonzero .x .x3)))
+    WP isa (.ite (.zero .x .x5) Impl.Gcm.AArch64.Pmull.tail
         (.seq (.loop (.block (Impl.Gcm.AArch64.Pmull.body 8)) (.nonzero .x .x5))
           Impl.Gcm.AArch64.Pmull.tail)) s₁ (Inv s₀ 8 (nb s₀)) := by
   have hn := hp.nb_lt
   have hev : eval (.zero .x .x5) s₁ = some (decide (nb s₀ < 8)) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hI₁.x5, hI₁.x3, Nat.sub_zero,
       shr3_beq (show nb s₀ < 2 ^ 64 by omega)]
-  refine WP.ite _ hev (fun _ => ones_ok hp (by decide) le_rfl hI₁) (fun h => ?_)
+  refine WP.ite _ hev (fun h => tail_ok hp (by simpa using h) hI₁) (fun h => ?_)
   simp only [decide_eq_false_iff_not, Nat.not_lt] at h
   refine WP.seq (WP.mono (Q := fun s => ∃ i, nb s₀ - i < 8 ∧ Inv s₀ 8 i s) ?_
     fun s₄ ⟨i, hi, hI₄⟩ => tail_ok hp hi hI₄)

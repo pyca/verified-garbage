@@ -63,10 +63,16 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
     (np : 0<N) (n32 : 4*N<2^32) (ol : o+4*N≤L) (so : o+4*N≤S ∨ S+12*N+56≤o)
     (hinv : (val32 s.mem W mo N*w32 s.mem W inv+1)%2^32=0)
     (hb : val32 s.mem W a N<val32 s.mem W mo N) :
-    WP isa (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 64
+    WP isa (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 32
+      (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 48
+      (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 64
       (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 96
-        (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 128 VG.Impl.Mont.X86.Rt.Square.square))) s
+        (VG.Impl.Mont.X86.Rt.StaticSquare.selectSize 128 VG.Impl.Mont.X86.Rt.Square.square))))) s
       (SquarePost W S N mo o a s) := by
+  apply selectSize_ok V lay np n32 ol so (by decide) (by decide) (by decide) _ s hw ha hinv hb
+  intro s hw ha hinv hb
+  apply selectSize_ok V lay np n32 ol so (by decide) (by decide) (by decide) _ s hw ha hinv hb
+  intro s hw ha hinv hb
   apply selectSize_ok V lay np n32 ol so (by decide) (by decide) (by decide) _ s hw ha hinv hb
   intro u hu hau iu bu
   apply selectSize_ok V lay np n32 ol so (by decide) (by decide) (by decide) _ u hu hau iu bu

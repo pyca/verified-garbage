@@ -27,6 +27,8 @@ alone; the other path is `prefix`'s (`prefixNRel`).
 
 namespace VG.Proof.AesGcm.X86_64.Split
 
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn step)
@@ -52,7 +54,7 @@ theorem encN_check :
 
 section
 variable {Ctx W SP D S : Addr} {R n sl : Nat} {σ σ' : State}
-  (h : PP CtxMode.prepared Ctx W SP D S R n sl σ) (h' : PP CtxMode.prepared Ctx W SP D S R n sl σ')
+  (h : PP (CtxMode.preparedN np hpn) Ctx W SP D S R n sl σ) (h' : PP (CtxMode.preparedN np hpn) Ctx W SP D S R n sl σ')
 include h h'
 
 /-- After `nTest`. -/
@@ -61,7 +63,7 @@ abbrev NT (n sl : Nat) (σ t : State) : Prop :=
     (∀ r, r ≠ .rax → r ≠ .rcx → t.gpr r = σ.gpr r) ∧ t.mem = σ.mem ∧ t.rd = σ.rd ∧ t.wr = σ.wr
 
 /-- The path in one pass, in two runs. -/
-theorem nPath_rel {c : Prog isa} (hE : EncNOk c)
+theorem nPath_rel {c : Prog isa} (hE : EncNOk np hpn c)
     (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {P : State → State → Prop}
     (hP : ∀ a b, P a b → NT n sl σ a ∧ NT n sl σ' b) :
     RelCT isa P (.seq (.block SealSplit.nCopyArgs) (.seq SealGather.copy (.seq (.block SealSplit.nArgs)
@@ -130,9 +132,9 @@ theorem nPath_rel {c : Prog isa} (hE : EncNOk c)
 end
 
 /-- `prefixN` in two runs. -/
-theorem prefixNRel {c : Prog isa} (hE : EncNOk c)
-    (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (T : BlkToFn CtxMode.prepared) :
-    PreRel CtxMode.prepared (SealSplit.prefixN T.fn c) := by
+theorem prefixNRel {c : Prog isa} (hE : EncNOk np hpn c)
+    (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (T : BlkToFn (CtxMode.preparedN np hpn)) :
+    PreRel (CtxMode.preparedN np hpn) (SealSplit.prefixN T.fn c) := by
   intro Ctx W SP D S R n sl σ σ' h h'
   unfold SealSplit.prefixN
   refine RelCT.seq (step [.r15] nTest_check (F₁ := (· = σ)) (F₂ := (· = σ'))

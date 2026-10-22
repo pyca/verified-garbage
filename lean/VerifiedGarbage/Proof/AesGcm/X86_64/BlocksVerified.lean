@@ -38,91 +38,91 @@ section
 variable (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned))
 
 theorem encryptBlocks_mx :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  unfold Blocks.encrypt encFull encSmall
-  refine StitchImpl.blocks_cases st (·.enc) (·.full) (·.small) aligned _ _ (fun c => c.allInstrs (fun i => !loadsMxcsr i) = true) ?_ (fun i b _ => ?_) (fun i b _ => ?_)
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))).allInstrs (fun i => !loadsMxcsr i) = true := by
+  unfold Blocks.encrypt encFull encSmall encSmall4
+  refine StitchImpl.blocks_cases st (·.enc) (·.encS) (·.full) (·.small) (·.small4) aligned _ _ (fun c => c.allInstrs (fun i => !loadsMxcsr i) = true) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
-  all_goals cases aligned <;> cases b <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
-      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, i.encP.mxcsr, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and,
+  all_goals cases aligned <;> cases b <;> cases c <;>
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, i.encP.mxcsr, i.encPS.mxcsr, Option.getD_some, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
 theorem decryptBlocks_mx :
-    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  unfold Blocks.decrypt decFull decSmall
-  refine StitchImpl.blocks_cases st (·.dec) (·.fullD) (·.smallD) aligned _ _ (fun c => c.allInstrs (fun i => !loadsMxcsr i) = true) ?_ (fun i b _ => ?_) (fun i b _ => ?_)
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))).allInstrs (fun i => !loadsMxcsr i) = true := by
+  unfold Blocks.decrypt decFull decSmall decSmall4
+  refine StitchImpl.blocks_cases st (·.dec) (·.decS) (·.fullD) (·.smallD) (·.small4) aligned _ _ (fun c => c.allInstrs (fun i => !loadsMxcsr i) = true) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
-  all_goals cases aligned <;> cases b <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
-      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, i.decP.mxcsr, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and,
+  all_goals cases aligned <;> cases b <;> cases c <;>
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, i.decP.mxcsr, i.decPS.mxcsr, Option.getD_some, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
 theorem encryptBlocks_spSafe :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st)).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold Blocks.encrypt encFull encSmall
-  refine StitchImpl.blocks_cases st (·.enc) (·.full) (·.small) aligned _ _ (fun c => c.all (fun i => !X86_64.isa.writesSp i) = true) ?_ (fun i b _ => ?_) (fun i b _ => ?_)
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold Blocks.encrypt encFull encSmall encSmall4
+  refine StitchImpl.blocks_cases st (·.enc) (·.encS) (·.full) (·.small) (·.small4) aligned _ _ (fun c => c.all (fun i => !X86_64.isa.writesSp i) = true) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all, GcmImpl.callees, v.ctr.spSafe, v.gh.spSafe, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
-  all_goals cases aligned <;> cases b <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
-      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all, GcmImpl.callees, i.encP.spSafe, v.ctr.spSafe, v.gh.spSafe, Bool.true_and,
+  all_goals cases aligned <;> cases b <;> cases c <;>
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all, GcmImpl.callees, i.encP.spSafe, i.encPS.spSafe, Option.getD_some, v.ctr.spSafe, v.gh.spSafe, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
 theorem decryptBlocks_spSafe :
-    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st)).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold Blocks.decrypt decFull decSmall
-  refine StitchImpl.blocks_cases st (·.dec) (·.fullD) (·.smallD) aligned _ _ (fun c => c.all (fun i => !X86_64.isa.writesSp i) = true) ?_ (fun i b _ => ?_) (fun i b _ => ?_)
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold Blocks.decrypt decFull decSmall decSmall4
+  refine StitchImpl.blocks_cases st (·.dec) (·.decS) (·.fullD) (·.smallD) (·.small4) aligned _ _ (fun c => c.all (fun i => !X86_64.isa.writesSp i) = true) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all, GcmImpl.callees, v.ctr.spSafe, v.gh.spSafe, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
-  all_goals cases aligned <;> cases b <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
-      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all, GcmImpl.callees, i.decP.spSafe, v.ctr.spSafe, v.gh.spSafe, Bool.true_and,
+  all_goals cases aligned <;> cases b <;> cases c <;>
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all, GcmImpl.callees, i.decP.spSafe, i.decPS.spSafe, Option.getD_some, v.ctr.spSafe, v.gh.spSafe, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
 theorem encryptBlocks_xdepth :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st)).x86_64Depth ≤ 8 := by
-  unfold Blocks.encrypt encFull encSmall
-  refine StitchImpl.blocks_cases st (·.enc) (·.full) (·.small) aligned _ _ (fun c => c.x86_64Depth ≤ 8) ?_ (fun i b _ => ?_) (fun i b _ => ?_)
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))).x86_64Depth ≤ 8 := by
+  unfold Blocks.encrypt encFull encSmall encSmall4
+  refine StitchImpl.blocks_cases st (·.enc) (·.encS) (·.full) (·.small) (·.small4) aligned _ _ (fun c => c.x86_64Depth ≤ 8) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
-  all_goals cases aligned <;> cases b <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
-      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, i.encP.xdepth, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
+  all_goals cases aligned <;> cases b <;> cases c <;>
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, i.encP.xdepth, i.encPS.xdepth, Option.getD_some, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
 theorem decryptBlocks_xdepth :
-    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st)).x86_64Depth ≤ 8 := by
-  unfold Blocks.decrypt decFull decSmall
-  refine StitchImpl.blocks_cases st (·.dec) (·.fullD) (·.smallD) aligned _ _ (fun c => c.x86_64Depth ≤ 8) ?_ (fun i b _ => ?_) (fun i b _ => ?_)
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))).x86_64Depth ≤ 8 := by
+  unfold Blocks.decrypt decFull decSmall decSmall4
+  refine StitchImpl.blocks_cases st (·.dec) (·.decS) (·.fullD) (·.smallD) (·.small4) aligned _ _ (fun c => c.x86_64Depth ≤ 8) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
-  all_goals cases aligned <;> cases b <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.stitchPart, Blocks.scratchSetup,
-      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, i.decP.xdepth, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
+  all_goals cases aligned <;> cases b <;> cases c <;>
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+      Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, i.decP.xdepth, i.decPS.xdepth, Option.getD_some, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
 theorem encryptBlocksM_correct (s : State) (hs : (Proof.AesGcm.encryptBlocksX86_64M M).pre s) :
-    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st)) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.encryptBlocksX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := Blocks.encrypt_wp v st hs
   exact ⟨t, s', he, abiPreserved_of_exec (encryptBlocks_mx v st) he hg, hp⟩
 
 theorem decryptBlocksM_correct (s : State) (hs : (Proof.AesGcm.decryptBlocksX86_64M M).pre s) :
-    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st)) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.decryptBlocksX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := Blocks.decrypt_wp v st hs
   exact ⟨t, s', he, abiPreserved_of_exec (decryptBlocks_mx v st) he hg, hp⟩

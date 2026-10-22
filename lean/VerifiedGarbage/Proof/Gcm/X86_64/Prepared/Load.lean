@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
 public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Powers
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
@@ -46,8 +47,8 @@ theorem loadPair_ok (j : Nat) (d : XReg) (s : State)
   · exact State.zlane_setV_ne _ _ (fun h => hr (List.mem_singleton.mpr h)) _ _ _
 
 /-- A valid odd-indexed pair has the same two values as the old conversion. -/
-theorem pair_values {m : Mem} {p : Addr} (hp : Spec.Gcm.PreparedPowersRepr m p)
-    {j : Nat} (hj : j < 48) (ho : j % 2 = 1) {l : Nat} (hl : l < 2) :
+theorem pair_values {n : Nat} {m : Mem} {p : Addr} (hp : Stitch.PowersN n m p)
+    {j : Nat} (hj : j < 2 * n) (ho : j % 2 = 1) {l : Nat} (hl : l < 2) :
     m.readW (p + BitVec.ofNat 64 (240 + 16*j + 16*l)) 128 =
       hInvF (Spec.Gcm.hpow (Spec.Gcm.ctxH m p) (j + 1 - l)) := by
   obtain ⟨lo, hi⟩ := hp (j / 2) (by omega)

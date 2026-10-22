@@ -234,11 +234,11 @@ def encBody8 (nr : Nat) (ix : Bool := false) : Prog isa :=
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 24)]))
 
 /-- The keystream of the eight counters prepared after the last batch,
-stored to `scratch + 832`. -/
-def ksTail (nr : Nat) : Prog isa :=
+stored to `scratch + off`. -/
+def ksTail (nr : Nat) (off : Nat := 832) : Prog isa :=
   .seq (.block ((List.range 8).map (fun i => .vmovdquLoad .l128 (aregs.getD i .xmm3) (at_ .r11 (640+16*i)))))
     (.seq (aesFixed nr aregs (fun _ => []))
-      (.block ((List.range 8).map (fun i => .vmovdquStore .l128 (at_ .r11 (832+16*i)) (aregs.getD i .xmm3)))))
+      (.block ((List.range 8).map (fun i => .vmovdquStore .l128 (at_ .r11 (off+16*i)) (aregs.getD i .xmm3)))))
 
 /-- For the `t = r9 - 16` blocks after the pipeline's: the counter advanced
 by `t`, the powers `H'ᵗ` … `H'` at `rax = scratch + 256 - 16 t`, `rdx` at
@@ -252,10 +252,10 @@ def tailSetup : List Instr :=
    .vmovdquLoad .l128 .xmm0 (at_ .r11 768), .vmovdquLoad .l128 .xmm1 (at_ .r11 784),
    .alu .add .r11 (.imm 64)]
 
-/-- After the `t` blocks: `r11` back, their products reduced into `Y`, and
-the last round key's address back in `r10`. -/
-def tailEnd (nr : Nat) : List Instr :=
-  ([.alu .sub .r11 (.imm 64)] : List Instr) ++ StitchAvx.reduceHash ++
+/-- After the `t` blocks: `r11` back (by `back`), their products reduced
+into `Y`, and the last round key's address back in `r10`. -/
+def tailEnd (nr : Nat) (back : Instr := .alu .sub .r11 (.imm 64)) : List Instr :=
+  ([back] : List Instr) ++ StitchAvx.reduceHash ++
   ([.mov .r10 (.reg .rdi), .alu .add .r10 (.imm (BitVec.ofNat 32 (16 * nr)))] : List Instr)
 
 /-- The blocks after the pipeline's, if any: `r9 - 16` of them, at
@@ -299,6 +299,47 @@ def decRest (nr : Nat) (rem : Bool) : Prog isa :=
   .seq (.block []) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
     (.seq (batch nr 8 0 (q8 nr)) (.seq (if rem then tailD nr else .block []) (.block finish)))))
 
+/-! ## Fewer blocks than the pipeline takes
+
+With a prepared key context, `encRS` and `decRS` take fewer than 16 blocks,
+from 1 on, without the pipeline: as `tailT` takes the blocks after it, but
+for all `t = r9` blocks from the start, with the keystream of up to 16
+counters at `scratch + 384` and the powers `H'ᵗ` … `H'` below `H'⁸`. -/
+
+/-- The powers `H'⁹` … `H'¹⁵`, loaded from the prepared key context and
+stored below the setup's `H'⁸` … `H'`: `H'ᵏ` at `scratch + 256 - 16 k`. -/
+def highs : List Instr :=
+  (List.range 7).flatMap fun i =>
+    [.vmovdquLoad .l128 .xmm12 (at_ .rdi (prepOff (i + 9))), .vmovdquStore .l128 (at_ .r11 (112 - 16 * i)) .xmm12]
+
+/-- For the `t = r9` blocks: the counter advanced by `t`, the powers `H'ᵗ`
+… `H'` at `rax = scratch + 256 - 16 t`, `r9 = 16 + t`, `r10 = 0`, the mask
+and the reduction constant loaded, and `r11` moved down 384 bytes, so that
+the keystream at `scratch + 384` is at `r11 + 768`, as `StitchZH.remBody`
+reads it. -/
+def smallSetup : List Instr :=
+  [.mov .r10 (.reg .r9), .alu32 .add .r8 (.reg .r10), .shift .shl .r10 4,
+   .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10),
+   .alu .add .r9 (.imm 16), .mov32 .r10 (.imm 0),
+   .vmovdquLoad .l128 .xmm0 (at_ .r11 768), .vmovdquLoad .l128 .xmm1 (at_ .r11 784),
+   .alu .sub .r11 (.imm 384)]
+
+/-- Encryption (decryption with `dec`) of the `r9` blocks, 1 to 15, after
+the setup: the keystream of the eight counters it prepared stored at
+`scratch + 384`; from 9 blocks on, that of the next eight at `scratch + 512`
+and the powers `H'⁹` … `H'¹⁵`; then each block encrypted and hashed
+(`StitchZH.remBody`), or hashed and decrypted (`StitchZH.remBodyD`), and
+their products reduced into `Y`. -/
+def small (nr : Nat) (dec : Bool) : Prog isa :=
+  .seq (ksTail nr 384)
+    (.seq (.block [.alu .cmp .r9 (.imm 9)])
+      (.seq (.ite .b (.block [])
+          (.seq (.block ((List.range 8).flatMap prepCounter)) (.seq (ksTail nr 512) (.block highs))))
+        (.seq (.block (smallSetup ++ StitchAvx.zero))
+          (.seq (.loop (.block ((if dec then StitchZH.remBodyD .rdx else StitchZH.remBody .rdx) ++
+              StitchZH.remNext)) .ne)
+            (.block (tailEnd nr (.alu .add .r11 (.imm 384)) ++ finish))))))
+
 /-- The setup `su`, which does not depend on the key size, then the complete
 loop for the key size, chosen once from the public AES round count `nr`: the
 setup leaves the end of the key schedule, `rdi + 16 nr`, in `r10`. -/
@@ -309,9 +350,16 @@ def dispatch (su : List Instr) (a b c : Prog isa) : Prog isa :=
 def enc : Prog isa := dispatch setup (encRest 10) (encRest 12) (encRest 14)
 /-- Encryption with a prepared key context: the powers loaded from it. -/
 def encR : Prog isa := dispatch setupR (encRest 10) (encRest 12) (encRest 14)
+/-- Encryption with a prepared key context of 1 to 15 blocks, `small`, which
+`Blocks.fullBody` runs on fewer than 16 blocks only, after `encR`'s code,
+which keeps the addresses of `encR`'s loops wherever it runs from 16 blocks
+on. -/
+def encRS : Prog isa := dispatch setupR (small 10 false) (small 12 false) (small 14 false)
 def dec : Prog isa := dispatch setup (decRest 10 false) (decRest 12 false) (decRest 14 false)
 /-- Decryption with a prepared key context: the powers loaded from it. -/
 def decR : Prog isa := dispatch setupR (decRest 10 true) (decRest 12 true) (decRest 14 true)
+/-- Decryption with a prepared key context of 1 to 15 blocks (see `encRS`). -/
+def decRS : Prog isa := dispatch setupR (small 10 true) (small 12 true) (small 14 true)
 
 /-! ## Out of place
 

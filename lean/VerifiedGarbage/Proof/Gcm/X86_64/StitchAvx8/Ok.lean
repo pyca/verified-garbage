@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Small
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Gcm.Powers
@@ -37,7 +38,7 @@ open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok constImm_ok ldrev_ok hInvImm_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (preg setupG lows highs setupC setup ordE ordD enc dec)
-open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
+open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk StitchOkSmall kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
   in_sub in_sub_int in_rdwr ghash16)
 open VG.Proof.Aes.X86_64.AesNi (one blockAt_frame)
 open VG.Proof.Gcm.X86_64 (revMask)
@@ -308,7 +309,7 @@ def GPost (s₀ t : State) : Prop :=
     (∀ r, r ≠ .rax → t.gpr r = s₀.gpr r) ∧ t.mem = s₀.mem ∧ t.rd = s₀.rd ∧ t.wr = s₀.wr
 
 /-- The setup, from any code `g` that leaves what `setupG` does. -/
-theorem setupWith_ok {s₀ : State} (hp : SPre s₀) {g : List Instr} (hg : WP isa (.block g) s₀ (GPost s₀)) :
+theorem setupWith_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {g : List Instr} (hg : WP isa (.block g) s₀ (GPost s₀)) :
     WP isa (.block (g ++ lows 8 ++ (setupC ++ metaCode ++ counterHead) ++ counterTail)) s₀ fun s =>
       ∃ P : Nat → Block, Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k) := by
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -376,19 +377,17 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch (hk)
-open VG.Proof.Gcm.X86_64.Pclmul (Prod φ_reduceB)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod φ_reduceB reduceB)
 open VG.Proof.Gcm.X86_64.StitchZH (accR)
 open VG.Spec.Gcm (Block ghashFrom)
 
-theorem tailLaw {s₀ : X86_64.State} {P : Nat → Block}
-    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) : TailLaw s₀ P := by
-  intro r hr1 hr7 X y
-  let T : Nat → BitVec 128 := fun j => P (8 - r + j)
-  have hT : ∀ j < r, x * φ (T j) = φ (hk s₀) ^ (r - j) := fun j hj => by
-    have := hP (8 - r + j) (by omega)
-    rwa [show 8 - (8 - r + j) = r - j by omega] at this
+/-- Products of `r` blocks with powers `T j` whose `x`-multiples are `Hʳ⁻ʲ`,
+added and reduced, are `GHASH` over the blocks. -/
+theorem accLaw {H : Block} {r : Nat} (hr1 : 1 ≤ r) {T : Nat → Block}
+    (hT : ∀ j < r, x * φ (T j) = φ H ^ (r - j)) (X : Nat → Block) (y : Block) :
+    reduceB (accR X T y r) = ghashFrom H y ((List.range r).map X) := by
   have key : ∀ n, 1 ≤ n → n ≤ r →
-      (accR X T y n).val = φ (hk s₀) ^ (r - n) * φ (ghashFrom (hk s₀) y ((List.range n).map X)) := by
+      (accR X T y n).val = φ H ^ (r - n) * φ (ghashFrom H y ((List.range n).map X)) := by
     intro n
     induction n with
     | zero => intro h; omega
@@ -409,6 +408,13 @@ theorem tailLaw {s₀ : X86_64.State} {P : Nat → Block}
         linear_combination φ (X n) * hn'
   apply φ_inj
   rw [φ_reduceB, key r hr1 (Nat.le_refl _), Nat.sub_self, pow_zero, one_mul]
+
+theorem tailLaw {s₀ : X86_64.State} {P : Nat → Block}
+    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) : TailLaw s₀ P := by
+  intro r hr1 hr7 X y
+  refine accLaw hr1 (fun j hj => ?_) X y
+  have := hP (8 - r + j) (by omega)
+  rwa [show 8 - (8 - r + j) = r - j by omega] at this
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -517,7 +523,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Proof.Gcm.X86_64.Pclmul (constImm_ok Only rev_eq)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encR dec decR)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encR dec decR encRS decRS)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
@@ -587,7 +593,7 @@ theorem setupGRS_ok (t : State)
 
 /-- What a prepared key context holds at `prepOff n`. -/
 theorem prep_val {m : Mem} {p : Addr} (hp : Spec.Gcm.PreparedPowersRepr m p) {n : Nat} (h1 : 1 ≤ n)
-    (h8 : n ≤ 8) : m.readW (p + BitVec.ofNat 64 (prepOff n)) 128 = hInvF (hpow (Spec.Gcm.ctxH m p) n) := by
+    (h8 : n ≤ 15) : m.readW (p + BitVec.ofNat 64 (prepOff n)) 128 = hInvF (hpow (Spec.Gcm.ctxH m p) n) := by
   by_cases he : n % 2 = 0
   · have h := StitchZR.pair_values hp (j := n - 1) (l := 0) (by omega) (by omega) (by decide)
     rw [show prepOff n = 240 + 16 * (n - 1) + 16 * 0 by simp only [prepOff, he, ite_true]; omega, h]
@@ -601,7 +607,7 @@ theorem x_φ_hInvF (H : Block) (n : Nat) : x * φ (hInvF (hpow H n)) = φ H ^ n 
   rw [hInvF, Pclmul.x_φ_hInv, φ_hpow]
 
 /-- `setupGR` leaves what `setupG` does, from a prepared key context. -/
-theorem setupGR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa (.block setupGR) s₀ (GPost s₀) := by
+theorem setupGR_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) : WP isa (.block setupGR) s₀ (GPost s₀) := by
   have hin : ∀ i < 8, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((prepOff (i + 1) : Nat) : Int)) 16 :=
     fun i hi => by
       rw [BitVec.ofInt_natCast]
@@ -618,11 +624,25 @@ theorem setupR_split : setupR = setupGR ++ lows 8 ++ (setupC ++ metaCode ++ coun
   simp only [setupR, initCounter, metaCode, counterHead, counterTail, List.append_assoc,
     List.cons_append, List.nil_append]
 
-theorem setupR_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem setupR_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
     WP isa (.block setupR) s₀ fun s => ∃ P : Nat → Block,
       Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k) := by
   rw [setupR_split]
   exact setupWith_ok hp.base (setupGR_ok hp)
+
+/-- The powers `smallPow` of a prepared key context: the setup's up to
+`H'⁸`, the key context's above it. -/
+theorem smallLaw {s₀ : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo)
+    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) : SmallLaw s₀ P := by
+  intro r hr1 hr15 X y
+  refine accLaw hr1 (fun j hj => ?_) X y
+  by_cases h8 : r - j ≤ 8
+  · simp only [smallPow, h8, ↓reduceIte]
+    have := hP (8 - (r - j)) (by omega)
+    rwa [show 8 - (8 - (r - j)) = r - j by omega] at this
+  · simp only [smallPow, h8, ↓reduceIte]
+    rw [prep_val hp.pow (by omega) (by omega), x_φ_hInvF]
+    rfl
 
 /-- Encryption with a prepared key context, of any number of blocks from 16 on. -/
 theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa encR s₀ (EPost s₀) := by
@@ -645,6 +665,29 @@ theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
 
 theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 1 :=
   ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
+
+/-- Encryption with a prepared key context, of 1 to 15 blocks. -/
+theorem encRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) (h16 : nb s₀ < 16) :
+    WP isa encRS s₀ (EPost s₀) := by
+  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
+  all_goals
+    intro s t ⟨P, hR, hP⟩ ht hn
+    have hw := smallE_ok hp (smallLaw hp hP) (hR.rax ht) h1 h16
+    rw [hn] at hw
+    exact hw
+
+/-- Decryption with a prepared key context, of 1 to 15 blocks. -/
+theorem decRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) (h16 : nb s₀ < 16) :
+    WP isa decRS s₀ (DPost s₀) := by
+  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
+  all_goals
+    intro s t ⟨P, hR, hP⟩ ht hn
+    have hw := smallD_ok hp (smallLaw hp hP) (hR.rax ht) h1 h16
+    rw [hn] at hw
+    exact hw
+
+theorem stitchRS_ok : StitchOkSmall CtxMode.prepared encRS decRS 1 1 :=
+  ⟨fun _ hp h16 => encRS_ok hp.toPrepared hp.base.nb16 h16, fun _ hp h16 => decRS_ok hp.toPrepared hp.base.nb16 h16⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

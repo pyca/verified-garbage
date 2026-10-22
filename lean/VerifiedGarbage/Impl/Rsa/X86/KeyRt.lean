@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
+public import VerifiedGarbage.Impl.Rsa.X86.Chain
 
 /-! # The RSA key workspace at a width read at run time (i686)
 
@@ -88,7 +89,7 @@ borrow) as a mask in `ecx`. -/
 def chain (op : AluOp) (o a b : Nat) (extra : Bool) : Prog isa :=
   .seq (.block (arrPtr L .ebp a .edx ++ arrPtr L .ebx b .edx ++ arrPtr L .edi o .edx ++ count L .edx extra ++
       [.mov .ecx (.imm 0)]))
-    (.seq (CrtRt.chainLoop op) (.block (restoreEdi L)))
+    (.seq (VG.Impl.Rsa.X86.Chain.loop op) (.block (restoreEdi L)))
 
 /-- `[o] = [a] - [b]`, `w` words, and `ebx` the borrow. -/
 def sub3 (o a b : Nat) : Prog isa :=

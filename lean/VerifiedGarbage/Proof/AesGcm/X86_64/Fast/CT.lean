@@ -44,6 +44,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Fast
 
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 open VG.Impl.AesGcm.X86_64.Fast (aadPad aadMul aadReg aadFull aadMulR aadSome)
 open VG.Proof.AesGcm.X86_64
@@ -225,12 +227,12 @@ end
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) {pre : Prog isa} {qf : Nat → Nat → Nat}
-    (hpre : PreOk CtxMode.prepared pre qf) (hrel : PreRel CtxMode.prepared pre)
+theorem sel_rel (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn)) {pre : Prog isa} {qf : Nat → Nat → Nat}
+    (hpre : PreOk (CtxMode.preparedN np hpn) pre qf) (hrel : PreRel (CtxMode.preparedN np hpn) pre)
     (hq : ∀ n sl, sl ≤ n → 16 * qf n sl ≤ n) (hF : ShortFacts)
-    {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {fin : Prog isa} (hfr : FinRel CtxMode.prepared fin)
-    {other : Prog isa} (ho : MidRel CtxMode.prepared other) :
-    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
+    {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {fin : Prog isa} (hfr : FinRel (CtxMode.preparedN np hpn) fin)
+    {other : Prog isa} (ho : MidRel (CtxMode.preparedN np hpn) other) :
+    MidRel (CtxMode.preparedN np hpn) (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
   intro s₀ s₀' Ctx W SP Np A D S T' nl al n sl R C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR'
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.Fast.sel
@@ -251,7 +253,7 @@ theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) {pre : Prog isa} {qf 
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
-    have a := (aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
+    have a := (aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
       (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
       (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
         g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial

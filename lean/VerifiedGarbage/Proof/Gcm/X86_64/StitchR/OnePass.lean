@@ -404,8 +404,9 @@ theorem NPost.bytes (hn : NPre M s₀ N) {s : State} (h : NPost s₀ N s) :
 end
 
 /-- `encN` meets its contract. -/
-theorem encN_ok (hS : SetupFin) {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) (hm : nb s₀ % 16 = 0) {N : Nat}
-    (hn : NPre CtxMode.prepared s₀ N) : WP isa Impl.Gcm.X86_64.StitchR.encN s₀ (NPost s₀ N) := by
+theorem encN_ok {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24} (hS : SetupFin np hnp) {s₀ : State}
+    (hp : SPreTo (CtxMode.preparedN np hnp) s₀) (hm : nb s₀ % 16 = 0) {N : Nat}
+    (hn : NPre (CtxMode.preparedN np hnp) s₀ N) : WP isa Impl.Gcm.X86_64.StitchR.encN s₀ (NPost s₀ N) := by
   have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
   have hp' := hn.sPre hp
   refine WP.seq (WP.mono (hS hp) fun s₁ ⟨P, hR, hf⟩ => ?_)

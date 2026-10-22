@@ -1,0 +1,11 @@
+//! SM4-GCM: the example of RFC 8998 Appendix A.1, read from the
+//! byte-for-byte vendored RFC (`vectors/rfc8998/`, see
+//! `vectors/sources/rfc8998.toml`), whole, in pieces and with truncated or
+//! changed tags; and SM4-GCM against GCM built here from SM4-ECB (`Sm4Ecb`,
+//! tested on draft-ribose-cfrg-sm4's examples) and GHASH bit by bit as
+//! SP 800-38D's Algorithm 1 computes it, on every length of nonce, additional
+//! data and text up to a few blocks, and longer texts.
+
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+
+mod sm4_gcm;

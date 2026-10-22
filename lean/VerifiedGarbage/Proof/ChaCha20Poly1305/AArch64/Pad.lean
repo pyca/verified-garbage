@@ -243,15 +243,4 @@ theorem sealRoute_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
   · have := threshold_lt v.callee.sve
     exact WP.mono (sealMain_ok v hp₁ (by omega)) fun _ h => Short.MainS.agree ag h
 
-theorem openRoute_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀)
-    (hlo : 1 ≤ L s₀) (h511 : L s₀ ≤ 511) : WP isa (openRoute v.callee) s₀ (MainO s₀) := by
-  unfold openRoute
-  refine WP.seq (WP.mono (split_ok v.callee.sve s₀) fun s₁ ⟨ag, x9⟩ => ?_)
-  have hp₁ := Short.APre.agree ag hp
-  have hL₁ : L s₁ = L s₀ := by rw [L, L, ag.gpr .x5 (by decide) (by decide)]
-  refine WP.ite (decide (L s₀ ≤ threshold v.callee.sve)) (split_eval h511 x9) (fun _ => ?_) (fun _ => ?_)
-  · exact WP.mono (ShortRest.openMain_ok v hp₁ (by omega)) fun _ h => Short.MainO.agree ag h
-  · have := threshold_lt v.callee.sve
-    exact WP.mono (openMain_ok v hp₁ (by omega)) fun _ h => Short.MainO.agree ag h
-
 end VG.Proof.ChaCha20Poly1305.AArch64.Pad

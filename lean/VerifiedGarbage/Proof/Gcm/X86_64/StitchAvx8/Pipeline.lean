@@ -136,7 +136,7 @@ theorem templateWord (s₀ : State) (i : Nat) :
   congr 2
   omega
 
-theorem prepTemplate_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
+theorem prepTemplate_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo)
     (hE : Env s₀ P s) (c n : Nat) (hn : n < 8) (hT : Templates s₀ c n s.mem)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8)) :
     WP isa (.block (prepCounter n)) s fun t =>
@@ -175,7 +175,7 @@ theorem prepTemplate_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
 
 /-- Prepare a consecutive portion of the next batch. The AES rounds use
 the two instances starting at slots zero and four. -/
-theorem prepTemplates_ok {s₀ : State} {P : Nat → Block} (hp : SPre s₀)
+theorem prepTemplates_ok {s₀ : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo)
     (c n k : Nat) (hk : n + k ≤ 8) (s : State) (hE : Env s₀ P s)
     (hT : Templates s₀ c n s.mem)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8)) :

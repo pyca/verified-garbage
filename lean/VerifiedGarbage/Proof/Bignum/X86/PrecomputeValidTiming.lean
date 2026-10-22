@@ -27,9 +27,10 @@ theorem precomputeValid_relCT (base : Addr) (bytes len : Nat) (args : Nat → Bi
       (by rw [← H.1.right.nLen]; exact (H.1.right.stack 3 (by decide)).readSrc)) F
     refine ⟨(CT _ _ _ _ _ _ H.1.agree E F).1,
       ⟨H.1.keep Ks Kt (by decide) (by decide) (by rw [Ms]; exact Outside.refl _ _ _ _)
-        (by rw [Mt]; exact Outside.refl _ _ _ _), ?_, ?_⟩, Ws, Wt⟩
+        (by rw [Mt]; exact Outside.refl _ _ _ _), ?_, ?_, ?_⟩, Ws, Wt⟩
     · rw [Ms]; exact H.2.1
-    · rw [Mt]; exact H.2.2
+    · rw [Mt]; exact H.2.2.1
+    · rw [Ms,Mt];exact H.2.2.2
   refine VG.RelCT.seq Setup ?_
   intro s t tr ur sf tf H E F
   apply precomputeDispatch_relCT PublicFn.widths (Spec.Rsa.modulusWords len) P
@@ -37,9 +38,10 @@ theorem precomputeValid_relCT (base : Addr) (bytes len : Nat) (args : Nat → Bi
     (fun _ _ J => J.2) ?_ ?_ _ _ _ _ _ _ H E F
   · intro s t u v J Ks Kt Ms Mt
     refine ⟨⟨J.1.1.keep Ks Kt (by simp) (by simp) (by rw [Ms]; exact Outside.refl _ _ _ _)
-      (by rw [Mt]; exact Outside.refl _ _ _ _), ?_, ?_⟩, ?_, ?_⟩
+      (by rw [Mt]; exact Outside.refl _ _ _ _), ?_, ?_, ?_⟩, ?_, ?_⟩
     · rw [Ms]; exact J.1.2.1
-    · rw [Mt]; exact J.1.2.2
+    · rw [Mt]; exact J.1.2.2.1
+    · rw [Ms,Mt];exact J.1.2.2.2
     · rw [Ks.1 _ (by simp)]; exact J.2.1
     · rw [Kt.1 _ (by simp)]; exact J.2.2
   · exact (precomputeSized_relCT base bytes len args).mono (fun _ _ J => J.1) (fun _ _ h => h)

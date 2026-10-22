@@ -17,6 +17,10 @@ def high (offset : Nat) : List Instr :=
   [.mov .ecx (.reg .eax), .alu .xor .ecx (.imm (BitVec.allOnes 32)), .alu .and .ecx (.imm 0x80000000),
     .alu .xor .ecx (.imm (BitVec.allOnes 32)), .alu .and .ecx (.mem (sc offset)), .store (sc offset) .ecx]
 
-def code (w src : Nat) : List Instr := low src ++ high (src + 8 * w - 4)
+/-- For a witness of `k` native words: bit one set, and the most significant
+bit of word `k − 1` cleared. -/
+def codeAt (k src : Nat) : List Instr := low src ++ high (src + 4 * k - 4)
+
+def code (w src : Nat) : List Instr := codeAt (2 * w) src
 
 end VG.Impl.RsaKeyGen.X86.WitnessFallback

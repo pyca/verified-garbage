@@ -42,4 +42,30 @@ def xorBuf (d b : Reg) : Prog isa :=
   (.seq (.block [.alu .cmp .rcx (.reg .rdx)])
     (.ite .e (.block []) (.loop (.block (bBody d b)) .ne))))
 
+/-- XOR the `2 ^ w` bytes at `rsi + rcx` into those at `d + rcx`, through
+`xmm0` and `xmm1` (or `ymm`, `zmm`), for `w` = 4, 5 or 6. -/
+def xData : Nat → Reg → List Instr
+  | 4, d => [.movdquLoad .xmm0 (idx d), .movdquLoad .xmm1 (idx .rsi),
+      .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (idx d) .xmm0]
+  | 5, d => [.vmovdquLoad .l256 .xmm0 (idx d),
+      .vmovdquLoad .l256 .xmm1 (idx .rsi), .vop (.vbin .vpxor .l256 .xmm0 .xmm0 .xmm1),
+      .vmovdquStore .l256 (idx d) .xmm0]
+  | _, d => [.vmovdqu32Load .xmm0 (idx d), .vmovdqu32Load .xmm1 (idx .rsi),
+      .zop (.zbin .vpxord .xmm0 .xmm0 .xmm1), .vmovdqu32Store (idx d) .xmm0]
+
+/-- `xData`, with `rcx` advanced past the bytes and `rax` counting down. -/
+def xBody (w : Nat) (d : Reg) : List Instr :=
+  xData w d ++ [.alu .add .rcx (.imm (BitVec.ofNat 32 (2 ^ w))), .alu .sub .rax (.imm 1)]
+
+/-- XORs the `rdx` bytes at `rsi` into the `rdx` bytes at `d`: `2 ^ w` at a
+time while at least that many remain (`rcx` counting the bytes done, `rax`
+the words left), then the rest by `XorBuf.xorBuf` from `rdi = d + rcx` and
+`rsi + rcx`. -/
+def xorBufX (w : Nat) (d : Reg) : Prog isa :=
+  .seq (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax w])
+  (.seq (.ite .e (.block []) (.loop (.block (xBody w d)) .ne))
+  (.seq (.block [.mov .rdi (.reg d), .alu .add .rdi (.reg .rcx), .alu .add .rsi (.reg .rcx),
+    .alu .sub .rdx (.reg .rcx)])
+    (xorBuf .rdi .rsi)))
+
 end VG.Impl.ChaCha20.X86_64.XorBuf

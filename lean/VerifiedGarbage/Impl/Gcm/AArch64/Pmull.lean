@@ -198,12 +198,11 @@ them, and `vg_ghash_store_powers_aes` computes them, as `vg_ghash_aes` does,
 and stores them after its epilogue. -/
 
 /-- GHASH from the prologue `pro`, which sets up `H'` to `H'⁸`, then `fin`
-after the epilogue. -/
+after the epilogue. Fewer than eight blocks go four, two and one at a time
+(`tail`), as the last `n mod 8` do, each group with one reduction. -/
 def ghashAll (pro fin : List Instr) : Prog isa :=
   .seq (.block pro)
-    (.seq (.ite (.zero .x .x5)
-        (.ite (.zero .x .x3) (.block []) (.loop (.block (body 1)) (.nonzero .x .x3)))
-        (.seq (.loop (.block (body 8)) (.nonzero .x .x5)) tail))
+    (.seq (.ite (.zero .x .x5) tail (.seq (.loop (.block (body 8)) (.nonzero .x .x5)) tail))
       (.block (epilogue ++ fin)))
 
 /-- Where `H'ᵏ` is, from `pw`. -/

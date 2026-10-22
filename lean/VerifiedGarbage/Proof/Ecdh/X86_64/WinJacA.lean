@@ -438,7 +438,7 @@ theorem mulQJA_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
   have tv : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₃ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
     fun hi hne => by show toM _ _ (sv c base s₃ _) = toM _ _ (sv c base s _); rw [e₃ hi hne]
   have hF : JacWinFixed (jwQ c) c.C base s₃ P (sv c base s₁ K) := by
-    refine ⟨F₃.zero, fun x hx => ?_, ?_, ?_, fun t ht => ?_⟩
+    refine ⟨⟨F₃.zero, fun x hx => ?_, ?_, ?_⟩, fun t ht => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
       · exact lt_of_eq_of_lt (e₃ (i := PX) (by decide) (by decide)) hpx

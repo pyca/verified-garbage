@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare16
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,6 +15,8 @@ meta import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Spec.Gcm.Prepared16
+meta import VerifiedGarbage.Impl.Gcm.X86_64.Prepare16
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -140,3 +144,28 @@ theorem verified_of (c : Prog isa)
       X86_64.abi, X86_64.argRegs] [satState] using satState)
 
 end VG.Proof.Gcm.X86_64.Prepare
+
+/-! `vg_aes_gcm_prepare16`: its contract on the registers and constant time;
+its powers are proven in `Stitch/Ok.lean`. -/
+
+namespace VG.Proof.Gcm.X86_64.Prepare16
+
+open VG VG.X86_64
+open VG.Impl.Gcm.X86_64.Prepare16 (prepare16)
+
+/-- `vg_aes_gcm_prepare16`'s contract, on the registers. -/
+def prepare16X86_64 : Contract isa where
+  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1024⟩] ∧ (s.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 ∧
+    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1024⟩
+  post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) 256 = Spec.Aes.bytesAt s.mem (s.gpr .rdi) 256 ∧
+    Spec.Gcm.PreparedPowers16Repr s'.mem (s.gpr .rdi)
+  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
+
+theorem prepare16_ct : ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub prepare16 := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ h
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; exact h
+
+end VG.Proof.Gcm.X86_64.Prepare16

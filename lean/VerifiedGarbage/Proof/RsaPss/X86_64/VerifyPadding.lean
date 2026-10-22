@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 import VerifiedGarbage.Proof.RsaPss.Encoding
@@ -116,14 +117,15 @@ structure VDone (s t : State) : Prop where
 variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
 
 include hH K in
-theorem vmid_safe : (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck H]).allInstrs safeI = true := by
-  simp only [seqs, posScan, posCheck, Code.allInstrs, mgfXor_safe hH K, rec_all, List.all_append, byteLoop, step,
-    Bool.and_true, Bool.true_and]
+theorem vmid_safe : (seqs [.block acc0, mgfXor H, .block clearTop, scanCheck H]).allInstrs safeI = true := by
+  simp only [seqs, scanCheck, prefixCheck, prefixWords, prefixBytes, posScan, posCheck, Code.allInstrs,
+    mgfXor_safe hH K, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include K in
-theorem vmid_xd : (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck H]).x86_64Depth = 8 := by
-  simp only [seqs, posScan, posCheck, byteLoop, Code.x86_64Depth, mgfXor_xd K]
+theorem vmid_xd : (seqs [.block acc0, mgfXor H, .block clearTop, scanCheck H]).x86_64Depth = 8 := by
+  simp only [seqs, scanCheck, prefixCheck, prefixWords, prefixBytes, posScan, posCheck, byteLoop, Code.x86_64Depth,
+    mgfXor_xd K]
   rfl
 
 include hH K in
@@ -183,16 +185,16 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
         (Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32)))
     (hsl : Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32) =
       if fixed then some (stackArg s 1).toNat else none) :
-    WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck H,
+    WP isa (seqs [.block acc0, mgfXor H, .block clearTop, scanCheck H,
       saltBack H]) u3 (PaddingDone result s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD : H.D = lk.G.len := lk.len.symm
   have hG := validG hH lk.hash lk.len
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
-  rw [show [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H,
+  rw [show [Code.block acc0, mgfXor H, .block clearTop, scanCheck H,
       saltBack H] =
-    [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H] ++
+    [Code.block acc0, mgfXor H, .block clearTop, scanCheck H] ++
     [saltBack H] from rfl]
   set k := (s.gpr .rsi).toNat with hk
   set db := k - lo - lk.G.len - 1 with hdb
@@ -225,13 +227,15 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
   have h24' : W3 24 = BitVec.ofNat 64 db := by rw [hW3 24 (by decide) (.inl (by decide)), h24]
   have h37' : W3 37 = s.gpr .r8 := by
     rw [hW3 37 (by decide) (.inr (by decide)), h37]
-  have hpd : (if lz dbL < db then lz dbL else 0) < db := by split <;> omega
+  set posF := if (fixed && decide ((W1 36).toNat < db)) = true then db - (W1 36).toNat - 1
+    else if lz dbL < db then lz dbL else 0 with hposF
+  have hpd : posF < db := by rw [hposF]; split <;> [omega; split <;> omega]
   have hrd4 : u4.rd = s.rd := by rw [rd4, hrd]
   have hwr4 : u4.wr = frR s :: s.wr := by rw [wr4, hw]
   have wDg := hp.wDg
   -- The salt, its hash, and the comparison.
   refine WP.mono (WP.keepIn (saltBack_safe hH K) (by rw [saltBack_xd K])
-    (saltBack_ok hH K lk L4 R3 (lo := lo) (db := db) (pos := if lz dbL < db then lz dbL else 0) (dig := s.gpr .r8)
+    (saltBack_ok hH K lk L4 R3 (lo := lo) (db := db) (pos := posF) (dig := s.gpr .r8)
       h23' h24' h34 h27 h37' hlo (by omega) hpd (by omega)
       (fun i hi => by
         rw [hrd4]
@@ -245,9 +249,15 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
         have hfixed : fixed = true := by
           rw [hW3 35 (by decide) (.inr (by decide)), h35] at hany
           cases fixed <;> first | rfl | simp at hany
-        rw [h33, acc1V_eq_zero] at hacc
+        rw [h33] at hacc
         rw [hW3 36 (by decide) (.inr (by decide))]
-        exact (hacc.2.2.2 hfixed).symm)))
+        by_cases hff : (fixed && decide ((W1 36).toNat < db)) = true
+        · have hlt : (W1 36).toNat < db := by simpa [hfixed] using hff
+          have hpF : posF = db - (W1 36).toNat - 1 := by rw [hposF, ifp hff]
+          rw [hpF, show db - (db - (W1 36).toNat - 1) - 1 = (W1 36).toNat by omega]
+          simp
+        · rw [ifn hff] at hacc
+          exact (hacc.2.2.2 hfixed).symm)))
     fun u5 ⟨⟨L5, rd5, wr5, cs5, ⟨V5, W5, R5, hW5⟩, hax5⟩, f5⟩ => ?_
   have g3 : ∀ j, j < nW → 34 < j → W3 j = W1 j := fun j hj h => hW3 j hj (.inr h)
   have g5 : ∀ j, j < nW → 34 < j → j ≠ 44 → j ≠ 45 → j ≠ 46 → W5 j = W1 j := fun j hj h a b c =>
@@ -273,12 +283,42 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
   have hV := vlogic lk.G hG x (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (z := z) fixed (stackArg s 1) hsl hxl hlo
     (by omega) hk2
   simp only [← hdb, ← hdbL] at hV
-  rw [hax5, h33, hmsg1, hmsg2, h36]
-  refine ite_setWidth ((Iff.trans (and_congr ?_ ?_) hV).trans hspec.symm)
-  · have h0 := hV1 0 (by omega)
+  rw [hax5, hmsg1, hmsg2]
+  refine ite_setWidth ((Iff.trans ?_ hV).trans hspec.symm)
+  have e0 : acc0V (V1 (oEm + k - 1)) (V1 oEm) (V1 (oEm + lo)) ((0xFF : Byte) >>> z) lo =
+      acc0V (x.getD (k - 1) 0) (x.getD 0 0) (x.getD lo 0) ((0xFF : Byte) >>> z) lo := by
+    have h0 := hV1 0 (by omega)
     rw [Nat.add_zero] at h0
     rw [hV1 lo (by omega), show oEm + k - 1 = oEm + (k - 1) by omega, hV1 _ (by omega), h0]
-  · rw [← hD]
+  have hHC : ∀ q, (∀ i < H.D, (lk.G.hash (Spec.RsaPss.zeros 8 ++ Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len ++
+      dbL.drop (q + 1))).getD i 0 = V3 (oEm + lo + db + i)) ↔
+      (∀ i < lk.G.len, (lk.G.hash (Spec.RsaPss.zeros 8 ++ Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len ++
+      dbL.drop (q + 1))).getD i 0 = (vH lk.G (x.drop lo) db).getD i 0) := fun q => by
+    rw [← hD]
     exact forall_congr' fun i => imp_congr_right fun hi => by rw [hHb i hi]
+  rw [h33, e0, acc1V_eq_zero, ← h36]
+  by_cases hff : (fixed && decide ((W1 36).toNat < db)) = true
+  · have hfx : fixed = true := by cases fixed <;> simp_all
+    have hlt : (W1 36).toNat < db := by simpa [hfx] using hff
+    have hpF : posF = db - (W1 36).toNat - 1 := by rw [hposF, ifp hff]
+    rw [ifp hff, hpF, fixed_cond dbL hdbl hlt]
+    have hsl64 : BitVec.ofNat 64 (W1 36).toNat = W1 36 := by simp
+    constructor
+    · rintro ⟨⟨ha, hl, h1, hsl'⟩, hh⟩
+      have hlz : lz dbL = db - (W1 36).toNat - 1 := by omega
+      refine ⟨⟨ha, by rw [ifp hl]; exact h1, decide_eq_true hl, fun _ => ?_⟩, ?_⟩
+      · rw [ifp hl, hsl', hsl64]
+      · rw [ifp hl, hlz]; exact (hHC _).mp hh
+    · rintro ⟨⟨ha, h1, hfd, hsl'⟩, hh⟩
+      have hl : lz dbL < db := of_decide_eq_true hfd
+      rw [ifp hl] at h1 hsl' hh
+      have hsl'' : db - lz dbL - 1 = (W1 36).toNat := by
+        have := congrArg BitVec.toNat (hsl' hfx)
+        rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      have hlz : lz dbL = db - (W1 36).toNat - 1 := by omega
+      exact ⟨⟨ha, hl, h1, hsl''⟩, by rw [← hlz]; exact (hHC _).mpr hh⟩
+  · have hpF : posF = if lz dbL < db then lz dbL else 0 := by rw [hposF, ifn hff]
+    rw [ifn hff, hpF]
+    exact and_congr Iff.rfl (hHC _)
 
 end VG.Proof.RsaPss.X86_64

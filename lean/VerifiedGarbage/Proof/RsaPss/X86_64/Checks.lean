@@ -74,12 +74,15 @@ structure VerifyChecks (P : Params) (D : Nat) : Prop where
   copyDigest : ∃ hc, (taint.check (pT 1 [21, 37] []) (.seq clearY (copyDigest (ckH P D))) hc).isSome = true
   copyFixedSalt : ∃ hc, (taint.check (pT 1 [23, 24, 36] [.rcx])
     (copyFixedSalt (ckH P D)) hc).isSome = true
-  fixedSaltLen : ∃ hc, (taint.check (pT 1 [36] [])
-    (.block (hashSaltLen (ckH P D) 36)) hc).isSome = true
+  fixedHead : ∃ hc, (taint.check (pT 1 [21, 36, 37] [])
+    (fixedHead (ckH P D)) hc).isSome = true
+  padSalt : ∃ hc, (taint.check (pT 1 [21, 36] []) (.block (padSalt (ckH P D))) hc).isSome = true
+  lenLast : ∃ hc, (taint.check (pT 1 [21, 28] []) (lenLast (ckH P D)) hc).isSome = true
   copyDb : ∃ hc, (taint.check (pT 1 [23, 24] [.rcx]) (copyDb (ckH P D)) hc).isSome = true
   shiftPass : ∃ hc, (taint.check (pT 1 [21, 24, 46] []) (shiftPass (ckH P D)) hc).isSome = true
   verifyNb : ∃ hc, (taint.check (pT 1 [24] []) (.block (verifyNb (ckH P D))) hc).isSome = true
   cmpH : ∃ hc, (taint.check (pT 1 [21, 23, 24] []) (cmpH (ckH P D)) hc).isSome = true
+  prefixCheck : ∃ hc, (taint.check (pT 1 [23, 24, 36] []) (prefixCheck (ckH P D)) hc).isSome = true
 
 /-- The pieces of signing. -/
 structure SignChecks (P : Params) (D : Nat) : Prop where

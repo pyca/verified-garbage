@@ -7,10 +7,10 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 The positive divisor in x1 and numerator in x0 fit in 32 bits. The
 quotient is returned in x5, remainder in x4. Borrow selects the remainder
 through a mask, without variable-latency hardware division or branches on the
-address word. `code` unrolls all 32 steps, for the reference index of every
-block; `loopCode`, for code that divides once per derivation, runs the same
-step in a loop counted down in x15, taking bit 31 of x0 and doubling x0 after
-each step, so it consumes x0.
+numerator. `loopCode`, for code that divides once per derivation, runs one
+step per bit in a loop counted down in x15, taking bit 31 of x0 and doubling
+x0 after each step, so it consumes x0. The reference lane of every block
+needs only a remainder, which `Remainder` computes with a shorter step.
 -/
 
 @[expose] public section
@@ -32,8 +32,6 @@ def select : List Instr :=
 def bit (j : Nat) : List Instr := subtract j ++ select
 
 def setup : List Instr := [.movz .x .x4 0 0, .movz .x .x5 0 0]
-
-def code : Prog isa := .block (setup ++ (List.range 32).reverse.flatMap bit)
 
 def loopSetup : List Instr := setup ++ [.movz .x .x15 32 0]
 

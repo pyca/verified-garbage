@@ -35,6 +35,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
+import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacOdd
+
 /-!
 # ECDH over P-256 on x86-64: `Verified`
 
@@ -116,17 +118,17 @@ theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc :
 /-- The Jacobian window method with the doubling by halving computes `[d]P`
 on P-256, which has prime order. -/
 theorem mulQJP256_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law Spec.P256.curve)
-    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
-    MulOk p256 (Impl.Ecdh.X86_64.Cfg.mulQJ p256 (Impl.P256.X86_64.doubleHalfPublic p256.MP' p256.rcbSlots))
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
+    MulOk p256 (Impl.Ecdh.X86_64.Cfg.mulQJO p256 (Impl.P256.X86_64.doubleHalfPublic p256.MP' p256.rcbSlots))
       (mulQJW p256) :=
-  mulQJ_ok (p256_ok hI) (Or.inl rfl) hL hO (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
-    (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hL (p256_ok hI).am3) (Nat.le_of_eq Proof.P256.X86_64.n_mod32.symm)
-    Proof.P256.X86_64.n_ge64
+  mulQJO_ok (p256_ok hI) (Or.inl rfl) hL hO hK (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
+    (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hL (p256_ok hI).am3) (by decide) (by decide) (by decide)
+    (by decide)
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256_ok hI) hL (mulQJP256_ok hI hL hO) (mulQJ_w (p256_ok hI))
+  ecdh_x86_of (p256_ok hI) hL (mulQJP256_ok hI hL hO hK) (mulQJ_w (p256_ok hI))
     (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `exchangeP256` without its displacements, as a literal of shared blocks
@@ -167,9 +169,9 @@ theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   simpa only [ecdhX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
     Verified X86_64.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI hO) ecdh_ct implies8
+  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI hO hK) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64

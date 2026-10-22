@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
-public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.AArch64.Remainder
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Divide
-meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -52,7 +51,7 @@ theorem highArgs_ok (s : State) : WP isa (.block highArgs) s (Prefix s) := by
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
   all_goals rfl
 
-def changed : List Reg := [.x0, .x7, .x15] ++ Divide.changed
+def changed : List Reg := [.x0, .x7, .x15, .x3, .x4, .x6, .x8, .x5, .x9]
 
 theorem code_ok (s : State) (lo : 0 < (s.gpr .x1).toNat)
     (bound : (s.gpr .x1).toNat < 2 ^ 32) :
@@ -63,16 +62,15 @@ theorem code_ok (s : State) (lo : 0 < (s.gpr .x1).toNat)
   refine WP.seq ((highArgs_ok s).mono ?_)
   intro a ha
   have si := ha.keeps.regs .x1 (by decide)
-  refine (Divide.code_ok a ?_ (by rw [si]; exact lo) (by rw [si]; exact bound)).mono ?_
+  refine (Remainder.code_ok a ?_ (by rw [si]; exact lo) (by rw [si]; exact bound)).mono ?_
   · rw [ha.high]
     simpa only [show 64 - 32 = (32 : Nat) from rfl] using
       BitVec.toNat_ushiftRight_lt (s.gpr .x0) 32 (by decide)
   · intro t ht
-    refine ⟨?_, ?_, (ha.keeps.mono ?_).trans (ht.2.2.mono ?_)⟩
-    · rw [ht.2.1, ha.high, si]
-    · exact (ht.2.2.regs .x7 (by decide)).trans ha.original
+    refine ⟨?_, ?_, (ha.keeps.mono ?_).trans (ht.2.mono (by decide))⟩
+    · rw [ht.1, ha.high, si]
+    · exact (ht.2.regs .x7 (by decide)).trans ha.original
     · intro r hr; exact List.mem_append_left _ hr
-    · intro r hr; exact List.mem_append_right _ hr
 
 theorem highArgs_secret_rel : RelCT isa (fun s t => s.sp = t.sp) (.block highArgs)
     (fun s t => s.sp = t.sp) :=
@@ -81,7 +79,7 @@ theorem highArgs_secret_rel : RelCT isa (fun s t => s.sp = t.sp) (.block highArg
     (fun _ _ h => h) (fun _ _ h => h.1)
 
 theorem code_secret_rel : RelCT isa (fun s t => s.sp = t.sp) code (fun s t => s.sp = t.sp) :=
-  highArgs_secret_rel.seq Divide.code_secret_rel
+  highArgs_secret_rel.seq Remainder.code_secret_rel
 
 end VG.Proof.Argon2.AArch64.ReferenceLane
 end

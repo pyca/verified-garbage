@@ -494,7 +494,7 @@ mod tests {
 
     /// The sizes of `composite`'s keys: 64 to 1024 bytes, with primes of
     /// whole words and not.
-    const SIZES: [usize; 5] = [32, 33, 39, 64, 511];
+    const SIZES: [usize; 6] = [32, 33, 39, 43, 64, 511];
 
     /// With `composite`'s keys and `e = 3`, 0 and 1 are their own result and
     /// pass the check; the result for 2 fails it, as the factors are not

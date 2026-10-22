@@ -6,7 +6,7 @@ use alloc::{format, string::ToString};
 pub(super) mod vectors;
 use vectors::{hex, vectors};
 
-#[cfg(target_arch = "x86")]
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
 #[test]
 fn generation_domain_checks() {
     let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
@@ -57,7 +57,7 @@ fn generation_domain_checks() {
     }
 }
 
-#[cfg(target_arch = "x86")]
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
 #[test]
 fn generation_derive_keys() {
     let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);

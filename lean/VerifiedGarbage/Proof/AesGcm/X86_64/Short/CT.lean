@@ -94,6 +94,23 @@ theorem rel_next {F₁ F₂ G₁ G₂ : State → Prop} {c : Prog isa}
     RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) c fun s₁ s₂ => G₁ s₁ ∧ G₂ s₂ :=
   (rel_wp h (fun _ _ h => h) hw₁ hw₂).mono (fun _ _ h => h) fun _ _ h => h.2
 
+/-- A block followed by code, related as the block's two parts and the code. -/
+theorem rel_seq_block_split {P Q : State → State → Prop} {l₁ l₂ : List Instr} {c : Prog isa}
+    (h : RelCT isa P (.seq (.block l₁) (.seq (.block l₂) c)) Q) : RelCT isa P (.seq (.block (l₁ ++ l₂)) c) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with | seq b₁ k₁ => cases e₂ with | seq b₂ k₂ =>
+  rw [Exec.block_iff, execBlock_append] at b₁ b₂
+  obtain ⟨⟨m₁, u₁⟩, a₁, d₁⟩ := Option.bind_eq_some_iff.mp b₁
+  obtain ⟨⟨m₂, u₂⟩, a₂, d₂⟩ := Option.bind_eq_some_iff.mp b₂
+  obtain ⟨⟨n₁, w₁⟩, c₁, f₁⟩ := Option.map_eq_some_iff.mp d₁
+  obtain ⟨⟨n₂, w₂⟩, c₂, f₂⟩ := Option.map_eq_some_iff.mp d₂
+  simp only [Prod.mk.injEq] at f₁ f₂
+  obtain ⟨rfl, rfl⟩ := f₁
+  obtain ⟨rfl, rfl⟩ := f₂
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.block a₁) (.seq (.block c₁) k₁)) (.seq (.block a₂) (.seq (.block c₂) k₂))
+  simp only [List.append_assoc] at ht ⊢
+  exact ⟨ht, hq⟩
+
 /-! ## `cond` -/
 
 /-- `cond` in two runs with the same lengths: the same branches. -/
@@ -299,9 +316,12 @@ theorem text_rel (g : Bool) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
         · rw [h₁.2.2.2, h₂.2.2.2]) (by cases g <;> exact ⟨_, by taint_decide⟩))
     (fun _ h => text_sj g C hn5 h32 h) (fun _ h => text_sj g C' hn5 h32 h)
 
-theorem copyC_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
+/-- `copyCG`: its arguments loaded from `W`, then its tests are on the
+length and on `rdi`, and every address comes from `rdi`, `rsi` and `rcx`,
+the same in both runs. -/
+theorem copyCG_rel (h32 : nb16 al + nb16 n < 32) :
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
-      copyC fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
+      copyCG fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
   have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
@@ -312,14 +332,14 @@ theorem copyC_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
     obtain ⟨t, run, di, si, cx, -⟩ := copyCArgs_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r296 h.sm.r272
       h.sm.r200 h.sm.r208 (by omega)
     exact WP.of_runBlock ⟨t, run, di, si, cx⟩
-  exact rel_next (rel_piece [.rdi, .rsi, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (keepsEnv (by decide +kernel))
-      ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · rw [h₁.1, h₂.1]
-        · rw [h₁.2.1, h₂.2.1]
-        · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩)
-    (fun _ h => copyC_sj C hn5 h32 h) (fun _ h => copyC_sj C' hn5 h32 h)
+  refine rel_next ?_ (fun _ h => copyCG_sj C h32 h) (fun _ h => copyCG_sj C' h32 h)
+  exact rel_seq_block_split (rel_piece [.rdi, .rsi, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env)
+    (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [h₁.1, h₂.1]
+      · rw [h₁.2.1, h₂.2.1]
+      · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩)
 
 theorem lens_rel (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
@@ -668,7 +688,7 @@ theorem openShort_rel (hF : ShortFacts) {pw gh : Prog isa} {tm tm' : Mem → Mem
       (F₂ := fun u => SM s₀' Ctx W SP A D R al n (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np 12))
         (BitVec.ofNat 64 t) u ∧ bytesAt u.mem A al = bytesAt s₀'.mem A al ∧ bytesAt u.mem D n = bytesAt s₀'.mem D n)
     ((RelCT.seq (pw_rel C C' hpc hpw hpw' h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq
-      (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyC_rel C C' hn5 h32)
+      (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyCG_rel C C' h32)
       (RelCT.seq (lens_rel C C' hal5 hn5 h32) (RelCT.seq (gh_rel C C' hpc.gh hpw.gh hpw'.gh h32)
       (chkTail_rel C C' hT hT' hTar hTar' oA)))))))).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
     (fun _ ⟨S, a, d⟩ => front_ok C hpw hR.symm hal5 hn5 h32 S a d fun _ F =>

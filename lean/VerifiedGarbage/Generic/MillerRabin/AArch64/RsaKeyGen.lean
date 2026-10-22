@@ -86,7 +86,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarryWord
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumn
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
@@ -98,7 +97,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightPolynomial
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
@@ -257,7 +255,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarryWord
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumn
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
@@ -268,7 +265,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightHead
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightPolynomial
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows

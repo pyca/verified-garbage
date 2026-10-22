@@ -19,7 +19,9 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
+    use verified_garbage::rsa_keygen::{
+        generate, generate_from, generate_prime_from, key_from_primes,
+    };
 
     use crate::{AWS_LC, OPENSSL, VG};
     // A prime of `bits` bits from OpenSSL that `e = 65537` admits, as the
@@ -116,6 +118,19 @@ pub fn bench(c: &mut Criterion) {
         });
         g.bench_function(BenchmarkId::new(AWS_LC, bits / 8), |b| {
             b.iter(|| KeyPair::generate(black_box(size)).unwrap())
+        });
+    }
+    g.finish();
+
+    // Include the operating system's entropy source and buffer refills.
+    // Fixed-stream generation above measures the arithmetic reproducibly;
+    // this group also measures the work done when extending that stream.
+    // Candidate counts vary, so use more samples than the fixed stream.
+    let mut g = c.benchmark_group("rsa_keygen_generate_random");
+    g.sample_size(30);
+    for bits in [2048, 3072, 4096] {
+        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+            b.iter(|| generate(black_box(bits), black_box(&[1, 0, 1])).unwrap())
         });
     }
     g.finish();

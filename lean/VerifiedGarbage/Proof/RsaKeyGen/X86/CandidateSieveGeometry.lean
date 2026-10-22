@@ -50,7 +50,7 @@ theorem Environment.Valid.sieve_valid {E : Environment} (v : E.Valid) : E.sieveG
     have fit := v.workspaceFit
     have := E.workspace.isLt
     omega
-  refine ⟨by change 0 < E.width; omega, width.2, ?_, ?_, ?_, v.tableFit, ?_, ?_⟩
+  refine ⟨by change 0 < E.width; omega, by change E.width ≤ 128; omega, ?_, ?_, ?_, v.tableFit, ?_, ?_⟩
   · change 0 < VG.Impl.RsaKeyGen.X86.Sieve.tableCount E.width
     unfold VG.Impl.RsaKeyGen.X86.Sieve.tableCount
     split <;> decide

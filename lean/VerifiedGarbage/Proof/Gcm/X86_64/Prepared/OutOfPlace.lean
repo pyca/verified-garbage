@@ -19,8 +19,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 namespace VG.Proof.Gcm.X86_64.Stitch
 open VG VG.X86_64
 /-- The in-place view used by the shared table-loader proofs. -/
-theorem SPreTo.toPrepared {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
-    SPrePrepared (StitchZTo.dst s₀) :=
+theorem SPreTo.toPrepared {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀) :
+    SPrePrepared (StitchZTo.dst s₀) 16 np :=
   ⟨hp.toD, hp.k_in, hp.wrap_k, hp.k_o.symm, hp.k_p.symm, hp.ok⟩
 end VG.Proof.Gcm.X86_64.Stitch
 
@@ -40,7 +40,8 @@ open VG.Proof.Gcm.X86_64.StitchZTo (EInvTo ReadyTo setupTTo_ok setupZTo_ok bigRe
 open VG.Spec.Gcm (Block)
 
 /-- `setupGP`: what `Stitch.setupG_ok` says of `setupG`. -/
-theorem setupGPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
+theorem setupGPTo_ok {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
+    (h8 : 8 ≤ np := by decide) :
     WP isa (.block setupGP) s₀ fun s =>
       (∀ l < 2, s.lane .xmm0 l = revMask) ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
       (∀ k < 8, ∀ l < 2, s.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) ∧
@@ -64,7 +65,7 @@ theorem setupGPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
   have mm₄ : s₄.mem = s₀.mem := by rw [f₄.mem, f₃.mem, o₁₂.mem]
   have rd₄ : s₄.rd = s₀.rd := by rw [f₄.rd, f₃.rd, o₁₂.rd]
   have wr₄ : s₄.wr = s₀.wr := by rw [f₄.wr, f₃.wr, o₁₂.wr]
-  refine WP.mono (cvtRun_ok hp.toPrepared 8 (Nat.le_refl _) s₄ (g₄ _ (by decide)) mm₄ rd₄ wr₄)
+  refine WP.mono (cvtRun_ok hp.toPrepared h8 8 (Nat.le_refl _) s₄ (g₄ _ (by decide)) mm₄ rd₄ wr₄)
     fun s' ⟨pw, F⟩ =>
     ⟨fun l hl => by rw [F.lane _ (by decide) l hl]; exact m0 l hl,
       fun l hl => by rw [F.lane _ (by decide) l hl]; exact m1 l hl, pw,

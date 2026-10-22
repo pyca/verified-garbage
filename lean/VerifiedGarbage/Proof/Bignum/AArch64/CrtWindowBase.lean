@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowCallCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedInterface
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
@@ -21,9 +22,10 @@ theorem body_keeps_link : ∀ i ∈ instrs body.code, vdstOf i ≠ some .v7 := b
 
 def called : Window := WindowCall.outlined body Spec.Rsa.MontWindow.windowApi.name body_keeps_link
 
-def code : Prog isa := VG.Impl.Rsa.AArch64.WindowFive.code called.code WindowVector.selector.code Mont.base.mm
+def code : Prog isa :=
+  VG.Impl.Rsa.AArch64.WindowFive.code called.code WindowVector.selector.code Mont.calledProductEight.mm
 
 theorem base_verified : Verified target code (Spec.Rsa.privateCrtContract abi 0) :=
-  verified called Mont.base WindowVector.selector
+  verified called Mont.calledProductEight WindowVector.selector
 
 end VG.Proof.Bignum.AArch64.WindowFive

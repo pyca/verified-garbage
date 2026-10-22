@@ -20,9 +20,11 @@ namespace VG.Proof.RsaKeyGen.X86.WitnessRound
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 open VG.Impl.RsaKeyGen.X86.WitnessRound
 
-def Initial (g : Geometry) (capacity : Nat) (p : BitVec 32) (input : Import.Geometry) (s : State) : Prop :=
+/-- A candidate of `32 k` bits, the full width for RSA. -/
+def Initial (g : Geometry) (capacity : Nat) (p : BitVec 32) (input : Import.Geometry) (s : State)
+    (k : Nat := 2 * g.w) : Prop :=
   ∃ c, Prepare.Data g c capacity p s ∧ c % 2 = 1 ∧ 3 ≤ c ∧
-    Spec.RsaKeyGen.bitLength (c - 1) = 64 * g.w ∧ Import.Context input s ∧
+    Spec.RsaKeyGen.bitLength (c - 1) = 32 * k ∧ Import.Context input s ∧
     s.gpr .esi = input.src ∧ s.gpr .edi + BitVec.ofNat 32 (g.array 6) = input.dst
 
 def Work (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
@@ -31,18 +33,21 @@ def Work (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
 def WorkPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) : Prop :=
   Pair g [.edi] s t ∧ Work g capacity p s ∧ Work g capacity p t
 
-def InitialPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (input : Import.Geometry) (s t : State) : Prop :=
-  Pair g [.edi, .esi] s t ∧ Initial g capacity p input s ∧ Initial g capacity p input t
+def InitialPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (input : Import.Geometry) (s t : State)
+    (k : Nat := 2 * g.w) : Prop :=
+  Pair g [.edi, .esi] s t ∧ Initial g capacity p input s k ∧ Initial g capacity p input t k
 
-theorem load_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
-    (width : input.count = g.words) :
-    RelCT isa (InitialPair g capacity p input) (VG.Impl.RsaKeyGen.X86.WitnessLoad.code g.w) (WorkPair g capacity p) := by
+theorem load_pairAt {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
+    {draw k : Nat} (width : 4 * input.count = draw) (two : 2 ≤ k) (narrow : k ≤ input.count)
+    (wide : input.count ≤ g.words) :
+    RelCT isa (fun s t => InitialPair g capacity p input s t k) (VG.Impl.RsaKeyGen.X86.WitnessLoad.codeAt draw k g.w)
+      (WorkPair g capacity p) := by
   intro s t tr ur u z H E G
-  obtain ⟨trace, agree⟩ := WitnessLoad.code_trace g.w _ _ _ _ _ _ H.1.2.2 E G
-  have post {a : State} (I : Initial g capacity p input a) :
-      WP isa (VG.Impl.RsaKeyGen.X86.WitnessLoad.code g.w) a (Work g capacity p) := by
+  obtain ⟨trace, agree⟩ := WitnessLoad.codeAt_trace draw k g.w _ _ _ _ _ _ H.1.2.2 E G
+  have post {a : State} (I : Initial g capacity p input a k) :
+      WP isa (VG.Impl.RsaKeyGen.X86.WitnessLoad.codeAt draw k g.w) a (Work g capacity p) := by
     obtain ⟨c, S, odd, large, shape, C, source, destination⟩ := I
-    exact WP.mono (WitnessLoad.code_ok v S C width source destination odd shape)
+    exact WP.mono (WitnessLoad.codeAt_ok v S C width two narrow wide source destination odd shape)
       fun _ ⟨D, _, _, _, _⟩ => ⟨c, D, odd, large⟩
   have U := wp_result (post H.2.1) E
   have Z := wp_result (post H.2.2) G
@@ -85,6 +90,23 @@ theorem convert_pair {mont : Prog isa} {name : String}
     exact ⟨c, val32 a.mem g.W (g.array 6) g.words, D, odd, large, by rw [Nat.mod_mul_mod]; exact value⟩
   exact ⟨trace, pair, wp_result (post H.2.1) E, wp_result (post H.2.2) G⟩
 
+theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
+    {draw k : Nat} (width : 4 * input.count = draw) (two : 2 ≤ k) (narrow : k ≤ input.count)
+    (wide : input.count ≤ g.words) (length : g.L = 8 * capacity) (fit : 68 ≤ p.toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
+    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    RelCT isa (fun s t => InitialPair g capacity p input s t k) (codeAt draw k g.w montName mont roundName round)
+      (Pair g [.edi]) := by
+  unfold codeAt
+  exact RelCT.seq (load_pairAt v width two narrow wide) (RelCT.seq (store_pair v)
+    (RelCT.seq (convert_pair montVerified montNoSp montStack v length)
+      (RoundCall.code_trace roundVerified roundNoSp roundStack v length fit far lengthFar)))
+
 theorem code_trace {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
@@ -94,10 +116,9 @@ theorem code_trace {mont round : Prog isa} {montName roundName : String}
     (width : input.count = g.words) (length : g.L = 8 * capacity) (fit : 68 ≤ p.toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
     (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
-    RelCT isa (InitialPair g capacity p input) (code g.w montName mont roundName round) (Pair g [.edi]) := by
-  unfold code
-  exact RelCT.seq (load_pair v width) (RelCT.seq (store_pair v)
-    (RelCT.seq (convert_pair montVerified montNoSp montStack v length)
-      (RoundCall.code_trace roundVerified roundNoSp roundStack v length fit far lengthFar)))
+    RelCT isa (InitialPair g capacity p input) (code g.w montName mont roundName round) (Pair g [.edi]) :=
+  codeAt_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
+    (by rw [width]; unfold Geometry.words; omega) (by have := v.minWidth; omega)
+    (by rw [width]; unfold Geometry.words; omega) (by rw [width]) length fit far lengthFar
 
 end VG.Proof.RsaKeyGen.X86.WitnessRound

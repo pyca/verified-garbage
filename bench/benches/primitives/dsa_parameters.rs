@@ -3,7 +3,12 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["dsa", "rsa_mont", "miller_rabin", "sha1", "sha256"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
@@ -29,5 +34,10 @@ pub fn bench(c: &mut Criterion) {
     group.finish();
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+)))]
 pub fn bench(_: &mut Criterion) {}

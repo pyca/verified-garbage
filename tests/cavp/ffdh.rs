@@ -1,7 +1,12 @@
 //! Published RFC 5114 and NIST FFC validity vectors, vendored byte for byte
 //! from cryptography with pinned provenance in vectors/sources/.
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 use super::unhex;

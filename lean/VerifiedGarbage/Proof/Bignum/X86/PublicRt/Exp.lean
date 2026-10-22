@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 
 `sparseRound`: with the result `y R` (number 2), the base `b R` (number 1)
 and the exponent's remaining bits `E` (two words at 128), the result times
-the base where `E` is odd (`product_ok`), the base squared, `E` halved, and
+the base where `E` is odd (`product_ok`), `E` halved, the base squared only if another bit remains, and
 `zf` set once `E` is gone (`sparseRound_ok`).
 -/
 
@@ -82,7 +82,8 @@ theorem sparseRound_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
       t.zf = some (decide (val32 s.mem base 128 2 / 2 = 0)) ∧
       val32 t.mem base (numAt len 2) (nw len) =
         (if val32 s.mem base 128 2 % 2 = 1 then y * b else y) * 2 ^ (32 * nw len) % M ∧
-      val32 t.mem base (numAt len 1) (nw len) = (b * b) * 2 ^ (32 * nw len) % M ∧
+      val32 t.mem base (numAt len 1) (nw len) =
+        (if val32 s.mem base 128 2 / 2 = 0 then b else b * b) * 2 ^ (32 * nw len) % M ∧
       val32 t.mem base 128 2 = val32 s.mem base 128 2 / 2 ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
       val32 t.mem base (numAt len 3) (nw len) = val32 s.mem base (numAt len 3) (nw len) := by
   have h := E.pi
@@ -99,32 +100,48 @@ theorem sparseRound_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
   unfold sparseRound
   refine WP.seq (WP.mono (product_ok E hbytes hY hX) fun u₁ ⟨E₁, C₁, Y₁, X₁, W₁, K₁, O₁⟩ => ?_)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
-  -- The base squared.
-  refine WP.seq (WP.mono (mulEnv_ok E₁ hbytes (o := 1) (a := 1) (b := 1) (by decide) (by decide) (by decide)
-    (by decide) (x := b) (y := b) (by rw [X₁, hX, Nat.mod_mod]) (by rw [X₁, hX, Nat.mod_mod])
-    (by rw [X₁, hX]; exact Nat.mod_lt _ hM)) fun u₂ ⟨E₂, C₂, cs₂, F₂, X₂⟩ => ?_)
-  have sp₂ : u₂.gpr .esp = s.gpr .esp := (cs₂.1 _ (by decide)).trans sp₁
-  have Y₂ : val32 u₂.mem base (numAt len 2) (nw len) = val32 u₁.mem base (numAt len 2) (nw len) :=
-    mulFrame_val32 E₁.room nw' F₂ (.inr (by omega)) (by omega) (by omega) f1 f5
-  have O₂ : val32 u₂.mem base (numAt len 3) (nw len) = val32 u₁.mem base (numAt len 3) (nw len) :=
-    mulFrame_val32 E₁.room nw' F₂ (.inr (by omega)) (by omega) (by omega) f1 f5
-  have W₂ : val32 u₂.mem base 128 2 = val32 u₁.mem base 128 2 := by
-    rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₁.room nw' F₂ (by decide) (by omega) f1 f5]
-  -- The exponent halved, and whether any of it is left.
-  refine WP.block_append (WP.mono (shiftExponent_ok E₂.pi.scratch 2 128 (by omega)) fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
-  have E₃ := E₂.keep K₃ (by decide) (by decide) (Outside.chg O₃ (.inl ⟨by decide, by decide⟩))
-  refine WP.mono (PublicContext.exponentLeft_ok E₃.pi.scratch (by omega)) fun t ⟨M₄, K₄, Z₄⟩ => ?_
-  have W₃ : val32 u₃.mem base 128 2 = val32 s.mem base 128 2 / 2 := by rw [V₃, W₂, W₁]
-  refine ⟨E₃.keep K₄ (by decide) (by decide) (by rw [M₄]; exact Frame.refl _ _), ?_, by rw [Z₄, W₃], ?_, ?_,
-    by rw [M₄, W₃], ?_, ?_⟩
-  · have G₂ : Frame (Chg base len bytes (s.gpr .esp)) u₁.mem u₂.mem := by rw [← sp₁]; exact C₂
-    have G₃ : Frame (Chg base len bytes (s.gpr .esp)) u₂.mem t.mem := by
-      rw [M₄]; exact Outside.chg O₃ (.inl ⟨by decide, by decide⟩)
-    exact (C₁.trans G₂).trans G₃
-  · rw [M₄, O₃.val32 (.inr (by omega)) (by omega), Y₂, Y₁]
-  · rw [M₄, O₃.val32 (.inr (by omega)) (by omega), X₂]
-  · exact (((K₁.mono (by decide)).trans (cs₂.mono (by decide))).trans (K₃.mono (by decide))).trans
-      (K₄.mono (by decide))
-  · rw [M₄, O₃.val32 (.inr (by omega)) (by omega), O₂, O₁]
+  -- Shift first: the last round has no use for another square.
+  refine WP.seq (WP.block_append (WP.mono (shiftExponent_ok E₁.pi.scratch 2 128 (by omega))
+    fun u₂ ⟨O₂, V₂, K₂⟩ => ?_))
+  have E₂ := E₁.keep K₂ (by decide) (by decide) (Outside.chg O₂ (.inl ⟨by decide, by decide⟩))
+  refine WP.mono (PublicContext.exponentLeft_ok E₂.pi.scratch (by omega)) fun u₃ ⟨M₃, K₃, Z₃⟩ => ?_
+  have E₃ := E₂.keep K₃ (by decide) (by decide) (by rw [M₃]; exact Frame.refl _ _)
+  have W₃ : val32 u₃.mem base 128 2 = val32 s.mem base 128 2 / 2 := by rw [M₃, V₂, W₁]
+  have X₃ : val32 u₃.mem base (numAt len 1) (nw len) = b * 2 ^ (32 * nw len) % M := by
+    rw [M₃, O₂.val32 (.inr (by omega)) (by omega), X₁, hX]
+  have Y₃ : val32 u₃.mem base (numAt len 2) (nw len) =
+      (if val32 s.mem base 128 2 % 2 = 1 then y * b else y) * 2 ^ (32 * nw len) % M := by
+    rw [M₃, O₂.val32 (.inr (by omega)) (by omega), Y₁]
+  have C₃ : Frame (Chg base len bytes (s.gpr .esp)) s.mem u₃.mem := by
+    refine C₁.trans ?_
+    rw [M₃]
+    exact Outside.chg O₂ (.inl ⟨by decide, by decide⟩)
+  have O₃ : val32 u₃.mem base (numAt len 3) (nw len) = val32 s.mem base (numAt len 3) (nw len) := by
+    rw [M₃, O₂.val32 (.inr (by omega)) (by omega), O₁]
+  have K₃' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₃ :=
+    ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))
+  have sp₃ : u₃.gpr .esp = s.gpr .esp := K₃'.1 _ (by decide)
+  by_cases done : val32 s.mem base 128 2 / 2 = 0
+  · refine WP.ite true (by change u₃.zf = _; rw [Z₃, V₂, W₁, done]; rfl)
+      (fun _ => WP.block_nil ?_) (fun e => nomatch e)
+    exact ⟨E₃, C₃, by rw [Z₃, V₂, W₁], Y₃, by rw [ite_eq_left done]; exact X₃, W₃, K₃', O₃⟩
+  · refine WP.ite false (by change u₃.zf = _; rw [Z₃, V₂, W₁, decide_eq_false done])
+      (fun e => nomatch e) (fun _ => ?_)
+    refine WP.seq (WP.mono (mulEnv_ok E₃ hbytes (o := 1) (a := 1) (b := 1) (by decide) (by decide) (by decide)
+      (by decide) (x := b) (y := b) (by rw [X₃, Nat.mod_mod]) (by rw [X₃, Nat.mod_mod])
+      (by rw [X₃]; exact Nat.mod_lt _ hM)) fun u₄ ⟨E₄, C₄, cs₄, F₄, X₄⟩ => ?_)
+    have Y₄ := mulFrame_val32 E₃.room nw' F₄ (d := numAt len 2)
+      (.inr (by omega)) (by omega) (by omega) f1 f5
+    have O₄ := mulFrame_val32 E₃.room nw' F₄ (d := numAt len 3)
+      (.inr (by omega)) (by omega) (by omega) f1 f5
+    have W₄ : val32 u₄.mem base 128 2 = val32 u₃.mem base 128 2 := by
+      rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₃.room nw' F₄ (by decide) (by omega) f1 f5]
+    refine WP.mono (PublicContext.exponentLeft_ok E₄.pi.scratch (by omega)) fun t ⟨M₅, K₅, Z₅⟩ => ?_
+    refine ⟨E₄.keep K₅ (by decide) (by decide) (by rw [M₅]; exact Frame.refl _ _), ?_,
+      by rw [Z₅, W₄, W₃], by rw [M₅, Y₄]; exact Y₃,
+      by rw [M₅, ite_eq_right done]; exact X₄, by rw [M₅, W₄, W₃],
+      (K₃'.trans (cs₄.mono (by decide))).trans (K₅.mono (by decide)), by rw [M₅, O₄, O₃]⟩
+    rw [M₅]
+    exact C₃.trans (by rw [← sp₃]; exact C₄)
 
 end VG.Proof.Bignum.X86.PublicRt

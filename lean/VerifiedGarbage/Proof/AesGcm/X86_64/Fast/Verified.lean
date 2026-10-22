@@ -27,6 +27,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Split
 
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
@@ -39,9 +41,10 @@ def _root_.VG.Proof.AesGcm.X86_64.OnePassName.code : OnePassName → Prog isa
   | .r => Impl.Gcm.X86_64.StitchR.encN
   | .z => Impl.Gcm.X86_64.StitchZHTo.encN
 
-theorem _root_.VG.Proof.AesGcm.X86_64.OnePassName.ok (hF : ShortFacts) : ∀ n : OnePassName, EncNOk n.code
-  | .r => encNR_ok hF.setupFin
-  | .z => encNZ_ok hF.phaseOneZ
+theorem _root_.VG.Proof.AesGcm.X86_64.OnePassName.ok (hF : ShortFacts) :
+    ∀ n : OnePassName, (n = .z → np = 24) → EncNOk np hpn n.code
+  | .r, _ => encNR_ok (hF.setupFin np hpn)
+  | .z, h => by obtain rfl := h rfl; exact encNZ_ok hF.phaseOneZ
 
 theorem _root_.VG.Proof.AesGcm.X86_64.OnePassName.check :
     ∀ n : OnePassName, ∃ hc, (taint.check (Taint.ofRegs encNRegs) n.code hc).isSome = true
@@ -90,7 +93,7 @@ theorem fastTailA_spSafe : (Fast.tail Short.finKsA : Prog isa).all (fun i => !X8
 theorem fastTailA_xdepth : (Fast.tail Short.finKsA : Prog isa).x86_64Depth = 0 := by decide +kernel
 
 section
-variable (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
+variable (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn)) (T : BlkToFn (CtxMode.preparedN np hpn))
 
 theorem tail_mx :
     ((.seq (SealSplit.«prefix» T.fn) (SealSplit.body (v.withBlk B) v.splitFin) : Prog isa)).allInstrs
@@ -164,30 +167,30 @@ theorem splitMidR_xdepth : (v.splitMidR (v.withBlk B) T.fn).x86_64Depth ≤ 56 :
       Nat.max_le] at t tp o ⊢
     omega
 
-theorem splitMidR_ok (hF : ShortFacts) : MidOk CtxMode.prepared (v.splitMidR (v.withBlk B) T.fn) := by
+theorem splitMidR_ok (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) : MidOk (CtxMode.preparedN np hpn) (v.splitMidR (v.withBlk B) T.fn) := by
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
-  · exact Fast.sel_ok hF v B (prefixNOk (OnePassName.ok hF _) T) Short.finKs_ksOk (splitFin_ok v hF)
+  · exact Fast.sel_ok hF v B (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T) Short.finKs_ksOk (splitFin_ok v hF)
       (splitMid_ok v B T hF)
   · exact Fast.sel_ok hF v B (prefixOk T) Short.finKs_ksOk (splitFin_ok v hF) (splitMid_ok v B T hF)
-  · exact Fast.sel_ok hF v B (prefixNOk (OnePassName.ok hF _) T) Short.finKsA_ksOk (splitFin_ok v hF)
+  · exact Fast.sel_ok hF v B (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T) Short.finKsA_ksOk (splitFin_ok v hF)
       (splitMid_ok v B T hF)
   · exact Fast.sel_ok hF v B (prefixOk T) Short.finKsA_ksOk (splitFin_ok v hF) (splitMid_ok v B T hF)
 
-theorem splitMidR_rel (hF : ShortFacts) : MidRel CtxMode.prepared (v.splitMidR (v.withBlk B) T.fn) := by
+theorem splitMidR_rel (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) : MidRel (CtxMode.preparedN np hpn) (v.splitMidR (v.withBlk B) T.fn) := by
   have hq : ∀ n sl : Nat, sl ≤ n → 16 * (sl / 16) ≤ n := fun _ _ h => by omega
   have nq : ∀ n sl : Nat, sl ≤ n →
       16 * (if 1 ≤ sl / 256 ∧ sl / 256 < n / 256 then 16 * (n / 256) else sl / 16) ≤ n :=
     fun n sl h => by split <;> omega
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
-  · exact @Fast.sel_rel false v B _ _ (prefixNOk (OnePassName.ok hF _) T)
-      (prefixNRel (OnePassName.ok hF _) (OnePassName.check _) T) nq hF _ Short.finKs_ksOk Short.finKs_rel _
+  · exact @Fast.sel_rel _ _ false v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
+      (prefixNRel (OnePassName.ok hF _ (hz _ ‹_›)) (OnePassName.check _) T) nq hF _ Short.finKs_ksOk Short.finKs_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
-  · exact @Fast.sel_rel false v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKs_ksOk Short.finKs_rel _
+  · exact @Fast.sel_rel _ _ false v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKs_ksOk Short.finKs_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
-  · exact @Fast.sel_rel true v B _ _ (prefixNOk (OnePassName.ok hF _) T)
-      (prefixNRel (OnePassName.ok hF _) (OnePassName.check _) T) nq hF _ Short.finKsA_ksOk Short.finKsA_rel _
+  · exact @Fast.sel_rel _ _ true v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
+      (prefixNRel (OnePassName.ok hF _ (hz _ ‹_›)) (OnePassName.check _) T) nq hF _ Short.finKsA_ksOk Short.finKsA_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
-  · exact @Fast.sel_rel true v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKsA_ksOk Short.finKsA_rel _
+  · exact @Fast.sel_rel _ _ true v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKsA_ksOk Short.finKsA_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
 
 theorem sealSplitR_mx :
@@ -205,18 +208,24 @@ theorem sealSplitR_xdepth : (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)
   simp only [SealSplit.«seal», Code.x86_64Depth, tagOut, Nat.max_le]
   omega
 
-theorem sealSplitR_correct (hF : ShortFacts) (s : State)
-    (hs : (Proof.AesGcm.sealSplitX86_64M CtxMode.prepared).pre s) :
+theorem sealSplitR_correct (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) (s : State)
+    (hs : (Proof.AesGcm.sealSplitX86_64M (CtxMode.preparedN np hpn)).pre s) :
     ∃ t s', Exec isa (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)) s t s' ∧ abiPreserved s s' ∧
-      (Proof.AesGcm.sealSplitX86_64M CtxMode.prepared).post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := sealSplitM_wp (splitMidR_ok v B T hF) hs
+      (Proof.AesGcm.sealSplitX86_64M (CtxMode.preparedN np hpn)).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := sealSplitM_wp (splitMidR_ok v B T hF hz) hs
   exact ⟨t, s', he, abiPreserved_of_exec (sealSplitR_mx v B T) he hg, hp⟩
+
+end
+
+section
+variable (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
 
 theorem sealSplitPrepared_core (hF : ShortFacts) :
     Verified X86_64.target (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn))
       (Proof.AesGcm.sealSplitPreparedScratchContract X86_64.abi 56) :=
-  Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M CtxMode.prepared) (sealSplitR_correct v B T hF)
-    (sealSplitM_ct (splitMidR_ok v B T hF) (splitMidR_rel v B T hF)) splitPrepared_implies
+  Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M CtxMode.prepared) (sealSplitR_correct v B T hF (fun _ _ _ => rfl))
+    (sealSplitM_ct (splitMidR_ok v B T hF (fun _ _ _ => rfl)) (splitMidR_rel v B T hF (fun _ _ _ => rfl)))
+    splitPrepared_implies
 
 /-- `vg_aes_gcm_seal_split_prepared`, in its frame. -/
 theorem sealSplitPrepared_framed (hF : ShortFacts) :

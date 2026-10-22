@@ -14,6 +14,11 @@
 //! `vg_sha256_finalize_avx2`, which call `vg_sha256_compress_avx2`.
 //! On AArch64, the `sha2` feature selects the `_sha2` streaming functions,
 //! whose compression uses SHA256H/SHA256H2 and SHA256SU0/SHA256SU1.
+//!
+//! On AArch64 and x86-64, `digest` calls `vg_sha256_digest` (or its variant
+//! for the backend: `_sha2`, `_shani` or `_avx2`; contract
+//! `VG.Spec.Sha256.digestContract`), which runs the same initialization,
+//! update and finalization in one call.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -39,8 +44,12 @@ use crate::arch::sha256::{
 };
 use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_init, vg_sha256_update};
 
+#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+use crate::arch::sha256::vg_sha256_digest;
 #[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::{vg_sha256_digest, vg_sha256_digest_sha2};
+use crate::arch::sha256::vg_sha256_digest_sha2;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha256::{vg_sha256_digest_avx2, vg_sha256_digest_shani};
 
 super::streaming_hash!(
     /// An incremental SHA-256 computation.
@@ -61,9 +70,14 @@ super::streaming_hash!(
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA256_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha256_update_avx2, vg_sha256_finalize_avx2),
         },
-        digests: #[cfg(target_arch = "aarch64")] {
+        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
             Scalar => vg_sha256_digest,
+            #[cfg(target_arch = "aarch64")]
             Sha2 => vg_sha256_digest_sha2,
+            #[cfg(target_arch = "x86_64")]
+            ShaNi => vg_sha256_digest_shani,
+            #[cfg(target_arch = "x86_64")]
+            Avx2 => vg_sha256_digest_avx2,
         },
     }
 );

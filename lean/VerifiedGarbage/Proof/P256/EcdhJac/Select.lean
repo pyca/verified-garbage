@@ -296,25 +296,24 @@ theorem neon_split : neon 2816 704 5400=setup++scan 2816 16++store := by
   dsimp only [row,acc,load]
   rfl
 
-theorem neon_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192)
-    (ha : a≤16) (hmag : s.gpr .x2=BitVec.ofNat 64 a) :
-    WP isa (.block (neon 2816 704 5400)) s fun t=>
+/-- The rows and the store, from the setup's broadcasts and cleared
+accumulators. -/
+theorem scanStore_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192) (ha : a≤16)
+    (hidx : s.v .v28=dup2 0) (hinc : s.v .v31=dup2 1) (hmag : s.v .v30=dup2 (BitVec.ofNat 64 a))
+    (hz : ∀ i<10,s.v (acc i)=0) :
+    WP isa (.block (scan 2816 16++store)) s fun t=>
       (∀ j<20,word t.mem base (output j)=if a=0 then 0 else
         word s.mem base (2816+160*(a-1)+8*j)) ∧
-      KeepRegs [.x5,.x17] s t ∧ Unch base outputRanges s.mem t.mem := by
-  rw [neon_split]
-  rw [WP.block_append_iff,WP.block_append_iff]
-  refine WP.mono (setup_ok s) fun s₁ ⟨idx₁,inc₁,mag₁,z₁,k₁⟩=>?_
-  have hs₁ : Scr s₁ base 8192 := ⟨(k₁.gpr _ (by decide)).trans hs.x0,
-    by simpa only [k₁.wr] using hs.wr,hs.nowrap,hs.enc⟩
-  refine WP.mono (scan_ok (by omega) idx₁ inc₁ (mag₁.trans (congrArg dup2 hmag)) z₁
+      KeepRegs [.x17] s t ∧ Unch base outputRanges s.mem t.mem := by
+  rw [WP.block_append_iff]
+  refine WP.mono (scan_ok (by omega) hidx hinc hmag hz
     (by decide : 2816+2560≤65536) (by decide)
     (fun r hr i hi=>by
-      rw [hs₁.x0]
-      exact ⟨_,List.mem_append_right _ hs₁.wr,hs₁.contains (by omega) (by decide)⟩)
+      rw [hs.x0]
+      exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩)
     16 (by decide)) fun s₂ ⟨_,acc₂,k₂⟩=>?_
-  have hs₂ : Scr s₂ base 8192 := ⟨(k₂.gpr _ List.not_mem_nil).trans hs₁.x0,
-    by simpa only [k₂.wr] using hs₁.wr,hs.nowrap,hs.enc⟩
+  have hs₂ : Scr s₂ base 8192 := ⟨(k₂.gpr _ List.not_mem_nil).trans hs.x0,
+    by simpa only [k₂.wr] using hs.wr,hs.nowrap,hs.enc⟩
   refine WP.mono (stores_ok hs₂) fun t ⟨wt,kt,ot⟩=>?_
   refine ⟨fun j hj=>?_,?_,?_⟩
   · rw [wt j hj,acc₂ (j/2) (by omega)]
@@ -322,11 +321,31 @@ theorem neon_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192)
     · simp only [hz,Nat.lt_irrefl,false_and,ite_false,ite_true,vdword_zero]
     · rw [ite_eq_left (by omega : 0<a ∧ a≤16),ite_eq_right hz]
       unfold picked
-      rw [k₁.mem,hs₁.x0,vdword_read16 _ _ (by omega : j%2<2),BitVec.add_assoc,BitVec.ofNat_add_ofNat]
+      rw [hs.x0,vdword_read16 _ _ (by omega : j%2<2),BitVec.add_assoc,BitVec.ofNat_add_ofNat]
       rw [show 2816+160*(a-1)+16*(j/2)+8*(j%2)=2816+160*(a-1)+8*j by omega]
-  · exact (((VG.Proof.Mont.AArch64.Keeps.regs k₁.keeps).mono (by regions_sub)).trans
-      ((VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps).mono (by regions_sub))).trans
+  · exact ((VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps).mono (by regions_sub)).trans
       (kt.mono (by regions_sub))
-  · simpa only [k₂.mem,k₁.mem] using ot
+  · simpa only [k₂.mem] using ot
+
+theorem neon_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192)
+    (ha : a≤16) (hmag : s.gpr .x2=BitVec.ofNat 64 a) :
+    WP isa (.block (neon 2816 704 5400)) s fun t=>
+      (∀ j<20,word t.mem base (output j)=if a=0 then 0 else
+        word s.mem base (2816+160*(a-1)+8*j)) ∧
+      KeepRegs [.x5,.x17] s t ∧ Unch base outputRanges s.mem t.mem := by
+  rw [neon_split,List.append_assoc,WP.block_append_iff]
+  refine WP.mono (setup_ok s) fun s₁ ⟨idx₁,inc₁,mag₁,z₁,k₁⟩=>?_
+  have hs₁ : Scr s₁ base 8192 := ⟨(k₁.gpr _ (by decide)).trans hs.x0,
+    by simpa only [k₁.wr] using hs.wr,hs.nowrap,hs.enc⟩
+  refine WP.mono (scanStore_ok hs₁ ha idx₁ inc₁ (mag₁.trans (congrArg dup2 hmag)) z₁) fun t ⟨wt,kt,ot⟩=>?_
+  refine ⟨fun j hj=>by rw [wt j hj,k₁.mem],?_,by simpa only [k₁.mem] using ot⟩
+  exact ((VG.Proof.Mont.AArch64.Keeps.regs k₁.keeps).mono (by regions_sub)).trans
+    (kt.mono (by regions_sub))
+
+theorem neonSetup_eq : Impl.P256.EcdhSelect.neonSetup=setup := rfl
+
+theorem neonScan_eq : Impl.P256.EcdhSelect.neonScan 2816 16=scan 2816 16 := rfl
+
+theorem neonStore_eq : Impl.P256.EcdhSelect.neonStore 704 5400=store := rfl
 
 end VG.Proof.P256.EcdhJac.Select

@@ -16,6 +16,10 @@ open VG VG.Arm VG.Arm.RegUpd VG.Impl.Bignum.Arm
 theorem MacFrame.subFlags (rs : List Reg) (s : State) (x y : BitVec 32) :
     MacFrame rs s (subFlags s x y) := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
+theorem MacFrame.withSubFlags {rs : List Reg} {s t : State} (h : MacFrame rs s t)
+    (x y : BitVec 32) : MacFrame rs s (VG.Arm.subFlags t x y) :=
+  h.trans (MacFrame.subFlags rs t x y)
+
 /-- Capturing and inverting the ARM carry flag gives the subtraction borrow. -/
 theorem subWord_ok (s : State) (d borrow a b : Reg) (hd : d ≠ borrow) :
     WP isa (.block (subWord d borrow a b)) s fun t =>
@@ -62,38 +66,28 @@ theorem subBorrow_ok (s : State) (hc : (s.gpr .r11).toNat ≤ 1) :
       (t.gpr .r3).toNat + (s.gpr .r2).toNat + (s.gpr .r11).toNat =
         (s.gpr .r1).toNat + 2 ^ 32 * (t.gpr .r11).toNat ∧
       (t.gpr .r11).toNat ≤ 1 ∧ MacFrame [.r3, .r4, .r5, .r11] s t := by
-  rw [subBorrow, List.append_assoc]
-  apply WP.block_append_iff.mpr
-  refine WP.mono (subWord_value s .r3 .r4 .r1 .r2 (by decide)) ?_
-  rintro s1 ⟨v1, b1, k1⟩
-  apply WP.block_append_iff.mpr
-  refine WP.mono (subWord_value s1 .r3 .r5 .r3 .r11 (by decide)) ?_
-  rintro s2 ⟨v2, b2, k2⟩
-  have c1 : s1.gpr .r11 = s.gpr .r11 := k1.regs .r11 (by simp)
-  have c2 : s2.gpr .r4 = s1.gpr .r4 := k2.regs .r4 (by simp)
-  have ha := (s.gpr .r1).isLt
-  have hb := (s.gpr .r2).isLt
-  have hd := (s2.gpr .r3).isLt
-  have hsum : (s2.gpr .r4).toNat + (s2.gpr .r5).toNat ≤ 1 := by
-    rw [c1] at v2
-    rw [c2]
-    omega
-  have value : (s2.gpr .r3).toNat + (s.gpr .r2).toNat + (s.gpr .r11).toNat =
-      (s.gpr .r1).toNat + 2 ^ 32 * ((s2.gpr .r4).toNat + (s2.gpr .r5).toNat) := by
-    rw [c1] at v2
-    rw [c2, Nat.mul_add]
-    omega
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, exec, Op2.eval, Option.map_some]
-  refine ⟨_, rfl, ?_, ?_, ?_⟩
-  · simp only [gpr_setReg, reduceCtorEq, ↓reduceIte, BitVec.toNat_add]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    exact value
-  · simp only [gpr_setReg_self, BitVec.toNat_add]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    exact hsum
-  · apply MacFrame.setReg (hr := by simp)
-    exact (k1.mono (by simp_all)).trans (k2.mono (by simp_all))
+  simp only [subBorrow, runBlock_cons, runStep_some, exec, Op2.eval,
+    Option.map_some, show encodable (0 : BitVec 32) = true from rfl,
+    show encodable (1 : BitVec 32) = true from rfl,
+    show encodable (3 : BitVec 32) = true from rfl, ↓reduceIte,
+    gpr_setReg_self, gpr_setReg_of_ne _ _ (by decide : Reg.r3 ≠ .r4),
+    gpr_setReg_of_ne _ _ (by decide : Reg.r11 ≠ .r3),
+    gpr_setReg_of_ne _ _ (by decide : Reg.r11 ≠ .r4), c_setReg]
+  refine ⟨_, rfl, ?value, ?bound, ?frame⟩
+  case frame =>
+    repeat first
+      | apply MacFrame.setReg (hr := by simp)
+      | apply MacFrame.withSubFlags
+      | exact ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  all_goals
+    simp only [gpr_setReg, subFlags, reduceCtorEq, ↓reduceIte]
+    have ha := (s.gpr .r1).isLt
+    have hb := (s.gpr .r2).isLt
+    by_cases h1 : (s.gpr .r2).toNat ≤ (s.gpr .r1).toNat <;>
+      by_cases h2 : (s.gpr .r11).toNat ≤ (s.gpr .r1 - s.gpr .r2).toNat <;>
+      simp only [h1, h2, decide_true, decide_false, ite_true, ite_false, Bool.false_eq_true] <;>
+      dsimp <;> simp only [BitVec.toNat_sub] at h2 ⊢ <;> omega
 
 theorem subBorrow_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block subBorrow) := by
   refine ConstantTime.of_silent fun s tr t _ h => ?_

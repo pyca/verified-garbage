@@ -52,7 +52,7 @@ theorem fastArgs_trace {g : Sieve.Geometry} {workspace : BitVec 32}
   exact ⟨(raw _ _ _ _ _ _ A E G).1,
     wp_result (fastArgs_control pointer S) E, wp_result (fastArgs_control pointer T) G⟩
 
-theorem fast_body_trace_bounded {g : Sieve.Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+theorem fast_body_trace_bounded {g : Sieve.Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 128)
     (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) {workspace : BitVec 32}
     (pointer : workspace + BitVec.ofNat 32 (slot g.w 5) = g.candidate) :
     RelCT isa (fun s t => FastInitial g workspace s ∧ FastInitial g workspace t)
@@ -91,7 +91,7 @@ theorem FastEntry.initial {g : Sieve.Geometry} {workspace : BitVec 32} {s : Stat
     · exact List.mem_append_left _ mem
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ mem)
 
-theorem fast_trace_bounded {g : Sieve.Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+theorem fast_trace_bounded {g : Sieve.Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 128)
     (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) {workspace : BitVec 32}
     (pointer : workspace + BitVec.ofNat 32 (slot g.w 5) = g.candidate) :
     RelCT isa (fun s t => FastEntry g workspace s ∧ FastEntry g workspace t)

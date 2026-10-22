@@ -131,7 +131,9 @@ structure PdCtx (s : State) : Prop where
     (Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
   hxb : Src s (stackArg s 0) ((stackArg s 1).toNat * 8) (s.gpr .x6)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x1).toNat)
+  hxspan : InRegions (s.rd ++ s.wr) (s.gpr .x6) (s.gpr .x1).toNat
   hout : ∀ j < (s.gpr .x1).toNat, InRegions s.wr (s.gpr .x0 + BitVec.ofNat 64 j) 1
+  houtSpan : InRegions s.wr (s.gpr .x0) (s.gpr .x1).toNat
   houts : ∀ j < (s.gpr .x1).toNat, (stackArg s 1).toNat * 8 ≤ ofs (stackArg s 0) (s.gpr .x0 + BitVec.ofNat 64 j)
 
 theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
@@ -150,7 +152,9 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
     fun j hj => out_scr dps (contains_byte _ (by omega) (by omega)),
     src_of_region (by rw [hrd]; simp) (by omega) des,
     src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
+    span_of_region (by rw [hrd, ← hil]; simp),
     fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
+    ⟨_, by rw [hwr]; exact List.mem_cons_self .., by simp [Region.Contains]⟩,
     fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega))⟩
 
 /-- `pre`'s words after the entry, as before it. -/
@@ -194,8 +198,9 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (h0 : t₁.gpr .x0 = stackA
       hO := by rw [x₂ sOut (by decide)]; exact hO, hK := by rw [x₂ sK (by decide), hK, ofNat_toNat64],
       hE := by rw [x₂ sE (by decide)]; exact hE, hL := by rw [x₂ sElen (by decide), hL, ofNat_toNat64],
       hIn := by rw [x₂ sIn (by decide)]; exact hIn, hW := hW₂, hb := hb₂, n := rfl, r := rfl, odd := hodd,
-      n1 := hN1, rlt := hRN, x := c.hxb.congrK i₂ kk, e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
-      el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2, out := fun j hj => by rw [kk.wr]; exact c.hout j hj,
+      n1 := hN1, rlt := hRN, x := c.hxb.congrK i₂ kk, xspan := by rw [kk.rd, kk.wr]; exact c.hxspan,
+      e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
+      el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2, out := by rw [kk.wr]; exact c.houtSpan,
       outSep := c.houts }
 
 /-- Reuse entry, cache validation, and output-contract reasoning for any

@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the numbers 0 and 1, and Montgomery multiplication's base
 
-From the end of the halvings: the context with `w` words, `[aZ] := n - n =
-0`, `[aOne] := 1`, and frame word 0 := `M0` with `r7 = w6` and `r3 = 0`,
-as `setup` takes them (`montA_vp`).
+Establish the context with `w` words, `[aZ] := n - n = 0`, `[aOne] := 1`,
+and frame word 0 := `M0` with `r7 = w6` and `r3 = 0`, as `setup` takes
+them (`montA_vp`). Retain only the exponent state each search needs.
 -/
 
 @[expose] public section
@@ -28,9 +28,25 @@ def A01 (P : RP) (σ : State) : Nat → Nat := upd (upd (Aload P σ) aZ 0) aOne 
 /-- The arrays 0, 1 and `n` live. -/
 abbrev live01 : List Nat := [aOne, aZ, aN]
 
-/-- The stage of the numbers 0, 1 and `n`, of `r` and of `t`. -/
-abbrev K01 (P : RP) (σ : State) (s : State) : Prop :=
-  KS P σ (A01 P σ) live01 (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc] s
+/-- The two-pass search retains its odd exponent and trailing-zero count;
+the fused search needs only the full exponent. This choice changes proof
+state, not executable setup code. -/
+def montWide (keepHalves : Bool) : List Nat :=
+  if keepHalves then [wR, wM] else [wM]
+
+def montSlots (keepHalves : Bool) : List Nat :=
+  if keepHalves then [sTc] else []
+
+def montInitSlots (keepHalves : Bool) : List Nat :=
+  if keepHalves then [sTc, sCnt] else []
+
+abbrev MontStart (P : RP) (σ : State) (s : State) (keepHalves : Bool := true) : Prop :=
+  KS P σ (Aload P σ) [aN] (AWh P σ P.c) (montWide keepHalves)
+    (Vh P σ P.c) (montInitSlots keepHalves) s ∧ Ws s P.B P.Z P.W 22
+
+/-- The numbers 0, 1 and `n`, with the retained exponent state. -/
+abbrev K01 (P : RP) (σ : State) (s : State) (keepHalves : Bool := true) : Prop :=
+  KS P σ (A01 P σ) live01 (AWh P σ P.c) (montWide keepHalves) (Vh P σ P.c) (montSlots keepHalves) s
 
 section
 variable {P : RP}
@@ -53,18 +69,18 @@ theorem zero_of_sub {X n w b : Nat} (hX : X < 2 ^ (32 * w)) (h : X + n = n + 2 ^
     X = 0 := by
   rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> omega
 
-theorem montA_vp {E : State → Prop} :
-    VP (fun σ s => E σ ∧ HI P σ P.c s) montA
-      (fun σ s => E σ ∧ K01 P σ s ∧ s.gpr .r0 = P.M0 ∧ s.gpr .r7 = BitVec.ofNat 32 P.w6 ∧ s.gpr .r3 = 0 ∧
+theorem montA_vp {E : State → Prop} (keepHalves : Bool := true) :
+    VP (fun σ s => E σ ∧ MontStart P σ s keepHalves) montA
+      (fun σ s => E σ ∧ K01 P σ s keepHalves ∧ s.gpr .r0 = P.M0 ∧ s.gpr .r7 = BitVec.ofNat 32 P.w6 ∧ s.gpr .r3 = 0 ∧
         s.mem.readW (State.addr P.sp) 32 = P.M0) := by
   simp only [montA, seqs]
-  let K1 := fun σ s => E σ ∧ KS P σ (Aload P σ) [aN] (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc, sCnt] s ∧
+  let K1 := fun σ s => E σ ∧ KS P σ (Aload P σ) [aN] (AWh P σ P.c) (montWide keepHalves) (Vh P σ P.c) (montInitSlots keepHalves) s ∧
     Ws s P.B P.Z P.w nArr
-  let K2 := fun σ s => E σ ∧ KS P σ (upd (Aload P σ) aZ 0) [aZ, aN] (AWh P σ P.c) [wR, wM] (Vh P σ P.c) [sTc, sCnt] s ∧
+  let K2 := fun σ s => E σ ∧ KS P σ (upd (Aload P σ) aZ 0) [aZ, aN] (AWh P σ P.c) (montWide keepHalves) (Vh P σ P.c) (montInitSlots keepHalves) s ∧
     Ws s P.B P.Z P.w nArr
-  let K3 := fun σ s => E σ ∧ KS P σ (upd (upd (Aload P σ) aZ 0) aOne 0) [aOne, aZ, aN] (AWh P σ P.c) [wR, wM]
-    (Vh P σ P.c) [sTc, sCnt] s ∧ Ws s P.B P.Z P.w nArr
-  let K4 := fun σ s => E σ ∧ K01 P σ s ∧ Ws s P.B P.Z P.w nArr ∧ s.gpr .r0 = P.M0
+  let K3 := fun σ s => E σ ∧ KS P σ (upd (upd (Aload P σ) aZ 0) aOne 0) [aOne, aZ, aN] (AWh P σ P.c) (montWide keepHalves)
+    (Vh P σ P.c) (montInitSlots keepHalves) s ∧ Ws s P.B P.Z P.w nArr
+  let K4 := fun σ s => E σ ∧ K01 P σ s keepHalves ∧ Ws s P.B P.Z P.w nArr ∧ s.gpr .r0 = P.M0
   refine VP.seq (G := K1) ?_ (VP.seq (G := K2) ?_ (VP.seq (G := K3) ?_ ?_))
   -- The context.
   · refine VP.taint [.r8] ctxw_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s ⟨e, h, _⟩ => ?_
@@ -73,7 +89,7 @@ theorem montA_vp {E : State → Prop} :
   -- `[aZ] := n - n`.
   · refine VP.ctx zeroZ_taint (fun σ s h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
     refine WP.mono (h.sub3_w hw (o := aZ) (a := aN) (b := aN) (by decide) (by simp) (by simp) (by decide)
-      (by decide) (by decide)) fun t ⟨X, ht, hwt, _, hx, hb⟩ => ⟨e, ?_, hwt⟩
+      (by decide) (by cases keepHalves <;> decide)) fun t ⟨X, ht, hwt, _, hx, hb⟩ => ⟨e, ?_, hwt⟩
     have hX : X < 2 ^ (32 * P.w) := by
       rw [← show num t.mem P.B P.w aZ = X by rw [ht.arrs aZ (by simp), upd_self]]
       exact val32_lt _ _ _ _
@@ -82,21 +98,21 @@ theorem montA_vp {E : State → Prop} :
   -- `[aOne] := 0`.
   · refine VP.ctx oneZ_taint (fun σ s h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
     refine WP.mono (h.copy_w hw (o := aOne) (a := aZ) (by decide) (by simp) (by decide)
-      (by decide)) fun t ⟨ht, hwt, _⟩ => ⟨e, ?_, hwt⟩
+      (by cases keepHalves <;> decide)) fun t ⟨ht, hwt, _⟩ => ⟨e, ?_, hwt⟩
     rwa [upd_self] at ht
   -- `[aOne] := 1`, and `r0 := M0`.
   · rw [montSet_eq]
     refine VP.block_append (G := K4) (VP.ctx montHead_taint (fun σ s h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_) ?_
     · have sz := h.sizes
       have hf := h.bs.pre.fS
-      refine h.setOne_w hw (j := aOne) (by simp) (by decide)
+      refine h.setOne_w hw (j := aOne) (by simp) (by cases keepHalves <;> decide)
         fun s1 h1 hw1 _ => ?_
       refine ptr_ok hw1 (r := .r0) (by decide) (j := mBase) (by decide) fun s2 p2 r2 m2 hw2 => ?_
       refine wp_dp (op2_imm (by decide)) fun t u => WP.block_nil ⟨e, ?_, ?_, ?_⟩
       · have r := (r2.trans (u.rest (ws := [.r0]) (by simp)))
         have h2 := (h1.of_rest r (u.mem.trans m2) (by decide)).mono (A' := A01 P σ) (live' := live01)
-          (AW' := AWh P σ P.c) (liveW' := [wR, wM]) (V' := Vh P σ P.c) (ls' := [sTc])
-          (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩)
+          (AW' := AWh P σ P.c) (liveW' := montWide keepHalves) (V' := Vh P σ P.c) (ls' := montSlots keepHalves)
+          (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨by cases keepHalves <;> simp_all [montSlots, montInitSlots], rfl⟩)
         · exact h2
         · simp only [live01, List.mem_cons, List.not_mem_nil, or_false] at hj
           rcases hj with rfl | rfl | rfl <;> simp [A01, upd, aOne, aZ, aN]
@@ -122,7 +138,7 @@ theorem montA_vp {E : State → Prop} :
       have bs2 : Bs P σ u2 := ⟨pre, by rw [m2.sp, h1.sp]; exact h.bs.sp, by rw [m2.rd, h1.rd]; exact h.bs.rd,
         by rw [m2.wr, h1.wr]; exact h.bs.wr, by
           rw [m2.mem, h1.mem]; exact h.bs.frame.writeW (r := P.r0F) (by simp) _ hc⟩
-      have k2 : K01 P σ u2 := h.of_outZ (outZ_of_frame0 h.bs f0) bs2 (by rw [m2.gpr, h1.other _ (by decide), h.r8])
+      have k2 : K01 P σ u2 keepHalves := h.of_outZ (outZ_of_frame0 h.bs f0) bs2 (by rw [m2.gpr, h1.other _ (by decide), h.r8])
       have sv : u2.mem.readW (State.addr P.sp) 32 = P.M0 := by
         rw [m2.mem, Mem.readW_writeW_self32, h1.other _ (by decide), r0]
       refine bs2.ldrSp (o := aoK) (by decide) (by decide) (by decide) fun u3 h3 => ?_

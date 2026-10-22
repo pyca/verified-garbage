@@ -12,16 +12,16 @@ namespace VG.Proof.RsaKeyGen.X86.WitnessAdvance
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 open VG.Impl.RsaKeyGen.X86.WitnessAdvance
 
-theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used : Nat} {p rand : BitVec 32}
+theorem codeAt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used step : Nat} {p rand : BitVec 32}
     (S : Prepare.Data g c capacity p s)
     (source : s.mem.readW (off g.W 28) 32 = rand)
-    (consumed : w32 s.mem g.W usedOffset = used) (fit : used + 8 * g.w < 2 ^ 32) :
-    WP isa (.block (code g.w)) s fun t =>
+    (consumed : w32 s.mem g.W usedOffset = used) (fit : used + step < 2 ^ 32) :
+    WP isa (.block (codeAt step)) s fun t =>
       Prepare.Data g c capacity p t ∧ t.gpr .esi = rand + BitVec.ofNat 32 used ∧
-      w32 t.mem g.W usedOffset = used + 8 * g.w ∧
+      w32 t.mem g.W usedOffset = used + step ∧
       Outside g.W usedOffset 4 s.mem t.mem ∧ Keeps [.eax, .esi] s t := by
   have head := v.headerFit
-  unfold code
+  unfold codeAt
   refine wp_movS (readSrc_sc S.ready.scratch (by omega)) fun a A _ => ?_
   have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
   refine wp_movS (readSrc_sc Sa (d := usedOffset) (by unfold usedOffset; omega)) fun b B _ =>
@@ -42,7 +42,17 @@ theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used : Nat}
     rw [wordEq]
   · rw [T.mem, w32_write_self, E.gpr, D.other .eax (by decide), B.gpr, A.mem,
       BitVec.toNat_add, BitVec.toNat_ofNat]
-    change (w32 s.mem g.W usedOffset + 8 * g.w % 2 ^ 32) % 2 ^ 32 = _
-    rw [consumed, Nat.mod_eq_of_lt (a := 8 * g.w) (by omega), Nat.mod_eq_of_lt fit]
+    change (w32 s.mem g.W usedOffset + step % 2 ^ 32) % 2 ^ 32 = _
+    rw [consumed, Nat.mod_eq_of_lt (a := step) (by omega), Nat.mod_eq_of_lt fit]
+
+theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used : Nat} {p rand : BitVec 32}
+    (S : Prepare.Data g c capacity p s)
+    (source : s.mem.readW (off g.W 28) 32 = rand)
+    (consumed : w32 s.mem g.W usedOffset = used) (fit : used + 8 * g.w < 2 ^ 32) :
+    WP isa (.block (code g.w)) s fun t =>
+      Prepare.Data g c capacity p t ∧ t.gpr .esi = rand + BitVec.ofNat 32 used ∧
+      w32 t.mem g.W usedOffset = used + 8 * g.w ∧
+      Outside g.W usedOffset 4 s.mem t.mem ∧ Keeps [.eax, .esi] s t :=
+  codeAt_ok v S source consumed fit
 
 end VG.Proof.RsaKeyGen.X86.WitnessAdvance

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Impl.Mont.X86.RepeatSquares
 
 /-! A shared short Montgomery squaring loop for public-modulus setup. -/
 
@@ -10,12 +11,11 @@ open VG VG.X86 VG.Impl.Mont.X86
 
 /-- Square the setup residue and decrement its public iteration count. -/
 def squareStep (n o : Nat) : Prog isa :=
-  .seq (mul (contextMod n) 0 (slot n 2) (slot n o) (slot n o) (slot n o))
-    (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
+  squareStepWith (mul (contextMod n) 0 (slot n 2) (slot n o) (slot n o) (slot n o))
 
 /-- Repeated squaring at a fixed slot, with a public loop count. -/
 def repeatSquares (n o count : Nat) : Prog isa :=
-  .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 count))]) (.loop (squareStep n o) .ne)
+  repeatSquaresWith (mul (contextMod n) 0 (slot n 2) (slot n o) (slot n o) (slot n o)) count
 
 def setupSquareStep (n : Nat) : Prog isa := squareStep n 4
 

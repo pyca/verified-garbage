@@ -592,7 +592,7 @@ theorem Ready.toC {s₀ s : State} {P : Nat → Block} (h : Ready s₀ P s) : Re
   ⟨h.env, h.templates, h.counter, h.cursor, h.remaining, h.hash, h.mask, h.base⟩
 
 /-- In place, the data is where the setup found it. -/
-theorem Ready.src {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (h : Ready s₀ P s) :
+theorem Ready.src {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo) (h : Ready s₀ P s) :
     ∀ k < nb s₀, blockAt s.mem (srcBlk s₀ false k) = blk s₀ k := fun k hk => by
   rw [srcBlk_false]
   exact VG.Proof.Aes.X86_64.AesNi.blockAt_frame h.frame (fun r hr => by

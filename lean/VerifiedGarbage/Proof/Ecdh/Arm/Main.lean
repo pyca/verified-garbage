@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
@@ -369,7 +370,8 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     fun hj t ht => by
       rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slWk h7 (by decide)) (tbl_apart_flag h7 h0 _ t)),
         tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW h7 (by decide) _ t) (tbl_apart_flag h7 h0 _ t))]
-  have hpk : sv c (ptr s₀ .r3) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
+  have hpk : sv c (ptr s₀ .r3) s₂ K < 2 ^ (8 * c.C.len) := by
+    rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _
   -- `[d]P`, then `Z^(p-2)`.
   have hstep := step_rep (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := sv c (ptr s₀ .r3) s₂ K) hC
     (peerPt_onCurve hc _ _ _)

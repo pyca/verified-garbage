@@ -1,8 +1,10 @@
 module
 
+public import VerifiedGarbage.Impl.Rsa.X86.Chain
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
+public import VerifiedGarbage.Impl.Mont.X86.RepeatSquares
 
 /-! # Private CRT RSA at a width read at run time (i686 cdecl)
 
@@ -115,12 +117,9 @@ def selectLoop : Prog isa :=
     .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
     .alu .sub .edi (.imm 4)]) .ne
 
-/-- `[edi] = [ebp] op [ebx]` with the carry (or borrow) as a mask in `ecx`; `edx` bytes. -/
-def chainLoop (op : AluOp) : Prog isa :=
-  .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx),
-    .alu op .eax (.mem (at_ .ebx 0)), .store (at_ .edi 0) .eax, .alu .sbb .ecx (.reg .ecx),
-    .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4), .alu .add .edi (.imm 4),
-    .alu .sub .edx (.imm 4)]) .ne
+/-- `[edi] = [ebp] op [ebx]` with the carry (or borrow) as a mask in `ecx`; `edx` bytes.
+Reuse the key-workspace loop: eight words per iteration, then scalar tails. -/
+def chainLoop (op : AluOp) : Prog isa := VG.Impl.Rsa.X86.Chain.loop op
 
 /-- `ecx` all ones if `[esi]` is below `[ebp]`, `edx` bytes. -/
 def compareLoop : Prog isa :=
@@ -220,14 +219,16 @@ def doubleStep (c : Ctx) : Prog isa :=
     .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax)]) <|
   .seq (select (.slot c 1) (.slot c 4) (one c)) (.block [.alu .sub .esi (.imm 1)])
 
-/-- `R² mod M` in slot 4: one, doubled `16 Bc` times. -/
+/-- `2^(8 Bc + Bc / 8) mod M` in slot 4: one, doubled `8 Bc + Bc / 8` times. -/
 def powerTwo (c : Ctx) : Prog isa :=
   .seq (setSmall (.slot c 4) (one c) 1) <|
-  .seq (.block (widthC 0 c .esi ++ List.replicate 4 (.alu .add .esi (.reg .esi)))) (.loop (doubleStep c) .ne)
+  .seq (.block (widthC 0 c .esi ++ [.mov .eax (.reg .esi), .shift .shr .eax 3, .alu .add .esi (.reg .esi),
+    .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .eax)])) (.loop (doubleStep c) .ne)
 
 /-- The context's modulus (slot 0) replaced by three unless it is an odd
-number above one; one in slot 3, `-M⁻¹ mod 2³²`, and `R² mod M`. -/
-def prepare (c : Ctx) : Prog isa :=
+number above one; one in slot 3, `-M⁻¹ mod 2³²`, and `2^(8 Bc + Bc / 8) mod M`
+in slot 4. -/
+def prepBase (c : Ctx) : Prog isa :=
   .seq (setSmall (.slot c 3) (one c) 1) <|
   .seq (setSmall (.slot c 7) (one c) 3) <|
   .seq (lessThan (.slot c 3) (.slot c 0) (one c)) <|
@@ -235,6 +236,13 @@ def prepare (c : Ctx) : Prog isa :=
     .alu .sub .eax (.reg .edx), .alu .and .ecx (.reg .eax), .alu .xor .ecx (.imm (BitVec.allOnes 32))]) <|
   .seq (select (.slot c 7) (.slot c 0) (one c)) <|
   .seq (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numBase invOff)) (powerTwo c)
+
+/-- The context set up: `prepBase`, and six Montgomery squares of slot 4 by
+the shared squaring loop, each taking `2^(8 Bc + d) mod M` to
+`2^(16 Bc + 2 d) R⁻¹ = 2^(8 Bc + 2 d) mod M`: `2^(8 Bc + 64 (Bc / 8)) =
+2^(16 Bc) = R² mod M`, with half the doublings of computing it by doubling
+alone. -/
+def prepare (c : Ctx) : Prog isa := .seq (prepBase c) (VG.Impl.Mont.X86.Dynamic.repeatSquaresWith (mul c 4 4 4) 6)
 
 /-- `[o] = [a] - [b] mod M` for `a` and `b` below `M`, through slot 1. -/
 def subMod (c : Ctx) (o a b : Nat) : Prog isa :=

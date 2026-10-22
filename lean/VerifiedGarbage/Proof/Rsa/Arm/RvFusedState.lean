@@ -30,9 +30,12 @@ def fusedA (P : RP) (j : Nat) (st : VG.Proof.Rsa.Fused.State) : Nat → Nat :=
 def fusedV (V : Nat → Nat) (st : VG.Proof.Rsa.Fused.State) : Nat → Nat :=
   upd (upd V sDone (b2n st.done)) sOk (b2n st.root.isSome)
 
+/-- Only the full exponent is retained by the fused search. -/
+def fusedAW (P : RP) (σ : State) : Nat → Nat := fun _ => mv P σ
+
 abbrev FI (P : RP) (E : State → Prop) (j : Nat) (st : State → VG.Proof.Rsa.Fused.State)
     (V : State → Nat → Nat) : State → State → Prop :=
-  St P E (fun σ => fusedA P j (st σ)) fusedKeep (fun σ => AWh P σ P.c) [wR, wM]
+  St P E (fun σ => fusedA P j (st σ)) fusedKeep (fun σ => fusedAW P σ) [wM]
     (fun σ => fusedV (V σ) (st σ)) fusedSlots P.w nArr
 
 theorem upd_override (A : Nat → Nat) (j x y : Nat) : upd (upd A j x) j y = upd A j y := by

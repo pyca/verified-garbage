@@ -4,7 +4,8 @@ public import VerifiedGarbage.Impl.Mont.X86.MulRt
 
 /-! # Fixed-width scalar product columns for the common RSA sizes
 
-Public widths select 2048-, 3072- and 4096-bit squares. Each column uses a
+Public widths select 1024-, 1536-, 2048-, 3072- and 4096-bit squares, including
+the prime-sized squares in 2048- and 3072-bit RSA CRT operations. Each column uses a
 96-bit scalar accumulator; every product and memory offset is fixed at
 emission time. The header, accumulator, final subtraction and ABI match the
 runtime-width multiplication. Other widths retain the runtime square.
@@ -82,7 +83,7 @@ def selectSize (N : Nat) (fallback : Prog isa) : Prog isa :=
 
 def dispatch : Prog isa := .seq
  (.block [.mov .eax (.mem argA),.mov .edx (.mem argB),.alu .cmp .eax (.reg .edx)])
- (.ite .e (selectSize 64 (selectSize 96 (selectSize 128 VG.Impl.Mont.X86.Rt.Square.square)))
+ (.ite .e (selectSize 32 (selectSize 48 (selectSize 64 (selectSize 96 (selectSize 128 VG.Impl.Mont.X86.Rt.Square.square)))))
    VG.Impl.Mont.X86.Rt.scalarBody)
 
 end VG.Impl.Mont.X86.Rt.StaticSquare

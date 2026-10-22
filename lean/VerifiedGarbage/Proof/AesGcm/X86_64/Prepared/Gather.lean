@@ -81,7 +81,7 @@ theorem sealGatherPrepared_core (Sh : ShortFn CtxMode.prepared) (I : InitFn) (A 
       (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888) :=
   Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared)
-    (withFront_correct Sh I A T F Sp long) (withFront_ct Sh I A T F Sp long) gatherPrepared_implies
+    (withFront_correct Sh I A T F Sp long false) (withFront_ct Sh I A T F Sp long) gatherPrepared_implies
 
 theorem gatherFrameSatPrepared_pre : ∃ s, (Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatP, ?_⟩

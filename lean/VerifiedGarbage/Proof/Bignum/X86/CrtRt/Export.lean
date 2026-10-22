@@ -58,18 +58,20 @@ theorem maskResult_ok (h : In Ex base bytes len args s) {c : Bool}
     (by rw [uw.gpr, mv, m, hm])) fun t ⟨O, V, Kt⟩ => k t (by rw [← mw, bw]; exact O) (by rw [V, mw])
       ((Kw.mono (by decide)).trans (Kt.mono (by decide))))
 
-/-- The result's `n_len` bytes to `out`; they are its value's when it fits them. -/
-theorem writeResult_ok (h : In Ex base bytes len args s) (outFit : (args 0).toNat + len ≤ 2 ^ 32)
-    (outWrite : InRegions s.wr (byteAddr (args 0)) len)
-    (outApart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr (args 0), len⟩) :
-    WP isa (.seq (.block (PublicFn.outputArgs ++ ptrTo (.slot .wide 19) .esi .edx ++
-      ([.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)] : List Instr)))
+/-- The result's `n_len` bytes to the synthetic argument `p`, of `n_len` bytes (at the synthetic argument
+`l`); they are its value's when it fits them. -/
+theorem writeTo_ok (h : In Ex base bytes len args s) {p l : Nat} (hp : p < 18) (hl : l < 18)
+    (lenArg : args l = BitVec.ofNat 32 len) (outFit : (args p).toNat + len ≤ 2 ^ 32)
+    (outWrite : InRegions s.wr (byteAddr (args p)) len)
+    (outApart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr (args p), len⟩) :
+    WP isa (.seq (.block (([.mov .ebx (.mem (PublicRt.argAt 0 p)), .mov .ecx (.mem (PublicRt.argAt 0 l))] : List Instr) ++
+      ptrTo (.slot .wide 19) .esi .edx ++ ([.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)] : List Instr)))
       (.seq reverseBytes (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)]))) s fun t =>
       (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) < 2 ^ (8 * len) →
-        Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
+        Spec.Rsa.bytesAt t.mem (byteAddr (args p)) len =
           Spec.Rsa.i2osp (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide)) len) ∧
       t.gpr .eax = s.mem.readW (off base accOff) 32 &&& 1 ∧
-      Frame [⟨byteAddr (args 0), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
+      Frame [⟨byteAddr (args p), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
   have f19 := h.slot_fit .wide (j := 19) (by decide)
   have bw := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .wide
@@ -80,10 +82,10 @@ theorem writeResult_ok (h : In Ex base bytes len args s) (outFit : (args 0).toNa
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e19 : lo len (.slot .wide 19) = numBase + 19 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
-  simp only [PublicFn.outputArgs, List.cons_append, List.append_assoc]
-  refine WP.seq (wp_movS (h.stack 0 (by decide)).readSrc fun u₁ e₁ _ => ?_)
+  simp only [List.cons_append, List.append_assoc]
+  refine WP.seq (wp_movS (h.stack p hp).readSrc fun u₁ e₁ _ => ?_)
   have h₁ := h.regs e₁.keeps e₁.mem
-  refine wp_movS (h₁.stack 1 (by decide)).readSrc fun u₂ e₂ _ => ?_
+  refine wp_movS (h₁.stack l hl).readSrc fun u₂ e₂ _ => ?_
   have h₂ := h₁.regs e₂.keeps e₂.mem
   refine ptrTo_ok (r := .esi) (t := .edx) (x := .slot .wide 19) (by decide) (by decide) h₂.edi h₂.width
     h.upper' (by omega) fun v Kv mv pv => wp_addS rfl fun v₁ w₁ _ => wp_subS rfl fun v₂ w₂ _ => WP.block_nil ?_
@@ -96,22 +98,22 @@ theorem writeResult_ok (h : In Ex base bytes len args s) (outFit : (args 0).toNa
   have srcNat : (v.gpr .esi).toNat = base.toNat + lo len (.slot .wide 19) := by
     rw [pv, Nat.mod_eq_of_lt (by omega)]
   have ecx₂ : v₂.gpr .ecx = BitVec.ofNat 32 len := by
-    rw [w₂.other _ (by decide), w₁.other _ (by decide), Kv.1 _ (by decide), e₂.gpr, h.outLen]
-  have ebx₂ : v₂.gpr .ebx = args 0 := by
+    rw [w₂.other _ (by decide), w₁.other _ (by decide), Kv.1 _ (by decide), e₂.gpr, lenArg]
+  have ebx₂ : v₂.gpr .ebx = args p := by
     rw [w₂.other _ (by decide), w₁.other _ (by decide), Kv.1 _ (by decide), e₂.other _ (by decide), e₁.gpr]
   have esi₂ : v₂.gpr .esi = v.gpr .esi + BitVec.ofNat 32 (len - 1) := by
-    rw [w₂.gpr, w₁.gpr, Kv.1 .ecx (by decide), e₂.gpr, h.outLen]
+    rw [w₂.gpr, w₁.gpr, Kv.1 .ecx (by decide), e₂.gpr, lenArg]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
   have hsub : Region.Sub ⟨off base (lo len (.slot .wide 19)), len⟩ ⟨base, bytes⟩ := by
     have := Offset.sub base (d := lo len (.slot .wide 19)) (n := len) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
-  refine WP.seq (WP.mono (reverseBuffer_ok v₂ (src := v.gpr .esi) (dst := args 0) (n := len) (by omega)
+  refine WP.seq (WP.mono (reverseBuffer_ok v₂ (src := v.gpr .esi) (dst := args p) (n := len) (by omega)
     (by omega) outFit (by omega) (by rw [K₂.2.1, K₂.2.2, srcAddr]; exact h.scratch.read (by omega))
     (by rw [K₂.2.2]; exact outWrite) (by rw [srcAddr]; exact outApart.sub_left hsub) ebx₂ esi₂ ecx₂)
     fun t ⟨V, F, _, T⟩ => ?_)
   have Kt : Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := (K₂.mono (by decide)).trans (T.mono (by decide))
-  have Ft : Frame [⟨byteAddr (args 0), len⟩] s.mem t.mem := by rw [← m₂]; exact F
+  have Ft : Frame [⟨byteAddr (args p), len⟩] s.mem t.mem := by rw [← m₂]; exact F
   have ht := h.ws.of_keeps Kt
   have st' : Scr t base bytes := ⟨by rw [← h.scratch.edi, Kt.1 _ (by decide)], ht.wr, ht.nowrap,
     by rw [Kt.1 _ (by decide)]; exact h.scratch.stk⟩
@@ -127,6 +129,20 @@ theorem writeResult_ok (h : In Ex base bytes len args s) (outFit : (args 0).toNa
         val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) := read_eq_val32 _ _ _ _
     rw [VG.Proof.Bignum.read_prefix_value s.mem _ (by omega : len ≤ 4 * cwc len .wide) (by rw [eq]; exact fitv), eq]
   · rw [u₂.gpr, u₁.gpr, acc]; rfl
+
+/-- The result's `n_len` bytes to `out`; they are its value's when it fits them. -/
+theorem writeResult_ok (h : In Ex base bytes len args s) (outFit : (args 0).toNat + len ≤ 2 ^ 32)
+    (outWrite : InRegions s.wr (byteAddr (args 0)) len)
+    (outApart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr (args 0), len⟩) :
+    WP isa (.seq (.block (PublicFn.outputArgs ++ ptrTo (.slot .wide 19) .esi .edx ++
+      ([.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)] : List Instr)))
+      (.seq reverseBytes (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)]))) s fun t =>
+      (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) < 2 ^ (8 * len) →
+        Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
+          Spec.Rsa.i2osp (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide)) len) ∧
+      t.gpr .eax = s.mem.readW (off base accOff) 32 &&& 1 ∧
+      Frame [⟨byteAddr (args 0), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t :=
+  writeTo_ok h (p := 0) (l := 1) (by decide) (by decide) h.outLen outFit outWrite outApart
 
 end
 

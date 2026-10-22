@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # The scratch block as a vector of words -/
@@ -32,36 +34,41 @@ theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
     exact Mem.readW_writeW_sep
       (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
 
-theorem working_storeMix (m : Mem) (p : Addr) (a b c d : Fin 128)
-    (v : Word × Word × Word × Word) :
-    working (storeMix m p a.val b.val c.val d.val v) p =
-      ((((working m p).set a v.1).set b v.2.1).set c v.2.2.1).set d v.2.2.2 := by
-  simp only [storeMix, working_write]
+/-- Store one register into its word of the permuted block. -/
+theorem storeWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : Addr}
+    (hs : Scratch s p) :
+    WP isa (.block [Impl.Argon2.AArch64.storeWord index j]) s fun t =>
+      t = { s with mem := s.mem.writeW (off p (1024 + 8 * (index j).val)) (s.gpr (Impl.Argon2.AArch64.lane j)) } := by
+  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  rw [← hs.reg] at st
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.AArch64.storeWord, runBlock_cons, runStep_some, runBlock_nil,
+    exec_str_x (word_offset _ (index j).isLt) st, hs.reg, off,
+    Option.some.injEq, exists_eq_left']
 
-theorem storeMix_frame (m : Mem) (p : Addr) (a b c d : Fin 128)
-    (v : Word × Word × Word × Word) :
-    Frame [⟨off p 1024, 1024⟩] m (storeMix m p a.val b.val c.val d.val v) := by
-  have inside (i : Fin 128) :
-      (⟨off p 1024, 1024⟩ : Region).Contains (off p (1024 + 8 * i.val)) 8 := by
-    exact Offset.contains p (by omega) (by omega) (by omega)
-  exact ((((Frame.refl [⟨off p 1024, 1024⟩] m).writeW (by simp) v.1 (inside a)).writeW
-    (by simp) v.2.1 (inside b)).writeW (by simp) v.2.2.1 (inside c)).writeW
-    (by simp) v.2.2.2 (inside d)
-
-/-- GB updates the block vector and only the permuted half of scratch. -/
-theorem gbAt_words (s : State) {p : Addr} (hs : Scratch s p) (a b c d : Fin 128) :
-    WP isa (Impl.Argon2.AArch64.gbAt a.val b.val c.val d.val) s fun t =>
-      working t.mem p = Proof.Argon2.mixWords (working s.mem p) a b c d ∧
+/-- Store the registers of the words `js` of a row or column, in order. -/
+theorem stores_ok (index : Fin 16 → Fin 128) (js : List (Fin 16)) (s : State) {p : Addr}
+    (hs : Scratch s p) :
+    WP isa (.block (js.map (Impl.Argon2.AArch64.storeWord index))) s fun t =>
+      working t.mem p =
+        js.foldl (fun b j => b.set (index j) (s.gpr (Impl.Argon2.AArch64.lane j))) (working s.mem p) ∧
       Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧
-      (∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x6 → r ≠ .x7 →
-        r ≠ .x8 → r ≠ .x9 → r ≠ .x10 → t.gpr r = s.gpr r) ∧
-      t.rd = s.rd ∧ t.wr = s.wr := by
-  refine (gbAt_ok s hs a.isLt b.isLt c.isLt d.isLt).mono ?_
-  rintro t ⟨hm, hk, hr, hw⟩
-  refine ⟨?_, ?_, hk, hr, hw⟩
-  · rw [hm, working_storeMix]
-    simp only [Proof.Argon2.mixWords, working_get]
-  · rw [hm]
-    exact storeMix_frame s.mem p a b c d _
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.v = s.v := by
+  induction js generalizing s with
+  | nil => exact WP.block_nil ⟨rfl, Frame.refl _ _, rfl, rfl, rfl, rfl⟩
+  | cons j js ih =>
+    rw [List.map_cons, ← List.singleton_append]
+    apply WP.block_append
+    refine (storeWord_ok index j s hs).mono ?_
+    intro s1 h1
+    have hs1 : Scratch s1 p := by subst h1; exact ⟨hs.reg, hs.wr⟩
+    refine (ih s1 hs1).mono ?_
+    rintro t ⟨hw, hf, hg, hr, hwr, hv⟩
+    subst h1
+    refine ⟨?_, ?_, hg, hr, hwr, hv⟩
+    · rw [hw, List.foldl_cons, working_write]
+    · exact ((Frame.refl [⟨off p 1024, 1024⟩] s.mem).writeW (by simp) _
+        (Offset.contains p (d := 1024 + 8 * (index j).val) (n := 8) (e := 1024) (k := 1024)
+          (by omega) (by omega) (by omega))).trans hf
 
 end VG.Proof.Argon2.AArch64

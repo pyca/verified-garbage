@@ -3,9 +3,11 @@ module
 import VerifiedGarbage.Proof.Framework.X86.TaintErase
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Erase
 meta import VerifiedGarbage.Proof.Framework.X86.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Erase
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -31,34 +33,61 @@ private theorem check_of_erased {c : Prog isa}
   rw [← VG.X86.Taint.check_erase c rtTaint hint rfl hn]
   exact hc
 
-materialize_shared square64 := VG.X86.Code.erase (Impl.Mont.X86.Rt.StaticSquare.square 64)
+materialize_shared square32 := Erase.square 32
+
+theorem square32_check : ∃ hint, (VG.Taint.check taint rtTaint
+    (Impl.Mont.X86.Rt.StaticSquare.square 32)
+    hint).isSome=true := by
+  apply check_of_erased
+  rw [Erase.erase_square]
+  exact ⟨_, by
+    constructor
+    · taint_decide
+    · decide +kernel⟩
+
+materialize_shared square48 := Erase.square 48
+
+theorem square48_check : ∃ hint, (VG.Taint.check taint rtTaint
+    (Impl.Mont.X86.Rt.StaticSquare.square 48)
+    hint).isSome=true := by
+  apply check_of_erased
+  rw [Erase.erase_square]
+  exact ⟨_, by
+    constructor
+    · taint_decide
+    · decide +kernel⟩
+
+materialize_shared square64 := Erase.square 64
 
 theorem square64_check : ∃ hint, (VG.Taint.check taint rtTaint
     (Impl.Mont.X86.Rt.StaticSquare.square 64)
     hint).isSome=true := by
   apply check_of_erased
+  rw [Erase.erase_square]
   exact ⟨_, by
     constructor
     · taint_decide
     · decide +kernel⟩
 
-materialize_shared square96 := VG.X86.Code.erase (Impl.Mont.X86.Rt.StaticSquare.square 96)
+materialize_shared square96 := Erase.square 96
 
 theorem square96_check : ∃ hint, (VG.Taint.check taint rtTaint
     (Impl.Mont.X86.Rt.StaticSquare.square 96)
     hint).isSome=true := by
   apply check_of_erased
+  rw [Erase.erase_square]
   exact ⟨_, by
     constructor
     · taint_decide
     · decide +kernel⟩
 
-materialize_shared square128 := VG.X86.Code.erase (Impl.Mont.X86.Rt.StaticSquare.square 128)
+materialize_shared square128 := Erase.square 128
 
 theorem square128_check : ∃ hint, (VG.Taint.check taint rtTaint
     (Impl.Mont.X86.Rt.StaticSquare.square 128)
     hint).isSome=true := by
   apply check_of_erased
+  rw [Erase.erase_square]
   exact ⟨_, by
     constructor
     · taint_decide

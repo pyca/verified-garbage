@@ -27,10 +27,11 @@ namespace VG.Proof.AesGcm.X86_64.Split
 
 open VG VG.X86_64
 
-theorem encNR_ok (hS : Gcm.X86_64.StitchR.SetupFin) : EncNOk Impl.Gcm.X86_64.StitchR.encN :=
+theorem encNR_ok {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24} (hS : Gcm.X86_64.StitchR.SetupFin np hpn) :
+    EncNOk np hpn Impl.Gcm.X86_64.StitchR.encN :=
   fun hp hm hn => Gcm.X86_64.StitchR.encN_ok hS hp hm hn
 
-theorem encNZ_ok (h1 : Gcm.X86_64.StitchZHTo.PhaseOne) : EncNOk Impl.Gcm.X86_64.StitchZHTo.encN :=
+theorem encNZ_ok (h1 : Gcm.X86_64.StitchZHTo.PhaseOne) : EncNOk 24 (by decide) Impl.Gcm.X86_64.StitchZHTo.encN :=
   fun hp hm hn => Gcm.X86_64.StitchZHTo.encN_ok h1 hp hm hn
 
 theorem encNZ_check :
