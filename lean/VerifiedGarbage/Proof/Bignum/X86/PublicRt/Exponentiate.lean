@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exp
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Seed
 public import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
@@ -9,8 +10,9 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 /-! # The exponentiation of public RSA at a run-time width
 
 From `R² mod M` (number 4), one (number 3) and the input `x < M` (number
-1): `R mod M`, the base `x R mod M`, a round per bit of the exponent up to
-its top one (`sparseLoop_ok`), and the result out of Montgomery form,
+1): convert the base to `x R mod M`, seed the accumulator with that base
+for an odd exponent and consume its low bit (or use `R mod M` for an even
+exponent), process the remaining bits (`sparseLoop_ok`), and leave Montgomery form,
 `x^e mod M` in number 2 for the exponent `e` at 128 (`exponentiate_ok`).
 -/
 
@@ -59,7 +61,7 @@ theorem sparseLoop_ok {s₀ : State} {base : Addr} {bytes len : Nat} {args : Nat
     simp only [eval, Zu, decide_eq_false done, Option.map_some, Bool.not_false]
 
 theorem exponentiate_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat}
-    (E : Env base bytes len args M s) (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
+    (E : Env base bytes len args M s) (_hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
     (hM1 : 1 < M)
     (hT : val32 s.mem base (numAt len 4) (nw len) = 2 ^ (32 * nw len) * 2 ^ (32 * nw len) % M)
     (hO : val32 s.mem base (numAt len 3) (nw len) = 1) :
@@ -83,45 +85,54 @@ theorem exponentiate_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat 
   have n0 : numOff = 256 := rfl
   have hR := E.coprime (32 * nw len)
   generalize hRd : 2 ^ (32 * nw len) = R at hT hR
-  -- `R mod M`, from `R²` and one.
+  -- Convert the input once, then seed from it for an odd exponent.
   unfold exponentiate
-  refine WP.seq (WP.mono (mulRaw_ok E hbytes (o := 2) (a := 4) (b := 3) (by decide) (by decide) (by decide)
-    (by decide) (by rw [hO]; exact hM1)) fun u₁ ⟨E₁, C₁, cs₁, F₁, L₁, V₁⟩ => ?_)
-  rw [hT, hO, hRd, Nat.mul_one, Nat.mod_mod] at V₁
-  have Y₁ : val32 u₁.mem base (numAt len 2) (nw len) = 1 * R % M := by
-    rw [Nat.one_mul, ← Nat.mod_eq_of_lt L₁]; exact VG.Proof.Bignum.mont_cancel hR V₁
-  have pv : ∀ {d}, (d + 4 * nw len ≤ numAt len 2 ∨ numAt len 2 + wb len ≤ d) → d + 4 * nw len ≤ numAt len 5 →
+  refine WP.seq (WP.mono (mulRaw_ok E hbytes (o := 1) (a := 1) (b := 4) (by decide) (by decide) (by decide)
+    (by decide) (by rw [hT]; exact Nat.mod_lt _ (by omega))) fun u₁ ⟨E₁, C₁, cs₁, F₁, L₁, V₁⟩ => ?_)
+  rw [hT, hRd] at V₁
+  have X₁ : val32 u₁.mem base (numAt len 1) (nw len) = val32 s.mem base (numAt len 1) (nw len) * R % M := by
+    rw [← Nat.mod_eq_of_lt L₁]
+    refine VG.Proof.Bignum.mont_cancel hR (V₁.trans ?_)
+    rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
+  have pv : ∀ {d}, (d + 4 * nw len ≤ numAt len 1 ∨ numAt len 1 + wb len ≤ d) → d + 4 * nw len ≤ numAt len 5 →
       val32 u₁.mem base d (nw len) = val32 s.mem base d (nw len) := fun hd h5 =>
-    mulFrame_val32 E.room nw' F₁ hd h5 (by omega) f2 f5
-  have X₁ := pv (d := numAt len 1) (.inl (by omega)) (by omega)
+    mulFrame_val32 E.room nw' F₁ hd h5 (by omega) f1 f5
   have T₁ := pv (d := numAt len 4) (.inr (by omega)) (by omega)
   have O₁ := pv (d := numAt len 3) (.inr (by omega)) (by omega)
   have W₁ : val32 u₁.mem base 128 2 = val32 s.mem base 128 2 := by
-    rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E.room nw' F₁ (by decide) (by omega) f2 f5]
-  -- The base `x R mod M`.
-  refine WP.seq (WP.mono (mulRaw_ok E₁ hbytes (o := 1) (a := 1) (b := 4) (by decide) (by decide) (by decide)
-    (by decide) (by rw [T₁, hT]; exact Nat.mod_lt _ (by omega))) fun u₂ ⟨E₂, C₂, cs₂, F₂, L₂, V₂⟩ => ?_)
-  rw [X₁, T₁, hT, hRd] at V₂
+    rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E.room nw' F₁ (by decide) (by omega) f1 f5]
+  refine WP.seq (WP.mono (seed_ok E₁ hbytes L₁ (by rw [O₁, hO]; exact hM1))
+    fun u₂ ⟨E₂, C₂, cs₂, L₂, pv₂, W₂, V₂⟩ => ?_)
   have X₂ : val32 u₂.mem base (numAt len 1) (nw len) = val32 s.mem base (numAt len 1) (nw len) * R % M := by
-    rw [← Nat.mod_eq_of_lt L₂]
-    refine VG.Proof.Bignum.mont_cancel hR (V₂.trans ?_)
-    rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
-  have pv₂ : ∀ {d}, (d + 4 * nw len ≤ numAt len 1 ∨ numAt len 1 + wb len ≤ d) → d + 4 * nw len ≤ numAt len 5 →
-      val32 u₂.mem base d (nw len) = val32 u₁.mem base d (nw len) := fun hd h5 =>
-    mulFrame_val32 E₁.room nw' F₂ hd h5 (by omega) f1 f5
-  have Y₂ := pv₂ (d := numAt len 2) (.inr (by omega)) (by omega)
-  have O₂ := pv₂ (d := numAt len 3) (.inr (by omega)) (by omega)
-  have W₂ : val32 u₂.mem base 128 2 = val32 s.mem base 128 2 := by
-    rw [← W₁, ← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₁.room nw' F₂ (by decide) (by omega) f1 f5]
+    rw [pv₂ 1 (by decide) (by decide), X₁]
+  have O₂ := pv₂ 3 (by decide) (by decide)
+  let k := val32 s.mem base 128 2
+  let x := val32 s.mem base (numAt len 1) (nw len)
+  let y := if k % 2 = 1 then x else 1
+  have Y₂ : val32 u₂.mem base (numAt len 2) (nw len) = y * R % M := by
+    by_cases odd : k % 2 = 1
+    · rw [W₁, ite_eq_left odd, X₁] at V₂
+      simpa only [y, ite_eq_left odd] using V₂
+    · rw [W₁, ite_eq_right odd, T₁, O₁, hT, hO, hRd, Nat.mul_one, Nat.mod_mod] at V₂
+      simp only [y, ite_eq_right odd, Nat.one_mul]
+      rw [← Nat.mod_eq_of_lt L₂]
+      exact VG.Proof.Bignum.mont_cancel hR V₂
   -- A round per bit of the exponent.
   have sp₁ : u₁.gpr .esp = s.gpr .esp := cs₁.1 _ (by decide)
   have sp₂ : u₂.gpr .esp = s.gpr .esp := (cs₂.1 _ (by decide)).trans sp₁
   have I₀ : LoopInv base bytes len args M (val32 s.mem base (numAt len 1) (nw len) ^ val32 s.mem base 128 2 % M)
       u₂ u₂ := by
-    refine ⟨E₂, Frame.refl _ _, ⟨1, val32 s.mem base (numAt len 1) (nw len), ?_, ?_, ?_⟩, Keeps.refl _ _, rfl⟩
-    · rw [Y₂, Y₁, ← hRd]
+    refine ⟨E₂, Frame.refl _ _, ⟨y, x, ?_, ?_, ?_⟩, Keeps.refl _ _, rfl⟩
+    · rw [Y₂, ← hRd]
     · rw [X₂, ← hRd]
-    · rw [W₂, Nat.one_mul]
+    · rw [W₂, W₁]
+      change (y * x ^ (k - k % 2)) % M = x ^ k % M
+      by_cases odd : k % 2 = 1
+      · simp only [y, ite_eq_left odd]
+        rw [odd, ← Nat.pow_succ', show (k - 1).succ = k from by omega]
+      · have even : k % 2 = 0 := by omega
+        simp only [y, ite_eq_right odd]
+        rw [even, Nat.sub_zero, Nat.one_mul]
   refine WP.seq (WP.mono (sparseLoop_ok hbytes I₀) fun u₄ ⟨I, z⟩ => ?_)
   obtain ⟨y, b, Y₄, -, V₄⟩ := I.value
   rw [z, Nat.pow_zero, Nat.mul_one] at V₄

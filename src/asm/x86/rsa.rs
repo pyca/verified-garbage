@@ -169987,7 +169987,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
 ///
-/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the public exponent, multiplying by the base only for a set bit, and ends after its top bit without computing an unused final square; the input acceptance mask is applied after it. Callee-saved registers reside in scratch.
+/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the public exponent, multiplying by the base only for a set bit, and ends after its top bit without computing an unused final square. An odd exponent seeds the accumulator from the converted input and consumes its low bit, avoiding two Montgomery products. The input acceptance mask is applied after exponentiation. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -170325,47 +170325,6 @@ add eax, edx
 mov DWORD PTR [esp+20], eax
 mov eax, 256
 add eax, edx
-add eax, edx
-mov DWORD PTR [esp+24], eax
-mov eax, 256
-add eax, edx
-add eax, edx
-add eax, edx
-add eax, edx
-mov DWORD PTR [esp+28], eax
-mov eax, 256
-add eax, edx
-add eax, edx
-add eax, edx
-mov DWORD PTR [esp+32], eax
-call {vg_rsa_mont_mul_at}
-lea esp, [esp+36]
-lea esp, [esp-36]
-mov edx, DWORD PTR [esp+44]
-add edx, 7
-shr edx, 3
-add edx, edx
-add edx, edx
-add edx, edx
-mov eax, DWORD PTR [esp+76]
-mov DWORD PTR [esp+4], eax
-mov DWORD PTR [esp], edi
-mov eax, edx
-shr eax, 3
-mov DWORD PTR [esp+8], eax
-mov eax, 256
-mov DWORD PTR [esp+12], eax
-mov eax, 152
-mov DWORD PTR [esp+16], eax
-mov eax, 256
-add eax, edx
-add eax, edx
-add eax, edx
-add eax, edx
-add eax, edx
-mov DWORD PTR [esp+20], eax
-mov eax, 256
-add eax, edx
 mov DWORD PTR [esp+24], eax
 mov eax, 256
 add eax, edx
@@ -170378,11 +170337,88 @@ add eax, edx
 mov DWORD PTR [esp+32], eax
 call {vg_rsa_mont_mul_at}
 lea esp, [esp+36]
-219:
 mov ecx, DWORD PTR [edi+128]
 and ecx, 1
 cmp ecx, 0
-je 220f
+je 219f
+mov ecx, DWORD PTR [esp+8]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+mov esi, edi
+add esi, 256
+add esi, ecx
+mov ecx, DWORD PTR [esp+8]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+mov ebp, edi
+add ebp, 256
+add ebp, ecx
+add ebp, ecx
+221:
+mov eax, DWORD PTR [esi]
+mov DWORD PTR [ebp], eax
+add esi, 4
+add ebp, 4
+sub ecx, 4
+jne 221b
+mov eax, DWORD PTR [edi+128]
+sub eax, 1
+mov DWORD PTR [edi+128], eax
+jmp 220f
+219:
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+44]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+mov eax, DWORD PTR [esp+76]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+mov eax, 256
+mov DWORD PTR [esp+12], eax
+mov eax, 152
+mov DWORD PTR [esp+16], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call {vg_rsa_mont_mul_at}
+lea esp, [esp+36]
+220:
+222:
+mov ecx, DWORD PTR [edi+128]
+and ecx, 1
+cmp ecx, 0
+je 223f
 lea esp, [esp-36]
 mov edx, DWORD PTR [esp+44]
 add edx, 7
@@ -170420,9 +170456,9 @@ add eax, edx
 mov DWORD PTR [esp+32], eax
 call {vg_rsa_mont_mul_at}
 lea esp, [esp+36]
-jmp 221f
-220:
-221:
+jmp 224f
+223:
+224:
 mov eax, DWORD PTR [edi+132]
 and eax, 1
 ror eax, 1
@@ -170440,7 +170476,7 @@ mov DWORD PTR [edi+132], edx
 mov eax, DWORD PTR [edi+128]
 or eax, DWORD PTR [edi+132]
 cmp eax, 0
-je 222f
+je 225f
 lea esp, [esp-36]
 mov edx, DWORD PTR [esp+44]
 add edx, 7
@@ -170479,10 +170515,10 @@ lea esp, [esp+36]
 mov eax, DWORD PTR [edi+128]
 or eax, DWORD PTR [edi+132]
 cmp eax, 0
-jmp 223f
-222:
-223:
-jne 219b
+jmp 226f
+225:
+226:
+jne 222b
 lea esp, [esp-36]
 mov edx, DWORD PTR [esp+44]
 add edx, 7
@@ -170533,13 +170569,13 @@ add ebp, 256
 add ebp, edx
 add ebp, edx
 mov ecx, DWORD PTR [edi+144]
-224:
+227:
 mov eax, DWORD PTR [ebp]
 and eax, ecx
 mov DWORD PTR [ebp], eax
 add ebp, 4
 sub edx, 4
-jne 224b
+jne 227b
 mov ebx, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov edx, DWORD PTR [esp+8]
@@ -170554,14 +170590,14 @@ add esi, edx
 add esi, edx
 add esi, ecx
 sub esi, 1
-225:
+228:
 movzx eax, BYTE PTR [esi]
 mov BYTE PTR [ebx], al
 add ebx, 1
 sub esi, 1
 sub ecx, 1
 cmp ecx, 0
-jne 225b
+jne 228b
 mov eax, DWORD PTR [edi+144]
 and eax, 1
 jmp 215f
@@ -170569,22 +170605,22 @@ jmp 215f
 mov esi, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov eax, 0
-226:
+229:
 mov BYTE PTR [esi], al
 add esi, 1
 sub ecx, 1
-jne 226b
+jne 229b
 215:
 jmp 28f
 27:
 mov esi, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov eax, 0
-227:
+230:
 mov BYTE PTR [esi], al
 add esi, 1
 sub ecx, 1
-jne 227b
+jne 230b
 28:
 mov ebx, DWORD PTR [edi]
 mov ebp, DWORD PTR [edi+4]
@@ -214973,7 +215009,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.publicCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input.
 ///
-/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the public exponent, multiplying by the base only for a set bit, and ends after its top bit without computing an unused final square; the input acceptance mask is applied after it. Callee-saved registers reside in scratch.
+/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the public exponent, multiplying by the base only for a set bit, and ends after its top bit without computing an unused final square. An odd exponent seeds the accumulator from the converted input and consumes its low bit, avoiding two Montgomery products. The input acceptance mask is applied after exponentiation. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -215445,47 +215481,6 @@ add eax, edx
 mov DWORD PTR [esp+20], eax
 mov eax, 256
 add eax, edx
-add eax, edx
-mov DWORD PTR [esp+24], eax
-mov eax, 256
-add eax, edx
-add eax, edx
-add eax, edx
-add eax, edx
-mov DWORD PTR [esp+28], eax
-mov eax, 256
-add eax, edx
-add eax, edx
-add eax, edx
-mov DWORD PTR [esp+32], eax
-call {vg_rsa_mont_mul_at}
-lea esp, [esp+36]
-lea esp, [esp-36]
-mov edx, DWORD PTR [esp+44]
-add edx, 7
-shr edx, 3
-add edx, edx
-add edx, edx
-add edx, edx
-mov eax, DWORD PTR [esp+76]
-mov DWORD PTR [esp+4], eax
-mov DWORD PTR [esp], edi
-mov eax, edx
-shr eax, 3
-mov DWORD PTR [esp+8], eax
-mov eax, 256
-mov DWORD PTR [esp+12], eax
-mov eax, 152
-mov DWORD PTR [esp+16], eax
-mov eax, 256
-add eax, edx
-add eax, edx
-add eax, edx
-add eax, edx
-add eax, edx
-mov DWORD PTR [esp+20], eax
-mov eax, 256
-add eax, edx
 mov DWORD PTR [esp+24], eax
 mov eax, 256
 add eax, edx
@@ -215498,11 +215493,88 @@ add eax, edx
 mov DWORD PTR [esp+32], eax
 call {vg_rsa_mont_mul_at}
 lea esp, [esp+36]
-223:
 mov ecx, DWORD PTR [edi+128]
 and ecx, 1
 cmp ecx, 0
-je 224f
+je 223f
+mov ecx, DWORD PTR [esp+8]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+mov esi, edi
+add esi, 256
+add esi, ecx
+mov ecx, DWORD PTR [esp+8]
+add ecx, 7
+shr ecx, 3
+add ecx, ecx
+add ecx, ecx
+add ecx, ecx
+mov ebp, edi
+add ebp, 256
+add ebp, ecx
+add ebp, ecx
+225:
+mov eax, DWORD PTR [esi]
+mov DWORD PTR [ebp], eax
+add esi, 4
+add ebp, 4
+sub ecx, 4
+jne 225b
+mov eax, DWORD PTR [edi+128]
+sub eax, 1
+mov DWORD PTR [edi+128], eax
+jmp 224f
+223:
+lea esp, [esp-36]
+mov edx, DWORD PTR [esp+44]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+mov eax, DWORD PTR [esp+76]
+mov DWORD PTR [esp+4], eax
+mov DWORD PTR [esp], edi
+mov eax, edx
+shr eax, 3
+mov DWORD PTR [esp+8], eax
+mov eax, 256
+mov DWORD PTR [esp+12], eax
+mov eax, 152
+mov DWORD PTR [esp+16], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+20], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+24], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+28], eax
+mov eax, 256
+add eax, edx
+add eax, edx
+add eax, edx
+mov DWORD PTR [esp+32], eax
+call {vg_rsa_mont_mul_at}
+lea esp, [esp+36]
+224:
+226:
+mov ecx, DWORD PTR [edi+128]
+and ecx, 1
+cmp ecx, 0
+je 227f
 lea esp, [esp-36]
 mov edx, DWORD PTR [esp+44]
 add edx, 7
@@ -215540,9 +215612,9 @@ add eax, edx
 mov DWORD PTR [esp+32], eax
 call {vg_rsa_mont_mul_at}
 lea esp, [esp+36]
-jmp 225f
-224:
-225:
+jmp 228f
+227:
+228:
 mov eax, DWORD PTR [edi+132]
 and eax, 1
 ror eax, 1
@@ -215560,7 +215632,7 @@ mov DWORD PTR [edi+132], edx
 mov eax, DWORD PTR [edi+128]
 or eax, DWORD PTR [edi+132]
 cmp eax, 0
-je 226f
+je 229f
 lea esp, [esp-36]
 mov edx, DWORD PTR [esp+44]
 add edx, 7
@@ -215599,10 +215671,10 @@ lea esp, [esp+36]
 mov eax, DWORD PTR [edi+128]
 or eax, DWORD PTR [edi+132]
 cmp eax, 0
-jmp 227f
-226:
-227:
-jne 223b
+jmp 230f
+229:
+230:
+jne 226b
 lea esp, [esp-36]
 mov edx, DWORD PTR [esp+44]
 add edx, 7
@@ -215653,13 +215725,13 @@ add ebp, 256
 add ebp, edx
 add ebp, edx
 mov ecx, DWORD PTR [edi+144]
-228:
+231:
 mov eax, DWORD PTR [ebp]
 and eax, ecx
 mov DWORD PTR [ebp], eax
 add ebp, 4
 sub edx, 4
-jne 228b
+jne 231b
 mov ebx, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov edx, DWORD PTR [esp+8]
@@ -215674,14 +215746,14 @@ add esi, edx
 add esi, edx
 add esi, ecx
 sub esi, 1
-229:
+232:
 movzx eax, BYTE PTR [esi]
 mov BYTE PTR [ebx], al
 add ebx, 1
 sub esi, 1
 sub ecx, 1
 cmp ecx, 0
-jne 229b
+jne 232b
 mov eax, DWORD PTR [edi+144]
 and eax, 1
 jmp 211f
@@ -215689,11 +215761,11 @@ jmp 211f
 mov esi, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov eax, 0
-230:
+233:
 mov BYTE PTR [esi], al
 add esi, 1
 sub ecx, 1
-jne 230b
+jne 233b
 211:
 21:
 mov ebx, DWORD PTR [edi]
