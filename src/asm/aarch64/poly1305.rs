@@ -92,8 +92,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -231,8 +231,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -275,8 +275,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -431,8 +431,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -525,8 +525,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -582,8 +582,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -629,8 +629,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -1009,8 +1009,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -1143,8 +1143,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
@@ -1263,8 +1263,8 @@ adc x12, x12, x13
 add x4, x9, #0
 add x5, x11, #0
 movz x14, #3, lsl #0
+bic x13, x12, x14, ror #0
 and x6, x12, x14
-sub x13, x12, x6
 lsr x12, x12, #2
 add x13, x13, x12
 movz x14, #0, lsl #0
