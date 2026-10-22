@@ -122,6 +122,27 @@ theorem xR_eq {o : State} (A : KeySearchABI o) : xR o = ⟨(arg o 0).setWidth 64
 theorem yR_eq {o : State} (A : KeySearchABI o) : yR o = ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
   rw [yR, A.yLen]
 
+/-- Zeros at the output `P` (`x` or `y`). -/
+theorem St.zeroOne {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) (hA : Aligned ds)
+    {d : Nat} {P : BitVec 32} (hdP : f d = P) (hl : f lenOff = BitVec.ofNat 32 (arg o 7).toNat)
+    (hdd : d ∈ ds) (hdl : lenOff ∈ ds) (hd4 : d + 4 ≤ 128)
+    (hin : (⟨P.setWidth 64, (arg o 7).toNat⟩ : Region) ∈ o.wr)
+    (hs : (stR (arg o 12)).Disjoint ⟨P.setWidth 64, (arg o 7).toNat⟩) (hb : P.toNat + (arg o 7).toNat ≤ 2 ^ 32) :
+    WP isa (zeroOut d) s fun u => St o ds f u ∧
+      Spec.Rsa.bytesAt u.mem (P.setWidth 64) (arg o 7).toNat = List.replicate (arg o 7).toNat 0 ∧
+      Frame [⟨P.setWidth 64, (arg o 7).toNat⟩] s.mem u.mem ∧ (∀ r, ¬ Scratch r → u.gpr r = s.gpr r) := by
+  have A := h.abi
+  have hp := A.pLen
+  unfold Spec.Ffdh.pLenValid at hp
+  refine WP.mono (zeroOut_ok h.esi (h.rIn hd4) (h.rIn (by decide)) ((h.words.get hdd).trans hdP)
+    ((h.words.get hdl).trans hl) (by rw [h.wr]; exact hin) (by omega) hb (by omega)) fun t ⟨F, Z, K⟩ => ?_
+  refine ⟨⟨A, K.2.1.trans h.rd, K.2.2.trans h.wr, by rw [K.1 _ (by decide), h.esp],
+      by rw [K.1 _ (by decide), h.esi], fun q hq hne => ?_, h.frame.trans (F.mono fun r hr => ?_),
+      h.words.frame A.sBound hA F fun r hr => ?_⟩, Z, F, fun r hr => K.1 _ fun hm => hr (by simp at hm; omega)⟩
+  · rw [K.1 _ (fun hm => saved_ne (q := q) (by simp at hm; omega) hq rfl), h.saved q hq hne]
+  · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_append_left _ hin
+  · simp only [List.mem_singleton] at hr; subst hr; exact hs
+
 /-- Zeros at `x` and `y`. -/
 theorem St.zeroOutputs {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) (hA : Aligned ds)
     (hx : f xOff = arg o 0) (hy : f yOff = arg o 2) (hl : f lenOff = BitVec.ofNat 32 (arg o 7).toNat)
