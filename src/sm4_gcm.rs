@@ -27,7 +27,8 @@
 //! and SSSE3 run the `_pclmul` instances (with `vg_ghash_pclmul`), and, on
 //! x86-64, CPUs with VPCLMULQDQ and AVX2 too the `_vpclmul` ones (with
 //! `vg_ghash_vpclmul`, eight blocks at a time in 256-bit registers). Which
-//! one a key calls depends only on the CPU.
+//! one a key calls depends only on the CPU. On ARMv7 there is one
+//! implementation, calling the baseline `vg_ghash`.
 //!
 //! # Tags
 //!
@@ -40,15 +41,14 @@
 //! compile time, as AES-GCM's (see [`crate::aes_gcm`]'s documentation for
 //! why the length is never taken from a slice).
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sm4_gcm::{
-    VG_SM4_GCM_SEAL_PCLMUL_FEATURES, vg_sm4_gcm_init, vg_sm4_gcm_open, vg_sm4_gcm_open_pclmul,
-    vg_sm4_gcm_seal, vg_sm4_gcm_seal_pclmul, vg_sm4_gcm_stream_aad, vg_sm4_gcm_stream_aad_pclmul,
-    vg_sm4_gcm_stream_decrypt, vg_sm4_gcm_stream_decrypt_pclmul, vg_sm4_gcm_stream_encrypt,
-    vg_sm4_gcm_stream_encrypt_pclmul, vg_sm4_gcm_stream_finish, vg_sm4_gcm_stream_finish_pclmul,
-    vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_init_pclmul, vg_sm4_gcm_stream_verify,
-    vg_sm4_gcm_stream_verify_pclmul,
+    VG_SM4_GCM_SEAL_PCLMUL_FEATURES, vg_sm4_gcm_open_pclmul, vg_sm4_gcm_seal_pclmul,
+    vg_sm4_gcm_stream_aad_pclmul, vg_sm4_gcm_stream_decrypt_pclmul,
+    vg_sm4_gcm_stream_encrypt_pclmul, vg_sm4_gcm_stream_finish_pclmul,
+    vg_sm4_gcm_stream_init_pclmul, vg_sm4_gcm_stream_verify_pclmul,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sm4_gcm::{
@@ -56,6 +56,11 @@ use crate::arch::sm4_gcm::{
     vg_sm4_gcm_stream_aad_vpclmul, vg_sm4_gcm_stream_decrypt_vpclmul,
     vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish_vpclmul,
     vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify_vpclmul,
+};
+use crate::arch::sm4_gcm::{
+    vg_sm4_gcm_init, vg_sm4_gcm_open, vg_sm4_gcm_seal, vg_sm4_gcm_stream_aad,
+    vg_sm4_gcm_stream_decrypt, vg_sm4_gcm_stream_encrypt, vg_sm4_gcm_stream_finish,
+    vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_verify,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -77,7 +82,8 @@ pub(crate) enum Ghash {
     /// The baseline ISA: `vg_ghash`.
     Scalar,
     /// PCLMULQDQ, one block at a time (and SSSE3's byte reversal): the
-    /// `_pclmul` instances.
+    /// `_pclmul` instances (x86 and x86-64).
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     Pclmul,
     /// VPCLMULQDQ, eight blocks at a time in 256-bit registers: the
     /// `_vpclmul` instances (x86-64 only).
@@ -91,6 +97,7 @@ macro_rules! instance {
     ($ghash:expr, $scalar:ident, $pclmul:ident, $vpclmul:ident) => {
         match $ghash {
             Ghash::Scalar => $scalar,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Ghash::Pclmul => $pclmul,
             #[cfg(target_arch = "x86_64")]
             Ghash::Vpclmul => $vpclmul,
@@ -102,6 +109,7 @@ impl Ghash {
     /// The best implementation a CPU with the features `f` can run: the
     /// features of its instances are `seal`'s, which are every other
     /// function's (those of the implementation of `vg_ghash`).
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     fn select(f: Features) -> Ghash {
         #[cfg(target_arch = "x86_64")]
         if f.contains(VG_SM4_GCM_SEAL_VPCLMUL_FEATURES) {
@@ -112,6 +120,12 @@ impl Ghash {
         } else {
             Ghash::Scalar
         }
+    }
+
+    /// The only implementation on ARMv7, whatever the CPU.
+    #[cfg(target_arch = "arm")]
+    fn select(_: Features) -> Ghash {
+        Ghash::Scalar
     }
 }
 
@@ -602,6 +616,14 @@ mod tests {
     fn ghash_backend() {
         let f = |names: &[&str]| Ghash::select(Features::of(names));
         assert_eq!(f(&[]), Ghash::Scalar);
+        assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
+    }
+
+    /// The instances x86's and x86-64's CPUs choose among.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn ghash_backend_x86() {
+        let f = |names: &[&str]| Ghash::select(Features::of(names));
         assert_eq!(f(&["pclmulqdq"]), Ghash::Scalar);
         assert_eq!(f(&["pclmulqdq", "ssse3"]), Ghash::Pclmul);
         let all = ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"];
@@ -611,7 +633,6 @@ mod tests {
         #[cfg(target_arch = "x86")]
         assert_eq!(f(&all), Ghash::Pclmul);
         assert_eq!(f(&all[1..]), Ghash::Pclmul);
-        assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
     }
 
     /// The text of a message is checked against its limits before
