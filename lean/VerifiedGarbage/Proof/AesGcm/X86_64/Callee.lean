@@ -424,7 +424,8 @@ structure StitchCode (M : CtxMode) (aligned : Bool := false) where
   small : Bool := false
   smallD : Bool := false
   /-- With `small` (`smallD`), whether the loops take fewer than 16 blocks
-  only from 5 on to encrypt and 4 to decrypt, not from 2 (`Blocks.smallMin`). -/
+  only from 5 on, not from 2 (`Blocks.smallMin`), and never exactly 8 to
+  encrypt (`Blocks.skip8`). -/
   small4 : Bool := false
   encS : Prog isa
   decS : Prog isa

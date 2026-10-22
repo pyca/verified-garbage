@@ -49,8 +49,9 @@ theorem scratch_ok (s₁ : State) :
         rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
 /-- With `full`: at least 16 blocks all by `piece` (or, if `small`, at least
-`smallMin small4 dec` by `pieceS.getD piece`), which leaves `Done` (`hpost`),
-or fewer by `rest` and the calls (`hsmall`). -/
+`smallMin small4` by `pieceS.getD piece`, but for exactly 8 with
+`skip8 small4 dec`), which leaves `Done` (`hpost`), or fewer by `rest` and
+the calls (`hsmall`). -/
 theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {pieceS : Option (Prog isa)}
     {Post : State → State → Prop} {Done : State → Prop}
     (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
@@ -64,7 +65,7 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) (hk : Kept s 0 s₁.mem)
     (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     WP isa (fullBody piece first second aligned small small4 pieceS dec) s₁ Done := by
-  have hmin : 1 ≤ smallMin small4 dec := by cases small4 <;> cases dec <;> decide
+  have hmin : 1 ≤ smallMin small4 := by cases small4 <;> decide
   -- The piece, from a state with `s₁`'s registers and memory.
   have pc : ∀ (p : Prog isa) (lo : Nat),
       (∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ lo → Gcm.X86_64.Stitch.nb s₃ = n s → WP isa p s₃ (Post s₃)) →
@@ -103,12 +104,20 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
     cases small with
     | false => exact cl hlt s₂ g₂ m₂ rd₂ wr₂
     | true =>
-      refine WP.seq (WP.mono (cmpMin_ok (s := s) small4 dec (by rw [g₂]; exact hg _ (by decide)))
+      refine WP.seq (WP.mono (cmpMin_ok (s := s) small4 (by rw [g₂]; exact hg _ (by decide)))
         fun s₃ ⟨g₃, m₃, rd₃, wr₃, cf₃⟩ => ?_)
-      refine WP.ite (decide (n s < smallMin small4 dec)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
+      refine WP.ite (decide (n s < smallMin small4)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
       · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
-      · exact pc _ _ (fun s₃ h3 hn => hpieceS s₃ h3 (hn ▸ hlt)) (by simp at h0 ⊢; omega) s₃ (g₃.trans g₂)
-          (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
+      · have hS := pc _ _ (fun s₃ h3 hn => hpieceS s₃ h3 (hn ▸ hlt)) (by simp at h0 ⊢; omega)
+        cases hsk : skip8 small4 dec <;> simp only [smallPart, hsk, Bool.false_eq_true, ↓reduceIte]
+        · exact hS s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
+        · refine WP.seq (WP.mono (cmp8_ok (s := s) (by rw [g₃, g₂]; exact hg _ (by decide)))
+            fun s₄ ⟨g₄, m₄, rd₄, wr₄, zf₄⟩ => ?_)
+          refine WP.ite (decide (n s = 8)) (by simp only [eval, zf₄]) (fun _ => ?_) (fun _ => ?_)
+          · exact cl hlt s₄ (g₄.trans (g₃.trans g₂)) (m₄.trans (m₃.trans m₂)) (rd₄.trans (rd₃.trans rd₂))
+              (wr₄.trans (wr₃.trans wr₂))
+          · exact hS s₄ (g₄.trans (g₃.trans g₂)) (m₄.trans (m₃.trans m₂)) (rd₄.trans (rd₃.trans rd₂))
+              (wr₄.trans (wr₃.trans wr₂))
   · exact pc _ _ (fun s₃ h3 _ => hpiece s₃ h3) (by simp at h; omega) s₂ g₂ m₂ rd₂ wr₂
 
 /-- After a loop that encrypts all the blocks: the blocks hashed are those

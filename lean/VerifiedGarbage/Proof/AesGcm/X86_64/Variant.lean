@@ -118,8 +118,10 @@ def smallR : StitchName → Bool
   | .aesniAvx => true
 
 /-- With `smallR`, whether the loops named `n` take fewer blocks than a group
-only from 5 on to encrypt and 4 to decrypt (`Blocks.smallMin`): the AES-NI
-loops' setup and eight AES lanes cost more than the calls below that. -/
+only from 5 on (`Blocks.smallMin`), and never exactly 8 to encrypt
+(`Blocks.skip8`): the AES-NI loops' setup and eight AES lanes cost more
+than the calls below 5 blocks (by 9–13% to decrypt 4 on Zen 5), and as
+much as the calls' one eight-block batch at 8. -/
 def small4R : StitchName → Bool
   | .aesniAvx => true
   | _ => false
