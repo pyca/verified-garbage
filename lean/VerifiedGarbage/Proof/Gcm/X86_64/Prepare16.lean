@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -17,6 +19,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 meta import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 meta import VerifiedGarbage.Proof.Gcm.Poly
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -120,8 +124,7 @@ theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, keep, fun k hk => ?_⟩
   · exact fr.readW (Region.contains_self _ _) (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
-      exact (hret.sub_right (Offset.sub_base (s₀.gpr .rdi) (by decide))).sub_right
-        (Offset.sub (s₀.gpr .rdi) (by decide) (by decide))) (by decide)
+      exact hret.sub_right (Offset.sub_base (s₀.gpr .rdi) (by decide))) (by decide)
   · rw [hH]
     have p0 := pw k hk 0 (by decide)
     have p1 := pw k hk 1 (by decide)
