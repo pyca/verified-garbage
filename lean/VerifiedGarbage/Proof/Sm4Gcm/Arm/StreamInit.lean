@@ -27,7 +27,7 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr)
-open VG.Spec.Sm4.Gcm (ctxH)
+open VG.Spec.Gcm (ctxH)
 
 /-- The layout of `stream_init`. -/
 theorem siLay {s₀ : State} (h : streamInitArm.pre s₀) :
@@ -48,7 +48,7 @@ structure SI1 (s₀ s₁ : State) : Prop where
 theorem si1_wp {s₀ : State} (h : streamInitArm.pre s₀) : WP isa (.block streamInitPre) s₀ (SI1 s₀) := by
   have hp := h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fW, -, spf⟩ := hp
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 144⟩] (s₀.rd ++ s₀.wr) := by
+  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) := by
     rw [hrd]; exact covers_of_mem (by simp)
   have hS : Covers [⟨State.addr (s₀.gpr .r3), 80⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
   have hW : Covers [⟨State.addr (arg s₀ 0), 768⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
@@ -72,7 +72,7 @@ theorem si_j0In {s₀ s₁ : State} (h : streamInitArm.pre s₀) (h1 : SI1 s₀ 
   refine ⟨h1.env, ?_, h1.r4, by rw [h1.r5]; simp, ⟨?_, (s₀.gpr .r2).isLt, fn, dns, dnW, bn⟩⟩
   · rw [ctxH_eq, blockAt_frame h1.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.ctx_w (a := 128) (n := 16) (show 128 + 16 ≤ 144 by decide) (show 128 + 36 ≤ 768 by decide))]
+      exact L.ctx_w (a := 240) (n := 16) (show 240 + 16 ≤ 256 by decide) (show 128 + 36 ≤ 768 by decide))]
   · rw [h1.rd, h1.wr, hrd]; exact covers_of_mem (by simp)
 
 /-- After `j0`. -/

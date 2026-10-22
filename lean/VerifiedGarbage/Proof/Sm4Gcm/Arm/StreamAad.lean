@@ -25,7 +25,7 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr)
-open VG.Spec.Sm4.Gcm (ctxH)
+open VG.Spec.Gcm (ctxH)
 
 theorem saLay {s₀ : State} (h : streamAadArm.pre s₀) :
     Lay (s₀.gpr .r0) (s₀.gpr .r1) (arg s₀ 2) s₀.sp := by
@@ -46,7 +46,7 @@ structure SA1 (s₀ s₁ : State) : Prop where
 theorem sa1_wp {s₀ : State} (h : streamAadArm.pre s₀) : WP isa (.block streamAadPre) s₀ (SA1 s₀) := by
   have hp := h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, dWA, -, -, -, -, -, -, -, fW, -, spf⟩ := hp
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 144⟩] (s₀.rd ++ s₀.wr) := by
+  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) := by
     rw [hrd]; exact covers_of_mem (by simp)
   have hS : Covers [⟨State.addr (s₀.gpr .r1), 80⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
   have hW : Covers [⟨State.addr (arg s₀ 2), 768⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
@@ -86,7 +86,7 @@ theorem sa_absIn {s₀ s₁ : State} (h : streamAadArm.pre s₀) (h1 : SA1 s₀ 
   · rw [h1.rd, h1.wr, hrd]; exact covers_of_mem (by simp)
   · rw [ctxH_eq, blockAt_frame h1.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.ctx_w (a := 128) (n := 16) (show 128 + 16 ≤ 144 by decide) (show 128 + 36 ≤ 768 by decide))]
+      exact L.ctx_w (a := 240) (n := 16) (show 240 + 16 ≤ 256 by decide) (show 128 + 36 ≤ 768 by decide))]
 
 /-- After `absorb`. -/
 def SA2 (s₀ : State) (x : List Byte) (s₂ : State) : Prop :=

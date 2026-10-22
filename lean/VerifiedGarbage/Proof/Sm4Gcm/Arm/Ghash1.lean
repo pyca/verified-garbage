@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 Untrusted: everything here is checked by Lean. `ghCall_ok` is the frame of a
 call of `vg_ghash` from a state whose registers are its arguments (the hash
-subkey at `ctx + 128`, the accumulator at `st + yo`, the working space at
+subkey at `ctx + 240`, the accumulator at `st + yo`, the working space at
 `W + 512`), and `ghash1 yo b o` continues the accumulator over the block at
 `P = b + o` (`ghash1_ok`).
 -/
@@ -38,7 +38,7 @@ structure GhOut (s : State) (c w sp : BitVec 32) (Y : Addr) (ds : List Block) (s
   spk : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r
   frame : Frame [⟨Y, 16⟩, ⟨State.addr w + BitVec.ofNat 64 512, 256⟩, below sp] s.mem s'.mem
-  out : blockAt s'.mem Y = ghashFrom (blockAt s.mem (State.addr c + BitVec.ofNat 64 128)) (blockAt s.mem Y) ds
+  out : blockAt s'.mem Y = ghashFrom (blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) (blockAt s.mem Y) ds
 
 theorem GhOut.env {s s' : State} {c st w sp k7 k8 : BitVec 32} {Y : Addr} {ds : List Block}
     (h : GhOut s c w sp Y ds s') (he : Env c st w sp k7 k8 s) : Env c st w sp k7 k8 s' :=
@@ -51,14 +51,14 @@ theorem blocksAt_one (m : Mem) (p : Addr) : blocksAt m p 1 = [blockAt m p] := by
 for `n` blocks at the 32-bit pointer `P`. -/
 theorem ghCall_mk {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
     {s : State} (he : Env c st w sp k7 k8 s) {P : BitVec 32} {n : Nat}
-    (h0 : s.gpr .r0 = c + BitVec.ofNat 32 128) (h1 : s.gpr .r1 = st + BitVec.ofNat 32 yo)
+    (h0 : s.gpr .r0 = c + BitVec.ofNat 32 240) (h1 : s.gpr .r1 = st + BitVec.ofNat 32 yo)
     (h2 : s.gpr .r2 = P) (h3 : s.gpr .r3 = BitVec.ofNat 32 n) (h12 : s.gpr .r12 = w + BitVec.ofNat 32 512)
     (hfit : P.toNat + 16 * n ≤ 2 ^ 32)
     (hpy : (⟨State.addr st + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨State.addr P, 16 * n⟩)
     (hpw : (⟨State.addr P, 16 * n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 512, 256⟩)
     (hpk : (below sp).Disjoint ⟨State.addr P, 16 * n⟩) (hpr : Covers [⟨State.addr P, 16 * n⟩] (s.rd ++ s.wr)) :
-    GhCall s (c + BitVec.ofNat 32 128) (st + BitVec.ofNat 32 yo) P (w + BitVec.ofNat 32 512) n := by
-  have eH := L.cA (d := 128) (by decide)
+    GhCall s (c + BitVec.ofNat 32 240) (st + BitVec.ofNat 32 yo) P (w + BitVec.ofNat 32 512) n := by
+  have eH := L.cA (d := 240) (by decide)
   have eY := L.stA (d := yo) (by omega)
   have eS := L.wA (d := 512) (by decide)
   have hk := he.sp
@@ -82,14 +82,14 @@ theorem ghCall_mk {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (
 `n` blocks at the 32-bit pointer `P`. -/
 theorem ghCall_ok {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
     {s : State} (he : Env c st w sp k7 k8 s) {P : BitVec 32} {n : Nat}
-    (h0 : s.gpr .r0 = c + BitVec.ofNat 32 128) (h1 : s.gpr .r1 = st + BitVec.ofNat 32 yo)
+    (h0 : s.gpr .r0 = c + BitVec.ofNat 32 240) (h1 : s.gpr .r1 = st + BitVec.ofNat 32 yo)
     (h2 : s.gpr .r2 = P) (h3 : s.gpr .r3 = BitVec.ofNat 32 n) (h12 : s.gpr .r12 = w + BitVec.ofNat 32 512)
     (hfit : P.toNat + 16 * n ≤ 2 ^ 32)
     (hpy : (⟨State.addr st + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨State.addr P, 16 * n⟩)
     (hpw : (⟨State.addr P, 16 * n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 512, 256⟩)
     (hpk : (below sp).Disjoint ⟨State.addr P, 16 * n⟩) (hpr : Covers [⟨State.addr P, 16 * n⟩] (s.rd ++ s.wr)) :
     WP isa ghFrame s (GhOut s c w sp (State.addr st + BitVec.ofNat 64 yo) (blocksAt s.mem (State.addr P) n)) := by
-  have eH := L.cA (d := 128) (by decide)
+  have eH := L.cA (d := 240) (by decide)
   have eY := L.stA (d := yo) (by omega)
   have eS := L.wA (d := 512) (by decide)
   have hc := ghCall_mk L hyo he h0 h1 h2 h3 h12 hfit hpy hpw hpk hpr
@@ -103,7 +103,7 @@ theorem ghArgs_ok {c st w sp k7 k8 : BitVec 32} {s : State} (he : Env c st w sp 
     (ho : encodable (BitVec.ofNat 32 o) = true) :
     ∃ s', runBlock isa [addI .r0 .r9 hO, addI .r1 .r10 yo, addI .r2 b o, .mov .r3 (imm 1),
         addI .r12 .r11 scrO] s = some s' ∧
-      s'.gpr .r0 = c + BitVec.ofNat 32 128 ∧ s'.gpr .r1 = st + BitVec.ofNat 32 yo ∧
+      s'.gpr .r0 = c + BitVec.ofNat 32 240 ∧ s'.gpr .r1 = st + BitVec.ofNat 32 yo ∧
       s'.gpr .r2 = s.gpr b + BitVec.ofNat 32 o ∧ s'.gpr .r3 = BitVec.ofNat 32 1 ∧
       s'.gpr .r12 = w + BitVec.ofNat 32 512 ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by

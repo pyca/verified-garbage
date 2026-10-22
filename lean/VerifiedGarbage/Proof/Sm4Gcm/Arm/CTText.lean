@@ -67,7 +67,7 @@ theorem ta_flush {s₀ s : State} (h : TA s₀ c st w sp k8 s) {q : Nat} (hq : q
     WP isa (flush 16) s (TA s₀ c st w sp k8) := by
   obtain ⟨k7, he, hk, hd⟩ := h
   refine WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl) (x := List.replicate q 0)
-    (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 128)) ⟨he, rfl⟩ (by simp [h6, Nat.mod_eq_of_lt hq])))
+    (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) ⟨he, rfl⟩ (by simp [h6, Nat.mod_eq_of_lt hq])))
     fun s' ⟨fl, rd, wr, sp'⟩ => ⟨k7, fl.env, hk.frame hf fl.frame (fun r hr => hA r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl | rfl <;> simp)) sp' rd wr, hd.of_eq rd wr⟩
@@ -169,11 +169,11 @@ theorem textAbsorb_rel {s₀ s₀' : State} (hf : s₀.sp.toNat + 4 * 5 ≤ 2 ^ 
   refine d.seq (rel_of_ct (absorb_ct L (yo := 16) (.inr rfl) (D := arg s₀ 2) (n := (arg s₀ 3).toNat)
     (q := (arg s₀ 0).toNat % 16) (Nat.mod_lt _ (by decide))) ?_ ?_)
   · intro s ⟨⟨k7, he, _, hd⟩, h4, h5, h6⟩
-    exact ⟨k7, k8, blockAt s.mem (State.addr c + BitVec.ofNat 64 128), List.replicate ((arg s₀ 0).toNat % 16) 0,
+    exact ⟨k7, k8, blockAt s.mem (State.addr c + BitVec.ofNat 64 240), List.replicate ((arg s₀ 0).toNat % 16) 0,
       by simp, ⟨he, h4, by rw [h5]; simp, by rw [h6]; simp, hd, rfl⟩⟩
   · intro s ⟨⟨k7, he, _, hd⟩, h4, h5, h6⟩
     rw [← ha 2 (by decide), ← ha 3 (by decide)] at hd
-    exact ⟨k7, k8, blockAt s.mem (State.addr c + BitVec.ofNat 64 128), List.replicate ((arg s₀ 0).toNat % 16) 0,
+    exact ⟨k7, k8, blockAt s.mem (State.addr c + BitVec.ofNat 64 240), List.replicate ((arg s₀ 0).toNat % 16) 0,
       by simp, ⟨he, by rw [h4, ha 2 (by decide)], by rw [h5, ha 3 (by decide)]; simp,
         by rw [h6, ha 0 (by decide)]; simp, hd, rfl⟩⟩
 

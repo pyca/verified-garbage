@@ -172,7 +172,7 @@ theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) {k8 : BitVec 32} :
     CT (fun s => ∃ k7, Env c st w sp k7 k8 s) (tag o) := by
   refine CT.seq (J := fun s => ∃ k7, Env c st w sp k7 k8 s)
     ((lens_ct L (yo := 16) (.inr rfl)).mono fun s ⟨k7, he⟩ => ⟨k7, _, he⟩)
-    (fun s ⟨k7, he⟩ => WP.mono (lens_ok L (yo := 16) (.inr rfl) (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 128))
+    (fun s ⟨k7, he⟩ => WP.mono (lens_ok L (yo := 16) (.inr rfl) (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 240))
       he rfl) fun s' h => ⟨k7, h.1⟩) ?_
   let J : State → Prop := fun s => ∃ k7, Env c st w sp k7 k8 s ∧ s.gpr .r0 = c ∧
     s.gpr .r2 = st ∧ s.gpr .r3 = w + BitVec.ofNat 32 o ∧ s.gpr .r12 = BitVec.ofNat 32 1

@@ -90,7 +90,7 @@ theorem j0hash_ct {Np : BitVec 32} {n : Nat} (hlt : n < 2 ^ 32) : CT (J0I c st w
   let G : State → Prop := fun s => ∃ k7 k8, Env c st w sp k7 k8 s
   refine CT.seq (J := G) ((flush_ct L (yo := 0) (.inl rfl) (q := n % 16) (Nat.mod_lt _ (by decide))).mono
     fun s ⟨k7, k8, he, h6, _⟩ => ⟨k7, k8, he, h6⟩) (fun s ⟨k7, k8, he, h6, _⟩ => WP.mono
-      (flush_ok L (yo := 0) (.inl rfl) (x := List.replicate n 0) (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 128))
+      (flush_ok L (yo := 0) (.inl rfl) (x := List.replicate n 0) (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 240))
         ⟨he, rfl⟩ (by rw [h6]; simp)) fun s' h => ⟨k7, k8, h.env⟩) ?_
   refine CT.seq (J := G) ?_ (fun s ⟨k7, k8, he⟩ => ?_) ((lens_ct L (.inl rfl)).mono fun s h => h)
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs []) (.block [.mov .r4 (imm 0), .mov .r5 (imm 0),

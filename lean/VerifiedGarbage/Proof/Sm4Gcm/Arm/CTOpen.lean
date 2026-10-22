@@ -109,7 +109,7 @@ theorem openRes_isSome {t : State} (hok : Spec.Gcm.tagLenOk (arg t 4).toNat = tr
     (openRes t).isSome = decide (openTagOk t) := by
   have e : openRes t = if openTagOk t then
       some (Spec.Gcm.gctr (Spec.Sm4.Gcm.ctxCiph t.mem (State.addr (t.gpr .r0)))
-        (Spec.Gcm.inc32 (Spec.Gcm.j0 (Spec.Sm4.Gcm.ctxH t.mem (State.addr (t.gpr .r0)))
+        (Spec.Gcm.inc32 (Spec.Gcm.j0 (Spec.Gcm.ctxH t.mem (State.addr (t.gpr .r0)))
           (Spec.Aes.bytesAt t.mem (State.addr (t.gpr .r1)) (t.gpr .r2).toNat)))
         (Spec.Aes.bytesAt t.mem (State.addr (arg t 1)) (arg t 2).toNat)) else none := by
     simp only [openRes, Spec.Gcm.openResult, hok, ite_true, Spec.Gcm.decryptWith]

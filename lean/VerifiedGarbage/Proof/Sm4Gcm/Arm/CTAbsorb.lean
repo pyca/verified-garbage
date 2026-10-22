@@ -75,7 +75,7 @@ theorem ghash1_ct {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {b : Reg} {o : Nat}
   have hb : b = .r10 ∨ b = .r11 := by rcases hbo with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> simp
   have he : encodable (BitVec.ofNat 32 o) = true := by rcases hbo with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
   have hey : encodable (BitVec.ofNat 32 yo) = true := by rcases hyo with rfl | rfl <;> decide
-  let J : State → Prop := fun s => GhCall s (c + BitVec.ofNat 32 128) (st + BitVec.ofNat 32 yo) P
+  let J : State → Prop := fun s => GhCall s (c + BitVec.ofNat 32 240) (st + BitVec.ofNat 32 yo) P
     (w + BitVec.ofNat 32 512) 1 ∧ s.sp = sp
   refine CT.seq (J := J) ?_ (fun s ⟨⟨k7, k8, hs⟩, hP, hpr⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r9, .r10, .r11])
@@ -167,7 +167,7 @@ theorem absorbWhole_ct {D : BitVec 32} {n q j : Nat} : CT (MidI c st w sp yo D n
       (fun _ => CT.skip) fun hb => ?_
     have h0 : nb ≠ 0 := by simpa using hb
     let J₂ : State → Prop := fun s => ∃ k7 k8, Env c st w sp k7 k8 s ∧ DataOk st w sp s D n ∧ j ≤ n ∧
-      s.gpr .r0 = c + BitVec.ofNat 32 128 ∧ s.gpr .r1 = st + BitVec.ofNat 32 yo ∧
+      s.gpr .r0 = c + BitVec.ofNat 32 240 ∧ s.gpr .r1 = st + BitVec.ofNat 32 yo ∧
       s.gpr .r2 = D + BitVec.ofNat 32 j ∧ s.gpr .r3 = BitVec.ofNat 32 nb ∧ s.gpr .r12 = w + BitVec.ofNat 32 512
     refine CT.seq (J := J₂) ?_ (fun s ⟨k7, k8, he, hd, hj, h2, h3, _⟩ => ?_) ?_
     · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r9, .r10, .r11])
@@ -176,7 +176,7 @@ theorem absorbWhole_ct {D : BitVec 32} {n q j : Nat} : CT (MidI c st w sp yo D n
       exact CT.taint _ (fun s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => h₁.pin h₂ (by simpa using hr)) hc
     · have h9 := he.r9; have h10 := he.r10; have h11 := he.r11
       have ey : encodable (BitVec.ofNat 32 yo) = true := by rcases hyo with rfl | rfl <;> decide
-      refine WP.of_runBlock ⟨((s.setReg .r0 (s.gpr .r9 + BitVec.ofNat 32 128)).setReg .r1
+      refine WP.of_runBlock ⟨((s.setReg .r0 (s.gpr .r9 + BitVec.ofNat 32 240)).setReg .r1
         (s.gpr .r10 + BitVec.ofNat 32 yo)).setReg .r12 (s.gpr .r11 + BitVec.ofNat 32 512), by arun [ey], k7, k8, he.keep (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl, hd.of_eq rfl rfl, hj, ?_, ?_, ?_, ?_, ?_⟩
@@ -252,7 +252,7 @@ theorem flush_ct {q : Nat} (hq : q < 16) :
   refine CT.ite (decide (q = 0)) (fun s h => h.2) (fun _ => CT.skip) fun hb => ?_
   have h0 : q ≠ 0 := by simpa using hb
   refine CT.seq (J := GhIn c st w sp .r11 96 (w + BitVec.ofNat 32 96)) ?_ (fun s ⟨⟨k7, k8, he, h6⟩, _⟩ =>
-    WP.mono (flushCopy_ok L hyo (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 128)) ⟨he, rfl⟩ h6 hq h0)
+    WP.mono (flushCopy_ok L hyo (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) ⟨he, rfl⟩ h6 hq h0)
       fun s' hm => ghIn_T L hm.env) (ghT_ct L hyo)
   obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r6, .r10, .r11])
       (.seq (.block flushPre) copyLoop) h).isSome = true := ⟨_, by taint_decide⟩

@@ -49,7 +49,7 @@ def mkSat (g : Reg → BitVec 32) (rd wr : List Region) : State where
 /-- A state satisfying `vg_sm4_gcm_init`'s precondition. -/
 def initSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0)
-    [⟨0x1000, 16⟩] [⟨0x2000, 144⟩, ⟨0x3000, 768⟩]
+    [⟨0x1000, 16⟩] [⟨0x2000, 256⟩, ⟨0x3000, 768⟩]
 
 theorem init_verified : Verified Arm.target init (Proof.Sm4Gcm.initScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => init_wp hs) init_ct (by
@@ -60,26 +60,26 @@ theorem init_verified : Verified Arm.target init (Proof.Sm4Gcm.initScratchContra
 /-- A state satisfying `vg_sm4_gcm_stream_init`'s precondition (with no nonce). -/
 def siSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0 | .r3 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x2000, 0⟩, ⟨0x8000, 4⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x8000, 4⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 theorem streamInit_verified :
     Verified Arm.target streamInit (Proof.Sm4Gcm.streamInitScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamInit_wp hs) streamInit_ct (by
     sig_implies [Proof.Sm4Gcm.streamInitScratchContract, Proof.Sm4Gcm.streamInitScratchSig,
-      Spec.Sm4.Gcm.streamInitSig, Spec.Sm4.Gcm.streamInitPost, streamInitArm, bel, arg, args, arg64,
+      Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost, streamInitArm, bel, arg, args, arg64,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [siSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using siSat)
 
 /-- A state satisfying `vg_sm4_gcm_stream_aad`'s precondition (with no data). -/
 def saSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0, 0⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 theorem streamAad_verified :
     Verified Arm.target streamAad (Proof.Sm4Gcm.streamAadScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamAad_wp hs) streamAad_ct (by
     sig_implies [Proof.Sm4Gcm.streamAadScratchContract, Proof.Sm4Gcm.streamAadScratchSig,
-      Spec.Sm4.Gcm.streamAadSig, Spec.Sm4.Gcm.streamAadPost, streamAadArm, bel, arg, args, arg64,
+      Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost, streamAadArm, bel, arg, args, arg64,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [saSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using saSat)
 
@@ -87,7 +87,7 @@ theorem streamAad_verified :
 data, and `scratch` at 0). -/
 def scSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩, ⟨0, 768⟩]
 
 theorem streamEncrypt_verified :
     Verified Arm.target streamEncrypt (Proof.Sm4Gcm.streamEncryptScratchContract Arm.abi 1520) :=
@@ -119,7 +119,7 @@ def mkSat3 (g : Reg → BitVec 32) (rd wr : List Region) : State :=
 at 0). -/
 def fSat : State :=
   mkSat2 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
 
 theorem streamFinish_verified :
     Verified Arm.target streamFinish (Proof.Sm4Gcm.streamFinishScratchContract Arm.abi 1520) :=
@@ -132,7 +132,7 @@ theorem streamFinish_verified :
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition (with no tag, and `work` at 0). -/
 def vSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 /-- The postconditions match; the result is the low word of `r1:r0`. -/
 theorem streamVerify_verified :
@@ -166,7 +166,7 @@ theorem streamVerify_verified :
 data, `tag` at `0x4000` and `work` at 0). -/
 def oSat : State :=
   mkSat3 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
 
 theorem seal_verified : Verified Arm.target «seal» (Proof.Sm4Gcm.sealScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
@@ -179,7 +179,7 @@ theorem seal_verified : Verified Arm.target «seal» (Proof.Sm4Gcm.sealScratchCo
 or tag, and `work` at 0). -/
 def opSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩] [⟨0, 0⟩, ⟨0, 768⟩]
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩] [⟨0, 0⟩, ⟨0, 768⟩]
 
 /-- The leak `open` may have: whether it succeeds. -/
 theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by

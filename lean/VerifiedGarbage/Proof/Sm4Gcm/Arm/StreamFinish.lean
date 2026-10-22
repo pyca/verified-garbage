@@ -28,7 +28,8 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr ghashInput fullTag)
-open VG.Spec.Sm4.Gcm (ctxH ctxCiph)
+open VG.Spec.Sm4.Gcm (ctxCiph)
+open VG.Spec.Gcm (ctxH)
 open VG.Proof.Gcm (Absorbed lensBlock)
 open VG.Proof.Cmac (store4)
 
@@ -111,7 +112,7 @@ theorem fin1_wp {s₀ : State} (h : finPre n wi s₀) (hn : wi < n) (hwi : 4 * w
   obtain ⟨⟨hc, hin⟩, ⟨hs, hw, -⟩, -, -, -, -, dWA, -, -, -, -, -, fW, -, spf⟩ := h
   have hA : ∀ r ∈ [savedR (arg s₀ wi)], (args s₀ n).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (dWA.sub_left (Lay.wSub (by decide))).symm
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 144⟩] (s₀.rd ++ s₀.wr) :=
+  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) :=
     covers_of_mem (List.mem_append_left _ hc)
   have hS : Covers [⟨State.addr (s₀.gpr .r1), 80⟩] s₀.wr := covers_of_mem hs
   have hW : Covers [⟨State.addr (arg s₀ wi), 768⟩] s₀.wr := covers_of_mem hw
@@ -156,7 +157,7 @@ theorem fin_tag {s₀ s₁ : State} (h : finPre n wi s₀) (hn : 2 ≤ n) (h1 : 
 /-- The tag, for a state that represents `a` and `ct`, from a memory `m₀` that
 differs from the entry's only apart from the context and the state. -/
 theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame rs s₀.mem m₀)
-    (hdc : ∀ r ∈ rs, (⟨State.addr (s₀.gpr .r0), 144⟩ : Region).Disjoint r)
+    (hdc : ∀ r ∈ rs, (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r)
     (hds : ∀ r ∈ rs, (⟨State.addr (s₀.gpr .r1), 80⟩ : Region).Disjoint r) {o : Nat} {iv a ct : List Byte}
     (hf : FinOut (s₀.gpr .r0) (s₀.gpr .r1) (arg s₀ wi) s₀.sp (s₀.gpr .r3) (s₀.gpr .r2) n s₀ o
       (ctxH s₀.mem (State.addr (s₀.gpr .r0))) a ct m₀ s)

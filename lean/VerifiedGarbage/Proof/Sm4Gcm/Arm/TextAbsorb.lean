@@ -55,7 +55,7 @@ structure TaOut (c st w sp k7 k8 : BitVec 32) (s₀ : State) (H : Block) (x₀ x
     Prop where
   env : Env c st w sp k7 k8 s
   args : ArgsKeep 5 s₀ s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   abs : Absorbed m₀ (State.addr st + BitVec.ofNat 64 16) (State.addr st + BitVec.ofNat 64 32) H x₀ →
     Absorbed s.mem (State.addr st + BitVec.ofNat 64 16) (State.addr st + BitVec.ofNat 64 32) H x
   frame : Frame (taFrame st w sp) m₀ s.mem
@@ -79,7 +79,7 @@ theorem t_taFrame {m m' : Mem} (h : Frame (tFrame st w sp 16) m m') : Frame (taF
 theorem textAbsorb_ok {s₀ s : State} {H : Block} {a ct : List Byte} (he : Env c st w sp k7 k8 s)
     (hk : ArgsKeep 5 s₀ s) (hf : s₀.sp.toNat + 4 * 5 ≤ 2 ^ 32) (hin : args s₀ 5 ∈ s₀.rd)
     (hA : ∀ r ∈ taFrame st w sp, (args s₀ 5).Disjoint r)
-    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H)
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H)
     (hd : DataOk st w sp s (arg s₀ 2) (arg s₀ 3).toNat)
     (ha : a.length % 16 = k8.toNat % 16) (hP : (arg s₀ 1 ++ arg s₀ 0).toNat = ct.length) :
     WP isa textAbsorb s (TaOut c st w sp k7 k8 s₀ H (ghashInput a ct)
@@ -133,7 +133,7 @@ theorem textAbsorb_ok {s₀ s : State} {H : Block} {a ct : List Byte} (he : Env 
       have := Proof.Gcm.length_pad_mod a.length; omega
   have hlt := Nat.mod_lt a.length (show 16 > 0 by decide)
   have mid : WP isa (.ite .eq firstFlush (.block [])) s₂ fun s₄ => Env c st w sp k7 k8 s₄ ∧ ArgsKeep 5 s₀ s₄ ∧
-      blockAt s₄.mem (State.addr c + BitVec.ofNat 64 128) = H ∧
+      blockAt s₄.mem (State.addr c + BitVec.ofNat 64 240) = H ∧
       (Absorbed s.mem (State.addr st + BitVec.ofNat 64 16) (State.addr st + BitVec.ofNat 64 32) H (ghashInput a ct) →
         Absorbed s₄.mem (State.addr st + BitVec.ofNat 64 16) (State.addr st + BitVec.ofNat 64 32) H x') ∧
       Frame (tFrame st w sp 16) s.mem s₄.mem := by

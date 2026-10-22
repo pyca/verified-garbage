@@ -28,7 +28,8 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr ghashInput fullTag zeros)
-open VG.Spec.Sm4.Gcm (ctxH ctxCiph)
+open VG.Spec.Sm4.Gcm (ctxCiph)
+open VG.Spec.Gcm (ctxH)
 open VG.Proof.Cmac (store4)
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : bytesAt m p k = (bytesAt m p n).take k := by
@@ -111,7 +112,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
       have f₀₄ : Frame [savedR (arg s₀ 4), ⟨State.addr (arg s₀ 4) + BitVec.ofNat 64 256, 16⟩] s₀.mem s₄.mem :=
         (h1.frame.mono (by simp)).trans ((k₁₃.mem ▸ hf₄ : Frame _ s₁.mem s₄.mem).mono (by simp))
       have dc₀₄ : ∀ r ∈ [savedR (arg s₀ 4), ⟨State.addr (arg s₀ 4) + BitVec.ofNat 64 256, 16⟩],
-          (⟨State.addr (s₀.gpr .r0), 144⟩ : Region).Disjoint r := by
+          (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl

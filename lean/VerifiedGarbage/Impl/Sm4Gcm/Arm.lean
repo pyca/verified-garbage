@@ -13,8 +13,8 @@ the verified `vg_sm4_expand_key`, `vg_sm4_ctr32` and `vg_ghash`: AES-GCM's
 code (`Impl/AesGcm/Arm.lean`, whose description of the pieces applies here
 too), with SM4's key context and functions.
 
-* The key context is SM4's 128-byte schedule, then the hash subkey: `H` is
-  at `ctx + 128` (`hO`).
+* The key context is SM4's 128-byte schedule, then, at AES-GCM's offset, the
+  hash subkey: `H` is at `ctx + 240` (`hO`).
 * `vg_sm4_ctr32(schedule, counter, data, n)` takes its arguments in `r0`–`r3`
   and keeps its 1512 bytes of working space on the stack, below the stack
   pointer: `ctrCall` moves AES-GCM's arguments (the counter block's address
@@ -45,7 +45,7 @@ def addI (d r : Reg) (k : Nat) : Instr := .dp .add d r (imm k)
 /-! ## The key context and the working space -/
 
 /-- The hash subkey's offset in the key context. -/
-abbrev hO : Nat := 128
+abbrev hO : Nat := 240
 
 def tO : Nat := 96
 def uO : Nat := 112

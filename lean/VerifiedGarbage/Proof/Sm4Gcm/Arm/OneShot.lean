@@ -32,7 +32,8 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashInput fullTag zeros padLen j0 inc32 gctr ghash ghashFrom blocks toBytes ofBytes)
-open VG.Spec.Sm4.Gcm (ctxH ctxCiph)
+open VG.Spec.Sm4.Gcm (ctxCiph)
+open VG.Spec.Gcm (ctxH)
 open VG.Proof.Gcm (Absorbed Ctr xorKs lensBlock padded)
 
 section
@@ -70,7 +71,7 @@ theorem one1_wp {s₀ : State} (h : onePre n wi s₀) (hn : wi < n) (hwi : 4 * w
   obtain ⟨⟨hc, -, -, hin⟩, ⟨-, hw, -⟩, -, -, -, -, -, -, -, -, dWA, -, -, -, -, -, -, -, -, -, fW, -, spf⟩ := h
   have hA : ∀ r ∈ [savedR (arg s₀ wi)], (args s₀ n).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (dWA.sub_left (Lay.wSub (by decide))).symm
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 144⟩] (s₀.rd ++ s₀.wr) :=
+  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) :=
     covers_of_mem (List.mem_append_left _ hc)
   have hW : Covers [⟨State.addr (arg s₀ wi), 768⟩] s₀.wr := covers_of_mem hw
   have hS : Covers [⟨State.addr (oSt s₀ wi), 80⟩] s₀.wr := by rw [hst]; exact covers_off hW (by decide) (by decide)
@@ -154,7 +155,7 @@ structure OA (n wi : Nat) (s₀ : State) (m₁ : Mem) (s : State) : Prop where
     (ctxH s₀.mem (State.addr (s₀.gpr .r0)))
     (bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat ++
       zeros (padLen (bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat).length))
-  hH : blockAt s.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0))
+  hH : blockAt s.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0))
   frame : Frame (j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp) m₁ s.mem
 
 theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 : SO1 n wi s₀ s₁) :
@@ -221,7 +222,7 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₅ _ (by decide)) k₅.sp k₅.rd k₅.wr
   have hk₅ := hk₄.of_eq k₅.mem k₅.sp k₅.rd k₅.wr
-  have hH₄ : blockAt s₄.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
+  have hH₄ : blockAt s₄.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl)), k₃.mem]; exact jo.hH
   refine WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl)
     (x := bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat) (H := ctxH s₀.mem (State.addr (s₀.gpr .r0)))
@@ -395,7 +396,7 @@ theorem one_argsOt {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 0 �
 
 theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Nat} (ho : o = 0 ∨ o = 112) {k7 : BitVec 32}
     (he : Env (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) s) (hk : ArgsKeep n s₀ s)
-    (hH : blockAt s.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0)))
+    (hH : blockAt s.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)))
     {a : List Byte} (hl : (arg s₀ 0).toNat = a.length)
     (hab : Absorbed s.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 16) (State.addr (oSt s₀ wi) + BitVec.ofNat 64 32)
       (ctxH s₀.mem (State.addr (s₀.gpr .r0))) (a ++ zeros (padLen a.length))) :
@@ -404,7 +405,7 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ n ∈ s₀.rd := h.1.2.2.2
   have hA := one_argsOt h ho
-  have dC : ∀ r ∈ otFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (⟨State.addr (s₀.gpr .r0), 144⟩ : Region).Disjoint r := by
+  have dC : ∀ r ∈ otFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -464,7 +465,7 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide)) k₃.sp k₃.rd k₃.wr
   have hk₃ := hk₂.of_eq k₃.mem k₃.sp k₃.rd k₃.wr
-  have hH₂ : blockAt s₂.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
+  have hH₂ : blockAt s₂.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl))]; exact hH
   let ct := bytesAt s.mem (State.addr (arg s₀ 1)) (arg s₀ 2).toNat
   have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (arg s₀ 2).toNat % 16 := by

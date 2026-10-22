@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # SM4-GCM on ARMv7: where everything is
 
-Untrusted: everything here is checked by Lean. The key context (144 bytes at
+Untrusted: everything here is checked by Lean. The key context (256 bytes at
 `c`), the streaming state (80 bytes at `st`), the working space (768 bytes at
 `w`) and the 8 bytes below the stack pointer `sp` used by the frames (`Lay`),
 all 32-bit pointers: the state is disjoint from the parts of `W` other than
@@ -89,21 +89,21 @@ theorem add32_ofNat_assoc (p : BitVec 32) (a b : Nat) :
 /-- The regions: the context, the state and the parts of `W`, and the stack
 below `sp` (1520 bytes, for the calls). -/
 structure Lay (c st w sp : BitVec 32) : Prop where
-  cw : c.toNat + 144 ≤ 2 ^ 32
+  cw : c.toNat + 256 ≤ 2 ^ 32
   sw : st.toNat + 80 ≤ 2 ^ 32
   ww : w.toNat + 768 ≤ 2 ^ 32
   sp8 : 1520 ≤ sp.toNat
-  cs : (⟨State.addr c, 144⟩ : Region).Disjoint ⟨State.addr st, 80⟩
-  cw' : (⟨State.addr c, 144⟩ : Region).Disjoint ⟨State.addr w, 768⟩
+  cs : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr st, 80⟩
+  cw' : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr w, 768⟩
   sa : (⟨State.addr st, 80⟩ : Region).Disjoint ⟨State.addr w, 16⟩
   sb : (⟨State.addr st, 80⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 96, 672⟩
-  kc : (below sp).Disjoint ⟨State.addr c, 144⟩
+  kc : (below sp).Disjoint ⟨State.addr c, 256⟩
   ks : (below sp).Disjoint ⟨State.addr st, 80⟩
   kw : (below sp).Disjoint ⟨State.addr w, 768⟩
 
 /-- What a state may access. -/
 structure Perm (c st w : BitVec 32) (s : State) : Prop where
-  ctx : Covers [⟨State.addr c, 144⟩] (s.rd ++ s.wr)
+  ctx : Covers [⟨State.addr c, 256⟩] (s.rd ++ s.wr)
   st : Covers [⟨State.addr st, 80⟩] s.wr
   w : Covers [⟨State.addr w, 768⟩] s.wr
 
@@ -149,7 +149,7 @@ namespace Lay
 
 /-! ### Sub-regions -/
 
-theorem ctxSub {C : Addr} {d n : Nat} (h : d + n ≤ 144) : Region.Sub ⟨C + BitVec.ofNat 64 d, n⟩ ⟨C, 144⟩ :=
+theorem ctxSub {C : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨C + BitVec.ofNat 64 d, n⟩ ⟨C, 256⟩ :=
   Offset.sub_base _ h
 
 theorem stSub {S : Addr} {d n : Nat} (h : d + n ≤ 80) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 80⟩ :=
@@ -170,7 +170,7 @@ include L
 
 /-! ### The code's sums do not wrap -/
 
-theorem cA {d : Nat} (hd : d < 144) : State.addr (c + BitVec.ofNat 32 d) = State.addr c + BitVec.ofNat 64 d :=
+theorem cA {d : Nat} (hd : d < 256) : State.addr (c + BitVec.ofNat 32 d) = State.addr c + BitVec.ofNat 64 d :=
   addr_add (by have := L.cw; omega)
 
 theorem stA {d : Nat} (hd : d < 80) : State.addr (st + BitVec.ofNat 32 d) = State.addr st + BitVec.ofNat 64 d :=
@@ -186,15 +186,15 @@ theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 �
   · exact (L.sa.sub_left (stSub ha)).sub_right (aSub hd)
   · exact (L.sb.sub_left (stSub ha)).sub_right (bSub h₁ h₂)
 
-theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 144) (hd : d + k ≤ 80) :
+theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 80) :
     (⟨State.addr c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr st + BitVec.ofNat 64 d, k⟩ :=
   (L.cs.sub_left (ctxSub ha)).sub_right (stSub hd)
 
-theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 144) (hd : d + k ≤ 768) :
+theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 768) :
     (⟨State.addr c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, k⟩ :=
   (L.cw'.sub_left (ctxSub ha)).sub_right (wSub hd)
 
-theorem stk_ctx {a n : Nat} (ha : a + n ≤ 144) :
+theorem stk_ctx {a n : Nat} (ha : a + n ≤ 256) :
     (below sp).Disjoint ⟨State.addr c + BitVec.ofNat 64 a, n⟩ := L.kc.sub_right (ctxSub ha)
 
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) :
@@ -216,12 +216,12 @@ theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 76
   Offset.disjoint _ h (by omega) (by omega)
 
 omit L in
-theorem ctx_ctx {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 144) (hd : d + k ≤ 144) :
+theorem ctx_ctx {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 256) (hd : d + k ≤ 256) :
     (⟨State.addr c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr c + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega) (by omega)
 
 /-- The 32-bit sums of the pointers, as numbers. -/
-theorem cN {d : Nat} (hd : d < 144) : (c + BitVec.ofNat 32 d).toNat = c.toNat + d := by
+theorem cN {d : Nat} (hd : d < 256) : (c + BitVec.ofNat 32 d).toNat = c.toNat + d := by
   have := L.cw
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 
@@ -240,7 +240,7 @@ namespace Perm
 variable {c st w : BitVec 32} {s : State} (P : Perm c st w s)
 include P
 
-theorem ctxR {d n : Nat} (h : d + n ≤ 144) : InRegions (s.rd ++ s.wr) (State.addr c + BitVec.ofNat 64 d) n :=
+theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (State.addr c + BitVec.ofNat 64 d) n :=
   in_off P.ctx h (by decide)
 
 theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (State.addr st + BitVec.ofNat 64 d) n :=
@@ -255,7 +255,7 @@ theorem wW {d n : Nat} (h : d + n ≤ 768) : InRegions s.wr (State.addr w + BitV
 theorem wR {d n : Nat} (h : d + n ≤ 768) : InRegions (s.rd ++ s.wr) (State.addr w + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem ctxC {d n : Nat} (h : d + n ≤ 144) : Covers [⟨State.addr c + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨State.addr c + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_off P.ctx h (by decide)
 
 theorem stC {d n : Nat} (h : d + n ≤ 80) : Covers [⟨State.addr st + BitVec.ofNat 64 d, n⟩] s.wr :=

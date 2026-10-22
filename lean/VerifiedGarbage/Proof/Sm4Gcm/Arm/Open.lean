@@ -27,7 +27,8 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashInput fullTag zeros padLen j0 inc32 gctr decryptWith openResult toBytes)
-open VG.Spec.Sm4.Gcm (ctxH ctxCiph)
+open VG.Spec.Sm4.Gcm (ctxCiph)
+open VG.Spec.Gcm (ctxH)
 open VG.Proof.Gcm (Absorbed)
 
 theorem SO1.keep {n wi : Nat} {s₀ s₁ s₂ : State} (h1 : SO1 n wi s₀ s₁)
@@ -148,7 +149,7 @@ theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
     · simp only [List.mem_singleton] at hr; exact .inr (by simp [hr])
   have hp := h
   obtain ⟨-, -, dcD, dcW, -, -, -, -, dDW, -, -, bc, -, -, bD, bW, -⟩ := hp
-  have dC : ∀ r ∈ rs, (⟨State.addr (s₀.gpr .r0), 144⟩ : Region).Disjoint r := by
+  have dC : ∀ r ∈ rs, (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [rs, List.mem_append] at hr
     rcases hr with ((hr | hr) | hr) | hr

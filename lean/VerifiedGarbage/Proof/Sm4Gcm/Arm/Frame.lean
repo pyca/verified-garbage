@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 
 /-!
@@ -33,7 +34,7 @@ open VG VG.Arm VG.Impl.Sm4Gcm.Arm
 space. -/
 def initFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
-    [⟨0x1000, 16⟩] [⟨0x2000, 144⟩]
+    [⟨0x1000, 16⟩] [⟨0x2000, 256⟩]
 
 theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract Arm.abi 2288).pre s := by
   implies_sat [Spec.Sm4.Gcm.initContract, Spec.Sm4.Gcm.initSig, Spec.Sm4.Gcm.initPost,
@@ -50,41 +51,41 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
 working space. -/
 def streamInitFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0 | .r3 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x2000, 0⟩] [⟨0x3000, 80⟩]
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩] [⟨0x3000, 80⟩]
 
-theorem streamInitFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamInitContract Arm.abi 2304).pre s := by
-  implies_sat [Spec.Sm4.Gcm.streamInitContract, Spec.Sm4.Gcm.streamInitSig, Spec.Sm4.Gcm.streamInitPost,
+theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract Arm.abi 2304).pre s := by
+  implies_sat [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [streamInitFrameSat, mkSat] using streamInitFrameSat
 
 theorem streamInit_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 784 0 streamInit)
-      (Spec.Sm4.Gcm.streamInitContract Arm.abi 2304) :=
-  Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
-    (n := 96) (post := Spec.Sm4.Gcm.streamInitPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
+      (Spec.Gcm.streamInitContract Arm.abi 2304) :=
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+    (n := 96) (post := Spec.Gcm.streamInitPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 0) streamInit_verified (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamInitPost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamInitPost_local _)
     streamInitFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_aad`'s precondition, without the
 working space. -/
 def streamAadFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0, 0⟩, ⟨0x8000, 8⟩] [⟨0x3000, 80⟩]
+    [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 8⟩] [⟨0x3000, 80⟩]
 
-theorem streamAadFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamAadContract Arm.abi 2304).pre s := by
-  implies_sat [Spec.Sm4.Gcm.streamAadContract, Spec.Sm4.Gcm.streamAadSig, Spec.Sm4.Gcm.streamAadPost,
+theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract Arm.abi 2304).pre s := by
+  implies_sat [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [streamAadFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using streamAadFrameSat
 
 theorem streamAad_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 784 2 streamAad)
-      (Spec.Sm4.Gcm.streamAadContract Arm.abi 2304) :=
-  Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
-    (n := 96) (post := Spec.Sm4.Gcm.streamAadPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
+      (Spec.Gcm.streamAadContract Arm.abi 2304) :=
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+    (n := 96) (post := Spec.Gcm.streamAadPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 2) streamAad_verified (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamAadPost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamAadPost_local _)
     streamAadFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
@@ -92,7 +93,7 @@ theorem streamAad_framed :
 stack arguments at `0x8000`. -/
 def crFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩]
+    [⟨0x1000, 256⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩]
 
 theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract Arm.abi 2320).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig,
@@ -128,7 +129,7 @@ theorem streamDecrypt_framed :
 working space: its three words of stack arguments at `0x8000`. -/
 def finFrameSat : State :=
   mkSat2 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩]
+    [⟨0x1000, 256⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩]
 
 theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract Arm.abi 2320).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost,
@@ -148,7 +149,7 @@ theorem streamFinish_framed :
 working space: its four words of stack arguments at `0x8000`. -/
 def verFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0, 0⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩]
+    [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩]
 
 theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract Arm.abi 2320).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost,
@@ -168,7 +169,7 @@ theorem streamVerify_framed :
 space: its four words of stack arguments at `0x8000`. -/
 def sealFrameSat : State :=
   mkSat3 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 16⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩]
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 16⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩]
 
 theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract Arm.abi 2320).pre s := by
   implies_sat [Spec.Sm4.Gcm.sealContract, Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost,
@@ -188,7 +189,7 @@ theorem seal_framed :
 space: its five words of stack arguments at `0x8000`. -/
 def openFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
-    [⟨0x1000, 144⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩]
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩]
 
 theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract Arm.abi 2320).pre s := by
   implies_sat [Spec.Sm4.Gcm.openContract, Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost,

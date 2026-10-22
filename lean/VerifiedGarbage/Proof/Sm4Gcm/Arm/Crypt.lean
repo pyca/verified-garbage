@@ -37,7 +37,7 @@ the context, the state, `W` and the stack below `sp`. -/
 structure DataW (c st w sp k7 k8 : BitVec 32) (s : State) (D : BitVec 32) (n : Nat) : Prop where
   ok : DataOk st w sp s D n
   wr : Covers [⟨State.addr D, n⟩] s.wr
-  ctx : (⟨State.addr c, 144⟩ : Region).Disjoint ⟨State.addr D, n⟩
+  ctx : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr D, n⟩
 
 theorem DataW.of_eq {c st w sp k7 k8 : BitVec 32} {s s' : State} {D : BitVec 32} {n : Nat}
     (h : DataW c st w sp k7 k8 s D n) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataW c st w sp k7 k8 s' D n :=
@@ -107,7 +107,7 @@ variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp)
 include L
 
 theorem ctx_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW c st w sp k7 k8 s D n) :
-    ∀ r ∈ crFrame st w sp D n, (⟨State.addr c, 144⟩ : Region).Disjoint r := by
+    ∀ r ∈ crFrame st w sp D n, (⟨State.addr c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -118,7 +118,7 @@ theorem ctx_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW c st w sp 
 
 omit L in
 theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (⟨State.addr c, 144⟩ : Region).Disjoint r) :
+    (hd : ∀ r ∈ rs, (⟨State.addr c, 256⟩ : Region).Disjoint r) :
     ciphOf m' (State.addr c) = ciphOf m (State.addr c) := by
   simp only [ciphOf, Spec.Sm4.Gcm.ctxCiph]
   rw [Proof.Sm4.scheduleAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide)))]

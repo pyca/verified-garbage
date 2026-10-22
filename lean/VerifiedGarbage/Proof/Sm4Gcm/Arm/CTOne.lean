@@ -114,7 +114,7 @@ theorem j0_wpI (h : onePre na wi t₀) (ec : t₀.gpr .r0 = c) (ew : arg t₀ wi
   have hp := h
   obtain ⟨hrd, -, -, -, -, dnW, -, -, -, -, -, -, bn, -, -, -, -, fn, -⟩ := hp
   have ji : J0In (t₀.gpr .r0) (oSt t₀ wi) (arg t₀ wi) t₀.sp k7 k8
-      (blockAt s.mem (State.addr (t₀.gpr .r0) + BitVec.ofNat 64 128)) (t₀.gpr .r1) (t₀.gpr .r2).toNat s :=
+      (blockAt s.mem (State.addr (t₀.gpr .r0) + BitVec.ofNat 64 240)) (t₀.gpr .r1) (t₀.gpr .r2).toNat s :=
     ⟨he, rfl, h4, by rw [h5]; simp, ⟨by rw [hk.rd, hk.wr]; exact covers_of_mem (List.mem_append_left _ hrd.2.1),
       (t₀.gpr .r2).isLt, fn, oSt_disj h dnW, dnW, bn⟩⟩
   exact ⟨⟨_, _, _, ji⟩, WP.mono (WP.with_rdwr (j0_ok L ji)) fun s' ⟨jo, rd', wr', sp'⟩ =>
@@ -193,7 +193,7 @@ theorem abs_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame
     (h4 : s.gpr .r4 = D) (h5 : s.gpr .r5 = BitVec.ofNat 32 n) (h6 : s.gpr .r6 = BitVec.ofNat 32 0) :
     AbsI c st w sp 16 D n 0 s ∧ WP isa (absorb 16) s (FT na t₀ c st w sp k8) := by
   obtain ⟨k7, he, hk⟩ := hs
-  have ai : AbsIn c st w sp k7 k8 16 (blockAt s.mem (State.addr c + BitVec.ofNat 64 128)) []
+  have ai : AbsIn c st w sp k7 k8 16 (blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) []
       D n s := ⟨he, h4, h5, by rw [h6]; rfl, hd.of_eq hk.rd hk.wr, rfl⟩
   exact ⟨⟨_, _, _, _, rfl, ai⟩, WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun s' ⟨ab, rd', wr', sp'⟩ =>
     ⟨k7, ab.env, hk.frame hf ab.frame (disj_sub hJ abs16_sub) sp' rd' wr'⟩⟩
@@ -203,11 +203,11 @@ theorem fl_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame 
     WP isa (flush 16) s (FT na t₀ c st w sp k8) := by
   obtain ⟨k7, he, hk⟩ := hs
   exact WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl) (x := List.replicate q 0)
-    (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 128)) ⟨he, rfl⟩ (by simp [h6, Nat.mod_eq_of_lt hq])))
+    (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) ⟨he, rfl⟩ (by simp [h6, Nat.mod_eq_of_lt hq])))
     fun s' ⟨fl, rd', wr', sp'⟩ => ⟨k7, fl.env, hk.frame hf fl.frame (disj_sub hJ t16_sub) sp' rd' wr'⟩
 
 theorem cr_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) {D : BitVec 32} {n : Nat} (hd : DataOk st w sp t₀ D n)
-    (hwD : Covers [⟨State.addr D, n⟩] t₀.wr) (hcD : (⟨State.addr c, 144⟩ : Region).Disjoint ⟨State.addr D, n⟩)
+    (hwD : Covers [⟨State.addr D, n⟩] t₀.wr) (hcD : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr D, n⟩)
     (hA : ∀ r ∈ crFrame st w sp D n, (args t₀ na).Disjoint r) {s : State}
     (hs : FT na t₀ c st w sp k8 s) (h4 : s.gpr .r4 = D) (h5 : s.gpr .r5 = BitVec.ofNat 32 n)
     (h6 : s.gpr .r6 = BitVec.ofNat 32 0) :
@@ -340,7 +340,7 @@ theorem oneCrypt_rel :
     exact covers_of_mem h0.2.1.1
   have hwD' : Covers [⟨State.addr (arg s₀ 1), (arg s₀ 2).toNat⟩] s₀'.wr := by
     rw [qa 1 (by omega), qa 2 (by omega)]; exact covers_of_mem h0'.2.1.1
-  have hcD' : (⟨State.addr (s₀.gpr .r0), 144⟩ : Region).Disjoint ⟨State.addr (arg s₀ 1), (arg s₀ 2).toNat⟩ := by
+  have hcD' : (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint ⟨State.addr (arg s₀ 1), (arg s₀ 2).toNat⟩ := by
     rw [q₁, qa 1 (by omega), qa 2 (by omega)]; exact h0'.2.2.1
   have hA := one_argsCr h0
   have hA' : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 1) (arg s₀ 2).toNat, (args s₀' na).Disjoint r := by

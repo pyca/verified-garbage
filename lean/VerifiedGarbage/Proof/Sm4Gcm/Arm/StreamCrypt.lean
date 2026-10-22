@@ -26,7 +26,8 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr ghashInput gctr inc32 j0)
-open VG.Spec.Sm4.Gcm (ctxH ctxCiph)
+open VG.Spec.Sm4.Gcm (ctxCiph)
+open VG.Spec.Gcm (ctxH)
 open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
 theorem scLay {s₀ : State} (h : streamCryptPre s₀) : Lay (s₀.gpr .r0) (s₀.gpr .r1) (arg s₀ 4) s₀.sp := by
@@ -48,7 +49,7 @@ theorem sc1_wp {s₀ : State} (h : streamCryptPre s₀) {Q : State → Prop} (k 
     WP isa (.block cryptEntry) s₀ Q := by
   have hA := sc_argsW h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fW, -, spf⟩ := h
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 144⟩] (s₀.rd ++ s₀.wr) := by
+  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) := by
     rw [hrd]; exact covers_of_mem (by simp)
   have hS : Covers [⟨State.addr (s₀.gpr .r1), 80⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
   have hW : Covers [⟨State.addr (arg s₀ 4), 768⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
@@ -158,11 +159,11 @@ theorem stp_saved {d k : Nat} (h1 : d + k ≤ 80) :
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
   exact L.st_w h1 (.inr ⟨by decide, by decide⟩)
 
-theorem ctx_saved : ∀ r ∈ [savedR w], (⟨State.addr c, 144⟩ : Region).Disjoint r := by
+theorem ctx_saved : ∀ r ∈ [savedR w], (⟨State.addr c, 256⟩ : Region).Disjoint r := by
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
   exact L.cw'.sub_right (Lay.wSub (by decide))
 
-theorem ctx_taFrame : ∀ r ∈ taFrame st w sp, (⟨State.addr c, 144⟩ : Region).Disjoint r := by
+theorem ctx_taFrame : ∀ r ∈ taFrame st w sp, (⟨State.addr c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -203,13 +204,13 @@ theorem saved_taFrame : ∀ r ∈ taFrame st w sp, (savedR w).Disjoint r := by
 omit L in
 /-- `ciphOf` is `ctxCiph`, and a frame apart from the context keeps it. -/
 theorem ciph_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (⟨State.addr c, 144⟩ : Region).Disjoint r) :
+    (hd : ∀ r ∈ rs, (⟨State.addr c, 256⟩ : Region).Disjoint r) :
     ciphOf m' (State.addr c) = ctxCiph m (State.addr c) := ciph_frame hf hd
 
 omit L in
 theorem ctxH_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (⟨State.addr c, 144⟩ : Region).Disjoint r) :
-    blockAt m' (State.addr c + BitVec.ofNat 64 128) = ctxH m (State.addr c) := by
+    (hd : ∀ r ∈ rs, (⟨State.addr c, 256⟩ : Region).Disjoint r) :
+    blockAt m' (State.addr c + BitVec.ofNat 64 240) = ctxH m (State.addr c) := by
   rw [ctxH_eq, blockAt_frame hf (fun r hr => (hd r hr).sub_left (Lay.ctxSub (by decide)))]
 
 end
@@ -259,7 +260,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   have hk₃ := hk₂.frame spf co.frame (sc_argsCr h) sp₃ rd₃ wr₃
   have hd₃ := (sc_dataW (k7 := s₀.gpr .r7) h hk₃).ok
   have f₂ : Frame [savedR (arg s₀ 4)] s₀.mem s₂.mem := by rw [hK₂.mem]; exact h1.frame
-  have hH₃ : blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
+  have hH₃ : blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [blockAt_frame co.frame (fun r hr => (ctx_crFrame L hd₂ r hr).sub_left (Lay.ctxSub (by decide))),
       ctxH_keep f₂ (ctx_saved L)]
   refine WP.seq (WP.mono (WP.with_rdwr (textAbsorb_ok L co.env hk₃ spf hin (sc_argsTa h) hH₃ hd₃ ha hP))
@@ -320,7 +321,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   have hin : args s₀ 5 ∈ s₀.rd := by rw [h.1]; simp
   refine WP.seq (sc1_wp h fun s₁ h1 => ?_)
   have hd₁ := (sc_dataW (k7 := s₀.gpr .r7) h h1.args).ok
-  have hH₁ : blockAt s₁.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) :=
+  have hH₁ : blockAt s₁.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) :=
     ctxH_keep h1.frame (ctx_saved L)
   refine WP.seq (WP.mono (WP.with_rdwr (textAbsorb_ok L h1.env h1.args spf hin (sc_argsTa h) hH₁ hd₁ ha hP))
     fun s₂ hh => ?_)

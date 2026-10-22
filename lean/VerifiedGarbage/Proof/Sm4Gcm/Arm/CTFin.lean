@@ -138,7 +138,7 @@ theorem finTag_rel {na : Nat} (hna : 2 ≤ na) {o : Nat} (ho : o = 0 ∨ o = 112
       GC t₀ s → WP isa (flush 16) s (FT na t₀ c st w sp k8) := fun {t₀ s} f hA₀ ⟨⟨k7, he, hk⟩, h6⟩ => by
     have hq := Nat.mod_lt (v s₀).toNat (show 16 > 0 by decide)
     refine WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl) (x := List.replicate ((v s₀).toNat % 16) 0)
-      (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 128)) ⟨he, rfl⟩ (by simp [h6, Nat.mod_eq_of_lt hq])))
+      (H := blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) ⟨he, rfl⟩ (by simp [h6, Nat.mod_eq_of_lt hq])))
       fun s' ⟨fl, rd, wr, sp'⟩ => ⟨k7, fl.env, hk.frame f fl.frame (disj_sub hA₀ tFrame_sub) sp' rd wr⟩
   have cF := rel_wp (F := GC s₀) (F' := GC s₀') (G := FT na s₀ c st w sp k8) (G' := FT na s₀' c st w sp k8)
     (rel_of_ct (flush_ct L (yo := 16) (.inr rfl) (q := (v s₀).toNat % 16) (Nat.mod_lt _ (by decide)))

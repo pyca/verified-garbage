@@ -24,7 +24,8 @@ namespace VG.Proof.Sm4Gcm.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashInput fullTag zeros padLen j0 inc32 gctr encryptWith toBytes)
-open VG.Spec.Sm4.Gcm (ctxH ctxCiph)
+open VG.Spec.Sm4.Gcm (ctxCiph)
+open VG.Spec.Gcm (ctxH)
 open VG.Proof.Gcm (Absorbed)
 
 section
@@ -51,7 +52,7 @@ theorem saved_otFrame {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 
 theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀) (h1 : SO1 n wi s₀ s₁) (oa : OA n wi s₀ s₁.mem s₂)
     {k7 : BitVec 32} (oc : OC n wi s₀ k7 (inc32 (j0 (ctxH s₀.mem (State.addr (s₀.gpr .r0)))
       (bytesAt s₀.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat))) s₂.mem s₃) :
-    blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 128) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) ∧
+    blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) ∧
     Absorbed s₃.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 16) (State.addr (oSt s₀ wi) + BitVec.ofNat 64 32)
       (ctxH s₀.mem (State.addr (s₀.gpr .r0)))
       (bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat ++
@@ -70,7 +71,7 @@ theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀) (h1 : SO1 
   have hd := one_dataW h oa.args 0 0
   have dCr := ctx_crFrame L hd
   have dc₂ : ∀ r ∈ [savedR (arg s₀ wi)] ++ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp,
-      (⟨State.addr (s₀.gpr .r0), 144⟩ : Region).Disjoint r := by
+      (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_append, List.mem_singleton] at hr
     rcases hr with rfl | hr

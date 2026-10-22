@@ -66,7 +66,7 @@ include L
 
 /-- The lengths block absorbed, before the copy. -/
 theorem tagLens_ok {H J : Block} {s : State} (he : Env c st w sp k7 k8 s)
-    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H) (hJ : blockAt s.mem (State.addr st) = J) :
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (State.addr st) = J) :
     WP isa (lens 16) s (TagMid c st w sp k7 k8 H (blockAt s.mem (State.addr st + BitVec.ofNat 64 16)) J
       (s.gpr .r5 ++ s.gpr .r4).toNat (s.gpr .r7 ++ s.gpr .r6).toNat s.mem) := by
   refine WP.mono (lens_ok L (yo := 16) (.inr rfl) he hH) fun s₁ ⟨he₁, _, hY₁, f₁⟩ => ?_
@@ -215,7 +215,7 @@ theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen
 
 /-- `tag o`, for `o` of 0 or 112. -/
 theorem tag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env c st w sp k7 k8 s)
-    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H) (hJ : blockAt s.mem (State.addr st) = J) :
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (State.addr st) = J) :
     WP isa (tag o) s (TagOut c st w sp k7 k8 o H (blockAt s.mem (State.addr st + BitVec.ofNat 64 16)) J
       (s.gpr .r5 ++ s.gpr .r4).toNat (s.gpr .r7 ++ s.gpr .r6).toNat s.mem) :=
   WP.seq (WP.mono (tagLens_ok L he hH hJ) fun _ hm => tagCall_ok L ho hm)

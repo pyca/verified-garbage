@@ -62,7 +62,7 @@ abbrev j0Frame (st w sp : BitVec 32) : List Region :=
 /-- Before `j0`: the `n`-byte nonce at `Np`. -/
 structure J0In (c st w sp k7 k8 : BitVec 32) (H : Block) (Np : BitVec 32) (n : Nat) (s : State) : Prop where
   env : Env c st w sp k7 k8 s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   r4 : s.gpr .r4 = Np
   r5 : s.gpr .r5 = BitVec.ofNat 32 n
   data : DataOk st w sp s Np n
@@ -70,14 +70,14 @@ structure J0In (c st w sp k7 k8 : BitVec 32) (H : Block) (Np : BitVec 32) (n : N
 /-- `J₀` written, from `m₀`, with some value of `r7`. -/
 structure J0Mid (c st w sp k8 : BitVec 32) (H : Block) (iv : List Byte) (m₀ : Mem) (s : State) : Prop where
   env : ∃ k7, Env c st w sp k7 k8 s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   j0 : blockAt s.mem (State.addr st) = Spec.Gcm.j0 H iv
   frame : Frame (j0Frame st w sp) m₀ s.mem
 
 /-- After `j0`: `J₀`, the accumulator zeroed and the first counter block. -/
 structure J0Out (c st w sp k8 : BitVec 32) (H : Block) (iv : List Byte) (m₀ : Mem) (s : State) : Prop where
   env : ∃ k7, Env c st w sp k7 k8 s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   j0 : blockAt s.mem (State.addr st) = Spec.Gcm.j0 H iv
   y : blockAt s.mem (State.addr st + BitVec.ofNat 64 16) = 0
   cb : blockAt s.mem (State.addr st + BitVec.ofNat 64 48) = inc32 (Spec.Gcm.j0 H iv)
@@ -87,7 +87,7 @@ section
 variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp)
 include L
 
-theorem ctx_j0Frame : ∀ r ∈ j0Frame st w sp, (⟨State.addr c + BitVec.ofNat 64 128, 16⟩ : Region).Disjoint r := by
+theorem ctx_j0Frame : ∀ r ∈ j0Frame st w sp, (⟨State.addr c + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -298,7 +298,7 @@ theorem j0zero_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c
     bytesAt_frame f₁ dD (by have := hd.lt; omega), f₁⟩
   · rw [blockAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      simpa using L.ctx_st (a := 128) (n := 16) (d := 0) (k := 16) (by decide) (by decide)), h.hH]
+      simpa using L.ctx_st (a := 240) (n := 16) (d := 0) (k := 16) (by decide) (by decide)), h.hH]
   · rw [add_ofNat_zero, blockAt, hm₁, Cmac.bytesAt_store4, Cmac.le4_zero]; decide
 
 /-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
@@ -313,7 +313,7 @@ theorem j0hash_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c
   rw [List.nil_append, hiv] at ho
   have hab₂ := ho.abs (Proof.Gcm.absorbed_nil H hY₁)
   have he₂ := ho.env
-  have hH₂ : blockAt s₂.mem (State.addr c + BitVec.ofNat 64 128) = H := by
+  have hH₂ : blockAt s₂.mem (State.addr c + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame ho.frame (ctx_absFrame L (.inl rfl)), hai.hH]
   obtain ⟨s₃, run₃, h6₃, hg₃, hk₃⟩ : ∃ s₃, runBlock isa [.dp .and .r6 .r7 (imm 15)] s₂ = some s₃ ∧
       s₃.gpr .r6 = BitVec.ofNat 32 (n % 16) ∧ (∀ r, r ≠ .r6 → s₃.gpr r = s₂.gpr r) ∧ Keeps s₂ s₃ := by

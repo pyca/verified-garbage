@@ -132,16 +132,16 @@ theorem restore_ok {s s₀ : State} {w : BitVec 32} (h11 : s.gpr .r11 = w) (hfit
   all_goals first | rfl | simp [gpr_setReg, sp_setReg, mem_setReg, rd_setReg, wr_setReg, hsp]
 
 /-- The layout, from disjointness of the context, the state, `W` and the stack. -/
-theorem Lay.of {c st w sp : BitVec 32} (cw : c.toNat + 144 ≤ 2 ^ 32) (sw : st.toNat + 80 ≤ 2 ^ 32)
-    (ww : w.toNat + 768 ≤ 2 ^ 32) (sp8 : 1520 ≤ sp.toNat) (cs : (⟨State.addr c, 144⟩ : Region).Disjoint ⟨State.addr st, 80⟩)
-    (cW : (⟨State.addr c, 144⟩ : Region).Disjoint ⟨State.addr w, 768⟩)
+theorem Lay.of {c st w sp : BitVec 32} (cw : c.toNat + 256 ≤ 2 ^ 32) (sw : st.toNat + 80 ≤ 2 ^ 32)
+    (ww : w.toNat + 768 ≤ 2 ^ 32) (sp8 : 1520 ≤ sp.toNat) (cs : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr st, 80⟩)
+    (cW : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr w, 768⟩)
     (sW : (⟨State.addr st, 80⟩ : Region).Disjoint ⟨State.addr w, 768⟩)
-    (kc : (below sp).Disjoint ⟨State.addr c, 144⟩) (ks : (below sp).Disjoint ⟨State.addr st, 80⟩)
+    (kc : (below sp).Disjoint ⟨State.addr c, 256⟩) (ks : (below sp).Disjoint ⟨State.addr st, 80⟩)
     (kw : (below sp).Disjoint ⟨State.addr w, 768⟩) : Lay c st w sp :=
   ⟨cw, sw, ww, sp8, cs, cW, sW.sub_right (Region.sub_prefix (by decide)), sW.sub_right (Lay.wSub (by decide)),
     kc, ks, kw⟩
 
-theorem ctxH_eq (m : Mem) (p : Addr) : Spec.Sm4.Gcm.ctxH m p = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 128) := rfl
+theorem ctxH_eq (m : Mem) (p : Addr) : Spec.Gcm.ctxH m p = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 240) := rfl
 
 theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
   rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]

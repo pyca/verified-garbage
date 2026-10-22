@@ -61,12 +61,12 @@ theorem store4_eq (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ : BitVec 32) :
 /-- Before `flush yo` (or `lens yo`): GHASH has absorbed `x`. -/
 structure FlIn (c st w sp k7 k8 : BitVec 32) (H : Block) (s : State) : Prop where
   env : Env c st w sp k7 k8 s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
 
 /-- After `flush yo`: GHASH has absorbed `x`, from `m₀`. -/
 structure FlOut (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (x₀ x : List Byte) (m₀ : Mem) (s : State) : Prop where
   env : Env c st w sp k7 k8 s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   abs : Absorbed m₀ (State.addr st + BitVec.ofNat 64 yo) (State.addr st + BitVec.ofNat 64 32) H x₀ →
     Absorbed s.mem (State.addr st + BitVec.ofNat 64 yo) (State.addr st + BitVec.ofNat 64 32) H x
   frame : Frame (tFrame st w sp yo) m₀ s.mem
@@ -74,7 +74,7 @@ structure FlOut (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (x₀ x : L
 /-- After the copy of the buffered bytes to `T`, padded with zeros. -/
 structure FlMid (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (o : Nat) (m₀ : Mem) (s : State) : Prop where
   env : Env c st w sp k7 k8 s
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   hT : bytesAt s.mem (State.addr w + BitVec.ofNat 64 96) 16 =
     bytesAt m₀ (State.addr st + BitVec.ofNat 64 32) o ++ zeros (16 - o)
   hY : blockAt s.mem (State.addr st + BitVec.ofNat 64 yo) = blockAt m₀ (State.addr st + BitVec.ofNat 64 yo)
@@ -84,7 +84,7 @@ section
 variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
-theorem ctx_tFrame : ∀ r ∈ tFrame st w sp yo, (⟨State.addr c + BitVec.ofNat 64 128, 16⟩ : Region).Disjoint r := by
+theorem ctx_tFrame : ∀ r ∈ tFrame st w sp yo, (⟨State.addr c + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -257,9 +257,9 @@ include L hyo
 
 /-- The lengths block of `r5:r4` and `r7:r6` bytes, absorbed. -/
 theorem lens_ok {H : Block} {s : State} (he : Env c st w sp k7 k8 s)
-    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H) :
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) :
     WP isa (lens yo) s fun s' => Env c st w sp k7 k8 s' ∧
-      blockAt s'.mem (State.addr c + BitVec.ofNat 64 128) = H ∧
+      blockAt s'.mem (State.addr c + BitVec.ofNat 64 240) = H ∧
       blockAt s'.mem (State.addr st + BitVec.ofNat 64 yo) = ghashFrom H (blockAt s.mem (State.addr st + BitVec.ofNat 64 yo))
         [Spec.Gcm.ofBytes (lensBlock (s.gpr .r5 ++ s.gpr .r4).toNat (s.gpr .r7 ++ s.gpr .r6).toNat)] ∧
       Frame (tFrame st w sp yo) s.mem s'.mem := by
@@ -275,7 +275,7 @@ theorem lens_ok {H : Block} {s : State} (he : Env c st w sp k7 k8 s)
   have hY₂ : blockAt s₂.mem (State.addr st + BitVec.ofNat 64 yo) = blockAt s.mem (State.addr st + BitVec.ofNat 64 yo) :=
     blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  have hH₂ : blockAt s₂.mem (State.addr c + BitVec.ofNat 64 128) = H := by
+  have hH₂ : blockAt s₂.mem (State.addr c + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), hH]
   have eT := L.wA (d := 96) (by decide)

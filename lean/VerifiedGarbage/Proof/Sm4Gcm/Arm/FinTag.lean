@@ -63,7 +63,7 @@ include L
 theorem finTag_ok {na : Nat} (hna : 2 ≤ na) {s₀ s : State} {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block}
     {a ct : List Byte} (he : Env c st w sp k7 k8 s) (hk : ArgsKeep na s₀ s) (hf : s₀.sp.toNat + 4 * na ≤ 2 ^ 32)
     (hin : args s₀ na ∈ s₀.rd) (hA : ∀ r ∈ tagFrame st w sp o, (args s₀ na).Disjoint r)
-    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H)
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H)
     (ha : a.length % 16 = k8.toNat % 16) (hP : (arg s₀ 1 ++ arg s₀ 0).toNat = ct.length) :
     WP isa (finTag o) s (FinOut c st w sp k7 k8 na s₀ o H a ct s.mem) := by
   have hlt := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)

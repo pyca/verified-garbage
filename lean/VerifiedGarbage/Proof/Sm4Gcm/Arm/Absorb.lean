@@ -48,7 +48,7 @@ structure AbsIn (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (x : List B
   r5 : s.gpr .r5 = BitVec.ofNat 32 n
   r6 : s.gpr .r6 = BitVec.ofNat 32 (x.length % 16)
   data : DataOk st w sp s D n
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
 
 /-- Part of the way: `j` bytes absorbed, from `m₀`. -/
 structure AbsMid (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (x : List Byte) (D : BitVec 32) (n : Nat)
@@ -58,7 +58,7 @@ structure AbsMid (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (x : List 
   r4 : s.gpr .r4 = D + BitVec.ofNat 32 j
   r5 : s.gpr .r5 = BitVec.ofNat 32 (n - j)
   data : DataOk st w sp s D n
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   abs : Absorbed m₀ (State.addr st + BitVec.ofNat 64 yo) (State.addr st + BitVec.ofNat 64 32) H x →
     Absorbed s.mem (State.addr st + BitVec.ofNat 64 yo) (State.addr st + BitVec.ofNat 64 32) H
       (x ++ bytesAt m₀ (State.addr D) j)
@@ -91,7 +91,7 @@ theorem data_absFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataOk st w sp
 
 /-- The context is apart from what `absorb` writes. -/
 theorem ctx_absFrame : ∀ r ∈ absFrame st w sp yo,
-    (⟨State.addr c + BitVec.ofNat 64 128, 16⟩ : Region).Disjoint r := by
+    (⟨State.addr c + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -131,7 +131,7 @@ structure HeadMid (c st w sp k7 k8 : BitVec 32) (yo : Nat) (H : Block) (x : List
   r6 : s.gpr .r6 = BitVec.ofNat 32 (x.length % 16 + k)
   z : s.z = decide (x.length % 16 + k = 16)
   data : DataOk st w sp s D n
-  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 128) = H
+  hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H
   buf : bytesAt s.mem (State.addr st + BitVec.ofNat 64 32) (x.length % 16 + k) =
     bytesAt m₀ (State.addr st + BitVec.ofNat 64 32) (x.length % 16) ++
       bytesAt m₀ (State.addr D) (k)
@@ -327,7 +327,7 @@ theorem whole_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m₀ : M
     have h9 := he₁.r9; have h10 := he₁.r10; have h11 := he₁.r11
     obtain ⟨s₂, run₂, h0', h1', h12', hg₂, hk₂⟩ : ∃ s₂, runBlock isa
         [addI .r0 .r9 hO, addI .r1 .r10 yo, addI .r12 .r11 scrO] s₁ = some s₂ ∧
-        s₂.gpr .r0 = c + BitVec.ofNat 32 128 ∧ s₂.gpr .r1 = st + BitVec.ofNat 32 yo ∧
+        s₂.gpr .r0 = c + BitVec.ofNat 32 240 ∧ s₂.gpr .r1 = st + BitVec.ofNat 32 yo ∧
         s₂.gpr .r12 = w + BitVec.ofNat 32 512 ∧
         (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r12 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂ := by
       refine ⟨_, by arun [show encodable (BitVec.ofNat 32 yo) = true by rcases hyo with rfl | rfl <;> decide], ?_,
