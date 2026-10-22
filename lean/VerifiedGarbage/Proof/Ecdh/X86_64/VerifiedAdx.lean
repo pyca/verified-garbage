@@ -39,6 +39,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 
+import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacOdd
+
 /-!
 # ECDH over P-256 on x86-64 with BMI2 and ADX: `Verified`
 
@@ -54,17 +56,17 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdh.X86_64
 open VG.Proof.Ecdsa.X86_64
 
 theorem mulQJP256x_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law Spec.P256.curve)
-    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
-    MulOk p256x (Impl.Ecdh.X86_64.Cfg.mulQJ p256x (Impl.P256.X86_64.doubleHalfPublic p256x.MP' p256x.rcbSlots))
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
+    MulOk p256x (Impl.Ecdh.X86_64.Cfg.mulQJO p256x (Impl.P256.X86_64.doubleHalfPublic p256x.MP' p256x.rcbSlots))
       (mulQJW p256x) :=
-  mulQJ_ok (p256x_ok hI) (Or.inl rfl) hL hO (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
-    (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) (Nat.le_of_eq Proof.P256.X86_64.n_mod32.symm)
-    Proof.P256.X86_64.n_ge64
+  mulQJO_ok (p256x_ok hI) (Or.inl rfl) hL hO hK (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
+    (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) (by decide) (by decide) (by decide)
+    (by decide)
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256x_ok hI) hL (mulQJP256x_ok hI hL hO) (mulQJ_w (p256x_ok hI))
+  ecdh_x86_of (p256x_ok hI) hL (mulQJP256x_ok hI hL hO hK) (mulQJ_w (p256x_ok hI))
     (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `exchangeP256Adx` without its displacements, as a literal of shared blocks
@@ -88,10 +90,10 @@ theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP25
     rfl (by taint_decide)
 
 theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
     Verified X86_64.target exchangeP256Adx
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
+  Verified.of_inline_ct (by lit_decide) (ecdh_x86_adx hL hI hO hK) ecdh_ct_adx implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64

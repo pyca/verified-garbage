@@ -60,8 +60,8 @@ theorem entry_sep {m i : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16)
 
 /-- `T = P` and entry 1. -/
 theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : State} {base : Addr}
-    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) {k : Nat}
-    (hF : JacWinFixed K C base s P k) :
+    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
+    (hF : JacWinPt K C base s P) :
     WP isa (.block (copyPt K.M.n K.E K.P ++ copy K.M.n K.z2 K.P.z ++ copy K.M.n (K.z2 + 8 * K.M.n) K.P.z ++
       ([.mov32 .rbx (.imm 1)] : List Instr) ++ K.storeEntry)) s (JBInv K C base size P s 1) := by
   have hn := hs.nowrap
@@ -224,14 +224,14 @@ theorem _root_.VG.Proof.Mont.X86_64.OpKeep.regs {base : Addr} {o : Nat} {s t : S
     KeepRegs (powClob K.M.n) s t := (⟨h.gpr, h.rd, h.wr⟩ : KeepRegs (clob K.M.n) s t).mono clob_powClob
 
 /-- `P` as a Jacobian triple with `Z = 1`, at any state of the frame. -/
-theorem JacWinFixed.jac (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C} {k : Nat}
-    (hF : JacWinFixed K C base s₀ P k) (hf : JFrame K C base size s₀ s) :
+theorem JacWinPt.jac (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C}
+    (hF : JacWinPt K C base s₀ P) (hf : JFrame K C base size s₀ s) :
     InvJ C (tmv C K.M.n base s K.P.x) (tmv C K.M.n base s K.P.y) 1 P := by
   rw [hf.ro_tmv hL (by jw_mem), hf.ro_tmv hL (by jw_mem), ← hF.pz]
   exact InvJ.of_rep01 hF.pt (Or.inl hF.pz)
 
-theorem JacWinFixed.lt (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C} {k : Nat}
-    (hF : JacWinFixed K C base s₀ P k) (hf : JFrame K C base size s₀ s) :
+theorem JacWinPt.lt (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C}
+    (hF : JacWinPt K C base s₀ P) (hf : JFrame K C base size s₀ s) :
     ∀ x ∈ [K.P.x, K.P.y, K.P.z], wordsVal s.mem base x K.M.n < C.p := by
   intro x hx
   have hro : x ∈ jwRo K := by
@@ -300,7 +300,7 @@ theorem tbl_val {N : List FOp} {base : Addr} {V : List Nat} {E : Nat → Fe C} {
 /-- `T = 2 P` and `D = P` sharing its `Z` by DBLU, from `T = P`, and entry 2. -/
 theorem jbuildDblu_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
     (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
-    (hn17 : 17 ≤ C.n) {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {s : State}
+    (hn17 : 17 ≤ C.n) {base : Addr} {s₀ : State} (hF : JacWinPt K C base s₀ P) {s : State}
     (hI : JBInv K C base size P s₀ 1 s) :
     WP isa (ForwardField.programB K.M K.dbluOps).inline s fun s₁ =>
       WP isa (.block (copy K.M.n K.D.x K.S.t3 ++ copy K.M.n K.D.y K.S.t2 ++
@@ -564,7 +564,7 @@ theorem jbuildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
 theorem jbuild_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
     (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hn17 : 17 ≤ C.n) {base : Addr} {s : State} (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
-    {k : Nat} (hF : JacWinFixed K C base s P k) :
+    (hF : JacWinPt K C base s P) :
     WP isa K.build.inline s fun s' => JFrame K C base size s s' ∧ JTblOk K C base P 16 s' := by
   rw [JacWinCfg.build]
   simp only [Code.inline]

@@ -38,4 +38,9 @@ theorem primeOrder : PrimeOrder Spec.P521.curve := by
   haveI : Fact Spec.P521.curve.p.Prime := ⟨curve_p_prime⟩
   exact primeOrder_of good n_prime onCurve_G mul_n (by decide +kernel)
 
+/-- `n` kills every point: the group has `n` elements. -/
+theorem killedByN : KilledByN Spec.P521.curve := by
+  haveI : Fact Spec.P521.curve.p.Prime := ⟨curve_p_prime⟩
+  exact killedByN_of good n_prime onCurve_G mul_n (by decide +kernel)
+
 end VG.Proof.P521
