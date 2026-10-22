@@ -2348,13 +2348,15 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
-            // On x86-64 the key context already holds the powers if the CPU
-            // runs any backend with `_prepared` instances: `new` chose the
-            // best backend, which has them then.
+            // On x86-64, the powers, if the backend `new` chose has no
+            // `_prepared` instances but `backend` has (VAES without
+            // VPCLMULQDQ chooses `VaesPclmul`, and `AesNiPclmulAvx` runs).
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             {
                 k.prepared = backend.prepared();
-                assert!(k.prepared.is_none() || self.prepared.is_some());
+                if let (Some(fns), None) = (k.prepared, self.prepared) {
+                    k.prepare(fns);
+                }
             }
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
             {
