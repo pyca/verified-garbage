@@ -193,8 +193,20 @@ pub(crate) fn hash_group<const N: usize>(
     md: MessageDigest,
     aws_lc: Option<&'static aws_lc_rs::digest::Algorithm>,
 ) {
+    hash_group_sizes(c, name, &SIZES, vg, md, aws_lc);
+}
+
+/// As `hash_group`, at the message sizes `sizes`.
+pub(crate) fn hash_group_sizes<const N: usize>(
+    c: &mut Criterion,
+    name: &str,
+    sizes: &[usize],
+    vg: fn(&[u8]) -> [u8; N],
+    md: MessageDigest,
+    aws_lc: Option<&'static aws_lc_rs::digest::Algorithm>,
+) {
     let mut g = c.benchmark_group(name);
-    for size in SIZES {
+    for &size in sizes {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         g.bench_function(BenchmarkId::new(VG, size), |b| {
