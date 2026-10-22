@@ -48,6 +48,54 @@ theorem readArg_step {m : MemOp} (hm : m.base = .esp) {v : BitVec 32} (hr : read
       exact dws.sub_right (Offset.sub_base _ (by omega))
   · cases hr
 
+/-- `bits`, the generator and `used` into the header, and the tape's length compared with `L`. -/
+theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = BitVec.ofNat 32 n)
+    (small : n < 2 ^ 32) (h3 : args 3 = BitVec.ofNat 32 len) {up : BitVec 32} {bits g : Nat}
+    (rb : readSrc s (.mem (argAt 19 3)) = some (BitVec.ofNat 32 bits))
+    (rg : readSrc s (.mem (argAt 19 4)) = some (BitVec.ofNat 32 g))
+    (ru : readSrc s (.mem (argAt 19 2)) = some up)
+    (dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩)
+    (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 40))
+    (hb2 : bits ≤ 8192) (hg25 : g = 2 ∨ g = 5) :
+    WP isa (.block (entryWords ++ [.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))])) s fun t =>
+      Step Ex base bytes len args s t ∧ w32 t.mem base bitsOff = bits ∧ w32 t.mem base genOff = g ∧
+      w32 t.mem base usedOff = up.toNat ∧ Kept base len [] [bitsOff, genOff, usedOff] s.mem t.mem ∧
+      t.cf = some (decide (n < len)) := by
+  have hu := h.upper
+  have ul : up.toNat < 2 ^ 32 := up.isLt
+  have ra : ∀ {t : State} {j : Nat} {v : BitVec 32}, j ∈ [2, 3, 4] → readSrc s (.mem (argAt 19 j)) = some v →
+      Step Ex base bytes len args s t → readSrc t (.mem (argAt 19 j)) = some v :=
+    fun hj hr S => readArg_step rfl hr S (dws _ hj) (d40 _ hj)
+  unfold entryWords
+  simp only [List.cons_append, List.nil_append]
+  refine wp_movS rb fun t₁ U₁ _ => ?_
+  have S₁ : Step Ex base bytes len args s t₁ := Step.regs h U₁.mem U₁.keeps
+  refine hdr_store S₁.inp hdr_bits fun t₂ S₂ W₂ k₂ _ _ _ _ => ?_
+  have S₂' := S₁.trans S₂
+  refine wp_movS (ra (by simp) rg S₂') fun t₃ U₃ _ => ?_
+  have S₃ : Step Ex base bytes len args s t₃ := S₂'.trans (Step.regs S₂.inp U₃.mem U₃.keeps)
+  refine hdr_store S₃.inp hdr_gen fun t₄ S₄ W₄ k₄ _ _ _ _ => ?_
+  have S₄' := S₃.trans S₄
+  refine wp_movS (ra (by simp) ru S₄') fun t₅ U₅ _ => ?_
+  have S₅ : Step Ex base bytes len args s t₅ := S₄'.trans (Step.regs S₄.inp U₅.mem U₅.keeps)
+  refine hdr_store S₅.inp hdr_used fun t₆ S₆ W₆ k₆ _ _ _ _ => ?_
+  have S₆' := S₅.trans S₆
+  refine wp_movS (S₆'.inp.arg (i := 12) (by decide)) fun t₇ U₇ _ => ?_
+  have h₇ := S₆'.inp.regs U₇.keeps U₇.mem
+  refine wp_cmpC (h₇.arg (i := 3) (by decide)) fun t₈ F₈ c₈ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact S₆'.trans (Step.regs S₆.inp (by rw [F₈.mem, U₇.mem]) (U₇.keeps.trans (F₈.keeps _)))
+  · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, k₄.word_eq, U₃.mem, W₂, U₁.gpr, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega)]
+  · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, W₄, U₃.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [F₈.mem, U₇.mem, W₆, U₅.gpr]
+  · exact (by rw [U₁.mem]; exact (Kept.refl _).mono : Kept base len [] [bitsOff, genOff, usedOff] s.mem t₁.mem).trans
+      (k₂.mono.trans ((by rw [U₃.mem]; exact (Kept.refl _).mono :
+        Kept base len [] [bitsOff, genOff, usedOff] t₂.mem t₃.mem).trans (k₄.mono.trans
+          ((by rw [U₅.mem]; exact (Kept.refl _).mono : Kept base len [] [bitsOff, genOff, usedOff] t₄.mem t₅.mem).trans
+            (k₆.mono.trans (by rw [F₈.mem, U₇.mem]; exact (Kept.refl _).mono))))))
+  · rw [c₈, U₇.gpr, Gl, h3, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small,
+      Nat.mod_eq_of_lt (by omega)]
+
 /-- The body, from the frame's state `s`, with the function's `bits`, generator and `used` read
 above the frame. -/
 theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
@@ -68,45 +116,9 @@ theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
       (Spec.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
-  have small := G.small
-  have hu := h.upper
-  have ul : up.toNat < 2 ^ 32 := up.isLt
-  have ra : ∀ {t : State} {j : Nat} {v : BitVec 32}, j ∈ [2, 3, 4] → readSrc s (.mem (argAt 19 j)) = some v →
-      Step Ex base bytes len args s t → readSrc t (.mem (argAt 19 j)) = some v :=
-    fun hj hr S => readArg_step rfl hr S (dws _ hj) (d40 _ hj)
-  unfold Impl.Ffdh.X86.Candidate.body entryWords
-  simp only [List.cons_append, List.nil_append]
-  refine WP.seq (WP.mono_syms (Q := fun t => Step Ex base bytes len args s t ∧ w32 t.mem base bitsOff = bits ∧
-      w32 t.mem base genOff = g ∧ w32 t.mem base usedOff = up.toNat ∧
-      Kept base len [] [bitsOff, genOff, usedOff] s.mem t.mem ∧ t.cf = some (decide (T.length < len))) ?_
+  unfold Impl.Ffdh.X86.Candidate.body
+  refine WP.seq (WP.mono_syms (bodyHead_ok h G.len G.small h3 rb rg ru dws d40 hb2 hg25)
     fun u ⟨S, B, Gn, Us, k, c⟩ sy => ?_)
-  · refine wp_movS rb fun t₁ U₁ _ => ?_
-    have S₁ : Step Ex base bytes len args s t₁ := Step.regs h U₁.mem U₁.keeps
-    refine hdr_store S₁.inp hdr_bits fun t₂ S₂ W₂ k₂ _ _ _ _ => ?_
-    have S₂' := S₁.trans S₂
-    refine wp_movS (ra (by simp) rg S₂') fun t₃ U₃ _ => ?_
-    have S₃ : Step Ex base bytes len args s t₃ := S₂'.trans (Step.regs S₂.inp U₃.mem U₃.keeps)
-    refine hdr_store S₃.inp hdr_gen fun t₄ S₄ W₄ k₄ _ _ _ _ => ?_
-    have S₄' := S₃.trans S₄
-    refine wp_movS (ra (by simp) ru S₄') fun t₅ U₅ _ => ?_
-    have S₅ : Step Ex base bytes len args s t₅ := S₄'.trans (Step.regs S₄.inp U₅.mem U₅.keeps)
-    refine hdr_store S₅.inp hdr_used fun t₆ S₆ W₆ k₆ _ _ _ _ => ?_
-    have S₆' := S₅.trans S₆
-    refine wp_movS (S₆'.inp.arg (i := 12) (by decide)) fun t₇ U₇ _ => ?_
-    have h₇ := S₆'.inp.regs U₇.keeps U₇.mem
-    refine wp_cmpC (h₇.arg (i := 3) (by decide)) fun t₈ F₈ c₈ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-    · exact S₆'.trans (Step.regs S₆.inp (by rw [F₈.mem, U₇.mem]) (U₇.keeps.trans (F₈.keeps _)))
-    · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, k₄.word_eq, U₃.mem, W₂, U₁.gpr, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)]
-    · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, W₄, U₃.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    · rw [F₈.mem, U₇.mem, W₆, U₅.gpr]
-    · exact (by rw [U₁.mem]; exact (Kept.refl _).mono : Kept base len [] [bitsOff, genOff, usedOff] s.mem t₁.mem).trans
-        (k₂.mono.trans ((by rw [U₃.mem]; exact (Kept.refl _).mono :
-          Kept base len [] [bitsOff, genOff, usedOff] t₂.mem t₃.mem).trans (k₄.mono.trans
-            ((by rw [U₅.mem]; exact (Kept.refl _).mono : Kept base len [] [bitsOff, genOff, usedOff] t₄.mem t₅.mem).trans
-              (k₆.mono.trans (by rw [F₈.mem, U₇.mem]; exact (Kept.refl _).mono))))))
-    · rw [c₈, U₇.gpr, G.len, h3, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small,
-        Nat.mod_eq_of_lt (by omega)]
   have Ox' : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [S.esp]; exact Ox.keep rfl S.keeps
   have U' : UsedAt base bytes up (u.gpr .esp) ⟨byteAddr (args 0), len⟩ u.wr := by
     rw [S.esp]; exact U.keep rfl S.keeps
