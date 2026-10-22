@@ -74,6 +74,17 @@ theorem addm_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
   have e := Scr.addr hs (d := d) (by omega)
   exact wp_addm (B := s.gpr .edi) rfl (by rw [e]; exact hs.read hd) fun s' u => by rw [e] at u; exact k s' u
 
+/-- `and r, [edi + d]`. -/
+theorem andm_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
+    (k : ∀ s', Upd s s' r (s.gpr r &&& s.mem.readW (off base d) 32) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .and r (.mem (sc d)) :: is)) s Q := by
+  have e := Scr.addr hs (d := d) (by omega)
+  have hin := hs.read hd
+  rw [← e] at hin
+  refine cons (by simp [exec, execAlu, sc, VG.Impl.Mont.X86.at_, readSrc_mem (B := s.gpr .edi) rfl hin]; rfl)
+    (k _ ?_)
+  rw [← e]; exact Upd.flags _ _ _ _ _ _
+
 /-- `movzx r, byte [edi + d]`. -/
 theorem ld8_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (k : ∀ s', Upd s s' r ((s.mem (off base d)).setWidth 32) → WP isa (.block is) s' Q) :
