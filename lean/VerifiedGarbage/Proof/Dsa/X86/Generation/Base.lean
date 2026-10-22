@@ -143,9 +143,13 @@ theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : Lis
     (F : E.Chg os s.mem t.mem) (A : E.Apart os) (edi : t.gpr .edi = s.gpr .edi) (sp : t.gpr .esp = s.gpr .esp)
     (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sy : t.syms = s.syms) : Base E t := by
   have hos : ∀ o ∈ os, o.1 + o.2 ≤ E.size := fun o ho => (A o ho).1
-  have word : ∀ d, fOut ≤ d → d + 4 ≤ fWitLen + 4 → t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    fun d h₁ h₂ => Env.Chg.word v F (by have := v.room; simp only [fWitLen, hdr] at h₂; omega)
-      fun o ho => ⟨(A o ho).1, by rcases (A o ho).2 with h | h <;> omega⟩
+  have word : ∀ d, d = fOut ∨ (fHs ≤ d ∧ d + 4 ≤ fWitLen + 4) →
+      t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
+    fun d h => Env.Chg.word v F (by have := v.room; simp only [fOut, fHs, fWitLen, hdr] at h; omega)
+      fun o ho => ⟨(A o ho).1, by
+        have := (A o ho).2
+        simp only [fOut, fHs, fWitLen, hdr] at h this ⊢
+        omega⟩
   have tapeEq : ∀ R ∈ [E.seedsRegion, E.hsRegion, E.witRegion],
       Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := fun R hR =>
     Env.Chg.bytesAt F (v.tapesFar R hR).1 (v.tapesFar R hR).2.2 hos (by
@@ -154,9 +158,9 @@ theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : Lis
       rcases hR with rfl | rfl | rfl <;> simp only [Env.seedsRegion, Env.hsRegion, Env.witRegion] <;> omega)
   refine ⟨Scr.of_eq B.scr edi sp wr, sp.trans B.sp, rd ▸ B.tapes, rd ▸ B.table, wr ▸ B.out, sy ▸ B.syms, ?_,
     (tapeEq E.seedsRegion (by simp)).trans B.seeds, (tapeEq E.hsRegion (by simp)).trans B.hs,
-    (tapeEq E.witRegion (by simp)).trans B.wit, (word fOut (by decide) (by decide)).trans B.outW,
-    (word fHs (by decide) (by decide)).trans B.hsW, (word fHsLen (by decide) (by decide)).trans B.hsLenW,
-    (word fWit (by decide) (by decide)).trans B.witW, (word fWitLen (by decide) (by decide)).trans B.witLenW⟩
+    (tapeEq E.witRegion (by simp)).trans B.wit, (word fOut (.inl rfl)).trans B.outW,
+    (word fHs (.inr (by decide))).trans B.hsW, (word fHsLen (.inr (by decide))).trans B.hsLenW,
+    (word fWit (.inr (by decide))).trans B.witW, (word fWitLen (.inr (by decide))).trans B.witLenW⟩
   intro c hc i hi
   have h := B.held c hc i hi
   simp only [VG.Impl.RsaKeyGen.TrialTable32.consts, List.mem_singleton] at hc

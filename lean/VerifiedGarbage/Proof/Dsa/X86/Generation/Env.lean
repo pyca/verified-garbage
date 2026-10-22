@@ -61,9 +61,10 @@ differ from `m` in. -/
 def Chg (os : List (Nat × Nat)) (m m' : Mem) : Prop :=
   Frame ((os.map fun o => (⟨off E.base o.1, o.2⟩ : Region)) ++ [E.stackRegion]) m m'
 
-/-- Ranges of `scratch` apart from the state words that hold the arguments. -/
+/-- Ranges of `scratch` apart from the state words that hold the arguments
+`Base` keeps: `out`, and the `h` and witness tapes. -/
 def Apart (os : List (Nat × Nat)) : Prop :=
-  ∀ o ∈ os, o.1 + o.2 ≤ E.size ∧ (o.1 + o.2 ≤ fOut ∨ fWitLen + 4 ≤ o.1)
+  ∀ o ∈ os, o.1 + o.2 ≤ E.size ∧ (o.1 + o.2 ≤ fOut ∨ (fOut + 4 ≤ o.1 ∧ o.1 + o.2 ≤ fHs) ∨ fWitLen + 4 ≤ o.1)
 
 end Env
 
