@@ -3,7 +3,12 @@
 //! validation all run in verified assembly. Rust supplies the three entropy
 //! tapes, allocates output and scratch, and selects the CPU implementation.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use alloc::{vec, vec::Vec};
 
@@ -117,7 +122,7 @@ type Generate = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 
-#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -215,4 +220,51 @@ fn select_backends(
         (H1::Sha2, H256::Scalar) => vg_dsa_generate_parameters_sha1_sha2,
         (H1::Sha2, H256::Sha2) => vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
     }
+}
+
+/// The ARMv7 implementations: the Miller–Rabin round's `umaal` variant where
+/// the operating system runs on A-profile cores alone, else the baseline.
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+fn select(features: Features) -> Generate {
+    select_backends(features.contains(VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES))
+}
+
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+fn select_backends(umaal: bool) -> Generate {
+    match umaal {
+        false => vg_dsa_generate_parameters,
+        true => vg_dsa_generate_parameters_umaal,
+    }
+}
+
+#[cfg(all(
+    target_arch = "arm",
+    not(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))
+))]
+fn select(_features: Features) -> Generate {
+    vg_dsa_generate_parameters
 }

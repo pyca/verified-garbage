@@ -306,7 +306,20 @@ fn backend_combinations() {
 }
 
 /// An implementation given empty tapes zeroes `out` and returns 0.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    )
+))]
 fn check_empty_tapes(selected: Generate) {
     let mut out = [0xa5; 276];
     let mut scratch = vec![0u64; 9216];
@@ -432,6 +445,36 @@ fn backend_combinations() {
             };
             assert_eq!(status, 0);
             assert_eq!(out, [0; 276]);
+        }
+    }
+}
+
+#[test]
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+fn backend_combinations() {
+    let cases: &[(bool, Generate, Features)] = &[
+        (false, vg_dsa_generate_parameters, Features(0)),
+        (
+            true,
+            vg_dsa_generate_parameters_umaal,
+            VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES,
+        ),
+    ];
+    for &(umaal, expected, required) in cases {
+        let selected = select_backends(umaal);
+        assert!(core::ptr::fn_addr_eq(selected, expected));
+        assert!(core::ptr::fn_addr_eq(select(required), expected));
+        if detected().contains(required) {
+            check_empty_tapes(selected);
         }
     }
 }
