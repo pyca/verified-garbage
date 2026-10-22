@@ -136,7 +136,7 @@ theorem mulA24Add_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (
     simp only [val4] at e1
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (fold_ok s₂ c2 hc) fun s₃ ⟨e3, _, k3⟩ => ?_
+  refine WP.mono (fold_ok s₂ hc) fun s₃ ⟨e3, _, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)
   refine WP.mono (store4_ok hs₃ ho) fun s₄ ⟨m4, g4, rd4, wr4⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩

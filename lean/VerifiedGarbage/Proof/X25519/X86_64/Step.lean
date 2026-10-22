@@ -226,64 +226,76 @@ theorem carry38_ok (s : State) (hx : (s.gpr .rax).toNat < 2 ^ 58) :
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2, ite_false]
 
-/-- `sbb x, x` then `and 19`: 19 if the carry was set, else 0. -/
-theorem mask19 (x : BitVec 64) (c : Bool) :
-    ((x - x - (BitVec.ofBool c).setWidth 64) &&& BitVec.signExtend 64 (19 : BitVec 32)).toNat =
-      19 * c.toNat := by
-  cases c <;> simp only [BitVec.sub_self] <;> decide
-
-/-- `shl x, 1` then `shr x, 1`: bit 63 cleared, and shifted out into the carry. -/
-theorem shl_shr_one (x : BitVec 64) :
-    (x <<< 1 >>> 1).toNat + 2 ^ 63 * (x.getLsbD (64 - 1)).toNat = x.toNat ∧
-      (x <<< 1 >>> 1).toNat < 2 ^ 63 := by
+/-- `shld c, x, 1`: `2c` plus bit 63 of `x`, for `c < 2⁶³`. -/
+theorem shld1_val (c x : BitVec 64) (hc : c.toNat < 2 ^ 63) :
+    ((c <<< 1) ||| (x >>> (64 - 1))).toNat = 2 * c.toNat + x.toNat / 2 ^ 63 := by
   have hx := x.isLt
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq]
-  simp only [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.reducePow, Nat.reduceSub]
-  by_cases h : x.toNat / 9223372036854775808 % 2 = 1 <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> constructor <;> omega
+  simp only [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
+    Nat.shiftRight_eq_div_pow, Nat.reduceSub, Nat.pow_one]
+  have h := Nat.two_pow_add_eq_or_of_lt (i := 1) (b := x.toNat / 2 ^ 63) (by omega) c.toNat
+  rw [Nat.pow_one] at h
+  rw [Nat.mod_eq_of_lt (by omega), Nat.mul_comm, ← h]
+
+/-- `btr x, 63`: bit 63 of `x` cleared. -/
+theorem btr63_val (x : BitVec 64) :
+    (x &&& ~~~((1 : BitVec 64) <<< 63)).toNat = x.toNat % 2 ^ 63 := by
+  have hm : ~~~((1 : BitVec 64) <<< 63) = BitVec.ofNat 64 (2 ^ 63 - 1) := by decide
+  rw [hm, BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by decide), Nat.and_two_pow_sub_one_eq_mod]
+
+theorem se19 : BitVec.signExtend 64 (19 : BitVec 32) = 19 := by
+  rw [BitVec.signExtend_eq_setWidth_of_msb_false (by decide)]; decide
+
+theorem toInt_19 : (19 : BitVec 64).toInt = 19 := by
+  rw [BitVec.toInt_eq_toNat_of_lt (by decide)]; rfl
+
+/-- `imul rax, c, 19`: `19 c`, for `c < 2⁵⁹`. -/
+theorem imul19_val (c : BitVec 64) (hc : c.toNat < 2 ^ 59) :
+    (BitVec.ofInt 64 (c.toInt * (BitVec.signExtend 64 (19 : BitVec 32)).toInt)).toNat = 19 * c.toNat := by
+  have hi : c.toInt = c.toNat := BitVec.toInt_eq_toNat_of_lt (by omega)
+  rw [se19, toInt_19, hi]
+  have : ((c.toNat : Int) * 19) = ((19 * c.toNat : Nat) : Int) := by push_cast; omega
+  rw [this, BitVec.ofInt_natCast, BitVec.toNat_ofNat]
+  exact Nat.mod_eq_of_lt (by omega)
 
 open VG.Spec.X25519 (P) in
-/-- `carry19 m`: `r8–r11 + rax`, with bit 255 folded in as 19, is the same
-number modulo `p`, and at most `2p`, if `rax < 2⁶³`. -/
-theorem carry19_ok (s : State) {m : Reg} (h8 : m ≠ .r8) (h9 : m ≠ .r9) (h10 : m ≠ .r10)
-    (h11 : m ≠ .r11) (ha : m ≠ .rax) (hx : (s.gpr .rax).toNat < 2 ^ 63) :
-    WP isa (.block (carry19 m)) s fun s' =>
+/-- `fold19 c`: `r8–r11 + 2²⁵⁶ c` (`+ 38 c`), with bit 255 folded in as 19, is the
+same number modulo `p`, and at most `2p`, if `c < 2⁵²`. -/
+theorem fold19_ok (s : State) {c : Reg} (h8 : c ≠ .r8) (h9 : c ≠ .r9) (h10 : c ≠ .r10)
+    (h11 : c ≠ .r11) (ha : c ≠ .rax) (hc : (s.gpr c).toNat < 2 ^ 52) :
+    WP isa (.block (fold19 c)) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
-        (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + (s.gpr .rax).toNat) % P ∧
+        (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 38 * (s.gpr c).toNat) % P ∧
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
-      Keeps [.r8, .r9, .r10, .r11, .rax, m] s s' := by
+      Keeps [.r8, .r9, .r10, .r11, .rax, c] s s' := by
   apply WP.of_runBlock
-  simp only [carry19, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift,
-    Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
-    RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_setFlags, ite_true,
+  simp only [fold19, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShld,
+    execBtr, execImul3, Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true,
     ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0, h11,
     Ne.symm h8, Ne.symm h9, Ne.symm h10, Ne.symm h11, Ne.symm ha, Nat.le_refl,
-    and_self, Nat.reduceLeDiff]
-  have hk := mask19 (s.gpr m) ((s.gpr .r11).getLsbD (64 - 1))
-  obtain ⟨hsh, hu⟩ := shl_shr_one (s.gpr .r11)
-  generalize (s.gpr .r11).getLsbD (64 - 1) = c at hk hsh hu ⊢
-  generalize (s.gpr m - s.gpr m - (BitVec.ofBool c).setWidth 64 &&&
-    BitVec.signExtend 64 (19 : BitVec 32)) = k at hk ⊢
-  have hc := Bool.toNat_le c
-  have hr : (s.gpr .rax + k).toNat = (s.gpr .rax).toNat + 19 * c.toNat := by
-    rw [BitVec.toNat_add, hk]; exact Nat.mod_eq_of_lt (by omega)
-  generalize s.gpr .rax + k = r at hr ⊢
-  generalize s.gpr .r11 <<< 1 >>> 1 = u at hsh hu ⊢
-  have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) u r 0 0 0
+    and_self, Nat.reduceLeDiff, Nat.reduceLT]
+  have hx := (s.gpr .r11).isLt
+  have hr := shld1_val (s.gpr c) (s.gpr .r11) (by omega)
+  generalize s.gpr c <<< 1 ||| s.gpr .r11 >>> (64 - 1) = r at hr ⊢
+  have hm := imul19_val r (by omega)
+  generalize BitVec.ofInt 64 (r.toInt * (BitVec.signExtend 64 (19 : BitVec 32)).toInt) = m at hm ⊢
+  have hu := btr63_val (s.gpr .r11)
+  generalize s.gpr .r11 &&& ~~~((1 : BitVec 64) <<< 63) = u at hu ⊢
+  have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) u m 0 0 0
   simp only at e
   generalize decide (2 ^ 64 ≤ u.toNat + BitVec.toNat 0 + _) = c3 at e
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   have h3 := Bool.toNat_le c3
-  have := r.isLt
+  have := m.isLt
   have := (s.gpr .r8).isLt; have := (s.gpr .r9).isLt; have := (s.gpr .r10).isLt
+  have hs : (s.gpr .r11).toNat = u.toNat + 2 ^ 63 * ((s.gpr .r11).toNat / 2 ^ 63) := by omega
   simp only [hz, val4] at e ⊢
   refine ⟨?_, ?_, fun x hx => ?_, rfl, rfl, rfl⟩
   · have key : ∀ A B k : Nat, A + P * k = B → A % P = B % P := fun A B k h => by
       rw [← h, Nat.add_mul_mod_self_left]
-    exact key _ _ c.toNat (by simp only [P]; omega)
+    exact key _ _ ((s.gpr .r11).toNat / 2 ^ 63) (by simp only [P]; omega)
   · simp only [P]; omega
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hx.1, hx.2.1,
       hx.2.2.1, hx.2.2.2.1, hx.2.2.2.2.1, hx.2.2.2.2.2, ite_false]
-
 end VG.Proof.X25519.X86_64

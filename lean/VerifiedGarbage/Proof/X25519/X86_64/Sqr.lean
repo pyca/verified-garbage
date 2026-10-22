@@ -289,7 +289,7 @@ theorem reduce_ok (s : State) :
     have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
     have := (s₁.gpr .r11).isLt
     omega
-  refine WP.mono (fold_ok s₁ c1 (by omega)) fun s₂ ⟨e2, b2, k2⟩ => ?_
+  refine WP.mono (fold_ok s₁ (by omega)) fun s₂ ⟨e2, b2, k2⟩ => ?_
   refine ⟨?_, b2, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
   rw [e2, ← fold256, e1, fold256]
 

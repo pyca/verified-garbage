@@ -93,10 +93,6 @@ theorem reduceLo_ok (s : State) :
     (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans
     (k6.mono (by decide))⟩
 
-theorem reduceX_eq :
-    reduceX = reduceLo ++ (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry19 .rbp) := by
-  simp only [reduceX, List.append_assoc]
-
 open VG.Spec.X25519 (P) in
 /-- The last fold: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79` and `rdx = 38`, folded into `r8–r11`. -/
 theorem foldX_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).toNat = 38) :
@@ -116,27 +112,6 @@ theorem foldX_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).
     k7.1 .r11 (by decide), fold256]
 
 open VG.Spec.X25519 (P) in
-/-- `reduceX`'s last fold: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79` and `rdx = 38`, folded into
-`r8–r11` at bit 255, at most `2p`. -/
-theorem foldX19_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).toNat = 38) :
-    WP isa (.block (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry19 .rbp)) s fun s' =>
-      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
-        (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 2 ^ 256 * (s.gpr .r12).toNat) % P ∧
-      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
-      Keeps [.r8, .r9, .r10, .r11, .rax, .rcx, .rbp] s s' := by
-  rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok s rfl (noImm_reg _) (by decide)) fun s7 ⟨e7, _, _, k7⟩ => ?_
-  rw [hd] at e7
-  have hax : (s7.gpr .rax).toNat = 38 * (s.gpr .r12).toNat := by
-    have := (s7.gpr .rax).isLt
-    omega_arith
-  refine WP.mono (carry19_ok s7 (m := .rbp) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith)) fun s8 ⟨e8, b8, k8⟩ => ?_
-  refine ⟨?_, b8, (k7.mono (by decide)).trans (k8.mono (by decide))⟩
-  rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
-    k7.1 .r11 (by decide), fold256]
-
-open VG.Spec.X25519 (P) in
 /-- `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`), at most `2p`. -/
 theorem reduceX_ok (s : State) :
     WP isa (.block reduceX) s fun s' =>
@@ -145,11 +120,12 @@ theorem reduceX_ok (s : State) :
           2 ^ 256 * val4 (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) (s.gpr .r15)) % P ∧
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
       Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx, .rbp] s s' := by
-  rw [reduceX_eq, WP.block_append_iff]
-  refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, hd, k6⟩ => ?_
-  refine WP.mono (foldX19_ok s6 (by omega) hd) fun s8 ⟨e8, b8, k8⟩ => ?_
+  rw [reduceX, WP.block_append_iff]
+  refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, _, k6⟩ => ?_
+  refine WP.mono (fold19_ok s6 (c := .r12) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by omega)) fun s8 ⟨e8, b8, k8⟩ => ?_
   refine ⟨?_, b8, k6.trans (k8.mono (by decide))⟩
-  rw [e8, hv, fold256]
+  rw [e8, ← fold256, hv, fold256]
 
 /-- `r8–r12` doubled, for `r12 < 2⁶³`. -/
 theorem dbl5_ok (s : State) (h12 : (s.gpr .r12).toNat < 2 ^ 63) :

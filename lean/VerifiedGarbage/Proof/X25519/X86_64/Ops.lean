@@ -136,7 +136,7 @@ theorem mulBnd_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho 
     have := (s₅.gpr .r11).isLt
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (fold_ok s₅ c5 (by omega)) fun s₆ ⟨e6, b6, k6⟩ => ?_
+  refine WP.mono (fold_ok s₅ (by omega)) fun s₆ ⟨e6, b6, k6⟩ => ?_
   have hs₆ := hs₅.of_keeps k6 (by decide)
   refine WP.mono (store4_ok hs₆ ho) fun s₇ ⟨m7, g7, rd7, wr7⟩ => ?_
   -- Memory is only read until the store.

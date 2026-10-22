@@ -26,8 +26,8 @@ multiplications (`mul`, `sqr`, and `mulSmallAdd` by `a24`) are the
 other multiplications:
 
 * `mul`: the 512-bit product, row by row (`r8–r15`, with the carry of a row
-  in `rbp`), then `lo + 38 hi` (as `2²⁵⁶ ≡ 38`), whose carry word `c` is
-  folded in as `38 c`, and a last carry of that as 38 more;
+  in `rbp`), then `lo + 38 hi` (as `2²⁵⁶ ≡ 38`), whose carry word `c` and
+  bit 255 are folded in as `19 (2c + bit 255)` (`fold19`), at most `2p`;
 * `add`, `sub`: with carries (borrows), each carry folded in (subtracted) as
   38, twice; `addCmov` and `subCmov`, the ladder's, once, which is enough when an
   operand is at most `2p`, as products are;
@@ -117,17 +117,18 @@ def carry38 : List Instr :=
     .alu .adc .r11 (.imm 0), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38),
     .alu .add .r8 (.reg .rax)]
 
-/-- `r8–r11 += rax`, for `rax < 2⁶³`, with bit 255 of `r8–r11` taken out and
-added back as 19 (`2²⁵⁵ ≡ 19`), using `m` for the mask: the sum, below
-`2²⁵⁵ + 2⁶⁴`, cannot carry out, so a product reduced this way is at most `2p`,
-as `addL` and `subL` need. -/
-def carry19 (m : Reg) : List Instr :=
-  [.shift .shl .r11 1, .alu .sbb m (.reg m), .shift .shr .r11 1, .alu .and m (.imm 19),
-    .alu .add .rax (.reg m), .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0),
+/-- `r8–r11 += 2²⁵⁶ c`, for `c < 2⁵²`, folded at bit 255 as s2n-bignum's
+`curve25519_x25519` folds a product's top word: `2²⁵⁶ c` and bit 255 of
+`r8–r11` are added back as `19 (2c + bit 255)` (`2²⁵⁶ ≡ 38`, `2²⁵⁵ ≡ 19`),
+`shld c, r11, 1` making `2c + bit 255` and `btr r11, 63` clearing the bit,
+with one `imul`. The sum, below `2²⁵⁵ + 2⁶⁴`, cannot carry out, so a product
+reduced this way is at most `2p`, as `addL` and `subL` need. -/
+def fold19 (c : Reg) : List Instr :=
+  [.shld c .r11 1, .btr .r11 63, .imul3 .rax c 19, .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0),
     .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0)]
 
-/-- `r8–r11 += 38 rbp`, with `rcx = 38`, at most `2p`. -/
-def fold : List Instr := [.mov .rax (.reg .rbp), .mul .rcx] ++ carry19 .rbp
+/-- `r8–r11 += 38 rbp`, at most `2p`. -/
+def fold : List Instr := fold19 .rbp
 
 /-- `[rdi + o] = a, b, c, d`. -/
 def stores (o : Nat) (a b c d : Reg) : List Instr :=

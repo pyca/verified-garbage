@@ -74,7 +74,7 @@ def reduceLo : List Instr :=
     madd .r10 .r11 (.reg .r14) ++ maddLast .r11 .r12 (.reg .r15)
 
 /-- `reduceLo`, then `r8–r11 += 38 r12`, folded at bit 255 (at most `2p`). -/
-def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry19 .rbp
+def reduceX : List Instr := reduceLo ++ fold19 .r12
 
 /-- `r8–r12` doubled. -/
 def dbl5 : List Instr :=
