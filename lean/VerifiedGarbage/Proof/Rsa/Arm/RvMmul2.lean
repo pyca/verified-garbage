@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
 import VerifiedGarbage.Proof.Rsa.Arm.RvTaint
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 import VerifiedGarbage.Proof.Rsa.Arm.RvViews
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontSelected
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a Montgomery product on a stage, as a piece (`mmul_vp`) -/
@@ -114,7 +114,7 @@ theorem mmul_vp {o a b : Nat} (hi : MIdx o a b) (hodd : P.n % 2 = 1)
         refine ⟨hm.mr.ready ptr, ?_⟩
         rw [numAt_eq sz pre.fS (by rw [h.arrs _ hb]; omega), h.arrs _ hb, hm.n0]
         exact hbv
-      refine (montOp_ct (base := P.M0) (len := P.lenM) (w := P.w6) opd.1 opd.2.1 opd.2.2 ?_).mono
+      refine (selectedMontOp_ct (base := P.M0) (len := P.lenM) (w := P.w6) opd.1 opd.2.1 opd.2.2 ?_).mono
         (fun s₁ s₂ ⟨h₁, h₂⟩ => ⟨sz₁ _ _ h₁, sz₁ _ _ h₂, ?_⟩) fun _ _ h => h
       · simp only [arrAt, Spec.Rsa.Mont.hdrBytes, RP.lenM]; omega
       · rw [h₁.1.2.1.bs.sp, h₁.1.2.1.bs.pre.sp, h₂.1.2.1.bs.sp, h₂.1.2.1.bs.pre.sp]

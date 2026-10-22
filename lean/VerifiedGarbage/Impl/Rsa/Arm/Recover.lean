@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+public import VerifiedGarbage.Impl.Bignum.Arm.MontSelected
 
 /-! # `vg_rsa_recover_primes` on ARMv7
 
@@ -242,7 +243,7 @@ def clrTop (j : Nat) : List Instr :=
 
 /-- A Montgomery product `[o] := [a] [b] R⁻¹ mod n` (Montgomery indices),
 then the context and `[o]`'s top words cleared. -/
-def mmul (o a b : Nat) : List (Prog isa) := [.block mont0, montOp o a b, .block (ctx ++ clrTop (mBase + o))]
+def mmul (o a b : Nat) : List (Prog isa) := [.block mont0, selectedMontOp o a b, .block (ctx ++ clrTop (mBase + o))]
 
 /-- The numbers 0 (`n - n`) and 1, and the base of the working space. -/
 def montA : Prog isa := seqs [.block ctxw, sub3 aZ aN aN, copy aOne aZ, .block (setOne aOne ++ montSet)]
