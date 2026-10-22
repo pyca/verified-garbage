@@ -27,7 +27,7 @@ pub fn bench(c: &mut Criterion) {
     // block, which ChaCha20-Poly1305 authenticates at these sizes too; and
     // 480 bytes (30 blocks), near where the x86-64 IFMA code hands short
     // inputs to other code.
-    const SIZES: [usize; 6] = [64, 480, 1024, 1025, 4097, 16384];
+    const SIZES: [usize; 11] = [64, 128, 192, 256, 320, 384, 448, 480, 1024, 1025, 4097];
     let key = [0x0b; 32];
     let mut g = c.benchmark_group("poly1305");
     for size in SIZES {
@@ -42,6 +42,18 @@ pub fn bench(c: &mut Criterion) {
                 let pkey = PKey::private_key_from_raw_bytes(black_box(&key), Id::POLY1305).unwrap();
                 let mut s = Signer::new_without_digest(&pkey).unwrap();
                 s.sign_oneshot(&mut out, black_box(&data)).unwrap()
+            })
+        });
+        // Diagnostic: AWS-LC's own Poly1305.
+        #[cfg(target_arch = "x86_64")]
+        g.bench_function(BenchmarkId::new(crate::AWS_LC, size), |b| {
+            b.iter(|| unsafe {
+                let mut st: aws_lc_sys::poly1305_state = [0; 512];
+                let mut mac = [0u8; 16];
+                aws_lc_sys::CRYPTO_poly1305_init(&mut st, black_box(key.as_ptr()));
+                aws_lc_sys::CRYPTO_poly1305_update(&mut st, black_box(data.as_ptr()), size);
+                aws_lc_sys::CRYPTO_poly1305_finish(&mut st, mac.as_mut_ptr());
+                mac
             })
         });
     }

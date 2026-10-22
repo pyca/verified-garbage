@@ -16,7 +16,7 @@ use crate::{OPENSSL, VG};
 /// whose plaintext is one byte longer (the content type): a partial last
 /// block, which ChaCha20-Poly1305 encrypts at these sizes too; and 480
 /// bytes, which leave 224 after the AArch64 code's whole 256-byte chunks.
-const SIZES: [usize; 6] = [64, 480, 1024, 1025, 4097, 16384];
+const SIZES: [usize; 11] = [64, 128, 192, 256, 320, 384, 448, 480, 1024, 1025, 4097];
 
 pub const USES: &[&str] = &["chacha20"];
 
@@ -47,6 +47,23 @@ pub fn bench(c: &mut Criterion) {
                 c.update(black_box(&data), &mut out).unwrap();
             })
         });
+        // Diagnostic: AWS-LC's own ChaCha20 (`ChaCha20_ctr32_avx2` on x86-64).
+        #[cfg(target_arch = "x86_64")]
+        {
+            let mut out = vec![0u8; size];
+            g.bench_function(BenchmarkId::new(crate::AWS_LC, size), |b| {
+                b.iter(|| unsafe {
+                    aws_lc_sys::CRYPTO_chacha_20(
+                        out.as_mut_ptr(),
+                        black_box(data.as_ptr()),
+                        size,
+                        black_box(key.as_ptr()),
+                        black_box(nonce[4..].as_ptr()),
+                        0,
+                    )
+                })
+            });
+        }
     }
     g.finish();
 }
