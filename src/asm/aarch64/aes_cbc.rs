@@ -2,6 +2,884 @@
 //! Verified `aes_cbc` functions for `aarch64`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_aes_cbc_decrypt_aes_sha3` requires (`Artifact.features`).
+pub(crate) const VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "sha3"]);
+
+/// The bytes of `scratch` that `vg_aes_cbc_decrypt_aes_sha3` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// With FEAT_AES and FEAT_SHA3: seven interleaved inverse-cipher states, with the inverse round keys prepared once and kept in registers. EOR3 combines the final round-key XOR and CBC chaining XOR. Remaining blocks use the same resident keys, one at a time. No stack or scratch memory is used.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `sha3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_aes_sha3(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+.arch_extension sha3
+sub x9, x1, #10
+sub x10, x1, #12
+cbz x9, 20f
+cbz x10, 22f
+add x11, x2, #0
+add x2, x3, #0
+add x3, x4, #0
+add x4, x5, #0
+ldr q31, [x11, #0]
+ldr q16, [x0, #0]
+ldr q17, [x0, #16]
+ldr q18, [x0, #32]
+ldr q19, [x0, #48]
+ldr q20, [x0, #64]
+ldr q21, [x0, #80]
+ldr q22, [x0, #96]
+ldr q23, [x0, #112]
+ldr q24, [x0, #128]
+ldr q25, [x0, #144]
+ldr q26, [x0, #160]
+ldr q27, [x0, #176]
+ldr q28, [x0, #192]
+lsl x9, x1, #4
+add x9, x0, x9
+ldr q30, [x9, #0]
+sub x6, x1, #10
+sub x7, x1, #12
+lsr x13, x3, #3
+ldr q29, [x0, #208]
+aesimc v17.16b, v17.16b
+aesimc v18.16b, v18.16b
+aesimc v19.16b, v19.16b
+aesimc v20.16b, v20.16b
+aesimc v21.16b, v21.16b
+aesimc v22.16b, v22.16b
+aesimc v23.16b, v23.16b
+aesimc v24.16b, v24.16b
+aesimc v25.16b, v25.16b
+aesimc v26.16b, v26.16b
+aesimc v27.16b, v27.16b
+aesimc v28.16b, v28.16b
+aesimc v29.16b, v29.16b
+sub x9, x3, #7
+lsr x13, x9, #63
+cbnz x13, 24f
+.p2align 4
+26:
+ldr q0, [x2, #0]
+ldr q1, [x2, #16]
+ldr q2, [x2, #32]
+ldr q3, [x2, #48]
+ldr q4, [x2, #64]
+ldr q5, [x2, #80]
+ldr q6, [x2, #96]
+aesd v0.16b, v30.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v30.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v30.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v30.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v30.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v30.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v30.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v29.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v29.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v29.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v29.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v29.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v29.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v29.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v28.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v28.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v28.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v28.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v28.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v28.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v28.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v27.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v27.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v27.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v27.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v27.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v27.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v27.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v26.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v26.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v26.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v26.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v26.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v26.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v26.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v25.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v25.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v25.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v25.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v25.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v25.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v25.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v24.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v24.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v24.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v24.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v24.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v24.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v24.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v23.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v23.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v23.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v23.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v23.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v23.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v23.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v22.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v22.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v22.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v22.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v22.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v22.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v22.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v21.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v21.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v21.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v21.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v21.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v21.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v21.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v20.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v20.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v20.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v20.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v20.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v20.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v20.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v19.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v19.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v19.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v19.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v19.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v19.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v19.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v18.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v18.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v18.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v18.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v18.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v18.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v18.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v17.16b
+aesd v1.16b, v17.16b
+aesd v2.16b, v17.16b
+aesd v3.16b, v17.16b
+aesd v4.16b, v17.16b
+aesd v5.16b, v17.16b
+aesd v6.16b, v17.16b
+eor3 v0.16b, v0.16b, v16.16b, v31.16b
+ldr q31, [x2, #0]
+str q0, [x2, #0]
+eor3 v1.16b, v1.16b, v16.16b, v31.16b
+ldr q31, [x2, #16]
+str q1, [x2, #16]
+eor3 v2.16b, v2.16b, v16.16b, v31.16b
+ldr q31, [x2, #32]
+str q2, [x2, #32]
+eor3 v3.16b, v3.16b, v16.16b, v31.16b
+ldr q31, [x2, #48]
+str q3, [x2, #48]
+eor3 v4.16b, v4.16b, v16.16b, v31.16b
+ldr q31, [x2, #64]
+str q4, [x2, #64]
+eor3 v5.16b, v5.16b, v16.16b, v31.16b
+ldr q31, [x2, #80]
+str q5, [x2, #80]
+eor3 v6.16b, v6.16b, v16.16b, v31.16b
+ldr q31, [x2, #96]
+str q6, [x2, #96]
+add x2, x2, #112
+sub x3, x3, #7
+sub x9, x3, #7
+lsr x13, x9, #63
+cbz x13, 26b
+b 25f
+24:
+25:
+cbz x3, 27f
+.p2align 4
+29:
+ldr q0, [x2, #0]
+aesd v0.16b, v30.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v29.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v28.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v27.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v26.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v25.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v24.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v23.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v22.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v21.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v20.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v19.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v18.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v17.16b
+eor3 v0.16b, v0.16b, v16.16b, v31.16b
+ldr q31, [x2, #0]
+str q0, [x2, #0]
+add x2, x2, #16
+sub x3, x3, #1
+cbnz x3, 29b
+b 28f
+27:
+28:
+str q31, [x11, #0]
+b 23f
+22:
+add x11, x2, #0
+add x2, x3, #0
+add x3, x4, #0
+add x4, x5, #0
+ldr q31, [x11, #0]
+ldr q16, [x0, #0]
+ldr q17, [x0, #16]
+ldr q18, [x0, #32]
+ldr q19, [x0, #48]
+ldr q20, [x0, #64]
+ldr q21, [x0, #80]
+ldr q22, [x0, #96]
+ldr q23, [x0, #112]
+ldr q24, [x0, #128]
+ldr q25, [x0, #144]
+ldr q26, [x0, #160]
+ldr q27, [x0, #176]
+ldr q28, [x0, #192]
+lsl x9, x1, #4
+add x9, x0, x9
+ldr q30, [x9, #0]
+sub x6, x1, #10
+sub x7, x1, #12
+lsr x13, x3, #3
+ldr q29, [x0, #208]
+aesimc v17.16b, v17.16b
+aesimc v18.16b, v18.16b
+aesimc v19.16b, v19.16b
+aesimc v20.16b, v20.16b
+aesimc v21.16b, v21.16b
+aesimc v22.16b, v22.16b
+aesimc v23.16b, v23.16b
+aesimc v24.16b, v24.16b
+aesimc v25.16b, v25.16b
+aesimc v26.16b, v26.16b
+aesimc v27.16b, v27.16b
+aesimc v28.16b, v28.16b
+aesimc v29.16b, v29.16b
+sub x9, x3, #7
+lsr x13, x9, #63
+cbnz x13, 210f
+.p2align 4
+212:
+ldr q0, [x2, #0]
+ldr q1, [x2, #16]
+ldr q2, [x2, #32]
+ldr q3, [x2, #48]
+ldr q4, [x2, #64]
+ldr q5, [x2, #80]
+ldr q6, [x2, #96]
+aesd v0.16b, v30.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v30.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v30.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v30.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v30.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v30.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v30.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v27.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v27.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v27.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v27.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v27.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v27.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v27.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v26.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v26.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v26.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v26.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v26.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v26.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v26.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v25.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v25.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v25.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v25.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v25.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v25.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v25.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v24.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v24.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v24.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v24.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v24.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v24.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v24.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v23.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v23.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v23.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v23.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v23.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v23.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v23.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v22.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v22.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v22.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v22.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v22.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v22.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v22.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v21.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v21.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v21.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v21.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v21.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v21.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v21.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v20.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v20.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v20.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v20.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v20.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v20.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v20.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v19.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v19.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v19.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v19.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v19.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v19.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v19.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v18.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v18.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v18.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v18.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v18.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v18.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v18.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v17.16b
+aesd v1.16b, v17.16b
+aesd v2.16b, v17.16b
+aesd v3.16b, v17.16b
+aesd v4.16b, v17.16b
+aesd v5.16b, v17.16b
+aesd v6.16b, v17.16b
+eor3 v0.16b, v0.16b, v16.16b, v31.16b
+ldr q31, [x2, #0]
+str q0, [x2, #0]
+eor3 v1.16b, v1.16b, v16.16b, v31.16b
+ldr q31, [x2, #16]
+str q1, [x2, #16]
+eor3 v2.16b, v2.16b, v16.16b, v31.16b
+ldr q31, [x2, #32]
+str q2, [x2, #32]
+eor3 v3.16b, v3.16b, v16.16b, v31.16b
+ldr q31, [x2, #48]
+str q3, [x2, #48]
+eor3 v4.16b, v4.16b, v16.16b, v31.16b
+ldr q31, [x2, #64]
+str q4, [x2, #64]
+eor3 v5.16b, v5.16b, v16.16b, v31.16b
+ldr q31, [x2, #80]
+str q5, [x2, #80]
+eor3 v6.16b, v6.16b, v16.16b, v31.16b
+ldr q31, [x2, #96]
+str q6, [x2, #96]
+add x2, x2, #112
+sub x3, x3, #7
+sub x9, x3, #7
+lsr x13, x9, #63
+cbz x13, 212b
+b 211f
+210:
+211:
+cbz x3, 213f
+.p2align 4
+215:
+ldr q0, [x2, #0]
+aesd v0.16b, v30.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v27.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v26.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v25.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v24.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v23.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v22.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v21.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v20.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v19.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v18.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v17.16b
+eor3 v0.16b, v0.16b, v16.16b, v31.16b
+ldr q31, [x2, #0]
+str q0, [x2, #0]
+add x2, x2, #16
+sub x3, x3, #1
+cbnz x3, 215b
+b 214f
+213:
+214:
+str q31, [x11, #0]
+23:
+b 21f
+20:
+add x11, x2, #0
+add x2, x3, #0
+add x3, x4, #0
+add x4, x5, #0
+ldr q31, [x11, #0]
+ldr q16, [x0, #0]
+ldr q17, [x0, #16]
+ldr q18, [x0, #32]
+ldr q19, [x0, #48]
+ldr q20, [x0, #64]
+ldr q21, [x0, #80]
+ldr q22, [x0, #96]
+ldr q23, [x0, #112]
+ldr q24, [x0, #128]
+ldr q25, [x0, #144]
+ldr q26, [x0, #160]
+ldr q27, [x0, #176]
+ldr q28, [x0, #192]
+lsl x9, x1, #4
+add x9, x0, x9
+ldr q30, [x9, #0]
+sub x6, x1, #10
+sub x7, x1, #12
+lsr x13, x3, #3
+ldr q29, [x0, #208]
+aesimc v17.16b, v17.16b
+aesimc v18.16b, v18.16b
+aesimc v19.16b, v19.16b
+aesimc v20.16b, v20.16b
+aesimc v21.16b, v21.16b
+aesimc v22.16b, v22.16b
+aesimc v23.16b, v23.16b
+aesimc v24.16b, v24.16b
+aesimc v25.16b, v25.16b
+aesimc v26.16b, v26.16b
+aesimc v27.16b, v27.16b
+aesimc v28.16b, v28.16b
+aesimc v29.16b, v29.16b
+sub x9, x3, #7
+lsr x13, x9, #63
+cbnz x13, 216f
+.p2align 4
+218:
+ldr q0, [x2, #0]
+ldr q1, [x2, #16]
+ldr q2, [x2, #32]
+ldr q3, [x2, #48]
+ldr q4, [x2, #64]
+ldr q5, [x2, #80]
+ldr q6, [x2, #96]
+aesd v0.16b, v30.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v30.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v30.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v30.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v30.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v30.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v30.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v25.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v25.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v25.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v25.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v25.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v25.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v25.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v24.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v24.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v24.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v24.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v24.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v24.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v24.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v23.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v23.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v23.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v23.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v23.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v23.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v23.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v22.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v22.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v22.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v22.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v22.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v22.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v22.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v21.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v21.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v21.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v21.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v21.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v21.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v21.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v20.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v20.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v20.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v20.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v20.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v20.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v20.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v19.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v19.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v19.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v19.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v19.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v19.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v19.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v18.16b
+aesimc v0.16b, v0.16b
+aesd v1.16b, v18.16b
+aesimc v1.16b, v1.16b
+aesd v2.16b, v18.16b
+aesimc v2.16b, v2.16b
+aesd v3.16b, v18.16b
+aesimc v3.16b, v3.16b
+aesd v4.16b, v18.16b
+aesimc v4.16b, v4.16b
+aesd v5.16b, v18.16b
+aesimc v5.16b, v5.16b
+aesd v6.16b, v18.16b
+aesimc v6.16b, v6.16b
+aesd v0.16b, v17.16b
+aesd v1.16b, v17.16b
+aesd v2.16b, v17.16b
+aesd v3.16b, v17.16b
+aesd v4.16b, v17.16b
+aesd v5.16b, v17.16b
+aesd v6.16b, v17.16b
+eor3 v0.16b, v0.16b, v16.16b, v31.16b
+ldr q31, [x2, #0]
+str q0, [x2, #0]
+eor3 v1.16b, v1.16b, v16.16b, v31.16b
+ldr q31, [x2, #16]
+str q1, [x2, #16]
+eor3 v2.16b, v2.16b, v16.16b, v31.16b
+ldr q31, [x2, #32]
+str q2, [x2, #32]
+eor3 v3.16b, v3.16b, v16.16b, v31.16b
+ldr q31, [x2, #48]
+str q3, [x2, #48]
+eor3 v4.16b, v4.16b, v16.16b, v31.16b
+ldr q31, [x2, #64]
+str q4, [x2, #64]
+eor3 v5.16b, v5.16b, v16.16b, v31.16b
+ldr q31, [x2, #80]
+str q5, [x2, #80]
+eor3 v6.16b, v6.16b, v16.16b, v31.16b
+ldr q31, [x2, #96]
+str q6, [x2, #96]
+add x2, x2, #112
+sub x3, x3, #7
+sub x9, x3, #7
+lsr x13, x9, #63
+cbz x13, 218b
+b 217f
+216:
+217:
+cbz x3, 219f
+.p2align 4
+221:
+ldr q0, [x2, #0]
+aesd v0.16b, v30.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v25.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v24.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v23.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v22.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v21.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v20.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v19.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v18.16b
+aesimc v0.16b, v0.16b
+aesd v0.16b, v17.16b
+eor3 v0.16b, v0.16b, v16.16b, v31.16b
+ldr q31, [x2, #0]
+str q0, [x2, #0]
+add x2, x2, #16
+sub x3, x3, #1
+cbnz x3, 221b
+b 220f
+219:
+220:
+str q31, [x11, #0]
+21:
+ret
+.arch_extension noaes
+.arch_extension nosha3
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_aes_cbc_encrypt_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_CBC_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
