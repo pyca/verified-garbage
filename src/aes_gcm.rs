@@ -919,11 +919,17 @@ macro_rules! assert_tag_length {
 /// one-shot AEAD; [`encryptor`](Self::encryptor) and
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
-// On x86-64 the key context, with the powers, is the first field, aligned
-// to a cache line: the `_prepared` instances load its round keys and powers
-// 16 bytes at a time, and at 8 bytes' alignment some of those loads would
-// cross cache lines.
-#[cfg_attr(all(target_arch = "x86_64", feature = "alloc"), repr(C, align(64)))]
+// The key context (on x86-64, with the powers) is the first field, aligned
+// to a cache line: the functions load its round keys (and powers) 16 bytes
+// at a time, and at 8 bytes' alignment some of those loads would cross
+// cache lines.
+#[cfg_attr(
+    all(
+        any(target_arch = "x86_64", target_arch = "aarch64"),
+        feature = "alloc"
+    ),
+    repr(C, align(64))
+)]
 pub struct AesGcm {
     /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`),
     /// with the powers of the hash subkey after it on x86-64 (`KeyCtx`).
