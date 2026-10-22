@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Spec.Sha1
 public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # DSA parameter generation on 32-bit ARM (AAPCS)
@@ -102,9 +103,10 @@ def wa (pLen : Nat) : Nat := 128 * pLen + 640
 def sK (pLen : Nat) : Nat := sA + wa pLen
 def kz (pLen : Nat) : Nat := 128 * pLen + 256
 
-/-- `d` := `scratch + o` (`o < 2^16`, through `r12`). -/
-def scr (d : Reg) (o : Nat) : List Instr :=
-  [ld d fScratch, .movw .r12 (BitVec.ofNat 16 o), .dp .add d d (.reg .r12)]
+/-- `d` := `scratch + o`, from the key working space's base in `r8`
+(through `r12`). -/
+def scr (L : Nat) (d : Reg) (o : Nat) : List Instr :=
+  [.movw .r12 (BitVec.ofNat 16 (sK L - o)), .dp .sub d .r8 (.reg .r12)]
 
 /-! ## Bytes -/
 
@@ -114,7 +116,7 @@ def copyN (dst : List Instr) (src : List Instr) (n : Nat) : Prog isa :=
   .seq (.block (src ++ dst ++ [.movw .lr (BitVec.ofNat 16 n)])) copyBytes
 
 /-- From `scratch + src` to `scratch + dst`. -/
-def copyS (dst src n : Nat) : Prog isa := copyN (scr .r0 dst) (scr .r1 src) n
+def copyS (L dst src n : Nat) : Prog isa := copyN (scr L .r0 dst) (scr L .r1 src) n
 
 /-- A byte of the big-endian addition: `[r0] + r1`, its carry and the
 addend's higher bytes on in `r1`. -/
@@ -147,20 +149,17 @@ def const (v : BitVec 32) : List Instr :=
 def ivStore (iv : List (BitVec 32)) : List Instr :=
   iv.zipIdx.flatMap fun (v, i) => const v ++ [.str .r1 .r0 (4 * i)]
 
-/-- The hash value at `r0` to `k` big-endian words at `r1`. -/
-def digestOut (k : Nat) : List Instr :=
-  (List.range k).flatMap fun i => [.ldr .r2 .r0 (4 * i), .rev .r2 .r2, .str .r2 .r1 (4 * i)]
-
-/-- The block at `sMsg` hashed into `dst`. -/
-def hash (G : Hash) (dst : Nat) : Prog isa := seqs [
-  .block (scr .r0 sState ++ ivStore G.iv ++ scr .r0 sState ++ scr .r1 sMsg ++ [.mov .r2 (.imm 1)] ++
-    scr .r3 sA),
-  .call G.name G.code,
-  .block (scr .r0 sState ++ scr .r1 dst ++ digestOut G.k)]
+/-- The block at `sMsg` hashed into `dst`: the initial hash value at
+`sState`, the block compressed into it with the working space at `sA`, and
+its words big-endian at `dst` (through `r9`, set back). -/
+def hash (L : Nat) (G : Hash) (dst : Nat) : Prog isa := seqs [
+  .block (scr L .r0 sState ++ ivStore G.iv ++ scr L .r1 sMsg ++ scr L .r3 sA),
+  VG.Impl.MdStream.Arm.compressAt G.name G.code,
+  .block (scr L .r6 dst ++ VG.Impl.MdStream.Arm.out32 G.k true ++ [.mov .r9 (.imm (BitVec.ofNat 32 (L / 4)))])]
 
 /-- The block's padding after a message of `n < 56` bytes. -/
-def padInit (n : Nat) : List Instr :=
-  scr .r0 sMsg ++ [.mov .r3 (.imm 0)] ++ (List.range 16).map (fun i => .str .r3 .r0 (4 * i)) ++
+def padInit (L n : Nat) : List Instr :=
+  scr L .r0 sMsg ++ [.mov .r3 (.imm 0)] ++ (List.range 16).map (fun i => .str .r3 .r0 (4 * i)) ++
     [.mov .r1 (.imm 0x80), .strb .r1 .r0 n,
       .mov .r1 (.imm (BitVec.ofNat 32 ((8 * n) / 256))), .strb .r1 .r0 62,
       .mov .r1 (.imm (BitVec.ofNat 32 ((8 * n) % 256))), .strb .r1 .r0 63]
@@ -176,7 +175,7 @@ def callWith (name : String) (callee : Prog isa) : Prog isa :=
 its result into `fRes`, and the octets it read added to `fUsed` unless it ran
 out. -/
 def test (pLen : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
-  .block (scr .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8)), ld .r4 fUsed, ld .r2 fWit,
+  .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8)), ld .r4 fUsed, ld .r2 fWit,
     .dp .add .r2 .r2 (.reg .r4), ld .r3 fWitLen, .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut]),
   callWith name callee,
   .block (st .r0 fRes ++ [.cmp .r0 (.imm 0)]),
@@ -211,21 +210,22 @@ def slLo : Nat := 124
 def slHi : Nat := 128
 def slG : Nat := 136
 
-/-- `r8`, `r9` and `r7`: the key working space, its words and the stride. -/
+/-- `r8`, `r9` and `r7`: the key working space, its words and the stride,
+which the search keeps. -/
 def ksRegs (pLen : Nat) : List Instr :=
-  scr .r8 (sK pLen) ++ [.mov .r9 (.imm (BitVec.ofNat 32 (pLen / 4)))] ++ stride
+  [ld .r8 fScratch, .movw .r12 (BitVec.ofNat 16 (sK pLen)), .dp .add .r8 .r8 (.reg .r12),
+    .mov .r9 (.imm (BitVec.ofNat 32 (pLen / 4)))] ++ stride
 
-/-- The registers, the words into the division's header, every array zeroed
-and 1 set. -/
-def ksSetup (pLen : Nat) : Prog isa :=
-  .seq (.block (ksRegs pLen ++ [.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)),
+/-- The words into the division's header, every array zeroed and 1 set. -/
+def ksSetup : Prog isa :=
+  .seq (.block [.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)),
       .mov .lr (.imm (BitVec.ofNat 32 nArrs)), .mul .lr .lr .r7, .mov .lr (.shifted .lr .lsr 2),
-      .mov .r3 (.imm 0)]))
+      .mov .r3 (.imm 0)])
     (.seq zero (.block (setOne aOne)))
 
 /-- Array `j` := the `n` big-endian bytes at `scratch + o`. -/
-def loadS (j o n : Nat) : Prog isa :=
-  .seq (.block (scr .r4 o ++ [.movw .r6 (BitVec.ofNat 16 n)])) (VG.Impl.Rsa.Arm.CrtValues.load j)
+def loadS (L j o n : Nat) : Prog isa :=
+  .seq (.block (scr L .r4 o ++ [.movw .r6 (BitVec.ofNat 16 n)])) (VG.Impl.Rsa.Arm.CrtValues.load j)
 
 /-- The slot `d` := `[a] < [b]`. -/
 def ltS (d a b : Nat) : List (Prog isa) := [sub3 aTmp a b, .block [.str .r11 .r8 d]]
@@ -234,22 +234,20 @@ def ltS (d a b : Nat) : List (Prog isa) := [sub3 aTmp a b, .block [.str .r11 .r8
 (big-endian) and `sPLE` (little-endian), `(p − 1) / q` to `sE`
 (little-endian, `e` words). -/
 def pArith (pLen qLen e : Nat) : Prog isa := seqs [
-  ksSetup pLen,
-  loadS aQt sX pLen, .block (ksRegs pLen), loadS aX sX pLen, .block (ksRegs pLen), loadS aDv sQ qLen,
-  .block (ksRegs pLen ++ VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt),
+  ksSetup,
+  loadS pLen aQt sX pLen, loadS pLen aX sX pLen, loadS pLen aDv sQ qLen,
+  .block (VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt),
   VG.Impl.Rsa.Arm.Div.code,
-  .block (ksRegs pLen), sub3 aT aX aRm,
+  sub3 aT aX aRm,
   .block (bitOf slOdd aQt), sel aS aZero aDv slOdd,
   sub3 aPm1 aT aS,
   copy aP aPm1, .block (orOne aP),
   copy aE aQt, .block (clrLow aE),
-  .block ([.mov .r1 (.imm 1), .str .r1 .r8 VG.Impl.Rsa.Arm.CrtValues.sMask] ++ scr .r10 sPBE ++
-    [.movw .r11 (BitVec.ofNat 16 pLen)] ++ ksRegs pLen),
+  .block ([.mov .r1 (.imm 1), .str .r1 .r8 VG.Impl.Rsa.Arm.CrtValues.sMask] ++ scr pLen .r10 sPBE ++
+    [.movw .r11 (BitVec.ofNat 16 pLen)]),
   VG.Impl.Rsa.Arm.CrtValues.store aP,
-  .block (ksRegs pLen),
-  copyN (scr .r0 sPLE) (ptr .r1 aP) pLen,
-  .block (ksRegs pLen),
-  copyN (scr .r0 sE) (ptr .r1 aE) (4 * e)]
+  copyN (scr pLen .r0 sPLE) (ptr .r1 aP) pLen,
+  copyN (scr pLen .r0 sE) (ptr .r1 aE) (4 * e)]
 
 /-! ## The search -/
 
@@ -285,32 +283,32 @@ def count : Nat := (8 * g.pLen - 1) / (8 * g.qLen)
 
 /-- q from the seed: hashed, shaped, at `sA`, and tested. -/
 def qPart : Prog isa := seqs [
-  copyN (scr .r0 sMsg) [ld .r1 fSeed] g.qLen,
-  hash g.G sQ,
-  .block (scr .r0 sQ ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0,
+  copyN (scr g.pLen .r0 sMsg) [ld .r1 fSeed] g.qLen,
+  hash g.pLen g.G sQ,
+  .block (scr g.pLen .r0 sQ ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0,
     .ldrb .r1 .r0 (g.qLen - 1), .dp .orr .r1 .r1 (.imm 1), .strb .r1 .r0 (g.qLen - 1)]),
-  copyS sA sQ g.qLen,
+  copyS g.pLen sA sQ g.qLen,
   test g.pLen g.qName g.qCode]
 
 /-- The hash of `seed + offset + j`, into its place in `X`. -/
 def pHash (j : Nat) : Prog isa := seqs [
-  copyN (scr .r0 sMsg) [ld .r1 fSeed] g.qLen,
-  .block (scr .r0 (sMsg + g.qLen - 1) ++ [ld .r1 fOffset, .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 j))]),
+  copyN (scr g.pLen .r0 sMsg) [ld .r1 fSeed] g.qLen,
+  .block (scr g.pLen .r0 (sMsg + g.qLen - 1) ++ [ld .r1 fOffset, .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 j))]),
   addBE g.qLen,
-  hash g.G (sX + g.pLen - (j + 1) * g.qLen)]
+  hash g.pLen g.G (sX + g.pLen - (j + 1) * g.qLen)]
 
 /-- `X`: the hashes, the top bit set. -/
 def pX : Prog isa :=
   seqs ((List.range (g.count + 1)).map g.pHash ++
-    [.block (scr .r0 sX ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0])])
+    [.block (scr g.pLen .r0 sX ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0])])
 
 /-- A counter's candidate: `fP` := 0 if the witnesses ran out, 1 if it is a
 probable prime, else as it was. -/
 def pAttempt : Prog isa := seqs [
   g.pX, pArith g.pLen g.qLen g.e,
-  .block (scr .r0 sPBE ++ [.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)]),
+  .block (scr g.pLen .r0 sPBE ++ [.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)]),
   .ite .eq (.block [])
-    (seqs [copyS sA sPBE g.pLen, test g.pLen g.pName g.pCode,
+    (seqs [copyS g.pLen sA sPBE g.pLen, test g.pLen g.pName g.pCode,
       .block (cmpF fRes 0), .ite .eq (.block (stImm fP 0))
         (seqs [.block (cmpF fRes 1), .ite .eq (.block (stImm fP 1)) (.block [])])])]
 
@@ -329,22 +327,22 @@ def pPart : Prog isa := seqs [
 
 /-- An `h`: `fG` := 1 with `g` at `sG` if `1 < h < p − 1` and `g > 1`. -/
 def gStep : Prog isa := seqs [
-  .block (ksRegs g.pLen ++ [ld .r4 fH, .movw .r6 (BitVec.ofNat 16 g.pLen)]),
+  .block [ld .r4 fH, .movw .r6 (BitVec.ofNat 16 g.pLen)],
   VG.Impl.Rsa.Arm.CrtValues.load aH,
-  .block (ksRegs g.pLen), seqs (ltS slLo aOne aH), seqs (ltS slHi aH aPm1),
+  seqs (ltS slLo aOne aH), seqs (ltS slHi aH aPm1),
   .block (andS slLo slLo slHi ++ [.ldr .r1 .r8 slLo, .cmp .r1 (.imm 0)]),
   .ite .eq (.block [])
-    (seqs [copyS (sA + g.powMod) sPLE g.pLen,
-      .block (ksRegs g.pLen), copyN (scr .r0 (sA + g.powBase)) (ptr .r1 aH) g.pLen,
-      copyS (sA + g.powExp) sE (4 * g.e),
-      .block (scr .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa g.pLen / 8))]),
+    (seqs [copyS g.pLen (sA + g.powMod) sPLE g.pLen,
+      copyN (scr g.pLen .r0 (sA + g.powBase)) (ptr .r1 aH) g.pLen,
+      copyS g.pLen (sA + g.powExp) sE (4 * g.e),
+      .block (scr g.pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa g.pLen / 8))]),
       .call g.powName g.powCode,
-      .block (ksRegs g.pLen), copyN (ptr .r0 aG) (scr .r1 (sA + g.powRes)) g.pLen,
-      .block (ksRegs g.pLen), seqs (ltS slG aOne aG),
+      copyN (ptr .r0 aG) (scr g.pLen .r1 (sA + g.powRes)) g.pLen,
+      seqs (ltS slG aOne aG),
       .block [.ldr .r1 .r8 slG, .cmp .r1 (.imm 0)],
       .ite .eq (.block [])
         (seqs [.block ([.mov .r1 (.imm 1), .str .r1 .r8 VG.Impl.Rsa.Arm.CrtValues.sMask] ++
-            scr .r10 sG ++ [.movw .r11 (BitVec.ofNat 16 g.pLen)] ++ ksRegs g.pLen),
+            scr g.pLen .r10 sG ++ [.movw .r11 (BitVec.ofNat 16 g.pLen)]),
           VG.Impl.Rsa.Arm.CrtValues.store aG, .block (stImm fG 1)])])]
 
 /-- g: `fG` := 1, or 2 if no `h` gives one. -/
@@ -358,9 +356,9 @@ def gPart : Prog isa := seqs [
 
 /-- p||q||g, checked: `fStatus` := 1 if it passes. -/
 def checkPart : Prog isa := seqs [
-  copyS sPacked sPBE g.pLen, copyS (sPacked + g.pLen) sQ g.qLen, copyS (sPacked + g.pLen + g.qLen) sG g.pLen,
-  .block (scr .r0 sPacked ++ [.movw .r1 (BitVec.ofNat 16 (2 * g.pLen + g.qLen)),
-    .movw .r2 (BitVec.ofNat 16 g.pLen), .mov .r3 (.imm (BitVec.ofNat 32 g.qLen))] ++ scr .r4 sA ++
+  copyS g.pLen sPacked sPBE g.pLen, copyS g.pLen (sPacked + g.pLen) sQ g.qLen, copyS g.pLen (sPacked + g.pLen + g.qLen) sG g.pLen,
+  .block (scr g.pLen .r0 sPacked ++ [.movw .r1 (BitVec.ofNat 16 (2 * g.pLen + g.qLen)),
+    .movw .r2 (BitVec.ofNat 16 g.pLen), .mov .r3 (.imm (BitVec.ofNat 32 g.qLen))] ++ scr g.pLen .r4 sA ++
     [.movw .r5 (BitVec.ofNat 16 (wa g.pLen / 8))]),
   callWith g.checkName g.checkCode,
   .block [.cmp .r0 (.imm 1)],
@@ -381,7 +379,7 @@ def attempt : Prog isa := seqs [
 
 /-- The seeds, one at a time, until a domain passes or none is left. -/
 def search : Prog isa := seqs [
-  .block (padInit g.qLen),
+  .block (ksRegs g.pLen ++ padInit g.pLen g.qLen),
   .loop (seqs [.block (cmpF fSeedLeft 0),
     .ite .eq (.block (stImm fStatus 2))
       (seqs [g.attempt, .block ([ld .r1 fSeed, .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 g.qLen))] ++
@@ -393,7 +391,7 @@ def search : Prog isa := seqs [
 def finish : Prog isa := seqs [
   .block (cmpF fStatus 1),
   .ite .eq
-    (seqs [copyN [ld .r0 fOut] (scr .r1 sPacked) (2 * g.pLen + g.qLen), .block [.mov .r0 (.imm 1)]])
+    (seqs [copyN [ld .r0 fOut] (scr g.pLen .r1 sPacked) (2 * g.pLen + g.qLen), .block [.mov .r0 (.imm 1)]])
     (seqs [.block [ld .r0 fOut, .mov .r3 (.imm 0), .movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))],
       .loop (.block zeroStep) .ne, .block [.mov .r0 (.imm 0)]])]
 
