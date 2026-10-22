@@ -4,10 +4,12 @@ public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
+public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! FFDH's domain and key checks and exchange on baseline i686. -/
+/-! FFDH's domain and key checks, exchange and key generation on baseline i686. -/
 
 @[expose] public section
 
@@ -50,6 +52,19 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.Exchange.code
     verified := Proof.Ffdh.X86.Exchange.verified
     spSafe := Proof.Ffdh.X86.Shape.exchange_spSafe
+    stack := 116 },
+  Spec.Ffdh.keyInitApi.artifact X86.target {
+    code := Impl.Ffdh.X86.KeyInit.code
+    verified := Proof.Ffdh.X86.KeyInit.verified },
+  Spec.Ffdh.generateKeyApi.artifact X86.target {
+    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
+      The bound's octets are scanned and `rand`'s cut to its bit length without a branch; the \
+      scalar's range is the one branch on x. The power of g is a fixed four-bit-window power over \
+      all of p's width; y's range and, with q, its subgroup membership are the acceptance mask, \
+      which clears both outputs. Callee-saved registers reside in scratch."]
+    code := Impl.Ffdh.X86.GenerateKey.code
+    verified := Proof.Ffdh.X86.KeyGen.verified
+    spSafe := Proof.Ffdh.X86.Shape.generateKey_spSafe
     stack := 116 }]
 
 end VG.Artifacts.Ffdh.X86
