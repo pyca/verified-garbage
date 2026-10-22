@@ -27,6 +27,9 @@ byte offsets into the areas. -/
 structure Op where
   /-- Increment the 16-byte big-endian destination, ignoring the sources. -/
   inc : Bool := false
+  /-- Increment the 4-byte big-endian destination modulo 2³² (GCM's
+  `inc₃₂` on a counter block's last word), ignoring the sources. -/
+  inc32 : Bool := false
   wide : Bool
   dst : Loc
   dOff : Nat
