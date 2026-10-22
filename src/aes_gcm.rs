@@ -1129,8 +1129,8 @@ impl AesGcm {
         // slower. On AVX-512 the prepared instances make 16- to 255-byte
         // opens 6–33% faster (#2775).
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(fns) = self.prepared {
-            return self.open_prepared(fns, nonce, aad, data, tag);
+        if let Some(r) = self.open_prepared(nonce, aad, data, tag) {
+            return r;
         }
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -1413,19 +1413,22 @@ impl AesGcm {
         self.powers.publish(pw);
     }
 
-    /// On x86-64, `open` with the key's `_prepared` instances `fns` and the
-    /// powers in `self.ctx`.
+    /// On x86-64, `open` with the key's `_prepared` instances and the
+    /// powers in `self.ctx`, if it has them. It reads `self.prepared`
+    /// itself: taking the instances as a fifth argument put a fourth on the
+    /// stack, which the compiler copied 16 bytes at a time, and the loads of
+    /// those copies were not forwarded from the stores before them (4–6 ns
+    /// an open on Zen 4 and Zen 5).
     #[cfg(target_arch = "x86_64")]
     #[inline(never)]
     fn open_prepared(
         &self,
-        fns: &Prepared,
         nonce: &[u8],
         aad: &[u8],
         data: &mut [u8],
         tag: &[u8],
-    ) -> Result<(), Error> {
-        let open = fns.open;
+    ) -> Option<Result<(), Error>> {
+        let open = self.prepared?.open;
         // SAFETY: as in `seal_with`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
@@ -1443,11 +1446,11 @@ impl AesGcm {
             )
         };
         // As in `open`.
-        if ok == 1 {
+        Some(if ok == 1 {
             Ok(())
         } else {
             Err(Error::TagMismatch)
-        }
+        })
     }
 
     /// On AArch64, `open` with the powers, if `Powers::get` gives them.
