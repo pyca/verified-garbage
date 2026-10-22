@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Correct
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
+meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
 
 /-! # The key search in constant time (x86)
 

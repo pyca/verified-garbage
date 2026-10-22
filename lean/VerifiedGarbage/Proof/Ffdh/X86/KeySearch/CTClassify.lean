@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTAttempt
-import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTAttempt
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
+meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
 
 /-! # Two runs after an attempt (x86)
 

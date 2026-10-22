@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 
 /-! # The key search's finish (x86)
 

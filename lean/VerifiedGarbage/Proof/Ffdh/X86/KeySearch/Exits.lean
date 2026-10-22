@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
-import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 
 /-! # The key search's exits without an attempt (x86)
 

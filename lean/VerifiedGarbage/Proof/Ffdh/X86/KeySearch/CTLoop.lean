@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTClassify
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
-import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTClassify
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
+public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Data
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Two runs of the key search's loop (x86)
 

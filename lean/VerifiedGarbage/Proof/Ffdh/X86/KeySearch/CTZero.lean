@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
-import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Two runs of the key search's exits (x86)
 
@@ -60,9 +62,7 @@ theorem Live.at {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o
     At (liveAt p used keys scalars) s := by
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
-  exact ⟨o, rfl, (S.sub fun d hd => by
-    simp only [pubDs, liveDs, List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; omega).congr
-    (liveF_pub _ _ _ _ _ _)⟩
+  exact ⟨o, rfl, (S.sub (by decide : ∀ d ∈ pubDs, d ∈ liveDs)).congr (liveF_pub _ _ _ _ _ _)⟩
 
 /-- Public words from which the outputs are zeroed. -/
 def ZAt (a : Pw) (s : State) : Prop :=

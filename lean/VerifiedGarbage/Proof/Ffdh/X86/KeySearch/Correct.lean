@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Finish
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Loop
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
 
 /-! # The key search against its contract (x86)
 

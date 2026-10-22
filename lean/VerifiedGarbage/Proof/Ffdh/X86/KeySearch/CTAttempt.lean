@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTZero
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Call
-import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Call
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTZero
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Call
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Ffdh.X86.ABI
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Frame
 
 /-! # Two runs of an attempt (x86)
 
