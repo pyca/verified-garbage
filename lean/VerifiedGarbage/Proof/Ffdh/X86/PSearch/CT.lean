@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CTAttempt
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Correct
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CTAttempt
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Entry
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Loop
 import VerifiedGarbage.Proof.Framework.Sig
@@ -10,6 +9,13 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Correct
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Entry
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Loop
 meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Finish
+public import Mathlib.Tactic.ToAdditive
+public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CTExits
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Classify
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Data
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # The parameter search in constant time (x86)
 

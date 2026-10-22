@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Two runs of the parameter search's exits (x86)
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Correct
 
 /-! # `vg_ffdh_generate_parameters_sieved` on i686, verified -/
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
-import VerifiedGarbage.Proof.Ffdh.SievedTape
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 
 /-! # The sieved parameter search from an offset into the tape

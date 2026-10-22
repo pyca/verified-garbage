@@ -8,6 +8,10 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Loop
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CTExits
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Classify
 meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
+meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 
 /-! # Two runs of an attempt (x86)
 

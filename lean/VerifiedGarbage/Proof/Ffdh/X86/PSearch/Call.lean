@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CallPre
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Entry
@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Framework.X86.Syms
+public import Mathlib.Tactic.ToAdditive
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # The attempt's call (x86)
 

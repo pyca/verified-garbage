@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Call
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 
 /-! # After an attempt (x86)
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Classify
+import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 
 /-! # The parameter search's loop (x86)
 
