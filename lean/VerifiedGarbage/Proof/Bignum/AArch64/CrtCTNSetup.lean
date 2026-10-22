@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dPubCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 import Mathlib.Data.Int.ModEq
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # RSA with the CRT on AArch64: `n`'s setup in constant time
 
-`nSetup` is `pcLoad`, `nInput`, `r2Steps` and `c R mod n` (`nSetup_ct`),
+`nSetup` is `pcLoad`, `nInput`, `r2StepsPub` and `c R mod n` (`nSetup_ct`),
 each constant time for its correctness lemma's hypotheses, which the one
 before it gives, as `nPart_ok` runs them; `-n⁻¹` is the same in both runs,
 as `n` is.
@@ -104,18 +105,18 @@ theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) f
   refine RelCT.seqs_append (by simp [pcLoad]) (by simp [nInput]) (RelCT.seq (R := Two NS1) (two_post
     (two_map (fun p : CrtPub => (⟨p.B, p.Z, p.k, p.op, p.np, p.nb⟩ : PcPub)) (fun _ _ h => stage0_pcl h) pcLoad_ct)
     fun _ _ h => ns1_ok h) ?_)
-  refine RelCT.seqs_append (by simp [nInput]) (by simp [r2Steps]) (RelCT.seq (R := Two NS2) (two_post
+  refine RelCT.seqs_append (by simp [nInput]) (by simp [r2StepsPub]) (RelCT.seq (R := Two NS2) (two_post
     (two_map (fun p : CrtPub => (⟨p.B, p.Z, p.k, p.ip⟩ : NIPub))
       (fun _ _ ⟨minv, xb, hg, hZ, hk1, hk2, hK, hIn, hx, hxl, _⟩ => ⟨minv, xb, hg, hZ, hk1, hk2, hK, hIn, hx, hxl⟩)
       nInput_ct) fun _ _ h => ns2_ok h) ?_)
-  refine RelCT.seqs_append (by simp [r2Steps]) (by simp)
+  refine RelCT.seqs_append (by simp [r2StepsPub]) (by simp)
     (RelCT.seq (R := Two fun (p : CrtPub) t => GoodW ⟨p.B, p.Z, p.w⟩ t) (two_post
-      ((r2_ct M).mono (fun _ _ h => two_bind (fun (p : CrtPub) s₁ s₂ ⟨m₁, h₁⟩ ⟨m₂, h₂⟩ => by
+      ((r2Pub_ct M).mono (fun _ _ h => two_bind (fun (p : CrtPub) s₁ s₂ ⟨m₁, h₁⟩ ⟨m₂, h₂⟩ => by
         obtain rfl := r2_minv h₁ h₂
         exact ⟨_, h₁, h₂⟩) h) fun _ _ h => h)
       fun p s hh => ?_) ?_)
   · obtain ⟨minv, ⟨hg, hZ⟩, hw, hw30, hn, hinv, hodd, hlo⟩ := hh
-    exact WP.mono (r2_ok M hg hZ hw hw30 hn hinv hodd hlo) fun t ⟨hg', _⟩ => ⟨minv, hg', hZ⟩
+    exact WP.mono (r2Pub_ok M hg hZ hw hw30 hn hinv hodd hlo) fun t ⟨hg', _⟩ => ⟨minv, hg', hZ⟩
   simp only [seqs]
   exact two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun _ _ h => h) (M.ct (by unfold MmUse; decide))
 
