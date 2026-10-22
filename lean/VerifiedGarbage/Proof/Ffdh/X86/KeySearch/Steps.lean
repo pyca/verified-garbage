@@ -71,10 +71,10 @@ theorem St.rIn {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o d
 theorem St.ld {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) {r : Reg} (hr : Scratch r)
     {d : Nat} (hd : d ∈ ds) (hd4 : d + 4 ≤ 128) {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, St o ds f t → t.gpr r = f d → (∀ q, q ≠ r → t.gpr q = s.gpr q) → t.cf = s.cf →
-      WP isa (.block rest) t Q) :
+      t.mem = s.mem → WP isa (.block rest) t Q) :
     WP isa (.block (.mov r (.mem (st d)) :: rest)) s Q := by
   show WP isa (.block (.mov r (.mem ⟨.esi, d⟩) :: rest)) s Q
-  refine wp_movS (readSrc_mem h.esi (h.rIn hd4)) fun t U c => k t (h.reg U hr) ?_ U.other c
+  refine wp_movS (readSrc_mem h.esi (h.rIn hd4)) fun t U c => k t (h.reg U hr) ?_ U.other c U.mem
   rw [U.gpr]; exact h.words.get hd
 
 /-- A store and the word it keeps. -/
@@ -96,9 +96,10 @@ theorem Aligned.cons {ds : List Nat} (h : Aligned ds) {d : Nat} (hd : d + 4 ≤ 
 theorem St.stw {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) (hA : Aligned ds) {r : Reg}
     {d : Nat} (hd : d + 4 ≤ 128) (hd4 : d % 4 = 0) {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, St o (d :: ds) (upd f d (s.gpr r)) t → t.gpr = s.gpr → t.zf = s.zf → t.cf = s.cf →
-      WP isa (.block rest) t Q) :
+      Frame [sR o] s.mem t.mem → WP isa (.block rest) t Q) :
     WP isa (.block (.store (st d) r :: rest)) s Q := by
   refine wp_storeS (st_ea h.esi d) (h.wIn hd) fun t M => k t ?_ M.gpr M.zf M.cf
+    (by rw [M.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (st_in h.abi hd))
   refine ⟨h.abi, M.rd.trans h.rd, M.wr.trans h.wr, by rw [M.gpr, h.esp], by rw [M.gpr, h.esi],
     fun q hq hne => by rw [M.gpr, h.saved q hq hne], ?_, ?_⟩
   · rw [M.mem]; exact h.frame.writeW (List.mem_append_left _ (sR_mem h.abi)) _ (st_in h.abi hd)
@@ -110,6 +111,10 @@ theorem Ctl.sub {m : Mem} {S : BitVec 32} {ds ds' : List Nat} {f : Nat → BitVe
 theorem St.sub {o s : State} {ds ds' : List Nat} {f : Nat → BitVec 32} (h : St o ds f s)
     (hs : ∀ d ∈ ds', d ∈ ds) : St o ds' f s :=
   ⟨h.abi, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words.sub hs⟩
+
+theorem St.congr {o s : State} {ds : List Nat} {f g : Nat → BitVec 32} (h : St o ds f s)
+    (e : ∀ d ∈ ds, f d = g d) : St o ds g s :=
+  ⟨h.abi, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, h.words.congr e⟩
 
 /-- The outputs' regions. -/
 theorem xR_eq {o : State} (A : KeySearchABI o) : xR o = ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
