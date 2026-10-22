@@ -188,6 +188,14 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vaes_pclmul,
     vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vpclmul,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::gcm::{
+    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_init_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_vaes_vpclmul_avx512, vg_aes_gcm_seal_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_aad_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_init_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512,
+};
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES, vg_aes_gcm_derive_prepared8_aes,
@@ -201,21 +209,15 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_encrypt_aes_sha3, vg_aes_gcm_stream_finish_aes_sha3,
     vg_aes_gcm_stream_init_aes_sha3, vg_aes_gcm_stream_verify_aes_sha3,
 };
-#[cfg(target_arch = "x86_64")]
-use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_init_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_vaes_vpclmul_avx512, vg_aes_gcm_seal_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_aad_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_init_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512,
-};
 use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
     vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
 };
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-use crate::arch::gcm::{vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_with_powers_aes_sha3};
+use crate::arch::gcm::{
+    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_with_powers_aes_sha3,
+};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
     vg_aes_gcm_seal_gather_aesni_pclmul_avx, vg_aes_gcm_seal_gather_aesni_vpclmul,
@@ -242,7 +244,10 @@ type Block = [u8; 16];
 type KeyCtx = Ctx;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 type KeyCtx = [u64; 48];
-#[cfg(not(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc")))]
+#[cfg(not(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+)))]
 type KeyCtx = [u64; 32];
 
 /// The largest plaintext (and ciphertext), in bytes: `2^39 − 256` bits
@@ -723,7 +728,10 @@ pub struct AesGcm {
     /// On x86-64 and AArch64, the backend's `_prepared` (on AArch64,
     /// `_with_powers`) instances, if this CPU runs them
     /// (`Backend::prepared`), and then `ctx` holds the powers.
-    #[cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
+    #[cfg(all(
+        any(target_arch = "x86_64", target_arch = "aarch64"),
+        feature = "alloc"
+    ))]
     prepared: Option<&'static Prepared>,
 }
 
@@ -749,7 +757,10 @@ impl AesGcm {
             ctx: [0; size_of::<KeyCtx>() / 8],
             rounds: key.len() / 4 + 6,
             backend,
-            #[cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
+            #[cfg(all(
+                any(target_arch = "x86_64", target_arch = "aarch64"),
+                feature = "alloc"
+            ))]
             prepared: backend.prepared(),
         };
         let init = instance!(k.backend, vg_aes_gcm_init,
@@ -765,7 +776,10 @@ impl AesGcm {
         // on the stack, or wrap around the end of the address space. The CPU
         // has the features of the implementation selected.
         unsafe { init(key.as_ptr(), key.len(), k.key_mut()) };
-        #[cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
+        #[cfg(all(
+            any(target_arch = "x86_64", target_arch = "aarch64"),
+            feature = "alloc"
+        ))]
         if let Some(fns) = k.prepared {
             k.prepare(fns);
         }
@@ -1098,13 +1112,7 @@ impl AesGcm {
     /// `encrypt_in_place` with the key's `_prepared` instances `fns`
     /// (`self.prepared`), with the powers in `self.ctx`.
     #[inline(always)]
-    fn seal_with(
-        &self,
-        fns: &Prepared,
-        nonce: &[u8],
-        aad: &[u8],
-        data: &mut [u8],
-    ) -> Block {
+    fn seal_with(&self, fns: &Prepared, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
         let seal = fns.seal;
         // SAFETY: as in `encrypt_in_place`, with the powers of the same
@@ -1924,6 +1932,9 @@ mod tests {
                 VG_AES_GCM_STREAM_FINISH_AES_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_AES_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
+                VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_DERIVE_PREPARED8_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_AES_FEATURES.contains(other));
             }
@@ -1940,9 +1951,9 @@ mod tests {
                 VG_AES_GCM_SEAL_AES_SHA3_FEATURES,
                 VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES,
-                VG_AES_GCM_OPEN_STORE_POWERS_AES_SHA3_FEATURES,
+                VG_AES_GCM_DERIVE_PREPARED8_AES_FEATURES,
             ] {
-                assert!(VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES.contains(other));
+                assert!(VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES.contains(other));
             }
         }
     }
@@ -2042,7 +2053,10 @@ mod tests {
             // The powers, if the backend `new` chose has no `_prepared`
             // instances but `backend` has (on x86-64, VAES without VPCLMULQDQ
             // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs).
-            #[cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
+            #[cfg(all(
+                any(target_arch = "x86_64", target_arch = "aarch64"),
+                feature = "alloc"
+            ))]
             {
                 k.prepared = backend.prepared();
                 if let (Some(fns), None) = (k.prepared, self.prepared) {
@@ -2341,7 +2355,10 @@ mod tests {
     /// backend has none does not. Either encrypts and decrypts every length,
     /// one-shot, out of place and streaming, as the baseline does, and a
     /// clone keeps the powers.
-    #[cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
+    #[cfg(all(
+        any(target_arch = "x86_64", target_arch = "aarch64"),
+        feature = "alloc"
+    ))]
     #[test]
     fn eager_powers() {
         let msg: [u8; 700] = core::array::from_fn(|i| (i * 11 + 5) as u8);
