@@ -27,7 +27,8 @@
 //! and SSSE3 run the `_pclmul` instances (with `vg_ghash_pclmul`), and, on
 //! x86-64, CPUs with VPCLMULQDQ and AVX2 too the `_vpclmul` ones (with
 //! `vg_ghash_vpclmul`, eight blocks at a time in 256-bit registers). Which
-//! one a key calls depends only on the CPU. On ARMv7 there is one
+//! one a key calls depends only on the CPU. AArch64 CPUs with PMULL run the
+//! `_aes` instances (with `vg_ghash_aes`). On ARMv7 there is one
 //! implementation, calling the baseline `vg_ghash`.
 //!
 //! # Tags
@@ -41,8 +42,19 @@
 //! compile time, as AES-GCM's (see [`crate::aes_gcm`]'s documentation for
 //! why the length is never taken from a slice).
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sm4_gcm::{
+    VG_SM4_GCM_SEAL_AES_FEATURES, vg_sm4_gcm_open_aes, vg_sm4_gcm_seal_aes,
+    vg_sm4_gcm_stream_aad_aes, vg_sm4_gcm_stream_decrypt_aes, vg_sm4_gcm_stream_encrypt_aes,
+    vg_sm4_gcm_stream_finish_aes, vg_sm4_gcm_stream_init_aes, vg_sm4_gcm_stream_verify_aes,
+};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sm4_gcm::{
     VG_SM4_GCM_SEAL_PCLMUL_FEATURES, vg_sm4_gcm_open_pclmul, vg_sm4_gcm_seal_pclmul,
@@ -89,18 +101,28 @@ pub(crate) enum Ghash {
     /// `_vpclmul` instances (x86-64 only).
     #[cfg(target_arch = "x86_64")]
     Vpclmul,
+    /// PMULL (FEAT_PMULL, which Rust and `src/cpu.rs` call `aes`): the
+    /// `_aes` instances (AArch64 only).
+    #[cfg(target_arch = "aarch64")]
+    Aes,
 }
 
 /// The instance of a function for `ghash`: the baseline one, then the
-/// `_pclmul` and `_vpclmul` ones.
+/// `_pclmul` one (x86 and x86-64), the `_vpclmul` one (x86-64) and the
+/// `_aes` one (AArch64).
 macro_rules! instance {
-    ($ghash:expr, $scalar:ident, $pclmul:ident, $vpclmul:ident) => {
+    ($ghash:expr, $scalar:ident,
+     x86: [$pclmul:ident],
+     x86_64: [$vpclmul:ident],
+     aarch64: [$aes:ident]) => {
         match $ghash {
             Ghash::Scalar => $scalar,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Ghash::Pclmul => $pclmul,
             #[cfg(target_arch = "x86_64")]
             Ghash::Vpclmul => $vpclmul,
+            #[cfg(target_arch = "aarch64")]
+            Ghash::Aes => $aes,
         }
     };
 }
@@ -117,6 +139,16 @@ impl Ghash {
         }
         if f.contains(VG_SM4_GCM_SEAL_PCLMUL_FEATURES) {
             Ghash::Pclmul
+        } else {
+            Ghash::Scalar
+        }
+    }
+
+    /// The best implementation an AArch64 CPU with the features `f` can run.
+    #[cfg(target_arch = "aarch64")]
+    fn select(f: Features) -> Ghash {
+        if f.contains(VG_SM4_GCM_SEAL_AES_FEATURES) {
+            Ghash::Aes
         } else {
             Ghash::Scalar
         }
@@ -242,12 +274,10 @@ impl Sm4Gcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let seal = instance!(
-            self.ghash,
-            vg_sm4_gcm_seal,
-            vg_sm4_gcm_seal_pclmul,
-            vg_sm4_gcm_seal_vpclmul
-        );
+        let seal = instance!(self.ghash, vg_sm4_gcm_seal,
+            x86: [vg_sm4_gcm_seal_pclmul],
+            x86_64: [vg_sm4_gcm_seal_vpclmul],
+            aarch64: [vg_sm4_gcm_seal_aes]);
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_sm4_gcm_init` wrote,
         // valid for reads of 256 bytes; `nonce` and `aad` are valid for reads
@@ -307,12 +337,10 @@ impl Sm4Gcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let open = instance!(
-            self.ghash,
-            vg_sm4_gcm_open,
-            vg_sm4_gcm_open_pclmul,
-            vg_sm4_gcm_open_vpclmul
-        );
+        let open = instance!(self.ghash, vg_sm4_gcm_open,
+            x86: [vg_sm4_gcm_open_pclmul],
+            x86_64: [vg_sm4_gcm_open_vpclmul],
+            aarch64: [vg_sm4_gcm_open_aes]);
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag` valid
         // for reads of its `N` bytes, between 4 and 16 (`vg_sm4_gcm_open`
         // rejects any other length).
@@ -384,12 +412,10 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             text_len: 0,
             in_text: false,
         };
-        let init = instance!(
-            key.ghash,
-            vg_sm4_gcm_stream_init,
-            vg_sm4_gcm_stream_init_pclmul,
-            vg_sm4_gcm_stream_init_vpclmul
-        );
+        let init = instance!(key.ghash, vg_sm4_gcm_stream_init,
+            x86: [vg_sm4_gcm_stream_init_pclmul],
+            x86_64: [vg_sm4_gcm_stream_init_vpclmul],
+            aarch64: [vg_sm4_gcm_stream_init_aes]);
         // SAFETY: `key.ctx` is a key context (as in
         // `Sm4Gcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
         // for reads of `nonce.len()`, and `s.state` for reads and writes of
@@ -407,12 +433,10 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         }
         let aad_len =
             add_len(self.aad_len, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let f = instance!(
-            self.key.ghash,
-            vg_sm4_gcm_stream_aad,
-            vg_sm4_gcm_stream_aad_pclmul,
-            vg_sm4_gcm_stream_aad_vpclmul
-        );
+        let f = instance!(self.key.ghash, vg_sm4_gcm_stream_aad,
+            x86: [vg_sm4_gcm_stream_aad_pclmul],
+            x86_64: [vg_sm4_gcm_stream_aad_vpclmul],
+            aarch64: [vg_sm4_gcm_stream_aad_aes]);
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
@@ -435,19 +459,15 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
         let f = if DECRYPT {
-            instance!(
-                self.key.ghash,
-                vg_sm4_gcm_stream_decrypt,
-                vg_sm4_gcm_stream_decrypt_pclmul,
-                vg_sm4_gcm_stream_decrypt_vpclmul
-            )
+            instance!(self.key.ghash, vg_sm4_gcm_stream_decrypt,
+                x86: [vg_sm4_gcm_stream_decrypt_pclmul],
+                x86_64: [vg_sm4_gcm_stream_decrypt_vpclmul],
+                aarch64: [vg_sm4_gcm_stream_decrypt_aes])
         } else {
-            instance!(
-                self.key.ghash,
-                vg_sm4_gcm_stream_encrypt,
-                vg_sm4_gcm_stream_encrypt_pclmul,
-                vg_sm4_gcm_stream_encrypt_vpclmul
-            )
+            instance!(self.key.ghash, vg_sm4_gcm_stream_encrypt,
+                x86: [vg_sm4_gcm_stream_encrypt_pclmul],
+                x86_64: [vg_sm4_gcm_stream_encrypt_vpclmul],
+                aarch64: [vg_sm4_gcm_stream_encrypt_aes])
         };
         // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
@@ -471,12 +491,10 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
     fn finish(mut self) -> Block {
-        let f = instance!(
-            self.key.ghash,
-            vg_sm4_gcm_stream_finish,
-            vg_sm4_gcm_stream_finish_pclmul,
-            vg_sm4_gcm_stream_finish_vpclmul
-        );
+        let f = instance!(self.key.ghash, vg_sm4_gcm_stream_finish,
+            x86: [vg_sm4_gcm_stream_finish_pclmul],
+            x86_64: [vg_sm4_gcm_stream_finish_vpclmul],
+            aarch64: [vg_sm4_gcm_stream_finish_aes]);
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
@@ -498,12 +516,10 @@ impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
     fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
-        let f = instance!(
-            self.key.ghash,
-            vg_sm4_gcm_stream_verify,
-            vg_sm4_gcm_stream_verify_pclmul,
-            vg_sm4_gcm_stream_verify_vpclmul
-        );
+        let f = instance!(self.key.ghash, vg_sm4_gcm_stream_verify,
+            x86: [vg_sm4_gcm_stream_verify_pclmul],
+            x86_64: [vg_sm4_gcm_stream_verify_vpclmul],
+            aarch64: [vg_sm4_gcm_stream_verify_aes]);
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
@@ -633,6 +649,13 @@ mod tests {
         #[cfg(target_arch = "x86")]
         assert_eq!(f(&all), Ghash::Pclmul);
         assert_eq!(f(&all[1..]), Ghash::Pclmul);
+    }
+
+    /// The instance AArch64's CPUs with PMULL choose.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn ghash_backend_aarch64() {
+        assert_eq!(Ghash::select(Features::of(&["aes"])), Ghash::Aes);
     }
 
     /// The text of a message is checked against its limits before

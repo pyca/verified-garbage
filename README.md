@@ -1254,7 +1254,7 @@ yours to keep:
 
 <td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL; GHASH with PMULL</td>
 
 <td>✅</td>
 
