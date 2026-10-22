@@ -155,4 +155,134 @@ theorem gStep_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   unfold Geo.n64
   rcases G.lengths with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> rw [h₁, h₂] <;> exact tcheck _ _ (by decide +kernel)
 
+/-- Another whole `h` is left. -/
+theorem next_h {E : Env} (v : E.Valid) {j : Nat} (hne : E.hsLen - j * E.pLen ≠ 0) :
+    (j + 1) * E.pLen ≤ E.hsLen := by
+  have whole : E.hsLen = E.hsLen / E.pLen * E.pLen := (Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero v.hsWhole)).symm
+  have hlt : j * E.pLen < E.hsLen / E.pLen * E.pLen := by omega
+  have := Nat.lt_of_mul_lt_mul_right hlt
+  have := Nat.mul_le_mul_right E.pLen (show j + 1 ≤ E.hsLen / E.pLen by omega)
+  omega
+
+/-- Before the generator, from `p` `a.1`, `q` `a.2.1` and `(p − 1)/q` `a.2.2`. -/
+structure GPIn (E : Env) (g : Geo) (a : Nat × Nat × Nat) (s : State) : Prop where
+  base : Base E s
+  hx' : a.2.2 = (a.1 - 1) / a.2.1
+  hone : val32 s.mem E.base aOne g.n32 = 1
+  hpm1 : val32 s.mem E.base aPm1 g.n32 = a.1 - 1
+  hP : val32 s.mem E.base aP g.n32 = a.1
+  hE : val32 s.mem E.base aE g.n32 = a.2.2
+  hxl : a.2.2 < 2 ^ (32 * g.e)
+  hp1 : 1 < a.1
+  hodd : a.1 % 2 = 1
+  hplt : a.1 < 2 ^ (8 * g.pLen)
+
+theorem gPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) :
+    RelCT isa (Both (GPIn E g)) g.gPart fun _ _ => True := by
+  have sz := v.size_ge
+  have lens := v.lens
+  have pl := v.pLen_ge
+  refine both_exists fun a => ?_
+  obtain ⟨p, Q, x⟩ := a
+  refine relct_of_fact (fun s t h => (⟨h.1.hx', h.1.hxl, h.1.hp1, h.1.hodd, h.1.hplt⟩ : _ ∧ _ ∧ _ ∧ _ ∧ _))
+    fun ⟨hx', hxl, hp1, hodd, hplt⟩ => ?_
+  unfold Geo.gPart
+  show RelCT isa _ (.seq (.block _) (.loop _ .e)) _
+  let N := E.hsLen / E.pLen + 1
+  let GIn : State → Prop := fun σ => Base E σ ∧ val32 σ.mem E.base aOne g.n32 = 1 ∧
+    val32 σ.mem E.base aPm1 g.n32 = p - 1 ∧ val32 σ.mem E.base aP g.n32 = p ∧ val32 σ.mem E.base aE g.n32 = x
+  let I : Nat → State → State → Prop := fun n => Both fun (j : Nat) t =>
+    (∃ σ, GIn σ ∧ GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) σ j t) ∧ j + n = N
+  refine RelCT.seq (R := I N) ?_ ?_
+  · -- The state words.
+    have tr : RelCT isa (fun s t => GPIn E g (p, Q, x) s ∧ GPIn E g (p, Q, x) t)
+        (.block [.mov .eax (.mem (sc fHs)), .store (sc fH) .eax, .mov .eax (.mem (sc fHsLen)),
+          .store (sc fHLeft) .eax, .mov .eax (.imm 4), .store (sc fG) .eax]) fun _ _ => True :=
+      (tcheck [.esp, .edi] _ (by decide +kernel)).mono (fun s t h => agree_regs fun r hr =>
+        (base_pins h.1.base r hr).trans (base_pins h.2.base r hr).symm) fun _ _ h => h
+    refine (tr.wpDep (F := fun σ t => GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) σ 0 t)
+      fun s t h => ⟨gInit_ok G v h.1.base p Q, gInit_ok G v h.2.base p Q⟩).mono (fun _ _ h => h)
+      fun s' t' ⟨_, σ₁, σ₂, ⟨P₁, P₂⟩, L₁, L₂⟩ => ⟨0, ⟨⟨σ₁, ⟨P₁.base, P₁.hone, P₁.hpm1, P₁.hP, P₁.hE⟩, L₁⟩, by simp⟩,
+        ⟨σ₂, ⟨P₂.base, P₂.hone, P₂.hpm1, P₂.hP, P₂.hE⟩, L₂⟩, by simp⟩
+  -- The `h`s.
+  refine RelCT.loop (M := isa) (Q := fun _ _ => True) I (fun n => ?_) N
+  refine both_exists fun j => ?_
+  refine relct_of_fact (fun s t h => h.1.2) fun hjN => ?_
+  let J : State → Prop := fun t => (∃ σ, GIn σ ∧ GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) σ j t) ∧ j + n = N
+  have hbJ : ∀ (u : Unit) t, J t → Base E t := fun _ t h => by
+    obtain ⟨⟨σ, _, L⟩, _⟩ := h; exact L.keep.base
+  have tr : RelCT isa (fun s t => J s ∧ J t)
+      (seqs [.block (cmpF fHLeft 0),
+        .ite .e (.block (stImm fG 2))
+          (seqs [g.gStep, .block [.mov .eax (.mem (sc fH)), .alu .add .eax (.imm (BitVec.ofNat 32 g.pLen)),
+            .store (sc fH) .eax, .mov .eax (.mem (sc fHLeft)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.pLen)),
+            .store (sc fHLeft) .eax]]),
+        .block (cmpF fG 4)]) fun _ _ => True := by
+    refine (show RelCT isa (Both fun (_ : Unit) t => J t) _ _ from ?_).mono (fun s t h => ⟨(), h.1, h.2⟩)
+      fun _ _ h => h
+    simp only [seqs]
+    refine RelCT.assoc (RelCT.seq (cmpF_ct (o := fHLeft) (v := 0) (by simp only [fHLeft, hdr]; omega) (by decide)
+      (fun _ => E.hsLen - j * E.pLen) hbJ (fun _ t h => by obtain ⟨⟨σ, _, L⟩, _⟩ := h; exact L.left)
+      (fun _ => by omega) (Q := VG.X86.Taint.Agree (τr [.esp, .edi])) ?_ ?_)
+      (tcheckE _ _ (.block (cmpF 0 0)) (cmpF_erase _ _) (by decide +kernel) (by decide +kernel)))
+    · -- None left.
+      exact (tkeep [.esp, .edi] _ (by decide +kernel)).mono (fun s t ⟨_, h₁, h₂⟩ => agree_regs fun r hr =>
+        (base_pins (h₁.1.base hbJ) r hr).trans (base_pins (h₂.1.base hbJ) r hr).symm) fun _ _ h => h
+    · -- `h` number `j`.
+      have gs : ∀ (u : Unit) t, CmpAfter (fun (_ : Unit) t => J t) u t ∧
+          decide (E.hsLen - j * E.pLen = 0) = false → GSIn E g (j, p, x, 4) t := fun u t h => by
+        obtain ⟨⟨s, ⟨⟨σ, ⟨_, hone, hpm1, hP, hE⟩, L⟩, _⟩, gr, m, rd, wr, sy⟩, hz⟩ := h
+        have hne : E.hsLen - j * E.pLen ≠ 0 := of_decide_eq_false hz
+        have B : Base E t := L.keep.base.regs m (gr _ (by decide)) (gr _ (by decide)) rd wr sy
+        have kept : ∀ {d : Nat}, 9728 ≤ d → d + 4 * g.n32 ≤ 9728 + 400 * 8 ∨ 9728 + 400 * 10 ≤ d →
+            d + 4 * g.n32 ≤ E.size → val32 t.mem E.base d g.n32 = val32 σ.mem E.base d g.n32 :=
+          fun h₀ h₁ h₂ => by rw [m]; exact gkeep_arrs G v L.keep h₀ h₁ h₂
+        have bd := G.bounds
+        have n32 : g.n32 = g.pLen / 4 := rfl
+        exact ⟨B, next_h v hne, by rw [m]; exact L.fh,
+          by rw [kept (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega)
+            (by simp only [aOne, arr]; omega), hone],
+          by rw [kept (by simp only [aPm1, arr]; omega) (by simp only [aPm1, arr]; omega)
+            (by simp only [aPm1, arr]; omega), hpm1],
+          by rw [kept (by simp only [aP, arr]; omega) (by simp only [aP, arr]; omega)
+            (by simp only [aP, arr]; omega), hP],
+          by rw [kept (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega)
+            (by simp only [aE, arr]; omega), hE], hxl, hp1, hodd, by rw [m]; exact L.fg⟩
+      refine RelCT.seq (both_post (Ψ := fun _ t => Base E t)
+        (both_map (fun _ => (j, p, x, 4)) gs (gStep_ct G v hp)) fun u t h => ?_) ?_
+      · have I := gs u t h
+        exact WP.mono (gStep_ok G v hp I.base I.hj I.hH I.hone I.hpm1 I.hP I.hE I.hx I.hp1 I.hodd hplt I.hF)
+          fun _ S => S.base
+      · refine both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h) ?_
+        rcases G.lengths with ⟨h₁, _⟩ | ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> rw [h₁] <;>
+          exact tkeep _ _ (by decide +kernel)
+  have post : ∀ (σ t : State), GIn σ → GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) σ j t →
+      WP isa (seqs [.block (cmpF fHLeft 0),
+        .ite .e (.block (stImm fG 2))
+          (seqs [g.gStep, .block [.mov .eax (.mem (sc fH)), .alu .add .eax (.imm (BitVec.ofNat 32 g.pLen)),
+            .store (sc fH) .eax, .mov .eax (.mem (sc fHLeft)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.pLen)),
+            .store (sc fHLeft) .eax]]),
+        .block (cmpF fG 4)]) t fun t' => isa.eval .e t' = some (gCont E p x j) ∧
+          (gCont E p x j = true → (j + 1) * E.pLen ≤ E.hsLen ∧
+            GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) σ (j + 1) t') := fun σ t ⟨_, hone, hpm1, hP, hE⟩ L =>
+    WP.mono (gBody_ok G v hp hx' hone hpm1 hP hE hxl hp1 hodd hplt L) fun t' h => by
+      rcases h with ⟨z, c, _⟩ | ⟨z, c, hj1, L'⟩
+      · exact ⟨by rw [c]; exact z, fun h => absurd (c.symm.trans h) (by decide)⟩
+      · exact ⟨by rw [c]; exact z, fun _ => ⟨hj1, L'⟩⟩
+  refine (tr.wpDep (F := fun s t' => ∃ σ, GIn σ ∧ isa.eval .e t' = some (gCont E p x j) ∧
+      (gCont E p x j = true → (j + 1) * E.pLen ≤ E.hsLen ∧
+        GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) σ (j + 1) t')) fun s t h => ⟨?_, ?_⟩).mono
+    (fun _ _ h => h) fun s' t' H => ?_
+  · obtain ⟨⟨σ, hσ, L⟩, _⟩ := h.1
+    exact WP.mono (post σ s hσ L) fun t' h' => ⟨σ, hσ, h'⟩
+  · obtain ⟨⟨σ, hσ, L⟩, _⟩ := h.2
+    exact WP.mono (post σ t hσ L) fun t' h' => ⟨σ, hσ, h'⟩
+  obtain ⟨_, _, _, _, ⟨σ₁, hσ₁, z₁, c₁⟩, ⟨σ₂, hσ₂, z₂, c₂⟩⟩ := H
+  refine ⟨z₁.trans z₂.symm, fun _ => trivial, fun ht => ?_⟩
+  have hc : gCont E p x j = true := by rw [z₁] at ht; exact Option.some.inj ht
+  obtain ⟨hj1, L₁⟩ := c₁ hc
+  obtain ⟨_, L₂⟩ := c₂ hc
+  have : j + 1 ≤ E.hsLen / E.pLen := (Nat.le_div_iff_mul_le (by omega)).mpr hj1
+  exact ⟨n - 1, by omega, j + 1, ⟨⟨σ₁, hσ₁, L₁⟩, by omega⟩, ⟨σ₂, hσ₂, L₂⟩, by omega⟩
+
 end VG.Proof.Dsa.X86.Generation
