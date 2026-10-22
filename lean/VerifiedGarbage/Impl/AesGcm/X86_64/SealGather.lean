@@ -147,6 +147,14 @@ def finArgs : List Instr :=
     .mov .rdx (.reg .r11), .alu .add .rdx (imm gState), .mov .rcx (.mem (at_ .r11 gAlen)),
     .mov .r8 (.mem (at_ .r11 gLen)), .mov .r9 (.mem (at_ .r11 gTag))]
 
+/-- `f` called, or (`inl`) its code inlined, in a frame of one word where a
+call stores its return address, so that it runs with the stack pointer of a
+call. A caller with variants of several functions inlines those it calls
+(`vg_aes_gcm_seal_gather_prepared16`: no variant of it calls the 512-bit
+streaming functions). -/
+def callOr (inl : Bool) (f : Fn) : Prog isa :=
+  if inl then .frame (.push [.rax]) f.code (.pop .rax 1) else .call f.name f.code
+
 /-- The slices, one after the other, by `encTo` (`vg_aes_gcm_stream_encrypt_to`),
 with `len_i`, `dst + off` and `len_i` passed on the stack. -/
 def slices (encTo : Fn) : Prog isa :=
@@ -158,11 +166,11 @@ def slices (encTo : Fn) : Prog isa :=
 
 /-- If there is any text: the additional data padded to a whole block, by
 `aad` (`vg_aes_gcm_stream_aad`), then the slices. -/
-def text (aad encTo : Fn) : Prog isa :=
+def text (aad encTo : Fn) (inl : Bool := false) : Prog isa :=
   .seq (.block textLen)
     (.ite .e (.block [])
       (.seq (.block padLen)
-        (.seq (.ite .e (.block []) (.seq (.block padArgs) (.call aad.name aad.code)))
+        (.seq (.ite .e (.block []) (.seq (.block padArgs) (callOr inl aad)))
           (slices encTo))))
 
 /-! ## A short text: copied, then sealed in place -/
@@ -412,27 +420,29 @@ def withFront (long : Bool) (splitFn : Fn) (rest : Prog isa) : Prog isa :=
 
 /-- From `vg_aes_gcm_stream_init` on: the message by the streaming functions,
 and the tag. -/
-def stream (init aad encTo fin : Fn) : Prog isa :=
-  .seq (.call init.name init.code)
+def stream (init aad encTo fin : Fn) (inl : Bool := false) : Prog isa :=
+  .seq (callOr inl init)
     (.seq (.block aadArgs)
-      (.seq (.call aad.name aad.code)
-        (.seq (text aad encTo)
-          (.seq (.block finArgs) (.call fin.name fin.code)))))
+      (.seq (callOr inl aad)
+        (.seq (text aad encTo inl)
+          (.seq (.block finArgs) (callOr inl fin)))))
 
 /-- For a text of at least `q` bytes: `short` (`copyShort`)
 if `test` (`splitTest`) sets `CF`, and otherwise `init`
 (`vg_aes_gcm_stream_init`), `aad` (`vg_aes_gcm_stream_aad`), `encTo`
-(`vg_aes_gcm_stream_encrypt_to`) and `fin` (`vg_aes_gcm_stream_finish`). -/
-def gatherRest (test short : Prog isa) (init aad encTo fin : Fn) : Prog isa :=
-  .seq test (.ite .b short (stream init aad encTo fin))
+(`vg_aes_gcm_stream_encrypt_to`) and `fin` (`vg_aes_gcm_stream_finish`),
+`init`, `aad` and `fin` inlined if `inl` (`callOr`). -/
+def gatherRest (test short : Prog isa) (init aad encTo fin : Fn) (inl : Bool := false) : Prog isa :=
+  .seq test (.ite .b short (stream init aad encTo fin inl))
 
 /-- `vg_aes_gcm_seal_gather`: `fast` (`copySeal`) if `quick` (the test of
 the text's length alone, `quickTest q`) sets `CF`, and otherwise
 `gatherRest`. -/
-def sealGather (quick fast test short : Prog isa) (init aad encTo fin : Fn) : Prog isa :=
+def sealGather (quick fast test short : Prog isa) (init aad encTo fin : Fn) (inl : Bool := false) :
+    Prog isa :=
   .seq (.block entry1)
     (.seq (.block entry2)
       (.seq quick
-        (.ite .b fast (gatherRest test short init aad encTo fin))))
+        (.ite .b fast (gatherRest test short init aad encTo fin inl))))
 
 end VG.Impl.AesGcm.X86_64.SealGather

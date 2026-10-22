@@ -595,13 +595,13 @@ def artifactsGatherR16 (v : GcmVariant) (r : R16 v) : List Artifact :=
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.withFront (tlsLong v) (splitFnR16 v r.onePass).fn
           (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR16 v r.short r.onePass).quick (shortFnR16 v r.short r.onePass).fast (shortFnR16 v r.short r.onePass).test
-            (shortFnR16 v r.short r.onePass).code (initFn v.impl).fn (aadFn v.impl).fn (toFnR16 v).fn (finFn v.impl).fn))
+            (shortFnR16 v r.short r.onePass).code (initFn v.impl).fn (aadFn v.impl).fn (toFnR16 v).fn (finFn v.impl).fn true))
       stack := 5128
       verified := Gather.sealGatherPrepared16_framed (shortFnR16 v r.short r.onePass) (initFn v.impl) (aadFn v.impl)
         (toFnR16 v) (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v)
       spSafe := X86_64.withStackArgScratch_spSafe
         (Gather.withFront_spAll (shortFnR16 v r.short r.onePass) (initFn v.impl) (aadFn v.impl) (toFnR16 v)
-          (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v))
+          (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v) true)
       features := v.impl.features }]
 
 /-- How an instance of `vg_aes_gcm_seal_split` works. -/

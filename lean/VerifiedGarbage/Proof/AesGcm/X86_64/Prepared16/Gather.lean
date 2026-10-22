@@ -77,15 +77,17 @@ theorem gatherPrepared16_implies : (Proof.AesGcm.sealGatherX86_64M CtxMode.prepa
     (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888) :=
   ⟨fun _ h => gatherPrePrepared16_of h, fun _ _ _ h => gatherPostPrepared16_of h, fun _ _ _ _ h => gatherPubPrepared16_of h, gatherSatPrepared16_pre⟩
 
-/-- `vg_aes_gcm_seal_gather_prepared`'s code: a TLS record's text sealed by
-`Sp` from the entry (`withFront long`), and the others by `sealGather`. -/
+/-- `vg_aes_gcm_seal_gather_prepared16`'s code: a TLS record's text sealed by
+`Sp` from the entry (`withFront long`), and the others by `sealGather`, with
+`I`, `A` and `F` inlined (`callOr`), as no variant of it would call their
+512-bit variants. -/
 theorem sealGatherPrepared16_core (Sh : ShortFn CtxMode.prepared16) (I : InitFn) (A : AadFn)
     (T : ToFn CtxMode.prepared16) (F : FinFn) (Sp : SplitFn CtxMode.prepared16) (long : Bool) :
     Verified X86_64.target
-      (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
+      (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn true))
       (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888) :=
   Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared16)
-    (withFront_correct Sh I A T F Sp long) (withFront_ct Sh I A T F Sp long) gatherPrepared16_implies
+    (withFront_correct Sh I A T F Sp long true) (withFront_ct Sh I A T F Sp long true) gatherPrepared16_implies
 
 theorem gatherFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.sealGatherPrepared16Contract X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatP, ?_⟩
@@ -103,13 +105,13 @@ theorem sealGatherPrepared16_framed (Sh : ShortFn CtxMode.prepared16) (I : InitF
     (A : AadFn) (T : ToFn CtxMode.prepared16) (F : FinFn) (Sp : SplitFn CtxMode.prepared16) (long : Bool) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)))
+        (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn true)))
       (Spec.Gcm.sealGatherPrepared16Contract X86_64.abi 5128) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Spec.Gcm.sealGatherPrepared16Pre X86_64.abi.ptrBits)
     (post := Spec.Gcm.sealGatherPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherPrepared16_core Sh I A T F Sp long) (by decide) (by decide) (by decide)
-    (withFront_spAll Sh I A T F Sp long) (withFront_xdepth Sh I A T F Sp long)
+    (withFront_spAll Sh I A T F Sp long true) (withFront_xdepth Sh I A T F Sp long true)
     (Proof.AesGcm.sealGatherPrepared16Pre_local _) (Proof.AesGcm.sealGatherPrecomputedPost_local _)
     gatherFrameSatPrepared16_pre
 
