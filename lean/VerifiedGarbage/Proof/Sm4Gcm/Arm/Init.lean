@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sm4.Scratch
 
 /-!
 # SM4-GCM on ARMv7: `vg_sm4_gcm_init`

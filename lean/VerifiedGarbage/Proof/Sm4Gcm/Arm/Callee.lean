@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Verified
-public import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
+import VerifiedGarbage.Proof.Sm4.Arm.Batch32Verified
+import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
@@ -16,8 +16,21 @@ import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr32
+public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Linear
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Body
+public import VerifiedGarbage.Proof.Sm4.SboxTable
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Spec.Sm4.Gcm
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # SM4-GCM on ARMv7: the functions called

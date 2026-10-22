@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # SM4-GCM on ARMv7: counter mode over a piece (`crypt`)

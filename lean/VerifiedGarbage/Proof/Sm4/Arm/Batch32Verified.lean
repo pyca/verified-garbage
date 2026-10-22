@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Body
 import VerifiedGarbage.Proof.Sm4.Arm.Batch32CT
 public import VerifiedGarbage.Proof.Sm4.Ctr32Scratch
-public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -12,6 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr32
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchCT
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Batched ARMv7 SM4 counter mode with `inc₃₂` meets the public, wiped-stack contract -/
 

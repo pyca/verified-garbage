@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # SM4-GCM on ARMv7: `vg_sm4_gcm_stream_finish`
