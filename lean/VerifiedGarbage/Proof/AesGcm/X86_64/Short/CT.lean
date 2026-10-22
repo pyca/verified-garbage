@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
-import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -21,8 +19,6 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
-meta import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
