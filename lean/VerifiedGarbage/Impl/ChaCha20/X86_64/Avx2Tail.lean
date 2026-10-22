@@ -296,12 +296,10 @@ def roundsS (vl : Bool) (S : Nat) : Nat → Prog isa
 
 /-- XOR the `rdx` bytes of keystream in `buf` into the data at `rsi`: 32 at
 a time through `ymm0` and `ymm1` while at least 32 remain, then eight and
-one at a time (`XorBuf.xorBufX`, with the data's address in `r10`); with
-`vl` (`vg_chacha20_xor_avx512vl`), eight and one at a time
-(`XorBuf.xorBuf`). -/
-def fromBuf (vl : Bool) : Prog isa :=
-  if vl then XorBuf.xorBuf .rsi .r9
-  else .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .r9)]) (XorBuf.xorBufX 5 .r10)
+one at a time (`XorBuf.xorBufX`, with the data's address in `r10`), in
+both kernels (`vl` or not). -/
+def fromBuf (_vl : Bool) : Prog isa :=
+  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .r9)]) (XorBuf.xorBufX 5 .r10)
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
 def last (vl : Bool) : Prog isa :=
