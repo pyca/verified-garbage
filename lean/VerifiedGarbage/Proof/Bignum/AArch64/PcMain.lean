@@ -27,7 +27,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 
 theorem seqs_one (c : Prog isa) : seqs [c] = c := rfl
 
-theorem pcMain_eq (M : Mont) : Precompute.main M.mm = seqs (pcLoad ++ (r2Steps M.mm ++ Precompute.pcOut)) := rfl
+theorem pcMain_eq (M : Mont) : Precompute.main M.mm = seqs (pcLoad ++ (r2StepsPub M.mm ++ Precompute.pcOut)) := rfl
 
 /-- `pcOut`: the arrays of `m` and `R² mod m` to `pre`, and 1 returned. -/
 theorem pcOut_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {op : Addr} {N R : Nat}
@@ -119,11 +119,11 @@ theorem pcMain_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np : Addr} {
   have hn := hs.nowrap
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
   rw [pcMain_eq M]
-  refine wp_seqs_append (by simp [pcLoad]) (by simp [r2Steps])
+  refine wp_seqs_append (by simp [pcLoad]) (by simp [r2StepsPub])
     (WP.mono (pcLoad_ok hs h0 hZ (by omega) (by omega) hK hN hnb hnl hodd)
       fun t₁ ⟨minv, hg₁, hn₁, hinv₁, f₁, k₁⟩ => ?_)
-  refine wp_seqs_append (by simp [r2Steps]) (by simp [Precompute.pcOut])
-    (WP.mono (r2_ok M hg₁ hZ (by omega) (by omega) hn₁ hinv₁ hodd hlo)
+  refine wp_seqs_append (by simp [r2StepsPub]) (by simp [Precompute.pcOut])
+    (WP.mono (r2Pub_ok M hg₁ hZ (by omega) (by omega) hn₁ hinv₁ hodd hlo)
       fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have x₁₂ := (Fixed.of_frm f₁ (pcLoadRanges_fixed _)).trans (Fixed.of_frm f₂ (r2Ranges_fixed _))
   have i₁₂ : InScr B Z s.mem t₂.mem := (InScr.of_frm f₁ fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ).trans

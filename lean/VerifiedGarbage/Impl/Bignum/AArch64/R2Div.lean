@@ -136,6 +136,35 @@ def fast : Prog isa := seqs [
   .block [ldh .x13 sW],
   steps]
 
+/-! ## For a public `m`
+
+`m` and every value computed from it are public in `vg_rsa_public_precompute`,
+whose contract allows its timing to depend on `n`: there, `addBack` runs only
+when `t` is negative (rarely), by a branch on its sign. -/
+
+/-- `x3 :=` the sign of `t`, the top bit of the accumulator's word `w`. -/
+def signTest : List Instr := [.lsl .x .x13 .x12 3, .add .x .x13 .x8 .x13, ld .x3 .x13, .lsr .x .x3 .x3 63]
+
+/-- `addBack` if `t` is negative, by a branch on its sign: for a public `m`. -/
+def addBackPub : Prog isa := .seq (.block signTest) (.ite (.zero .x .x3) (.block []) addBack)
+
+/-- `step` with `addBackPub`: for a public `m`. -/
+def stepPub : Prog isa :=
+  seqs [.block (bases ++ quot), zeroAcc, mulAddRow, subPass, addBackPub, addBackPub, copyBack]
+
+/-- `steps` of `stepPub`. -/
+def stepsPub : Prog isa :=
+  .seq (.block [sth .x13 sCnt])
+    (.loop (.seq stepPub (.block [ldh .x13 sCnt, .subImm .x .x13 .x13 1, sth .x13 sCnt])) (.nonzero .x .x13))
+
+/-- `fast` by `stepsPub`: for a public `m`. -/
+def fastPub : Prog isa := seqs [
+  .block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp), ldh .x12 sW, movi .x7 0],
+  neg,
+  recip,
+  .block [ldh .x13 sW],
+  stepsPub]
+
 /-- `x3` zero iff the top bit of `m`'s top word is clear. -/
 def fastTest : List Instr :=
   [ldh .x12 sW, ldh .x9 (sArr aN), .lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13,
@@ -144,5 +173,8 @@ def fastTest : List Instr :=
 /-- `R² mod m` by `fast` when the top bit of `m` is set, by `old` (the
 doublings and squarings) otherwise. -/
 def choice (old : Prog isa) : Prog isa := .seq (.block fastTest) (.ite (.zero .x .x3) old fast)
+
+/-- `choice` by `fastPub`: for a public `m`. -/
+def choicePub (old : Prog isa) : Prog isa := .seq (.block fastTest) (.ite (.zero .x .x3) old fastPub)
 
 end VG.Impl.Bignum.AArch64.R2Div

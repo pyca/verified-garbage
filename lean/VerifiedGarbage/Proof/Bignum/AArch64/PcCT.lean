@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dPubCT
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dPubCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -190,16 +192,16 @@ def PcO (q : PcPub × BitVec 64) (s : State) : Prop :=
     (∀ i < 16 * q.1.w, q.1.Z ≤ ofs q.1.B (q.1.op + BitVec.ofNat 64 i))
 
 /-- `R² mod m` leaks the same in runs that agree on `m`. -/
-theorem pcR2_ct (M : Mont) : RelCT isa (Two Pc3) (seqs (r2Steps M.mm)) (Two PcO) := by
+theorem pcR2_ct (M : Mont) : RelCT isa (Two Pc3) (seqs (r2StepsPub M.mm)) (Two PcO) := by
   have h := two_post (Φ := fun (q : PcPub × BitVec 64) s => PcM q.1 s ∧ R2Pre ⟨PcPub.L q, q.1.N⟩ s)
-    (Ψ := PcO) (two_map (fun q => (⟨PcPub.L q, q.1.N⟩ : R2Pub)) (fun _ _ h => h.2) (r2_ct M)) ?_
+    (Ψ := PcO) (two_map (fun q => (⟨PcPub.L q, q.1.N⟩ : R2Pub)) (fun _ _ h => h.2) (r2Pub_ct M)) ?_
   · exact h.mono (fun _ _ hp => two_bind (fun p s₁ s₂ ⟨mi₁, m₁, r₁⟩ ⟨mi₂, m₂, r₂⟩ => by
       obtain rfl := pc3_minv r₁ r₂
       exact ⟨(p, mi₁), ⟨m₁, r₁⟩, m₂, r₂⟩) hp) fun _ _ h => h
   rintro ⟨p, mi⟩ s ⟨hm, hr⟩
   obtain ⟨hg, hw, hw', hn, hinv, hodd, hlo⟩ := hr
   dsimp only at hg hw hw' hn hinv hodd hlo
-  refine WP.mono (r2_ok M hg.1 hg.2 hw hw' hn hinv hodd hlo) fun t ⟨hg', _, _, f, k⟩ =>
+  refine WP.mono (r2Pub_ok M hg.1 hg.2 hw hw' hn hinv hodd hlo) fun t ⟨hg', _, _, f, k⟩ =>
     ⟨⟨hg', hg.2⟩, hw, hw', ?_, fun i hi => by rw [k.wr]; exact hm.2.2.2.2.2.2.2.2.2.2.2.1 i hi,
       hm.2.2.2.2.2.2.2.2.2.2.2.2⟩
   rw [(Fixed.of_frm f (r2Ranges_fixed _)) sOut (by decide)]
@@ -326,14 +328,14 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs Precompute.pcOut) fun _ _ => True :
 /-- `main` leaks the same in runs that agree on the public data and `n`. -/
 theorem pcMain_ct (M : Mont) : RelCT isa (Two PcM) (Precompute.main M.mm) fun _ _ => True := by
   rw [pcMain_eq M]
-  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2Steps]) (RelCT.seq (R := Two Pc3)
+  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2StepsPub]) (RelCT.seq (R := Two Pc3)
     (two_post (pcLoad_ct.mono (fun _ _ h => two_mono (fun _ _ h => PcM.load h) h) fun _ _ _ => trivial)
       fun p s h => ?_) ?_)
   · have h' := h
     obtain ⟨hs, h0, hZ, hk1, hk2, -, hK, hN, hn, hnl, hv, -⟩ := h'
     refine WP.mono (pcLoad_r2 hs h0 hZ hk1 hk2 hK hN hn hnl hv) fun t ⟨mi, hr, f, k⟩ =>
       ⟨mi, h.congr f (fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ) (pcLoadRanges_fixed _) k (by decide), hr⟩
-  exact RelCT.seqs_append (by simp [r2Steps]) (by simp [Precompute.pcOut]) (RelCT.seq (pcR2_ct M) pcOut_ct)
+  exact RelCT.seqs_append (by simp [r2StepsPub]) (by simp [Precompute.pcOut]) (RelCT.seq (pcR2_ct M) pcOut_ct)
 
 /-! ## The whole function -/
 

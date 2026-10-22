@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
@@ -16,7 +17,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 `step` makes `x := x 2^64 mod m` for `x < m` (array `aR2`), `m` of `w ≥ 2`
 words (array `aN`) with its top bit set, and its reciprocal `v` in the first
-word of array `aTmp` (`r2dStep_ok`), by `WordStep.wordStep_val`.
+word of array `aTmp` (`r2dStep_ok`), by `WordStep.wordStep_val`; and so
+does `stepPub`, whose `addBackPub` branches on the sign that `addBack` masks
+by (`r2dStepPub_ok`): both are `r2dStepWith_ok` for a program that does what
+`addBack` does (`AddBackSpec`).
 -/
 
 @[expose] public section
@@ -25,7 +29,7 @@ namespace VG.Proof.Bignum.AArch64
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.Public VG.Impl.Bignum.AArch64 VG.Impl.Bignum.AArch64.R2Div
 open VG.Proof.Bignum
-open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
 /-- A number of `w ≥ 2` words: its top two words and the rest. -/
 theorem wv_split2 (m : Mem) (B : Addr) (e : Nat) {w : Nat} (hw : 2 ≤ w) :
@@ -120,18 +124,73 @@ theorem r2dHead_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
     (by have := sl aN (by decide); omega) (by have := sl aTmp (by decide); omega) hu hd hv)
     fun t' ⟨h1, hm, k⟩ => ⟨hr.keep k, by rw [h1, hm₁], by rw [hm, hm₁], (k₁.trans k).mono (by decide)⟩
 
+/-! ## Adding `m` back -/
+
+/-- What `addBack` does (`r2dAddBack_ok`): `m` (the `w` words at `x9`) added
+to the `w + 1` words `t` of the accumulator (at `x8`) if `t` is negative. -/
+def AddBackSpec (ab : Prog isa) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w eA eM : Nat}, Scr s B Z → s.gpr .x8 = off B eA → s.gpr .x9 = off B eM →
+    s.gpr .x12 = BitVec.ofNat 64 w → s.gpr .x7 = 0 → 1 ≤ w → w < 2 ^ 31 → eA + 8 * (w + 1) ≤ Z →
+    eM + 8 * w ≤ Z → (eA + 8 * (w + 1) ≤ eM ∨ eM + 8 * w ≤ eA) →
+    WP isa ab s fun t => ∃ c : Bool,
+      wv t.mem B eA (w + 1) + 2 ^ (64 * (w + 1)) * c.toNat =
+        wv s.mem B eA (w + 1) + (if 2 ^ (64 * (w + 1)) / 2 ≤ wv s.mem B eA (w + 1) then wv s.mem B eM w else 0) ∧
+      Outside B eA (8 * (w + 1)) s.mem t.mem ∧ Keep [.x3, .x4, .x13, .x14, .x15, .x16, .x17] s t
+
+theorem addBack_spec : AddBackSpec addBack := r2dAddBack_ok
+
+/-- `signTest`: the sign of `t` into `x3`. -/
+theorem signTest_ok {s : State} {B : Addr} {Z w eA : Nat} (hs : Scr s B Z) (h8 : s.gpr .x8 = off B eA)
+    (h12 : s.gpr .x12 = BitVec.ofNat 64 w) (hw' : w < 2 ^ 31) (hA : eA + 8 * (w + 1) ≤ Z) :
+    WP isa (.block signTest) s fun t =>
+      (t.gpr .x3 = BitVec.ofNat 64 (decide (2 ^ 63 ≤ (word s.mem B (eA + 8 * w)).toNat)).toNat ∧ t.mem = s.mem) ∧
+        Keep [.x3, .x13] s t := by
+  have hn := hs.nowrap
+  refine WP.keep [.x3, .x13] (Q := fun t =>
+      t.gpr .x3 = BitVec.ofNat 64 (decide (2 ^ 63 ≤ (word s.mem B (eA + 8 * w)).toNat)).toNat ∧ t.mem = s.mem)
+    ?_ (by decide) (by decide) (by decide +kernel)
+  refine WP.mono (Q := fun (t : State) => t.gpr .x3 = word s.mem B (eA + 8 * w) >>> 63 ∧ t.mem = s.mem) ?_
+    fun t ⟨h3, hm⟩ => ⟨by rw [h3, shr63_toNat], hm⟩
+  brun [signTest, h8, h12, r2d_ofNat_shl3 (show w < 2 ^ 61 by omega), hs.ld (show eA + 8 * w + 8 ≤ Z by omega)]
+
+/-- `addBackPub` does what `addBack` does: when `t` is not negative, `addBack`
+adds nothing, and `addBackPub` skips it. -/
+theorem addBackPub_spec : AddBackSpec addBackPub := by
+  intro s B Z w eA eM hs h8 h9 h12 h7 hw hw' hA hM sM
+  unfold addBackPub
+  refine WP.seq (WP.mono (signTest_ok hs h8 h12 hw' hA) fun t₁ ⟨⟨h3, hm₁⟩, k₁⟩ => ?_)
+  have hT : (2 ^ (64 * (w + 1)) / 2 ≤ wv s.mem B eA (w + 1)) ↔ 2 ^ 63 ≤ (word s.mem B (eA + 8 * w)).toNat :=
+    (decide_eq_decide.mp (sign_top s.mem B eA w)).symm
+  by_cases hneg : 2 ^ 63 ≤ (word s.mem B (eA + 8 * w)).toNat
+  · refine WP.ite false (by rw [eval_zero, h3, decide_eq_true hneg]; rfl) (by simp) fun _ => ?_
+    refine WP.mono (addBack_spec (hs.congr k₁.wr) ((k₁.gpr .x8 (by decide)).trans h8)
+      ((k₁.gpr .x9 (by decide)).trans h9) ((k₁.gpr .x12 (by decide)).trans h12)
+      ((k₁.gpr .x7 (by decide)).trans h7) hw hw' hA hM sM) fun t ⟨c, hv, o, k⟩ =>
+      ⟨c, by rw [hm₁] at hv; exact hv, by rw [← hm₁]; exact o, (k₁.trans k).mono (by decide)⟩
+  · refine WP.ite true (by rw [eval_zero, h3, decide_eq_false hneg]; rfl) (fun _ => ?_) (by simp)
+    refine WP.block_nil ⟨false, ?_, by rw [hm₁]; exact Outside.refl _ _ _ _, k₁.mono (by decide)⟩
+    simp only [hT, hneg, ↓reduceIte, hm₁, Bool.toNat_false, Nat.mul_zero, Nat.add_zero]
+
 /-! ## A step -/
 
-/-- `x := x 2^64 mod m`: `x < m` (array `aR2`) for `m` (array `aN`) of `w ≥ 2`
-words, its top word `D ≥ 2^63`, and `v` for `D` in the first word of `aTmp`. -/
-theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
+/-- The estimate `q̂` of a step's quotient: `x`'s top two words by `m`'s top
+word `D`. -/
+def r2dQ (m : Mem) (B : Addr) (w D : Nat) : Nat :=
+  min (((word m B (slot w aR2 + 8 * (w - 1))).toNat * 2 ^ 64 + (word m B (slot w aR2 + 8 * (w - 2))).toNat) / D)
+    (2 ^ 64 - 1)
+
+/-- A step's first pieces: `t = x 2^64 - q̂ m` in the accumulator's `w + 1`
+words, with a borrow `b` out of them. -/
+theorem r2dStepPre_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv t.mem B (slot w aN) w = M)
     (hD : (word t.mem B (slot w aN + 8 * (w - 1))).toNat = D) (hd : 2 ^ 63 ≤ D)
     (hv : (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / D - 2 ^ 64)
     (hX : wv t.mem B (slot w aR2) w < M) :
-    WP isa step t fun t' => Good t' B Z w minv ∧
-      wv t'.mem B (slot w aR2) w = wv t.mem B (slot w aR2) w * 2 ^ 64 % M ∧
-      Arrays B w [aAcc, aR2] t.mem t'.mem ∧ Keep mmRegs t t' := by
+    WP isa (seqs [.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass]) t fun t₄ =>
+      Good t₄ B Z w minv ∧ StepRegs t₄ B w ∧ wv t₄.mem B (slot w aN) w = M ∧
+      (∃ b : Bool, wv t₄.mem B (slot w aAcc) (w + 1) + r2dQ t.mem B w D * M =
+        2 ^ 64 * wv t.mem B (slot w aR2) w + 2 ^ (64 * (w + 1)) * b.toNat) ∧
+      Arrays B w [aAcc, aR2] t.mem t₄.mem ∧ Keep mmRegs t t₄ := by
   have hs := hg.scr
   have hn := hs.nowrap
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
@@ -140,24 +199,18 @@ theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : 
   have lX := sl aR2 (by decide)
   have sAM := slot_sep (w := w) (show aAcc ≠ aN by decide)
   have sAX := slot_sep (w := w) (show aAcc ≠ aR2 by decide)
-  have sXM := slot_sep (w := w) (show aR2 ≠ aN by decide)
   have hu := r2d_top_le (m := t.mem) (B := B) (by omega : 1 ≤ w) (hM ▸ hX)
-  unfold step
   simp only [seqs]
   refine WP.seq (WP.mono (r2dHead_ok hg hZ hw hw' hu (by rw [hD]; exact hd) (by rw [hv, hD]))
     fun t₁ ⟨r₁, h1, hm₁, k₁⟩ => ?_)
   rw [hD] at h1
-  generalize hq : min (((word t.mem B (slot w aR2 + 8 * (w - 1))).toNat * 2 ^ 64 +
-    (word t.mem B (slot w aR2 + 8 * (w - 2))).toNat) / D) (2 ^ 64 - 1) = q at h1
-  have hqB : q < 2 ^ 64 := by rw [← hq]; exact Nat.lt_of_le_of_lt (Nat.min_le_right _ _) (by decide)
+  have hq : r2dQ t.mem B w D = min (((word t.mem B (slot w aR2 + 8 * (w - 1))).toNat * 2 ^ 64 +
+    (word t.mem B (slot w aR2 + 8 * (w - 2))).toNat) / D) (2 ^ 64 - 1) := rfl
+  rw [← hq] at h1
+  generalize r2dQ t.mem B w D = q at h1 hq ⊢
+  have hqB : q < 2 ^ 64 := by rw [hq]; exact Nat.lt_of_le_of_lt (Nat.min_le_right _ _) (by decide)
   have hs₁ := hs.congr k₁.wr
-  generalize hXv : wv t.mem B (slot w aR2) w = X at hX
-  have hXw := wv_split2 t.mem B (slot w aR2) hw
-  have hMw := wv_split1 t.mem B (slot w aN) (show 1 ≤ w by omega)
-  have hXl := wv_lt t.mem B (slot w aR2) (w - 2)
-  have hml := wv_lt t.mem B (slot w aN) (w - 1)
-  rw [hXv] at hXw
-  rw [hM, hD] at hMw
+  generalize hXv : wv t.mem B (slot w aR2) w = X at hX ⊢
   have hMB : M < 2 ^ (64 * w) := hM ▸ wv_lt _ _ _ _
   -- `[acc] := 0`.
   refine WP.seq (WP.mono (zeroAcc_ok hs₁ r₁.x8 r₁.x12 r₁.x7 hw' lA) fun t₂ ⟨hz₂, o₂, k₂⟩ => ?_)
@@ -184,20 +237,64 @@ theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : 
   have X₃ : wv t₃.mem B (slot w aR2) w = X := by rw [o₃.wv (by omega) (by omega), X₂]
   have M₃ : wv t₃.mem B (slot w aN) w = M := by rw [o₃.wv (by omega) (by omega), M₂]
   -- `t := x 2^64 - q̂ m`.
-  refine WP.seq (WP.mono (subPass_ok hs₃ r₃.x8 r₃.x11 r₃.x12 r₃.x7 (by omega) hw' (by omega) (by omega)
-    (by omega)) fun t₄ ⟨b, hv₄, o₄, k₄⟩ => ?_)
+  refine WP.mono (subPass_ok hs₃ r₃.x8 r₃.x11 r₃.x12 r₃.x7 (by omega) hw' (by omega) (by omega)
+    (by omega)) fun t₄ ⟨b, hv₄, o₄, k₄⟩ => ?_
   rw [P₃, X₃] at hv₄
   have r₄ := r₃.keep k₄
   have hs₄ := hs₃.congr k₄.wr
-  have M₄ : wv t₄.mem B (slot w aN) w = M := by rw [o₄.wv (by omega) (by omega), M₃]
+  have kk : Keep mmRegs t t₄ := (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
+  have ha : Arrays B w [aAcc, aR2] t.mem t₄.mem := by
+    have mA : aAcc ∈ [aAcc, aR2] := by decide
+    rw [← hm₁]
+    exact ((Arrays.of_outside mA o₂ (Nat.le_refl _) (Nat.le_refl _)).trans
+      (Arrays.of_outside mA o₃ (Nat.le_refl _) (Nat.le_refl _))).trans
+      (Arrays.of_outside mA o₄ (Nat.le_refl _) (by omega))
+  exact ⟨⟨hs₄, (kk.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, r₄,
+    by rw [o₄.wv (by omega) (by omega), M₃], ⟨b, by omega⟩, ha, kk⟩
+
+/-- `x := x 2^64 mod m` by a step whose `ab` does what `addBack` does: `x < m`
+(array `aR2`) for `m` (array `aN`) of `w ≥ 2` words, its top word
+`D ≥ 2^63`, and `v` for `D` in the first word of `aTmp`. -/
+theorem r2dStepWith_ok {ab : Prog isa} (hab : AddBackSpec ab) {t : State} {B : Addr} {Z w : Nat}
+    {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv t.mem B (slot w aN) w = M)
+    (hD : (word t.mem B (slot w aN + 8 * (w - 1))).toNat = D) (hd : 2 ^ 63 ≤ D)
+    (hv : (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / D - 2 ^ 64)
+    (hX : wv t.mem B (slot w aR2) w < M) :
+    WP isa (seqs [.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass, ab, ab, copyBack]) t fun t' =>
+      Good t' B Z w minv ∧
+      wv t'.mem B (slot w aR2) w = wv t.mem B (slot w aR2) w * 2 ^ 64 % M ∧
+      Arrays B w [aAcc, aR2] t.mem t'.mem ∧ Keep mmRegs t t' := by
+  have hn := hg.scr.nowrap
+  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have lA := sl aAcc (by decide)
+  have lM := sl aN (by decide)
+  have lX := sl aR2 (by decide)
+  have sAM := slot_sep (w := w) (show aAcc ≠ aN by decide)
+  have sAX := slot_sep (w := w) (show aAcc ≠ aR2 by decide)
+  have hXw := wv_split2 t.mem B (slot w aR2) hw
+  have hMw := wv_split1 t.mem B (slot w aN) (show 1 ≤ w by omega)
+  have hXl := wv_lt t.mem B (slot w aR2) (w - 2)
+  have hml := wv_lt t.mem B (slot w aN) (w - 1)
+  rw [hM, hD] at hMw
+  have hMB : M < 2 ^ (64 * w) := hM ▸ wv_lt _ _ _ _
+  refine wp_seqs_append (a := [.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass])
+    (b := [ab, ab, copyBack]) (by simp) (by simp)
+    (WP.mono (r2dStepPre_ok hg hZ hw hw' hM hD hd hv hX) fun t₄ ⟨g₄, r₄, M₄, ⟨b, hv₄⟩, a₄, k₄⟩ => ?_)
+  have hs₄ := g₄.scr
+  have hq : r2dQ t.mem B w D = min (((word t.mem B (slot w aR2 + 8 * (w - 1))).toNat * 2 ^ 64 +
+    (word t.mem B (slot w aR2 + 8 * (w - 2))).toNat) / D) (2 ^ 64 - 1) := rfl
+  generalize r2dQ t.mem B w D = q at hv₄ hq
+  generalize hXv : wv t.mem B (slot w aR2) w = X at hX hXw hv₄ ⊢
+  simp only [seqs]
   -- `m` added back while `t` is negative.
-  refine WP.seq (WP.mono (r2dAddBack_ok hs₄ r₄.x8 r₄.x9 r₄.x12 r₄.x7 (by omega) hw' (by omega) (by omega)
+  refine WP.seq (WP.mono (hab hs₄ r₄.x8 r₄.x9 r₄.x12 r₄.x7 (by omega) hw' (by omega) (by omega)
     (by omega)) fun t₅ ⟨c1, hv₅, o₅, k₅⟩ => ?_)
   rw [M₄] at hv₅
   have r₅ := r₄.keep k₅
   have hs₅ := hs₄.congr k₅.wr
   have M₅ : wv t₅.mem B (slot w aN) w = M := by rw [o₅.wv (by omega) (by omega), M₄]
-  refine WP.seq (WP.mono (r2dAddBack_ok hs₅ r₅.x8 r₅.x9 r₅.x12 r₅.x7 (by omega) hw' (by omega) (by omega)
+  refine WP.seq (WP.mono (hab hs₅ r₅.x8 r₅.x9 r₅.x12 r₅.x7 (by omega) hw' (by omega) (by omega)
     (by omega)) fun t₆ ⟨c2, hv₆, o₆, k₆⟩ => ?_)
   rw [M₅] at hv₆
   have r₆ := r₅.keep k₆
@@ -206,7 +303,7 @@ theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : 
   have hT3 : wv t₆.mem B (slot w aAcc) (w + 1) = X * 2 ^ 64 % M := by
     refine WordStep.wordStep_val hw hXw hXl hMw hml hd (hD ▸ BitVec.isLt _) hX (wv_lt _ _ _ _) (Bool.toNat_lt b)
       ?_ (wv_lt _ _ _ _) (Bool.toNat_lt c1) hv₅ (wv_lt _ _ _ _) (Bool.toNat_lt c2) hv₆
-    rw [hq]; omega
+    rw [← hq]; omega
   -- `x := t`.
   unfold copyBack
   refine WP.seq (WP.mono (WP.keep [.x16, .x17] (Q := fun t₇ => t₇.gpr .x16 = off B (slot w aAcc) ∧
@@ -218,20 +315,37 @@ theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : 
     (fun j hj => hs₇.ld (by omega)) (fun j hj => hs₇.st (by omega))
     (fun j hj i hi => by rw [ofs_off B (by omega)]; omega)) fun t' ⟨hc, _, o', _, _, k'⟩ => ?_
   have hMod : X * 2 ^ 64 % M < 2 ^ (64 * w) := Nat.lt_trans (Nat.mod_lt _ (by omega)) hMB
-  have kk : Keep mmRegs t t' :=
-    ((((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans k').mono (by decide))
+  have kk : Keep mmRegs t t' := ((((k₄.trans k₅).trans k₆).trans k₇).trans k').mono (by decide)
   have ha : Arrays B w [aAcc, aR2] t.mem t'.mem := by
     have mA : aAcc ∈ [aAcc, aR2] := by decide
     have mX : aR2 ∈ [aAcc, aR2] := by decide
-    rw [← hm₁]
-    refine (((((Arrays.of_outside mA o₂ (Nat.le_refl _) (Nat.le_refl _)).trans
-      (Arrays.of_outside mA o₃ (Nat.le_refl _) (Nat.le_refl _))).trans
-      (Arrays.of_outside mA o₄ (Nat.le_refl _) (by omega))).trans
-      (Arrays.of_outside mA o₅ (Nat.le_refl _) (by omega))).trans
+    refine ((a₄.trans (Arrays.of_outside mA o₅ (Nat.le_refl _) (by omega))).trans
       (Arrays.of_outside mA o₆ (Nat.le_refl _) (by omega))).trans ?_
     rw [← hm₇]
     exact Arrays.of_outside mX o' (Nat.le_refl _) (by omega)
   refine ⟨⟨hs₇.congr k'.wr, (kk.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, ?_, ha, kk⟩
   rw [hc, hm₇, wv_low_top t₆.mem B (slot w aAcc) w (by rw [hT3]; exact hMod), hT3]
+
+/-- `step`: `x := x 2^64 mod m` (`r2dStepWith_ok`). -/
+theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv t.mem B (slot w aN) w = M)
+    (hD : (word t.mem B (slot w aN + 8 * (w - 1))).toNat = D) (hd : 2 ^ 63 ≤ D)
+    (hv : (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / D - 2 ^ 64)
+    (hX : wv t.mem B (slot w aR2) w < M) :
+    WP isa step t fun t' => Good t' B Z w minv ∧
+      wv t'.mem B (slot w aR2) w = wv t.mem B (slot w aR2) w * 2 ^ 64 % M ∧
+      Arrays B w [aAcc, aR2] t.mem t'.mem ∧ Keep mmRegs t t' :=
+  r2dStepWith_ok addBack_spec hg hZ hw hw' hM hD hd hv hX
+
+/-- `stepPub`: `x := x 2^64 mod m` (`r2dStepWith_ok`). -/
+theorem r2dStepPub_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv t.mem B (slot w aN) w = M)
+    (hD : (word t.mem B (slot w aN + 8 * (w - 1))).toNat = D) (hd : 2 ^ 63 ≤ D)
+    (hv : (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / D - 2 ^ 64)
+    (hX : wv t.mem B (slot w aR2) w < M) :
+    WP isa stepPub t fun t' => Good t' B Z w minv ∧
+      wv t'.mem B (slot w aR2) w = wv t.mem B (slot w aR2) w * 2 ^ 64 % M ∧
+      Arrays B w [aAcc, aR2] t.mem t'.mem ∧ Keep mmRegs t t' :=
+  r2dStepWith_ok addBackPub_spec hg hZ hw hw' hM hD hd hv hX
 
 end VG.Proof.Bignum.AArch64
