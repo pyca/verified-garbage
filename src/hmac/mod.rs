@@ -44,6 +44,9 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     /// Returns the MAC.
     #[doc(hidden)]
     fn hmac_finalize(state: Self::State) -> Self::Output;
+    /// The MAC of `data` with `key`, with the states on the stack.
+    #[doc(hidden)]
+    fn hmac_mac(key: &[u8], data: &[u8]) -> Self::Output;
 }
 
 /// The MAC did not match: the message or the key is not what was
@@ -98,11 +101,10 @@ impl<H: HmacHash> Hmac<H> {
         }
     }
 
-    /// The MAC of `data` with `key`.
+    /// The MAC of `data` with `key`: as `new`, `update` and `finalize`,
+    /// without the intermediate computations.
     pub fn mac(key: &[u8], data: &[u8]) -> H::Output {
-        let mut h = Self::new(key);
-        h.update(data);
-        h.finalize()
+        H::hmac_mac(key, data)
     }
 }
 
@@ -212,6 +214,33 @@ macro_rules! streaming_hmac {
                 unsafe { finalize(inner, &state.outer, count, &mut mac) };
                 mac
             }
+
+            fn hmac_mac(key: &[u8], data: &[u8]) -> [u8; $output] {
+                let backend = $backend::select($crate::cpu::detected());
+                let init = match backend {
+                    $backend::$base => $init,
+                    $($(#[$attr])* $backend::$variant => $vinit,)*
+                };
+                let finalize = match backend {
+                    $backend::$base => $finalize,
+                    $($(#[$attr])* $backend::$variant => $vfinalize,)*
+                };
+                // As in `hmac_init` and `hmac_finalize`, with the states on
+                // the stack: `inner` is wiped when dropped, `outer` below.
+                let mut inner = $hash::from_state([0; $state], Self::BLOCK_SIZE as u64, backend);
+                let mut outer = [0; $state];
+                let (st, _) = inner.state_mut();
+                // SAFETY: as in `hmac_init`.
+                unsafe { init(st, &mut outer, key.as_ptr(), key.len()) };
+                inner.update(data);
+                let (st, count) = inner.state_mut();
+                let mut mac = [0; $output];
+                // SAFETY: as in `hmac_finalize`: `st` represents `(K₀ ⊕
+                // ipad) ‖ data`, of `count` bytes, and `outer` `K₀ ⊕ opad`.
+                unsafe { finalize(st, &outer, count, &mut mac) };
+                $crate::zeroize::zeroize(&mut outer);
+                mac
+            }
         }
 
         #[cfg(test)]
@@ -233,6 +262,32 @@ macro_rules! streaming_hmac {
                         }
                     }
                 )*
+            }
+
+            /// `mac` gives the MAC that `new`, `update` and `finalize`
+            /// compute: with keys up to longer than a block and messages
+            /// around a block, with the implementation this CPU runs.
+            #[test]
+            fn one_call() {
+                use $crate::hashes::HashFunction;
+                type Mac = super::super::Hmac<$hash>;
+                let b = <$hash as HashFunction>::BLOCK_SIZE;
+                let mut bytes = [0u8; 600];
+                for (i, x) in bytes.iter_mut().enumerate() {
+                    *x = (i * 7) as u8;
+                }
+                let streamed = |key: &[u8], data: &[u8]| {
+                    let mut h = Mac::new(key);
+                    h.update(data);
+                    h.finalize()
+                };
+                for klen in [0, 1, b, b + 1] {
+                    let key = &bytes[..klen];
+                    for len in [0, 1, b - 1, b, b + 1, 2 * b + 3] {
+                        let data = &bytes[100..100 + len];
+                        assert_eq!(Mac::mac(key, data), streamed(key, data));
+                    }
+                }
             }
 
             /// A key longer than a block gives the MAC of its digest (FIPS
