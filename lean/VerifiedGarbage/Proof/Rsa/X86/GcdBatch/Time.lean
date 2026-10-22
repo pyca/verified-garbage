@@ -22,8 +22,9 @@ theorem body_trace {s t sf tf : State} {base : Addr} {size n : Nat} {tr ur : Lis
     (hs : Scr s base size) (ht : Scr t base size) (hn : 16 ≤ n) (hnMax : n ≤ 1024)
     (hz : offset n 15 ≤ size) (sp : s.gpr .esp=t.gpr .esp)
     (hm : val32 s.mem base (offset n 8) n%2=1) (hm' : val32 t.mem base (offset n 8) n%2=1)
+    {hint : VG.Taint.Hint VG.X86.Taint.T}
     (hc : (VG.Taint.check taint (WorkspaceTaint.dom (offset n 15)) (body n)
-      (VG.Taint.hintOf taint (WorkspaceTaint.dom (offset n 15)) (body n))).isSome=true)
+      hint).isSome=true)
     (es : Exec isa (body n) s tr sf) (et : Exec isa (body n) t ur tf) : tr=ur :=
   WorkspaceTaint.trace_eq hs ht hz sp hc
     (WP.mono (body_ok (WorkspaceTaint.view_scr hs) hn hnMax hz hm) fun _ _ => trivial)

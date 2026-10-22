@@ -63,12 +63,13 @@ theorem divGeom_ctx {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s 
     have e : ∀ x, 20 ≤ arr w x := fun x => Nat.le_trans (by decide : 20 ≤ hdr) (Nat.le_add_right _ _)
     rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> simp only [divGeom] <;> first | exact e _ | (simp at hi)
   · intro i j hij
-    have := arr_disj (w := w) hqr; have := arr_disj (w := w) hqd; have := arr_disj (w := w) hqt
-    have := arr_disj (w := w) hrd; have := arr_disj (w := w) hrt; have := arr_disj (w := w) hdt
+    -- Keep the arithmetic solver independent of the workspace and memory facts.
+    have qr := arr_disj (w := w) hqr; have qd := arr_disj (w := w) hqd; have qt := arr_disj (w := w) hqt
+    have rd := arr_disj (w := w) hrd; have rt := arr_disj (w := w) hrt; have dt := arr_disj (w := w) hdt
     rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> rcases j with ⟨_ | _ | _ | _ | j, hj⟩ <;>
       simp only [divGeom, Geometry.words, Fin.mk.injEq, ne_eq, not_true_eq_false] at hij ⊢ <;>
       (try split) <;> (try split) <;>
-      first | omega | (exact absurd rfl hij) | (simp at hi) | (simp at hj) | (simp at *)
+      first | omega_using [qr, qd, qt, rd, rt, dt, hij, hi, hj, hS] | (exact absurd rfl hij) | (simp at hi) | (simp at hj)
   · intro i; rcases i with ⟨_ | _ | _ | _ | i, hi⟩
     · exact hh.q
     · exact hh.r

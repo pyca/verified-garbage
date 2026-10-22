@@ -88,7 +88,8 @@ theorem lift_exec {s z : State} {base : Addr} {size : Nat} {c : Prog isa} {tr : 
 
 theorem trace_eq {s t sf tf : State} {base : Addr} {size minimum : Nat} {c : Prog isa} {tr ur : List Leak}
     (hs : Scr s base size) (ht : Scr t base size) (hm : minimum≤size) (sp : s.gpr .esp=t.gpr .esp)
-    (hc : (VG.Taint.check taint (dom minimum) c (VG.Taint.hintOf taint (dom minimum) c)).isSome=true)
+    {hint : VG.Taint.Hint VG.X86.Taint.T}
+    (hc : (VG.Taint.check taint (dom minimum) c hint).isSome=true)
     (left : WP isa c (view s base size) (fun _ => True)) (right : WP isa c (view t base size) (fun _ => True))
     (es : Exec isa c s tr sf) (et : Exec isa c t ur tf) : tr=ur := by
   obtain ⟨a,sa,ea,_⟩ := left

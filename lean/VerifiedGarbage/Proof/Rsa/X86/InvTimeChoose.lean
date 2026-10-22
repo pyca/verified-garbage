@@ -39,8 +39,9 @@ include rsaBatchLaw
 
 theorem choose_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' desired w n : Nat} {sp : BitVec 32} {fallback : Prog isa}
     (hn : 16≤n) (nl : n≤1024) (hw : w=2*n) (he : n%2=0) (small : desired<2^32) (widthChoice : kw desired=w)
+    {hint : VG.Taint.Hint VG.X86.Taint.T}
     (check : (VG.Taint.check taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.InvBatch.offset w 15)) (VG.Impl.Rsa.X86.InvBatch.body w n)
-      (VG.Taint.hintOf taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.InvBatch.offset w 15)) (VG.Impl.Rsa.X86.InvBatch.body w n))).isSome=true)
+      hint).isSome=true)
     (guardCheck : (VG.Taint.check taint τ (VG.Impl.Rsa.X86.InvBatch.guard desired n)
       (VG.Taint.hintOf taint τ (VG.Impl.Rsa.X86.InvBatch.guard desired n))).isSome=true)
     (other : RelCT isa (Pair args base size len P Q P' Q' sp) fallback (fun _ _ => True)) :
@@ -73,10 +74,13 @@ theorem choose_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q
 
 theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
     RelCT isa (Pair args base size len P Q P' Q' sp) VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice (fun _ _ => True) := by
+  obtain ⟨_, body64_check⟩ := InvBatch.body64_check
+  obtain ⟨_, body96_check⟩ := InvBatch.body96_check
+  obtain ⟨_, body128_check⟩ := InvBatch.body128_check
   unfold VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice VG.Impl.Rsa.X86.InvBatch.dispatch
-  refine choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) InvBatch.body64_check guard64_check
-    (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) InvBatch.body96_check guard96_check
-      (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) InvBatch.body128_check guard128_check ?_))
+  refine choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body64_check guard64_check
+    (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body96_check guard96_check
+      (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body128_check guard128_check ?_))
   exact (RelCT.taint (A:=taint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2) fallback_check).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
 
