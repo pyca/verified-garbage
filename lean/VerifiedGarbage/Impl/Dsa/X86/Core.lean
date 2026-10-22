@@ -35,9 +35,11 @@ def setup (len : Nat) (modulus : Field) : Prog isa :=
     (contextSetup ((len + 7) / 8))
 
 /-- Internal results are not masked until final signature output. -/
-def store (len output : Nat) : Prog isa :=
+def storeAt (len input output : Nat) : Prog isa :=
   .seq (.block (pointer (.local output) ++ [.mov .ecx (.imm (BitVec.allOnes 32))]))
-    (storeComponent len (slot ((len + 7) / 8) 6))
+    (storeComponent len input)
+
+def store (len output : Nat) : Prog isa := storeAt len (slot ((len + 7) / 8) 6) output
 
 /-- Common byte input staging for ordinary and retained-context exponentiation. -/
 def loadPower (n len expLen : Nat) (modulus : Field) (a e : Pointer) : Prog isa :=

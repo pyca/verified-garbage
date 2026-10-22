@@ -220,6 +220,14 @@ theorem powMod_eq (a e m : Nat) : Spec.Rsa.powMod a e m = a ^ e % m := by
 /-! ## Exponentiation in Montgomery form -/
 
 /-- A Montgomery squaring of `Y ≡ x^E R`: `x^(2E) R`. -/
+theorem mont_encode {Y x R m : Nat} (hR : Nat.Coprime R m)
+    (h : Y * R % m = x * (R * R % m) % m) : Y % m = x * R % m := by
+  apply mont_cancel hR
+  calc
+    Y * R % m = x * (R * R % m) % m := h
+    _ = x * (R * R) % m := by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
+    _ = (x * R) * R % m := by rw [Nat.mul_assoc]
+
 theorem mont_sq {Y Y' x E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E * R % m)
     (h : Y' * R % m = Y * Y % m) : Y' % m = x ^ (2 * E) * R % m := by
   apply mont_cancel hR

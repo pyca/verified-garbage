@@ -123,4 +123,20 @@ theorem keeps_write_flag {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat}
       hh L.flag (List.mem_cons_self ..)
   exact (writeW_outside m' B v hl _ hx).trans (h i hi hh ha ht)
 
+theorem kept_header {B : Addr} {n w j : Nat} {m m' : Mem}
+    (h : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B n w m m')
+    (hn : 32 ≤ n) (hj : j < 32) (he : j ∉ [23, 26, 29, 30, 1]) :
+    word m' B (8 * j) = word m B (8 * j) := by
+  apply keeps_word h (by omega_arith)
+  · intro k hk
+    have hne : j ≠ k := fun hEq => he (hEq ▸ hk)
+    omega_arith
+  · simp only [Spec.MillerRabin.compact, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl) <;>
+      left <;> simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega_arith
+  · left
+    simp only [Spec.MillerRabin.compact, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    omega_arith
+
+
 end VG.Proof.MillerRabin

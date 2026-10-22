@@ -287,6 +287,9 @@ pub(crate) mod idea_ofb;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod miller_rabin;
+
+#[rustfmt::skip]
 pub(crate) mod mldsa;
 
 #[rustfmt::skip]

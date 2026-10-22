@@ -58,10 +58,10 @@ theorem wv_le_one {m : Mem} {p : Addr} {d w : Nat} (hw : 1 ≤ w) :
 
 /-- The witness from `x < 2^(64 w)` for the odd `c` with `c − 1` of
 `64 w` bits. -/
-theorem witness_eq {c x w : Nat} (hc : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
-    (hx : x < 2 ^ (64 * w)) :
+theorem witness_eq_bits {c x bits : Nat} (hc : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = bits)
+    (hx : x < 2 ^ (bits)) :
     Spec.RsaKeyGen.witness (c - 1) x =
-      (if decide (2 ≤ x) && decide (x + (1 - x % 2) < c) then x else (x ||| 2) % 2 ^ (64 * w - 1),
+      (if decide (2 ≤ x) && decide (x + (1 - x % 2) < c) then x else (x ||| 2) % 2 ^ (bits - 1),
         decide (2 ≤ x) && decide (x + (1 - x % 2) < c)) := by
   have e : (decide (2 ≤ x) && decide (x + (1 - x % 2) < c)) = decide (2 ≤ x ∧ x < c - 1) := by
     rw [← Bool.decide_and]; exact decide_eq_decide.mpr (by omega)
@@ -69,6 +69,14 @@ theorem witness_eq {c x w : Nat} (hc : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength
   unfold Spec.RsaKeyGen.witness
   simp only [hb, Nat.mod_eq_of_lt hx]
   by_cases h : 2 ≤ x ∧ x < c - 1 <;> simp [h]
+
+/-- Whole-limb specialization retained for the existing RSA callers. -/
+theorem witness_eq {c x w : Nat} (hc : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
+    (hx : x < 2 ^ (64 * w)) :
+    Spec.RsaKeyGen.witness (c - 1) x =
+      (if decide (2 ≤ x) && decide (x + (1 - x % 2) < c) then x else (x ||| 2) % 2 ^ (64 * w - 1),
+        decide (2 ≤ x) && decide (x + (1 - x % 2) < c)) :=
+  witness_eq_bits hc hb hx
 
 /-- `|c − p|` from the difference `D` and its borrow `b`. -/
 theorem absDiff_of {D p c P : Nat} {b : Bool} (h : D + p = c + P * b.toNat) (hD : D < P) :

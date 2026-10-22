@@ -26,12 +26,7 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidat
 open VG.Proof.X25519.Arm VG.Impl.RsaKeyGen VG.Proof.RsaKeyGen
 open VG.Proof.Rsa (b2n)
 
-/-- Whether one of the first `n` entries of the table divides `c`. -/
-def tr (n c : Nat) : Bool := (List.range n).any fun i => c % tabEntry i == 0
-
-theorem tr_succ (n c : Nat) : tr (n + 1) c = (tr n c || decide (c % tabEntry n = 0)) := by
-  simp only [tr, List.range_succ, List.any_append, List.any_cons, List.any_nil, Bool.or_false]
-  congr 1
+export VG.Proof.RsaKeyGen (tr tr_succ)
 
 theorem trialStep_eq : trialStep =
     .seq (.block [.ldr .r10 .r12 0, .dp .add .r12 .r12 (.imm 4)])

@@ -35,19 +35,18 @@ theorem outside_rebase {base : Addr} {out len : Nat} {m m' : Mem}
 /-- What storing a component writes: its pointer, the mask and the loop's registers. -/
 def storeClob : List Reg := [.esi, .eax, .ebx, .ecx, .edx, .ebp]
 
-theorem coreStore_ok {s : State} {base : Addr} {size n len output : Nat}
+theorem coreStoreAt_ok {s : State} {base : Addr} {size n len input output : Nat}
     (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
-    (hn : (len + 7) / 8 = n) (ha : slot n 6 + 8 * n ≤ size) (h4 : 4 ≤ len) (hlen : len ≤ 8 * n)
+    (ha : input + 8 * n ≤ size) (h4 : 4 ≤ len) (hlen : len ≤ 8 * n)
     (hw4 : len % 4 = 0)
-    (ho : output + len ≤ size) (hsep : slot n 6 + 8 * n ≤ output ∨ output + len ≤ slot n 6) :
-    WP isa (Core.store len output) s fun t =>
-      Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len (wordsVal s.mem base (slot n 6) n) ∧
+    (ho : output + len ≤ size) (hsep : input + 8 * n ≤ output ∨ output + len ≤ input) :
+    WP isa (Core.storeAt len input output) s fun t =>
+      Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len (wordsVal s.mem base (input) n) ∧
       Keeps storeClob s t ∧ Outside base output len s.mem t.mem := by
   have nw := hs.nowrap
   have fit : base.toNat + output < 2 ^ 32 := by omega
   have out32 : output < 2 ^ 32 := by omega
-  unfold Core.store
-  rw [hn]
+  unfold Core.storeAt
   refine WP.seq (WP.block_append (WP.mono (pointer_ok hs hz (.local output)) fun u ⟨Pu, Ku, Mu⟩ => ?_))
   have pa : (u.gpr .esi).setWidth 64 = off base output := by
     rw [Pu, pointerValue]
@@ -74,5 +73,17 @@ theorem coreStore_ok {s : State} {base : Addr} {size n len output : Nat}
   · simpa only [pv, pa, uv.mem, Mu, ite_true] using Vt
   · rw [pv, pa, uv.mem, Mu] at Ot
     exact outside_rebase Ot (by omega)
+
+theorem coreStore_ok {s : State} {base : Addr} {size n len output : Nat}
+    (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
+    (hn : (len + 7) / 8 = n) (ha : slot n 6 + 8 * n ≤ size) (h4 : 4 ≤ len) (hlen : len ≤ 8 * n)
+    (hw4 : len % 4 = 0)
+    (ho : output + len ≤ size) (hsep : slot n 6 + 8 * n ≤ output ∨ output + len ≤ slot n 6) :
+    WP isa (Core.store len output) s fun t =>
+      Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len (wordsVal s.mem base (slot n 6) n) ∧
+      Keeps storeClob s t ∧ Outside base output len s.mem t.mem := by
+  unfold Core.store
+  rw [hn]
+  exact coreStoreAt_ok hs hz ha h4 hlen hw4 ho hsep
 
 end VG.Proof.Dsa.X86

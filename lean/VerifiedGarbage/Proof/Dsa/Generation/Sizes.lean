@@ -20,12 +20,18 @@ theorem generation_sizes {l n : Nat} (h : VG.Spec.Dsa.subgroupBits l = some n) :
     · simp_all
     · cases h
 
+/-- A generation offset needs at most eighteen bits, including its contribution index. -/
+theorem seed_offset_small {l n counter j : Nat} (h : VG.Spec.Dsa.subgroupBits l = some n)
+    (hc : counter < 4 * l) (hj : j ≤ (l - 1) / n) :
+    1 + counter * ((l - 1) / n + 1) + j < 2 ^ 18 := by
+  rcases generation_sizes h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  all_goals omega
+
 /-- Every offset plus contribution index fits in the byte-adder's carry. -/
 theorem seed_offset_bound {l n counter j : Nat} (h : VG.Spec.Dsa.subgroupBits l = some n)
     (hc : counter < 4 * l) (hj : j ≤ (l - 1) / n) :
-    1 + counter * ((l - 1) / n + 1) + j < 2 ^ 32 := by
-  rcases generation_sizes h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  all_goals omega
+    1 + counter * ((l - 1) / n + 1) + j < 2 ^ 32 :=
+  Nat.lt_trans (seed_offset_small h hc hj) (by decide)
 
 /-- Hash widths divide octets; the final contribution has seven high bits
 in its leading byte and fits in the allocated digest. -/

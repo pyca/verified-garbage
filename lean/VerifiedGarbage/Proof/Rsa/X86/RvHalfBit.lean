@@ -31,7 +31,7 @@ theorem KS.halfBit_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     (bound : V sTc ≤ 16384) :
     WP isa (.block VG.Impl.Rsa.X86.RecoverRt.halfBit) s fun t =>
       KS g s0 A live AW liveW (Vhalf V (AW wR)) (sTc :: sBit :: sBit :: ls) t := by
-  unfold VG.Impl.Rsa.X86.RecoverRt.halfBit
+  unfold VG.Impl.Rsa.X86.RecoverRt.halfBit VG.Impl.Rsa.X86.KeyRt.countEven
   refine WP.block_append (WP.mono (h.bitOf_W hr (by decide)) fun u ⟨hu, _⟩ => ?_)
   refine WP.block_append (WP.mono (hu.loadSlot (d := sBit) (by simp) (r := .eax) (by decide))
     fun v ⟨hv, vx, _⟩ => ?_)

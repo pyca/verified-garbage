@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
@@ -130,44 +130,7 @@ theorem stage_relCT {c : Prog isa} {P Q P' Q' : State → Prop}
   (h.wp (F₁ := P') (F₂ := Q') fun s t hst => ⟨left s hst.1, right t hst.2⟩).mono (fun _ _ h => h)
     fun _ _ h => h.2
 
-/-- A loop of `c` rounds, each related by `body`, its flag from each run's invariant. -/
-theorem fixedLoop_relCT {body : Prog isa} {c : Nat}
-    (I J : Nat → State → Prop) (positive : 0 < c)
-    (rel : ∀ k, k < c → RelCT isa (fun s t => I k s ∧ J k t) body (fun _ _ => True))
-    (left : ∀ k s, k < c → I k s → WP isa body s fun t =>
-      I (k + 1) t ∧ t.zf = some (decide (c - (k + 1) = 0)))
-    (right : ∀ k s, k < c → J k s → WP isa body s fun t =>
-      J (k + 1) t ∧ t.zf = some (decide (c - (k + 1) = 0))) :
-    RelCT isa (fun s t => I 0 s ∧ J 0 t) (.loop body .ne)
-      (fun s t => I c s ∧ J c t) := by
-  have loop := VG.RelCT.loop (M := isa) (body := body) (c := .ne)
-    (Q := fun s t => I c s ∧ J c t)
-    (fun remaining s t => ∃ k, k + remaining = c ∧ 0 < remaining ∧ I k s ∧ J k t)
-    (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
-      have trace := (rel k (by omega) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
-      obtain ⟨is, zs⟩ := VG.Proof.Dsa.X86.wp_result (left k s (by omega) hs) es
-      obtain ⟨it, zt⟩ := VG.Proof.Dsa.X86.wp_result (right k t (by omega) ht) et
-      refine ⟨trace, ?_, ?_, ?_⟩
-      · change sf.zf.map (!·) = tf.zf.map (!·)
-        rw [zs, zt]
-      · intro done
-        have last : k + 1 = c := by
-          change sf.zf.map (!·) = some false at done
-          rw [zs] at done
-          simp only [Option.map_some, Option.some.injEq, Bool.not_eq_false', decide_eq_true_eq] at done
-          omega
-        exact ⟨last ▸ is, last ▸ it⟩
-      · intro more
-        have next : k + 1 < c := by
-          change sf.zf.map (!·) = some true at more
-          rw [zs] at more
-          simp only [Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at more
-          omega
-        exact ⟨remaining - 1, by omega, k + 1, by omega, by omega, is, it⟩) c
-  apply loop.mono
-  · intro s t ⟨hs, ht⟩
-    exact ⟨0, by omega, positive, hs, ht⟩
-  · intro s t h; exact h
+export VG.Proof.Dsa.X86 (fixedLoop_relCT)
 
 /-- Code whose leaks `τA` makes public. -/
 def Pub (c : Prog isa) : Prop := ∃ hint, (VG.Taint.check taint τA c hint).isSome = true

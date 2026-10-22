@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
-import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.RsaKeyGen.Table32
 import Mathlib.Algebra.GroupWithZero.Nat
 public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Data.Nat.Basic
@@ -37,18 +37,7 @@ def tabJs : List Nat := List.range' 22 27
 /-- The table's words: 256, or 512 for `W ≥ 35` (`w > 16`). -/
 def nT (W : Nat) : Nat := if 35 ≤ W then 512 else 256
 
-theorem tabWord32_lo {j : Nat} (hj : j < 512) : tabWord32 j % 2 ^ 16 = tabEntry (2 * j) := by
-  have := (tabEntry_facts (i := 2 * j) (by omega)).2.2
-  unfold tabWord32; omega
-
-theorem tabWord32_hi {j : Nat} (hj : j < 512) : tabWord32 j / 2 ^ 16 = tabEntry (2 * j + 1) := by
-  have := (tabEntry_facts (i := 2 * j) (by omega)).2.2
-  unfold tabWord32; omega
-
-theorem tabWord32_lt {j : Nat} (hj : j < 512) : tabWord32 j < 2 ^ 32 := by
-  have := (tabEntry_facts (i := 2 * j) (by omega)).2.2
-  have := (tabEntry_facts (i := 2 * j + 1) (by omega)).2.2
-  unfold tabWord32; omega
+export VG.Proof.RsaKeyGen (tabWord32_lo tabWord32_hi tabWord32_lt)
 
 theorem tab_movt {j : Nat} (hj : j < 512) :
     (BitVec.ofNat 16 (tabEntry (2 * j + 1)) ++

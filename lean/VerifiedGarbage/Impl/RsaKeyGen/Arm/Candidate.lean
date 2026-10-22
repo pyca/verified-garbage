@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
-public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes32
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
 
@@ -234,8 +234,8 @@ def closeCheck : List (Prog isa) :=
 
 /-! ## Trial division -/
 
-/-- Word `j` of the table: entries `2 j` and `2 j + 1`, the first the less significant. -/
-def tabWord32 (j : Nat) : Nat := tabEntry (2 * j) + tabEntry (2 * j + 1) * 2 ^ 16
+/- Word `j` of the table: entries `2 j` and `2 j + 1`, the first the less significant. -/
+export VG.Impl.RsaKeyGen (tabWord32)
 
 /-- Store word `j` of the table at `[r12 + 4 j]`. -/
 def tabStore (j : Nat) : List Instr :=

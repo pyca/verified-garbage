@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.Arm.CvEntry
+public import VerifiedGarbage.Proof.Mont.Words32Offset
 
 import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
 import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
@@ -25,12 +26,7 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Ar
 open VG.Proof.Rsa.Arm.Keys VG.Proof.Bignum.Arm VG.Impl.Bignum.Arm
 open VG.Proof.X25519.Arm
 
-theorem val32_off (m : Mem) (base : Addr) (d : Nat) : ∀ (e n : Nat),
-    val32 m (off base d) e n = val32 m base (d + e) n
-  | _, 0 => rfl
-  | e, n + 1 => by
-    rw [val32, val32, val32_off m base d (e + 4) n, show d + (e + 4) = d + e + 4 by omega]
-    simp only [w32, off, Offset.add_add]
+export VG.Proof.Mont (val32_off)
 
 alias val32_zero_part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part
 

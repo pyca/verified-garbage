@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.Words
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
@@ -33,17 +34,7 @@ abbrev tOf (P : MP) (σ : State) : Nat := (Spec.Rsa.splitTwos (cOf P σ.mem - 1)
 /-- The exponent. -/
 abbrev eOf (P : MP) (σ : State) : Nat := Spec.MillerRabin.exponent (cOf P σ.mem)
 
-/-- Word `i` of a number of `k` words. -/
-theorem val32_word' (m : Mem) (base : Addr) {d k i : Nat} (hi : i < k) :
-    w32 m base (d + 4 * i) = val32 m base d k / 2 ^ (32 * i) % 2 ^ 32 := by
-  obtain ⟨r, rfl⟩ : ∃ r, k = i + (r + 1) := ⟨k - i - 1, by omega⟩
-  rw [val32_append m base d i (r + 1)]
-  simp only [val32]
-  have lo := val32_lt m base d i
-  have hw : w32 m base (d + 4 * i) < 2 ^ 32 := (m.readW _ 32).isLt
-  have hp : 0 < 2 ^ (32 * i) := Nat.two_pow_pos _
-  rw [Nat.add_mul_div_left _ _ hp, Nat.div_eq_of_lt lo, Nat.zero_add, Nat.add_mul_mod_self_left,
-    Nat.mod_eq_of_lt hw]
+export VG.Proof.MillerRabin (val32_word')
 
 theorem bv_add_sub (x y z : BitVec 32) : x + y - z = x + (y - z) := by
   rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]

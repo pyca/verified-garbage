@@ -4,7 +4,9 @@ public import VerifiedGarbage.Proof.Dsa.Generation.Contributions
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
+import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.GetElem
@@ -45,6 +47,19 @@ theorem pCandidate_shaped {l n : Nat} (hl : 2 ≤ l)
   dsimp only [Spec.Dsa.pCandidate]
   dsimp only [pDigest] at hcut
   rw [hcut, VG.Proof.Ffdh.ParameterCandidate.candidate_low_high (by omega), pReduction_orOne]
+
+/-- Shaping and the even-modulus reduction leave an odd, positive candidate
+strictly below the requested output width. The lower-width guard is separate. -/
+theorem pCandidate_shape {l n : Nat} (hl : 2 ≤ l)
+    (hlen : ∀ bs, 8 * (Spec.Dsa.seedHash n bs).length = n)
+    (q : Nat) (seed : List Byte) (offset : Nat) :
+    (Spec.Dsa.pCandidate l n q seed offset) % 2 = 1 ∧
+      0 < Spec.Dsa.pCandidate l n q seed offset ∧ Spec.Dsa.pCandidate l n q seed offset < 2 ^ l := by
+  rw [pCandidate_shaped hl hlen q seed offset]
+  have shape := VG.Proof.Ffdh.ParameterCandidate.candidate_shape hl
+    (contributions n (pDigest n seed offset) ((l - 1) / n + 1))
+  exact ⟨pReduction_odd _ _, (pReduction_le shape.1).1,
+    Nat.lt_of_le_of_lt (pReduction_le shape.1).2 shape.2.2⟩
 
 /-- Taking only the bytes needed for the candidate before shaping is
 identical to shaping the full radix assembly. -/

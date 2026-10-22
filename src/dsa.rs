@@ -326,3 +326,7 @@ pub use parameters::Parameters;
 #[cfg(test)]
 #[path = "dsa/tests.rs"]
 mod tests;
+
+#[cfg(all(test, target_arch = "x86"))]
+#[path = "dsa/miller_rabin_tests.rs"]
+mod miller_rabin_tests;

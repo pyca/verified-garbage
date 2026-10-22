@@ -30,4 +30,16 @@ theorem trial_policy {bits : Nat}
     1024 < bits ↔ 16 < max 4 ((bits + 63) / 64) := by
   rcases hbits with h | h | h | h | h <;> subst bits <;> decide
 
+/-- Extend the low-word residue after consuming another candidate word. -/
+theorem trial_word_step {s acc next x V j : Nat}
+    (step : next * 2 ^ 32 % s = (x + acc) % s)
+    (previous : acc * 2 ^ (32 * j) % s = V % s) :
+    next * 2 ^ (32 * (j + 1)) % s = (V + 2 ^ (32 * j) * x) % s := by
+  have power : next * 2 ^ (32 * (j + 1)) = next * 2 ^ 32 * 2 ^ (32 * j) := by
+    rw [Nat.mul_assoc, ← Nat.pow_add]
+    congr 2
+    omega
+  rw [power, ← Nat.mod_mul_mod, step, Nat.mod_mul_mod, Nat.add_mul,
+    Nat.add_mod, previous, ← Nat.add_mod, Nat.add_comm, Nat.mul_comm x]
+
 end VG.Proof.Dsa.Generation

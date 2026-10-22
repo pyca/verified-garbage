@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Rsa.X86.KeyRt.CountEven
 import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
@@ -61,9 +62,7 @@ def numbers : Prog isa := seqs [loads, prod, .block skipBits, sub3 wid wT wZ wM,
 def halfInit : Prog isa := seqs [copy wid wR wM,
   .block ([.mov .eax (.imm 0), .store (sc sTc) .eax] ++ cntBits)]
 
-def halfBit : List Instr := bitOf wid sBit wR ++ [
-  .mov .eax (.mem (sc sBit)), .alu .xor .eax (.imm 1), .store (sc sBit) .eax,
-  .mov .edx (.mem (sc sTc)), .alu .add .edx (.reg .eax), .store (sc sTc) .edx]
+def halfBit : List Instr := VG.Impl.Rsa.X86.KeyRt.countEven wid sBit sTc wR
 
 /-- Keep the old value in `wR` until the masked update; no snapshot array is needed. -/
 def halfBody : Prog isa := seqs [copy wid wH wR,
