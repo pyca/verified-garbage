@@ -216,12 +216,16 @@ theorem SS.mono (h : SS G σ c s) {c' : Cfg} (hV : ∀ o ∈ c'.LS, o ∈ c.LS �
   · rw [← (hA j hj).2]; exact arrs j (hA j hj).1
   · rw [← (hK d hd).2]; exact ksl d (hK d hd).1
 
-/-- A step that writes `[o, o + n)` of `scratch`, below the key working
+/-- The ranges `(o, n)` of `scratch`. -/
+abbrev GP.rss (G : GP) (os : List (Nat × Nat)) : List Region := os.map fun p => G.rs p.1 p.2
+
+/-- A step that writes the ranges `os` of `scratch`, below the key working
 space, and the stack below the frame: the claims `cl'`, each kept and apart
-from the range, or holding. -/
-theorem SS.of_scr {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {o n : Nat} (hon : o + n ≤ sK G.pLen)
-    (f : Frame [G.rs o n, G.rBelow] s.mem t.mem) {cl' : Claims}
-    (hcl : ∀ x ∈ cl', (x ∈ c.cl ∧ Apart o n x) ∨
+from the ranges, or holding. -/
+theorem SS.of_scrs {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {os : List (Nat × Nat)}
+    (hon : ∀ p ∈ os, p.1 + p.2 ≤ sK G.pLen)
+    (f : Frame (G.rss os ++ [G.rBelow]) s.mem t.mem) {cl' : Claims}
+    (hcl : ∀ x ∈ cl', (x ∈ c.cl ∧ ∀ p ∈ os, Apart p.1 p.2 x) ∨
       (Spec.Rsa.bytesAt t.mem (G.sa x.1) x.2.length = x.2 ∧ x.1 + x.2.length ≤ sK G.pLen))
     (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) :
     SS G σ { c with cl := cl' } t := by
@@ -229,27 +233,29 @@ theorem SS.of_scr {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {o n : Nat
   have big := gi.scrBig
   have fit := gi.scrFit
   have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+  have mem : ∀ r' ∈ G.rss os ++ [G.rBelow], (∃ p ∈ os, r' = G.rs p.1 p.2) ∨ r' = G.rBelow := fun r' hr' => by
+    simp only [GP.rss, List.mem_append, List.mem_map, List.mem_singleton] at hr'
+    rcases hr' with ⟨p, hp, rfl⟩ | rfl
+    · exact .inl ⟨p, hp, rfl⟩
+    · exact .inr rfl
   have fs : Frame [G.rScr, G.rBelow] s.mem t.mem := f.sub fun x hx => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨G.rScr, List.mem_cons_self, sw G (by omega)⟩
+    rcases mem x hx with ⟨p, hp, rfl⟩ | rfl
+    · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hon p hp; omega)⟩
     · exact ⟨G.rBelow, by simp, fun _ h => h⟩
   -- The key working space is apart from what the step writes.
-  have kd : ∀ r' ∈ [G.rs o n, G.rBelow], G.rK.Disjoint r' := fun r' hr' => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+  have kd : ∀ r' ∈ G.rss os ++ [G.rBelow], G.rK.Disjoint r' := fun r' hr' => by
     show Region.Disjoint ⟨State.addr G.KB, _⟩ _
     rw [gi.kaddr]
-    rcases hr' with rfl | rfl
-    · exact gi.sdisj (.inr hon) big (by omega)
+    rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
+    · exact gi.sdisj (.inr (hon p hp)) big (by have := hon p hp; omega)
     · exact gi.scr_below big
   refine ⟨gi.of_scr r fs, (r.gpr _ h7).trans h.r7, (r.gpr _ h8).trans h.r8, (r.gpr _ h9).trans h.r9,
     fun x hx => ?_, fun x hx => ?_, fun j hj => ?_, h.liveOk, fun d hd => ?_, h.kslOk⟩
   · rcases hcl x hx with ⟨hm, ha⟩ | ⟨e, _⟩
     · have := h.clOk x hm
       rw [VG.Proof.Dsa.Generation.frame_bytesAt f (fun r' hr' => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-        rcases hr' with rfl | rfl
-        · exact gi.sdisj ha (by omega) (by omega)
+        rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
+        · exact gi.sdisj (ha p hp) (by omega) (by have := hon p hp; omega)
         · exact gi.scr_below (by omega)) (by omega)]
       exact h.sb x hm
     · exact e
@@ -258,6 +264,16 @@ theorem SS.of_scr {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {o n : Nat
     · exact b
   · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
   · rw [slot_frame h.lens f kd (h.kslOk d hd)]; exact h.ksl d hd
+
+/-- A step that writes the range `[o, o + n)` of `scratch`. -/
+theorem SS.of_scr {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {o n : Nat} (hon : o + n ≤ sK G.pLen)
+    (f : Frame [G.rs o n, G.rBelow] s.mem t.mem) {cl' : Claims}
+    (hcl : ∀ x ∈ cl', (x ∈ c.cl ∧ Apart o n x) ∨
+      (Spec.Rsa.bytesAt t.mem (G.sa x.1) x.2.length = x.2 ∧ x.1 + x.2.length ≤ sK G.pLen))
+    (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) :
+    SS G σ { c with cl := cl' } t :=
+  h.of_scrs (os := [(o, n)]) r (by simpa using hon) f
+    (fun x hx => (hcl x hx).imp (fun ⟨hm, ha⟩ => ⟨hm, by simpa using ha⟩) id) h7 h8 h9
 
 end
 

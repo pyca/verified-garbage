@@ -174,7 +174,8 @@ theorem saved_ok : ∀ p ∈ VG.Impl.Dsa.Arm.Generation.saved, p.2 + 4 ≤ 40 �
 /-- `str r, [sp, #o]` (through `r12`) of a variable frame word. -/
 theorem GI.stF (h : GI G σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r ≠ .r12)
     {rest : List Instr} {Q : State → Prop}
-    (k : ∀ t, GI G σ (upd V o (s.gpr r)) (o :: LS) t → Rest [.r12] s t → WP isa (.block rest) t Q) :
+    (k : ∀ t, GI G σ (upd V o (s.gpr r)) (o :: LS) t → Rest [.r12] s t → Frame [G.rFrame] s.mem t.mem →
+      WP isa (.block rest) t Q) :
     WP isa (.block (st r o ++ rest)) s Q := by
   obtain ⟨o40, oF, o4, ofix⟩ := hv
   have spHi := h.spHi
@@ -184,7 +185,9 @@ theorem GI.stF (h : GI G σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r
     rw [h0.gpr, BitVec.add_zero, h.sp]; exact addr_add (by simp only [F] at *; omega)
   refine VG.Proof.X25519.Arm.wp_str (by simp only [F] at *; omega) ea
     ⟨G.rFrame, by rw [h0.wr, h.wr]; exact List.mem_cons_self, Offset.contains_base _ oF (by omega)⟩
-    fun t m => k t ?_ ((h0.rest (by simp)).trans (m.rest _))
+    fun t m => k t ?_ ((h0.rest (by simp)).trans (m.rest _)) (by
+      rw [m.mem, h0.mem]
+      exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega)))
   have vr : u.gpr r = s.gpr r := h0.other _ hr
   have mt : t.mem = s.mem.writeW (State.addr G.sp + BitVec.ofNat 64 o) (s.gpr r) := by rw [m.mem, h0.mem, vr]
   have sep : ∀ {p : Nat}, p % 4 = 0 → p ≠ o → p + 4 ≤ F → fw t.mem G p = fw s.mem G p := fun hp hne hpF => by
