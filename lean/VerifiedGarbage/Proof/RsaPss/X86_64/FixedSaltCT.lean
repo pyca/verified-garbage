@@ -103,7 +103,7 @@ theorem fixedCopy_ct (hc : VerifyChecks H.P H.D) :
   exact ⟨s, S, v.next L k.2.2 R hw hx, k.2.1.trans hrd, hok, hf⟩
 
 include hH in
-theorem fixedPad_ct (hc : VerifyChecks H.P H.D) :
+theorem padSalt_ct (hc : VerifyChecks H.P H.D) :
     RelCT isa (Two (VAt (extra := extra) G (JFixedN H))) (.block (padSalt H))
       (Two (VAt (extra := extra) G (JFixedN H))) := by
   obtain ⟨_, hc⟩ := hc.padSalt
@@ -125,7 +125,7 @@ theorem fixedSaltPrefix_ct (hc : VerifyChecks H.P H.D) :
     RelCT isa (Two (VAt (extra := extra) lk.G (JFixed H))) (fixedSaltPrefix H)
       (Two (VAt (extra := extra) lk.G (JFixedN H))) := by
   unfold fixedSaltPrefix seqs seqs
-  exact (fixedHead_ct hH lk hc).seq ((fixedCopy_ct hH hc).seq (fixedPad_ct hH hc))
+  exact (fixedHead_ct hH lk hc).seq ((fixedCopy_ct hH hc).seq (padSalt_ct hH hc))
 
 /-! ## `fixedHash` -/
 
