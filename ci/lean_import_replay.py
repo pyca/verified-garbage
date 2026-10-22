@@ -14,6 +14,7 @@ import pathlib
 
 import check_lean_public_imports as check
 import lean_profile
+import lean_shards
 
 SCHEMA = 1
 
@@ -183,19 +184,53 @@ def visibility_impact(plan: check.Plan, graph: check.Graph, targets: list[str]) 
             "largest_changes": ranked[:20], "dependencies_with_changes": len(ranked)}
 
 
+def rebuild_impact(plan: check.Plan, graph: check.Graph, targets: list[str]) -> dict:
+    """Compare project source dependencies in Lake traces, not declaration access."""
+    basis = "Lake source dependencies, including meta IR; excludes native libraries and wall time"
+    if len(targets) > 250:
+        return {"evaluated": False, "basis": basis, "reason": "scope exceeds 250 modules; select a smaller batch"}
+
+    def dependencies(view):
+        imps, vis, modes = {}, {}, {}
+        pending = list(targets)
+        while pending:
+            mod = pending.pop()
+            if mod in imps:
+                continue
+            edges = [edge for edge in view.imports(mod) if graph.project(edge[0])]
+            imps[mod] = list(dict.fromkeys(i for i, _, _, _ in edges))
+            vis[mod] = ([i for i, public, _, _ in edges if public],
+                        [i for i, _, _, all_ in edges if all_]) if check.is_module(graph.text(mod)) else None
+            modes[mod] = {"meta": [i for i, _, meta, _ in edges if meta],
+                          "public_meta": [i for i, public, meta, _ in edges if public and meta]}
+            pending.extend(imps[mod])
+        return lean_shards.reads(imps, lean_shards.closures(imps), vis, modes)
+
+    before = dependencies(graph)
+    after = dependencies(check.Planned(graph, plan.edits))
+    lost, gained = Counter(), Counter()
+    for mod in targets:
+        lost.update(before[mod] - after[mod])
+        gained.update(after[mod] - before[mod])
+    return {"evaluated": True, "basis": basis, "scope_modules": len(targets),
+            "removed_pairs": sum(lost.values()), "added_pairs": sum(gained.values()),
+            "largest_changes": [{"dependency": dep, "removed_readers": lost[dep], "added_readers": gained[dep]}
+                                for dep in sorted(lost.keys() | gained.keys(),
+                                                  key=lambda d: (-(lost[d] + gained[d]), d))[:20]]}
+
+
 def report(plan: check.Plan, estimate: dict, graph: check.Graph | None = None) -> dict:
     result = {"build_verified": False, "edits": [asdict(e) for e in plan.edits],
             "findings": plan.messages, "blocked": plan.blocked, "deferred": plan.deferred,
             "decisions": plan.decisions, "cost": estimate}
     if graph is not None:
-        try:
-            result["visibility_impact"] = visibility_impact(plan, graph, estimate["verification_targets"])
-        except MissingEvidence as error:
-            # Old captures can support a valid replan without every source
-            # needed for this optional diagnostic. Core planning evidence
-            # remains strict; never force a rebuild just for an impact count.
-            result["visibility_impact"] = {"evaluated": False, "reason": "optional impact evidence was not captured",
-                                           "detail": str(error)}
+        for key, measure in (("visibility_impact", visibility_impact), ("rebuild_impact", rebuild_impact)):
+            try:
+                result[key] = measure(plan, graph, estimate["verification_targets"])
+            except MissingEvidence as error:
+                # Old captures need not contain optional diagnostic evidence.
+                result[key] = {"evaluated": False, "reason": "optional impact evidence was not captured",
+                               "detail": str(error)}
     return result
 
 

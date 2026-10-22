@@ -7,7 +7,9 @@ importing them, and those importing a module that passes them on (`public
 import`, `reads`). A module that imports a changed module privately is
 rebuilt, but its own outputs come out as they were, so Lake rebuilds nothing
 beyond it on its account; the plan counts it among the modules to rebuild
-but not what imports it. The build is
+but not what imports it. Native library consumers also depend on the shared
+libraries in their compile traces, except for libraries opting out with
+`platformIndependent = true` (the ordinary proofs and tests). The build is
 limited mostly by throughput, so the modules to rebuild are split into
 shards that build in parallel on separate runners, as many as the work
 needs: none when one would do (the `lean` job builds it), or when shards
@@ -62,8 +64,10 @@ exceeding the same finish-time budget.
                                         `lean/.lake/build/`, relative to it),
                                         those that are outputs of SHARD's
                                         modules
-  lean_shards.py times                  the time of each module a `lake build`
-                                        log on stdin built, as JSON
+  lean_shards.py times [--observations]  the time of each module a `lake build`
+                                        log on stdin built, as JSON; with
+                                        --observations, keep native components
+                                        separate for manifest updates
   lean_shards.py manifest OLD TIMES...  the manifest of the sources, with the
                                         times of TIMES (files of `times`) and,
                                         for the modules they lack, of OLD
@@ -76,12 +80,14 @@ exceeding the same finish-time budget.
 """
 
 import hashlib
+import functools
 import heapq
 import json
 import math
 import os
 import pathlib
 import re
+import statistics
 import sys
 import time
 import tomllib
@@ -162,25 +168,42 @@ def inputs() -> dict:
     return {**files, "lakefile.toml settings": settings, "libraries": libraries}
 
 
-def needed(targets: list[str], closure: dict[str, frozenset[str]]) -> set[str]:
-    """The modules a build of `targets` needs built: what they import, and
-    every module of a precompiled library one of those is in (Lake links
-    the whole library's shared library for a module importing any of its
-    modules), with what those import in turn."""
+def precompiled_libraries(closure):
+    """The project's native libraries, in Lake's configuration order."""
     config = tomllib.loads((LEAN / "lakefile.toml").read_text())
-    native = [
-        {m for m in closure if any(matches(f"{k}:{e}", m, closure) for k in MODULE_LISTS for e in lib.get(k, []))}
+    return {
+        lib["name"]: frozenset(m for m in closure if any(
+            matches(f"{k}:{e}", m, closure) for k in MODULE_LISTS for e in lib.get(k, [])))
         for lib in config.get("lean_lib", []) if lib.get("precompileModules")
-    ]
-    out = set().union(*(closure[t] for t in targets))
-    grown = True
-    while grown:
-        grown = False
-        for lib in native:
-            if out & lib and not lib <= out:
-                out |= set().union(*(closure[m] for m in lib))
-                grown = True
-    return out
+    }
+
+
+def build_requirements(closure, libraries):
+    """Add whole native libraries exactly as the selective cache restore does.
+
+    Importing one native module can link its whole library, including modules
+    outside the ordinary import closure. Scheduling and restoration must agree
+    on those dependencies. Expand library groups once, rather than walking
+    their imports again for every sink and candidate shard count.
+    """
+    expanded = {name: set().union(*(closure[m] for m in members))
+                for name, members in libraries.items()}
+    changed = True
+    while changed:
+        changed = False
+        for name, part in expanded.items():
+            for other, members in libraries.items():
+                if part & members and not expanded[other] <= part:
+                    part.update(expanded[other])
+                    changed = True
+    return {m: part.union(*(expanded[name] for name, members in libraries.items() if part & members))
+            for m, part in closure.items()}
+
+
+def needed(targets: list[str], closure: dict[str, frozenset[str]]) -> set[str]:
+    """The ordinary and native-library imports a shard must restore."""
+    required = build_requirements(closure, precompiled_libraries(closure))
+    return set().union(*(required[t] for t in targets))
 
 
 def matches(entry: str, module: str, closure: dict[str, frozenset[str]]) -> bool:
@@ -202,7 +225,7 @@ def imported_by(text: str, mods) -> list[str]:
     return [i for _, _, i in import_kinds(text, mods)]
 
 
-def import_kinds(text: str, mods) -> list[tuple[bool, bool, str]]:
+def import_kinds(text: str, mods, modes=None) -> list[tuple[bool, bool, str]]:
     """Project imports, with their public/all visibility, in source order."""
     # Every match starts on a line containing one of these keywords.
     # Literal searches skip proof bodies much faster than trying an
@@ -230,6 +253,10 @@ def import_kinds(text: str, mods) -> list[tuple[bool, bool, str]]:
             p, a, i = match.groups()
             if i in mods:
                 kinds.append((bool(p), bool(a), i))
+                if modes is not None and "meta" in match.group(0).split()[:-1]:
+                    modes.setdefault("meta", []).append(i)
+                    if p:
+                        modes.setdefault("public_meta", []).append(i)
     return kinds
 
 
@@ -276,7 +303,7 @@ def visibilities(mods: dict[str, pathlib.Path]) -> dict[str, tuple[list[str], li
     return {m: visibility(f.read_text(), mods) for m, f in mods.items()}
 
 
-def source_info(mods):
+def source_info(mods, source_bytes=None, import_modes=None):
     """Read/hash each source once and share one import scan between graphs.
 
     Hash the original bytes, but normalize newlines for parsing just as
@@ -287,10 +314,15 @@ def source_info(mods):
     for m, path in mods.items():
         data = path.read_bytes()
         hashes[m] = hashlib.sha256(data).hexdigest()
+        if source_bytes is not None:
+            source_bytes[m] = len(data)
         text = data.decode("utf-8")
         if "\r" in text:
             text = text.replace("\r\n", "\n").replace("\r", "\n")
-        kinds = import_kinds(text, mods)
+        modes = {} if import_modes is not None else None
+        kinds = import_kinds(text, mods, modes)
+        if modes:
+            import_modes[m] = modes
         imps[m] = [i for _, _, i in kinds]
         vis[m] = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
     return imps, vis, hashes
@@ -300,16 +332,20 @@ def reads(
     imps: dict[str, list[str]],
     closure: dict[str, frozenset[str]],
     vis: dict[str, tuple[list[str], list[str]] | None],
+    modes: dict | None = None,
 ) -> dict[str, frozenset[str]]:
     """The modules of the project whose outputs each module's build reads
     (its trace), as Lake reads them: each module it imports, and what those
     pass on (`public import`), transitively; with an `import all`, also what
     that module imports; with the whole closure for a file that is not a
-    module. A module's public outputs are made from its source and what it
-    reads publicly, so a change to a module that a module imports only
-    privately (or through a private import) rebuilds the importer, which
-    then (but for its own changes) produces the outputs it did, and Lake
-    rebuilds nothing beyond it: such a module need not be rebuilt."""
+    module. `meta import` also reads interpreter IR through private imports;
+    a public meta import passes that dependency on. For ordinary imports,
+    changes behind a private import can leave the importer's public outputs
+    unchanged, allowing its downstream ordinary importers to stay cached."""
+    # Meta traces include interpreter IR of private transitive imports too.
+    # Public meta imports pass that dependency on to ordinary importers.
+    meta = {m: set(k.get("meta", [])) for m, k in (modes or {}).items()}
+    public_meta = {m: set(k.get("public_meta", [])) for m, k in (modes or {}).items()}
     passed: dict[str, frozenset[str]] = {}
     for root in imps:
         stack = [(root, False)]
@@ -319,19 +355,84 @@ def reads(
                 continue
             on = imps[m] if vis.get(m) is None else vis[m][0]
             if ready:
-                passed[m] = frozenset({m}).union(*(passed[i] for i in on))
+                passed[m] = frozenset({m}).union(*(closure[i] if i in public_meta.get(m, ()) else passed[i] for i in on))
             else:
                 stack.append((m, True))
                 stack += [(i, False) for i in on if i not in passed]
+    @functools.cache
+    def all_trace(m):
+        if vis.get(m) is None:
+            return closure[m]
+        return frozenset({m}).union(*(
+            all_trace(i) if i in vis[m][1] else closure[i] if i in meta.get(m, ()) else passed[i]
+            for i in imps[m]))
+
     out = {}
     for m in imps:
         if vis.get(m) is None:
             out[m] = closure[m] - {m}
         else:
-            read = set().union(*(passed[i] for i in imps[m]))
-            for i in vis[m][1]:
-                read |= set().union(*(passed[j] for j in imps[i]))
-            out[m] = frozenset(read)
+            out[m] = frozenset().union(*(
+                all_trace(i) if i in vis[m][1] else closure[i] if i in meta.get(m, ()) else passed[i]
+                for i in imps[m]))
+    return out
+
+
+def native_trace_modules(closure):
+    """Modules whose effective library does not opt out of native hashes.
+
+    Lake resolves a module through the last matching library. Ordinary proofs
+    in this project deliberately use platformIndependent=true; native libraries
+    do not. Do not invalidate those ordinary proofs for unrelated native work.
+    """
+    config = tomllib.loads((LEAN / "lakefile.toml").read_text())
+    dependent = set(closure)
+    for lib in config.get("lean_lib", []):
+        members = {m for m in closure if any(matches(f"{k}:{e}", m, closure)
+                   for k in MODULE_LISTS for e in lib.get(k, []))}
+        if lib.get("platformIndependent") is True:
+            dependent.difference_update(members)
+        else:
+            dependent.update(members)
+    return dependent
+
+
+def native_reads(imps, closure, libraries, trace_modules=None):
+    """Source dependencies of the native libraries in Lake's compile trace.
+
+    Even a private/transitive import loads native plugins. Across libraries,
+    Lake hashes the whole shared library, so an otherwise unrelated member
+    can invalidate an importer. Inside one native library it loads only the
+    imported modules' dynlibs, not unrelated siblings. Keep this separate from
+    public/private Lean interface propagation.
+    """
+    owners = {m: name for name, members in libraries.items() for m in members}
+    groups = {name: set().union(*(closure[m] for m in members))
+              for name, members in libraries.items()}
+    # Shared libraries also link native libraries reached by their members.
+    changed = True
+    while changed:
+        changed = False
+        for name, part in groups.items():
+            for other, members in libraries.items():
+                if other != name and part & members and not groups[other] <= part:
+                    part.update(groups[other])
+                    changed = True
+    out = {}
+    for m, imports in closure.items():
+        if trace_modules is not None and m not in trace_modules:
+            out[m] = frozenset()
+            continue
+        dependencies = set()
+        for name, members in libraries.items():
+            imported = (imports - {m}) & members
+            if not imported:
+                continue
+            if owners.get(m) == name:
+                dependencies.update(set().union(*(closure[i] for i in imported)))
+            else:
+                dependencies.update(groups[name])
+        out[m] = frozenset(dependencies - {m})
     return out
 
 
@@ -594,25 +695,134 @@ def refine(imps, closure, cost, path, packed, limit, simulator=None):
     return loads, targets, built
 
 
+def log_timings(log):
+    """Keep module compilation separate from native facets and partial logs."""
+    components = {}
+    for match in BUILT.finditer(log):
+        name, _, facet = match.group(1).partition(":")
+        if facet not in ("", *NATIVE_FACETS):
+            continue
+        duration = float(match.group(2)) / (1000 if match.group(3) == "ms" else 1)
+        components.setdefault(name, {})[facet or "lean"] = duration
+    return {"version": 1, "components": components}
+
+
+def update_timings(old, observations, sources, build_inputs, closure=None):
+    """One median sample per component per build; retain three same-source samples.
+
+    Partial assembly logs update only their recorded components. Repeated
+    shard measurements do not depend on artifact/file order. Changed sources
+    and toolchain/options never inherit measurements of the previous build.
+    Old flat timing files and manifests remain readable during migration.
+    """
+    same_inputs = ({k: v for k, v in old.get("inputs", {}).items() if k != "libraries"}
+                   == {k: v for k, v in build_inputs.items() if k != "libraries"})
+    before = old.get("inputs", {}).get("libraries", {})
+    after = build_inputs.get("libraries", {})
+    moved = {entry for lib in before.keys() | after.keys()
+             for entry in set(before.get(lib, [])) ^ set(after.get(lib, []))}
+    old_times = old.get("times", {})
+    histories = {}
+    times = {}
+    for m, source in sources.items():
+        if (same_inputs and old.get("sources", {}).get(m) == source
+                and not any(matches(entry, m, closure or {}) for entry in moved)):
+            if m in old_times:
+                times[m] = old_times[m]
+            if m in old.get("timing_history", {}):
+                histories[m] = {facet: list(values) for facet, values in old["timing_history"][m].items()}
+    samples = {}
+    for observation in observations:
+        if observation.get("version") == 1 and "components" in observation:
+            components = observation["components"]
+        else:
+            components = {m: {"total": value} for m, value in observation.items()}
+        for m, facets in components.items():
+            if m not in sources:
+                continue
+            for facet, value in facets.items():
+                if facet not in ("lean", "total", *NATIVE_FACETS) or not isinstance(value, (int, float)):
+                    raise ValueError(f"Invalid timing component for {m}: {facet}")
+                if not math.isfinite(value) or value < 0:
+                    raise ValueError(f"Invalid timing duration for {m}: {value}")
+                samples.setdefault(m, {}).setdefault(facet, []).append(value)
+    for m, facets in samples.items():
+        history = histories.setdefault(m, {})
+        if "lean" in facets:
+            history.pop("total", None)
+            facets = {k: v for k, v in facets.items() if k != "total"}
+        for facet, values in facets.items():
+            if facet == "total" and "lean" in history:
+                continue
+            history[facet] = [*history.get(facet, []), statistics.median(values)][-3:]
+        if "lean" in history:
+            times[m] = math.fsum(statistics.median(values) for facet, values in history.items() if facet != "total")
+        elif "total" in history:
+            times[m] = statistics.median(history["total"])
+        # A legacy total cannot be split reliably. Native-only observations
+        # keep it until a complete Lean measurement is available.
+    return times, histories
+
+
+def timing_estimates(imps, times, source_bytes=None):
+    """Use measured times, or size-matched peers for an unseen module.
+
+    Prefer the nearest namespace with eight measured peers in the same
+    power-of-two source-size bucket. The upper quartile allows for expensive
+    unseen proofs without assigning every new file a project's typical cost.
+    Legacy snapshots without source sizes retain the global median fallback.
+    """
+    default = sorted(times.values())[len(times) // 2] if times else DEFAULT_TIME
+    groups = {}
+    for m, t in times.items():
+        if m not in imps or m not in (source_bytes or {}):
+            continue
+        parts = m.split(".")
+        bucket = max(1, source_bytes[m]).bit_length() - 1
+        for n in range(len(parts)):
+            groups.setdefault((".".join(parts[:n]), bucket), []).append(t)
+    peers = {k: sorted(v)[int(.75 * (len(v) - 1))]
+             for k, v in groups.items() if len(v) >= 8}
+    estimates = {}
+    for m in imps:
+        if m in times:
+            estimates[m] = times[m]
+            continue
+        estimate = default
+        if m in (source_bytes or {}):
+            parts = m.split(".")
+            bucket = max(1, source_bytes[m]).bit_length() - 1
+            for n in range(len(parts) - 1, -1, -1):
+                key = (".".join(parts[:n]), bucket)
+                if key in peers:
+                    estimate = peers[key]
+                    break
+        estimates[m] = estimate
+    return estimates, default
+
 def schedule(
     imps: dict[str, list[str]],
     closure: dict[str, frozenset[str]],
     stale: set[str],
     times: dict[str, float],
     diagnostics: dict | None = None,
+    *, source_bytes: dict[str, int] | None = None,
+    requirements: dict[str, frozenset[str]] | None = None,
 ) -> tuple[float, dict[str, float], tuple[list[float], list[list[str]], list[set[str]]]]:
     """The shards that build the modules `stale` of the modules `imps`
-    (whose closures are `closure`), each taking its time in `times` (a
-    module without one, the median): the work, each module's critical path,
+    (whose import closures are `closure` and whole-library dependencies
+    are `requirements`), each taking its time in `times` (an unseen module
+    uses size-matched peers when source sizes are available): the work, each module's critical path,
     and each shard's estimated time, its sinks and the modules it builds
     (none when the `lean` job builds them alone)."""
-    default = sorted(times.values())[len(times) // 2] if times else DEFAULT_TIME
-    cost = {m: (times.get(m, default) if m in stale else UP_TO_DATE) for m in imps}
+    estimates, default = timing_estimates(imps, times, source_bytes)
+    cost = {m: (estimates[m] if m in stale else UP_TO_DATE) for m in imps}
     work = math.fsum(cost[m] for m in stale)
     path = paths(imps, cost)
-    total = {m: math.fsum(cost[x] for x in closure[m]) for m in rebuild_targets(stale, closure)}
+    required = requirements if requirements is not None else closure
+    total = {m: math.fsum(cost[x] for x in required[m]) for m in rebuild_targets(stale, closure)}
     sinks = sorted(total, key=lambda m: (-total[m], m))
-    needed = set().union(*(closure[m] for m in sinks))
+    needed = set().union(*(required[m] for m in sinks))
     # Include the same cached imports in the solo estimate as in the shards.
     simulator = _BuildGraph(imps, {m: cost[m] for m in needed})
     solo = simulator.time()
@@ -622,6 +832,7 @@ def schedule(
             "stale_modules": sorted(stale),
             "timed_stale_modules": len(stale & times.keys()),
             "fallback_time_s": default,
+            "fallback_estimates": {m: estimates[m] for m in sorted(stale - times.keys())},
             "candidates": [{"shards": 0, "finish_s": solo, "module_work_s": unique_work}],
         })
 
@@ -649,7 +860,7 @@ def schedule(
     # A lower bound already outside the tolerance cannot become competitive
     # as the fastest time decreases, so it need not be simulated.
     for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
-        bounds, targets, built = pack(n, sinks, closure, cost, path)
+        bounds, targets, built = pack(n, sinks, required, cost, path)
         candidate = {"shards": n, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
         if diagnostics is not None:
             diagnostics["candidates"].append(candidate)
@@ -678,13 +889,14 @@ def schedule(
                  key=lambda c: (c[1], c[2], c[0]))
     packed = chosen[3]
     if chosen[2]:
-        packed = refine(imps, closure, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD, simulator)
+        packed = refine(imps, required, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD, simulator)
     return work, path, report(packed)
 
 
 def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
     mods = modules()
-    imps, vis, hashes = source_info(mods)
+    source_bytes, import_modes = {}, {}
+    imps, vis, hashes = source_info(mods, source_bytes, import_modes)
     now = inputs()
     if diagnostics is not None:
         diagnostics.update({
@@ -695,10 +907,13 @@ def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
             "manifest_inputs": manifest.get("inputs", {}),
             "imports": imps,
             "visibility": vis,
+            "import_modes": import_modes,
             "historical_times": manifest.get("times", {}),
+            "source_bytes": source_bytes,
             "settings": {"max_shards": MAX_SHARDS, "shard_overhead_s": SHARD_OVERHEAD,
                          "slack": SLACK, "parallelism": PARALLELISM, "up_to_date_s": UP_TO_DATE,
-                         "default_time_s": DEFAULT_TIME},
+                         "default_time_s": DEFAULT_TIME, "fallback_peer_count": 8,
+                         "fallback_quantile": .75, "timing_history_samples": 3},
         })
     then = manifest.get("inputs", {})
     sources = manifest.get("sources", {})
@@ -719,8 +934,17 @@ def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
         changed |= {m for m in mods for _, e in moved if matches(e, m, closure)}
     else:
         changed = set(mods)
-    stale = stale_of(changed, reads(imps, closure, vis))
-    work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}), diagnostics)
+    libraries = precompiled_libraries(closure)
+    read = reads(imps, closure, vis, import_modes)
+    trace_modules = native_trace_modules(closure)
+    native = native_reads(imps, closure, libraries, trace_modules)
+    stale = stale_of(changed, {m: read[m] | native[m] for m in imps})
+    required = build_requirements(closure, libraries)
+    if diagnostics is not None:
+        diagnostics["precompiled_libraries"] = {name: sorted(ms) for name, ms in libraries.items()}
+        diagnostics["native_trace_modules"] = sorted(trace_modules)
+    work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}), diagnostics,
+                                                        source_bytes=source_bytes, requirements=required)
     owner = {}
     for i, shard in enumerate(shards):
         for m in sorted(shard):
@@ -810,34 +1034,23 @@ def main(args: list[str]) -> int:
                 if path and p["owner"].get(module_of_output(path), 0) == i:
                     print(path)
         return 0
-    if args == ["times"]:
-        times = {}
-        for m in BUILT.finditer(sys.stdin.read()):
-            # A module of a precompiled library is also compiled to native
-            # code and linked (`<module>:c.o`, `<module>:dynlib`), in every
-            # shard that builds it: that is part of the module's time. A
-            # library's own steps (`NativeTactics:shared`) belong to no module.
-            name, _, facet = m.group(1).partition(":")
-            if facet in ("", *NATIVE_FACETS):
-                t = float(m.group(2)) / (1000 if m.group(3) == "ms" else 1)
-                times[name] = times.get(name, 0.0) + t
-        print(json.dumps(times, indent=1, sort_keys=True))
+    if args in (["times"], ["times", "--observations"]):
+        observation = log_timings(sys.stdin.read())
+        out = observation if len(args) == 2 else {
+            m: math.fsum(facets.values()) for m, facets in observation["components"].items()}
+        print(json.dumps(out, indent=1, sort_keys=True))
         return 0
     if len(args) >= 2 and args[0] == "manifest":
         mods = modules()
-        times = read_json(args[1]).get("times", {})
-        for t in args[2:]:
-            times.update(read_json(t))
-        print(
-            json.dumps(
-                {
-                    "inputs": inputs(),
-                    "sources": {m: digest(f) for m, f in mods.items()},
-                    "times": {m: times[m] for m in mods if m in times},
-                },
-                indent=1,
-            )
-        )
+        sources = {m: digest(f) for m, f in mods.items()}
+        build_inputs = inputs()
+        old = read_json(args[1])
+        closure = (closures(imports(mods)) if old.get("inputs", {}).get("libraries", {})
+                   != build_inputs.get("libraries", {}) else None)
+        times, history = update_timings(old, [read_json(t) for t in args[2:]],
+                                        sources, build_inputs, closure)
+        print(json.dumps({"inputs": build_inputs, "sources": sources,
+                          "times": times, "timing_history": history}, indent=1))
         return 0
     if len(args) == 2 and args[0] == "prune":
         build = pathlib.Path(args[1])

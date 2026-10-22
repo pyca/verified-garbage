@@ -219,7 +219,7 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
         run: |
-          python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/build.log" > "$RUNNER_TEMP/lean-times-$SHARD.json"
+          python3 ../ci/lean_shards.py times --observations < "$RUNNER_TEMP/build.log" > "$RUNNER_TEMP/lean-times-$SHARD.json"
           cd .lake/build
           find . -type f -newer "$RUNNER_TEMP/before-build" -printf '%P\n' \
             | python3 ../../../ci/lean_shards.py outputs "$RUNNER_TEMP/lean-plan.json" "$SHARD" \

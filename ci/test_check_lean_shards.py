@@ -17,6 +17,7 @@ moreLeanArgs = ["-j2"]
 [[lean_lib]]
 name = "VerifiedGarbage"
 globs = ["VerifiedGarbage.*"]
+platformIndependent = true
 
 # Compiled specifications.
 [[lean_lib]]
@@ -184,6 +185,212 @@ class Diagnostics(Project):
         self.assertEqual(d["timed_stale_modules"], len(imps))
         self.assertEqual(d["candidates"][0]["shards"], 0)
         self.assertEqual({c["shards"] for c in d["candidates"]}, {0, *range(2, shards.MAX_SHARDS + 1)})
+
+
+
+
+
+class MetaDependencies(unittest.TestCase):
+    def test_import_modes_do_not_upgrade_a_private_meta_import_to_public(self):
+        modes = {}
+        text = "module\npublic import B\nmeta import B\npublic meta import C\nmeta import all D\n"
+        kinds = shards.import_kinds(text, {"B", "C", "D"}, modes)
+        self.assertEqual(kinds, [(True, False, "B"), (False, False, "B"),
+                                 (True, False, "C"), (False, True, "D")])
+        self.assertEqual(modes, {"meta": ["B", "C", "D"], "public_meta": ["C"]})
+
+    def test_meta_reads_private_transitive_inputs_and_public_meta_passes_them_on(self):
+        imps = {"C": [], "B": ["C"], "Plain": ["B"], "Meta": ["B"],
+                "Export": ["B"], "Downstream": ["Export"],
+                "Mixed": ["B"], "MixedDownstream": ["Mixed"]}
+        vis = dict.fromkeys(imps, ([], []))
+        vis["Export"] = (["B"], [])
+        vis["Mixed"] = (["B"], [])
+        modes = {"Meta": {"meta": ["B"]},
+                 "Export": {"meta": ["B"], "public_meta": ["B"]},
+                 "Mixed": {"meta": ["B"]}}
+        closure = shards.closures(imps)
+        self.assertEqual(shards.stale_of({"C"}, shards.reads(imps, closure, vis)), {"C", "B"})
+        self.assertEqual(shards.stale_of({"C"}, shards.reads(imps, closure, vis, modes)),
+                         {"C", "B", "Meta", "Export", "Downstream", "Mixed"})
+
+    def test_import_all_includes_meta_inputs_of_private_imports(self):
+        imps = {"C": [], "B": ["C"], "Bridge": ["B"], "All": ["Bridge"]}
+        vis = dict.fromkeys(imps, ([], []))
+        vis["All"] = ([], ["Bridge"])
+        modes = {"Bridge": {"meta": ["B"]}}
+        read = shards.reads(imps, shards.closures(imps), vis, modes)
+        self.assertIn("C", read["All"])
+
+
+class NativeRequirements(Project):
+    def test_scoped_targets_remain_module_targets(self):
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps({"targets": [["VerifiedGarbage.Proof"]]}))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(shards.main(["targets", str(plan), "1"]), 0)
+        self.assertEqual(out.getvalue().splitlines(), ["+VerifiedGarbage.Proof"])
+
+    def test_trace_settings_keep_ordinary_proofs_independent(self):
+        closure = shards.closures(shards.imports(shards.modules()))
+        self.assertEqual(shards.native_trace_modules(closure), {"VerifiedGarbage.Spec.A"})
+
+    def test_unrelated_native_member_invalidates_private_transitive_importers(self):
+        imps = {"A": [], "B": [], "Consumer": ["A"], "Downstream": ["Consumer"]}
+        closure = shards.closures(imps)
+        libraries = {"Native": frozenset({"A", "B"})}
+        ordinary = shards.reads(imps, closure, dict.fromkeys(imps, ([], [])))
+        native = shards.native_reads(imps, closure, libraries)
+        combined = {m: ordinary[m] | native[m] for m in imps}
+        self.assertEqual(shards.stale_of({"B"}, ordinary), {"B"})
+        self.assertEqual(shards.stale_of({"B"}, combined), {"B", "Consumer", "Downstream"})
+        self.assertNotIn("B", native["A"])
+
+    def test_members_of_one_native_library_do_not_read_unrelated_siblings(self):
+        imps = {"Helper": [], "Main": ["Helper"], "Unrelated": []}
+        closure = shards.closures(imps)
+        native = shards.native_reads(imps, closure, {"Native": frozenset(imps)})
+        self.assertEqual(native["Main"], frozenset({"Helper"}))
+        self.assertEqual(native["Unrelated"], frozenset())
+
+    def test_transitive_native_libraries_are_import_closed(self):
+        imps = {"A": [], "B": ["C"], "C": [], "D": [], "Sink": ["A"]}
+        closure = shards.closures(imps)
+        libraries = {"One": frozenset({"A", "B"}), "Two": frozenset({"C", "D"})}
+        required = shards.build_requirements(closure, libraries)
+        self.assertEqual(required["Sink"], frozenset(imps))
+        self.assertEqual(required["D"], frozenset({"C", "D"}))
+        for part in required.values():
+            for m in part:
+                self.assertLessEqual(closure[m], part)
+
+    def test_schedule_counts_native_members_absent_from_normal_imports(self):
+        imps = {"A": [], "B": [], **{f"Sink{i}": ["A"] for i in range(20)}}
+        closure = shards.closures(imps)
+        required = shards.build_requirements(closure, {"Native": frozenset({"A", "B"})})
+        times = {"A": 1., "B": 100., **{f"Sink{i}": 500. for i in range(20)}}
+        d = {}
+        _, _, (_, targets, built) = shards.schedule(imps, closure, set(imps), times, d,
+                                                    requirements=required)
+        self.assertTrue(targets)
+        for ts, part in zip(targets, built):
+            self.assertEqual(part, set().union(*(required[t] for t in ts)))
+        self.assertLessEqual(set(imps), set().union(*built))
+        total = sum(times[m] for part in built for m in part)
+        self.assertEqual(d["selected"]["module_work_s"], total)
+        self.assertAlmostEqual(d["selected"]["duplicate_work_s"], total - sum(times.values()))
+
+
+class TimingHistory(unittest.TestCase):
+    def setUp(self):
+        self.sources = {"M": "source", "N": "unchanged"}
+        self.inputs = {"toolchain": "v1"}
+        self.old = {"inputs": self.inputs, "sources": self.sources,
+                    "times": {"M": 100.0, "N": 10.0}}
+
+    def update(self, observations, old=None, sources=None, inputs=None):
+        return shards.update_timings(old or self.old, observations,
+                                     sources or self.sources, inputs or self.inputs)
+
+    def test_duplicate_shards_are_combined_without_file_order_bias(self):
+        samples = [{"version": 1, "components": {"M": {"lean": t}}} for t in (10, 1000, 12)]
+        left = self.update(samples)
+        self.assertEqual(left, self.update(list(reversed(samples))))
+        self.assertEqual(left[0], {"M": 12, "N": 10})
+        self.assertEqual(left[1]["M"]["lean"], [12])
+
+    def test_partial_final_assembly_cannot_replace_module_time(self):
+        samples = [
+            {"version": 1, "components": {"M": {"lean": 20, "c.o": 5}}},
+            {"version": 1, "components": {"M": {"dynlib": 1}}},
+        ]
+        times, history = self.update(samples)
+        self.assertEqual(times["M"], 26)
+        old = dict(self.old, times=times, timing_history=history)
+        times, _ = self.update([{ "version": 1, "components": {"M": {"dynlib": 3}}}], old)
+        self.assertEqual(times["M"], 27)
+
+    def test_recent_same_source_samples_resist_outliers_and_adapt(self):
+        old = self.old
+        for sample, expected in [(10, 10), (12, 11), (1000, 12), (14, 14), (16, 16)]:
+            times, history = self.update([{"M": sample}], old)
+            self.assertEqual(times["M"], expected)
+            self.assertLessEqual(len(history["M"]["total"]), 3)
+            old = dict(self.old, times=times, timing_history=history)
+
+    def test_changed_source_or_toolchain_drops_unmeasured_old_timings(self):
+        times, history = self.update([], sources={"M": "new", "N": "unchanged"})
+        self.assertEqual(times, {"N": 10})
+        self.assertEqual(history, {})
+        times, history = self.update([], inputs={"toolchain": "v2"})
+        self.assertEqual((times, history), ({}, {}))
+
+    def test_changed_source_starts_new_history(self):
+        old = dict(self.old, timing_history={"M": {"lean": [100, 120, 140]}})
+        times, history = self.update([{"version": 1, "components": {"M": {"lean": 5}}}],
+                                     old, sources={"M": "new", "N": "unchanged"})
+        self.assertEqual(times["M"], 5)
+        self.assertEqual(history["M"], {"lean": [5]})
+
+    def test_moving_library_members_resets_only_affected_timings(self):
+        inputs = dict(self.inputs, libraries={"Native": ["roots:M"]})
+        closure = {"M": frozenset({"M"}), "N": frozenset({"N"})}
+        times, history = shards.update_timings(self.old, [], self.sources, inputs, closure)
+        self.assertEqual(times, {"N": 10})
+        self.assertEqual(history, {})
+
+    def test_native_only_sample_preserves_unsplittable_legacy_total(self):
+        times, history = self.update([{"version": 1, "components": {"M": {"c.o": 2}}}])
+        self.assertEqual(times["M"], 100)
+        self.assertEqual(history["M"], {"c.o": [2]})
+
+    def test_deleted_modules_and_invalid_measurements(self):
+        times, _ = self.update([{"gone": 200}], sources={"N": "unchanged"})
+        self.assertEqual(times, {"N": 10})
+        for value in (-1, float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                self.update([{"M": value}])
+
+    def test_log_components_do_not_confuse_linking_with_compilation(self):
+        parsed = shards.log_timings(Times.LOG)
+        self.assertEqual(parsed["components"]["VerifiedGarbage.Proof.Framework.Omega"],
+                         {"lean": 1.2, "c.o": 8.8, "dynlib": .15})
+        self.assertNotIn("NativeTactics", parsed["components"])
+
+
+class TimingEstimates(unittest.TestCase):
+    def test_unknown_uses_size_matched_peers_in_nearest_namespace(self):
+        peers = {f"VG.Proof.Family.M{i}": float(i + 1) for i in range(8)}
+        unrelated = {f"VG.Spec.M{i}": 100.0 for i in range(8)}
+        other_sizes = {f"VG.Proof.Family.Large{i}": 200.0 for i in range(8)}
+        unknown = "VG.Proof.Family.New"
+        times = peers | unrelated | other_sizes
+        sizes = dict.fromkeys(peers | unrelated, 1024) | dict.fromkeys(other_sizes, 8192) | {unknown: 1500}
+        estimates, _ = shards.timing_estimates(dict.fromkeys([*times, unknown]), times, sizes)
+        self.assertEqual(estimates[unknown], 6.0)
+        self.assertEqual(estimates["VG.Spec.M0"], 100.0)
+
+    def test_sparse_or_legacy_inputs_keep_global_fallback(self):
+        times = {"A": 1.0, "B": 4.0, "C": 9.0}
+        for sizes in (None, {"A": 100, "new": 100}):
+            estimates, default = shards.timing_estimates(dict.fromkeys([*times, "new"]), times, sizes)
+            self.assertEqual(estimates["new"], 4.0)
+            self.assertEqual(default, 4.0)
+        estimates, _ = shards.timing_estimates({"new": []}, {}, {"new": 0})
+        self.assertEqual(estimates["new"], shards.DEFAULT_TIME)
+
+    def test_unknown_chain_costs_are_included_and_retained(self):
+        peers = {f"VG.Proof.M{i}": [] for i in range(8)}
+        imps = peers | {"VG.Proof.New": ["VG.Proof.M0"], "VG.Proof.End": ["VG.Proof.New"]}
+        times = dict.fromkeys(peers, 100.0)
+        sizes = dict.fromkeys(imps, 1024)
+        diagnostics = {}
+        work, _, _ = shards.schedule(imps, shards.closures(imps), set(imps), times,
+                                      diagnostics, source_bytes=sizes)
+        self.assertEqual(work, 1000.0)
+        self.assertEqual(diagnostics["fallback_estimates"],
+                         {"VG.Proof.End": 100.0, "VG.Proof.New": 100.0})
 
 
 class Plan(Project):

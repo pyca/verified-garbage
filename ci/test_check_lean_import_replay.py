@@ -34,6 +34,21 @@ class Replay(unittest.TestCase):
         # Shared downstream work appears once, not once per candidate.
         self.assertEqual(result["cost"]["known_profile_work_seconds"], 7)
 
+    def test_rebuild_impact_tracks_private_ir_without_expanding_visibility(self):
+        graph = check.Graph([])
+        edges = {"A": [("B", False, True, False)],
+                 "B": [("C", False, False, False)], "C": []}
+        graph.imports = lambda m: edges[m]
+        graph.text = lambda m: "module\n"
+        graph.project = lambda m: m in edges
+        plan = check.Plan()
+        plan.edits = [check.Edit("A", "remove_meta", "B")]
+        self.assertNotIn("C", graph.reads("A", True))
+        impact = replay.rebuild_impact(plan, graph, ["A"])
+        self.assertEqual(impact["removed_pairs"], 2)
+        self.assertEqual(impact["added_pairs"], 0)
+        self.assertEqual({r["dependency"] for r in impact["largest_changes"]}, {"B", "C"})
+
     def test_required_repairs_do_not_count_as_a_reduction_in_local_read_exposure(self):
         result = replay.replay(self.data)
         impact = result["visibility_impact"]
