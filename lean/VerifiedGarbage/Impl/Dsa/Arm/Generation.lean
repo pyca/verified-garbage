@@ -90,8 +90,6 @@ def sState : Nat := 64
 def sQ : Nat := 128
 def sX : Nat := 192
 def sPBE : Nat := 576
-def sPLE : Nat := 960
-def sE : Nat := 1344
 def sG : Nat := 1728
 def sPacked : Nat := 2112
 def sA : Nat := 4096
@@ -254,23 +252,13 @@ def storeBE (L j o n : Nat) : Prog isa :=
 /-- The slot `d` := `[a] < [b]`. -/
 def ltS (d a b : Nat) : List (Prog isa) := [sub3 aTmp a b, .block [.str .r11 .r8 d]]
 
-/-- `p` and `(p − 1) / q` from `X` at `sX` and `q` at `sQ`: `p` to `sPBE`
-(big-endian) and `sPLE` (little-endian), `(p − 1) / q` to `sE`
-(little-endian, `e` words). -/
-def pArith (pLen qLen e : Nat) : Prog isa := seqs [
-  ksSetup,
-  loadS pLen aQt sX pLen, loadS pLen aX sX pLen, loadS pLen aDv sQ qLen,
-  .block (VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt),
-  VG.Impl.Rsa.Arm.Div.code,
-  .block (wRegs pLen),
-  sub3 aT aX aRm,
-  .block (bitOf slOdd aQt), sel aS aZero aDv slOdd,
-  sub3 aPm1 aT aS,
-  copy aP aPm1, .block (orOne aP),
-  copy aE aQt, .block (clrLow aE),
-  storeBE pLen aP sPBE pLen,
-  copyN (scr pLen .r0 sPLE) (ptr .r1 aP) pLen,
-  copyN (scr pLen .r0 sE) (ptr .r1 aE) (4 * e)]
+/-- `p` and `(p − 1) / q` from `X` at `sX` and `q` at `sQ`: `p` in array
+`aP` and to `sPBE` (big-endian), `(p − 1) / q` in array `aE`. -/
+def pArith (pLen qLen : Nat) : Prog isa := seqs [
+  seqs [ksSetup, loadS pLen aQt sX pLen, loadS pLen aX sX pLen, loadS pLen aDv sQ qLen],
+  seqs [.block (VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt), VG.Impl.Rsa.Arm.Div.code, .block (wRegs pLen)],
+  seqs [sub3 aT aX aRm, .block (bitOf slOdd aQt), sel aS aZero aDv slOdd, sub3 aPm1 aT aS],
+  seqs [copy aP aPm1, .block (orOne aP), copy aE aQt, .block (clrLow aE), storeBE pLen aP sPBE pLen]]
 
 /-! ## The search -/
 
@@ -332,7 +320,7 @@ def pX : Prog isa :=
 /-- A counter's candidate: `fP` := 0 if the witnesses ran out, 1 if it is a
 probable prime, else as it was. -/
 def pAttempt : Prog isa := seqs [
-  g.pX, pArith g.pLen g.qLen g.e,
+  g.pX, pArith g.pLen g.qLen,
   .block (scr g.pLen .r0 sPBE ++ [.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)]),
   .ite .eq (.block [])
     (seqs [copyS g.pLen sA sPBE g.pLen, test g.pLen g.pName g.pCode,
@@ -359,9 +347,9 @@ def gStep : Prog isa := seqs [
   seqs (ltS slLo aOne aH), seqs (ltS slHi aH aPm1),
   .block (andS slLo slLo slHi ++ [.ldr .r1 .r8 slLo, .cmp .r1 (.imm 0)]),
   .ite .eq (.block [])
-    (seqs [copyS g.pLen (sA + g.powMod) sPLE g.pLen,
+    (seqs [copyN (scr g.pLen .r0 (sA + g.powMod)) (ptr .r1 aP) g.pLen,
       copyN (scr g.pLen .r0 (sA + g.powBase)) (ptr .r1 aH) g.pLen,
-      copyS g.pLen (sA + g.powExp) sE (4 * g.e),
+      copyN (scr g.pLen .r0 (sA + g.powExp)) (ptr .r1 aE) (4 * g.e),
       .block (scr g.pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa g.pLen / 8))]),
       .call g.powName g.powCode,
       copyN (ptr .r0 aG) (scr g.pLen .r1 (sA + g.powRes)) g.pLen,
