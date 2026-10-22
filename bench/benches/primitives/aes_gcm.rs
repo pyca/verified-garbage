@@ -505,13 +505,13 @@ fn tls_records(c: &mut Criterion) {
     /// The payloads: a full record, a common web record, and smaller ones,
     /// each next to sizes that are not a multiple of 16 (as most records'
     /// are), since the end of a record costs differently from its blocks;
-    /// and records of 16, 64 and 255 bytes with their content type (alerts,
-    /// handshake messages, small requests), shorter than the messages the
-    /// library computes its keys' powers for; and a 2048-byte record, where
-    /// VAES's `seal` changes paths.
-    const TLS_SIZES: [usize; 19] = [
-        15, 63, 254, 255, 256, 257, 1023, 1024, 1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001,
-        16383, 16384, 16385,
+    /// and records of 16, 32, 48, 64 and 255 bytes with their content type
+    /// (alerts, handshake messages, small requests), shorter than the
+    /// messages the library computes its keys' powers for; and a 2048-byte
+    /// record, where VAES's `seal` changes paths.
+    const TLS_SIZES: [usize; 21] = [
+        15, 31, 47, 63, 254, 255, 256, 257, 1023, 1024, 1025, 2047, 4095, 4096, 4097, 9999, 10000,
+        10001, 16383, 16384, 16385,
     ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
