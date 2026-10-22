@@ -56,14 +56,6 @@ theorem prepare_ct : ConstantTime isa prepareX86_64.pre prepareX86_64.pub prepar
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-theorem prepareAvx_ct :
-    ConstantTime isa prepareX86_64.pre prepareX86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepare := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
 /-- What `vg_aes_gcm_prepare` does from `s₀`: the 48 prepared powers of the
 hash subkey at `C + 240` into pairs 0–23 of the context at `C`, nothing else
 written, and the registers but `rax` kept. -/
@@ -167,5 +159,72 @@ theorem prepare16_ct : ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub 
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
+
+theorem prepare16Avx_ct :
+    ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepare16 := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ h
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; exact h
+
+open VG.Proof.Gcm.X86_64.Prepare (bytesAt_frame satState)
+
+/-- What an implementation of `vg_aes_gcm_prepare16` may do from `s₀`: the 16
+prepared powers of the hash subkey at `C + 240` into pairs 0–7 of the
+context at `C`, nothing written but bytes 256–1023 of the context, and the
+registers but `rax` kept. -/
+def PrepOk16W (s₀ s : State) : Prop :=
+  (∀ k < 8, ∀ l < 2, s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
+    Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (2 * k + 2 - l))) ∧
+  Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 768⟩] s₀.mem s.mem ∧
+  (∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
+
+theorem correctW {c : Prog isa}
+    (hok : ∀ s₀, InRegions s₀.wr (s₀.gpr .rdi) 1024 → (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 →
+      WP isa c s₀ (PrepOk16W s₀))
+    {s₀ : State} (hp : prepare16X86_64.pre s₀) :
+    WP isa c s₀ fun s => gprPreserved s₀ s ∧ prepare16X86_64.post s₀ s := by
+  obtain ⟨_, hwr, hwrap, hret⟩ := hp
+  have hw : InRegions s₀.wr (s₀.gpr .rdi) 1024 := by
+    rw [hwr]; exact ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  refine WP.mono (hok s₀ hw hwrap) fun s ⟨pw, fr, g, _, _⟩ => ?_
+  have keep : Spec.Aes.bytesAt s.mem (s₀.gpr .rdi) 256 = Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) 256 :=
+    bytesAt_frame fr (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+  have hH : Spec.Gcm.ctxH s.mem (s₀.gpr .rdi) = Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi) := by
+    simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
+    rw [bytesAt_frame fr (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide)) (by decide)
+        (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
+  refine ⟨⟨fun r hr => g r (by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, keep, fun k hk => ?_⟩
+  · exact fr.readW (Region.contains_self _ _) (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact hret.sub_right (Offset.sub_base (s₀.gpr .rdi) (by decide))) (by decide)
+  · rw [hH]
+    have p0 := pw k hk 0 (by decide)
+    have p1 := pw k hk 1 (by decide)
+    rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
+    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
+    exact ⟨p0, p1⟩
+
+/-- `Verified` for code that writes the first 16 prepared powers and nothing
+outside bytes 256–1023 of the context, loads no MXCSR, and is constant
+time. -/
+theorem verified_ofW (c : Prog isa)
+    (hok : ∀ s₀, InRegions s₀.wr (s₀.gpr .rdi) 1024 → (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 →
+      WP isa c s₀ (PrepOk16W s₀))
+    (hx : c.allInstrs (fun i => !loadsMxcsr i) = true)
+    (hct : ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub c) :
+    Verified X86_64.target c (Spec.Gcm.prepare16Contract X86_64.abi) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, h⟩ := correctW hok hs
+      exact ⟨t, s', he, abiPreserved_of_exec hx he h.1, h.2⟩) hct (by
+    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
+      X86_64.abi, X86_64.argRegs] [satState] using satState)
 
 end VG.Proof.Gcm.X86_64.Prepare16
