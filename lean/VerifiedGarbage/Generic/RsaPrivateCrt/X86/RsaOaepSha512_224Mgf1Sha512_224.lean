@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha512
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Verified

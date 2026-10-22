@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.RsaOaep.X86
 
 /-!
 # RSAES-OAEP decryption on x86: the call of `vg_rsa_private_checked`

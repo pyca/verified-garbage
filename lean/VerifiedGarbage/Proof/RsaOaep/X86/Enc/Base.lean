@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.RsaOaep.X86
+import VerifiedGarbage.Impl.RsaOaep.X86
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86.Base
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.RsaPss.X86
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86: where everything is
