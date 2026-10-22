@@ -46,6 +46,28 @@ class Registrations(unittest.TestCase):
             [p] = check_registrations.problems(pathlib.Path(d))
             self.assertIn(":4: a tactic proof", p)
 
+    def test_a_default_as_a_field(self):
+        # A default ends at the next field, at the same indentation.
+        with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
+                    "module\ndef artifacts := [\n  api.artifact t {\n"
+                    "    spSafe := by sp_safe\n"
+                    "    ofSig := by\n      of_sig\n"
+                    "    verified := v }]\n"}) as d:
+            self.assertEqual(check_registrations.problems(pathlib.Path(d)), [])
+
+    def test_a_default_with_more_tactics(self):
+        with tree({"VerifiedGarbage/Generic/A/X86_64/B.lean":
+                    "module\ndef sign (code : Prog isa)\n"
+                    "    (hsp : P code := by sp_safe <;> decide) : Artifact :=\n  x\n",
+                    "VerifiedGarbage/Artifacts/A/X86_64.lean":
+                    "module\ndef artifacts := [\n  api.artifact t {\n"
+                    "    spSafe := by sp_safe\n      all_goals decide\n"
+                    "    verified := v }]\n"}) as d:
+            ps = check_registrations.problems(pathlib.Path(d))
+            self.assertEqual(len(ps), 2)
+            self.assertIn("Artifacts/A/X86_64.lean:4: a tactic proof", ps[0])
+            self.assertIn("Generic/A/X86_64/B.lean:3: a tactic proof", ps[1])
+
     def test_a_theorem(self):
         with tree({"VerifiedGarbage/Variants/A/X86_64/B.lean":
                     "module\ntheorem ok : 1 = 1 := rfl\ndef variant := v\n"}) as d:

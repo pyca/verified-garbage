@@ -4,16 +4,15 @@ modules"). Exits non-zero on violations, naming each.
 
   * Every file under lean/VerifiedGarbage/ is a module (it starts with
     `module`, after any leading comment), except `Artifacts.lean`.
-  * `Artifacts.lean` is not a module: it runs `#assert_standard_axioms`,
-    which needs every proof, and a module sees the theorems it imports
-    without their proofs (the audits refuse to run in one).
-  * No module imports a file of this project that is not a module (Lean
-    refuses).
+
+Lean checks the rest itself: a module may not import a file that is not
+one ("cannot import non-`module`"), and the audits that `Artifacts.lean`
+runs refuse to run in a module (`TCB/Axioms.lean`, `TCB/Audit.lean`).
 """
 
 import pathlib
-import re
 import sys
+from collections.abc import Iterable
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean"
@@ -21,13 +20,12 @@ LEAN = ROOT / "lean"
 # The one file of the library that is not a module.
 NOT_MODULES = ["VerifiedGarbage/Artifacts.lean"]
 
-ANY_IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)\s*$", re.M)
 
-
-def is_module(text: str) -> bool:
-    """Whether `text` starts with `module`, after any leading comments."""
+def is_module(lines: Iterable[str]) -> bool:
+    """Whether `lines` start with `module`, after any leading comments. It
+    reads only as far as the header, so that a file's proofs are not read."""
     comment = False
-    for l in text.split("\n"):
+    for l in lines:
         s = l.strip()
         if comment:
             comment = not s.endswith("-/")
@@ -46,22 +44,14 @@ def problems(lean: pathlib.Path) -> list[str]:
     """What is wrong under `lean` (the directory with `VerifiedGarbage/`), one
     line each."""
     out = []
-    modules = {}
     for f in sorted((lean / "VerifiedGarbage").rglob("*.lean")):
         rel = f.relative_to(lean).as_posix()
-        modules[rel] = is_module(f.read_text())
-        if rel in NOT_MODULES and modules[rel]:
-            out.append(f"lean/{rel}: a module, but it runs the audits, which need a file that is not one")
-        elif rel not in NOT_MODULES and not modules[rel]:
-            out.append(f"lean/{rel}: not a module; every file under lean/VerifiedGarbage/ but "
-                       f"{', '.join(NOT_MODULES)} starts with `module` (CLAUDE.md, \"Lean modules\")")
-    for rel, module in modules.items():
-        if not module:
+        if rel in NOT_MODULES:
             continue
-        for m in ANY_IMPORT.finditer((lean / rel).read_text()):
-            dep = (m.group(1).replace(".", "/") + ".lean")
-            if (lean / dep).exists() and not is_module((lean / dep).read_text()):
-                out.append(f"lean/{rel}: a module, but imports `{m.group(1)}`, which is not one")
+        with f.open(encoding="utf-8") as lines:
+            if not is_module(lines):
+                out.append(f"lean/{rel}: not a module; every file under lean/VerifiedGarbage/ but "
+                           f"{', '.join(NOT_MODULES)} starts with `module` (CLAUDE.md, \"Lean modules\")")
     return out
 
 

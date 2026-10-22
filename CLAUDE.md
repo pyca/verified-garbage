@@ -121,6 +121,7 @@ Lake rebuilds your changes and anything not yet cached.
   prologue.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
+  `ci/check_lean_imports.py` checks both.
 
 ## Adding a primitive
 

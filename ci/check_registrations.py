@@ -8,7 +8,8 @@ chooses and bind proofs made under `Proof/`:
 
   * no theorems or lemmas;
   * no tactic proofs (`by …`) but the defaults of `Registration`
-    (`by sp_safe`, `by of_sig`), which a builder of artifacts may also give
+    (`by sp_safe`, `by of_sig`), each the whole of its tactic block (not
+    `by sp_safe <;> decide`), which a builder of artifacts may also give
     its own arguments: a side condition a registration would decide is an
     `autoParam` of the lemma that needs it, or the algorithm's proofs state
     the instance as a theorem.
@@ -27,7 +28,8 @@ DIRS = ["Artifacts", "Generic", "Variants"]
 DEFAULTS = {"sp_safe", "of_sig"}
 
 THEOREM = re.compile(r"(?<![\w.'])(theorem|lemma)\s")
-BY = re.compile(r"(?<![\w.'])by(?![\w'])\s*(\S*)")
+BY = re.compile(r"(?<![\w.'])by(?![\w'])\s*([\w.']*)")
+OPEN, CLOSE = "([{⟨", ")]}⟩"
 
 
 def code_only(text: str) -> str:
@@ -69,6 +71,35 @@ def code_only(text: str) -> str:
     return "".join(out)
 
 
+def rest_of_block(code: str, by: int, start: int) -> str:
+    """What the tactic block of the `by` at `by` holds from `start` on: up to
+    the bracket that closes around it, a `,` beside it, or a line indented no
+    further than the line of the `by`."""
+    head = code[code.rfind("\n", 0, by) + 1:by]
+    indent = len(head) - len(head.lstrip())
+    depth, i, n = 0, start, len(code)
+    while i < n:
+        c = code[i]
+        if c in OPEN:
+            depth += 1
+        elif c in CLOSE:
+            if depth == 0:
+                break
+            depth -= 1
+        elif c == "," and depth == 0:
+            break
+        elif c == "\n" and depth == 0:
+            j = i + 1
+            while j < n and code[j] == "\n":
+                j += 1
+            end = code.find("\n", j)
+            line = code[j:n if end < 0 else end]
+            if not line.strip() or len(line) - len(line.lstrip()) <= indent:
+                break
+        i += 1
+    return code[start:i].strip()
+
+
 def problems(lean: pathlib.Path) -> list[str]:
     """What is wrong under `lean` (the directory with `VerifiedGarbage/`), one
     line each."""
@@ -82,7 +113,7 @@ def problems(lean: pathlib.Path) -> list[str]:
                 out.append(f"lean/{rel}:{line(m.start())}: a {m.group(1)} in a file reviewed by hand; "
                            "prove it under `Proof/` (CLAUDE.md, \"Adding a primitive\")")
             for m in BY.finditer(code):
-                if m.group(1).rstrip(")") in DEFAULTS:
+                if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):
                     continue
                 out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a file reviewed by hand; "
                            "make the side condition an `autoParam` of the lemma, or prove the "

@@ -14,11 +14,16 @@ proofs. Exits non-zero on violations.
     (ci/lean_shards.py), which builds a module with everything it imports,
     would check both. What more than one target uses goes in a
     target-independent module.
+  * TCB/   holds definitions only: no `theorem` or `lemma` (CLAUDE.md), so
+    that what is trusted is what is reviewed as trusted; lemmas about it go
+    in Proof/.
 """
 
 import pathlib
 import re
 import sys
+
+from check_registrations import THEOREM, code_only
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean" / "VerifiedGarbage"
@@ -43,8 +48,21 @@ def target_of(parts, targets: set[str]) -> str | None:
     return next((p for p in parts if p in targets), None)
 
 
+def tcb_lemmas(lean: pathlib.Path) -> list[str]:
+    """A line for each theorem or lemma under `lean`'s (lean/VerifiedGarbage/'s)
+    TCB/, outside comments and strings."""
+    out = []
+    for f in sorted((lean / "TCB").rglob("*.lean")):
+        code = code_only(f.read_text())
+        for m in THEOREM.finditer(code):
+            line = code.count("\n", 0, m.start()) + 1
+            out.append(f"{f.relative_to(lean.parent.parent)}:{line}: a {m.group(1)} in TCB/, "
+                       "which holds definitions only; prove it under Proof/")
+    return out
+
+
 def main() -> int:
-    errors = []
+    errors = tcb_lemmas(LEAN)
     targets = {p.name for p in (LEAN / "TCB").iterdir() if p.is_dir()}
     for f in sorted(LEAN.rglob("*.lean")):
         own = target_of(f.relative_to(LEAN).with_suffix("").parts, targets)
