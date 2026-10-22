@@ -20,6 +20,10 @@ The kernel evaluates the passes of `nttR` in `check` (`Run.lean`), in the
 constant-time analysis, and in the checks of every instruction of the
 functions that contain them; these read the literals rather than running the
 register allocation again.
+
+Name each half's
+underlying generator application explicitly, so the combined passes reuse
+its checked literal instead of evaluating the allocator a second time.
 -/
 
 @[expose] public section
@@ -40,13 +44,19 @@ def passIBAcc1 : List VG.X86_64.Instr := passIB .acc 1
 end Impl.MlKem.X86_64.NttR
 
 materialize_value Impl.MlKem.X86_64.NttR.passA
+materialize_value Impl.MlKem.X86_64.NttR.passBR100 :=
+  Impl.MlKem.X86_64.NttR.passB .r10 0
+materialize_value Impl.MlKem.X86_64.NttR.passBR101 :=
+  Impl.MlKem.X86_64.NttR.passB .r10 1
 materialize_value Impl.MlKem.X86_64.NttR.passBsR10
-materialize_value Impl.MlKem.X86_64.NttR.passBR100
-materialize_value Impl.MlKem.X86_64.NttR.passBR101
+materialize_value Impl.MlKem.X86_64.NttR.passBAccR100 :=
+  Impl.MlKem.X86_64.NttR.passBAcc .r10 0
+materialize_value Impl.MlKem.X86_64.NttR.passBAccR101 :=
+  Impl.MlKem.X86_64.NttR.passBAcc .r10 1
 materialize_value Impl.MlKem.X86_64.NttR.passBsAccR10
-materialize_value Impl.MlKem.X86_64.NttR.passBAccR100
-materialize_value Impl.MlKem.X86_64.NttR.passBAccR101
 materialize_value Impl.MlKem.X86_64.NttR.passIA
+materialize_value Impl.MlKem.X86_64.NttR.passIBAcc0 :=
+  Impl.MlKem.X86_64.NttR.passIB .acc 0
+materialize_value Impl.MlKem.X86_64.NttR.passIBAcc1 :=
+  Impl.MlKem.X86_64.NttR.passIB .acc 1
 materialize_value Impl.MlKem.X86_64.NttR.passIBsAcc
-materialize_value Impl.MlKem.X86_64.NttR.passIBAcc0
-materialize_value Impl.MlKem.X86_64.NttR.passIBAcc1
