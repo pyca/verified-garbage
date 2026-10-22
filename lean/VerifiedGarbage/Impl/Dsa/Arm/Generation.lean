@@ -177,7 +177,7 @@ result into `fRes`, and the octets it read added to `fUsed` unless it ran out. -
 def test (pLen : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
   .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8))]),
   .block [ld .r4 fUsed, ld .r2 fWit, ld .r3 fWitLen],
-  .block [.dp .add .r2 .r2 (.reg .r4), .addSp .r4 fUsedOut, .subs .r3 .r3 (.reg .r4)],
+  .block [.dp .add .r2 .r2 (.reg .r4), .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut, .cmp .r3 (.imm 0)],
   .ite .eq (.block [ld .r2 fWit]) (.block []),
   callWith name callee,
   .block (st .r0 fRes),
