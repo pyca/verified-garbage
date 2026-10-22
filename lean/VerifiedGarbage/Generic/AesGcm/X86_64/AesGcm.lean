@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
