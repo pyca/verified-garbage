@@ -106,12 +106,8 @@ macro_rules! compressed_peers {
                     let mut private = [0; $len];
                     private[$len - bytes.len()..].copy_from_slice(bytes);
                     let key = PrivateKey::<$curve>::from_bytes(&private);
-                    assert_eq!(
-                        key.diffie_hellman(&public).unwrap().to_vec(),
-                        test.case.shared.0,
-                        "tcId {}",
-                        test.tc_id
-                    );
+                    let shared = key.diffie_hellman(&public).unwrap().to_vec();
+                    assert_eq!(shared, test.case.shared.0, "tcId {}", test.tc_id);
                     checked.add();
                 } else {
                     assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
