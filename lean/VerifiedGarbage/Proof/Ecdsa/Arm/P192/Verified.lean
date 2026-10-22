@@ -70,6 +70,7 @@ theorem p192_ok : CfgOk p192 where
   n_odd := by decide +kernel
   p_lt := by decide +kernel
   n_lt := by decide +kernel
+  n_enc := by decide +kernel
   p_ge := by decide +kernel
   n_ge := by decide +kernel
   p_lt_2n := by decide +kernel

@@ -51,7 +51,8 @@ import VerifiedGarbage.Proof.Mont.Read
 /-! # DSA's exponentiations on ARMv7
 
 One function for each (modulus, exponent) width pair that `vg_dsa_sign` and
-`vg_dsa_verify` exponentiate at (`Impl.Dsa.Arm.Core.power`). -/
+`vg_dsa_verify` exponentiate at (`Impl.Dsa.Arm.Core.power`), and that
+`vg_dsa_generate_parameters` finds `g` at, `(p − 1) / q` wide. -/
 
 @[expose] public section
 
@@ -76,6 +77,9 @@ def artifacts : List Artifact := [
   helper 4 7 (verified 4 7),
   helper 32 8 (verified 32 8),
   helper 4 8 (verified 4 8),
-  helper 48 8 (verified 48 8)]
+  helper 48 8 (verified 48 8),
+  helper 16 28 (verified 16 28),
+  helper 32 57 (verified 32 57),
+  helper 48 89 (verified 48 89)]
 
 end VG.Artifacts.DsaPow.Arm

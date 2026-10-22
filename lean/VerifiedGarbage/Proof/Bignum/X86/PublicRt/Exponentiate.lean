@@ -45,7 +45,12 @@ theorem sparseLoop_ok {s₀ : State} {base : Addr} {bytes len : Nat} {args : Nat
   have next : LoopInv base bytes len args M target s₀ u := by
     refine ⟨Eu, ?_, ⟨_, _, Yu, Bu, ?_⟩, I.keeps.trans Ku, ?_⟩
     · exact I.frame.trans (by rw [← I.keeps.1 _ (by decide)]; exact Fu)
-    · rw [Wu, VG.Proof.Mont.X86.Dynamic.exponent_step_value]; exact V
+    · by_cases done : val32 t.mem base 128 2 / 2 = 0
+      · rw [Wu, done, Nat.pow_zero, Nat.mul_one]
+        have h := congrArg (· % M) (VG.Proof.Mont.X86.Dynamic.exponent_step_value y b
+          (val32 t.mem base 128 2))
+        simpa only [done, Nat.pow_zero, Nat.mul_one] using h.trans V
+      · rw [Wu, ite_eq_right done, VG.Proof.Mont.X86.Dynamic.exponent_step_value]; exact V
     · rw [ou, I.one]
   by_cases done : val32 t.mem base 128 2 / 2 = 0
   · refine .inl ⟨?_, next, by rw [Wu, done]⟩

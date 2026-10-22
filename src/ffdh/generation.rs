@@ -1,4 +1,4 @@
-//! Entropy-tape service and safe-prime parameter generation on x86-64/AArch64/ARMv7.
+//! Entropy-tape service and safe-prime parameter generation.
 //! The whole parameter search runs in
 //! verified code (`vg_ffdh_generate_parameters`): the candidates, their
 //! Miller–Rabin witnesses, the attempt limit and the length of each entropy
@@ -7,16 +7,15 @@
 use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;
-#[cfg(not(target_arch = "arm"))]
+#[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
 use crate::arch::ffdh::vg_ffdh_generate_parameters;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
-use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
+#[cfg(any(target_arch = "arm", target_arch = "x86"))]
+use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_parameters;
 #[cfg(target_arch = "arm")]
-use crate::arch::ffdh::{
-    vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_parameters,
-    vg_ffdh_generate_parameters_sieved_umaal as vg_ffdh_generate_parameters_umaal,
-};
+use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved_umaal as vg_ffdh_generate_parameters_umaal;
+use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
 use crate::cpu::detected;
 use crate::rsa::Scratch;
 use crate::zeroize::zeroize;
@@ -233,13 +232,14 @@ mod tests {
                 half
             })
             .collect();
-        #[cfg(target_arch = "arm")]
+        // The sieved candidate (ARMv7, x86) draws one witness for p first.
+        #[cfg(any(target_arch = "arm", target_arch = "x86"))]
         let phases = [
             (prime.to_vec(), 1),
             (q, rounds),
             (prime.to_vec(), rounds - 1),
         ];
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
         let phases = [(q, rounds), (prime.to_vec(), rounds)];
         for (modulus, rounds) in phases {
             let mut upper = modulus.clone();

@@ -49,8 +49,10 @@ theorem qTest_check : ACheck (.block Impl.Ffdh.X86.qTest) := by dsimp only [AChe
 theorem ret0_check : ACheck (ret 0) := by dsimp only [ACheck]; taint_decide
 theorem ret1_check : ACheck (ret 1) := by dsimp only [ACheck]; taint_decide
 theorem withQFront_check : ACheck (Prog.chain withQFront (.block [])) := by dsimp only [ACheck]; taint_decide
-theorem dividesHead_check : ACheck (Prog.chain [copy (.slot .wide 11) (.slot .wide 0) (one .wide), prepare .wide,
-    copy (.slot .wide 15) (.slot .wide 5) (one .wide)] (.block [])) := by dsimp only [ACheck]; taint_decide
+theorem dividesHead_check : ACheck (copy (.slot .wide 11) (.slot .wide 0) (one .wide)) := by
+  dsimp only [ACheck]; taint_decide
+theorem dividesCopy_check : ACheck (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) := by
+  dsimp only [ACheck]; taint_decide
 theorem dividesTail_check : ACheck (Prog.chain [zero (.slot .wide 17) (one .wide),
     equal (.slot .wide 6) (.slot .wide 17) (one .wide), testMask] (.block [])) := by dsimp only [ACheck]; taint_decide
 theorem mul653_check : MulCheck .wide 6 5 3 := by dsimp only [MulCheck]; taint_decide
@@ -141,16 +143,15 @@ theorem subgroup_trace :
 
 theorem dividesFront_trace :
     RelCT isa (Both (Run Ex base bytes len args sp)) (Prog.chain dividesFront (.block [])) fun _ _ => True := by
-  show RelCT isa _ (Prog.chain [copy (.slot .wide 11) (.slot .wide 0) (one .wide), prepare .wide,
-    copy (.slot .wide 15) (.slot .wide 5) (one .wide)] (.seq (CrtRt.mul .wide 6 5 3)
+  show RelCT isa _ (.seq (copy (.slot .wide 11) (.slot .wide 0) (one .wide)) (.seq (prepare .wide)
+    (.seq (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) (.seq (CrtRt.mul .wide 6 5 3)
       (Prog.chain [zero (.slot .wide 17) (one .wide), equal (.slot .wide 6) (.slot .wide 17) (one .wide), testMask]
-        (.block [])))) _
-  apply VG.RelCT.chain
+        (.block [])))))) _
   refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ dividesHead_check fun _ R =>
-    WP.seq (WP.mono (copyDown_run (j := 11) (d := 0) (by decide) (by decide) (by decide) R) fun _ R₁ =>
-      WP.seq (WP.mono (prepare_wst R₁ .wide) fun _ W =>
-        WP.seq (WP.mono (copyDown_wst (j := 15) (d := 5) (by decide) (by decide) (by decide) (by decide)
-          (by decide) (by decide) W) fun _ W' => WP.block_nil W')))) ?_
+    copyDown_run (j := 11) (d := 0) (by decide) (by decide) (by decide) R) ?_
+  refine VG.RelCT.seq (prepare_relCT .wide) ?_
+  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ dividesCopy_check fun _ W =>
+    copyDown_wst (j := 15) (d := 5) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) W) ?_
   refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) mul653_check (ks := [3, 4]) (ks' := []) (by decide) (by decide) (by decide)) ?_
   exact RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) dividesTail_check

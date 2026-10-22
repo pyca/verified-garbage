@@ -78,7 +78,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in \
       `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) \
       with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
-      all 576 bits of the nine words of `d`, with the complete addition formulas of Renes, \
+      all 528 bits of the 66-byte encoding of `d`, with the complete addition formulas of Renes, \
       Costello and Batina for every addition and doubling and a masked selection for each bit; \
       and `Z⁻¹` is Fermat's, by square-and-always-multiply over the bits of `p - 2`. The result \
       (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only \

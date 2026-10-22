@@ -58,6 +58,7 @@ structure CfgOk (c : Cfg) : Prop where
   n_odd : c.C.n % 2 = 1
   p_lt : c.C.p < 2 ^ (64 * c.n)
   n_lt : c.C.n < 2 ^ (64 * c.n)
+  n_enc : c.C.n < 2 ^ (8 * c.C.len)
   p_ge : 3 ≤ c.C.p
   n_ge : 3 ≤ c.C.n
   p_lt_2n : c.C.p < 2 * c.C.n

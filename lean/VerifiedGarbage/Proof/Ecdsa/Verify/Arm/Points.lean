@@ -262,9 +262,9 @@ abbrev ptsW : List Nat :=
 theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {generator : Prog isa} {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hMul : GeneratorWP c generator s₀ base (sv c base s U) Q₁ s.syms)
-    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (64 * c.n) 0 1 0)
+    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (8 * c.C.len) 0 1 0)
     (hstep₂ : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
-    (hO₂ : Q₂ (64 * c.n) 0 1 0) {rest : Prog isa} {Q : State → Prop}
+    (hO₂ : Q₂ (8 * c.C.len) 0 1 0) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.pointsWith c generator) rest) s Q := by
   have h0 := hc.n0
@@ -274,9 +274,7 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have hp3 := hc.p_ge
   have F := hM.fixed
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
-    have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
-    exact this _ h7
+  have henc := scalarBits_enc hc
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl h7 hi 0
   unfold Impl.Ecdsa.Verify.Arm.Cfg.pointsWith
@@ -310,7 +308,7 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     rw [v₁ hi]
   have hR₁ : Q₁ c.ladderCfg.nbits (tmv c.C c.n base s₁ (c.sl RX)) (tmv c.C c.n base s₁ (c.sl RY))
       (tmv c.C c.n base s₁ (c.sl RZ)) := by
-    show Q₁ (64 * c.n) (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) (toM _ _ (sv c base s₁ RZ))
+    show Q₁ (8 * c.C.len) (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) (toM _ _ (sv c base s₁ RZ))
     rw [v₁ (by decide), v₁ (by decide), v₁ (by decide), hM.rx, hM.ry, hM.rz, toM_cmont hc, toM_zero]
     exact hO₁
   refine WP.seq (WP.mono (hMul s₁ hs₁ hf₁ F₁ hlt₁
@@ -365,7 +363,7 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       rw [v₄ hi, W₃ hi hl]
   have hR₄ : Q₂ (Impl.Ecdh.Arm.Cfg.ladderQ c).nbits (tmv c.C c.n base s₄ (c.sl RX))
       (tmv c.C c.n base s₄ (c.sl RY)) (tmv c.C c.n base s₄ (c.sl RZ)) := by
-    show Q₂ (64 * c.n) (toM _ _ (sv c base s₄ RX)) (toM _ _ (sv c base s₄ RY)) (toM _ _ (sv c base s₄ RZ))
+    show Q₂ (8 * c.C.len) (toM _ _ (sv c base s₄ RX)) (toM _ _ (sv c base s₄ RY)) (toM _ _ (sv c base s₄ RZ))
     rw [v₄ (by decide), v₄ (by decide), v₄ (by decide), rx₃, ry₃, rz₃, toM_cmont hc, toM_zero]
     exact hO₂
   refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLayQ hc) (ladWkQ hc) hc.fp ladPtQ hpR
@@ -375,7 +373,8 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))) hR₄
       (fun t ht => by
         show s₄.mem (off base (bitsAt c.n 0 + t)) = _
-        rw [b₄ t ht, show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from
+        rw [b₄ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc)),
+          show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from
           W₃ (by decide) (by decide)]) henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, q₅⟩ => ?_)
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWxQ_eq] at U₅
@@ -473,9 +472,9 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
 /-- The existing double-ladder implementation uses the same generic pipeline. -/
 theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (64*c.n) 0 1 0)
+    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (8*c.C.len) 0 1 0)
     (hstep₂ : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
-    (hO₂ : Q₂ (64*c.n) 0 1 0) {rest : Prog isa} {Q : State → Prop}
+    (hO₂ : Q₂ (8*c.C.len) 0 1 0) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s',Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.points c) rest) s Q :=
   pointsWith_ok hc hM (generatorWP_ladder hc) hstep₁ hO₁ hstep₂ hO₂ h

@@ -51,6 +51,7 @@ mod cmac_aes;
 mod cmac_triple_des;
 mod dsa;
 mod dsa_parameters;
+mod ec_compressed;
 mod ecdh_brainpoolp256r1;
 mod ecdh_brainpoolp384r1;
 mod ecdh_brainpoolp512r1;
@@ -127,6 +128,7 @@ mod sm4_cbc;
 mod sm4_cfb;
 mod sm4_ctr;
 mod sm4_ecb;
+mod sm4_gcm;
 mod sm4_ofb;
 mod triple_des_cbc;
 mod triple_des_cfb;
@@ -192,8 +194,20 @@ pub(crate) fn hash_group<const N: usize>(
     md: MessageDigest,
     aws_lc: Option<&'static aws_lc_rs::digest::Algorithm>,
 ) {
+    hash_group_sizes(c, name, &SIZES, vg, md, aws_lc);
+}
+
+/// As `hash_group`, at the message sizes `sizes`.
+pub(crate) fn hash_group_sizes<const N: usize>(
+    c: &mut Criterion,
+    name: &str,
+    sizes: &[usize],
+    vg: fn(&[u8]) -> [u8; N],
+    md: MessageDigest,
+    aws_lc: Option<&'static aws_lc_rs::digest::Algorithm>,
+) {
     let mut g = c.benchmark_group(name);
-    for size in SIZES {
+    for &size in sizes {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         g.bench_function(BenchmarkId::new(VG, size), |b| {
@@ -491,6 +505,7 @@ benches! {
     (sm4_cfb::USES, sm4_cfb::bench),
     (sm4_ctr::USES, sm4_ctr::bench),
     (sm4_ecb::USES, sm4_ecb::bench),
+    (sm4_gcm::USES, sm4_gcm::bench),
     (sm4_ofb::USES, sm4_ofb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
@@ -507,7 +522,8 @@ benches! {
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
     (ed448::USES, ed448::bench),
-    (ecdsa_p192::USES, ecdsa_p192::bench),
+    (ec_compressed::USES, ec_compressed::bench),
+        (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
     (ecdsa_brainpoolp256r1::USES, ecdsa_brainpoolp256r1::bench),

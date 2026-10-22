@@ -185,18 +185,20 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
 section
 variable {M : CtxMode} (Sh : ShortFn M) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
 
-theorem sealGather_mx : (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem sealGather_mx (inl : Bool := false) : (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases inl <;>
   simp only [sealGather, gatherRest, Code.allInstrs, Sh.quickMx, Sh.fastMx, Sh.testMx, Sh.codeMx, stream, text, slices, I.mx, A.mx, T.mx, F.mx,
-    Bool.true_and, Bool.and_true]
+    callOr, Bool.false_eq_true, ↓reduceIte, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
-theorem sealGather_spAll :
-    (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
+theorem sealGather_spAll (inl : Bool := false) :
+    (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases inl <;>
   simp only [sealGather, gatherRest, Code.all, Sh.quickSp, Sh.fastSp, Sh.testSp, Sh.codeSp, stream, text, slices, I.spAll, A.spAll, T.spAll,
-    F.spAll, Bool.true_and, Bool.and_true]
+    F.spAll, callOr, Bool.false_eq_true, ↓reduceIte, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
-theorem sealGather_xdepth : (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn).x86_64Depth ≤ 4888 := by
+theorem sealGather_xdepth (inl : Bool := false) : (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl).x86_64Depth ≤ 4888 := by
   have s₃ := Sh.quickXd
   have s₂ := Sh.fastXd
   have s₀ := Sh.testXd
@@ -205,23 +207,24 @@ theorem sealGather_xdepth : (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.
   have a := A.xd
   have tt := T.xd
   have f := F.xd
-  simp only [sealGather, gatherRest, stream, text, slices, Code.x86_64Depth, X86_64.Instr.frameBytes,
-    List.length_cons, List.length_nil, Nat.max_le]
+  cases inl <;>
+  simp only [sealGather, gatherRest, stream, text, slices, callOr, Bool.false_eq_true, ↓reduceIte, Code.x86_64Depth,
+    X86_64.Instr.frameBytes, List.length_cons, List.length_nil, Nat.max_le] <;>
   omega
 
-theorem sealGather_correct (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
-    ∃ tr s', Exec isa (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn) s tr s' ∧ abiPreserved s s' ∧
+theorem sealGather_correct (inl : Bool) (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
+    ∃ tr s', Exec isa (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl) s tr s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.sealGatherPostG s s' := by
   have hp := SG.ofM hs
   obtain ⟨tr, s', he, hg, hpo⟩ := sealGatherG_wp hp (go := Sh.go s) (fun _ h => Sh.quickWp hp _ h)
     (fun e st E r11 => Sh.fastWp hp e st E r11) (fun st h => Sh.testWp hp st h)
-    (fun e st E r11 => Sh.wp hp e st E r11) I A T F (Same.refl s)
-  exact ⟨tr, s', he, abiPreserved_of_exec (sealGather_mx Sh I A T F) he hg, hpo⟩
+    (fun e st E r11 => Sh.wp hp e st E r11) inl I A T F (Same.refl s)
+  exact ⟨tr, s', he, abiPreserved_of_exec (sealGather_mx Sh I A T F inl) he hg, hpo⟩
 
-theorem sealGather_ct :
+theorem sealGather_ct (inl : Bool := false) :
     ConstantTime isa (Proof.AesGcm.sealGatherX86_64M M).pre Proof.AesGcm.sealGatherPub
-      (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn) :=
-  sealGatherG_ct Sh.go Sh.hgo Sh.quickRel Sh.fastRel Sh.testRel Sh.rel I A T F
+      (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl) :=
+  sealGatherG_ct Sh.go Sh.hgo Sh.quickRel Sh.fastRel Sh.testRel Sh.rel inl I A T F
 
 end
 
@@ -232,43 +235,43 @@ section
 variable {M : CtxMode} (Sh : ShortFn M) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) (Sp : SplitFn M)
   (long : Bool)
 
-theorem withFront_mx : (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)).allInstrs
+theorem withFront_mx (inl : Bool := false) : (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)).allInstrs
     (fun i => !loadsMxcsr i) = true := by
-  simp only [withFront, frontTest, frontFast, Code.allInstrs, sealGather_mx Sh I A T F, Sp.mx, Bool.true_and,
+  simp only [withFront, frontTest, frontFast, Code.allInstrs, sealGather_mx Sh I A T F inl, Sp.mx, Bool.true_and,
     Bool.and_true]
   cases long <;> decide +kernel
 
-theorem withFront_spAll : (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)).all
+theorem withFront_spAll (inl : Bool := false) : (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)).all
     (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [withFront, frontTest, frontFast, Code.all, sealGather_spAll Sh I A T F, Sp.spAll, Bool.true_and,
+  simp only [withFront, frontTest, frontFast, Code.all, sealGather_spAll Sh I A T F inl, Sp.spAll, Bool.true_and,
     Bool.and_true]
   cases long <;> decide +kernel
 
-theorem withFront_xdepth :
-    (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)).x86_64Depth ≤ 4888 := by
-  have s₀ := sealGather_xdepth Sh I A T F
+theorem withFront_xdepth (inl : Bool := false) :
+    (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)).x86_64Depth ≤ 4888 := by
+  have s₀ := sealGather_xdepth Sh I A T F inl
   have s₁ := Sp.xd
   cases long <;> simp only [withFront, frontTest, frontCore, frontFast, Code.x86_64Depth, X86_64.Instr.frameBytes,
     List.length_cons, List.length_nil, Nat.max_le, Bool.false_eq_true, ↓reduceIte] <;> omega
 
-theorem withFront_correct (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
-    ∃ tr s', Exec isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
+theorem withFront_correct (inl : Bool) (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
+    ∃ tr s', Exec isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl))
       s tr s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealGatherPostG s s' := by
   have hp := SG.ofM hs
-  have w : WP isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)) s
+  have w : WP isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)) s
       (Done s) := by
     unfold withFront
     exact WP.seq (WP.mono (frontTest_wp hp long) fun st ⟨S, zf⟩ =>
       WP.ite (frontGo long s) (by simp only [eval, zf]) (fun e => frontFast_wp hp Sp e S)
         (fun _ => sealGatherG_wp hp (go := Sh.go s) (fun _ h => Sh.quickWp hp _ h)
           (fun e st E r11 => Sh.fastWp hp e st E r11) (fun st h => Sh.testWp hp st h)
-          (fun e st E r11 => Sh.wp hp e st E r11) I A T F S))
+          (fun e st E r11 => Sh.wp hp e st E r11) inl I A T F S))
   obtain ⟨tr, s', he, hg, hpo⟩ := w
-  exact ⟨tr, s', he, abiPreserved_of_exec (withFront_mx Sh I A T F Sp long) he hg, hpo⟩
+  exact ⟨tr, s', he, abiPreserved_of_exec (withFront_mx Sh I A T F Sp long inl) he hg, hpo⟩
 
-theorem withFront_ct :
+theorem withFront_ct (inl : Bool := false) :
     ConstantTime isa (Proof.AesGcm.sealGatherX86_64M M).pre Proof.AesGcm.sealGatherPub
-      (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)) := by
+      (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)) := by
   refine ct_of_rel (k := Proof.AesGcm.sealGatherX86_64M M) fun s₀ s₀' h h' hq => ?_
   have hp := SG.ofM h
   have hp' := SG.ofM h'
@@ -279,7 +282,7 @@ theorem withFront_ct :
   · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨S₁, z₁⟩, ⟨S₂, _⟩⟩, ev⟩ => ?_
     have e : frontGo long s₀ = true := by simp only [eval, z₁] at ev; simpa using ev
     exact frontFast_eq2 hp hp' pb Sp e S₁ S₂
-  · exact (sealGatherG_rel Sh.go Sh.hgo Sh.quickRel Sh.fastRel Sh.testRel Sh.rel I A T F hp hp' pb).mono
+  · exact (sealGatherG_rel Sh.go Sh.hgo Sh.quickRel Sh.fastRel Sh.testRel Sh.rel inl I A T F hp hp' pb).mono
       (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
 
 end
@@ -419,14 +422,14 @@ theorem sealGather_core (Sh : ShortFn CtxMode.base) (I : InitFn) (A : AadFn)
     (T : ToFn CtxMode.base) (F : FinFn) :
     Verified X86_64.target (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)
       (Proof.AesGcm.sealGatherScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.base) (sealGather_correct Sh I A T F)
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.base) (sealGather_correct Sh I A T F false)
     (sealGather_ct Sh I A T F) gather_implies
 
 theorem sealGatherP_core (Sh : ShortFn CtxMode.powers) (I : InitFn) (A : AadFn)
     (T : ToFn CtxMode.powers) (F : FinFn) :
     Verified X86_64.target (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)
       (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.powers) (sealGather_correct Sh I A T F)
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.powers) (sealGather_correct Sh I A T F false)
     (sealGather_ct Sh I A T F) gatherP_implies
 
 /-! ## In its frame -/

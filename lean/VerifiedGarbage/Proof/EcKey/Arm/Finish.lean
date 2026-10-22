@@ -39,22 +39,28 @@ theorem mask4 (b : Bool) :
     (((4 : BitVec 32) &&& mask32 (b = true)).setWidth 8 : BitVec 8) = if b then 4 else 0 := by
   cases b <;> decide
 
+theorem finishWith_eq (c : Cfg) (x y : Nat) : Impl.EcKey.Arm.Cfg.finishWith c x y =
+    .ldr .r10 wb (c.sl FLAG) :: .mov .r4 (.imm 4) :: .dp .and .r4 .r4 (.reg .r10) :: .strb .r4 .lr 0 ::
+    (storeBytes c.C.len c.n .lr 1 (c.sl x) ++ (storeBytes c.C.len c.n .lr (1 + c.C.len) (c.sl y) ++
+    (.dp .and .r0 .r10 (.imm 1) :: Cfg.restore))) := by
+  simp only [Impl.EcKey.Arm.Cfg.finishWith, List.append_assoc, List.cons_append, List.nil_append]
+
 theorem finish_eq (c : Cfg) : Impl.EcKey.Arm.Cfg.finish c =
     .ldr .r10 wb (c.sl FLAG) :: .mov .r4 (.imm 4) :: .dp .and .r4 .r4 (.reg .r10) :: .strb .r4 .lr 0 ::
     (storeBytes c.C.len c.n .lr 1 (c.sl X) ++ (storeBytes c.C.len c.n .lr (1 + c.C.len) (c.sl Y) ++
     (.dp .and .r0 .r10 (.imm 1) :: Cfg.restore))) := by
-  simp only [Impl.EcKey.Arm.Cfg.finish, List.append_assoc, List.cons_append, List.nil_append]
+  simp only [Impl.EcKey.Arm.Cfg.finish, Impl.EcKey.Arm.Cfg.finishWith, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- The result, the return value and the callee-saved registers. -/
-theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
+theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
     (hlr : s.gpr .lr = o32) (hofit : o32.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)
     (hw : (⟨State.addr o32, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨State.addr o32, 1 + 2 * c.C.len⟩ ⟨base, size⟩)
     {g : Reg → BitVec 32} (hsv : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = g rd.1) (b : Bool)
     (hf : flagW c base s = mask32 (b = true)) :
-    WP isa (.block (Impl.EcKey.Arm.Cfg.finish c)) s fun s' =>
+    WP isa (.block (Impl.EcKey.Arm.Cfg.finishWith c x y)) s fun s' =>
       Spec.Ecdsa.bytesAt s'.mem (State.addr o32) (1 + 2 * c.C.len) =
-        (if b then 4 :: (toBytes c.C.len (sv c base s X) ++ toBytes c.C.len (sv c base s Y))
+        (if b then 4 :: (toBytes c.C.len (sv c base s x) ++ toBytes c.C.len (sv c base s y))
           else List.replicate (1 + 2 * c.C.len) 0) ∧
       s'.gpr .r0 = (if b then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
@@ -66,8 +72,8 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hsz : size = 4096 := rfl
-  have hX := sl_le c h7 (i := X) (by decide)
-  have hY := sl_le c h7 (i := Y) (by decide)
+  have hX := sl_le c h7 (i := x) hx
+  have hY := sl_le c h7 (i := y) hy
   have hF := sl_le c h7 (i := FLAG) (by decide)
   generalize hout64 : State.addr o32 = out at hw hd ⊢
   have hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 1 + 2 * c.C.len →
@@ -80,7 +86,7 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     fun rd hrd w hw => by
       have := saved_lt rd hrd
       simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega_arith)
-  rw [finish_eq]
+  rw [finishWith_eq]
   -- The flag and the leading byte.
   refine wp_ldr (hs.off_lt (by omega_arith)) (hs.ea (by omega_arith)) (hs.read (d := c.sl FLAG) (n := 4) (by omega_arith))
     fun s₁ u₁ => ?_
@@ -104,10 +110,10 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_arith)))
   have hb₄ : s₄.gpr .lr = o32 := by rw [m₄.gpr, hb₃]
   have hc₄ : s₄.gpr .r10 = mask32 (b = true) := by rw [m₄.gpr, hc₃]
-  have x₄ : wordsVal s₄.mem base (c.sl X) c.n = sv c base s X := by
+  have x₄ : wordsVal s₄.mem base (c.sl x) c.n = sv c base s x := by
     rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₃]
   -- `x`, from `out + 1`.
-  refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₄ (dst := .lr) (d := 1) (a := c.sl X) (by decide)
+  refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₄ (dst := .lr) (d := 1) (a := c.sl x) (by decide)
     (by decide) b hc₄ hX (by omega_arith) hlhi (by rw [hb₄]; omega_arith) (by omega_arith) (fun e m he => ⟨_, by rw [m₄.wr, k₃.wr]; exact hw, by
       rw [hb₄, hout64, Offset.add_add]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
     (by rw [hb₄, hout64]; exact hdsc hX (by omega_arith))) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
@@ -117,11 +123,11 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have U₅ := O₅.unch_far (hscd (d := 1) (by omega_arith))
   have hb₅ : s₅.gpr .lr = o32 := by rw [k₅.gpr _ (by decide), hb₄]
   have hc₅ : s₅.gpr .r10 = mask32 (b = true) := by rw [k₅.gpr _ (by decide), hc₄]
-  have y₅ : wordsVal s₅.mem base (c.sl Y) c.n = sv c base s Y := by
+  have y₅ : wordsVal s₅.mem base (c.sl y) c.n = sv c base s y := by
     rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith),
       U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₃]
   -- `y`, from `out + 1 + len`.
-  refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₅ (dst := .lr) (d := 1 + c.C.len) (a := c.sl Y)
+  refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₅ (dst := .lr) (d := 1 + c.C.len) (a := c.sl y)
     (by decide) (by decide) b hc₅ hY (by omega_arith) hlhi (by rw [hb₅]; omega_arith) (by omega_arith) (fun e m he => ⟨_, by rw [k₅.wr, m₄.wr, k₃.wr]; exact hw, by
       rw [hb₅, hout64, Offset.add_add]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
     (by rw [hb₅, hout64]; exact hdsc hY (by omega_arith))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
@@ -146,7 +152,7 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
         bytesAt_keep O₅ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith)]
       exact congrArg (· :: []) L₄
     have xs : Spec.Ecdsa.bytesAt s₆.mem (out + BitVec.ofNat 64 1) c.C.len =
-        if b then toBytes c.C.len (sv c base s X) else List.replicate c.C.len 0 := by
+        if b then toBytes c.C.len (sv c base s x) else List.replicate c.C.len 0 := by
       rw [bytesAt_keep O₆ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega_arith) (by omega_arith)) (by omega_arith)
         (by omega_arith), e₅]
     rw [m', u₇.mem, show 1 + 2 * c.C.len = 1 + (c.C.len + c.C.len) by omega_arith, bytesAt_add, bytesAt_add, lead, xs,
@@ -162,5 +168,21 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   · rw [m', u₇.mem, ← hm₃]
     exact ((O₄.mono (Nat.zero_le _) (by omega_arith)).trans ((outside_shift O₅ (by omega_arith)).mono (Nat.zero_le _)
       (by omega_arith))).trans ((outside_shift O₆ (by omega_arith)).mono (Nat.zero_le _) (by omega_arith))
+
+theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
+    (hlr : s.gpr .lr = o32) (hofit : o32.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)
+    (hw : (⟨State.addr o32, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
+    (hd : Region.Disjoint ⟨State.addr o32, 1 + 2 * c.C.len⟩ ⟨base, size⟩)
+    {g : Reg → BitVec 32} (hsv : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = g rd.1) (b : Bool)
+    (hf : flagW c base s = mask32 (b = true)) :
+    WP isa (.block (Impl.EcKey.Arm.Cfg.finish c)) s fun s' =>
+      Spec.Ecdsa.bytesAt s'.mem (State.addr o32) (1 + 2 * c.C.len) =
+        (if b then 4 :: (toBytes c.C.len (sv c base s X) ++ toBytes c.C.len (sv c base s Y))
+          else List.replicate (1 + 2 * c.C.len) 0) ∧
+      s'.gpr .r0 = (if b then 1 else 0) ∧
+      (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
+      Rest [.r0, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] s s' ∧
+      Outside (State.addr o32) 0 (1 + 2 * c.C.len) s.mem s'.mem :=
+  pointFinish_ok hc (by decide) (by decide) hs hlr hofit hw hd hsv b hf
 
 end VG.Proof.EcKey.Arm

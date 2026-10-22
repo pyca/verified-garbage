@@ -65,6 +65,15 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
 theorem ladSlots_eq (c : Cfg) : ladSlots c.ladderCfg = [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4,
     T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
 
+/-- The scalar's byte width fits the stored table. -/
+theorem scalarBits_le (hc : CfgOk c) : 8 * c.C.len ≤ 64 * c.n := by
+  have := hc.len_hi; omega
+
+/-- The encoded scalar width is an ARM immediate. -/
+theorem scalarBits_enc (hc : CfgOk c) : encodable (BitVec.ofNat 32 (8 * c.C.len)) = true := by
+  have h : c.C.len < 73 := by have := hc.len_hi; have := hc.n10; omega
+  exact (by decide : ∀ len < 73, encodable (BitVec.ofNat 32 (8 * len)) = true) _ h
+
 theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size 8192 := by
   have hn := hc.n0
   have h7 := hc.n10
@@ -75,8 +84,10 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size 8192 := by
     ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
-    bitsAt_le c h7 (j := 0) (by decide), ?_⟩
+    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega,
+      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega⟩,
+    (by have := bitsAt_le c h7 (j := 0) (by decide); have := hc.len_hi;
+        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, GX, GY, ONEP])

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Powers
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -20,10 +21,11 @@ its instance of the existing context-mode interface; no contract changes.
 namespace VG.Proof.Gcm.X86_64.Stitch
 open VG VG.X86_64
 
-/-- The key context of `vg_aes_gcm_init_prepared`. -/
-def CtxMode.prepared : CtxMode where
+/-- A prepared key context holding its first `n` pairs of powers (`PowersN`),
+for loops that read no other. -/
+def CtxMode.preparedN (n : Nat) (hn : 8 ≤ n ∧ n ≤ 24 := by decide) : CtxMode where
   len := 1024
-  ok := Spec.Gcm.PreparedPowersRepr
+  ok := PowersN n
   ge := by decide
   le := Nat.le_refl _
   frame {rs m m' p} hf hd hw h := by
@@ -33,20 +35,30 @@ def CtxMode.prepared : CtxMode where
     have keep (o : Nat) (ho : o + 16 ≤ 1024) :
         m'.readW (p + BitVec.ofNat 64 o) 128 = m.readW (p + BitVec.ofNat 64 o) 128 :=
       hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base _ ho (by omega)) hd (by decide)
+    obtain ⟨_, hn₂⟩ := hn
     intro k hk
     rw [keep _ (by omega), keep _ (by omega), hH]
     exact h k hk
 
+/-- The key context of `vg_aes_gcm_prepare`: all 24 pairs, whose `ok` is
+`Spec.Gcm.PreparedPowersRepr`. -/
+abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
+
+/-- The key context of `vg_aes_gcm_prepare16`: its first 8 pairs, which the
+256-bit loops read. -/
+abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
+
 /-- The interleaved-loop precondition, with prepared powers. -/
-structure SPrePrepared (s₀ : State) (lo : Nat := 16) : Prop where
+structure SPrePrepared (s₀ : State) (lo : Nat := 16) (n : Nat := 24) : Prop where
   base : SPre s₀ lo
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) 1024
   wrap_k : (kp s₀).toNat + 1024 ≤ 2 ^ 64
   d_k : (dR s₀).Disjoint (kPR s₀)
   p_k : (pR s₀).Disjoint (kPR s₀)
-  pow : Spec.Gcm.PreparedPowersRepr s₀.mem (kp s₀)
+  pow : PowersN n s₀.mem (kp s₀)
 
-theorem SPreM.toPrepared {s₀ : State} {lo : Nat} (h : SPreM CtxMode.prepared s₀ lo) : SPrePrepared s₀ lo :=
+theorem SPreM.toPrepared {s₀ : State} {lo n : Nat} {hn : 8 ≤ n ∧ n ≤ 24} (h : SPreM (CtxMode.preparedN n hn) s₀ lo) :
+    SPrePrepared s₀ lo n :=
   ⟨h.base, h.k_in, h.wrap_k, h.d_k, h.p_k, h.ok⟩
 
 end VG.Proof.Gcm.X86_64.Stitch

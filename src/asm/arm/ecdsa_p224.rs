@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
+/// The function saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 224 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -665,7 +665,7 @@ ldr r4, [r12, #312]
 str r4, [r12, #3576]
 ldr r4, [r12, #316]
 str r4, [r12, #3580]
-mov r11, #256
+mov r11, #224
 23:
 sub r11, r11, #1
 ldr r4, [r12, #512]
@@ -1586,7 +1586,7 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function is `vg_ecdsa_p224_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p224`'s checks of the public key: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 256 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` and `vg_p224_point_add` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
+/// The function is `vg_ecdsa_p224_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p224`'s checks of the public key: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 224 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` and `vg_p224_point_add` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
 ///
 /// # Safety
 ///
@@ -3246,7 +3246,7 @@ ldr r4, [r12, #312]
 str r4, [r12, #3576]
 ldr r4, [r12, #316]
 str r4, [r12, #3580]
-mov r11, #256
+mov r11, #224
 25:
 sub r11, r11, #1
 ldr r4, [r12, #512]
@@ -3736,7 +3736,7 @@ ldr r4, [r12, #312]
 str r4, [r12, #3576]
 ldr r4, [r12, #316]
 str r4, [r12, #3580]
-mov r11, #256
+mov r11, #224
 27:
 sub r11, r11, #1
 ldr r4, [r12, #512]

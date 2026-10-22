@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
@@ -12,6 +12,10 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+meta import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -256,6 +260,41 @@ theorem finArgs_check : ∃ hc, (taint.check (Taint.ofRegs [.r11, .rsp]) (.block
 
 /-! ## The pieces, in two runs -/
 
+theorem covers_pushed {rd wr : List Region} {st : State} (hc : Covers (rd ++ wr) (st.rd ++ st.wr)) :
+    Covers (rd ++ wr) ((pushed [.rax] st).rd ++ (pushed [.rax] st).wr) := fun a n hi => by
+  obtain ⟨r, hr, hcr⟩ := hc a n hi
+  refine ⟨r, ?_, hcr⟩
+  rw [pushed_rd, pushed_wr]
+  rcases List.mem_append.mp hr with hr | hr
+  · exact List.mem_append_left _ hr
+  · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
+
+theorem covers_pushed_wr {wr : List Region} {st : State} (hw : Covers wr st.wr) :
+    Covers wr (pushed [.rax] st).wr := fun a n hi => by
+  obtain ⟨r, hr, hcr⟩ := hw a n hi
+  exact ⟨r, by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr, hcr⟩
+
+/-- `RelCT.callEx`, for a function called or (`inl`) inlined (`callOr`). -/
+theorem RelCT.callOrEx (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
+      k.pre ((enter inl s₁).withRegions rd₁ wr₁) ∧ k.pre ((enter inl s₂).withRegions rd₂ wr₂) ∧
+      k.pub ((enter inl s₁).withRegions rd₁ wr₁) ((enter inl s₂).withRegions rd₂ wr₂) ∧
+      Covers (rd₁ ++ wr₁) (s₁.rd ++ s₁.wr) ∧ Covers wr₁ s₁.wr ∧
+      Covers (rd₂ ++ wr₂) (s₂.rd ++ s₂.wr) ∧ Covers wr₂ s₂.wr ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (callOr inl F.fn) fun _ _ => True := by
+  cases inl
+  · simp only [enter_false] at hP
+    exact RelCT.callEx F.ok F.ct hP
+  · simp only [enter_true] at hP
+    show RelCT isa P (.frame (.push [.rax]) F.fn.code (.pop .rax 1)) _
+    refine RelCT.frame (fun s₁ s₂ h => (hP s₁ s₂ h).choose_spec.choose_spec.choose_spec.choose_spec.2.2.2.2.2.2.2)
+      (regionModel.relCT_inline (Post := fun a b => abiPreserved a b ∧ k.post a b)
+        (fun a h => let ⟨t, b, e, ab, pb⟩ := F.ok a h; ⟨t, b, e, ab, pb⟩) F.ct ?_)
+    rintro a b ⟨s₁, s₂, h, rfl, rfl⟩
+    obtain ⟨rd₁, wr₁, rd₂, wr₂, p₁, p₂, hpub, c₁, w₁, c₂, w₂, -⟩ := hP s₁ s₂ h
+    exact ⟨rd₁, wr₁, rd₂, wr₂, p₁, p₂, hpub, covers_pushed c₁, covers_pushed_wr w₁, covers_pushed c₂,
+      covers_pushed_wr w₂⟩
+
 section
 variable {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀')
 include hp hp' pb
@@ -305,16 +344,16 @@ theorem entry2_rel : RelCT isa (fun s₁ s₂ => E1 s₀ s₁ ∧ E1 s₀' s₂)
       · rw [h.1.2.1 _ (by decide) (by decide) (by decide), h.2.2.1 _ (by decide) (by decide) (by decide), pb.rsp])
     entry2_check) (fun _ => w_entry2 hp) (fun _ => w_entry2 hp')
 
-theorem init_rel (I : InitFn) : RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) (.call I.fn.name I.fn.code)
+theorem init_rel (inl : Bool) (I : InitFn) : RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) (callOr inl I.fn)
     fun s₁ s₂ => Mid s₀ (AL s₀) 0 [] s₁ ∧ Mid s₀' (AL s₀') 0 [] s₂ := by
-  refine pstep (RelCT.callEx (k := initK) I.ok I.ct fun s₁ s₂ h => ?_) (fun _ => w_init hp I) (fun _ => w_init hp' I)
+  refine pstep (RelCT.callOrEx inl I fun s₁ s₂ h => ?_) (fun _ => w_init hp inl I) (fun _ => w_init hp' inl I)
   obtain ⟨⟨B₁, di₁, si₁, dx₁, cx₁⟩, ⟨B₂, di₂, si₂, dx₂, cx₂⟩⟩ := h
-  obtain ⟨p₁, c₁, w₁⟩ := initEntry hp B₁ di₁ si₁ dx₁ cx₁
-  obtain ⟨p₂, c₂, w₂⟩ := initEntry hp' B₂ di₂ si₂ dx₂ cx₂
+  obtain ⟨p₁, c₁, w₁⟩ := initEntry (inl := inl) hp B₁ di₁ si₁ dx₁ cx₁
+  obtain ⟨p₂, c₂, w₂⟩ := initEntry (inl := inl) hp' B₂ di₂ si₂ dx₂ cx₂
   refine ⟨_, _, _, _, p₁, p₂, ?_, c₁, w₁, c₂, w₂, by rw [B₁.rsp, B₂.rsp]; exact pb.rsp.symm⟩
-  simp only [initK, initPub, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp), entry_rsp B₁.rsp,
-    entry_rsp B₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, K, Nn, pb.rdi, pb.rdx, pb.rcx, pb.st, pb.rsp, SP,
+  simp only [initK, initPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp), enter_rsp B₁.rsp,
+    enter_rsp B₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, K, Nn, pb.rdi, pb.rdx, pb.rcx, pb.st, pb.rsp, SP,
     and_self]
 
 theorem aadArgs_rel : RelCT isa (fun s₁ s₂ => Mid s₀ (AL s₀) 0 [] s₁ ∧ Mid s₀' (AL s₀') 0 [] s₂) (.block aadArgs)
@@ -323,18 +362,18 @@ theorem aadArgs_rel : RelCT isa (fun s₁ s₂ => Mid s₀ (AL s₀) 0 [] s₁ �
   rw [show aadArgs = .mov .r11 (.mem (at_ .rsp 48)) :: aadArgs.tail from rfl]
   exact rel_base hp hp' pb (fun _ _ h => ⟨_, _, _, _, h.1.toBase, h.2.toBase⟩) aadArgs_check
 
-theorem aad_rel (A : AadFn) : RelCT isa (fun s₁ s₂ => P4 s₀ s₁ ∧ P4 s₀' s₂) (.call A.fn.name A.fn.code)
+theorem aad_rel (inl : Bool) (A : AadFn) : RelCT isa (fun s₁ s₂ => P4 s₀ s₁ ∧ P4 s₀' s₂) (callOr inl A.fn)
     fun s₁ s₂ => Mid s₀ (AL s₀) 0 (ad s₀) s₁ ∧ Mid s₀' (AL s₀') 0 (ad s₀') s₂ := by
-  refine pstep (RelCT.callEx (k := aadK) A.ok A.ct fun s₁ s₂ h => ?_) (fun _ => w_aad hp A) (fun _ => w_aad hp' A)
+  refine pstep (RelCT.callOrEx inl A fun s₁ s₂ h => ?_) (fun _ => w_aad hp inl A) (fun _ => w_aad hp' inl A)
   obtain ⟨⟨M₁, di₁, si₁, dx₁, cx₁, r8₁⟩, ⟨M₂, di₂, si₂, dx₂, cx₂, r8₂⟩⟩ := h
-  obtain ⟨p₁, c₁, w₁⟩ := aadEntry hp M₁.toBase (hp.a_w.symm.sub_left stR_sub) hp.b_a
+  obtain ⟨p₁, c₁, w₁⟩ := aadEntry (inl := inl) hp M₁.toBase (hp.a_w.symm.sub_left stR_sub) hp.b_a
     (covers_of_mem (by rw [hp.rd]; simp)) hp.w_ad (AL s₀).isLt di₁ si₁ cx₁ (by rw [r8₁, ofNat_toNat])
-  obtain ⟨p₂, c₂, w₂⟩ := aadEntry hp' M₂.toBase (hp'.a_w.symm.sub_left stR_sub) hp'.b_a
+  obtain ⟨p₂, c₂, w₂⟩ := aadEntry (inl := inl) hp' M₂.toBase (hp'.a_w.symm.sub_left stR_sub) hp'.b_a
     (covers_of_mem (by rw [hp'.rd]; simp)) hp'.w_ad (AL s₀').isLt di₂ si₂ cx₂ (by rw [r8₂, ofNat_toNat])
   refine ⟨_, _, _, _, p₁, p₂, ?_, c₁, w₁, c₂, w₂, by rw [M₁.rsp, M₂.rsp]; exact pb.rsp.symm⟩
-  simp only [aadK, aadPub, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.r8 ≠ .rsp), entry_rsp M₁.rsp, entry_rsp M₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂,
+  simp only [aadK, aadPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_rsp M₁.rsp, enter_rsp M₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂,
     cx₁, cx₂, r8₁, r8₂, K, Ad, AL, pb.rdi, pb.r8, pb.r9, pb.st, pb.rsp, SP, and_self]
 
 theorem finArgs_rel : RelCT isa (fun s₁ s₂ => Fin s₀ s₁ ∧ Fin s₀' s₂) (.block finArgs)
@@ -344,17 +383,17 @@ theorem finArgs_rel : RelCT isa (fun s₁ s₂ => Fin s₀ s₁ ∧ Fin s₀' s�
   exact rel_base hp hp' pb (fun _ _ h => let ⟨_, _, b₁, _⟩ := h.1; let ⟨_, _, b₂, _⟩ := h.2;
     ⟨_, _, _, _, b₁, b₂⟩) finArgs_check
 
-theorem fin_rel (F : FinFn) : RelCT isa (fun s₁ s₂ => P7 s₀ s₁ ∧ P7 s₀' s₂) (.call F.fn.name F.fn.code)
+theorem fin_rel (inl : Bool) (F : FinFn) : RelCT isa (fun s₁ s₂ => P7 s₀ s₁ ∧ P7 s₀' s₂) (callOr inl F.fn)
     fun _ _ => True := by
-  refine RelCT.callEx (k := finK) F.ok F.ct fun s₁ s₂ h => ?_
+  refine RelCT.callOrEx inl F fun s₁ s₂ h => ?_
   obtain ⟨⟨⟨_, _, B₁, -⟩, di₁, si₁, dx₁, cx₁, r8₁, r9₁⟩, ⟨⟨_, _, B₂, -⟩, di₂, si₂, dx₂, cx₂, r8₂, r9₂⟩⟩ := h
-  obtain ⟨p₁, c₁, w₁⟩ := finEntry hp B₁ di₁ si₁ dx₁ r9₁
-  obtain ⟨p₂, c₂, w₂⟩ := finEntry hp' B₂ di₂ si₂ dx₂ r9₂
+  obtain ⟨p₁, c₁, w₁⟩ := finEntry (inl := inl) hp B₁ di₁ si₁ dx₁ r9₁
+  obtain ⟨p₂, c₂, w₂⟩ := finEntry (inl := inl) hp' B₂ di₂ si₂ dx₂ r9₂
   refine ⟨_, _, _, _, p₁, p₂, ?_, c₁, w₁, c₂, w₂, by rw [B₁.rsp, B₂.rsp]; exact pb.rsp.symm⟩
-  simp only [finK, finPub, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.r8 ≠ .rsp), entry_gpr _ _ (by decide : Reg.r9 ≠ .rsp), entry_rsp B₁.rsp,
-    entry_rsp B₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, K, AL, pb.rdi, pb.rsi, pb.r9,
+  simp only [finK, finPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_gpr _ _ (by decide : Reg.r9 ≠ .rsp), enter_rsp B₁.rsp,
+    enter_rsp B₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, K, AL, pb.rdi, pb.rsi, pb.r9,
     pb.st, pb.len, pb.tg, pb.rsp, SP, and_self]
 
 end
@@ -465,8 +504,8 @@ theorem slices_rel (T : ToFn M) {ap ap' : BitVec 64} {A A' : List Byte} (hap : a
     exact ⟨Cnt s₀ - (i + 1), by omega, i + 1, by omega, rfl, M₁, M₂⟩
 
 /-- The text, in two runs. -/
-theorem text_rel (A : AadFn) (T : ToFn M) :
-    RelCT isa (fun s₁ s₂ => Mid s₀ (AL s₀) 0 (ad s₀) s₁ ∧ Mid s₀' (AL s₀') 0 (ad s₀') s₂) (text A.fn T.fn)
+theorem text_rel (inl : Bool) (A : AadFn) (T : ToFn M) :
+    RelCT isa (fun s₁ s₂ => Mid s₀ (AL s₀) 0 (ad s₀) s₁ ∧ Mid s₀' (AL s₀') 0 (ad s₀') s₂) (text A.fn T.fn inl)
       fun s₁ s₂ => Fin s₀ s₁ ∧ Fin s₀' s₂ := by
   unfold text
   refine RelCT.seq (pstep ?_ (fun _ => w_textLen hp) (fun _ => w_textLen hp')) ?_
@@ -497,27 +536,27 @@ theorem text_rel (A : AadFn) (T : ToFn M) :
   refine RelCT.seq ((pstep (rel_taint [.r11] (fun _ _ h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.1, h.2.2.1, pb.w]) padArgs_check)
     (fun _ => w_padArgs hp) (fun _ => w_padArgs hp')).mono (fun _ _ h => h.1) fun _ _ h => h) ?_
-  refine pstep (RelCT.callEx (k := aadK) A.ok A.ct fun s₁ s₂ h => ?_) (fun _ h => w_padCall hp A h hr)
-    (fun _ h => w_padCall hp' A h hr')
+  refine pstep (RelCT.callOrEx inl A fun s₁ s₂ h => ?_) (fun _ h => w_padCall hp inl A h hr)
+    (fun _ h => w_padCall hp' inl A h hr')
   obtain ⟨⟨M₁, di₁, si₁, dx₁, cx₁, r8₁⟩, ⟨M₂, di₂, si₂, dx₂, cx₂, r8₂⟩⟩ := h
   obtain ⟨f₁, f₂, f₃, f₄, f₅⟩ := pad_facts hp
   obtain ⟨f₁', f₂', f₃', f₄', f₅'⟩ := pad_facts hp'
-  obtain ⟨p₁, c₁, w₁⟩ := aadEntry hp M₁.toBase f₁ f₂ f₃ f₄ f₅ di₁ si₁ cx₁ r8₁
-  obtain ⟨p₂, c₂, w₂⟩ := aadEntry hp' M₂.toBase f₁' f₂' f₃' f₄' f₅' di₂ si₂ cx₂ r8₂
+  obtain ⟨p₁, c₁, w₁⟩ := aadEntry (inl := inl) hp M₁.toBase f₁ f₂ f₃ f₄ f₅ di₁ si₁ cx₁ r8₁
+  obtain ⟨p₂, c₂, w₂⟩ := aadEntry (inl := inl) hp' M₂.toBase f₁' f₂' f₃' f₄' f₅' di₂ si₂ cx₂ r8₂
   refine ⟨_, _, _, _, p₁, p₂, ?_, c₁, w₁, c₂, w₂, by rw [M₁.rsp, M₂.rsp]; exact pb.rsp.symm⟩
-  simp only [aadK, aadPub, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.r8 ≠ .rsp), entry_rsp M₁.rsp, entry_rsp M₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂,
+  simp only [aadK, aadPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_rsp M₁.rsp, enter_rsp M₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂,
     cx₁, cx₂, r8₁, r8₂, K, AL, pl, pb.rdi, pb.r9, pb.st, pb.w, pb.rsp, SP, and_self]
 
 end
 
 /-- The streaming path, in two runs. -/
-theorem stream_rel {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀') (I : InitFn)
-    (A : AadFn) (T : ToFn M) (F : FinFn) :
-    RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) (stream I.fn A.fn T.fn F.fn) fun _ _ => True := by
+theorem stream_rel {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀') (inl : Bool)
+    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
+    RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) (stream I.fn A.fn T.fn F.fn inl) fun _ _ => True := by
   unfold stream
-  exact RelCT.seq (init_rel hp hp' pb I) (RelCT.seq (aadArgs_rel hp hp' pb) (RelCT.seq (aad_rel hp hp' pb A)
-    (RelCT.seq (text_rel hp hp' pb A T) (RelCT.seq (finArgs_rel hp hp' pb) (fin_rel hp hp' pb F)))))
+  exact RelCT.seq (init_rel hp hp' pb inl I) (RelCT.seq (aadArgs_rel hp hp' pb) (RelCT.seq (aad_rel hp hp' pb inl A)
+    (RelCT.seq (text_rel hp hp' pb inl A T) (RelCT.seq (finArgs_rel hp hp' pb) (fin_rel hp hp' pb inl F)))))
 
 end VG.Proof.AesGcm.X86_64.Gather

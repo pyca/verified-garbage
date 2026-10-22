@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.P256.EcdhInverse
 public import VerifiedGarbage.Impl.P256.EcdhDouble
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Impl.AArch64Weave
 import VerifiedGarbage.Impl.P256.VerifyRegisters
 
 @[expose] public section
@@ -35,13 +36,21 @@ def add : Prog isa :=
   .seq (VerifyAllocated.program .cachedHead) (VerifyAllocated.program .jacTail)
 def dblStep : Prog isa :=
   .seq (double) (.block [.subImm .x .x19 .x19 2048,.lsr .x .x4 .x19 11])
+/-- Four of the window's five doublings. -/
 def dbls : Prog isa :=
-  .seq (.block [.movz .x .x4 10240 0,.add .x .x19 .x19 .x4])
+  .seq (.block [.movz .x .x4 8192 0,.add .x .x19 .x19 .x4])
     (.loop (dblStep) (.nonzero .x .x4))
+
+/-- The fifth doubling, its instructions interleaved with the rows of the
+digit's selection, which load the table and write only vector registers:
+the doubling writes neither, so the two run as the doubling and then the
+rows. -/
+def doubleSel : List Instr := Impl.AArch64Weave.weave EcdhDouble.code (EcdhSelect.neonScan K.tbl 16)
 
 def step : Prog isa :=
   .seq (.block [decCounter]) <| .seq (dbls) <|
-  .seq (.block (tc.digit ++ select ++ negYW K.M 5 K.neg K.zero K.E.y K.bits)) <|
+  .seq (.block (tc.digit ++ EcdhSelect.neonSetup ++ doubleSel ++ EcdhSelect.neonStore K.E.x z2 ++
+    negYW K.M 5 K.neg K.zero K.E.y K.bits)) <|
   .seq (add) <|
   .block (nzMask 4 K.R.z ++ selPt 4 K.D K.E K.D ++ tc.digit ++
     [zero7,.movz .x .x5 1 0,.subs .x .x16 .x2 .x5,.sbc .x .x3 .x7 .x7] ++

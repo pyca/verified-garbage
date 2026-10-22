@@ -261,11 +261,19 @@ def maskBody : List Instr :=
   [.ldrb .x14 .x12 0, .logic .and .w .x14 .x14 .x11, .strb .x14 .x12 0, .addImm .x .x12 .x12 1,
     .subImm .x .x13 .x13 1]
 
+/-- Sixteen bytes of the data ANDed with `v16`. -/
+def maskV : List Instr :=
+  [.ldrq .v17 .x12 0, .vop (.logic .and .v17 .v17 .v16), .strq .v17 .x12 0, .addImm .x .x12 .x12 16,
+    .subImm .x .x14 .x14 1]
+
 /-- Every byte of the data ANDed with `x10 − 1`: all ones if the tags are
-equal (`x10` is 0), zeros if not. -/
+equal (`x10` is 0), zeros if not. Sixteen bytes at a time, with `x10 − 1`'s
+low byte in each byte of `v16`, then the last `len mod 16` one at a time. -/
 def mask : Prog isa :=
-  .seq (.block [.subImm .x .x11 .x10 1, mov .x12 .x27, mov .x13 .x28])
-    (.ite (.zero .x .x13) (.block []) (.loop (.block maskBody) (.nonzero .x .x13)))
+  .seq (.block [.subImm .x .x11 .x10 1, mov .x12 .x27, .vop (.dup .b16 .v16 .x11), .lsr .x .x14 .x28 4,
+      .lsl .x .x13 .x14 4, .sub .x .x13 .x28 .x13])
+    (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block maskV) (.nonzero .x .x14)))
+      (.ite (.zero .x .x13) (.block []) (.loop (.block maskBody) (.nonzero .x .x13))))
 
 /-! ## The functions -/
 

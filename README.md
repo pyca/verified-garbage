@@ -1174,7 +1174,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, SHA extensions</td>
 
 <td>✅</td>
 
@@ -1252,7 +1252,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ</td>
 
 <td>❌</td>
 
@@ -1558,13 +1558,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ BMI2, ADX</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1724,7 +1724,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -2038,7 +2038,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2054,7 +2054,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅ umaal</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2070,7 +2070,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅ SHA extensions</td>
 

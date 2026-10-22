@@ -102,18 +102,20 @@ rust = "stable"
 # AVX. And RSAES-OAEP with SHA-1's and SHA-256's SHA extensions
 # and with SHA-512's baseline code and RSA's ADX code, or with
 # SHA-512's AVX2 code and RSA's baseline or ADX code (whatever
-# the runner's AVX512_IFMA).
+# the runner's AVX512_IFMA). And SM4-GCM with each of its GHASH
+# implementations: the baseline's, PCLMULQDQ's and VPCLMULQDQ's.
 [[cpu]]
 chip = "native"
 arch = "x86_64"
 runs = """
-- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
+- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize sm4_gcm cpu
+none | sm4_gcm
 aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
-pclmulqdq,ssse3 | aes_gcm cpu
+pclmulqdq,ssse3 | aes_gcm sm4_gcm cpu
 aes,pclmulqdq,ssse3 | aes_gcm cpu
 aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
 aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
-aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm sm4_gcm cpu
 aes,avx,avx2,ssse3,vaes | aes_xts cpu
 sha,ssse3 | dsa_parameters rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
 avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep cpu
@@ -276,14 +278,14 @@ none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job
-# runs them): `none` takes RSA and FFDH's baseline code, which a CPU with `umaal`
-# (every runner's) never chooses.
+# runs them): `none` takes RSA, FFDH and DSA parameter generation's baseline
+# code, which a CPU with `umaal` (every runner's) never chooses.
 [[cpu]]
 chip = "native"
 arch = "arm"
 os = "ubuntu-26.04-arm"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 runs = """
-none | rsa ffdh cpu
+none | rsa ffdh dsa_parameters cpu
 """
 

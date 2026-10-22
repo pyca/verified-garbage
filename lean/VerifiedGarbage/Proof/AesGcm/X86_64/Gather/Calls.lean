@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the calls without stack arguments
@@ -90,6 +92,101 @@ theorem entry_keep {st : State} (hsp : st.gpr .rsp = SP s) (rd wr : List Region)
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨tR s, by simp, by rw [hsp]; exact below_sub (by decide) (by decide)⟩
 
+/-! ## A function called or inlined -/
+
+/-- The state a function of the streaming path runs from: entered by a call,
+or (`inl`) inlined in a frame of one word, where the call stores its return
+address (`callOr`). -/
+def enter (inl : Bool) (st : State) : State := if inl then pushed [.rax] st else st.callEntry
+
+theorem enter_true (st : State) : enter true st = pushed [.rax] st := by simp only [enter, ↓reduceIte]
+theorem enter_false (st : State) : enter false st = st.callEntry := by
+  simp only [enter, Bool.false_eq_true, ↓reduceIte]
+
+theorem enter_gpr {inl : Bool} {st : State} (rd wr : List Region) {r : Reg} (hr : r ≠ .rsp) :
+    ((enter inl st).withRegions rd wr).gpr r = st.gpr r := by
+  cases inl
+  · rw [enter_false]; exact entry_gpr rd wr hr
+  · rw [State.withRegions_gpr, enter_true]; exact pushed_gpr _ _ hr
+
+theorem enter_rsp {inl : Bool} {st : State} (hsp : st.gpr .rsp = SP s) (rd wr : List Region) :
+    ((enter inl st).withRegions rd wr).gpr .rsp = SP s - BitVec.ofNat 64 8 := by
+  cases inl
+  · rw [enter_false]; exact entry_rsp hsp rd wr
+  · rw [State.withRegions_gpr, enter_true, pushed_rsp, hsp]; rfl
+
+/-- What entering a function leaves as it was: all but its return address's
+word (or the word pushed in its place). -/
+theorem enter_keep {inl : Bool} {st : State} (hsp : st.gpr .rsp = SP s) (h8 : 8 ≤ (SP s).toNat)
+    (rd wr : List Region) : Frame [tR s] st.mem ((enter inl st).withRegions rd wr).mem := by
+  cases inl
+  · rw [enter_false]; exact entry_keep hsp rd wr
+  · rw [State.withRegions_mem, enter_true]
+    have hf := (pushRegs_mem st [.rax] (by decide) (by rw [hsp]; simpa using h8)).1
+    rw [hsp] at hf
+    exact hf.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨tR s, by simp, Offset.sub_below _ (by decide) (by decide)⟩
+
+theorem enter_frame {inl : Bool} {st : State} (hsp : st.gpr .rsp = SP s) (h8 : 8 ≤ (SP s).toNat)
+    (hf : Frame (wR s ++ [tR s]) s.mem st.mem) (rd wr : List Region) :
+    Frame (wR s ++ [tR s]) s.mem ((enter inl st).withRegions rd wr).mem :=
+  hf.trans ((enter_keep hsp h8 rd wr).sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨tR s, by simp, fun _ h => h⟩)
+
+/-- `call0_ok`, for a function called or (`inl`) inlined (`callOr`). -/
+theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (hd : d + 8 ≤ 4888) {st : State}
+    (hsp : st.gpr .rsp = SP s) (h8 : 8 ≤ (SP s).toNat) {rd wr : List Region}
+    (hpre : k.pre ((enter inl st).withRegions rd wr))
+    (hc : Covers (rd ++ wr) (st.rd ++ st.wr)) (hw : Covers wr st.wr) :
+    WP isa (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn) st fun st' =>
+      (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+      Frame (wr ++ [tR s]) st.mem st'.mem ∧
+      ∃ s₂ : State, s₂.mem = st'.mem ∧ k.post ((enter inl st).withRegions rd wr) s₂ := by
+  cases inl
+  · rw [enter_false] at hpre ⊢; exact call0_ok F hd hsp hpre hc hw
+  · rw [enter_true] at hpre ⊢
+    show WP isa (.frame (.push [.rax]) F.fn.code (.pop .rax [Reg.rax].length)) st _
+    have hP : (pushed [.rax] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
+    have hc' : Covers (rd ++ wr) ((pushed [.rax] st).rd ++ (pushed [.rax] st).wr) := fun a n hi => by
+      obtain ⟨r, hr, hcr⟩ := hc a n hi
+      refine ⟨r, ?_, hcr⟩
+      rw [pushed_rd, pushed_wr]
+      rcases List.mem_append.mp hr with hr | hr
+      · exact List.mem_append_left _ hr
+      · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
+    have hw' : Covers wr (pushed [.rax] st).wr := fun a n hi => by
+      obtain ⟨r, hr, hcr⟩ := hw a n hi
+      exact ⟨r, by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr, hcr⟩
+    have hf₀ := enter_keep (inl := true) hsp h8 rd wr
+    rw [State.withRegions_mem] at hf₀
+    refine WP.frame (by simp) (by decide) (by decide) (by rw [hsp]; simpa using h8) ?_
+    refine WP.inlineF F.ok F.sp (by have := F.xd; omega) hpre hc' hw'
+      fun s' hrd hwr habi hfr _ hpost => ⟨by rw [habi.1 _ (by decide)], hwr, ?_⟩
+    have hsp' : s'.gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [habi.1 _ (by decide), hP]
+    refine ⟨fun r hr => ?_, by rw [popped_rd, hrd, pushed_rd], by rw [popped_wr, hwr, pushed_wr]; rfl, ?_,
+      s'.withRegions rd wr, by rw [State.withRegions_mem, popped_mem], hpost⟩
+    · by_cases hs : r = .rsp
+      · subst hs
+        rw [popped_rsp, hsp', hsp]
+        simp only [List.length_cons, List.length_nil]
+        rw [BitVec.sub_add_cancel]
+      · have hra : r ≠ .rax := by
+          intro h; subst h; simp [calleeSaved] at hr
+        rw [popped_gpr _ _ _ hs hra, habi.1 r hr, pushed_gpr _ _ hs]
+    · rw [popped_mem]
+      rw [enter_true] at hf₀
+      refine (hf₀.sub fun r hr => ?_).trans (hfr.sub fun r hr => ?_)
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨tR s, by simp, fun _ h => h⟩
+      · rcases List.mem_append.mp hr with hr | hr
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · simp only [List.mem_singleton] at hr; subst hr
+          refine ⟨tR s, by simp, ?_⟩
+          rw [hP]
+          exact fun a h => stk_sub' (s := s) hd a (below_sub (by have := F.xd; exact this) (by omega) a h)
+
 end
 
 section
@@ -121,9 +218,9 @@ theorem st_sub : ∀ r ∈ [stR s], ∃ t ∈ wR s, r.Sub t := fun r hr => by
 /-! ## `vg_aes_gcm_stream_init` -/
 
 /-- What the call of `vg_aes_gcm_stream_init` needs. -/
-theorem initEntry {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) (h_di : st.gpr .rdi = K s)
+theorem initEntry {inl : Bool} {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) (h_di : st.gpr .rdi = K s)
     (h_si : st.gpr .rsi = Nn s) (h_dx : st.gpr .rdx = s.gpr .rcx) (h_cx : st.gpr .rcx = St s) :
-    initK.pre (st.callEntry.withRegions [⟨K s, 256⟩, nR s] [stR s]) ∧
+    initK.pre ((enter inl st).withRegions [⟨K s, 256⟩, nR s] [stR s]) ∧
       Covers ([⟨K s, 256⟩, nR s] ++ [stR s]) (st.rd ++ st.wr) ∧ Covers [stR s] st.wr := by
   have wsp := hp.w_sp
   have wsp' := hp.w_sp'
@@ -132,10 +229,10 @@ theorem initEntry {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) (
   have hst : (St s).toNat = (W s).toNat + 104 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 104) (by decide)]; omega
   have hsp8 : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
-  have hpre : initK.pre (st.callEntry.withRegions [⟨K s, 256⟩, nR s] [stR s]) := by
-    simp only [initK, initPre, Proof.AesGcm.ret, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp),
-      entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp),
-      entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp), entry_rsp h.rsp, h_di, h_si, h_dx, h_cx, State.withRegions_rd,
+  have hpre : initK.pre ((enter inl st).withRegions [⟨K s, 256⟩, nR s] [stR s]) := by
+    simp only [initK, initPre, Proof.AesGcm.ret, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp),
+      enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp),
+      enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp), enter_rsp h.rsp, h_di, h_si, h_dx, h_cx, State.withRegions_rd,
       State.withRegions_wr]
     exact ⟨trivial, trivial, (hp.k_w.sub_left kS).sub_right stR_sub, hp.n_w.sub_right stR_sub,
       (hp.b_k.sub_left ret_sub).sub_right kS, hp.b_n.sub_left ret_sub, (hp.b_w.sub_left ret_sub).sub_right stR_sub,
@@ -153,16 +250,16 @@ theorem initEntry {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) (
 
 /-- The call of `vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state)` on the
 state in `work`. -/
-theorem initCall_ok (F : InitFn) {st : State} (h : Base s (AL s) 0 st) (h_di : st.gpr .rdi = K s)
+theorem initCall_ok (inl : Bool) (F : InitFn) {st : State} (h : Base s (AL s) 0 st) (h_di : st.gpr .rdi = K s)
     (h_si : st.gpr .rsi = Nn s) (h_dx : st.gpr .rdx = s.gpr .rcx) (h_cx : st.gpr .rcx = St s) :
-    WP isa (.call F.fn.name F.fn.code) st (Mid s (AL s) 0 []) := by
-  obtain ⟨hpre, hc, hw'⟩ := initEntry hp h h_di h_si h_dx h_cx
-  refine WP.mono (call0_ok F (by decide) h.rsp hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
-  have fU := entry_frame h.rsp h.frame [⟨K s, 256⟩, nR s] [stR s]
+    WP isa (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn) st (Mid s (AL s) 0 []) := by
+  obtain ⟨hpre, hc, hw'⟩ := initEntry (inl := inl) hp h h_di h_si h_dx h_cx
+  refine WP.mono (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
+  have fU := enter_frame (inl := inl) h.rsp (by have := hp.w_sp; omega) h.frame [⟨K s, 256⟩, nR s] [stR s]
   rw [State.withRegions_mem] at fU
   simp only [initK, Proof.AesGcm.streamInitX86_64, State.withRegions_mem,
-    entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp), h_di, h_si, h_dx, h_cx,
+    enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp), h_di, h_si, h_dx, h_cx,
     hk_eq hp fU, hm] at hpost
   rw [show (s.gpr .rcx).toNat = NL s from rfl, iv_eq hp fU] at hpost
   have hB := h.after hp hcs hrd hwr hf st_sub fun r hr => by
@@ -174,12 +271,12 @@ theorem initCall_ok (F : InitFn) {st : State} (h : Base s (AL s) 0 st) (h_di : s
 /-! ## `vg_aes_gcm_stream_aad` -/
 
 /-- What the call of `vg_aes_gcm_stream_aad` needs. -/
-theorem aadEntry {ap : BitVec 64} {i : Nat} {D : Addr} {n : Nat} {st : State}
+theorem aadEntry {inl : Bool} {ap : BitVec 64} {i : Nat} {D : Addr} {n : Nat} {st : State}
     (h : Base s ap i st) (hD : (stR s).Disjoint ⟨D, n⟩) (hDt : (tR s).Disjoint ⟨D, n⟩)
     (hDc : Covers [⟨D, n⟩] (s.rd ++ s.wr)) (hDw : D.toNat + n ≤ 2 ^ 64) (hn64 : n < 2 ^ 64)
     (h_di : st.gpr .rdi = K s) (h_si : st.gpr .rsi = St s) (h_cx : st.gpr .rcx = D)
     (h_8 : st.gpr .r8 = BitVec.ofNat 64 n) :
-    aadK.pre (st.callEntry.withRegions [⟨K s, 256⟩, ⟨D, n⟩] [stR s]) ∧
+    aadK.pre ((enter inl st).withRegions [⟨K s, 256⟩, ⟨D, n⟩] [stR s]) ∧
       Covers ([⟨K s, 256⟩, ⟨D, n⟩] ++ [stR s]) (st.rd ++ st.wr) ∧ Covers [stR s] st.wr := by
   have wsp := hp.w_sp
   have wsp' := hp.w_sp'
@@ -190,10 +287,10 @@ theorem aadEntry {ap : BitVec 64} {i : Nat} {D : Addr} {n : Nat} {st : State}
   have hst : (St s).toNat = (W s).toNat + 104 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 104) (by decide)]; omega
   have hsp8 : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
-  have hpre : aadK.pre (st.callEntry.withRegions [⟨K s, 256⟩, ⟨D, n⟩] [stR s]) := by
-    simp only [aadK, aadPre, Proof.AesGcm.ret, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp),
-      entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-      entry_gpr _ _ (by decide : Reg.r8 ≠ .rsp), entry_rsp h.rsp, h_di, h_si, h_cx, h_8, hn,
+  have hpre : aadK.pre ((enter inl st).withRegions [⟨K s, 256⟩, ⟨D, n⟩] [stR s]) := by
+    simp only [aadK, aadPre, Proof.AesGcm.ret, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp),
+      enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
+      enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_rsp h.rsp, h_di, h_si, h_cx, h_8, hn,
       State.withRegions_rd, State.withRegions_wr]
     exact ⟨trivial, trivial, (hp.k_w.sub_left kS).sub_right stR_sub, hD,
       (hp.b_k.sub_left ret_sub).sub_right kS, (hp.b_w.sub_left ret_sub).sub_right stR_sub, hDt.sub_left ret_sub,
@@ -217,24 +314,24 @@ theorem aadEntry {ap : BitVec 64} {i : Nat} {D : Addr} {n : Nat} {st : State}
 /-- The call of `vg_aes_gcm_stream_aad(ctx, state, aad_len, data, len)` on the
 state in `work`, before any text, with `n` bytes of data at `D`, readable
 and apart from the state and the stack. -/
-theorem aadCall_ok (F : AadFn) {ap : BitVec 64} {A : List Byte} {D : Addr} {n : Nat} {st : State}
+theorem aadCall_ok (inl : Bool) (F : AadFn) {ap : BitVec 64} {A : List Byte} {D : Addr} {n : Nat} {st : State}
     (h : Mid s ap 0 A st) (hD : (stR s).Disjoint ⟨D, n⟩) (hDt : (tR s).Disjoint ⟨D, n⟩)
     (hDc : Covers [⟨D, n⟩] (s.rd ++ s.wr)) (hDw : D.toNat + n ≤ 2 ^ 64) (hn64 : n < 2 ^ 64)
     (h_di : st.gpr .rdi = K s) (h_si : st.gpr .rsi = St s) (h_dx : st.gpr .rdx = BitVec.ofNat 64 A.length)
     (h_cx : st.gpr .rcx = D) (h_8 : st.gpr .r8 = BitVec.ofNat 64 n) :
-    WP isa (.call F.fn.name F.fn.code) st (Mid s ap 0 (A ++ bytesAt st.mem D n)) := by
+    WP isa (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn) st (Mid s ap 0 (A ++ bytesAt st.mem D n)) := by
   have hn : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn64
-  obtain ⟨hpre, hc, hw'⟩ := aadEntry hp h.toBase hD hDt hDc hDw hn64 h_di h_si h_cx h_8
-  refine WP.mono (call0_ok F (by decide) h.rsp hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
-  have fU := entry_frame h.rsp h.frame [⟨K s, 256⟩, ⟨D, n⟩] [stR s]
-  have fK := entry_keep h.rsp [⟨K s, 256⟩, ⟨D, n⟩] [stR s]
+  obtain ⟨hpre, hc, hw'⟩ := aadEntry (inl := inl) hp h.toBase hD hDt hDc hDw hn64 h_di h_si h_cx h_8
+  refine WP.mono (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
+  have fU := enter_frame (inl := inl) h.rsp (by have := hp.w_sp; omega) h.frame [⟨K s, 256⟩, ⟨D, n⟩] [stR s]
+  have fK := enter_keep (inl := inl) h.rsp (by have := hp.w_sp; omega) [⟨K s, 256⟩, ⟨D, n⟩] [stR s]
   rw [State.withRegions_mem] at fU fK
   simp only [aadK, Proof.AesGcm.streamAadX86_64, State.withRegions_mem,
-    entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.r8 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, hn, hk_eq hp fU, hm] at hpost
-  have sr₀ : StreamRepr st.callEntry.mem (St s) (ciph s) (hk s) (iv s) A [] := by
+    enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, hn, hk_eq hp fU, hm] at hpost
+  have sr₀ : StreamRepr (enter inl st).mem (St s) (ciph s) (hk s) (iv s) A [] := by
     have := h.sr; rw [ct_zero] at this
     exact streamRepr_frame fK (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) this
@@ -248,10 +345,10 @@ theorem aadCall_ok (F : AadFn) {ap : BitVec 64} {A : List Byte} {D : Addr} {n : 
 /-! ## `vg_aes_gcm_stream_finish` -/
 
 /-- What the call of `vg_aes_gcm_stream_finish` needs. -/
-theorem finEntry {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st)
+theorem finEntry {inl : Bool} {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st)
     (h_di : st.gpr .rdi = K s) (h_si : st.gpr .rsi = s.gpr .rsi) (h_dx : st.gpr .rdx = St s)
     (h_9 : st.gpr .r9 = Tg s) :
-    finK.pre (st.callEntry.withRegions [⟨K s, 256⟩] [stR s, tgR s]) ∧
+    finK.pre ((enter inl st).withRegions [⟨K s, 256⟩] [stR s, tgR s]) ∧
       Covers ([⟨K s, 256⟩] ++ [stR s, tgR s]) (st.rd ++ st.wr) ∧ Covers [stR s, tgR s] st.wr := by
   have wsp := hp.w_sp
   have wsp' := hp.w_sp'
@@ -260,10 +357,10 @@ theorem finEntry {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st)
   have hst : (St s).toNat = (W s).toNat + 104 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 104) (by decide)]; omega
   have hsp8 : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
-  have hpre : finK.pre (st.callEntry.withRegions [⟨K s, 256⟩] [stR s, tgR s]) := by
-    simp only [finK, finPre, Proof.AesGcm.ret, Proof.AesGcm.rounds, entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp),
-      entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp),
-      entry_gpr _ _ (by decide : Reg.r9 ≠ .rsp), entry_rsp h.rsp, h_di, h_si, h_dx, h_9,
+  have hpre : finK.pre ((enter inl st).withRegions [⟨K s, 256⟩] [stR s, tgR s]) := by
+    simp only [finK, finPre, Proof.AesGcm.ret, Proof.AesGcm.rounds, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp),
+      enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp),
+      enter_gpr _ _ (by decide : Reg.r9 ≠ .rsp), enter_rsp h.rsp, h_di, h_si, h_dx, h_9,
       State.withRegions_rd, State.withRegions_wr]
     exact ⟨trivial, trivial, (hp.k_w.sub_left kS).sub_right stR_sub, hp.k_t.sub_left kS,
       hp.t_w.symm.sub_left stR_sub,
@@ -288,24 +385,24 @@ theorem finEntry {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st)
 /-- The call of `vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len,
 text_len, tag)` on the state in `work`, representing the message with the
 additional data and the ciphertext `C`. -/
-theorem finCall_ok (F : FinFn) {ap : BitVec 64} {i : Nat} {C : List Byte} {st : State} (h : Base s ap i st)
+theorem finCall_ok (inl : Bool) (F : FinFn) {ap : BitVec 64} {i : Nat} {C : List Byte} {st : State} (h : Base s ap i st)
     (hsr : StreamRepr st.mem (St s) (ciph s) (hk s) (iv s) (ad s) C) (hC : C.length = L s)
     (h_di : st.gpr .rdi = K s) (h_si : st.gpr .rsi = s.gpr .rsi) (h_dx : st.gpr .rdx = St s)
     (h_cx : st.gpr .rcx = AL s) (h_8 : st.gpr .r8 = stackArg s 3) (h_9 : st.gpr .r9 = Tg s) :
-    WP isa (.call F.fn.name F.fn.code) st fun st' => Base s ap i st' ∧
+    WP isa (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn) st fun st' => Base s ap i st' ∧
       Frame [stR s, tgR s, tR s] st.mem st'.mem ∧
       bytesAt st'.mem (Tg s) 16 = fullTag (ciph s) (hk s) (iv s) (ad s) C := by
-  obtain ⟨hpre, hc, hw'⟩ := finEntry hp h h_di h_si h_dx h_9
-  refine WP.mono (call0_ok F (by decide) h.rsp hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
-  have fU := entry_frame h.rsp h.frame [⟨K s, 256⟩] [stR s, tgR s]
-  have fK := entry_keep h.rsp [⟨K s, 256⟩] [stR s, tgR s]
+  obtain ⟨hpre, hc, hw'⟩ := finEntry (inl := inl) hp h h_di h_si h_dx h_9
+  refine WP.mono (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
+  have fU := enter_frame (inl := inl) h.rsp (by have := hp.w_sp; omega) h.frame [⟨K s, 256⟩] [stR s, tgR s]
+  have fK := enter_keep (inl := inl) h.rsp (by have := hp.w_sp; omega) [⟨K s, 256⟩] [stR s, tgR s]
   rw [State.withRegions_mem] at fU fK
   simp only [finK, Proof.AesGcm.streamFinishX86_64, State.withRegions_mem,
-    entry_gpr _ _ (by decide : Reg.rdi ≠ .rsp), entry_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.rdx ≠ .rsp), entry_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-    entry_gpr _ _ (by decide : Reg.r8 ≠ .rsp), entry_gpr _ _ (by decide : Reg.r9 ≠ .rsp), h_di, h_si, h_dx, h_cx,
+    enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
+    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_gpr _ _ (by decide : Reg.r9 ≠ .rsp), h_di, h_si, h_dx, h_cx,
     h_8, h_9, ciph_eq hp fU, hk_eq hp fU, hm] at hpost
-  have sr₀ : StreamRepr st.callEntry.mem (St s) (ciph s) (hk s) (iv s) (ad s) C :=
+  have sr₀ : StreamRepr (enter inl st).mem (St s) (ciph s) (hk s) (iv s) (ad s) C :=
     streamRepr_frame fK (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) hsr
   have hB := h.after hp hcs hrd hwr hf (fun r hr => by

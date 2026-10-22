@@ -236,13 +236,15 @@ open VG.Impl.Bignum.X86_64.Public in
 `vg_rsa_public`, then the others of `vg_rsa_private_crt` (whose prime
 workspaces name arrays 1, 4 and 5 differently: its chunk, `x` and `T`; the
 one before the last builds the exponentiation's table, `T := T x`, and the
-last computes `2^E mod n` from `2^(E - 64 w)`). -/
+last computes `2^E mod n` from `2^(E - 64 w)`), and the out-of-place
+square of prime recovery. -/
 def MmUse (o a b : Nat) : Prop :=
   (o = aR2 ∧ a = aR2 ∧ b = aR2) ∨ (o = aY ∧ a = aY ∧ b = aY) ∨ (o = aY ∧ a = aY ∧ b = aXm) ∨
   (o = aY ∧ a = aR2 ∧ b = aOne) ∨ (o = aXm ∧ a = aX ∧ b = aR2) ∨ (o = aY ∧ a = aY ∧ b = aOne) ∨
   (o = aR2 ∧ a = aR2 ∧ b = aOne) ∨ (o = aXm ∧ a = aX ∧ b = aOne) ∨ (o = aXm ∧ a = aY ∧ b = aR2) ∨
   (o = aY ∧ a = aXm ∧ b = aY) ∨ (o = aX ∧ a = aX ∧ b = aR2) ∨ (o = aX ∧ a = aX ∧ b = aY) ∨
-  (o = aY ∧ a = aXm ∧ b = aX) ∨ (o = aXm ∧ a = aXm ∧ b = aR2) ∨ (o = aY ∧ a = aR2 ∧ b = aY)
+  (o = aY ∧ a = aXm ∧ b = aX) ∨ (o = aXm ∧ a = aXm ∧ b = aR2) ∨ (o = aY ∧ a = aR2 ∧ b = aY) ∨
+  (o = aX ∧ a = aY ∧ b = aY)
 
 open VG.Impl.Bignum.X86_64.Public in
 /-- An implementation `mm o a b` of Montgomery multiplication in the working
@@ -302,7 +304,7 @@ def Mont.base : Mont where
     intro o a b h
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
+      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
     exact mm_ct (by decide) (by decide) (by decide) (by taint_decide)
 
 end VG.Proof.Bignum.X86_64

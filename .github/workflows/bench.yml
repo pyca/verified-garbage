@@ -104,12 +104,30 @@ jobs:
         with:
           path: head
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (bench_compare.py leaves out lean/ too).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch == 'thumb' && 'arm' || matrix.arch == 'aarch64-apple' && 'aarch64' || matrix.arch }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ needs.arches.outputs.base }}
         with:
           ref: ${{ needs.arches.outputs.base }}
           path: base
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (bench_compare.py leaves out lean/ too).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch == 'thumb' && 'arm' || matrix.arch == 'aarch64-apple' && 'aarch64' || matrix.arch }}/
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a

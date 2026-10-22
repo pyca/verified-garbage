@@ -26,6 +26,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.Fast
 
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split
@@ -54,7 +56,7 @@ theorem fastAad_xdepth : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).x86_64Depth = 
 /-- `aad` after the entry, for a 12-byte nonce and at most 16 bytes of
 additional data: what `oneAad` leaves. -/
 theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Addr} {al n : Nat}
-    (C : OneCtx s k Ctx W SP Np A D 12 al n) (X : CtxExt CtxMode.prepared Ctx (W + BitVec.ofNat 64 16) W SP D n s)
+    (C : OneCtx s k Ctx W SP Np A D 12 al n) (X : CtxExt (CtxMode.preparedN np hpn) Ctx (W + BitVec.ofNat 64 16) W SP D n s)
     (E : OneEntry s Ctx W SP A D n s₁)
     (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = 12) (hal : (s.gpr .r9).toNat = al) (h16 : al ≤ 16) :
     WP isa Impl.AesGcm.X86_64.Fast.aad s₁ (OneMid s Ctx W SP D n (ctxH s.mem Ctx) (bytesAt s.mem Np 12) (bytesAt s.mem A al) s₁.mem) := by
@@ -68,15 +70,15 @@ theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : 
   have hal' : s₁.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [E.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- `H'`, kept from the prepared context.
-  have s272 : Region.Sub ⟨Ctx + BitVec.ofNat 64 272, 16⟩ ⟨Ctx, CtxMode.prepared.len⟩ :=
+  have s272 : Region.Sub ⟨Ctx + BitVec.ofNat 64 272, 16⟩ ⟨Ctx, (CtxMode.preparedN np hpn).len⟩ :=
     Offset.sub_base Ctx (show 272 + 16 ≤ 1024 by decide)
   have cw := X.cw.sub_left s272
   have ct : (below SP 8).Disjoint ⟨Ctx + BitVec.ofNat 64 272, 16⟩ :=
     (X.ct.sub_left (below_sub (by decide) (by decide))).sub_right s272
   have inH : InRegions (s₁.rd ++ s₁.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
-    rw [E.rd, E.wr]; exact in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by decide)
+    rw [E.rd, E.wr]; exact in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))
   have hP : IsH1 (ctxH s.mem Ctx) (s₁.mem.readW (Ctx + BitVec.ofNat 64 272) 128) := by
-    have e := (X.ok 0 (by decide)).2
+    have e := (X.ok 0 (by have := hpn.1; omega)).2
     simp only [Nat.mul_zero, Nat.add_zero] at e
     rw [E.frame.readW (r := ⟨Ctx + BitVec.ofNat 64 272, 16⟩) (Region.contains_self _ _) (dW _ _ cw) (by decide), e]
     exact hF.pp1 _
@@ -115,11 +117,11 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) K.rd K.wr (by rw [K.mem]; exact Frame.refl _ _)
 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
-theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {pre : Prog isa}
-    {qf : Nat → Nat → Nat} (hpre : PreOk CtxMode.prepared pre qf)
-    {ks : Prog isa} (hks : KsOk ks) {fin : Prog isa} (hfin : FinOk CtxMode.prepared fin) {other : Prog isa}
-    (ho : MidOk CtxMode.prepared other) :
-    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
+theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn)) {pre : Prog isa}
+    {qf : Nat → Nat → Nat} (hpre : PreOk (CtxMode.preparedN np hpn) pre qf)
+    {ks : Prog isa} (hks : KsOk ks) {fin : Prog isa} (hfin : FinOk (CtxMode.preparedN np hpn) fin) {other : Prog isa}
+    (ho : MidOk (CtxMode.preparedN np hpn) other) :
+    MidOk (CtxMode.preparedN np hpn) (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
   intro s₀ s₁ Ctx W SP Np A D S T' nl al n sl C X kM E hNp hnl hal
   unfold Impl.AesGcm.X86_64.Fast.sel
   refine WP.seq (WP.mono (condE_ok C.toOneCtx E.toOneEntry hnl hal) fun s₂ ⟨hz, E₂, K⟩ => ?_)

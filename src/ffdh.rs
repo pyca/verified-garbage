@@ -9,13 +9,18 @@
 //! need. Rust obtains random bytes and packs inputs and results. Parameter
 //! generation runs entirely in verified code, including its attempt limit
 //! and entropy requests; Rust allocates and fills the random tape it asks
-//! for. Parameter generation is currently available on x86-64 and AArch64.
+//! for. Parameter generation is available on every supported architecture.
 //! Imported parameters receive structural and algebraic checks; callers must
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 

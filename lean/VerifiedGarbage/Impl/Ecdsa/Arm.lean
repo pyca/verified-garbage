@@ -163,6 +163,7 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl B3P, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
+/-- Process every encoded scalar bit, including invalid encodings, but no word padding. -/
 def ladderCfg : LadderCfg where
   M := c.MP'
   S := c.rcbSlots
@@ -171,7 +172,7 @@ def ladderCfg : LadderCfg where
   D := c.pt DX DY DZ
   T := c.pt TX TY TZ
   bits := bitsAt c.n 0
-  nbits := 64 * c.n
+  nbits := 8 * c.C.len
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩

@@ -59,12 +59,15 @@ def upToPow : Prog isa := upToPowWith c c.combP
 
 /-- `04 ‖ x ‖ y` (or zeros, `len` bytes each) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/
-def finish : List Instr :=
+def finishWith (x y : Nat) : List Instr :=
   [ld .x3 (c.sl FLAG), .movz .x .x1 4 0, .logic .and .x .x1 .x1 .x3, .strb .x1 .x20 0,
     .addImm .x .x6 .x20 1] ++
-  storeBytes c.C.len c.n .x6 0 (c.sl X) ++ storeBytes c.C.len c.n .x6 c.C.len (c.sl Y) ++
+  storeBytes c.C.len c.n .x6 0 (c.sl x) ++ storeBytes c.C.len c.n .x6 c.C.len (c.sl y) ++
   Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)
+
+
+def finish : List Instr := finishWith c X Y
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/

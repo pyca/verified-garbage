@@ -28,6 +28,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 
 /-! ## `HotField` -/
 
@@ -206,26 +208,26 @@ theorem doubles_ok (hC : Law C) (ha : AM3 C) {base : Addr} {P Q : Point C} {k j 
     (hQ : onCurve C Q=true) (hj : j<52) {s : State} (hs : RState base P Q k s)
     (h19 : s.gpr .x19=BitVec.ofNat 64 j) :
     WP isa Impl.P256.EcdhJac.dbls s fun t =>
-      Frame base work s t ∧ RState base P (mul 32 Q) k t ∧ t.gpr .x19=BitVec.ofNat 64 j := by
+      Frame base work s t ∧ RState base P (mul 16 Q) k t ∧ t.gpr .x19=BitVec.ofNat 64 j := by
   unfold Impl.P256.EcdhJac.dbls
   apply WP.seq
   refine WP.mono (doubleCounter_start s h19) fun a ⟨a19,ka⟩ => ?_
   have fa : Frame base work s a := (AllocatedFrame.of_keeps ka).widenRegs (by decide)
   have ca := hs.of_keeps ka (by decide)
-  let I := fun q t => Frame base work s t ∧ RState base P (mul (2^(5-q)) Q) k t ∧
+  let I := fun q t => Frame base work s t ∧ RState base P (mul (2^(4-q)) Q) k t ∧
     t.gpr .x19=BitVec.ofNat 64 (2048*q+j)
-  apply countRegLoop_ok .x4 (Inv:=I) (n:=5) (by decide)
+  apply countRegLoop_ok .x4 (Inv:=I) (n:=4) (by decide)
   · intro q b hq hq5 hi
     obtain ⟨fb,cb,b19⟩ := hi
     unfold Impl.P256.EcdhJac.dblStep
     apply WP.seq
     refine WP.mono (double_state hC ha (hC.onCurve_mul hQ _) cb) fun d ⟨fd,cd⟩ => ?_
     have d19 := (fd.regs.gpr .x19 allocatedRegs_x19).trans b19
-    refine WP.mono (doubleCounter_ok d hq hq5 hj d19) fun t ⟨t19,t4,kt⟩ => ?_
+    refine WP.mono (doubleCounter_ok d hq (by omega) hj d19) fun t ⟨t19,t4,kt⟩ => ?_
     have ft : Frame base work d t := (AllocatedFrame.of_keeps kt).widenRegs (by decide)
     have ct := cd.of_keeps kt (by decide)
-    have ep : add (mul (2^(5-q)) Q) (mul (2^(5-q)) Q)=mul (2^(5-(q-1))) Q := by
-      rw [hC.add_mul_mul hQ,show 5-(q-1)=(5-q)+1 by omega,Nat.pow_succ]
+    have ep : add (mul (2^(4-q)) Q) (mul (2^(4-q)) Q)=mul (2^(4-(q-1))) Q := by
+      rw [hC.add_mul_mul hQ,show 4-(q-1)=(4-q)+1 by omega,Nat.pow_succ]
       congr 1
       omega
     rw [ep] at ct
@@ -346,8 +348,64 @@ end
 section
 
 namespace VG.Proof.P256.EcdhJac
-open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open Spec.Weierstrass
+
+/-- A block of the interleaving's class whose footprint writes no vector
+register keeps them all. -/
+theorem runBlock_keepsV {a : List Instr}
+    (H : ∀ x∈a,∃ F,Interleave.fp .x0 x=some F ∧ ∀ i,F.vw.testBit i=false) :
+    ∀ {s s' : State},runBlock isa a s=some s'→s'.v=s.v := by
+  induction a with
+  | nil => intro s s' h; cases h; rfl
+  | cons i is ih =>
+    intro s s' h
+    have h' : (exec i s).bind (runBlock isa is)=some s' := h
+    cases he : exec i s with
+    | none => rw [he] at h'; cases h'
+    | some s₁ =>
+      rw [he] at h'
+      obtain ⟨F,hf,hv⟩ := H i (List.mem_cons_self ..)
+      have fr := Interleave.frame hf he
+      rw [ih (fun x hx => H x (List.mem_cons_of_mem _ hx)) h']
+      funext r
+      exact fr.v r (hv _)
+
+theorem keepsV_of_blockFp {a : List Instr} (h : (Interleave.blockFp .x0 a).map Interleave.Fp.vw=some 0) :
+    ∀ x∈a,∃ F,Interleave.fp .x0 x=some F ∧ ∀ i,F.vw.testBit i=false := by
+  cases ha : Interleave.blockFp .x0 a with
+  | none => rw [ha] at h; cases h
+  | some A =>
+    rw [ha,Option.map_some,Option.some.injEq] at h
+    intro x hx
+    obtain ⟨F,hf,hs⟩ := Interleave.blockFp_sub ha x hx
+    refine ⟨F,hf,fun i=>?_⟩
+    cases hb : F.vw.testBit i
+    · rfl
+    · have := hs.vw i hb; rw [h,Nat.zero_testBit] at this; cases this
+
+theorem double_keepsV :
+    ∀ x∈Impl.P256.EcdhDouble.code,∃ F,Interleave.fp .x0 x=some F ∧ ∀ i,F.vw.testBit i=false :=
+  keepsV_of_blockFp (by decide +kernel)
+
+theorem doubleSel_indeps :
+    Interleave.Indeps .x0 Impl.P256.EcdhDouble.code (Impl.P256.EcdhSelect.neonScan 2816 16) :=
+  Interleave.indeps_of_check (by decide +kernel)
+
+/-- The doubling, with the vector registers it keeps. -/
+theorem double_stateV (hC : Law C) (ha : AM3 C) {base : Addr} {P Q : Point C} {k : Nat}
+    (hQ : onCurve C Q=true) {s : State} (hs : RState base P Q k s) :
+    WP isa (.block Impl.P256.EcdhDouble.code) s fun t =>
+      AllocatedFrame allocatedRegs base work s t ∧ RState base P (add Q Q) k t ∧ t.v=s.v := by
+  obtain ⟨t,hr,hq⟩ := Interleave.runBlock_of_WP (double_state hC ha hQ hs)
+  exact WP.of_runBlock ⟨t,hr,hq.1,hq.2,runBlock_keepsV double_keepsV hr⟩
+
+theorem step_split : tc.digit ++ Impl.P256.EcdhSelect.neonSetup ++ Impl.P256.EcdhJac.doubleSel ++
+    Impl.P256.EcdhSelect.neonStore Impl.P256.EcdhJac.K.E.x Impl.P256.EcdhJac.z2 ++
+    negYW M 5 K.neg K.zero K.E.y K.bits =
+    tc.digit ++ (Select.setup ++ (Impl.AArch64Weave.weave Impl.P256.EcdhDouble.code
+      (Impl.P256.EcdhSelect.neonScan 2816 16) ++ (Select.store ++ negYW M 5 K.neg K.zero K.E.y K.bits))) := by
+  simp only [List.append_assoc]; rfl
 
 theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     {base : Addr} {P : Point C} {k j : Nat} (hP : onCurve C P=true)
@@ -365,10 +423,37 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     intro hk
     rw [hq hk,Window5.mul_mul hC hP,show j-1+1=j by omega]
   apply WP.seq
-  refine WP.mono (entry_ok (fun _ h => h) (by decide) rb.field rb.fixed rb.table (by omega) b19)
-    fun e he => ?_
-  have re := he.rstate rb
-  have e19 := he.counter.trans b19
+  -- The digit, the selection's setup, the fifth doubling with the selection's
+  -- rows, the store and the negation.
+  rw [step_split,WP.block_append_iff]
+  refine WP.mono (digitW_ok tc rb.field.scr (k:=k+offset) (j:=j-1) (N:=260)
+    (by decide) (by decide) (by change 5*(j-1)+5≤260; omega) (by decide) (by decide) b19 rb.fixed.bits)
+    fun u ⟨hu,ku⟩=>?_
+  have fu : Frame base work b u := (AllocatedFrame.of_keeps ku).widenRegs (by decide)
+  have ru := rb.of_keeps ku (by decide)
+  have hmag : u.gpr .x2=BitVec.ofNat 64 (magH 16 (Window5.nib (k+offset) (j-1))) := by
+    change u.gpr .x2=BitVec.ofNat 64 (magH 16 (combWin 5 (k+offset) (j-1))) at hu
+    simpa only [Window5.combWin_five] using hu
+  rw [WP.block_append_iff]
+  refine WP.mono (Select.setup_ok u) fun s₁ ⟨idx₁,inc₁,mag₁,z₁,k₁⟩=>?_
+  have f₁ : Frame base work u s₁ := (AllocatedFrame.of_keeps k₁.keeps).widenRegs (by decide)
+  have r₁ := ru.of_keeps k₁.keeps (by decide)
+  rw [WP.block_append_iff]
+  refine Interleave.WP.weave doubleSel_indeps ?_
+  have h16 : onCurve C (mul 16 Q)=true := hC.onCurve_mul hQ _
+  refine WP.mono (double_stateV hC ha h16 r₁) fun s₂ ⟨fd,r₂,v₂⟩=>?_
+  have e32 : add (mul 16 Q) (mul 16 Q)=mul 32 Q := by
+    rw [hC.add_mul_mul hQ]
+  rw [e32] at r₂
+  have f₂ : Frame base work s₁ s₂ := fd.widenRegs allocated_regs
+  have s₂19 : s₂.gpr .x19=BitVec.ofNat 64 (j-1) := by
+    rw [fd.regs.gpr _ allocatedRegs_x19,k₁.gpr _ (by decide),ku.gpr _ (by decide),b19]
+  rw [← WP.block_append_iff,← List.append_assoc]
+  refine WP.mono (signedEntryV_ok (fun _ h => h) (by decide) r₂.field r₂.fixed r₂.table (by omega) s₂19
+    (by rw [v₂]; exact idx₁) (by rw [v₂]; exact inc₁)
+    (by rw [v₂,mag₁,hmag]) (fun i hi=>by rw [v₂]; exact z₁ i hi)) fun e he => ?_
+  have re := he.rstate r₂
+  have e19 := he.counter.trans s₂19
   apply WP.seq
   refine WP.mono (add_state re he.field he.cache2 (by
     rw [he.cache3,he.cache2]; exact Lean.Grind.CommSemiring.mul_comm _ _)) fun d hd => ?_
@@ -382,7 +467,8 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     exact ⟨hp.jac,hp.z⟩
   refine WP.mono (masked_ok hC ha hO hP (hC.onCurve_mul hQ _) qb hd.state
     (by omega) d19 hd.field ep hd.point) fun t ⟨ft,ht⟩ => ?_
-  exact ⟨(((fa.trans fb).trans he.frame).trans (hd.frame.widenRegs allocated_regs)).trans ft,ht⟩
+  exact ⟨((((((fa.trans fb).trans fu).trans f₁).trans f₂).trans he.frame).trans
+    (hd.frame.widenRegs allocated_regs)).trans ft,ht⟩
 
 theorem loop_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     {base : Addr} {P : Point C} {k : Nat} (hP : onCurve C P=true)

@@ -344,6 +344,8 @@ jobs:
           persist-credentials: false
           # A pull request's merge commit, and its first parent, the base.
           fetch-depth: 2
+          # Only ci/rust_arches.py and its matrix: the diff reads trees, not files.
+          sparse-checkout: ci
       - id: arches
         env:
           EVENT: ${{ github.event_name }}
@@ -381,6 +383,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (or formats: rustfmt skips a missing
+          # module file that a `cfg` leaves out).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch }}/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -518,6 +530,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (or formats: rustfmt skips a missing
+          # module file that a `cfg` leaves out).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/bench/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch }}/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -621,6 +644,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (or formats: rustfmt skips a missing
+          # module file that a `cfg` leaves out).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/bench/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch || 'x86_64' }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -805,6 +839,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          sparse-checkout: |
+            .github
+            ci
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cpu-features-times

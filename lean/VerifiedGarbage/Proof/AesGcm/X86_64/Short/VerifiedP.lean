@@ -171,7 +171,20 @@ theorem sealMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86
     (FastSeal.sealSel_ok hF v B finKs_ksOk (sealLongOk_sealLong hF v B)) hs
   exact ⟨t, s', he, abiPreserved_of_exec (sealMP_mx v B) he hg, hp⟩
 
-theorem sealFinP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86_64M CtxMode.prepared).pre s) :
+theorem openMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M CtxMode.prepared).pre s) :
+    ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.ghashP) s t s' ∧
+      abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := openMW_wp hF v B powOk_powersP
+    (FastOpen.openSel_ok hF v B finKs_ksOk (longOk_openLong v B)) hs
+  exact ⟨t, s', he, abiPreserved_of_exec (openMP_mx v B) he hg, hp⟩
+
+end
+
+section
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24} (B : BlkFn (CtxMode.preparedN np hpn))
+
+theorem sealFinP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86_64M (CtxMode.preparedN np hpn)).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)
       (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.SealFin.mid (v.withBlk B))
         Impl.AesGcm.X86_64.Short.finKsA true)) s t s' ∧
@@ -180,21 +193,13 @@ theorem sealFinP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX
     (FastSeal.sealSel_ok hF v B finKsA_ksOk (SealFin.sealLongOk_mid v B hF)) hs
   exact ⟨t, s', he, abiPreserved_of_exec (sealFinP_mx v B) he hg, hp⟩
 
-theorem openFinP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M CtxMode.prepared).pre s) :
+theorem openFinP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M (CtxMode.preparedN np hpn)).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.FastOpen.openFin
       (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B))
         Impl.AesGcm.X86_64.Short.finKsA true)) s t s' ∧
       abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := FastOpen.openFinW_wp (FastOpen.openSel_ok hF v B finKsA_ksOk (longOk_openLong v B)) hs
   exact ⟨t, s', he, abiPreserved_of_exec (openFinP_mx v B) he hg, hp⟩
-
-theorem openMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M CtxMode.prepared).pre s) :
-    ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.ghashP) s t s' ∧
-      abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := openMW_wp hF v B powOk_powersP
-    (FastOpen.openSel_ok hF v B finKs_ksOk (longOk_openLong v B)) hs
-  exact ⟨t, s', he, abiPreserved_of_exec (openMP_mx v B) he hg, hp⟩
 
 end
 

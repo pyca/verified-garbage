@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -202,7 +204,15 @@ def stream : List StreamFn := [
     stack := 8 + 616
     verified := Proof.Sha256.X86_64.Shared.finalize224Stack v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
-      (Proof.Sha256.X86_64.Shared.finalize224_spSafe v.spSafe) }]
+      (Proof.Sha256.X86_64.Shared.finalize224_spSafe v.spSafe) },
+  { api := Spec.Sha256.digest224Api
+    code := Proof.Sha256.X86_64.OneShot.digest (Impl.MdStream.X86_64.out32 7 true) Spec.Sha256.H0_224 v.callee
+    contract := Spec.Sha256.digestContract X86_64.abi 28 Spec.Sha256.sha224 (8 + Proof.Sha256.X86_64.OneShot.frame)
+    stack := 8 + Proof.Sha256.X86_64.OneShot.frame
+    verified := Proof.Sha256.X86_64.OneShot.verified Proof.Sha256.X86_64.OneShot.code224
+      Proof.Sha256.X86_64.OneShot.init_check224 Proof.Sha256.X86_64.OneShot.sha224_take v.ok v.mxcsr v.spSafe
+      v.noStack
+    spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code224 Spec.Sha256.H0_224 v.spSafe }]
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`

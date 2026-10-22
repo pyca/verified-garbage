@@ -28,5 +28,26 @@ def neon (tbl out cache : Nat) : List Instr :=
   ([.movz .x .x17 (BitVec.ofNat 16 cache) 0,.add .x .x17 .x0 .x17] : List Instr) ++
   ((List.range 4).map (fun i => .strq (vectorAcc.getD (i+6) .v0) .x17 (16*i)) : List Instr)
 
+/-- `neon`'s parts: the index, increment and magnitude broadcast, and the
+accumulators cleared (`neonSetup`); row `r`'s loads and masked keeps
+(`neonRow`); the first `k` rows (`neonScan`); the accumulators stored
+(`neonStore`). `neon tbl out cache` is `neonSetup ++ neonScan tbl 16 ++
+neonStore out cache`. -/
+def neonSetup : List Instr :=
+  [.movz .x .x5 1 0,.vop (.dup .d2 .v31 .x5),.vop (.dup .d2 .v30 .x2),.vop (.movi0 .v28)] ++
+  vectorAcc.map (fun r => .vop (.movi0 r))
+
+def neonRow (tbl r : Nat) : List Instr :=
+  ([.vop (.add .d2 .v28 .v28 .v31),.vop (.cmeq .d2 .v29 .v28 .v30)] : List Instr) ++
+  ((List.range 10).map (fun i => .ldrq (vectorLoad.getD i .v18) .x0 (tbl+160*r+16*i)) : List Instr) ++
+  ((List.range 10).map (fun i => .vop (.bsel .bit (vectorAcc.getD i .v0) (vectorLoad.getD i .v18) .v29))
+    : List Instr)
+
+def neonScan (tbl k : Nat) : List Instr := (List.range k).flatMap (neonRow tbl)
+
+def neonStore (out cache : Nat) : List Instr :=
+  ((List.range 6).map (fun i => .strq (vectorAcc.getD i .v0) .x0 (out+16*i)) : List Instr) ++
+  ([.movz .x .x17 (BitVec.ofNat 16 cache) 0,.add .x .x17 .x0 .x17] : List Instr) ++
+  ((List.range 4).map (fun i => .strq (vectorAcc.getD (i+6) .v0) .x17 (16*i)) : List Instr)
 
 end VG.Impl.P256.EcdhSelect

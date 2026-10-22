@@ -31,6 +31,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64.FastOpen
 
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Short VG.WriteBytes
 open VG.Impl.AesGcm.X86_64.FastOpen (incJ tagP)
 open VG.Proof.AesGcm.X86_64
@@ -244,16 +246,16 @@ theorem endTail_ok {Ctx W SP : Addr} {H : Block} {u : State} (he : Env Ctx (W + 
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
 the keystream of the counter block. -/
-theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP CtxMode.prepared KOk (tagP ks) := by
+theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (CtxMode.preparedN np hpn) KOk (tagP ks) := by
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW hCD X
   -- `H'` and `H'²`.
-  have hX : Spec.Gcm.PreparedPowersRepr s.mem Ctx := X.ok
-  have p0 := hX 0 (by decide)
+  have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.ok
+  have p0 := hX 0 (by have := hpn.1; omega)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   rw [show ctxH s.mem Ctx = H by rw [ctxH_eq, hH]] at p0
   unfold tagP Impl.AesGcm.X86_64.FastOpen.lenTest
-  refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by decide))
-    (in_off X.cov (show 256 + 16 ≤ 1024 by decide) (by decide)) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
+  refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
+    (in_off X.cov (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
   have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => o₁.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₁.rd o₁.wr
@@ -462,7 +464,7 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP CtxM
     rfl
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
-theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMode.prepared (tagP ks) :=
+theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk (CtxMode.preparedN np hpn) (tagP ks) :=
   TagOkP.tagOk (tagP_okP hF hks)
 
 end VG.Proof.AesGcm.X86_64.FastOpen

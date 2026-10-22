@@ -13,6 +13,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Mem32
 
 /-!
 # AES-CCM on AArch64: checking a received tag (`cmp`, `mask`)
@@ -21,9 +26,10 @@ Untrusted: everything here is checked by Lean. `cmp` pads the `tl` bytes of
 the received tag at `T` (in `x12`) and of the computed one at `W + 96` with
 zeros, and
 leaves 0 in `x10` if they are equal, 1 if not (`cmp_ok`), as AES-GCM's
-`cmpSeg` does; `mask` ANDs every byte of the data with `x10 − 1`: it keeps
-the data if the tags are equal, and overwrites it with zeros if not
-(`mask_ok`).
+`cmpSeg` does; `mask` ANDs every byte of the data with `x10 − 1`, sixteen at
+a time (`maskVLoop_ok`) and then the last `n mod 16` one at a time
+(`maskLoop_ok`): it keeps the data if the tags are equal, and overwrites it
+with zeros if not (`mask_ok`).
 -/
 
 @[expose] public section
@@ -274,6 +280,116 @@ theorem mask_byte {ok : Bool} :
     ((BitVec.ofNat 64 (if ok then 0 else 1) - 1 : BitVec 64).setWidth 8 : Byte) = if ok then 0xff else 0 := by
   cases ok <;> decide
 
+/-! ## Sixteen bytes at a time -/
+
+theorem vbyte_and (a b : BitVec 128) (i : Nat) : vbyte (a &&& b) i = vbyte a i &&& vbyte b i := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp [vbyte, BitVec.getLsbD_extractLsb', hj]
+
+/-- Sixteen bytes masked in place: `writeBytes` of them masked. -/
+theorem writeW_mask (m : Mem) (A : Addr) (kb : Byte) :
+    m.writeW A (m.readW A 128 &&& ofVBytes fun _ => kb) = writeBytes m A ((bytesAt m A 16).map (· &&& kb)) := by
+  funext x
+  simp only [Mem.writeW, Mem.write, writeBytes, List.length_map, length_bytesAt, Nat.reduceDiv, Nat.reduceMul,
+    BitVec.setWidth_eq]
+  split
+  · rename_i h
+    have hb := Proof.Cmac.getD_bytesAt m A (n := 16) h
+    have hl : (x - A).toNat < (bytesAt m A 16).length := by rw [length_bytesAt]; exact h
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl, Option.getD_some] at hb
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_getElem hl, Option.map_some,
+      Option.getD_some, hb]
+    show vbyte _ _ = _
+    rw [vbyte_and, Proof.Aes.AArch64.Aese.vbyte_readW _ _ h, VG.AArch64.vbyte_ofVBytes _ h]
+  · rfl
+
+theorem maskVStep_ok (s : State) {A : Addr} (ha : s.gpr .x12 = A) (w : InRegions s.wr A 16) :
+    WP isa (.block maskV) s fun s' => s'.mem = s.mem.writeW A (s.mem.readW A 128 &&& s.v .v16) ∧
+      s'.gpr .x12 = A + BitVec.ofNat 64 16 ∧ s'.gpr .x14 = s.gpr .x14 - 1 ∧ s'.v .v16 = s.v .v16 ∧
+      Others [.x12, .x14] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have wa := in_left (rd := s.rd) w
+  simp only [maskV]
+  rw [WP.block_cons_iff]
+  refine ⟨_, Proof.Gcm.AArch64.Pmull.exec_ldrq (t := .v17) (off := 0) (by decide) (by decide)
+    (by rw [ha, BitVec.add_zero]; exact wa), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, Proof.Gcm.AArch64.Pmull.exec_strq (t := .v17) (off := 0) (by decide) (by decide)
+    (by simpa only [gpr_setV, wr_setV, ha, BitVec.add_zero] using w), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_addImm_x (imm := 16) (by decide), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [mem_write, mem_setV, gpr_setV, v_setV_self, ha, BitVec.add_zero, Mem.writeW, Mem.readW,
+      BitVec.setWidth_eq, Nat.reduceDiv, Nat.reduceMul, v_setV_of_ne _ _ (show VReg.v16 ≠ VReg.v17 by decide)]
+  · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, State.read, BitVec.setWidth_eq, Size.bits]
+    show s.gpr .x12 + _ = _
+    rw [ha]
+  · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, State.read, BitVec.setWidth_eq, Size.bits]
+    rfl
+  · simp only [v_write, v_setV_of_ne _ _ (show VReg.v16 ≠ VReg.v17 by decide)]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [gpr_write, hr.1, hr.2, ite_false]
+    rfl
+
+/-- The bytes past what `writeBytes` wrote. -/
+theorem bytesAt_writeBytes_after (m : Mem) (D : Addr) (xs : List Byte) (k : Nat) (h : xs.length + k < 2 ^ 64) :
+    bytesAt (writeBytes m D xs) (D + BitVec.ofNat 64 xs.length) k = bytesAt m (D + BitVec.ofNat 64 xs.length) k := by
+  apply List.ext_getElem (by simp [length_bytesAt])
+  intro j h₁ h₂
+  have hj : j < k := by rw [length_bytesAt] at h₂; exact h₂
+  have e₁ := Proof.Cmac.getD_bytesAt (writeBytes m D xs) (D + BitVec.ofNat 64 xs.length) hj
+  have e₂ := Proof.Cmac.getD_bytesAt m (D + BitVec.ofNat 64 xs.length) hj
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁, Option.getD_some] at e₁
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some] at e₂
+  rw [e₁, e₂, Offset.add_add]
+  simp only [writeBytes, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show xs.length + j < 2 ^ 64 by omega)]
+  rw [ite_eq_right (by omega)]
+
+theorem maskVLoop_ok (s : State) {D : Addr} {q : Nat} {kb : Byte} (hd : s.gpr .x12 = D)
+    (hq : s.gpr .x14 = BitVec.ofNat 64 q) (hq1 : 1 ≤ q) (hql : 16 * q < 2 ^ 64) (hv : s.v .v16 = ofVBytes fun _ => kb)
+    (hw : Covers [⟨D, 16 * q⟩] s.wr) :
+    WP isa (.loop (.block maskV) (.nonzero .x .x14)) s fun s' =>
+      s'.mem = writeBytes s.mem D (maskBytes s.mem D kb (16 * q)) ∧ s'.gpr .x12 = D + BitVec.ofNat 64 (16 * q) ∧
+      Others [.x12, .x14] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine WP.loop (M := isa) (body := .block maskV) (c := .nonzero .x .x14)
+    (fun (k : Nat) (t : State) => ∃ i, k = q - i ∧ i < q ∧ t.gpr .x12 = D + BitVec.ofNat 64 (16 * i) ∧
+      t.gpr .x14 = BitVec.ofNat 64 (q - i) ∧ t.mem = writeBytes s.mem D (maskBytes s.mem D kb (16 * i)) ∧
+      t.v .v16 = s.v .v16 ∧ Others [.x12, .x14] s t ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (q - 0) _
+    ⟨0, rfl, by omega, by rw [hd]; simp, by rw [hq, Nat.sub_zero], by simp [maskBytes, bytesAt, writeBytes_nil],
+      rfl, fun _ _ => rfl, rfl, rfl, rfl⟩
+  rintro k t ⟨i, rfl, hi, x12, x14, mem, v16, g, sp, rd, wr⟩
+  refine WP.mono (maskVStep_ok t (A := D + BitVec.ofNat 64 (16 * i)) x12
+    (by rw [wr]; exact Proof.AesGcm.AArch64.in_off hw (show 16 * i + 16 ≤ 16 * q by omega) hql))
+    fun t' ⟨mem', x12', x14', v16', g', sp', rd', wr'⟩ => ?_
+  have hlen : (maskBytes s.mem D kb (16 * i)).length = 16 * i := length_maskBytes _ _ _ _
+  have hmem : t'.mem = writeBytes s.mem D (maskBytes s.mem D kb (16 * (i + 1))) := by
+    have hb := bytesAt_writeBytes_after s.mem D (maskBytes s.mem D kb (16 * i)) 16 (by rw [hlen]; omega)
+    have hap := writeBytes_append s.mem D (maskBytes s.mem D kb (16 * i))
+      ((bytesAt s.mem (D + BitVec.ofNat 64 (16 * i)) 16).map (· &&& kb)) (by simp [length_maskBytes, length_bytesAt]; omega)
+    rw [hlen] at hb hap
+    rw [mem', v16, hv, writeW_mask, mem, hb, hap]
+    simp only [maskBytes]
+    rw [show 16 * (i + 1) = 16 * i + 16 by omega, Proof.Cmac.bytesAt_add, List.map_append]
+  have x14'' : t'.gpr .x14 = BitVec.ofNat 64 (q - (i + 1)) := by
+    rw [x14', x14, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
+  have ev := eval_nonzero (r := .x14) (a := q - (i + 1)) x14'' (by omega)
+  have gg : Others [.x12, .x14] s t' := fun r hr => by rw [g' r hr, g r hr]
+  have x12'' : t'.gpr .x12 = D + BitVec.ofNat 64 (16 * (i + 1)) := by
+    rw [x12', Offset.add_add, show 16 * i + 16 = 16 * (i + 1) by omega]
+  by_cases he : i + 1 = q
+  · left
+    exact ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [x12'', he], gg, by rw [sp', sp], by rw [rd', rd],
+      by rw [wr', wr]⟩
+  · right
+    exact ⟨by rw [ev]; simp; omega, q - (i + 1), by omega, i + 1, rfl, by omega, x12'', x14'', hmem,
+      by rw [v16', v16], gg, by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
+
+/-! ## The mask -/
+
 /-- `mask`: the data kept if `x10` is 0, zeros if it is 1. -/
 theorem mask_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {ok : Bool}
     (h10 : s.gpr .x10 = BitVec.ofNat 64 (if ok then 0 else 1)) :
@@ -281,24 +397,11 @@ theorem mask_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {ok : Bool}
       bytesAt s'.mem c.D c.n = (if ok then bytesAt s.mem c.D c.n else zeros c.n) ∧
       Env c s' ∧ Others [.x11, .x12, .x13, .x14] s s' ∧ Frame [⟨c.D, c.n⟩] s.mem s'.mem := by
   have hn := L.n_lt
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, og₁, hm₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
-      [.subImm .x .x11 .x10 1, mov .x12 .x27, mov .x13 .x28] s = some s₁ ∧
-      s₁.gpr .x11 = BitVec.ofNat 64 (if ok then 0 else 1) - 1 ∧ s₁.gpr .x12 = c.D ∧
-      s₁.gpr .x13 = BitVec.ofNat 64 c.n ∧ Others [.x11, .x12, .x13] s s₁ ∧ s₁.mem = s.mem ∧ s₁.sp = s.sp ∧
-      s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by carun [], ?_⟩
-    refine ⟨?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩
-    · simp [gpr_write, h10]
-    · simp [gpr_write, E.x27]
-    · simp [gpr_write, E.x28]
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp [gpr_write, hr]
-  have E₁ : Env c s₁ := E.others og₁ (by decide) sp₁ rd₁ wr₁
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have hmb : ((s₁.gpr .x11).setWidth 8 : Byte) = if ok then 0xff else 0 := by rw [x11₁, mask_byte]
-  have hres : ∀ m : Mem, (if ok then bytesAt m c.D c.n else zeros c.n) =
-      maskBytes m c.D (if ok then 0xff else 0) c.n := fun m => by
+  have hq16 : 16 * (c.n / 16) ≤ c.n := Nat.mul_div_le _ _
+  let kb : Byte := (BitVec.ofNat 64 (if ok then 0 else 1) - 1 : BitVec 64).setWidth 8
+  have hkb : kb = if ok then 0xff else 0 := mask_byte
+  have hres : ∀ m : Mem, (if ok then bytesAt m c.D c.n else zeros c.n) = maskBytes m c.D kb c.n := fun m => by
+    rw [hkb]
     cases ok
     · simp only [maskBytes, Bool.false_eq_true, ite_false]
       apply List.ext_getElem (by simp [length_bytesAt, zeros])
@@ -311,20 +414,89 @@ theorem mask_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {ok : Bool}
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_and, show (255 : BitVec 8).toNat = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
         Nat.mod_eq_of_lt x.isLt]
-  refine WP.ite (decide (c.n = 0)) (eval_zero x13₁ hn) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : c.n = 0 := by simpa using ht
-    refine WP.block_nil ⟨?_, E₁, fun r hr => og₁ r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact ⟨hr.1, hr.2.1, hr.2.2.1⟩),
-      by rw [hm₁]; exact Frame.refl _ _⟩
-    rw [hm₁, h0]; cases ok <;> rfl
-  · have h0 : c.n ≠ 0 := by simpa using hf
-    refine WP.mono (maskLoop_ok s₁ x12₁ x13₁ (by omega) hn E₁.perm.d) fun s' ⟨hm, g, sp', rd', wr'⟩ => ?_
-    refine ⟨?_, E₁.others g (by decide) sp' rd' wr', fun r hr => ?_, ?_⟩
-    · rw [hm, hmb, Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [length_maskBytes]) hn,
-        length_maskBytes, List.drop_eq_nil_of_le (by rw [length_bytesAt]), List.append_nil, hm₁, hres]
+  -- What `mask` leaves: the data masked.
+  have fin : ∀ s', s'.mem = writeBytes s.mem c.D (maskBytes s.mem c.D kb c.n) → Env c s' →
+      Others [.x11, .x12, .x13, .x14] s s' →
+      bytesAt s'.mem c.D c.n = (if ok then bytesAt s.mem c.D c.n else zeros c.n) ∧
+      Env c s' ∧ Others [.x11, .x12, .x13, .x14] s s' ∧ Frame [⟨c.D, c.n⟩] s.mem s'.mem := fun s' hm E' o' => by
+    refine ⟨?_, E', o', by rw [hm]; exact writeBytes_frame' _ (length_maskBytes _ _ _ _)⟩
+    rw [hm, Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [length_maskBytes]) hn,
+      length_maskBytes, List.drop_eq_nil_of_le (by rw [length_bytesAt]), List.append_nil, hres]
+  -- The mask, the pointer and the counts.
+  have hpre : WP isa (.block [.subImm .x .x11 .x10 1, mov .x12 .x27, .vop (.dup .b16 .v16 .x11),
+      .lsr .x .x14 .x28 4, .lsl .x .x13 .x14 4, .sub .x .x13 .x28 .x13]) s fun s₁ =>
+      s₁.gpr .x11 = BitVec.ofNat 64 (if ok then 0 else 1) - 1 ∧ s₁.gpr .x12 = c.D ∧
+      s₁.gpr .x14 = BitVec.ofNat 64 (c.n / 16) ∧ s₁.gpr .x13 = BitVec.ofNat 64 (c.n - 16 * (c.n / 16)) ∧
+      s₁.v .v16 = (ofVBytes fun _ => kb) ∧ Others [.x11, .x12, .x13, .x14] s s₁ ∧ s₁.mem = s.mem ∧ s₁.sp = s.sp ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    rw [show ([.subImm .x .x11 .x10 1, mov .x12 .x27, .vop (.dup .b16 .v16 .x11),
+        .lsr .x .x14 .x28 4, .lsl .x .x13 .x14 4, .sub .x .x13 .x28 .x13] : List Instr) =
+        [.subImm .x .x11 .x10 1, mov .x12 .x27] ++
+        (.vop (.dup .b16 .v16 .x11) :: [.lsr .x .x14 .x28 4, .lsl .x .x13 .x14 4, .sub .x .x13 .x28 .x13]) from rfl,
+      WP.block_append_iff]
+    refine Proof.AesGcm.AArch64.WP.run ⟨_, by carun [], rfl⟩ fun u hu => ?_
+    rw [WP.block_cons_iff]
+    refine ⟨_, rfl, Proof.AesGcm.AArch64.WP.run ⟨_, by carun [], rfl⟩ fun u₂ hu₂ => ?_⟩
+    subst hu hu₂
+    refine ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+    · simp [gpr_write, gpr_setV, State.read, h10]
+    · simp [gpr_write, gpr_setV, E.x27]
+    · simp [gpr_write, gpr_setV, State.read, E.x28, Proof.AesGcm.AArch64.lsr_ofNat _ _ hn]
+    · simp only [gpr_write, gpr_setV, ite_true, ite_false, reduceCtorEq, State.read, BitVec.setWidth_eq, Size.bits,
+        E.x28]
+      rw [Proof.AesGcm.AArch64.lsr_ofNat _ _ hn, Proof.AesGcm.AArch64.lsl4_ofNat,
+        Proof.AesGcm.AArch64.ofNat_sub (by omega) hn]
+    · simp [v_write, gpr_write, State.read, kb, h10]
+      rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      rw [g r (by simp [maskRegs, hr.2.1, hr.2.2.1, hr.2.2.2]), og₁ r (by simp [hr.1, hr.2.1, hr.2.2.1])]
-    · rw [hm, ← hm₁]
-      exact writeBytes_frame' _ (length_maskBytes _ _ _ _)
+      simp [gpr_write, gpr_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2]
+  refine WP.seq (WP.mono hpre fun s₁ ⟨x11₁, x12₁, x14₁, x13₁, v16₁, o₁, hm₁, sp₁, rd₁, wr₁⟩ => ?_)
+  have E₁ : Env c s₁ := E.others o₁ (by decide) sp₁ rd₁ wr₁
+  -- Sixteen bytes at a time.
+  have hvec : WP isa (.ite (.zero .x .x14) (.block []) (.loop (.block maskV) (.nonzero .x .x14))) s₁ fun s₂ =>
+      s₂.mem = writeBytes s.mem c.D (maskBytes s.mem c.D kb (16 * (c.n / 16))) ∧
+      s₂.gpr .x12 = c.D + BitVec.ofNat 64 (16 * (c.n / 16)) ∧ Others [.x12, .x14] s₁ s₂ ∧ s₂.sp = s₁.sp ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
+    refine WP.ite (decide (c.n / 16 = 0)) (eval_zero x14₁ (by omega)) (fun h => ?_) (fun h => ?_)
+    · have h0 : c.n / 16 = 0 := by simpa using h
+      refine WP.block_nil ⟨?_, by rw [x12₁, h0]; simp, fun _ _ => rfl, rfl, rfl, rfl⟩
+      rw [h0, hm₁]; simp [maskBytes, bytesAt, writeBytes_nil]
+    · have h1 : 1 ≤ c.n / 16 := by simp at h; omega
+      exact WP.mono (maskVLoop_ok s₁ x12₁ x14₁ h1 (by omega) v16₁
+        (Proof.AesGcm.AArch64.covers_prefix E₁.perm.d hq16)) fun s₂ ⟨m₂, x12₂, o₂, sp₂, rd₂, wr₂⟩ =>
+          ⟨by rw [m₂, hm₁], x12₂, o₂, sp₂, rd₂, wr₂⟩
+  refine WP.seq (WP.mono hvec fun s₂ ⟨m₂, x12₂, o₂, sp₂, rd₂, wr₂⟩ => ?_)
+  have O₂ : Others [.x11, .x12, .x13, .x14] s s₂ := fun r hr => by
+    rw [o₂ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact ⟨hr.2.1, hr.2.2.2⟩),
+      o₁ r hr]
+  have E₂ : Env c s₂ := E.others O₂ (by decide) (by rw [sp₂, sp₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
+  have x13₂ : s₂.gpr .x13 = BitVec.ofNat 64 (c.n - 16 * (c.n / 16)) := by rw [o₂ _ (by decide), x13₁]
+  have x11₂ : s₂.gpr .x11 = s₁.gpr .x11 := o₂ _ (by decide)
+  have hlq : (maskBytes s.mem c.D kb (16 * (c.n / 16))).length = 16 * (c.n / 16) := length_maskBytes _ _ _ _
+  -- The last bytes, one at a time.
+  refine WP.ite (decide (c.n - 16 * (c.n / 16) = 0)) (eval_zero x13₂ (by omega)) (fun h => ?_) (fun h => ?_)
+  · have h0 : c.n - 16 * (c.n / 16) = 0 := by simpa using h
+    refine WP.block_nil (fin s₂ ?_ E₂ O₂)
+    rw [m₂, show 16 * (c.n / 16) = c.n by omega]
+  · have h1 : 1 ≤ c.n - 16 * (c.n / 16) := by simp at h; omega
+    refine WP.mono (maskLoop_ok s₂ x12₂ x13₂ h1 (by omega)
+      (by rw [wr₂, wr₁]; exact Proof.AesGcm.AArch64.covers_off E.perm.d (by omega) hn))
+      fun s₃ ⟨m₃, o₃, sp₃, rd₃, wr₃⟩ => ?_
+    have O₃ : Others [.x11, .x12, .x13, .x14] s s₃ := fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      rw [o₃ r (by simp [maskRegs, hr.2.1, hr.2.2.1, hr.2.2.2]), O₂ r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2])]
+    refine fin s₃ ?_ (E.others O₃ (by decide) (by rw [sp₃, sp₂, sp₁]) (by rw [rd₃, rd₂, rd₁])
+      (by rw [wr₃, wr₂, wr₁])) O₃
+    have hb := bytesAt_writeBytes_after s.mem c.D (maskBytes s.mem c.D kb (16 * (c.n / 16)))
+      (c.n - 16 * (c.n / 16)) (by rw [hlq]; omega)
+    have hap := writeBytes_append s.mem c.D (maskBytes s.mem c.D kb (16 * (c.n / 16)))
+      ((bytesAt s.mem (c.D + BitVec.ofNat 64 (16 * (c.n / 16))) (c.n - 16 * (c.n / 16))).map (· &&& kb))
+      (by simp [length_maskBytes, length_bytesAt]; omega)
+    rw [hlq] at hb hap
+    have k₁ : (s₁.gpr .x11).setWidth 8 = kb := by rw [x11₁]
+    rw [m₃, m₂, x11₂, k₁]
+    simp only [maskBytes] at hb hap ⊢
+    rw [hb, hap, ← List.map_append, ← Proof.Cmac.bytesAt_add, show 16 * (c.n / 16) + (c.n - 16 * (c.n / 16)) = c.n by
+      omega]
 
 end VG.Proof.AesCcm.AArch64

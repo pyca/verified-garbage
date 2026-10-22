@@ -32,21 +32,21 @@ theorem streamToPrepared_implies : (Proof.AesGcm.streamEncryptToX86_64M CtxMode.
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.prepared]
+      X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           post := by sig_implies_post [Proof.AesGcm.streamEncryptToPreparedScratchContract,
       Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPreparedPre,
       Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.prepared]
+      X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           pub := by sig_implies_pub [Proof.AesGcm.streamEncryptToPreparedScratchContract,
       Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPreparedPre,
       Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.prepared]
+      X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           sat := ⟨streamToSatP, by
             sig_pre [Proof.AesGcm.streamEncryptToPreparedScratchContract,
               Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPreparedPre,

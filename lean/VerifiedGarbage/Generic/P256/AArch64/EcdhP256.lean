@@ -167,7 +167,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       windows recode the scalar as `d + 16 Σ_{j<52} 32^j`; a 16-entry Jacobian table is built \
       with co-Z doubling and additions and stores each point's `Z²` and `Z³`. The first digit \
       initializes the accumulator, followed by 51 iterations of five Jacobian doublings and \
-      one cached Jacobian addition. Each selection scans all 16 entries with NEON masks, and \
+      one cached Jacobian addition. Each selection scans all 16 entries with NEON masks, \
+      interleaved with the window's fifth doubling, which uses only general registers, and \
       digit signs, zero digits and infinity accumulators are handled without secret branches \
       or secret addresses. Prime-order bounds establish the nonexceptional additions for \
       valid private scalars; invalid scalars still execute safely and are rejected by the \

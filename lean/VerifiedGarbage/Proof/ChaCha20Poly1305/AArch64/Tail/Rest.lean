@@ -48,11 +48,11 @@ abbrev Rk (key : List Byte) : Nat := Spec.Poly1305.clamp (Spec.Poly1305.leNum (k
 
 /-- `load`: our caller's `x20` in `x8`, the rest in `x7`, the last chunk in
 `x20`, and the accumulator and the clamped key as before the chunks. -/
-theorem load_ok {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {T : Nat}
-    (hc : Crypted true s₀ s key msg T u) (hx21 : u.gpr .x21 = cx s₀) :
+theorem load_ok {s₀ s w₀ u : State} (hp : APre true s₀) {key msg : List Byte} {o T : Nat}
+    (hc : Crypted true o s₀ s w₀ key msg T u) (hx21 : u.gpr .x21 = cx s₀) :
     WP isa (.block Tail.load) u fun s₂ =>
       Acc (Rk key) (Spec.Poly1305.accumulate (Rk key)
-        (msg ++ bytesAt u.mem (dp s₀) (512 * (T - 1)))) s₂ ∧
+        (msg ++ bytesAt u.mem (dp s₀) ((o + 512 * (T - 1))))) s₂ ∧
       s₂.gpr .x20 = u.gpr .x22 ∧ s₂.gpr .x8 = u.gpr .x20 ∧ s₂.gpr .x7 = u.gpr .x1 ∧
       s₂.mem = memIn u.mem (cx s₀) (u.gpr .x27) (u.gpr .x28) ∧
       (∀ r, r ∉ [Reg.x7, .x8, .x20, .x21, .x22, .x23, .x24, .x25] → s₂.gpr r = u.gpr r) ∧
@@ -72,7 +72,7 @@ theorem load_ok {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {
   refine (polyIn_ok hp (by rw [g₁ _ (by decide) (by decide) (by decide), hx21])
     (by rw [rd₁, hc.inv.rd]) (by rw [wr₁, hc.inv.wr])).mono
     fun s₂ ⟨⟨a21, a22, a23, m₂, g₂, _, _⟩, v₂, sp₂, rd₂, wr₂⟩ => ?_
-  have hr : Repr s₁.mem (off (cx s₀) 448) key (msg ++ bytesAt u.mem (dp s₀) (512 * (T - 1))) := by
+  have hr : Repr s₁.mem (off (cx s₀) 448) key (msg ++ bytesAt u.mem (dp s₀) ((o + 512 * (T - 1)))) := by
     have e := hc.mac
     simp only [ite_true, pre] at e
     rw [m₁]; exact e
@@ -229,22 +229,22 @@ theorem not_in {D : Addr} {a n k : Nat} (h : k < a ∨ a + n ≤ k) (hk : k < 2 
   omega
 
 /-- `Tail.rest`, after `T ≥ 1` chunks with a rest. -/
-theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {T : Nat}
-    (hc : Crypted true s₀ s key msg T u) (hT : 1 ≤ T) (hr : 512 * T < L s₀) :
-    WP isa (Tail.rest sve) u fun w => ∃ P, Sealed s₀ s key msg P (512 * T) w := by
+theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key msg : List Byte} {o T : Nat}
+    (hc : Crypted true o s₀ s w₀ key msg T u) (ho : o % 64 = 0) (hT : 1 ≤ T) (hr : (o + 512 * T) < L s₀) :
+    WP isa (Tail.rest sve) u fun w => ∃ P, Sealed s₀ s w₀ key msg P ((o + 512 * T)) w := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have wd := hp.wrap_d
-  have pre_eq : pre true T = 512 * (T - 1) := rfl
+  have pre_eq : pre o true T = (o + 512 * (T - 1)) := rfl
   have oo : ∀ a b, off (cx s₀) a + BitVec.ofNat 64 b = off (cx s₀) (a + b) := fun a b => off_off _ a b
   refine (WP.withSp (WP.preservedV (c := Tail.rest sve) (Q := fun w => ∃ P,
       (∀ r ∈ preservedV, (w.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) → w.sp = u.sp →
-        Sealed s₀ s key msg P (512 * T) w) ?_ (by cases sve <;> lit_decide))).mono
+        Sealed s₀ s w₀ key msg P ((o + 512 * T)) w) ?_ (by cases sve <;> lit_decide))).mono
     fun w ⟨⟨⟨P, hw⟩, vw⟩, spw⟩ => ⟨P, hw vw spw⟩
   unfold Tail.rest
   refine WP.seq ((load_ok hp hc hc.inv.x21).mono
     fun s₂ ⟨a₂, x20₂, x8₂, x7₂, m₂, g₂, v₂, sp₂, rd₂, wr₂⟩ => ?_)
   -- The kernel, on the last chunk.
-  let W := dp s₀ + BitVec.ofNat 64 (512 * (T - 1))
+  let W := dp s₀ + BitVec.ofNat 64 ((o + 512 * (T - 1)))
   have rd₂' : s₂.rd = s₀.rd := by rw [rd₂, hc.inv.rd]
   have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, hc.inv.wr]
   have x0₂ : s₂.gpr .x0 = off (cx s₀) 64 := by rw [g₂ _ (by decide), hc.x0]
@@ -271,34 +271,34 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
   -- The accumulator stored.
   refine WP.seq ((out_ok hp x0₃ (by rw [rd₃, rd₂']) (by rw [wr₃, wr₂'])).mono
     fun s₄ ⟨acc₄, f₄, st₄, x21₄, x27₄, x28₄, x22₄, x20₄, x23₄, g₄, rd₄, wr₄, sp₄, v₄⟩ => ?_)
-  have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * T) := by
+  have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (L s₀ - (o + 512 * T)) := by
     rw [g₄ _ (by decide), g₃' _ (by decide) (by decide) (by decide), g₂ _ (by decide), hc.x2]
   -- `m` bytes of the rest.
-  refine WP.seq ((take_ok (r := L s₀ - 512 * T) (by omega) x2₄).mono
+  refine WP.seq ((take_ok (r := L s₀ - (o + 512 * T)) (by omega) x2₄).mono
     fun s₅ ⟨x23₅, g₅, m₅, rd₅, wr₅⟩ => ?_)
   have x21₅ : s₅.gpr .x21 = cx s₀ := by rw [g₅ _ (by decide) (by decide), x21₄]
-  have x22₅ : s₅.gpr .x22 = dp s₀ + BitVec.ofNat 64 (512 * T) := by
+  have x22₅ : s₅.gpr .x22 = dp s₀ + BitVec.ofNat 64 ((o + 512 * T)) := by
     rw [g₅ _ (by decide) (by decide), x22₄, g₃' _ (by decide) (by decide) (by decide), x7₂, hc.x1]
   have rd₅' : s₅.rd = s₀.rd := by rw [rd₅, rd₄, rd₃, rd₂']
   have wr₅' : s₅.wr = s₀.wr := by rw [wr₅, wr₄, wr₃, wr₂']
-  refine WP.seq ((Short.xorKsAt_ok hp (o := 512 * T) (n := min (L s₀ - 512 * T) 256) (by omega)
+  refine WP.seq ((Short.xorKsAt_ok hp (o := (o + 512 * T)) (n := min (L s₀ - (o + 512 * T)) 256) (by omega)
     (by omega) x21₅ x22₅ x23₅ rd₅' wr₅').mono fun s₆ ⟨k₆, d₆, f₆, g₆⟩ => ?_)
   -- The stream's arguments.
   have g₆' (r : Reg) (h9 : r ≠ .x9) (h10 : r ≠ .x10) (h11 : r ≠ .x11) (h12 : r ≠ .x12)
       (h13 : r ≠ .x13) : s₆.gpr r = s₅.gpr r :=
     g₆ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
-  refine (args_ok (s₀ := s₀) (D := dp s₀ + BitVec.ofNat 64 (512 * T))
-    (m := min (L s₀ - 512 * T) 256) (r := L s₀ - 512 * T) (Nat.min_le_left _ _)
+  refine (args_ok (s₀ := s₀) (D := dp s₀ + BitVec.ofNat 64 ((o + 512 * T)))
+    (m := min (L s₀ - (o + 512 * T)) 256) (r := L s₀ - (o + 512 * T)) (Nat.min_le_left _ _)
     (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x21₅])
     (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x22₅])
     (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x23₅])
     (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide),
       g₅ _ (by decide) (by decide), x2₄])).mono
     fun s₇ ⟨x0₇, x1₇, x2₇, x3₇, x23₇, g₇, m₇, rd₇, wr₇⟩ =>
-      ⟨512 * T + min (L s₀ - 512 * T) 256, fun vw spw => ?_⟩
+      ⟨(o + 512 * T) + min (L s₀ - (o + 512 * T)) 256, fun vw spw => ?_⟩
   -- The frames.
-  have hM : 512 * T + min (L s₀ - 512 * T) 256 ≤ L s₀ := by omega
-  have dsub : Region.Sub ⟨dp s₀ + BitVec.ofNat 64 (512 * T), min (L s₀ - 512 * T) 256⟩ (dR s₀) :=
+  have hM : (o + 512 * T) + min (L s₀ - (o + 512 * T)) 256 ≤ L s₀ := by omega
+  have dsub : Region.Sub ⟨dp s₀ + BitVec.ofNat 64 ((o + 512 * T)), min (L s₀ - (o + 512 * T)) 256⟩ (dR s₀) :=
     Offset.sub_base _ hM
   let tgt := [sub s₀ 64 408, sub s₀ 32 16, dR s₀]
   have c64 (k n : Nat) (h₁ : 64 ≤ k) (h₂ : k + n ≤ 472) : ∃ r' ∈ tgt, Region.Sub (sub s₀ k n) r' :=
@@ -335,7 +335,7 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact data_ctx hp (by lit_omega)) hk
     rw [m₅, e₁, e₂, m₂, e₃]
-  have dout : ∀ k < L s₀, (k < 512 * T ∨ 512 * T + min (L s₀ - 512 * T) 256 ≤ k) →
+  have dout : ∀ k < L s₀, (k < (o + 512 * T) ∨ (o + 512 * T) + min (L s₀ - (o + 512 * T)) 256 ≤ k) →
       s₇.mem (dp s₀ + BitVec.ofNat 64 k) = u.mem (dp s₀ + BitVec.ofNat 64 k) := by
     intro k hk hout
     rw [m₇, f₆ _ fun r hr => by
@@ -374,7 +374,7 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
   have x21₇ : s₇.gpr .x21 = cx s₀ := by
     rw [g₇' _ (by decide) (by decide) (by decide) (by decide) (by decide),
       g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x21₅]
-  have x22₇ : s₇.gpr .x22 = dp s₀ + BitVec.ofNat 64 (512 * T) := by
+  have x22₇ : s₇.gpr .x22 = dp s₀ + BitVec.ofNat 64 ((o + 512 * T)) := by
     rw [g₇' _ (by decide) (by decide) (by decide) (by decide) (by decide),
       g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x22₅]
   have rd₇' : s₇.rd = s₀.rd := by rw [rd₇, k₆.rd, rd₅']
@@ -396,27 +396,27 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
       exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right dsub
   -- The data before the rest is kept.
   have pfx : ∀ {m m' : Mem} {rs : List Region}, Frame rs m m' → (∀ r ∈ rs, (dR s₀).Disjoint r) →
-      bytesAt m' (dp s₀) (512 * T) = bytesAt m (dp s₀) (512 * T) :=
+      bytesAt m' (dp s₀) ((o + 512 * T)) = bytesAt m (dp s₀) ((o + 512 * T)) :=
     fun hf hd => prefix_frame hf hd (by omega)
-  have b₅ : bytesAt s₅.mem (dp s₀) (512 * T) = bytesAt s₂.mem (dp s₀) (512 * T) := by
+  have b₅ : bytesAt s₅.mem (dp s₀) ((o + 512 * T)) = bytesAt s₂.mem (dp s₀) ((o + 512 * T)) := by
     rw [m₅, pfx f₄ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact data_ctx hp (by lit_omega)),
       pfx f₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact data_ctx hp (by lit_omega))]
-  have b₇ : bytesAt s₇.mem (dp s₀) (512 * T) = bytesAt s₂.mem (dp s₀) (512 * T) := by
+  have b₇ : bytesAt s₇.mem (dp s₀) ((o + 512 * T)) = bytesAt s₂.mem (dp s₀) ((o + 512 * T)) := by
     rw [m₇, ← b₅]
     exact bytesAt_frame f₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.base_disjoint _ (Nat.le_refl _) (by omega)) (by omega)
-  have b₂ : ∀ n ≤ 512 * T, bytesAt s₂.mem (dp s₀) n = bytesAt u.mem (dp s₀) n := fun n hn => by
+  have b₂ : ∀ n ≤ (o + 512 * T), bytesAt s₂.mem (dp s₀) n = bytesAt u.mem (dp s₀) n := fun n hn => by
     rw [m₂]
     exact prefix_frame (memIn_frame (s₀ := s₀) _ _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact data_ctx hp (by lit_omega)) (by omega)
-  have hsplit : bytesAt s₂.mem (dp s₀) (512 * T) =
-      bytesAt s₂.mem (dp s₀) (512 * (T - 1)) ++ bytesAt s₂.mem W 512 := by
-    rw [← Poly1305.bytesAt_add, show 512 * (T - 1) + 512 = 512 * T by omega]
+  have hsplit : bytesAt s₂.mem (dp s₀) ((o + 512 * T)) =
+      bytesAt s₂.mem (dp s₀) ((o + 512 * (T - 1))) ++ bytesAt s₂.mem W 512 := by
+    rw [← Poly1305.bytesAt_add, show (o + 512 * (T - 1)) + 512 = (o + 512 * T) by omega]
   have hmac := hc.mac
   simp only [ite_true, pre] at hmac
   have hml : msg.length % 16 = 0 := by
@@ -426,8 +426,8 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
   refine ⟨⟨x21₇, un₇, by rw [spw, hc.inv.sp], rd₇', wr₇', hc.inv.saved.frame F (fun r hr => ?_),
       hc.inv.frame.trans (F.sub fun r hr => ?_)⟩, hM, by omega, by omega, fun h => by omega,
     x0₇, by rw [x1₇, VG.Proof.ChaCha20.AArch64.Xor.add_ofNat],
-    by rw [x2₇, show L s₀ - 512 * T - min (L s₀ - 512 * T) 256 =
-      L s₀ - (512 * T + min (L s₀ - 512 * T) 256) by omega], x3₇, x22₇, x23₇, fun hlt => ?_,
+    by rw [x2₇, show L s₀ - (o + 512 * T) - min (L s₀ - (o + 512 * T)) 256 =
+      L s₀ - ((o + 512 * T) + min (L s₀ - (o + 512 * T)) 256) by omega], x3₇, x22₇, x23₇, fun hlt => ?_,
     fun k hk => ?_, hc.frame.trans F, ⟨?_, ?_, ?_⟩, fun r hr => (vw r hr).trans (hc.vec r hr)⟩
   · simp only [tgt, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -440,30 +440,30 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
     · exact ⟨dR s₀, by simp, fun _ h => h⟩
   · -- The counter, past the four blocks.
-    have h256 : min (L s₀ - 512 * T) 256 = 256 := by omega
+    have h256 : min (L s₀ - (o + 512 * T)) 256 = 256 := by omega
     rw [st₇, st₄, st₃, st₂, hc.cnt, VG.Proof.ChaCha20.AArch64.Neon4.ctr_add, h256,
-      show (512 * T + 256) / 64 = 8 * T + 4 by omega]
+      show ((o + 512 * T) + 256) / 64 = o / 64 + 8 * T + 4 by omega]
   · -- The data.
-    by_cases h₁ : k < 512 * T
+    by_cases h₁ : k < (o + 512 * T)
     · rw [dout k hk (.inl h₁), hc.data k hk, ite_eq_left h₁, ite_eq_left (by omega)]
-    by_cases h₂ : k < 512 * T + min (L s₀ - 512 * T) 256
-    · have hi : k - 512 * T < min (L s₀ - 512 * T) 256 := by omega
-      have e := d₆ (k - 512 * T) hi
-      rw [show 512 * T + (k - 512 * T) = k by omega] at e
+    by_cases h₂ : k < (o + 512 * T) + min (L s₀ - (o + 512 * T)) 256
+    · have hi : k - (o + 512 * T) < min (L s₀ - (o + 512 * T)) 256 := by omega
+      have e := d₆ (k - (o + 512 * T)) hi
+      rw [show (o + 512 * T) + (k - (o + 512 * T)) = k by omega] at e
       rw [m₇, e, dctx k hk, hc.data k hk, ite_eq_right h₁, ite_eq_left h₂]
       congr 1
-      have k₅ : s₅.mem (Short.kp' s₀ + BitVec.ofNat 64 (k - 512 * T)) =
-          s₃.mem (off (cx s₀) 128 + BitVec.ofNat 64 (k - 512 * T)) := by
+      have k₅ : s₅.mem (Short.kp' s₀ + BitVec.ofNat 64 (k - (o + 512 * T))) =
+          s₃.mem (off (cx s₀) 128 + BitVec.ofNat 64 (k - (o + 512 * T))) := by
         rw [m₅]
         exact f₄.bytes (R := ⟨off (cx s₀) 128, 256⟩) (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl <;> exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
-          (show 256 ≤ 2 ^ 64 by decide) (show k - 512 * T < 256 by omega)
+          (show 256 ≤ 2 ^ 64 by decide) (show k - (o + 512 * T) < 256 by omega)
       rw [k₅, ks₃ _ (by omega), x0₂, st₂, hc.cnt, KS1,
-        ks_shift _ hk (q := 8 * T) (by omega), show 64 * (8 * T) = 512 * T by omega]
+        ks_shift _ hk (q := o / 64 + 8 * T) (by omega), show 64 * (o / 64 + 8 * T) = (o + 512 * T) by omega]
     · rw [dout k hk (.inr (by omega)), hc.data k hk, ite_eq_right h₁, ite_eq_right h₂]
   · -- The message's length.
-    show (msg ++ bytesAt s₇.mem (dp s₀) (512 * T)).length % 16 = 0
+    show (msg ++ bytesAt s₇.mem (dp s₀) ((o + 512 * T))).length % 16 = 0
     rw [List.length_append, Poly1305.length_bytesAt]; omega
   · -- The key.
     have k24 : (off (cx s₀) 448 + 24 : Addr) = off (cx s₀) 472 := off_off _ 448 24
@@ -483,11 +483,11 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
       rw [m₇, ← m₅, bytesAt_frame f₆ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right dsub) (by lit_omega)]
-    have hlt := Poly1305.accumulate_lt (Rk key) (msg ++ bytesAt u.mem (dp s₀) (512 * (T - 1)))
+    have hlt := Poly1305.accumulate_lt (Rk key) (msg ++ bytesAt u.mem (dp s₀) ((o + 512 * (T - 1))))
     rw [l₇, acc₄ h2₃, show hacc s₃ = Poly.hval s₃ from rfl, hv₃,
       Nat.mod_eq_of_lt (Poly1305.absorbAll_lt hlt _), b₇, hsplit, ← List.append_assoc,
       b₂ _ (by omega)]
-    exact (Poly1305.accumulate_append (r := Rk key) (a := msg ++ bytesAt u.mem (dp s₀) (512 * (T - 1)))
+    exact (Poly1305.accumulate_append (r := Rk key) (a := msg ++ bytesAt u.mem (dp s₀) ((o + 512 * (T - 1))))
       (by rw [List.length_append, Poly1305.length_bytesAt]; omega)).symm
 
 theorem wp_seq3 {a b c x : Prog isa} {s : State} {Q' Q : State → Prop}
@@ -498,30 +498,30 @@ theorem wp_seq3 {a b c x : Prog isa} {s : State} {Q' Q : State → Prop}
   rw [WP.seq_iff] at ht ⊢
   exact ht.mono fun t' ht' => WP.seq (ht'.mono hx)
 
-/-- `cryptStitched` when encrypting. -/
-theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {s : State}
-    (h : Inv s₀ s)
-    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
-    {key msg : List Byte} (hr : Repr s.mem (off (cx s₀) 448) key msg) :
-    WP isa (cryptStitched sve true) s fun u => ∃ P A, Sealed s₀ s key msg P A u := by
+/-- `cryptStitched` when encrypting, from byte `o`. -/
+theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {o : Nat} {s w₀ : State}
+    {key msg : List Byte} (E : Entry true o s₀ s key msg w₀) :
+    WP isa (cryptStitched sve true) w₀ fun u => ∃ P A, Sealed s₀ s w₀ key msg P A u := by
   unfold cryptStitched afterBulk
   simp only [ite_true]
-  refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
-  apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
+  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
+  have hLo : L s₀ - o < 2 ^ 64 := by omega
+  refine WP.seq ((setup_ok E.inv.x21).mono fun s₂ ⟨x0₂, x1₂, x2₂, x3₂, x5₂, k₂, m₂, v₂⟩ => ?_)
+  rw [E.x23, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hLo] at x5₂
+  apply WP.ite (decide (L s₀ - o < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
   · intro hs
-    exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
-      (of_decide_eq_true hs)).sealed⟩
+    exact WP.block_nil ⟨_, _, (short_crypted true E x0₂ x1₂ x2₂ x3₂ k₂ m₂ v₂
+      (of_decide_eq_true hs)).sealed E.o64⟩
   · intro hs
-    refine wp_seq3 (long_crypted (sve := sve) true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
+    refine wp_seq3 (long_crypted (sve := sve) true hp E x0₂ x1₂ x2₂ x3₂ k₂ m₂ v₂
       (by have := of_decide_eq_false hs; omega)) fun u ⟨T, hT, hc⟩ => ?_
-    have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-    refine WP.ite (decide (L s₀ - 512 * T = 0)) (by
+    refine WP.ite (decide (L s₀ - (o + 512 * T) = 0)) (by
         rw [show isa.eval (.zero .x .x2) u = some (u.gpr .x2 == 0) from
           VG.Proof.ChaCha20.AArch64.Xor.eval_zero u .x2, hc.x2,
           VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)]) (fun _ => ?_) (fun hz => ?_)
-    · exact WP.block_nil ⟨_, _, hc.sealed⟩
+    · exact WP.block_nil ⟨_, _, hc.sealed E.o64⟩
     · have h₁ := of_decide_eq_false hz
       have hle := hc.le
-      exact (rest_ok sve hp hc hT (by omega)).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
+      exact (rest_ok sve hp hc E.o64 hT (by omega)).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Tail
