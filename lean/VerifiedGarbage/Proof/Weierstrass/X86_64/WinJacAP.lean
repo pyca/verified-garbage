@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntryA
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogI
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # 5-bit windows with an affine table on x86-64, each selection woven into the addition before it
