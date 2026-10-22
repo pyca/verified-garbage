@@ -141,6 +141,35 @@ theorem Ctx.wFr {σ s : State} (hg : Geo L scr) (h : Ctx L scr σ s) :
     ∀ d, d + 4 ≤ frameBytes → InRegions s.wr (L.fr d) 4 :=
   fun d hd => h.st.inFr (by rw [hg.F]; exact hd)
 
+/-! ## Steps that keep `Ctx` -/
+
+namespace Ctx
+
+variable {σ s : State} (hg : Geo L scr) (hc : Ctx L scr σ s)
+include hg hc
+
+/-- `mov r, [esp + d]` of a slot. -/
+theorem wp_slot {d : Nat} (hd : d + 4 ≤ frameBytes) {r : Reg} (hr : r ≠ .esp) (hb : r ≠ .ebp) {is : List Instr}
+    {Q : State → Prop} (k : ∀ t, Ctx L scr σ t → Upd s t r (s.mem.readW (L.fr d) 32) → WP isa (.block is) t Q) :
+    WP isa (.block (.mov r (.mem ⟨.esp, d⟩) :: is)) s Q :=
+  hc.st.wp_slot (by rw [hg.F]; exact hd) hr fun t _ u => k t (hc.upd u hr hb) u
+
+/-- `mov r, [esp + argOff j]` of argument `j`. -/
+theorem wp_arg {j : Nat} (hj : j < L.argv.length) {r : Reg} (hr : r ≠ .esp) (hb : r ≠ .ebp) {is : List Instr}
+    {Q : State → Prop} (k : ∀ t, Ctx L scr σ t → Upd s t r (L.argv.getD j 0) → WP isa (.block is) t Q) :
+    WP isa (.block (.mov r (.mem ⟨.esp, Impl.RsaPkcs1Sig.X86.argOff frameBytes j⟩) :: is)) s Q := by
+  have e := hg.F
+  rw [← e]
+  exact hc.st.wp_arg hj hr fun t _ u => k t (hc.upd u hr hb) u
+
+/-- `mov [esp + d], r` into a slot. -/
+theorem wp_st {d : Nat} (hd : d + 4 ≤ frameBytes) {r : Reg} {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Ctx L scr σ t → Mupd s t (s.mem.writeW (L.fr d) (s.gpr r)) → WP isa (.block is) t Q) :
+    WP isa (.block (.store ⟨.esp, d⟩ r :: is)) s Q :=
+  hc.st.wp_strFr (by rw [hg.F]; exact hd) fun t st u => k t ⟨st, by rw [u.gpr]; exact hc.ebp⟩ u
+
+end Ctx
+
 theorem slot_frame (L : Lay) (m : Mem) (d : Nat) (v : BitVec 32) : Frame [slotR L d] m (m.writeW (L.fr d) v) :=
   (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
 
