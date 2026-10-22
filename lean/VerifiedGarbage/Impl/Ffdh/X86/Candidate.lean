@@ -88,11 +88,14 @@ def short : Prog isa := .seq zeroOut (.block ([.mov .eax (.imm 0)] ++ storeUsed 
 def reject : Prog isa :=
   .seq zeroOut (.block ([.mov .eax (.mem (sc curOff))] ++ storeUsed ++ [.mov .eax (.imm 2)]))
 
+/-- p written to `out`. -/
+def acceptOut : Prog isa :=
+  .seq (copy (sl 9) (sl 19) n1) <|
+  .seq (.block [.mov .ecx (.imm (BitVec.allOnes 32)), .store (sc accOff) .ecx]) (exportTo 0 1)
+
 /-- An acceptance: p, the octets read so far used, 1. -/
 def accept : Prog isa :=
-  .seq (copy (sl 9) (sl 19) n1) <|
-  .seq (.block [.mov .ecx (.imm (BitVec.allOnes 32)), .store (sc accOff) .ecx]) <|
-  .seq (exportTo 0 1) (.block ([.mov .eax (.mem (sc curOff))] ++ storeUsed ++ [.mov .eax (.imm 1)]))
+  .seq acceptOut (.block ([.mov .eax (.mem (sc curOff))] ++ storeUsed ++ [.mov .eax (.imm 1)]))
 
 /-! ## Words of a number -/
 

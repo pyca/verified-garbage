@@ -209,15 +209,16 @@ theorem reject_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans
     (Ft.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..))
 
-/-- An acceptance: p (slot 9), the cursor `c` used, 1. -/
-theorem accept_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
-    {up : BitVec 32} (U : UsedAt base bytes up (s.gpr .esp) ⟨byteAddr (args 0), len⟩ s.wr)
-    (hu : w32 s.mem base usedOff = up.toNat) {c p : Nat} (hc : w32 s.mem base curOff = c)
-    (hp : sv s.mem base len .wide 9 = p) (hpl : p < 2 ^ (8 * len)) :
-    WP isa accept s (Fin base len args up s 1 c (Spec.Rsa.i2osp p len)) := by
+/-- p written to `out`. -/
+theorem acceptOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
+    {p : Nat} (hp : sv s.mem base len .wide 9 = p) (hpl : p < 2 ^ (8 * len)) :
+    WP isa acceptOut s fun u => Spec.Rsa.bytesAt u.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp p len ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧ In Ex base bytes len args u ∧
+      Kept base len [19] [accOff] s.mem u.mem := by
   have ao : accOff = 8 := rfl
   have nb : numBase = 3336 := rfl
-  unfold Impl.Ffdh.X86.Candidate.accept
+  unfold acceptOut
   refine WP.seq (WP.mono (copy19_ok h (a := 9) (by decide)) fun u₁ ⟨S₁, V₁, k₁⟩ => ?_)
   have h₁ := S₁.inp
   refine WP.seq (show WP isa (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ [.store (sc accOff) .ecx])) u₁ _ from
@@ -234,18 +235,27 @@ theorem accept_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
     have bw := bc_eq_cwc len .wide
     have bl := h.bytes_lt
     rw [O.val32 (.inr (by omega)) (by omega), a.mem, V₁, hp]
-  refine WP.seq (WP.mono (export_ok I (p := 0) (l := 1) (c := true) (by decide) (by decide) I.outLen
+  refine WP.mono (export_ok I (p := 0) (l := 1) (c := true) (by decide) (by decide) I.outLen
     (by rw [S.esp]; exact Ox.keep rfl S.keeps) (BitVec.eq_of_toNat_eq W) V (fun _ => hpl))
-    fun u₂ ⟨B, _, F₂, K₂, I₂, k₂⟩ => ?_)
-  have sp : u₂.gpr .esp = s.gpr .esp := by rw [K₂.1 _ (by decide), S.esp]
-  refine WP.mono (curTail_ok I₂ (up := up) (r := 1) (by rw [sp]; exact U.keep rfl (S.keeps.trans K₂))
-    (by rw [k₂.word_eq, kv.word_eq, hu]) (by rw [k₂.word_eq, kv.word_eq, hc]))
-    fun t ⟨E, Bt, Wt, Ft, Kt⟩ => ⟨E, by rw [Bt, B]; rfl, Wt, ?_, (S.keeps.trans K₂).trans (Kt.mono (by decide))⟩
+    fun u₂ ⟨B, _, F₂, K₂, I₂, k₂⟩ => ⟨by rw [B]; rfl, ?_, S.keeps.trans K₂, I₂, kv.trans k₂.mono⟩
   rw [S.esp] at F₂
-  exact ((S.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans (F₂.mono fun r hr => by
+  exact (S.frame.mono fun r hr => List.mem_cons_of_mem _ hr).trans F₂
+
+/-- An acceptance: p, the octets read so far used, 1. -/
+theorem accept_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
+    {up : BitVec 32} (U : UsedAt base bytes up (s.gpr .esp) ⟨byteAddr (args 0), len⟩ s.wr)
+    (hu : w32 s.mem base usedOff = up.toNat) {c p : Nat} (hc : w32 s.mem base curOff = c)
+    (hp : sv s.mem base len .wide 9 = p) (hpl : p < 2 ^ (8 * len)) :
+    WP isa accept s (Fin base len args up s 1 c (Spec.Rsa.i2osp p len)) := by
+  unfold Impl.Ffdh.X86.Candidate.accept
+  refine WP.seq (WP.mono (acceptOut_ok h Ox hp hpl) fun u ⟨B, F, K, I, k⟩ => ?_)
+  have sp : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  refine WP.mono (curTail_ok I (up := up) (r := 1) (by rw [sp]; exact U.keep rfl K) (by rw [k.word_eq, hu])
+    (by rw [k.word_eq, hc])) fun t ⟨E, Bt, W, Ft, Kt⟩ => ⟨E, by rw [Bt, B], W, ?_, K.trans (Kt.mono (by decide))⟩
+  exact (F.mono fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
     · exact List.mem_cons_self ..
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr))).trans
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans
     (Ft.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..))
 
 end VG.Proof.Ffdh.X86.Cand
