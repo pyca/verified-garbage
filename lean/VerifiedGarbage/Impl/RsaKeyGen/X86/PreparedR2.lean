@@ -12,8 +12,10 @@ open VG VG.X86 VG.Impl.Bignum.X86.PublicContext
 
 /-- Array six is the multiplier's in-place operand; retain R² in array four
 before Miller–Rabin uses array six for its running result. -/
-def code (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
-  .seq (FastR2.code (modulus w) (slot w 2) (slot w 6)
+def codeAt (e w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
+  .seq (FastR2.codeAt (modulus w) e (slot w 2) (slot w 6)
     (VG.Impl.MillerRabin.X86.mulY montName montCode 6)) (VG.Impl.MillerRabin.X86.copy 4 6)
+
+def code (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa := codeAt (64 * w - 1) w montName montCode
 
 end VG.Impl.RsaKeyGen.X86.PreparedR2

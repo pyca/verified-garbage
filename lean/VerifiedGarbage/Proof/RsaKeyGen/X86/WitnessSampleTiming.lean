@@ -11,9 +11,14 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFallbackTiming
 namespace VG.Proof.RsaKeyGen.X86.WitnessSample
 open VG VG.X86 VG.Proof.MillerRabin.X86 VG.Impl.RsaKeyGen.X86.WitnessSample
 
+theorem codeAt_trace (k w src modulus : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (codeAt k w src modulus)
+      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
+  RelCT.seq (WitnessUniform.code_trace w src modulus) (WitnessFallback.codeAt_trace k src)
+
 theorem code_trace (w src modulus : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (code w src modulus)
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  RelCT.seq (WitnessUniform.code_trace w src modulus) (WitnessFallback.code_trace w src)
+  codeAt_trace (2 * w) w src modulus
 
 end VG.Proof.RsaKeyGen.X86.WitnessSample

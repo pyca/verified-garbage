@@ -9,14 +9,15 @@ public import VerifiedGarbage.Spec.MillerRabin
 namespace VG.Proof.RsaKeyGen.X86.Prepare
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.RsaKeyGen.X86.PreparedR2
 
-structure Input (g : Geometry) (c capacity : Nat) (p : BitVec 32) (s : State) : Prop where
+/-- A candidate of at least `e + 1` bits, its top bit for RSA's full-width candidates. -/
+structure Input (g : Geometry) (c capacity : Nat) (p : BitVec 32) (s : State) (e : Nat := 64 * g.w - 1) : Prop where
   scratch : Scr s g.W g.L
   caller : Caller g capacity p s
   candidate : val32 s.mem g.W (g.array 0) g.words = c
   minusOne : val32 s.mem g.W (g.array 5) g.words = c - 1
   odd : c % 2 = 1
   large : 1 < c
-  top : 2 ^ (64 * g.w - 1) ≤ c
+  top : 2 ^ e ≤ c
 
 structure Data (g : Geometry) (c capacity : Nat) (p : BitVec 32) (s : State) : Prop where
   ready : Ready g c capacity p s

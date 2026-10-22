@@ -13,17 +13,22 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 namespace VG.Proof.RsaKeyGen.X86.FastR2
 open VG VG.X86 VG.Proof.Mont.X86.Dynamic VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.FastR2
 
-theorem doubles_trace (M : VG.Impl.Mont.Mod) (acc out : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (doubles M acc out)
+theorem doublesAt_trace (M : VG.Impl.Mont.Mod) (e acc out : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (doublesAt M e acc out)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   refine RelCT.seq (setConst_relCT _ _ _) ?_
   apply erased_relCT (τ := workspaceTaint false) (σ := workspaceTaint false)
-    (.seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (M.n + 1)))])
+    (.seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (M.n + 64 * M.n - e)))])
       (VG.Impl.Mont.X86.Dynamic.doubleLoop M acc out))
     (.seq (.block [.mov .esi (.imm 1)])
       (VG.Impl.Mont.X86.Dynamic.doubleLoop { n := 1, mo := 0, tmp := 0, minv := 0 } 0 0))
     (.seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) doubleHint)) rfl rfl rfl
   decide +kernel
+
+theorem doubles_trace (M : VG.Impl.Mont.Mod) (acc out : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (doubles M acc out)
+      (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  doublesAt_trace M _ acc out
 
 theorem squares_trace (square : Prog isa)
     (ct : RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) square
@@ -35,11 +40,18 @@ theorem squares_trace (square : Prog isa)
   | zero => exact ct
   | succ n ih => exact RelCT.seq ct ih
 
+theorem codeAt_trace (M : VG.Impl.Mont.Mod) (e acc out : Nat) (square : Prog isa)
+    (ct : RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) square
+      (VG.X86.Taint.Agree (workspaceTaint false))) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (codeAt M e acc out square)
+      (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  RelCT.seq (doublesAt_trace M e acc out) (squares_trace square ct 5)
+
 theorem code_trace (M : VG.Impl.Mont.Mod) (acc out : Nat) (square : Prog isa)
     (ct : RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) square
       (VG.X86.Taint.Agree (workspaceTaint false))) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (code M acc out square)
       (VG.X86.Taint.Agree (workspaceTaint false)) :=
-  RelCT.seq (doubles_trace M acc out) (squares_trace square ct 5)
+  codeAt_trace M _ acc out square ct
 
 end VG.Proof.RsaKeyGen.X86.FastR2

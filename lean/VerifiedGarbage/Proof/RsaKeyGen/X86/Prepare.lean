@@ -24,15 +24,15 @@ def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 def ranges (g : Geometry) : List (Nat × Nat) :=
   PrepareHeader.ranges ++ PreparedR2.ranges g ++ Constants.ranges g ++ Exponent.preparedRanges g
 
-theorem code_full_ok {mont : Prog isa} {name : String}
+theorem code_full_okAt {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
-    WP isa (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) s fun t =>
+    (length : g.L = 8 * capacity) {e : Nat} (I : Input g c capacity p s e) (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
+    WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont) s fun t =>
       Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t ∧
       WorkspaceFrame g (ranges g) s.mem t.mem := by
-  unfold VG.Impl.RsaKeyGen.X86.Prepare.code
+  unfold VG.Impl.RsaKeyGen.X86.Prepare.codeAt
   rw [Prepared.slot_eq, Prepared.slot_eq, Prepared.slot_eq]
   refine WP.seq (WP.mono (PrepareHeader.code_ok v I.scratch I.caller length I.candidate I.odd)
     fun a ⟨A, Oa, Ka, strideA⟩ => ?_)
@@ -43,7 +43,7 @@ theorem code_full_ok {mont : Prog isa} {name : String}
       rcases mem with (rfl | rfl | rfl) | rfl <;> right <;> omega)
       (by have := I.scratch.nowrap; have := v.arrayFit (j := 5) (by decide); omega)]
     exact I.minusOne
-  refine WP.seq (WP.mono (PreparedR2.code_ok verified noSp stack v length A bound I.odd I.top)
+  refine WP.seq (WP.mono (PreparedR2.code_okAt verified noSp stack v length A bound I.odd positive eLt I.top)
     fun b ⟨B, r2B, Fb, Kb, Wb⟩ => ?_)
   have strideB : word b.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change b.mem.readW (off g.W 224) 64 = _
@@ -98,6 +98,26 @@ theorem code_full_ok {mont : Prog isa} {name : String}
       · left; have := v.arrayHeader 27; omega) (by decide)]
     exact strideD
   · exact (((Ka.mono (by unfold clob PrepareHeader.clob; decide)).widen Kb).widen Kd).widen Kt
+
+theorem code_full_ok {mont : Prog isa} {name : String}
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
+    WP isa (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) s fun t =>
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t ∧
+      WorkspaceFrame g (ranges g) s.mem t.mem :=
+  code_full_okAt verified noSp stack v bound length I
+    (by have := v.minWidth; omega) (by have := v.minWidth; omega)
+
+theorem code_okAt {mont : Prog isa} {name : String}
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (length : g.L = 8 * capacity) {e : Nat} (I : Input g c capacity p s e) (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
+    WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont) s fun t =>
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t :=
+  WP.mono (code_full_okAt verified noSp stack v bound length I positive eLt) fun _ ⟨D, F, K, _⟩ => ⟨D, F, K⟩
 
 theorem code_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
