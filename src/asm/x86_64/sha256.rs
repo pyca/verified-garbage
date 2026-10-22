@@ -7087,6 +7087,174 @@ ret
     )
 }
 
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-728]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+560], rbx
+mov QWORD PTR [rcx+568], rbp
+mov QWORD PTR [rcx+576], r12
+mov QWORD PTR [rcx+584], r13
+mov QWORD PTR [rcx+592], r14
+mov QWORD PTR [rcx+600], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+movabs rax, 3926247204440088280
+movq xmm0, rax
+movabs rax, -644479594506691305
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi], xmm0
+movabs rax, 7518782744944446257
+movq xmm0, rax
+movabs rax, -4685344894838272089
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi+16], xmm0
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha256_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+32], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+27:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+32], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 27b
+jmp 26f
+25:
+26:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+32], r8b
+cmp r10, 56
+jae 28f
+jmp 29f
+28:
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+29:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+88], rax
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov eax, DWORD PTR [rbx+20]
+bswap eax
+mov DWORD PTR [rbp+20], eax
+mov eax, DWORD PTR [rbx+24]
+bswap eax
+mov DWORD PTR [rbp+24], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+560]
+mov rbp, QWORD PTR [r15+568]
+mov r12, QWORD PTR [r15+576]
+mov r13, QWORD PTR [r15+584]
+mov r14, QWORD PTR [r15+592]
+mov r15, QWORD PTR [r15+600]
+lea rsp, [rsp+728]
+ret
+.p2align 6",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
 /// The CPU features `vg_sha224_finalize_avx2` requires (`Artifact.features`).
 pub(crate) const VG_SHA224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
 
@@ -7250,6 +7418,178 @@ ret
     )
 }
 
+/// The CPU features `vg_sha224_digest_avx2` requires (`Artifact.features`).
+pub(crate) const VG_SHA224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-728]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+560], rbx
+mov QWORD PTR [rcx+568], rbp
+mov QWORD PTR [rcx+576], r12
+mov QWORD PTR [rcx+584], r13
+mov QWORD PTR [rcx+592], r14
+mov QWORD PTR [rcx+600], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+movabs rax, 3926247204440088280
+movq xmm0, rax
+movabs rax, -644479594506691305
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi], xmm0
+movabs rax, 7518782744944446257
+movq xmm0, rax
+movabs rax, -4685344894838272089
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi+16], xmm0
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha256_compress_avx2}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+32], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+27:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+32], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 27b
+jmp 26f
+25:
+26:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+32], r8b
+cmp r10, 56
+jae 28f
+jmp 29f
+28:
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_avx2}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+29:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+88], rax
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_avx2}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov eax, DWORD PTR [rbx+20]
+bswap eax
+mov DWORD PTR [rbp+20], eax
+mov eax, DWORD PTR [rbx+24]
+bswap eax
+mov DWORD PTR [rbp+24], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+560]
+mov rbp, QWORD PTR [r15+568]
+mov r12, QWORD PTR [r15+576]
+mov r13, QWORD PTR [r15+584]
+mov r14, QWORD PTR [r15+592]
+mov r15, QWORD PTR [r15+600]
+lea rsp, [rsp+728]
+ret
+.p2align 6",
+        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2,
+    )
+}
+
 /// The CPU features `vg_sha224_finalize_shani` requires (`Artifact.features`).
 pub(crate) const VG_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
@@ -7407,6 +7747,178 @@ mov r13, QWORD PTR [r15+584]
 mov r14, QWORD PTR [r15+592]
 mov r15, QWORD PTR [r15+600]
 lea rsp, [rsp+616]
+ret
+.p2align 6",
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+    )
+}
+
+/// The CPU features `vg_sha224_digest_shani` requires (`Artifact.features`).
+pub(crate) const VG_SHA224_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-728]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+560], rbx
+mov QWORD PTR [rcx+568], rbp
+mov QWORD PTR [rcx+576], r12
+mov QWORD PTR [rcx+584], r13
+mov QWORD PTR [rcx+592], r14
+mov QWORD PTR [rcx+600], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+movabs rax, 3926247204440088280
+movq xmm0, rax
+movabs rax, -644479594506691305
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi], xmm0
+movabs rax, 7518782744944446257
+movq xmm0, rax
+movabs rax, -4685344894838272089
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi+16], xmm0
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha256_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+32], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+27:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+32], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 27b
+jmp 26f
+25:
+26:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+32], r8b
+cmp r10, 56
+jae 28f
+jmp 29f
+28:
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+29:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+88], rax
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov eax, DWORD PTR [rbx+20]
+bswap eax
+mov DWORD PTR [rbp+20], eax
+mov eax, DWORD PTR [rbx+24]
+bswap eax
+mov DWORD PTR [rbp+24], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+560]
+mov rbp, QWORD PTR [r15+568]
+mov r12, QWORD PTR [r15+576]
+mov r13, QWORD PTR [r15+584]
+mov r14, QWORD PTR [r15+592]
+mov r15, QWORD PTR [r15+600]
+lea rsp, [rsp+728]
 ret
 .p2align 6",
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
@@ -8049,6 +8561,177 @@ mov r12, QWORD PTR [r15+576]
 mov r13, QWORD PTR [r15+584]
 mov r14, QWORD PTR [r15+592]
 mov r15, QWORD PTR [r15+600]
+ret
+.p2align 6",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-728]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+560], rbx
+mov QWORD PTR [rcx+568], rbp
+mov QWORD PTR [rcx+576], r12
+mov QWORD PTR [rcx+584], r13
+mov QWORD PTR [rcx+592], r14
+mov QWORD PTR [rcx+600], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+movabs rax, -4942790177982912921
+movq xmm0, rax
+movabs rax, -6534734903820487822
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi], xmm0
+movabs rax, -7276294671082564993
+movq xmm0, rax
+movabs rax, 6620516960021240235
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi+16], xmm0
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha256_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+32], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+27:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+32], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 27b
+jmp 26f
+25:
+26:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+32], r8b
+cmp r10, 56
+jae 28f
+jmp 29f
+28:
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+29:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+88], rax
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov eax, DWORD PTR [rbx+20]
+bswap eax
+mov DWORD PTR [rbp+20], eax
+mov eax, DWORD PTR [rbx+24]
+bswap eax
+mov DWORD PTR [rbp+24], eax
+mov eax, DWORD PTR [rbx+28]
+bswap eax
+mov DWORD PTR [rbp+28], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+560]
+mov rbp, QWORD PTR [r15+568]
+mov r12, QWORD PTR [r15+576]
+mov r13, QWORD PTR [r15+584]
+mov r14, QWORD PTR [r15+592]
+mov r15, QWORD PTR [r15+600]
+lea rsp, [rsp+728]
 ret
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
@@ -8713,6 +9396,181 @@ ret
     )
 }
 
+/// The CPU features `vg_sha256_digest_avx2` requires (`Artifact.features`).
+pub(crate) const VG_SHA256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-728]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+560], rbx
+mov QWORD PTR [rcx+568], rbp
+mov QWORD PTR [rcx+576], r12
+mov QWORD PTR [rcx+584], r13
+mov QWORD PTR [rcx+592], r14
+mov QWORD PTR [rcx+600], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+movabs rax, -4942790177982912921
+movq xmm0, rax
+movabs rax, -6534734903820487822
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi], xmm0
+movabs rax, -7276294671082564993
+movq xmm0, rax
+movabs rax, 6620516960021240235
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi+16], xmm0
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha256_compress_avx2}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+32], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+27:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+32], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 27b
+jmp 26f
+25:
+26:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+32], r8b
+cmp r10, 56
+jae 28f
+jmp 29f
+28:
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_avx2}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+29:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+88], rax
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_avx2}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov eax, DWORD PTR [rbx+20]
+bswap eax
+mov DWORD PTR [rbp+20], eax
+mov eax, DWORD PTR [rbx+24]
+bswap eax
+mov DWORD PTR [rbp+24], eax
+mov eax, DWORD PTR [rbx+28]
+bswap eax
+mov DWORD PTR [rbp+28], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+560]
+mov rbp, QWORD PTR [r15+568]
+mov r12, QWORD PTR [r15+576]
+mov r13, QWORD PTR [r15+584]
+mov r14, QWORD PTR [r15+592]
+mov r15, QWORD PTR [r15+600]
+lea rsp, [rsp+728]
+ret
+.p2align 6",
+        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2,
+    )
+}
+
 /// The CPU features `vg_sha256_update_shani` requires (`Artifact.features`).
 pub(crate) const VG_SHA256_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
@@ -9365,6 +10223,181 @@ mov r12, QWORD PTR [r15+576]
 mov r13, QWORD PTR [r15+584]
 mov r14, QWORD PTR [r15+592]
 mov r15, QWORD PTR [r15+600]
+ret
+.p2align 6",
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+    )
+}
+
+/// The CPU features `vg_sha256_digest_shani` requires (`Artifact.features`).
+pub(crate) const VG_SHA256_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-728]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+560], rbx
+mov QWORD PTR [rcx+568], rbp
+mov QWORD PTR [rcx+576], r12
+mov QWORD PTR [rcx+584], r13
+mov QWORD PTR [rcx+592], r14
+mov QWORD PTR [rcx+600], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+movabs rax, -4942790177982912921
+movq xmm0, rax
+movabs rax, -6534734903820487822
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi], xmm0
+movabs rax, -7276294671082564993
+movq xmm0, rax
+movabs rax, 6620516960021240235
+movq xmm1, rax
+punpcklqdq xmm0, xmm1
+movdqu XMMWORD PTR [rdi+16], xmm0
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha256_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+32], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+27:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+32], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 27b
+jmp 26f
+25:
+26:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+32], r8b
+cmp r10, 56
+jae 28f
+jmp 29f
+28:
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+29:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+88], rax
+mov rsi, rbx
+add rsi, 32
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha256_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov eax, DWORD PTR [rbx+20]
+bswap eax
+mov DWORD PTR [rbp+20], eax
+mov eax, DWORD PTR [rbx+24]
+bswap eax
+mov DWORD PTR [rbp+24], eax
+mov eax, DWORD PTR [rbx+28]
+bswap eax
+mov DWORD PTR [rbp+28], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+560]
+mov rbp, QWORD PTR [r15+568]
+mov r12, QWORD PTR [r15+576]
+mov r13, QWORD PTR [r15+584]
+mov r14, QWORD PTR [r15+592]
+mov r15, QWORD PTR [r15+600]
+lea rsp, [rsp+728]
 ret
 .p2align 6",
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
