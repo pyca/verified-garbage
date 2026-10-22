@@ -19,7 +19,7 @@ in `Impl.AesGcmSiv.AArch64`.
   halves swapped: `ghPart` loads it with `ldr q` and `ext #8` (`ld`) and
   multiplies it as AES-GCM's does. The table of keys is computed from GHASH's
   key at `W + 64` as `vg_ghash_aes` computes its powers (`tblBuild`), into
-  `W + tblO`.
+  `W + tblO`, in the space of the reversed blocks.
 * Counter mode increments the first 4 bytes of the counter block at `W + 96`
   as a little-endian number: `aesPart`'s counter blocks put `w10 + j` in its
   first lane (`ctr1`), without `rev32`, and the counter is stored back after
@@ -30,8 +30,7 @@ in `Impl.AesGcmSiv.AArch64`.
   decrypted the iteration before (`openLoop`, AES-GCM's `encLoop`): POLYVAL is
   of the plaintext.
 
-`W` is that of `Impl.AesGcmSiv.AArch64`, 192 bytes longer for the table: 4000
-bytes.
+`W` is that of `Impl.AesGcmSiv.AArch64`.
 -/
 
 @[expose] public section
@@ -44,11 +43,10 @@ open VG.Impl.Gcm.AArch64.Stitch (K P Y C HI LO MID A₁ A₂ S₁ S₂ KP T U X�
   addFirst addNext reduce fuse stores byRounds)
 open VG.Impl.AesGcm.AArch64 (Callees mov ptr imm restore)
 
-/-- Where the table of keys is in `W`. -/
-def tblO : Nat := 3808
-
-/-- The size of `W`. -/
-def wSize : Nat := 4000
+/-- Where the table of keys is in `W`: in the space for the reversed blocks
+(`revO`), which only `absorb` uses, before the table is written or after the
+loops have read it. -/
+def tblO : Nat := revO
 
 /-! ## The table of keys
 
