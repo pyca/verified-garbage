@@ -25,7 +25,7 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (privateEq : P.p = CandidateFrame.privateSp s)
     (candidate : val32 s.mem P.g.W (P.g.array 0) P.g.words = P.candidate)
     (minusOne : val32 s.mem P.g.W (P.g.array 5) P.g.words = P.candidate - 1)
-    (top : 2 ^ (64 * P.g.w - 1) ≤ P.candidate)
+    (top : 2 ^ P.seed ≤ P.candidate)
     (readable : InRegions (s.rd ++ s.wr) (P.rand.setWidth 64) P.randLen)
     (entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy)
     (randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand)
@@ -34,12 +34,12 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (fit : 96 ≤ (s.gpr .esp).toNat)
     (separate : (s.gpr .esp).toNat ≤ P.g.W.toNat ∨ P.g.W.toNat + P.g.L + 96 ≤ (s.gpr .esp).toNat)
     (randPrivateFar : (⟨P.rand.setWidth 64, P.randLen⟩ : Region).Disjoint (below (s.gpr .esp) 28)) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.codeOf P.checks P.g.w montName mont roundName round) s fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith P.seed P.checks P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       val32 t.mem P.g.W (P.g.array 0) P.g.words = P.candidate ∧ MillerRabinLoop.Result P t ∧
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
       Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 96] s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.codeOf
-  refine CandidateFrame.code_full_ok (CandidateNoSp.coreOf montNoSp roundNoSp P.checks P.g.w montName roundName) S v.geometry.headerFit capacity fit separate ?_
+  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith
+  refine CandidateFrame.code_full_ok (CandidateNoSp.coreWith montNoSp roundNoSp P.seed P.checks P.bytes P.words P.g.w montName roundName) S v.geometry.headerFit capacity fit separate ?_
   intro a Sa Ca _ Fa Ka
   have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
     FilterStack.allocated_apart (by omega) S.nowrap
@@ -49,7 +49,7 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     exact Fa.bytes (R := ⟨P.g.W, P.g.L⟩)
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
       (by change P.g.L ≤ 2 ^ 64; have := S.nowrap; omega) index
-  have I : Prepare.Input P.g P.candidate P.capacity P.p a := by
+  have I : Prepare.Input P.g P.candidate P.capacity P.p a P.seed := by
     refine ⟨Sa, ?_, ?_, ?_, v.odd, by have := v.large; omega, top⟩
     · rw [privateEq]; exact Ca
     · rw [Wa.val32 (v.geometry.arrayFit (by decide)) (by intro r mem; nomatch mem)]; exact candidate

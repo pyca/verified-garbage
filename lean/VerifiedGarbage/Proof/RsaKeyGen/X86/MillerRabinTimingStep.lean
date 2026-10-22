@@ -26,7 +26,7 @@ theorem branch_raw {mont round : Prog isa} {montName roundName : String}
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
     RelCT isa (AvailablePair P other entropy k n)
-      (.ite .b (.block exhausted) (VG.Impl.RsaKeyGen.X86.WitnessStep.code P.g.w montName mont roundName round))
+      (.ite .b (.block exhausted) (VG.Impl.RsaKeyGen.X86.WitnessStep.codeAt P.bytes P.words P.g.w montName mont roundName round))
       (VG.X86.Taint.Agree (roundTaint [.edi])) := by
   refine VG.RelCT.ite (fun _ _ H => H.2.1.trans H.2.2.symm)
     (exhausted_raw.mono (fun _ _ H => H.1.1.1.2.2) (fun _ _ H => H)) ?_
@@ -39,9 +39,10 @@ theorem branch_raw {mont round : Prog isa} {montName roundName : String}
     have condition := H.1.2.1
     rw [H.2, decide_eq_true small] at condition
     cases condition
-  have pre : WitnessStep.InitialPair P.g P.capacity P.p P.rand (P.start + P.bytes * k) P.randLen s t :=
+  have pre : WitnessStep.InitialPair P.g P.capacity P.p P.rand (P.start + P.bytes * k) P.randLen s t P.words :=
     ⟨H.1.1.1, H.1.1.2.1.stepInitial v, H.1.1.2.2.stepInitial w⟩
-  obtain ⟨trace, pair⟩ := WitnessStep.code_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v.geometry
+  obtain ⟨trace, pair⟩ := WitnessStep.codeAt_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack
+    v.geometry v.two v.narrow v.wide v.four
     v.length v.randFit v.randLenFit enough v.randSeparate v.low v.stackFar v.lengthFar _ _ _ _ _ _ pre E G
   exact ⟨trace, pair.2.2⟩
 
@@ -52,9 +53,9 @@ theorem step_raw {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
-    RelCT isa (LoopPair P other entropy k n) (step P.g.w montName mont roundName round)
+    RelCT isa (LoopPair P other entropy k n) (stepAt P.bytes P.words P.g.w montName mont roundName round)
       (VG.X86.Taint.Agree (roundTaint [.edi])) := by
-  unfold step
+  unfold stepAt
   exact RelCT.seq (available_pair v w k n)
     (RelCT.seq (branch_raw montVerified montNoSp montStack roundVerified roundNoSp roundStack v w k n) again_raw)
 
@@ -65,7 +66,7 @@ theorem step_pair {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
-    RelCT isa (LoopPair P other entropy k n) (step P.g.w montName mont roundName round)
+    RelCT isa (LoopPair P other entropy k n) (stepAt P.bytes P.words P.g.w montName mont roundName round)
       (fun s t => Pair P.g [.edi] s t ∧ Outcome P k n s ∧ Outcome (P.withSecret other entropy) k n t) := by
   intro s t tr ur u z H E G
   obtain ⟨trace, agree⟩ := step_raw montVerified montNoSp montStack roundVerified roundNoSp roundStack v w k n _ _ _ _ _ _ H E G

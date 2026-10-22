@@ -28,8 +28,13 @@ structure Parameters where
   /-- The offset of the first witness in the tape: after the candidate's own
   octets for RSA, 0 for DSA. -/
   start : Nat
-
-def Parameters.bytes (P : Parameters) : Nat := 8 * P.g.w
+  /-- The octets drawn for a witness: `8 w` for RSA. -/
+  bytes : Nat
+  /-- The candidate's native words, its bit length `32 words`: `2 w` for RSA. -/
+  words : Nat
+  /-- A power of two `2^seed ≤ candidate` that starts R²'s setup: the top
+  bit, `64 w − 1`, for RSA. -/
+  seed : Nat
 def Parameters.twos (P : Parameters) : Nat × Nat := Spec.Rsa.splitTwos (P.candidate - 1)
 
 /-- The result of the blinded loop on the witnesses from `start` on. -/
@@ -49,7 +54,13 @@ structure Parameters.Valid (P : Parameters) : Prop where
   lengthFar : (lengthRegion P.p).Disjoint (below P.p 68)
   odd : P.candidate % 2 = 1
   large : 3 < P.candidate
-  shape : Spec.RsaKeyGen.bitLength (P.candidate - 1) = 64 * P.g.w
+  shape : Spec.RsaKeyGen.bitLength (P.candidate - 1) = 32 * P.words
+  two : 2 ≤ P.words
+  narrow : 4 * P.words ≤ P.bytes
+  wide : P.bytes ≤ 8 * P.g.w
+  four : P.bytes % 4 = 0
+  seedPos : 1 ≤ P.seed
+  seedLt : P.seed < 64 * P.g.w
   witnessBytes : Spec.RsaKeyGen.witnessBytes P.candidate = P.bytes
   checksFit : P.checks < 2 ^ 32
 
@@ -82,7 +93,7 @@ theorem StateAt.keepMem {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat}
 theorem StateAt.countFit {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
     w32 s.mem P.g.W 176 + 1 < 2 ^ 32 ∧ w32 s.mem P.g.W 192 + 1 < 2 ^ 32 := by
   have used := S.atLoop.used
-  have positive : 2 ≤ P.bytes := by have := v.geometry.minWidth; unfold Parameters.bytes; omega
+  have positive : 2 ≤ P.bytes := by have := v.narrow; have := v.two; omega
   have count := Nat.mul_le_mul_right k positive
   rw [v.entropyLength] at used
   rw [S.rounds, S.uniform]

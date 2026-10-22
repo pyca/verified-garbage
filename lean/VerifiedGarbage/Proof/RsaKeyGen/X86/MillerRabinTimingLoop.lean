@@ -18,9 +18,9 @@ theorem loop_trace {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
-    RelCT isa (LoopPair P other entropy k n) (.loop (step P.g.w montName mont roundName round) .e) (Pair P.g [.edi]) := by
+    RelCT isa (LoopPair P other entropy k n) (.loop (stepAt P.bytes P.words P.g.w montName mont roundName round) .e) (Pair P.g [.edi]) := by
   let Inv : Nat → State → State → Prop := fun q s t => ∃ k n, q = n + 1 ∧ LoopPair P other entropy k n s t
-  have run : RelCT isa (Inv (n + 1)) (.loop (step P.g.w montName mont roundName round) .e) (Pair P.g [.edi]) := by
+  have run : RelCT isa (Inv (n + 1)) (.loop (stepAt P.bytes P.words P.g.w montName mont roundName round) .e) (Pair P.g [.edi]) := by
     refine RelCT.loop (M := isa) Inv ?_ (n + 1)
     rintro q s t tr ur u z ⟨i, j, rfl, H⟩ E G
     obtain ⟨trace, pair, Ou, Oz⟩ := step_pair montVerified montNoSp montStack roundVerified roundNoSp roundStack v w i j _ _ _ _ _ _ H E G

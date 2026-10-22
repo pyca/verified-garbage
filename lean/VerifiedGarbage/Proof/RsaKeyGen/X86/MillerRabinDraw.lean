@@ -19,7 +19,7 @@ theorem draw_ok {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
-    WP isa (VG.Impl.RsaKeyGen.X86.WitnessStep.code P.g.w montName mont roundName round) s fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.WitnessStep.codeAt P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧
       w32 t.mem P.g.W 152 = P.start + P.bytes * k + P.bytes ∧ w32 t.mem P.g.W 176 = k + 1 ∧
       w32 t.mem P.g.W 192 = (mrSB P.candidate P.bytes P.start P.entropy (k + 1)).2 ∧
@@ -31,10 +31,10 @@ theorem draw_ok {mont round : Prog isa} {montName roundName : String}
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
       Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   have counts := S.countFit v
-  refine WP.mono (WitnessStep.code_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v.geometry
+  refine WP.mono (WitnessStep.codeAt_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v.geometry
+    v.two v.narrow v.wide v.four
     v.length S.prepared S.randPtr S.used v.randFit v.randLenFit enough S.readable v.randSeparate v.odd (by have := v.large; omega)
     v.shape counts.1 counts.2 v.low v.stackFar v.lengthFar) fun t ⟨T, used, rounds, uniform, status, W, F, K⟩ => ?_
-  rw [show 8 * P.g.w = P.bytes from rfl] at uniform status
   rw [S.rounds] at rounds
   rw [S.sample enough, S.uniform, ← mrSB_uniform_next] at uniform
   rw [S.sample enough, S.rounds, S.uniform, S.checks, count_policy] at status

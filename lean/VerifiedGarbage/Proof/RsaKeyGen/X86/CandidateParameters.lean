@@ -15,7 +15,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 
 def Environment.parameters (E : Environment) (entropy : List Byte) : MillerRabinLoop.Parameters :=
   ⟨E.geometry, E.capacity, E.p - 28#32, E.rand, E.randLength, candidateValue E entropy, entropy,
-    VG.Impl.RsaKeyGen.X86.WitnessChecks.checks E.width, 8 * E.width⟩
+    VG.Impl.RsaKeyGen.X86.WitnessChecks.checks E.width, 8 * E.width, 8 * E.width, 2 * E.width, 64 * E.width - 1⟩
 
 theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) (entropy : List Byte)
     (entropyLength : entropy.length = E.randLength) : (E.parameters entropy).Valid := by
@@ -26,7 +26,11 @@ theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) (entr
   have bits := candidate_bits v entropy
   refine ⟨v.geometry, rfl, v.randFit, v.randLengthFit, entropyLength,
     v.readWorkspace (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)), ?_, privateFit, ?_, ?_,
-    candidate_odd v entropy, by change 3 < candidateValue E entropy; have := candidate_large v entropy; omega, bits.2.1, ?_, ?_⟩
+    candidate_odd v entropy, by change 3 < candidateValue E entropy; have := candidate_large v entropy; omega,
+    by change Spec.RsaKeyGen.bitLength (candidateValue E entropy - 1) = 32 * (2 * E.width); rw [bits.2.1]; omega,
+    by have := v.width_bounds; change 2 ≤ 2 * E.width; omega, by change 4 * (2 * E.width) ≤ 8 * E.width; omega,
+    Nat.le_refl _, by change 8 * E.width % 4 = 0; omega, by have := v.width_bounds; change 1 ≤ 64 * E.width - 1; omega,
+    by have := v.width_bounds; change 64 * E.width - 1 < 64 * E.width; omega, ?_, ?_⟩
   · exact (v.stackFar E.randRegion (List.mem_append_right _
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))).sub_right inner
   · exact (v.stackFar E.workspaceRegion (List.mem_append_left _

@@ -17,7 +17,7 @@ theorem step_ok {mont round : Prog isa} {montName roundName : String}
     (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
-    WP isa (step P.g.w montName mont roundName round) s fun t =>
+    WP isa (stepAt P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
       Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
@@ -25,9 +25,9 @@ theorem step_ok {mont round : Prog isa} {montName roundName : String}
     have := S.atLoop.used
     rw [v.entropyLength] at this
     exact this
-  unfold step
-  refine WP.seq (WP.mono (WitnessAvailable.code_ok S.prepared.ready.scratch v.geometry.headerFit
-    (by have := v.geometry.maxWidth; omega) S.randLength S.used usedBound) fun a ⟨CF, mem, Ka⟩ => ?_)
+  unfold stepAt
+  refine WP.seq (WP.mono (WitnessAvailable.codeAt_ok S.prepared.ready.scratch v.geometry.headerFit
+    (by have := v.geometry.maxWidth; have := v.wide; omega) S.randLength S.used usedBound) fun a ⟨CF, mem, Ka⟩ => ?_)
   have A := S.keepMem v mem Ka (by decide) (by decide)
   have condition : isa.eval .b a = some (decide (¬ P.start + P.bytes * k + P.bytes ≤ P.randLen)) := by
     change a.cf = _

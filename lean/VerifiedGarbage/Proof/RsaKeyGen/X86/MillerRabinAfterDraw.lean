@@ -26,7 +26,7 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
-    WP isa (.seq (VG.Impl.RsaKeyGen.X86.WitnessStep.code P.g.w montName mont roundName round) (.block again)) s fun t =>
+    WP isa (.seq (VG.Impl.RsaKeyGen.X86.WitnessStep.codeAt P.bytes P.words P.g.w montName mont roundName round) (.block again)) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
       Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
@@ -56,7 +56,7 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
   | true =>
     by_cases more : goS P.checks (mrSB P.candidate P.bytes P.start P.entropy (k + 1))
     · have next := mrLoopAt_next S.atLoop v.witnessBytes
-        (by have := v.geometry.minWidth; unfold Parameters.bytes; omega)
+        (by have := v.narrow; have := v.two; omega)
         (by rw [v.entropyLength]; exact enough) passed more
       simp only [passed, ↓reduceIte, more] at statusA
       have nextState := StateAt.next v S A usedA roundsA uniformA next.2 Wa Fa Ka

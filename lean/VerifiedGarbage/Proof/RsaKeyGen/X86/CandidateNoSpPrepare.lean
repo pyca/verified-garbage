@@ -65,9 +65,13 @@ theorem exponent (w minusOne src out : Nat) : NoSp (Exponent.code w minusOne src
   exact sequence (sequence (sequence (NoSp.of_all (by rfl)) (lowPairs minusOne 0 w))
     (NoSp.of_all (by rfl))) (NoSp.of_all (by rfl))
 
-theorem prepare {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (Prepare.code w name mont) := by
-  unfold Prepare.code
-  exact sequence (NoSp.of_all (by rfl)) (sequence (r2 H w name)
+theorem prepareAt {mont : Prog isa} (H : NoSp mont) (e w : Nat) (name : String) :
+    NoSp (Prepare.codeAt e w name mont) := by
+  unfold Prepare.codeAt
+  exact sequence (NoSp.of_all (by rfl)) (sequence (r2At H e w name)
     (sequence (constants H w name) (exponent _ _ _ _)))
+
+theorem prepare {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (Prepare.code w name mont) :=
+  prepareAt H _ w name
 
 end VG.Proof.RsaKeyGen.X86.CandidateNoSp

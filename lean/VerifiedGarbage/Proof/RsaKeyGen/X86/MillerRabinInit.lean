@@ -38,7 +38,7 @@ theorem init_ok {P : Parameters} (v : P.Valid) {s : State}
     simp only [WitnessChecks.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl <;> left <;> omega
   have primeAt := mrLoopAt_zero (ch := P.checks) (a := P.twos.1) (m := P.twos.2) (s := P.start) v.witnessBytes
-    (by have := v.geometry.minWidth; unfold Parameters.bytes; omega)
+    (by have := v.narrow; have := v.two; omega)
     (by rw [v.entropyLength]; exact enough)
   refine ⟨⟨T, ?_, ?_, ?_, (hdr (by decide)).trans randLength,
     by simpa only [Nat.mul_zero, Nat.add_zero] using (hdr (d := 152) (by decide)).trans used,

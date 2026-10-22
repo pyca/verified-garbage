@@ -8,8 +8,11 @@ public import VerifiedGarbage.Impl.Mont.X86
 namespace VG.Impl.RsaKeyGen.X86.WitnessAvailable
 open VG VG.X86 VG.Impl.Mont.X86
 
-def code (w : Nat) : List Instr :=
+/-- Whether `D` more octets remain. -/
+def codeAt (D : Nat) : List Instr :=
   [.mov .eax (.mem (sc 32)), .alu .sub .eax (.mem (sc 152)),
-    .alu .cmp .eax (.imm (BitVec.ofNat 32 (8 * w)))]
+    .alu .cmp .eax (.imm (BitVec.ofNat 32 D))]
+
+def code (w : Nat) : List Instr := codeAt (8 * w)
 
 end VG.Impl.RsaKeyGen.X86.WitnessAvailable

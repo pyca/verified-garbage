@@ -20,17 +20,17 @@ theorem core_ok {mont round : Prog isa} {montName roundName : String}
     (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State}
-    (S : Prepare.Input P.g P.candidate P.capacity P.p s)
+    (S : Prepare.Input P.g P.candidate P.capacity P.p s P.seed)
     (readable : InRegions (s.rd ++ s.wr) (P.rand.setWidth 64) P.randLen)
     (entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy)
     (randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand)
     (randLength : w32 s.mem P.g.W 32 = P.randLen)
     (used : w32 s.mem P.g.W 152 = P.start) (enough : P.start ≤ P.randLen) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.coreOf P.checks P.g.w montName mont roundName round) s fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.coreWith P.seed P.checks P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ MillerRabinLoop.Result P t ∧
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
       Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.coreOf
+  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.coreWith
   refine WP.seq (WP.mono (CandidatePrepare.code_ok montVerified montNoSp montStack v bound
     ⟨S, readable, entropy, randPtr, randLength, used⟩) fun a ⟨A, Wa, Fa, Ka⟩ => ?_)
   refine WP.mono (MillerRabinLoop.code_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack

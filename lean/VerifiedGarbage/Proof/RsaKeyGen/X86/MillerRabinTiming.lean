@@ -52,8 +52,8 @@ theorem code_trace {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (enough : P.start ≤ P.randLen) :
-    RelCT isa (InitialPair P other entropy) (codeOf P.checks P.g.w montName mont roundName round) (Pair P.g [.edi]) := by
-  unfold codeOf
+    RelCT isa (InitialPair P other entropy) (codeWith P.checks P.bytes P.words P.g.w montName mont roundName round) (Pair P.g [.edi]) := by
+  unfold codeWith
   exact RelCT.seq (init_pair v w enough)
     (loop_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v w 0 P.iterations)
 
