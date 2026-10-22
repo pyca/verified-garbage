@@ -31,15 +31,15 @@ theorem branch_raw {mont round : Prog isa} {montName roundName : String}
   refine VG.RelCT.ite (fun _ _ H => H.2.1.trans H.2.2.symm)
     (exhausted_raw.mono (fun _ _ H => H.1.1.1.2.2) (fun _ _ H => H)) ?_
   intro s t tr ur u z H E G
-  have enough : P.bytes * (k + 1) + P.bytes ≤ P.randLen := by
+  have enough : P.start + P.bytes * k + P.bytes ≤ P.randLen := by
     by_contra short
     have bound := H.1.1.2.1.atLoop.used
     rw [v.entropyLength] at bound
-    have small : P.randLen - P.bytes * (k + 1) < P.bytes := by omega
+    have small : P.randLen - (P.start + P.bytes * k) < P.bytes := by omega
     have condition := H.1.2.1
     rw [H.2, decide_eq_true small] at condition
     cases condition
-  have pre : WitnessStep.InitialPair P.g P.capacity P.p P.rand (P.bytes * (k + 1)) P.randLen s t :=
+  have pre : WitnessStep.InitialPair P.g P.capacity P.p P.rand (P.start + P.bytes * k) P.randLen s t :=
     ⟨H.1.1.1, H.1.1.2.1.stepInitial v, H.1.1.2.2.stepInitial w⟩
   obtain ⟨trace, pair⟩ := WitnessStep.code_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v.geometry
     v.length v.randFit v.randLenFit enough v.randSeparate v.low v.stackFar v.lengthFar _ _ _ _ _ _ pre E G

@@ -13,8 +13,11 @@ def checks (w : Nat) : Nat :=
   if w < 5 then 27 else if w < 6 then 8 else if w < 7 then 7 else if w < 8 then 6 else
     if w < 22 then 5 else if w < 59 then 4 else 3
 
-def code (w : Nat) : List Instr :=
+/-- The counters zeroed, and `checks` uniform tests required. -/
+def codeOf (checks : Nat) : List Instr :=
   [.mov .eax (.imm 0), .store (sc 176) .eax, .store (sc 192) .eax,
-    .mov .eax (.imm (BitVec.ofNat 32 (checks w))), .store (sc 200) .eax]
+    .mov .eax (.imm (BitVec.ofNat 32 checks)), .store (sc 200) .eax]
+
+def code (w : Nat) : List Instr := codeOf (checks w)
 
 end VG.Impl.RsaKeyGen.X86.WitnessChecks

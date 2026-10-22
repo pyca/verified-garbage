@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
 import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
-public import VerifiedGarbage.Proof.RsaKeyGen.MrIter
+public import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedDataGap
@@ -23,10 +23,18 @@ structure Parameters where
   randLen : Nat
   candidate : Nat
   entropy : Spec.RsaKeyGen.Rand
+  /-- The uniform witnesses required (`checksForSize` for RSA, `primeChecks` for DSA). -/
+  checks : Nat
+  /-- The offset of the first witness in the tape: after the candidate's own
+  octets for RSA, 0 for DSA. -/
+  start : Nat
 
 def Parameters.bytes (P : Parameters) : Nat := 8 * P.g.w
-def Parameters.checks (P : Parameters) : Nat := VG.Impl.RsaKeyGen.X86.WitnessChecks.checks P.g.w
 def Parameters.twos (P : Parameters) : Nat × Nat := Spec.Rsa.splitTwos (P.candidate - 1)
+
+/-- The result of the blinded loop on the witnesses from `start` on. -/
+def Parameters.test (P : Parameters) : Option (Bool × Spec.RsaKeyGen.Rand) :=
+  Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep P.candidate P.checks P.twos.1 P.twos.2) (1, 0) (P.entropy.drop P.start)
 
 structure Parameters.Valid (P : Parameters) : Prop where
   geometry : P.g.Valid
@@ -43,7 +51,7 @@ structure Parameters.Valid (P : Parameters) : Prop where
   large : 3 < P.candidate
   shape : Spec.RsaKeyGen.bitLength (P.candidate - 1) = 64 * P.g.w
   witnessBytes : Spec.RsaKeyGen.witnessBytes P.candidate = P.bytes
-  checks : Spec.RsaKeyGen.checksForSize (Spec.RsaKeyGen.bitLength P.candidate) = P.checks
+  checksFit : P.checks < 2 ^ 32
 
 structure StateAt (P : Parameters) (k n : Nat) (s : State) : Prop where
   prepared : Prepare.Data P.g P.candidate P.capacity P.p s
@@ -51,11 +59,11 @@ structure StateAt (P : Parameters) (k n : Nat) (s : State) : Prop where
   entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy
   randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand
   randLength : w32 s.mem P.g.W 32 = P.randLen
-  used : w32 s.mem P.g.W 152 = P.bytes * (k + 1)
+  used : w32 s.mem P.g.W 152 = P.start + P.bytes * k
   rounds : w32 s.mem P.g.W 176 = k
-  uniform : w32 s.mem P.g.W 192 = (mrS P.candidate P.bytes P.entropy k).2
+  uniform : w32 s.mem P.g.W 192 = (mrSB P.candidate P.bytes P.start P.entropy k).2
   checks : w32 s.mem P.g.W 200 = P.checks
-  atLoop : MrAt P.candidate P.checks P.twos.1 P.twos.2 P.bytes P.entropy k n
+  atLoop : MrLoopAt P.candidate P.checks P.twos.1 P.twos.2 P.bytes P.start P.entropy k n
 
 theorem StateAt.keepMem {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat}
     (S : StateAt P k n s) (mem : t.mem = s.mem) {regs : List Reg} (K : Keeps regs s t)
@@ -74,19 +82,19 @@ theorem StateAt.keepMem {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat}
 theorem StateAt.countFit {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
     w32 s.mem P.g.W 176 + 1 < 2 ^ 32 ∧ w32 s.mem P.g.W 192 + 1 < 2 ^ 32 := by
   have used := S.atLoop.used
-  have positive : 1 ≤ P.bytes := by have := v.geometry.minWidth; unfold Parameters.bytes; omega
-  have count := Nat.le_mul_of_pos_left (k + 1) positive
+  have positive : 2 ≤ P.bytes := by have := v.geometry.minWidth; unfold Parameters.bytes; omega
+  have count := Nat.mul_le_mul_right k positive
   rw [v.entropyLength] at used
   rw [S.rounds, S.uniform]
-  have uniform := mrS_uniform_le P.candidate P.bytes P.entropy k
+  have uniform := mrSB_uniform_le P.candidate P.bytes P.start P.entropy k
   have bound := v.randLenFit
   constructor <;> omega
 
 theorem StateAt.sample {P : Parameters} {s : State} {k n : Nat} (S : StateAt P k n s)
-    (enough : P.bytes * (k + 1) + P.bytes ≤ P.randLen) :
+    (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
     Spec.RsaKeyGen.witness (P.candidate - 1)
-      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off (P.rand.setWidth 64) (P.bytes * (k + 1))) P.bytes)) =
-      wit P.candidate P.bytes P.entropy (P.bytes * (k + 1)) := by
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off (P.rand.setWidth 64) (P.start + P.bytes * k)) P.bytes)) =
+      wit P.candidate P.bytes P.entropy (P.start + P.bytes * k) := by
   unfold wit
   rw [← S.entropy, seg_bytesAt _ _ enough]
 

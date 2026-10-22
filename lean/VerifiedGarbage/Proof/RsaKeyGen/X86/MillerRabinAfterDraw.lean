@@ -25,7 +25,7 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
     (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
-    (enough : P.bytes * (k + 1) + P.bytes ≤ P.randLen) :
+    (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
     WP isa (.seq (VG.Impl.RsaKeyGen.X86.WitnessStep.code P.g.w montName mont roundName round) (.block again)) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
@@ -40,7 +40,7 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
   refine ⟨T, ?_, W, F, Ka.widen Kt⟩
   have ev : isa.eval .e t = some (decide (w32 a.mem P.g.W 168 = 4)) := Z
   cases passed : Spec.RsaKeyGen.mrIteration P.candidate P.twos.1 P.twos.2
-      (wit P.candidate P.bytes P.entropy (P.bytes * (k + 1))).1 with
+      (wit P.candidate P.bytes P.entropy (P.start + P.bytes * k)).1 with
   | false =>
     have failed := S.failed v enough passed
     simp only [passed] at statusA
@@ -54,8 +54,8 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
       rw [← v.entropyLength] at bound
       omega
   | true =>
-    by_cases more : goS P.checks (mrS P.candidate P.bytes P.entropy (k + 1))
-    · have next := mrAt_next S.atLoop v.witnessBytes
+    by_cases more : goS P.checks (mrSB P.candidate P.bytes P.start P.entropy (k + 1))
+    · have next := mrLoopAt_next S.atLoop v.witnessBytes
         (by have := v.geometry.minWidth; unfold Parameters.bytes; omega)
         (by rw [v.entropyLength]; exact enough) passed more
       simp only [passed, ↓reduceIte, more] at statusA

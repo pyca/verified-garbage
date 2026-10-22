@@ -21,7 +21,7 @@ theorem step_ok {mont round : Prog isa} {montName roundName : String}
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
       Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  have usedBound : P.bytes * (k + 1) ≤ P.randLen := by
+  have usedBound : P.start + P.bytes * k ≤ P.randLen := by
     have := S.atLoop.used
     rw [v.entropyLength] at this
     exact this
@@ -29,15 +29,15 @@ theorem step_ok {mont round : Prog isa} {montName roundName : String}
   refine WP.seq (WP.mono (WitnessAvailable.code_ok S.prepared.ready.scratch v.geometry.headerFit
     (by have := v.geometry.maxWidth; omega) S.randLength S.used usedBound) fun a ⟨CF, mem, Ka⟩ => ?_)
   have A := S.keepMem v mem Ka (by decide) (by decide)
-  have condition : isa.eval .b a = some (decide (¬ P.bytes * (k + 1) + P.bytes ≤ P.randLen)) := by
+  have condition : isa.eval .b a = some (decide (¬ P.start + P.bytes * k + P.bytes ≤ P.randLen)) := by
     change a.cf = _
     rw [CF]
     congr 1
     apply decide_eq_decide.mpr
-    change (P.randLen - P.bytes * (k + 1) < P.bytes) ↔ ¬ P.bytes * (k + 1) + P.bytes ≤ P.randLen
+    change (P.randLen - (P.start + P.bytes * k) < P.bytes) ↔ ¬ P.start + P.bytes * k + P.bytes ≤ P.randLen
     omega
   refine WP.seq ?_
-  by_cases enough : P.bytes * (k + 1) + P.bytes ≤ P.randLen
+  by_cases enough : P.start + P.bytes * k + P.bytes ≤ P.randLen
   · refine WP.ite false (by rw [condition]; simp only [enough, not_true_eq_false, decide_false])
       (fun impossible => nomatch impossible) (fun _ => ?_)
     apply WP.seq_iff.mp

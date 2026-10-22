@@ -30,16 +30,16 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy)
     (randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand)
     (randLength : w32 s.mem P.g.W 32 = P.randLen)
-    (used : w32 s.mem P.g.W 152 = P.bytes) (enough : P.bytes ≤ P.randLen)
+    (used : w32 s.mem P.g.W 152 = P.start) (enough : P.start ≤ P.randLen)
     (fit : 96 ≤ (s.gpr .esp).toNat)
     (separate : (s.gpr .esp).toNat ≤ P.g.W.toNat ∨ P.g.W.toNat + P.g.L + 96 ≤ (s.gpr .esp).toNat)
     (randPrivateFar : (⟨P.rand.setWidth 64, P.randLen⟩ : Region).Disjoint (below (s.gpr .esp) 28)) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.code P.g.w montName mont roundName round) s fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.codeOf P.checks P.g.w montName mont roundName round) s fun t =>
       val32 t.mem P.g.W (P.g.array 0) P.g.words = P.candidate ∧ MillerRabinLoop.Result P t ∧
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
       Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 96] s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.code
-  refine CandidateFrame.code_full_ok (CandidateNoSp.core montNoSp roundNoSp P.g.w montName roundName) S v.geometry.headerFit capacity fit separate ?_
+  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.codeOf
+  refine CandidateFrame.code_full_ok (CandidateNoSp.coreOf montNoSp roundNoSp P.checks P.g.w montName roundName) S v.geometry.headerFit capacity fit separate ?_
   intro a Sa Ca _ Fa Ka
   have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
     FilterStack.allocated_apart (by omega) S.nowrap

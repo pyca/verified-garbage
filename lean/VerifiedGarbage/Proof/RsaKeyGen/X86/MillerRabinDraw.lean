@@ -18,15 +18,15 @@ theorem draw_ok {mont round : Prog isa} {montName roundName : String}
     (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
-    (enough : P.bytes * (k + 1) + P.bytes ≤ P.randLen) :
+    (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
     WP isa (VG.Impl.RsaKeyGen.X86.WitnessStep.code P.g.w montName mont roundName round) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧
-      w32 t.mem P.g.W 152 = P.bytes * (k + 1) + P.bytes ∧ w32 t.mem P.g.W 176 = k + 1 ∧
-      w32 t.mem P.g.W 192 = (mrS P.candidate P.bytes P.entropy (k + 1)).2 ∧
+      w32 t.mem P.g.W 152 = P.start + P.bytes * k + P.bytes ∧ w32 t.mem P.g.W 176 = k + 1 ∧
+      w32 t.mem P.g.W 192 = (mrSB P.candidate P.bytes P.start P.entropy (k + 1)).2 ∧
       w32 t.mem P.g.W 168 =
         (if Spec.RsaKeyGen.mrIteration P.candidate P.twos.1 P.twos.2
-            (wit P.candidate P.bytes P.entropy (P.bytes * (k + 1))).1 then
-          if goS P.checks (mrS P.candidate P.bytes P.entropy (k + 1)) then 4 else 1
+            (wit P.candidate P.bytes P.entropy (P.start + P.bytes * k)).1 then
+          if goS P.checks (mrSB P.candidate P.bytes P.start P.entropy (k + 1)) then 4 else 1
         else 3) ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
       Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
@@ -36,7 +36,7 @@ theorem draw_ok {mont round : Prog isa} {montName roundName : String}
     v.shape counts.1 counts.2 v.low v.stackFar v.lengthFar) fun t ⟨T, used, rounds, uniform, status, W, F, K⟩ => ?_
   rw [show 8 * P.g.w = P.bytes from rfl] at uniform status
   rw [S.rounds] at rounds
-  rw [S.sample enough, S.uniform, ← mrS_uniform_next] at uniform
+  rw [S.sample enough, S.uniform, ← mrSB_uniform_next] at uniform
   rw [S.sample enough, S.rounds, S.uniform, S.checks, count_policy] at status
   exact ⟨T, used, rounds, uniform, status, W, F, K⟩
 

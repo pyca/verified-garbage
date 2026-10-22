@@ -30,20 +30,33 @@ theorem witness {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
   exact sequence (NoSp.of_all (by rfl))
     (sequence (witnessRound Hm Hr w montName roundName) (NoSp.of_all (by rfl)))
 
-theorem millerRabin {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (w : Nat) (montName roundName : String) : NoSp (MillerRabinLoop.code w montName mont roundName round) := by
+theorem millerRabinOf {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
+    (checks w : Nat) (montName roundName : String) :
+    NoSp (MillerRabinLoop.codeOf checks w montName mont roundName round) := by
   apply NoSp.of_all
-  simp only [MillerRabinLoop.code, MillerRabinLoop.step, Code.allInstrs, checked (witness Hm Hr w montName roundName)]
+  simp only [MillerRabinLoop.codeOf, MillerRabinLoop.step, Code.allInstrs, checked (witness Hm Hr w montName roundName)]
   rfl
+
+theorem millerRabin {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
+    (w : Nat) (montName roundName : String) : NoSp (MillerRabinLoop.code w montName mont roundName round) :=
+  millerRabinOf Hm Hr _ w montName roundName
+
+theorem coreOf {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
+    (checks w : Nat) (montName roundName : String) : NoSp (CandidateTest.coreOf checks w montName mont roundName round) :=
+  sequence (prepare Hm w montName) (millerRabinOf Hm Hr checks w montName roundName)
 
 theorem core {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
     (w : Nat) (montName roundName : String) : NoSp (CandidateTest.core w montName mont roundName round) :=
-  sequence (prepare Hm w montName) (millerRabin Hm Hr w montName roundName)
+  coreOf Hm Hr _ w montName roundName
+
+theorem testOf {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
+    (checks w : Nat) (montName roundName : String) : NoSp (CandidateTest.codeOf checks w montName mont roundName round) := by
+  apply NoSp.of_all
+  simp only [CandidateTest.codeOf, CandidateFrame.code, Code.allInstrs, checked (coreOf Hm Hr checks w montName roundName)]
+  rfl
 
 theorem test {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (w : Nat) (montName roundName : String) : NoSp (CandidateTest.code w montName mont roundName round) := by
-  apply NoSp.of_all
-  simp only [CandidateTest.code, CandidateFrame.code, Code.allInstrs, checked (core Hm Hr w montName roundName)]
-  rfl
+    (w : Nat) (montName roundName : String) : NoSp (CandidateTest.code w montName mont roundName round) :=
+  testOf Hm Hr _ w montName roundName
 
 end VG.Proof.RsaKeyGen.X86.CandidateNoSp

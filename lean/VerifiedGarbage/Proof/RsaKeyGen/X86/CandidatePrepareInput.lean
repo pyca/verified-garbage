@@ -18,7 +18,7 @@ structure Input (P : MillerRabinLoop.Parameters) (s : State) : Prop where
   entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy
   randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand
   randLength : w32 s.mem P.g.W 32 = P.randLen
-  used : w32 s.mem P.g.W 152 = P.bytes
+  used : w32 s.mem P.g.W 152 = P.start
 
 structure Ready (P : MillerRabinLoop.Parameters) (s : State) : Prop where
   prepared : Prepare.Data P.g P.candidate P.capacity P.p s
@@ -26,7 +26,7 @@ structure Ready (P : MillerRabinLoop.Parameters) (s : State) : Prop where
   entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy
   randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand
   randLength : w32 s.mem P.g.W 32 = P.randLen
-  used : w32 s.mem P.g.W 152 = P.bytes
+  used : w32 s.mem P.g.W 152 = P.start
 
 theorem code_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))

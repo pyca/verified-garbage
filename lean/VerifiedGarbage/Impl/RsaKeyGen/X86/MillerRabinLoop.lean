@@ -17,7 +17,12 @@ def step (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String
   .seq (.block (WitnessAvailable.code w))
     (.seq (.ite .b (.block exhausted) (WitnessStep.code w montName montCode roundName roundCode)) (.block again))
 
+/-- The loop with `checks` uniform tests required. -/
+def codeOf (checks w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) :
+    Prog isa :=
+  .seq (.block (WitnessChecks.codeOf checks)) (.loop (step w montName montCode roundName roundCode) .e)
+
 def code (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block (WitnessChecks.code w)) (.loop (step w montName montCode roundName roundCode) .e)
+  codeOf (WitnessChecks.checks w) w montName montCode roundName roundCode
 
 end VG.Impl.RsaKeyGen.X86.MillerRabinLoop

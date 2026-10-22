@@ -41,10 +41,10 @@ theorem core_trace {mont round : Prog isa} {montName roundName : String}
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64)
     {other : Nat} {entropy : Spec.RsaKeyGen.Rand} (w : (P.withSecret other entropy).Valid)
-    (enough : P.bytes ≤ P.randLen) :
-    RelCT isa (CorePair P other entropy) (VG.Impl.RsaKeyGen.X86.CandidateTest.core P.g.w montName mont roundName round)
+    (enough : P.start ≤ P.randLen) :
+    RelCT isa (CorePair P other entropy) (VG.Impl.RsaKeyGen.X86.CandidateTest.coreOf P.checks P.g.w montName mont roundName round)
       (Pair P.g [.edi]) := by
-  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.core
+  unfold VG.Impl.RsaKeyGen.X86.CandidateTest.coreOf
   exact RelCT.seq (prepare_pair montVerified montNoSp montStack v bound w)
     (MillerRabinLoop.code_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v w enough)
 

@@ -36,6 +36,7 @@ theorem prepared_result_ok {mont round : Prog isa} {montName roundName : String}
     fun a ⟨value, result, W, F, K⟩ => ?_)
   have ready := D.finishReady_after_test v value W F K
   have frame : MutableFrame E s.mem a.mem := F.mutable
+  rw [MillerRabinLoop.Result, v.test_eq] at result
   change (match Spec.RsaKeyGen.primalityTest (candidateValue E entropy) (entropy.drop (8 * E.width)) with
     | none => w32 a.mem E.base 168 = 0
     | some (prime, rest) => w32 a.mem E.base 168 = (if prime then 1 else 3) ∧

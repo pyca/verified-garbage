@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecks
 
 /-! # The public candidate environment supplies the complete blinded-loop geometry -/
 
@@ -13,7 +14,8 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 
 def Environment.parameters (E : Environment) (entropy : List Byte) : MillerRabinLoop.Parameters :=
-  ⟨E.geometry, E.capacity, E.p - 28#32, E.rand, E.randLength, candidateValue E entropy, entropy⟩
+  ⟨E.geometry, E.capacity, E.p - 28#32, E.rand, E.randLength, candidateValue E entropy, entropy,
+    VG.Impl.RsaKeyGen.X86.WitnessChecks.checks E.width, 8 * E.width⟩
 
 theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) (entropy : List Byte)
     (entropyLength : entropy.length = E.randLength) : (E.parameters entropy).Valid := by
@@ -49,10 +51,22 @@ theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) (entr
       rw [lengthNat]; have := E.p.isLt; omega
   · change Spec.RsaKeyGen.witnessBytes (candidateValue E entropy) = 8 * E.width
     rw [bits.2.2, v.length_eq]
-  · change Spec.RsaKeyGen.checksForSize (Spec.RsaKeyGen.bitLength (candidateValue E entropy)) =
-      VG.Impl.RsaKeyGen.X86.WitnessChecks.checks E.width
+  · exact VG.Proof.RsaKeyGen.X86.WitnessChecks.checks_bound E.width
+
+/-- The loop's result is RSA's primality test of the candidate. -/
+theorem Environment.Valid.test_eq {E : Environment} (v : E.Valid) (entropy : List Byte) :
+    (E.parameters entropy).test =
+      Spec.RsaKeyGen.primalityTest (candidateValue E entropy) (entropy.drop (8 * E.width)) := by
+  have bits := candidate_bits v entropy
+  have checks : Spec.RsaKeyGen.checksForSize (Spec.RsaKeyGen.bitLength (candidateValue E entropy)) =
+      VG.Impl.RsaKeyGen.X86.WitnessChecks.checks E.width := by
     rw [bits.1]
     exact VG.Proof.RsaKeyGen.checksW_eq E.width (by have := v.width_bounds.2; omega) v.width_bounds.1
+  have odd := candidate_odd v entropy
+  have large := candidate_large v entropy
+  unfold Spec.RsaKeyGen.primalityTest
+  rw [ite_eq_right (by omega), ite_eq_right (by rw [odd]; decide), ite_eq_right (by omega), checks]
+  rfl
 
 theorem MemoryFacts.entropyLength {E : Environment} {eBytes pBytes entropy : List Byte} {s : State}
     (M : MemoryFacts E eBytes pBytes entropy s) : entropy.length = E.randLength := by
