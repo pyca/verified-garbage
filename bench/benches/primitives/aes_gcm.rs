@@ -513,8 +513,8 @@ fn tls_records(c: &mut Criterion) {
     /// hashes at an offset of 1 to 3 blocks into a group of four (all but
     /// 432, which starts a group).
     const TLS_SIZES: [usize; 23] = [
-        15, 63, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024, 1025, 2047, 4095, 4096, 4097, 9999,
-        10000, 10001, 16383, 16384, 16385,
+        15, 63, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024, 1025, 2047, 4095, 4096, 4097,
+        9999, 10000, 10001, 16383, 16384, 16385,
     ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
