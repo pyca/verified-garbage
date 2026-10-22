@@ -42,7 +42,8 @@ theorem Env.Chg.widen {E : Env} {os os' : List (Nat × Nat)} {m m' : Mem} (h : E
     · exact Env.in_stack (fun _ h => h)
 
 theorem GeoOk.bounds {g : Geo} (G : GeoOk g) :
-    20 ≤ g.qLen ∧ g.qLen ≤ 32 ∧ 128 ≤ g.pLen ∧ g.pLen ≤ 384 ∧ (g.count + 1) * g.qLen ≤ g.pLen + 12 := by
+    20 ≤ g.qLen ∧ g.qLen ≤ 32 ∧ 128 ≤ g.pLen ∧ g.pLen ≤ 384 ∧ (g.count + 1) * g.qLen ≤ g.pLen + 12 ∧
+      g.pLen ≤ (g.count + 1) * g.qLen := by
   unfold Geo.count
   rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
 
