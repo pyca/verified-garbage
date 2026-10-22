@@ -118,6 +118,7 @@ namespace VG.Variants.P384.X86_64.Law
 open Proof.Weierstrass Proof.Weierstrass.X86_64
 
 def variant : HasLawInvOrd Spec.P384.curve :=
-  ⟨⟨Proof.P384.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩, Proof.P384.primeOrder⟩
+  ⟨⟨Proof.P384.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩, Proof.P384.primeOrder,
+    Proof.P384.killedByN⟩
 
 end VG.Variants.P384.X86_64.Law

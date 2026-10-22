@@ -126,5 +126,6 @@ def variant : HasLawInvOrd Spec.P256.curve where
   law := Proof.P256.law
   inv := fun hp => invSound_of_toM hp (invToM_of_prime hp)
   prime := Proof.P256.primeOrder
+  killed := Proof.P256.killedByN
 
 end VG.Variants.P256.X86_64.Law
