@@ -129,12 +129,12 @@ theorem tail_st {M k : Nat} {s : State} (S : St base bytes len args sp M k s) :
 theorem sparseRound_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
     RelCT isa (Both fun s => ∃ M, St base bytes len args sp M k s) sparseRound
       (Both fun s => (∃ M, St base bytes len args sp M (k / 2) s) ∧ s.zf = some (decide (k / 2 = 0))) := by
-  have mul : ∀ {o a b : Nat} (ho : 1 ≤ o) (ho4 : o ≤ 4) (ha : a ≤ 4) (hb : b ≤ 4) (h1 : o ≠ 3)
+  have mul : ∀ {k o a b : Nat} (ho : 1 ≤ o) (ho4 : o ≤ 4) (ha : a ≤ 4) (hb : b ≤ 4) (h1 : o ≠ 3)
       (h3 : o ≠ 1 ∨ b = 1) (hb13 : b = 1 ∨ b = 3)
       (hT : (VG.Taint.check taint τF (.block (mulArgs o a b)) (.block [])).isSome = true),
       RelCT isa (Both fun s => ∃ M, St base bytes len args sp M k s) (PublicRt.mul o a b)
         (Both fun s => ∃ M, St base bytes len args sp M k s) := by
-    intro o a b ho ho4 ha hb h1 h3 hb13 hT
+    intro k o a b ho ho4 ha hb h1 h3 hb13 hT
     have lt : ∀ {M : Nat} {s : State}, St base bytes len args sp M k s →
         val32 s.mem base (numAt len b) (nw len) < M := by
       intro M s S; rcases hb13 with rfl | rfl
@@ -152,10 +152,24 @@ theorem sparseRound_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
     · exact RelCT.nil fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩
     · exact (mul (o := 2) (a := 2) (b := 1) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by taint_decide)).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
-  refine VG.RelCT.seq (mul (o := 1) (a := 1) (b := 1) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by taint_decide)) ?_
-  exact taint_both (fun _ _ ⟨_, S₁⟩ ⟨_, S₂⟩ => S₁.agree S₂) (.block []) (by taint_decide)
-    fun _ ⟨M, S⟩ => WP.mono (tail_st sp S) fun _ ⟨h, z⟩ => ⟨⟨M, h⟩, z⟩
+  refine VG.RelCT.seq (R := Both fun s =>
+    (∃ M, St base bytes len args sp M (k / 2) s) ∧ s.zf = some (decide (k / 2 = 0)))
+    (taint_both (fun _ _ ⟨_, S₁⟩ ⟨_, S₂⟩ => S₁.agree S₂) (.block [])
+      (by taint_decide) fun _ ⟨M, S⟩ => WP.mono (tail_st sp S) fun _ ⟨h, z⟩ => ⟨⟨M, h⟩, z⟩) ?_
+  refine VG.RelCT.ite (M := isa) (c := .e) (fun _ _ h => h.1.2.trans h.2.2.symm) ?_ ?_
+  · exact RelCT.nil fun _ _ h => ⟨h.1.1, h.1.2⟩
+  · refine VG.RelCT.seq ((mul (k := k / 2) (o := 1) (a := 1) (b := 1) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide)).mono
+      (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h) ?_
+    exact taint_both (fun _ _ ⟨_, S₁⟩ ⟨_, S₂⟩ => S₁.agree S₂) (.block []) (by taint_decide)
+      fun _ ⟨M, S⟩ => WP.mono (PublicContext.exponentLeft_ok S.1.pi.scratch (by
+          have h0 := (S.1.pi.fits (j := 0) (by decide)).1
+          simp only [numAt, numOff] at h0
+          omega))
+        fun t ⟨Mt, Kt, Zt⟩ => ⟨⟨M, S.1.keep Kt (by decide) (by decide) (by rw [Mt]; exact Frame.refl _ _),
+          S.2.1.keep Kt (by decide), (Kt.1 _ (by decide)).trans S.2.2.1,
+          by rw [Mt]; exact S.2.2.2.1, by rw [Mt]; exact S.2.2.2.2.1,
+          by rw [Mt]; exact S.2.2.2.2.2⟩, by rw [Zt, S.2.2.2.2.2]⟩
 
 theorem sparseLoop_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
     RelCT isa (Both fun s => ∃ M, St base bytes len args sp M k s) (.loop sparseRound .ne)
