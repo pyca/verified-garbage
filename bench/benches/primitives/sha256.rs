@@ -44,6 +44,17 @@ const TRANSCRIPT: [(usize, bool); 7] = [
     (52, true),
 ];
 
+/// The transcript's length, which names its benchmarks.
+const TRANSCRIPT_LEN: usize = {
+    let mut n = 0;
+    let mut i = 0;
+    while i < TRANSCRIPT.len() {
+        n += TRANSCRIPT[i].0;
+        i += 1;
+    }
+    n
+};
+
 /// The last of the transcript's hashes, by `update` and a clone's `finalize`.
 fn vg_transcript(msgs: &[Vec<u8>]) -> [u8; 32] {
     let mut h = Sha256::new();
@@ -90,13 +101,13 @@ fn transcript(c: &mut Criterion) {
     assert_eq!(openssl_transcript(&msgs), vg_transcript(&msgs));
     assert_eq!(aws_lc_transcript(&msgs), vg_transcript(&msgs));
     let mut g = c.benchmark_group("sha256-transcript");
-    g.bench_function(BenchmarkId::new(VG, "tls13"), |b| {
+    g.bench_function(BenchmarkId::new(VG, TRANSCRIPT_LEN), |b| {
         b.iter(|| vg_transcript(&msgs))
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, "tls13"), |b| {
+    g.bench_function(BenchmarkId::new(OPENSSL, TRANSCRIPT_LEN), |b| {
         b.iter(|| openssl_transcript(&msgs))
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, "tls13"), |b| {
+    g.bench_function(BenchmarkId::new(AWS_LC, TRANSCRIPT_LEN), |b| {
         b.iter(|| aws_lc_transcript(&msgs))
     });
     g.finish();
