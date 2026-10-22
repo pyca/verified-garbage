@@ -331,6 +331,30 @@ theorem sim_lanewise {b : Addr} {J : List Nat} {d : XReg} {z : State} {o : ZOp} 
     rw [hz d _ (by omega), ite_eq_left rfl, e]
   · rw [hz d _ (by omega), ite_eq_left rfl, hF h hh y hr 1 (by decide)]
 
+/-- `vpxor ymm d, d, d`, VEX-encoded, as the `zmm` code keeps it: it zeroes all of `zmm d`
+(VEX.256 writes zero bits 511:256), so both halves of `zmm d` are the `ymm` code's zero. -/
+theorem sim_zero {b : Addr} {J : List Nat} {d : XReg} {z : State} (_hz : ZOK b z) :
+    ∃ z', runBlock isa [.vop (.vbin .vpxor .l256 d d d)] z = some z' ∧ ZKeep b z z' ∧
+      ∀ h < 2, ∀ y y', Rel b h J z y → exec (.vop (.vbin .vpxor .l256 d d d)) y = some y' →
+        Rel b h (jw J d) z' y' := by
+  have hx : ∀ x : BitVec 128, VBinOp.vpxor.sse.eval x x = 0 := fun x => BitVec.xor_self
+  refine ⟨(VOp.vbin .vpxor .l256 d d d).exec z, runBlock_one rfl, ⟨vm_vop (ZKeep.refl b z).vm _, fun _ _ => rfl⟩,
+    ?_⟩
+  intro h hh y y' hr e
+  simp only [exec, Option.some.injEq] at e
+  subst e
+  simp only [VOp.exec, hx]
+  refine rel_write (z' := z.setV .l256 d 0 0) hr ⟨by cases z; rfl, fun _ _ => rfl⟩ rfl jw_J (fun r hrd _ k hk => ?_) ?_ ?_
+  · simp only [State.zlane, State.lane, State.setV, hrd, ite_false]
+  · simp only [State.zlane, State.lane, State.setV, ite_true]
+    split <;> rename_i hl
+    · split <;> rfl
+    · simp
+  · simp only [State.zlane, State.lane, State.setV, ite_true]
+    split <;> rename_i hl
+    · split <;> rfl
+    · simp
+
 /-! ## Rows of the window -/
 
 /-- A row of the window, at its offset. -/
@@ -618,6 +642,11 @@ theorem sim1 {b : Addr} {t : Nat} {J J' : List Nat} {i : Instr} (hj : jstep t J 
     cases hj
     simp only [Bool.and_eq_true, free_iff] at hc
     obtain ⟨⟨hop, ha⟩, hc⟩ := hc
+    by_cases h0 : op = .vpxor ∧ a = d ∧ c = d
+    · obtain ⟨rfl, rfl, rfl⟩ := h0
+      simp only [toZ, and_self, ite_true]
+      exact sim_zero hz
+    rw [show toZ t (.vop (.vbin op .l256 d a c)) = [.zop (.zbin (zbin op) d a c)] by simp only [toZ, h0, ite_false]]
     exact ⟨_, runBlock_one rfl, zop_keep b _ z, sim_lanewise (F := fun L i => op.sse.eval (L a i) (L c i))
       (fun r i hi => by rw [zlane_zbin _ _ _ _ _ _ hi, zbin_sse hop]) (fun _ => rfl)
       (fun h hh y hr k hk => by simp only; rw [hr.lane ha hk, hr.lane hc hk])⟩

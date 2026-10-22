@@ -75,9 +75,14 @@ def zbin : VBinOp → ZBinOp
 /-- `[rdi + o]` as `[rdi + zrow o]`. -/
 def zmem (m : MemOp) : MemOp := { m with disp := (ZB : Int) + 2 * (m.disp - 1024) }
 
-/-- An instruction of the `ymm` code on both halves (`t`: the free register of a blend). -/
+/-- An instruction of the `ymm` code on both halves (`t`: the free register of a blend). A
+register zeroed by `vpxor` with itself stays VEX-encoded: it zeroes the whole `zmm` register
+too, and AMD's Zen 4 recognises it as independent of the register's value, as it does not the
+EVEX-encoded `vpxord`, which would hold each zeroed accumulator back for the instruction that
+last wrote it. -/
 def toZ (t : Nat) : Instr → List Instr
-  | .vop (.vbin op .l256 d a b) => [.zop (.zbin (zbin op) d a b)]
+  | .vop (.vbin op .l256 d a b) =>
+    if op = .vpxor ∧ a = d ∧ b = d then [.vop (.vbin .vpxor .l256 d d d)] else [.zop (.zbin (zbin op) d a b)]
   | .vop (.vshift .psllq .l256 d a n) => [.zop (.vshift .vpsllq d a n)]
   | .vop (.vshift .psrlq .l256 d a n) => [.zop (.vshift .vpsrlq d a n)]
   | .vop (.vpermq d a o) => [.zop (.vpermq d a o)]
