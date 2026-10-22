@@ -144,10 +144,12 @@ class Selection(unittest.TestCase):
     def test_unbenchmarked_asm_module_selects_its_users(self):
         # The generated tables of constants, which no benchmark lists, and
         # its declaration: the modules of that architecture using them.
-        self.files['src/asm/x86_64/consts.rs'] = 'pub(crate) static VG_T: [u64; 1] = [1];\n'
+        self.files['src/asm/x86_64/consts/mod.rs'] = 'mod vg_t;\npub(crate) use vg_t::VG_T;\n'
+        self.files['src/asm/x86_64/consts/vg_t.rs'] = 'pub(crate) static VG_T: [u64; 1] = [1];\n'
         self.files['src/asm/x86_64/x448.rs'] += 'T = sym super::consts::VG_T,\n'
         self.files['src/asm/x86_64/mod.rs'] = 'pub(crate) mod consts;\npub(crate) mod x448;\n'
-        for paths, registered in [(['src/asm/x86_64/consts.rs'], ()),
+        for paths, registered in [(['src/asm/x86_64/consts/vg_t.rs'], ()),
+                                  (['src/asm/x86_64/consts/mod.rs'], ()),
                                   (['src/asm/x86_64/mod.rs'], ('consts',))]:
             with self.subTest(paths=paths):
                 self.assertEqual(self.modules(self.rows(paths, registered)), {'x86_64': 'x448'})
@@ -160,7 +162,7 @@ class Selection(unittest.TestCase):
                 else:
                     del self.files['src/ct.rs']
                     self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
-                rows = self.rows(['src/asm/x86_64/consts.rs'])
+                rows = self.rows(['src/asm/x86_64/consts/vg_t.rs'])
                 self.assertEqual({r['arch'] for r in rows}, {'x86_64'})
                 self.assertTrue(all(r['modules'] == '' for r in rows))
 

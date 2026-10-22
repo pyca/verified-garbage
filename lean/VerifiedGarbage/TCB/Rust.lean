@@ -42,9 +42,11 @@ the `doc` must not state them itself (`checkLayout`).
 An artifact that reads tables of constants (`Artifact.consts`, and those
 its instructions carry, `Printer.tables`: `tablesOf`) names each
 by the name of a `static` holding it, which `files` writes once per target,
-in the module `consts` (`src/asm/<target>/consts.rs`), after checking that
-every artifact of the target with a table of that name gives the same words
-and that the code names only its own tables (`checkConsts`):
+each in a file of its own, `src/asm/<target>/consts/<name>.rs` (its name in
+lowercase), after checking that every artifact of the target with a table of
+that name gives the same words and that the code names only its own tables
+(`checkConsts`). `consts/mod.rs` declares `Table` and each table's module,
+and re-exports its `static`, which the code names as `super::consts::<NAME>`:
 
 ```rust
 #[repr(C, align(64))]
@@ -55,6 +57,9 @@ pub(crate) static <NAME>: Table<<8 n>> = Table(*b"\
     …
 ");
 ```
+
+A table's file depends on nothing but its name and words, so `EmitOne.lean`
+writes those of its artifacts' tables without touching the others.
 
 `Table` holds the bytes of the words at its start (`repr(C)`, one field),
 each word little-endian as the contract's memory holds it
@@ -536,12 +541,13 @@ def checkUnique (as : List Artifact) : Except String Unit :=
     unless (as.filter fun b => b.target.name == a.target.name && b.name == a.name).length == 1 do
       throw s!"{a.target.name}: {a.name} is defined more than once"
 
-/-- A table's name is a Rust constant's: an uppercase ASCII letter, then
-uppercase ASCII letters, digits and underscores. -/
+/-- A table's name is a Rust constant's starting with `VG_`: `VG_`, then
+uppercase ASCII letters, digits and underscores; so its lowercase, the
+module of its file, is never a Rust keyword or `mod`. -/
 def tableName (n : String) : Bool :=
   match n.toList with
-  | [] => false
-  | c :: cs => ('A' ≤ c && c ≤ 'Z') && cs.all fun c => ('A' ≤ c && c ≤ 'Z') || c.isDigit || c == '_'
+  | 'V' :: 'G' :: '_' :: c :: cs => (c :: cs).all fun c => ('A' ≤ c && c ≤ 'Z') || c.isDigit || c == '_'
+  | _ => false
 
 /-- Tables of the same name in `cs` and `ds` have the same words. -/
 def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
@@ -564,7 +570,7 @@ def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
     throw s!"{a.target.name}: {a.name} has two tables of constants of the same name"
   for (n, _) in ts do
     unless tableName n do
-      throw s!"{a.target.name}: {a.name}'s table of constants {n} is not named as a Rust constant"
+      throw s!"{a.target.name}: {a.name}'s table of constants {n} is not named as a Rust constant starting with `VG_`"
   unless consistent ts ts do
     throw s!"{a.target.name}: {a.name} gives a table of constants two lists of words"
   for q in ps do
@@ -607,21 +613,31 @@ def byteEscape (b : Nat) : String :=
 def wordBytes (w : BitVec 64) : String :=
   String.join ((List.range 8).map fun i => byteEscape (w.toNat / 2 ^ (8 * i) % 256))
 
-/-- The module of a target's tables of constants: each table's words, as the
-memory holds them (`Abi.constsHeld`: little-endian), in a byte string
-literal, one word per line (each line of the literal ends with `\`, which
-continues it on the next line without the newline and the indentation).
-rustc evaluates a byte string literal at once, faster than an array of a
-word per element. -/
-def tablesFile (t : String) (ts : List (String × List (BitVec 64))) : String :=
-  header ++ s!"//! The tables of constants of the verified functions for `{t}` (`Artifact.consts`).\n" ++
+/-- The module of a table of constants, its name in lowercase. -/
+def tableModule (n : String) : String := n.toLower
+
+/-- The file of the table `n`: its words, as the memory holds them
+(`Abi.constsHeld`: little-endian), in a byte string literal, one word per
+line (each line of the literal ends with `\`, which continues it on the next
+line without the newline and the indentation). rustc evaluates a byte string
+literal at once, faster than an array of a word per element. -/
+def tableFile (t n : String) (ws : List (BitVec 64)) : String :=
+  header ++ s!"//! The table of constants `{n}` of the verified functions for `{t}` (`Artifact.consts`).\n" ++
   "#![allow(dead_code)]\n" ++
+  "\nuse super::Table;\n" ++
+  s!"\n/// The table of constants `{n}` (`Artifact.consts`).\n" ++
+  s!"pub(crate) static {n}: Table<{8 * ws.length}> = Table(*b\"\\\n" ++
+  String.join (ws.map fun w => "    " ++ wordBytes w ++ "\\\n") ++ "\");\n"
+
+/-- The module of a target's tables of constants, `consts/mod.rs`: `Table`,
+and each table's module, whose `static` it re-exports. -/
+def tablesMod (t : String) (ts : List (String × List (BitVec 64))) : String :=
+  header ++ s!"//! The tables of constants of the verified functions for `{t}` (`Artifact.consts`).\n" ++
+  "#![allow(dead_code, unused_imports)]\n" ++
   "\n/// A table of constants, aligned to a cache line.\n" ++
   "#[repr(C, align(64))]\npub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);\n" ++
-  String.join (ts.map fun (n, ws) =>
-    s!"\n/// The table of constants `{n}` (`Artifact.consts`).\n" ++
-    s!"pub(crate) static {n}: Table<{8 * ws.length}> = Table(*b\"\\\n" ++
-    String.join (ws.map fun w => "    " ++ wordBytes w ++ "\\\n") ++ "\");\n")
+  String.join (ts.map fun (n, _) =>
+    s!"\n#[rustfmt::skip]\nmod {tableModule n};\npub(crate) use {tableModule n}::{n};\n")
 
 /-- `mod` declarations for generated child modules (never reformatted by rustfmt). -/
 def modDecls (ms : List String) (cfg : String → Option String) : String :=
@@ -696,7 +712,9 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
     let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
     (s!"{t}/mod.rs", header ++ s!"//! Verified functions for `{t}`.\n" ++
       modDecls mods (fun _ => none)) ::
-    (if ts.isEmpty then [] else [(s!"{t}/consts.rs", tablesFile t ts)]) ++
+    (if ts.isEmpty then [] else
+      (s!"{t}/consts/mod.rs", tablesMod t ts) ::
+        ts.map fun (n, ws) => (s!"{t}/consts/{tableModule n}.rs", tableFile t n ws)) ++
     -- Each module's file on a task of its own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>
       (s!"{t}/{m}.rs",

@@ -25,7 +25,10 @@ It runs the same trusted printer (`VG.Emit.run`) and the same audits
 `.lake/emit/one`, and then copies (or compares) each file it generated but the
 `mod.rs` files. It refuses a file that does not exist yet (a new module also
 changes `mod.rs`) or that has functions it did not generate (another
-registration file emits into it): `Emit.lean` handles those. It is a
+registration file emits into it): `Emit.lean` handles those. Each table of
+constants has a file of its own (`src/asm/<target>/consts/<name>.rs`, which
+depends only on the table), so it writes those of its artifacts' tables and
+leaves the others; a new table is a new file. It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI
 runs, checks every artifact and every file.
 -/

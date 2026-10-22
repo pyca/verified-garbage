@@ -122,13 +122,11 @@ ret
 -- and the code may name it without `Artifact.consts`.
 #guard (Rust.checkConsts [.of artifact] (.of artifact)).isOk
 #guard Rust.tables [artifact] == [(name, tbl 42)]
-#guard Rust.tablesFile "aarch64" (Rust.tables [artifact]) ==
-  Rust.header ++ "//! The tables of constants of the verified functions for `aarch64` (`Artifact.consts`).
+#guard Rust.tableFile "aarch64" name (tbl 42) ==
+  Rust.header ++ "//! The table of constants `VG_TEST_LDRQTBL` of the verified functions for `aarch64` (`Artifact.consts`).
 #![allow(dead_code)]
 
-/// A table of constants, aligned to a cache line.
-#[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
+use super::Table;
 
 /// The table of constants `VG_TEST_LDRQTBL` (`Artifact.consts`).
 pub(crate) static VG_TEST_LDRQTBL: Table<32> = Table(*b\"\\

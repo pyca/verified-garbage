@@ -246,7 +246,9 @@ SHARED = re.compile(
 
 # The file of one module: its assembly on one architecture, or its Rust API
 # on every one.
-ASM = re.compile(r"src/asm/([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
+# A generated module's file, or (`consts`) a file of its directory: one per
+# table of constants, `consts/<table>.rs`, all of them the module `consts`.
+ASM = re.compile(r"src/asm/([a-z0-9_]+)/([a-z0-9_]+)(?:/[a-z0-9_]+)?\.rs$")
 API = re.compile(r"src/(?:hashes/)?([a-z0-9_]+)\.rs$")
 HASHES = "src/hashes/mod.rs"
 # A module declared in `src/lib.rs`: its attributes, and `pub` if it has it.
