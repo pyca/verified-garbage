@@ -19,6 +19,8 @@ apart from the ranges keeps its value (`frameR_val32`), and so do the inputs
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Dsa.X86 (stackAddress stackValue)
@@ -77,20 +79,18 @@ section
 variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s t : State}
 
 /-- The inputs hold after a stage that changes registers but `edi` and `esp`, and memory in its ranges. -/
-theorem In.keepF (h : In base bytes len args s) {regs : List Reg} (K : Keeps regs s t)
+theorem In.keepF (h : In Ex base bytes len args s) {regs : List Reg} (K : Keeps regs s t)
     (di : .edi ∉ regs) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
     (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) :
-    In base bytes len args t := by
-  have hc := h.crt
+    In Ex base bytes len args t := by
+  have hc := h
   have nw := hc.scratch.nowrap
   have low := hc.room.low
   have top := hc.top
   have esp : t.gpr .esp = s.gpr .esp := K.1 _ sp
-  refine ⟨⟨hc.scratch.of_keeps K di sp, hc.lower, hc.upper, hc.space, fun i hi => ⟨(hc.stack i hi).stack.keep K sp, ?_⟩,
-    hc.outLen, hc.nLen, hc.inLen, hc.pShort, hc.qShort, hc.dpLen, hc.dqLen, hc.qiLen, hc.outFit,
-    by rw [K.2.2]; exact hc.outWrite, hc.outApart, hc.positive, hc.bounded, hc.fits,
-    fun i hi => by rw [K.2.1, K.2.2]; exact hc.readable i hi, hc.apart, by rw [esp]; exact hc.room,
-    by rw [esp]; exact hc.top⟩, h.need, h.hbase, h.hbytes⟩
+  refine ⟨hc.scratch.of_keeps K di sp, hc.lower, hc.upper, fun i hi => ⟨(hc.stack i hi).stack.keep K sp, ?_⟩,
+    hc.outLen, by rw [esp]; exact hc.room, by rw [esp]; exact hc.top, h.need, h.hbase, h.hbytes,
+    by rw [K.2.1, K.2.2]; exact h.extra⟩
   have A := hc.stack i hi
   rw [← A.value]
   unfold stackValue

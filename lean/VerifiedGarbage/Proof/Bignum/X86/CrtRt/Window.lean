@@ -16,6 +16,8 @@ Four squares of slot 6, the window's entry into slot 7, and their product
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
@@ -30,7 +32,7 @@ abbrev nwR (len : Nat) (c : Ctx) : List (Nat × Nat) := [(winOff, 4), (lo len (.
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {M : Nat}
 
-theorem wR_fit (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ wR len c, p.1 + p.2 ≤ bytes := by
+theorem wR_fit (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ wR len c, p.1 + p.2 ≤ bytes := by
   have f8 := h.slot_fit c (j := 8) (by decide)
   have est : st len c = 2 * bc len c + 32 := rfl
   have e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
@@ -65,11 +67,11 @@ theorem wR_sub_mul (len : Nat) (c : Ctx) : ∀ p ∈ mulR len c 6, p ∈ wR len 
   rcases hp with rfl | rfl <;> simp
 
 /-- A window keeps slot 3 and the table. -/
-theorem wR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+theorem wR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (wR len c)) m m') (R : CallRoom sp base bytes) :
     sv m' base len c 3 = sv m base len c 3 ∧
       ∀ j < 16, val32 m' base (te len c j) (cwc len c) = val32 m base (te len c j) (cwc len c) := by
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
   have bw := bc_eq_cwc len c
@@ -92,11 +94,11 @@ theorem wR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     rcases hp with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
 /-- A product into slot 6 keeps slot 8 and the table. -/
-theorem mulR6_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+theorem mulR6_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (mulR len c 6)) m m') (R : CallRoom sp base bytes) :
     sv m' base len c 8 = sv m base len c 8 ∧
       ∀ j < 16, val32 m' base (te len c j) (cwc len c) = val32 m base (te len c j) (cwc len c) := by
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
   have bw := bc_eq_cwc len c
@@ -115,11 +117,11 @@ theorem mulR6_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     rcases hp with rfl | rfl <;> dsimp only <;> omega
 
 /-- The window's shift keeps slot 6 and the table. -/
-theorem nwR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+theorem nwR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (nwR len c)) m m') (R : CallRoom sp base bytes) :
     sv m' base len c 6 = sv m base len c 6 ∧
       ∀ j < 16, val32 m' base (te len c j) (cwc len c) = val32 m base (te len c j) (cwc len c) := by
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
   have bw := bc_eq_cwc len c
@@ -139,9 +141,9 @@ theorem nwR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     rcases hp with rfl | rfl <;> dsimp only <;> omega
 
 /-- A square of slot 6. -/
-theorem square_ok (C : CtxOk base bytes len args c M s) {y : Nat}
+theorem square_ok (C : CtxOk Ex base bytes len args c M s) {y : Nat}
     (hy : sv s.mem base len c 6 = y * 2 ^ (8 * bc len c) % M) :
-    WP isa (square c) s fun t => CtxOk base bytes len args c M t ∧ Keeps [.eax, .ecx, .edx] s t ∧
+    WP isa (square c) s fun t => CtxOk Ex base bytes len args c M t ∧ Keeps [.eax, .ecx, .edx] s t ∧
       Frame (frameR base (s.gpr .esp) (mulR len c 6)) s.mem t.mem ∧
       sv t.mem base len c 6 = y ^ 2 * 2 ^ (8 * bc len c) % M := by
   have hM := C.gt
@@ -154,9 +156,9 @@ theorem square_ok (C : CtxOk base bytes len args c M s) {y : Nat}
   rw [v, Nat.pow_two]
 
 /-- Four squares of slot 6, then `P`. -/
-theorem squares_ok (C : CtxOk base bytes len args c M s) {y : Nat}
+theorem squares_ok (C : CtxOk Ex base bytes len args c M s) {y : Nat}
     (hy : sv s.mem base len c 6 = y * 2 ^ (8 * bc len c) % M) {P : Prog isa} {Q : State → Prop}
-    (k : ∀ t, CtxOk base bytes len args c M t → Keeps [.eax, .ecx, .edx] s t →
+    (k : ∀ t, CtxOk Ex base bytes len args c M t → Keeps [.eax, .ecx, .edx] s t →
       Frame (frameR base (s.gpr .esp) (mulR len c 6)) s.mem t.mem →
       sv t.mem base len c 6 = y ^ 16 * 2 ^ (8 * bc len c) % M → WP isa P t Q) :
     WP isa (.seq (square c) (.seq (square c) (.seq (square c) (.seq (square c) P)))) s Q := by
@@ -175,12 +177,12 @@ theorem squares_ok (C : CtxOk base bytes len args c M s) {y : Nat}
 
 /-- A window: slot 6 to `y^16 b^w` (in Montgomery form) for the top four bits `w` of slot 8, slot 8
 shifted up past them, and `esi` down one. -/
-theorem windowStep_ok (C : CtxOk base bytes len args c M s) {b y n : Nat}
+theorem windowStep_ok (C : CtxOk Ex base bytes len args c M s) {b y n : Nat}
     (hT : ∀ j < 16, val32 s.mem base (te len c j) (cwc len c) = b ^ j * 2 ^ (8 * bc len c) % M)
     (hy : sv s.mem base len c 6 = y * 2 ^ (8 * bc len c) % M) (hn0 : 0 < n) (hn : n < 2 ^ 32)
     (he : s.gpr .esi = BitVec.ofNat 32 n) :
     WP isa (windowStep c) s fun u =>
-      CtxOk base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (wR len c)) s.mem u.mem ∧
+      CtxOk Ex base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (wR len c)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
       u.gpr .esi = BitVec.ofNat 32 (n - 1) ∧ u.zf = some (decide (n = 1)) ∧
       sv u.mem base len c 6 =
@@ -195,16 +197,16 @@ theorem windowStep_ok (C : CtxOk base bytes len args c M s) {b y n : Nat}
   have e6 : lo len (.slot c 6) = numBase + 6 * st len c := rfl
   have e7 : lo len (.slot c 7) = numBase + 7 * st len c := rfl
   have e8 : lo len (.slot c 8) = numBase + 8 * st len c := rfl
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have fitW := wR_fit h c
   have hdrW := wR_hdr len c
   unfold windowStep
   refine squares_ok C hy fun t₁ C₁ K₁ F₁ V₁ => ?_
-  obtain ⟨E₁, T₁⟩ := mulR6_keep h F₁ h.crt.room
+  obtain ⟨E₁, T₁⟩ := mulR6_keep h F₁ h.room
   have sp₁ : t₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   -- The window.
   refine WP.seq (WP.mono (nextWindow_ok C₁.inp c) fun t₂ ⟨F₂, W₂, E₂, K₂⟩ => ?_)
-  obtain ⟨Y₂, T₂⟩ := nwR_keep C₁.inp F₂ C₁.inp.crt.room
+  obtain ⟨Y₂, T₂⟩ := nwR_keep C₁.inp F₂ C₁.inp.room
   have C₂ := C₁.keepF2 K₂ (by decide) (by decide) F₂ (fun p hp => fitW p (wR_sub_nw len c p hp))
     (fun p hp => hdrW p (wR_sub_nw len c p hp))
   have sp₂ : t₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
@@ -227,7 +229,7 @@ theorem windowStep_ok (C : CtxOk base bytes len args c M s) {b y n : Nat}
   -- The product.
   refine WP.seq (WP.mono (cmul_ok C₃ (o := 6) (a := 6) (b := 7) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [S₃']; exact Nat.mod_lt _ (by omega))) fun t₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
-  obtain ⟨E₄, _⟩ := mulR6_keep C₃.inp F₄ C₃.inp.crt.room
+  obtain ⟨E₄, _⟩ := mulR6_keep C₃.inp F₄ C₃.inp.room
   have sp₄ : t₄.gpr .esp = s.gpr .esp := (K₄.1 _ (by decide)).trans sp₃
   -- The count.
   have Kt : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t₄ :=

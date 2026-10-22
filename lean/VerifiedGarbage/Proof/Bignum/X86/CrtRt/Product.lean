@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (countLoop)
@@ -77,7 +79,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- A row's multiplier, word `i` of `mulA`, into the header, and the pointers and count of the row. -/
-theorem rowSetup_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b + bc len .wide ≤ bytes) {i : Nat}
+theorem rowSetup_ok (h : In Ex base bytes len args s) {b : Loc} (hb : lo len b + bc len .wide ≤ bytes) {i : Nat}
     (hi : i < cwc len .wide) (hp : PtrAt s base .ebp (prodOff + 4 * i)) {Q : State → Prop}
     (k : ∀ u, Keeps [.eax, .ebx, .ecx, .edx, .esi] s u → Outside base multOff 4 s.mem u.mem →
       w32 u.mem base multOff = w32 s.mem base (mulAOff + 4 * i) → PtrAt u base .ecx (lo len b) →
@@ -88,14 +90,14 @@ theorem rowSetup_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b + bc
   have bw := bc_eq_cwc len .wide
   have bl := h.bytes_lt
   have hbw := bc_le h.upper' .wide
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have mo : multOff = 48 := rfl
   have po : prodOff = 256 := rfl
   have ma : mulAOff = 2312 := rfl
   simp only [List.cons_append, List.append_assoc]
   refine wp_movS (readSrc_ptr h.ws hp (d := mulAOff - prodOff) (by omega)) fun u₁ a₁ _ => ?_
   have h₁ := h.regs a₁.keeps a₁.mem
-  refine wp_storeS (h₁.crt.scratch.ea (d := multOff) (by omega)) (h₁.crt.scratch.write (d := multOff) (n := 4)
+  refine wp_storeS (h₁.scratch.ea (d := multOff) (by omega)) (h₁.scratch.write (d := multOff) (n := 4)
     (by omega)) fun u₂ m₂ => ?_
   have O₂ : Outside base multOff 4 s.mem u₂.mem := by
     rw [m₂.mem, a₁.mem]; exact writeW32_outside _ _ _ (by omega)
@@ -115,7 +117,7 @@ theorem rowSetup_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b + bc
   · rw [a₅.other _ (by decide), e₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), bw]
 
 /-- The end of a row: its carry word stored, `ebp` at the next row, and ZF after the last. -/
-theorem rowTail_ok (h : In base bytes len args s) {i : Nat} (hi : i < cwc len .wide)
+theorem rowTail_ok (h : In Ex base bytes len args s) {i : Nat} (hi : i < cwc len .wide)
     (hp : PtrAt s base .ebp (prodOff + 4 * i + 4 * cwc len .wide)) :
     WP isa (.block (([.store (at_ .ebp 0) .ebx] : List Instr) ++ widthC 0 .wide .eax ++
       ([.alu .sub .ebp (.reg .eax), .alu .add .ebp (.imm 4), .alu .add .eax (.reg .edi),
@@ -127,7 +129,7 @@ theorem rowTail_ok (h : In base bytes len args s) {i : Nat} (hi : i < cwc len .w
   have pf := h.prod_fit
   have bw := bc_eq_cwc len .wide
   have hbw := bc_le h.upper' .wide
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have po : prodOff = 256 := rfl
   have ma : mulAOff = 2312 := rfl
   simp only [List.cons_append]
@@ -171,23 +173,23 @@ theorem rowTail_ok (h : In base bytes len args s) {i : Nat} (hi : i < cwc len .w
 /-- The ranges a product changes. -/
 abbrev prodR (len : Nat) : List (Nat × Nat) := [(multOff, 4), (prodOff, 2 * bc len .wide + 4)]
 
-theorem prodR_fit (h : In base bytes len args s) : ∀ p ∈ prodR len, p.1 + p.2 ≤ bytes := by
+theorem prodR_fit (h : In Ex base bytes len args s) : ∀ p ∈ prodR len, p.1 + p.2 ≤ bytes := by
   have pf := h.prod_fit
   intro p hp; simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl <;> simp only [multOff, prodOff, mulAOff, numBase] at * <;> omega
 
 /-- A product keeps everything from the multiplicand up. -/
-theorem prodR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+theorem prodR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (prodR len)) m m') (R : CallRoom sp base bytes) {d k : Nat} (hd : mulAOff ≤ d)
     (hk : d + 4 * k ≤ bytes) : val32 m' base d k = val32 m base d k := by
   have pf := h.prod_fit
-  refine frameR_val32 F R h.crt.scratch.nowrap hk ?_ (prodR_fit h)
+  refine frameR_val32 F R h.scratch.nowrap hk ?_ (prodR_fit h)
   intro p hp; simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl <;> simp only [multOff, prodOff, mulAOff, numBase] at * <;> omega
 
 /-- The product of the multiplicand at `mulAOff` and the number `b`, `B` bytes each, into the
 `2 B + 4` bytes at `prodOff`. -/
-theorem wideProduct_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b + bc len .wide ≤ bytes)
+theorem wideProduct_ok (h : In Ex base bytes len args s) {b : Loc} (hb : lo len b + bc len .wide ≤ bytes)
     (hbn : numBase ≤ lo len b) :
     WP isa (wideProduct b) s fun u =>
       Frame (frameR base (s.gpr .esp) (prodR len)) s.mem u.mem ∧
@@ -198,7 +200,7 @@ theorem wideProduct_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b +
   have bw := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .wide
   have hbw := bc_le h.upper' .wide
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have bl := h.bytes_lt
   have po : prodOff = 256 := rfl
   have ma : mulAOff = 2312 := rfl
@@ -233,7 +235,7 @@ theorem wideProduct_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b +
     exact (Nat.mul_eq_zero.mp z).resolve_left (by omega)
   -- The rows.
   refine WP.mono (countLoop (N := cn) (by omega) (fun i t =>
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ In base bytes len args t ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ In Ex base bytes len args t ∧
       PtrAt t base .ebp (prodOff + 4 * i) ∧ Frame (frameR base (s.gpr .esp) (prodR len)) s.mem t.mem ∧
       val32 t.mem base prodOff (i + cn) = val32 s.mem base mulAOff i * Bv ∧
       val32 t.mem base (prodOff + 4 * (i + cn)) (cn + 1 - i) = 0) ?step
@@ -244,7 +246,7 @@ theorem wideProduct_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b +
     rw [show cn + 1 - cn = 1 by omega] at V₂
     rw [show 2 * cwc len .wide + 1 = (cn + cn) + 1 by omega, val32_append, V₁, V₂, Nat.mul_zero, Nat.add_zero]
   rintro i t hi ⟨Kt, It, pt, Ft, V1, V2⟩
-  have room := It.crt.room
+  have room := It.room
   have sp : t.gpr .esp = s.gpr .esp := Kt.1 _ (by decide)
   rw [sp] at room
   -- The multiplier and the pointers.
@@ -268,9 +270,9 @@ theorem wideProduct_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b +
   · -- The new row's value.
     have a₃ : w32 u₃.mem base (0 + multOff) = w32 s.mem base (mulAOff + 4 * i) := by
       rw [Nat.zero_add, M₃, ← w32_val32_one, ← w32_val32_one,
-        prodR_keep h Ft h.crt.room (by omega) (by omega)]
+        prodR_keep h Ft h.room (by omega) (by omega)]
     have b₃ : val32 u₃.mem base (lo len b) cn = Bv := by
-      rw [O₃.val32 (.inr (by omega)) (by omega)]; exact prodR_keep h Ft h.crt.room (by omega) (by omega)
+      rw [O₃.val32 (.inr (by omega)) (by omega)]; exact prodR_keep h Ft h.room (by omega) (by omega)
     have lo₅ : val32 u₅.mem base prodOff i = val32 t.mem base prodOff i := by
       rw [O₅.val32 (.inl (by omega)) (by omega), O₄.val32 (.inl (by omega)) (by omega),
         O₃.val32 (.inr (by omega)) (by omega)]

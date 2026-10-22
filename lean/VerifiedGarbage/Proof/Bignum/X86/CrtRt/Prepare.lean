@@ -16,6 +16,8 @@ inverse and `R² mod M` (`prepare_ok`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (count1_zf countLoop)
@@ -28,12 +30,12 @@ abbrev powR (len : Nat) (c : Ctx) : List (Nat × Nat) :=
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem powerTwo_ok (h : In base bytes len args s) (c : Ctx) (hM : 1 < sv s.mem base len c 0) :
+theorem powerTwo_ok (h : In Ex base bytes len args s) (c : Ctx) (hM : 1 < sv s.mem base len c 0) :
     WP isa (powerTwo c) s fun u =>
       Frame (frameR base (s.gpr .esp) (powR len c)) s.mem u.mem ∧
       sv u.mem base len c 4 = 2 ^ (16 * bc len c) % sv s.mem base len c 0 ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have nw' := h.crt.scratch.nowrap
+  have nw' := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have g := bc_ge h.lower' c
   have hb := bc_le h.upper' c
@@ -77,7 +79,7 @@ theorem powerTwo_ok (h : In base bytes len args s) (c : Ctx) (hM : 1 < sv s.mem 
   · rintro j t hj ⟨Kt, Ft, Vt, esit⟩
     have ht := h₅.keepF Kt (by decide) (by decide) (by rw [sp₅]; exact Ft) fit
     have Mt : sv t.mem base len c 0 = M := by
-      have := frameR_val32 (d := lo len (.slot c 0)) (k := cwc len c) Ft h.crt.room nw' (by omega) (by
+      have := frameR_val32 (d := lo len (.slot c 0)) (k := cwc len c) Ft h.room nw' (by omega) (by
         intro p hp
         simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl <;> dsimp only <;> omega) fit
@@ -124,14 +126,14 @@ theorem zero_sub_and_one (w : BitVec 32) : (0 : BitVec 32) - (w &&& 1) = cmask (
   rw [e]
   rcases Nat.mod_two_eq_zero_or_one w.toNat with h | h <;> rw [h] <;> rfl
 
-theorem prepare_ok (h : In base bytes len args s) (c : Ctx) :
+theorem prepare_ok (h : In Ex base bytes len args s) (c : Ctx) :
     WP isa (prepare c) s fun u =>
       Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem u.mem ∧
       sv u.mem base len c 0 = safeM (sv s.mem base len c 0) ∧ sv u.mem base len c 3 = 1 ∧
       sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
       (safeM (sv s.mem base len c 0) * w32 u.mem base invOff + 1) % 2 ^ 32 = 0 ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have nw' := h.crt.scratch.nowrap
+  have nw' := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have g := bc_ge h.lower' c
   have bw := bc_eq_cwc len c
@@ -172,7 +174,7 @@ theorem prepare_ok (h : In base bytes len args s) (c : Ctx) :
   simp only [cw1, one₂, z0, M₂] at e₃
   have h₃ := h₂.regs (K₃.mono (by decide) : Keeps [.eax, .ecx, .edx, .ebp, .esi] u₂ u₃) m₃
   -- `ecx`: whether it is to be replaced.
-  refine WP.seq (wp_movS (readSrc_sc h₃.crt.scratch (d := numBase) (by omega)) fun v₁ a₁ _ => ?_)
+  refine WP.seq (wp_movS (readSrc_sc h₃.scratch (d := numBase) (by omega)) fun v₁ a₁ _ => ?_)
   refine wp_logicS (.inl rfl) rfl fun v₂ a₂ => wp_movS rfl fun v₃ a₃ _ => wp_subS rfl fun v₄ a₄ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun v₅ a₅ => wp_logicS (.inr rfl) rfl fun v₆ a₆ => WP.block_nil ?_
   have mem₆ : v₆.mem = u₂.mem := by rw [a₆.mem, a₅.mem, a₄.mem, a₃.mem, a₂.mem, a₁.mem, m₃]
@@ -216,7 +218,7 @@ theorem prepare_ok (h : In base bytes len args s) (c : Ctx) :
   -- The inverse.
   have odd₇ : w32 u₇.mem base numBase % 2 = 1 := by
     rw [← VG.Proof.Mont.X86.Dynamic.val32_parity u₇.mem base numBase k, ← ek, safe₇]; exact safeM_odd _
-  refine WP.seq (WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h₇.crt.scratch (mo := numBase) (inv := invOff) (by omega)
+  refine WP.seq (WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h₇.scratch (mo := numBase) (inv := invOff) (by omega)
     (by simp only [invOff]; omega) odd₇) fun u₈ ⟨I₈, O₈, K₈⟩ => ?_)
   have h₈ := h₇.keep K₈ (by decide) (by decide) (O₈.mono (Nat.zero_le _) (by simp only [invOff]; omega))
   have M₈ : val32 u₈.mem base numBase (cwc len c) = safeM M₀ := by
@@ -233,7 +235,7 @@ theorem prepare_ok (h : In base bytes len args s) (c : Ctx) :
   have keepVal : ∀ d, d + 4 * cwc len c ≤ bytes → (d + 4 * cwc len c ≤ lo len (.slot c 1) ∨
       lo len (.slot c 1) + (bc len c + 4) ≤ d) → (d + 4 * cwc len c ≤ lo len (.slot c 4) ∨ lo len (.slot c 4) + bc len c ≤ d) →
       val32 u.mem base d (cwc len c) = val32 u₈.mem base d (cwc len c) := fun d hd h1 h2 =>
-    frameR_val32 F₉ h.crt.room nw' hd (by
+    frameR_val32 F₉ h.room nw' hd (by
       intro p hp
       simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl <;> dsimp only <;> omega) fitW
@@ -251,7 +253,7 @@ theorem prepare_ok (h : In base bytes len args s) (c : Ctx) :
   · simp only [sv] at V₉ ⊢; rw [V₉]; simp only [z0]; rw [M₈]; simp only [M₀, sv, z0]
   · have W : w32 u.mem base invOff = w32 u₈.mem base invOff := by
       rw [← w32_val32_one, ← w32_val32_one]
-      exact frameR_val32 F₉ h.crt.room nw' (by simp only [invOff]; omega) (by
+      exact frameR_val32 F₉ h.room nw' (by simp only [invOff]; omega) (by
         intro p hp
         simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl <;> dsimp only <;> simp only [invOff] <;> omega) fitW

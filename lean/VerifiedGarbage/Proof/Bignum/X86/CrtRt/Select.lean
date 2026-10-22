@@ -14,6 +14,8 @@ by a scan of all sixteen entries under masks.
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
@@ -28,7 +30,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx}
 
 /-- `ebp` at entry `j`, `ebx` at slot 7, `edi` the bytes of a number. -/
-theorem selPtrs_ok (h : In base bytes len args s) {j : Nat} (hj : j ≤ 16) {Q : State → Prop}
+theorem selPtrs_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 16) {Q : State → Prop}
     (k : ∀ w, Keeps [.ebx, .edx, .ebp, .edi] s w → w.mem = s.mem → PtrAt w base .ebp (te len c j) →
       PtrAt w base .ebx (lo len (.slot c 7)) → (w.gpr .edi).toNat = 4 * cwc len c → Q w) :
     WP isa (.block (entryPtr c .ebp j .edx ++ ptrTo (.slot c 7) .ebx .edx ++ cntTo (one c) .edi)) s Q := by
@@ -52,7 +54,7 @@ theorem selPtrs_ok (h : In base bytes len args s) {j : Nat} (hj : j ≤ 16) {Q :
   · rw [cnt_toNat h.upper' (one_ok c) c₃, cw1]
 
 /-- Entry `j` into slot 7 when the window word is `j`. -/
-theorem selectEntry_ok (h : In base bytes len args s) (hw : w32 s.mem base winOff < 16) {j : Nat}
+theorem selectEntry_ok (h : In Ex base bytes len args s) (hw : w32 s.mem base winOff < 16) {j : Nat}
     (hj : j < 16) :
     WP isa (selectEntry c j) s fun u =>
       Outside base (lo len (.slot c 7)) (bc len c) s.mem u.mem ∧
@@ -72,7 +74,7 @@ theorem selectEntry_ok (h : In base bytes len args s) (hw : w32 s.mem base winOf
   rw [show ∀ a b c d : List Instr, a ++ b ++ c ++ d = a ++ (b ++ c ++ d) from by intros; simp]
   change WP isa (.seq (.block (VG.Impl.Mont.X86.Dynamic.windowMask j ++ _)) _) s _
   refine WP.seq (WP.block_append
-    (WP.mono (VG.Proof.Mont.X86.Dynamic.windowMask_ok h.crt.scratch (by omega) (Nat.lt_trans hw (by decide)) (by omega)) fun w ⟨M, C, K⟩ => ?_))
+    (WP.mono (VG.Proof.Mont.X86.Dynamic.windowMask_ok h.scratch (by omega) (Nat.lt_trans hw (by decide)) (by omega)) fun w ⟨M, C, K⟩ => ?_))
   have h₁ := h.regs K M
   refine selPtrs_ok h₁ (j := j) (by omega) fun w₂ K₂ m₂ pe pb ce => ?_
   have K₀ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s w₂ := (K.mono (by decide)).trans (K₂.mono (by decide))
@@ -88,10 +90,10 @@ theorem selectEntry_ok (h : In base bytes len args s) (hw : w32 s.mem base winOf
   · rw [V, mw]; by_cases e : w32 s.mem base winOff = j <;> simp [e]
 
 /-- Slot 7 keeps the window word and the table. -/
-theorem slot7_keeps (h : In base bytes len args s) {m : Mem} (O : Outside base (lo len (.slot c 7)) (bc len c) s.mem m) :
+theorem slot7_keeps (h : In Ex base bytes len args s) {m : Mem} (O : Outside base (lo len (.slot c 7)) (bc len c) s.mem m) :
     w32 m base winOff = w32 s.mem base winOff ∧
       ∀ j < 16, val32 m base (te len c j) (cwc len c) = val32 s.mem base (te len c j) (cwc len c) := by
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
   have bw := bc_eq_cwc len c
@@ -104,7 +106,7 @@ theorem slot7_keeps (h : In base bytes len args s) {m : Mem} (O : Outside base (
   exact O.val32 (.inr (by omega)) (by omega)
 
 /-- Entries `1` to `k` into slot 7, each when the window word names it. -/
-theorem selectEntries_ok (h : In base bytes len args s) (hw : w32 s.mem base winOff < 16) :
+theorem selectEntries_ok (h : In Ex base bytes len args s) (hw : w32 s.mem base winOff < 16) :
     ∀ k, k < 16 →
     WP isa (selectEntries c k) s fun u =>
       Outside base (lo len (.slot c 7)) (bc len c) s.mem u.mem ∧
@@ -135,7 +137,7 @@ theorem selectEntries_ok (h : In base bytes len args s) (hw : w32 s.mem base win
       simp only [e']
 
 /-- The window word's entry into slot 7. -/
-theorem selectWindow_ok (h : In base bytes len args s) (hw : w32 s.mem base winOff < 16) :
+theorem selectWindow_ok (h : In Ex base bytes len args s) (hw : w32 s.mem base winOff < 16) :
     WP isa (selectWindow c) s fun u =>
       Outside base (lo len (.slot c 7)) (bc len c) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot c 7)) (cwc len c) =

@@ -17,6 +17,8 @@ back where it is below `M`. One, doubled `16 Bc` times, is `R² mod M` for
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (select_mod' count1_zf countLoop wp_carry)
@@ -41,14 +43,14 @@ theorem zero_sub_cmask (c : Bool) : (0 : BitVec 32) - cmask c = BitVec.ofNat 32 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem doubleStep_ok (h : In base bytes len args s) (c : Ctx)
+theorem doubleStep_ok (h : In Ex base bytes len args s) (c : Ctx)
     (hT : sv s.mem base len c 4 < sv s.mem base len c 0) :
     WP isa (doubleStep c) s fun u =>
       Frame (frameR base (s.gpr .esp) [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)]) s.mem u.mem ∧
       sv u.mem base len c 4 = (sv s.mem base len c 4 + sv s.mem base len c 4) % sv s.mem base len c 0 ∧
       u.gpr .esi = s.gpr .esi - 1 ∧ u.zf = some (s.gpr .esi - 1 == 0) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have nw' := h.crt.scratch.nowrap
+  have nw' := h.scratch.nowrap
   have bl := h.bytes_lt
   have f8 := h.slot_fit c (j := 8) (by decide)
   have g := bc_ge h.lower' c

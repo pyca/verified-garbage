@@ -17,6 +17,8 @@ the result of a power saved zero-extended (`saveResult_ok`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
@@ -35,7 +37,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- `2 B` and `B` bytes from wide slot 9 on; half slots within the wide ones. -/
-theorem In.wide_fit (h : In base bytes len args s) {j : Nat} (hj : j ≤ 19) :
+theorem In.wide_fit (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 19) :
     lo len (.slot .wide j) + 2 * bc len .wide + 32 ≤ lo len (.slot .wide (j + 1)) ∧
       lo len (.slot .wide (j + 1)) ≤ bytes := by
   have f := h.slot_fit .wide (j := j) (by omega)
@@ -46,7 +48,7 @@ theorem In.wide_fit (h : In base bytes len args s) {j : Nat} (hj : j ≤ 19) :
 
 /-- The half context's slots, its table and the wide context's slots 0 to 8, within the first nine
 wide slots and the table. -/
-theorem half_in_wide (h : In base bytes len args s) {j : Nat} (hj : j ≤ 8) :
+theorem half_in_wide (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 8) :
     lo len (.slot .half j) + st len .half ≤ lo len (.slot .wide 9) := by
   have hb := bc_half_le' len
   have g := bc_ge h.lower' .wide
@@ -57,7 +59,7 @@ theorem half_in_wide (h : In base bytes len args s) {j : Nat} (hj : j ≤ 8) :
   have := Nat.mul_le_mul_right (st len .half) hj
   rw [e, e9]; omega
 
-theorem prepR_fit (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len c, p.1 + p.2 ≤ bytes := by
+theorem prepR_fit (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len c, p.1 + p.2 ≤ bytes := by
   have f8 := h.slot_fit c (j := 8) (by decide)
   have est : st len c = 2 * bc len c + 32 := rfl
   have e01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le c (by decide)
@@ -73,9 +75,9 @@ theorem prepR_fit (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len
 
 /-- A prepared context: its modulus the odd number above one that slot 0 held (or three), one in
 slot 3 and `R² mod M` in slot 4. -/
-theorem prepCtx_ok (h : In base bytes len args s) (c : Ctx) :
+theorem prepCtx_ok (h : In Ex base bytes len args s) (c : Ctx) :
     WP isa (prepare c) s fun u =>
-      CtxOk base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
+      CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
       sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
       Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u :=
@@ -83,7 +85,7 @@ theorem prepCtx_ok (h : In base bytes len args s) (c : Ctx) :
     ⟨⟨h.keepF K (by decide) (by decide) F (prepR_fit h c), M, safeM_gt _, safeM_odd _, I⟩, one, R2, F, K⟩
 
 /-- A power's result (slot 6 of `c`) into the wide slot `o`, zero-extended to `2 B` bytes. -/
-theorem saveResult_ok (h : In base bytes len args s) (c : Ctx) {o : Nat} (ho9 : 9 ≤ o) (ho : o ≤ 19) :
+theorem saveResult_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho9 : 9 ≤ o) (ho : o ≤ 19) :
     WP isa (saveResult c o) s fun u =>
       Outside base (lo len (.slot .wide o)) (2 * bc len .wide) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = sv s.mem base len c 6 ∧

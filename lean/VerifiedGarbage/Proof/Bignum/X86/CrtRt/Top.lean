@@ -24,6 +24,8 @@ the registers saved and restored around it; `correct`: the contract.
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Spill VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.Crt (componentValue componentArguments accepted outputValue specResult specResult_eq)
@@ -88,7 +90,7 @@ def Post (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem sized_post (h : In base bytes len args s)
+theorem sized_post (h : RIn base bytes len args s)
     (valid : Spec.Rsa.modulusValid (componentValue s.mem args 2) len = true) :
     WP isa CrtRt.sized s fun t => Post base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
@@ -101,14 +103,14 @@ theorem sized_post (h : In base bytes len args s)
     exact ⟨by simp only [B, acc, decide_false]; rfl,
       by simpa only [acc, ite_false, VG.Proof.Bignum.i2osp_zero'] using Y⟩
 
-theorem failure_post (h : In base bytes len args s) (failed : specResult s.mem args = none) :
+theorem failure_post (h : RIn base bytes len args s) (failed : specResult s.mem args = none) :
     WP isa PublicFn.failure s fun t => Post base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have lo := h.lower'
   have hi := h.upper'
   refine WP.mono (publicFailure_ok (by omega) (by omega) h.crt.outFit
-    ((h.crt.stack 0 (by decide)).readSrc)
-    (by rw [← h.crt.outLen]; exact (h.crt.stack 1 (by decide)).readSrc) h.crt.outWrite)
+    ((h.stack 0 (by decide)).readSrc)
+    (by rw [← h.outLen]; exact (h.stack 1 (by decide)).readSrc) h.crt.outWrite)
     fun t ⟨Y, B, O, K⟩ => ?_
   refine ⟨⟨?_, ?_⟩, K.mono (by decide)⟩
   · simp only [failed, Spec.Rsa.written]; exact ⟨B, Y⟩
@@ -116,7 +118,7 @@ theorem failure_post (h : In base bytes len args s) (failed : specResult s.mem a
     simp only [BitVec.add_zero] at F
     exact F.mono (by simp [rtBody, byteAddr])
 
-theorem body_ok (h : In base bytes len args s) :
+theorem body_ok (h : RIn base bytes len args s) :
     WP isa CrtRt.body s fun t => Post base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have nf := h.crt.fits 2 (by decide)
@@ -126,7 +128,7 @@ theorem body_ok (h : In base bytes len args s) :
   rw [h.crt.modulus_length] at nf nr
   unfold CrtRt.body
   refine WP.seq (WP.mono (argumentPair_ok (c := BitVec.ofNat 32 len) (by decide) (by decide)
-    ((h.crt.stack 2 (by decide)).readSrc) (by rw [← h.crt.nLen]; exact (h.crt.stack 3 (by decide)).readSrc))
+    ((h.stack 2 (by decide)).readSrc) (by rw [← h.crt.nLen]; exact (h.stack 3 (by decide)).readSrc))
     fun u ⟨P, C, M, K⟩ => ?_)
   refine WP.seq (WP.mono (modulusCheck_ok u h.lower' h.upper' (by rw [P]; exact nf)
     (by rw [P, K.2.1, K.2.2]; exact nr) C) fun v ⟨Z, Mv, Kv⟩ => ?_)
@@ -172,10 +174,10 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   unfold CrtRt.code
   rw [entry_eq]
   refine WP.seq (WP.mono (Crt.installed_ok A) fun u ⟨I, S, K, O⟩ => ?_)
-  have hI : In (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) u :=
-    ⟨I, need_le A.lengths.1 A.scratchLength,
-      by simp only [argumentPointer, BitVec.toNat_setWidth,
-        Nat.mod_eq_of_lt (Nat.lt_trans (arg s 16).isLt (by decide : 2 ^ 32 < 2 ^ 64))], rfl⟩
+  have hI : RIn (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) u :=
+    In.ofInputs I (need_le A.lengths.1 A.scratchLength)
+      (by simp only [argumentPointer, BitVec.toNat_setWidth,
+        Nat.mod_eq_of_lt (Nat.lt_trans (arg s 16).isLt (by decide : 2 ^ 32 < 2 ^ 64))]) rfl
   refine WP.seq (WP.mono (body_ok hI) fun v ⟨⟨V, F⟩, Kv⟩ => ?_)
   have Saved := frameRt_saved F I.outApart low high I.room.apart (savedRegisters_eq ▸ S)
   have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)

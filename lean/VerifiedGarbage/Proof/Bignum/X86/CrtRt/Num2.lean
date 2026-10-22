@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (reduceLoop_ok compareLoop_ok byteAddr_ptr)
@@ -19,7 +21,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- The pointers and count of `chain`, its carry cleared. -/
-theorem chainSetup_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N : CntOk n)
+theorem chainSetup_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N : CntOk n)
     (ho : lo len o + cb len n ≤ bytes) (ha : lo len a + cb len n ≤ bytes) (hb : lo len b + cb len n ≤ bytes)
     {Q : State → Prop}
     (k : ∀ w, Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s w → w.mem = s.mem → PtrAt w base .ebp (lo len a) →
@@ -49,7 +51,7 @@ theorem chainSetup_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N 
   · rw [PtrAt, u₂.other _ (by decide), u₁.gpr, Ky.1 _ (by decide)]; exact pw
   · rw [u₂.other _ (by decide), u₁.other _ (by decide)]; exact cnt_toNat h.upper' N cy
 
-theorem chainSub_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N : CntOk n)
+theorem chainSub_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N : CntOk n)
     (ho : lo len o + cb len n ≤ bytes) (ha : lo len a + cb len n ≤ bytes) (hb : lo len b + cb len n ≤ bytes)
     (hoa : Apart (lo len o) (cb len n) (lo len a) (cb len n)) (hob : Apart (lo len o) (cb len n) (lo len b) (cb len n)) :
     WP isa (chain .sbb o a b n) s fun u => Outside base (lo len o) (cb len n) s.mem u.mem ∧
@@ -65,14 +67,14 @@ theorem chainSub_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N : 
     fun t ⟨O, P, V, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K.trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega)
-  refine wp_movS ((h.crt.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
+  refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
   have ed : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
   obtain ⟨c', ec', V'⟩ := V
   refine ⟨by rw [u₁.mem, ← m, ce]; exact O, by rw [PtrAt, u₁.other _ (by decide), ce]; exact P,
     ⟨c', by rw [u₁.other _ (by decide)]; exact ec', by rw [u₁.mem, ← m]; exact V'⟩,
     PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp]) (Kall.trans (u₁.keeps.mono (by decide))) ed⟩
 
-theorem chainAdd_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N : CntOk n)
+theorem chainAdd_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N : CntOk n)
     (ho : lo len o + cb len n ≤ bytes) (ha : lo len a + cb len n ≤ bytes) (hb : lo len b + cb len n ≤ bytes)
     (hoa : Apart (lo len o) (cb len n) (lo len a) (cb len n)) (hob : Apart (lo len o) (cb len n) (lo len b) (cb len n)) :
     WP isa (chain .adc o a b n) s fun u => Outside base (lo len o) (cb len n) s.mem u.mem ∧
@@ -88,14 +90,14 @@ theorem chainAdd_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N : 
     fun t ⟨O, P, _, V, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K.trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega)
-  refine wp_movS ((h.crt.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
+  refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
   have ed : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
   obtain ⟨c', ec', V'⟩ := V
   refine ⟨by rw [u₁.mem, ← m, ce]; exact O, by rw [PtrAt, u₁.other _ (by decide), ce]; exact P,
     ⟨c', by rw [u₁.other _ (by decide)]; exact ec', by rw [u₁.mem, ← m]; exact V'⟩,
     PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp]) (Kall.trans (u₁.keeps.mono (by decide))) ed⟩
 
-theorem lessThan_ok (h : In base bytes len args s) {a b : Loc} {n : Cnt} (N : CntOk n)
+theorem lessThan_ok (h : In Ex base bytes len args s) {a b : Loc} {n : Cnt} (N : CntOk n)
     (ha : lo len a + cb len n ≤ bytes) (hb : lo len b + cb len n ≤ bytes) :
     WP isa (lessThan a b n) s fun u => u.mem = s.mem ∧
       u.gpr .ecx = cmask (decide (val32 s.mem base (lo len a) (cw len n) < val32 s.mem base (lo len b) (cw len n))) ∧
@@ -124,7 +126,7 @@ theorem lessThan_ok (h : In base bytes len args s) {a b : Loc} {n : Cnt} (N : Cn
 theorem cmask_or_not (x y : Bool) : (cmask x ||| cmask y) ^^^ BitVec.allOnes 32 = cmask (!(x || y)) := by
   cases x <;> cases y <;> rfl
 
-theorem equal_ok (h : In base bytes len args s) {a b : Loc} {n : Cnt} (N : CntOk n)
+theorem equal_ok (h : In Ex base bytes len args s) {a b : Loc} {n : Cnt} (N : CntOk n)
     (ha : lo len a + cb len n ≤ bytes) (hb : lo len b + cb len n ≤ bytes) :
     WP isa (equal a b n) s fun u => u.mem = s.mem ∧
       u.gpr .ecx = cmask (decide (val32 s.mem base (lo len a) (cw len n) = val32 s.mem base (lo len b) (cw len n))) ∧

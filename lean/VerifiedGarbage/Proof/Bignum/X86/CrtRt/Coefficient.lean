@@ -14,6 +14,8 @@ into the wide slot 7, in the context of `p` (the modulus `safeM p`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
@@ -38,9 +40,9 @@ theorem subMod_value {a b M W D T : Nat} {c₁ c₂ : Bool} (ha : a < M) (hb : b
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {M : Nat}
 
-theorem subMod_raw (C : CtxOk base bytes len args c M s) :
+theorem subMod_raw (C : CtxOk Ex base bytes len args c M s) :
     WP isa (subMod c 7 6 5) s fun u =>
-      CtxOk base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (subR len c)) s.mem u.mem ∧
+      CtxOk Ex base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (subR len c)) s.mem u.mem ∧
       (sv s.mem base len c 6 < M → sv s.mem base len c 5 < M →
         sv u.mem base len c 7 = (sv s.mem base len c 6 + M - sv s.mem base len c 5) % M) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
@@ -49,7 +51,7 @@ theorem subMod_raw (C : CtxOk base bytes len args c M s) :
   have bw := bc_eq_cwc len c
   have g := bc_ge h.lower' c
   have bl := h.bytes_lt
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have est : st len c = 2 * bc len c + 32 := rfl
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
   have e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
@@ -69,8 +71,8 @@ theorem subMod_raw (C : CtxOk base bytes len args c M s) :
   rw [cb1] at O₁
   rw [cw1] at V₁
   have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
-  refine WP.seq (wp_storeS (h₁.crt.scratch.ea (d := maskOff) (by omega))
-    (h₁.crt.scratch.write (d := maskOff) (n := 4) (by omega)) fun u₂ m₂ => WP.block_nil ?_)
+  refine WP.seq (wp_storeS (h₁.scratch.ea (d := maskOff) (by omega))
+    (h₁.scratch.write (d := maskOff) (n := 4) (by omega)) fun u₂ m₂ => WP.block_nil ?_)
   have O₂ : Outside base maskOff 4 u₁.mem u₂.mem := by rw [m₂.mem]; exact writeW32_outside _ _ _ (by omega)
   have A₂ : u₂.mem.readW (off base maskOff) 32 = cmask c₁ := by rw [m₂.mem, Mem.readW_writeW_self32, k₁]
   have h₂ := h₁.keep (m₂.keeps []) (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
@@ -82,7 +84,7 @@ theorem subMod_raw (C : CtxOk base bytes len args c M s) :
   rw [cw1] at V₃
   have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega))
   -- The borrow back, and the selection.
-  refine WP.seq (wp_movS (readSrc_sc h₃.crt.scratch (d := maskOff) (by omega)) fun u₄ a₄ _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc h₃.scratch (d := maskOff) (by omega)) fun u₄ a₄ _ => WP.block_nil ?_)
   have h₄ := h₃.regs a₄.keeps a₄.mem
   have ecx₄ : u₄.gpr .ecx = cmask c₁ := by
     rw [a₄.gpr, ← A₂]
@@ -119,10 +121,10 @@ theorem subMod_raw (C : CtxOk base bytes len args c M s) :
   · exact ((((K₁.mono (by decide)).trans ((m₂.keeps []).mono (by decide))).trans (K₃.mono (by decide))).trans
       (a₄.keeps.mono (by decide))).trans (K₅.mono (by decide))
 
-theorem subMod_ok (C : CtxOk base bytes len args c M s) (ha : sv s.mem base len c 6 < M)
+theorem subMod_ok (C : CtxOk Ex base bytes len args c M s) (ha : sv s.mem base len c 6 < M)
     (hb : sv s.mem base len c 5 < M) :
     WP isa (subMod c 7 6 5) s fun u =>
-      CtxOk base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (subR len c)) s.mem u.mem ∧
+      CtxOk Ex base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (subR len c)) s.mem u.mem ∧
       sv u.mem base len c 7 = (sv s.mem base len c 6 + M - sv s.mem base len c 5) % M ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u :=
   WP.mono (subMod_raw C) fun _ ⟨C', F, V, K⟩ => ⟨C', F, V ha hb, K⟩
@@ -135,7 +137,7 @@ abbrev coR (len : Nat) : List (Nat × Nat) := [(invOff, 4), (maskOff, 4), (numBa
 abbrev InCo (len : Nat) (p : Nat × Nat) : Prop :=
   p = (invOff, 4) ∨ p = (maskOff, 4) ∨ Within p (numBase, 9 * st len .wide)
 
-theorem coR_fit (h : In base bytes len args s) : ∀ q ∈ coR len, q.1 + q.2 ≤ bytes := by
+theorem coR_fit (h : In Ex base bytes len args s) : ∀ q ∈ coR len, q.1 + q.2 ≤ bytes := by
   have f8 := h.slot_fit .wide (j := 8) (by decide)
   have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
@@ -152,7 +154,7 @@ theorem co_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
     · exact ⟨_, by simp, Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp, w⟩
 
-theorem co_of_outside (h : In base bytes len args s) {sp : BitVec 32} {a n : Nat} {m m' : Mem}
+theorem co_of_outside (h : In Ex base bytes len args s) {sp : BitVec 32} {a n : Nat} {m m' : Mem}
     (O : Outside base a n m m') (w : Within (a, n) (numBase, 9 * st len .wide)) :
     Frame (frameR base sp (coR len)) m m' := by
   have fit := coR_fit h
@@ -164,7 +166,7 @@ theorem co_of_outside (h : In base bytes len args s) {sp : BitVec 32} {a n : Nat
   obtain rfl := List.mem_singleton.mp hp
   exact .inr (.inr ⟨by assumption, w2⟩)
 
-theorem prepR_co (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len c, InCo len p := by
+theorem prepR_co (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len c, InCo len p := by
   intro p hp
   have g := bc_ge h.lower' c
   simp only [prepR, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -176,7 +178,7 @@ theorem prepR_co (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len 
   · exact .inr (.inr (slot_in h c (by decide)))
   · exact .inr (.inr (slot_in h c (by decide)))
 
-theorem mulR_co (h : In base bytes len args s) (c : Ctx) {j : Nat} (hj : j ≤ 8) :
+theorem mulR_co (h : In Ex base bytes len args s) (c : Ctx) {j : Nat} (hj : j ≤ 8) :
     ∀ p ∈ mulR len c j, InCo len p := by
   intro p hp
   simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -184,7 +186,7 @@ theorem mulR_co (h : In base bytes len args s) (c : Ctx) {j : Nat} (hj : j ≤ 8
   · exact .inr (.inr (slot_in h c hj))
   · exact .inr (.inr (slot1_in h c))
 
-theorem subR_co (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ subR len c, InCo len p := by
+theorem subR_co (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ subR len c, InCo len p := by
   intro p hp
   simp only [subR, List.mem_cons, List.not_mem_nil, or_false] at hp
   have g := bc_ge h.lower' c
@@ -194,10 +196,10 @@ theorem subR_co (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ subR len c,
   · exact .inr (.inr (slot_in h c (by decide)))
 
 /-- A subtraction modulo `M` keeps slots 3, 4 and 8. -/
-theorem subR_sv (h : In base bytes len args s) (c : Ctx) {sp : BitVec 32} {m m' : Mem}
+theorem subR_sv (h : In Ex base bytes len args s) (c : Ctx) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (subR len c)) m m') (R : CallRoom sp base bytes) {j : Nat}
     (hj3 : 3 ≤ j) (hj : j ≤ 8) (h7 : j ≠ 7) : sv m' base len c j = sv m base len c j := by
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
@@ -219,13 +221,13 @@ theorem subR_sv (h : In base bytes len args s) (c : Ctx) {sp : BitVec 32} {m m' 
 
 /-- The coefficient from the context of `p`: `m_q` (slot 5) reduced by Montgomery multiplications,
 subtracted from `m_p` (slot 6) modulo `M`, and multiplied by `qInv` (slot 8). -/
-theorem coArith_ok (C : CtxOk base bytes len args .wide M s) {mp mq qi : Nat}
+theorem coArith_ok (C : CtxOk Ex base bytes len args .wide M s) {mp mq qi : Nat}
     (h3 : sv s.mem base len .wide 3 = 1) (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M)
     (h6 : sv s.mem base len .wide 6 = mp) (hmp : mp < M) (h5 : sv s.mem base len .wide 5 = mq)
     (h8 : sv s.mem base len .wide 8 = qi) :
     WP isa (.seq (mul .wide 5 5 4) <| .seq (mul .wide 5 5 3) <| .seq (subMod .wide 7 6 5) <|
       .seq (mul .wide 8 8 4) (mul .wide 7 7 8)) s fun u =>
-      CtxOk base bytes len args .wide M u ∧ Frame (frameR base (s.gpr .esp) (coR len)) s.mem u.mem ∧
+      CtxOk Ex base bytes len args .wide M u ∧ Frame (frameR base (s.gpr .esp) (coR len)) s.mem u.mem ∧
       sv u.mem base len .wide 7 = ((mp + M - mq % M) % M * qi) % M ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have h := C.inp
@@ -240,27 +242,27 @@ theorem coArith_ok (C : CtxOk base bytes len args .wide M s) {mp mq qi : Nat}
     have v := VG.Proof.Dsa.mont_scale C.coprime (out := sv u₁.mem base len .wide 5) (input := mq)
       (c := 2 ^ (8 * bc len .wide)) (by rw [V₁, h5, h4, RR])
     rwa [Nat.mod_eq_of_lt L₁] at v
-  have o₁ := mulR_sv C.inp F₁ C.inp.crt.room (j := 3) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have f₁ := mulR_sv C.inp F₁ C.inp.crt.room (j := 4) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have m₁ := mulR_sv C.inp F₁ C.inp.crt.room (j := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have q₁ := mulR_sv C.inp F₁ C.inp.crt.room (j := 8) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have o₁ := mulR_sv C.inp F₁ C.inp.room (j := 3) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have f₁ := mulR_sv C.inp F₁ C.inp.room (j := 4) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have m₁ := mulR_sv C.inp F₁ C.inp.room (j := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have q₁ := mulR_sv C.inp F₁ C.inp.room (j := 8) (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (cmul_ok C₁ (o := 5) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [o₁, h3]; exact hM)) fun u₂ ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
   have D₂ : sv u₂.mem base len .wide 5 = mq % M := by
     have v := VG.Proof.Dsa.mont_decode (A := sv u₁.mem base len .wide 5) (out := sv u₂.mem base len .wide 5)
       C.coprime (by rw [B₁, Nat.mod_mod]) (by rw [V₂, o₁, h3])
     rwa [Nat.mod_eq_of_lt L₂] at v
-  have f₂ := mulR_sv C₁.inp F₂ C₁.inp.crt.room (j := 4) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have m₂ := mulR_sv C₁.inp F₂ C₁.inp.crt.room (j := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have q₂ := mulR_sv C₁.inp F₂ C₁.inp.crt.room (j := 8) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have f₂ := mulR_sv C₁.inp F₂ C₁.inp.room (j := 4) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have m₂ := mulR_sv C₁.inp F₂ C₁.inp.room (j := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have q₂ := mulR_sv C₁.inp F₂ C₁.inp.room (j := 8) (by decide) (by decide) (by decide) (by decide) (by decide)
   -- The difference modulo `M`.
   refine WP.seq (WP.mono (subMod_ok C₂ (by rw [m₂, m₁, h6]; exact hmp) (by rw [D₂]; exact Nat.mod_lt _ (by omega)))
     fun u₃ ⟨C₃, F₃, S₃, K₃⟩ => ?_)
   rw [m₂, m₁, h6, D₂] at S₃
   have f₃ : sv u₃.mem base len .wide 4 = sv u₂.mem base len .wide 4 :=
-    subR_sv C₂.inp .wide F₃ C₂.inp.crt.room (by decide) (by decide) (by decide)
+    subR_sv C₂.inp .wide F₃ C₂.inp.room (by decide) (by decide) (by decide)
   have q₃ : sv u₃.mem base len .wide 8 = sv u₂.mem base len .wide 8 :=
-    subR_sv C₂.inp .wide F₃ C₂.inp.crt.room (by decide) (by decide) (by decide)
+    subR_sv C₂.inp .wide F₃ C₂.inp.room (by decide) (by decide) (by decide)
   -- `qInv R mod M`, and the product.
   refine WP.seq (WP.mono (cmul_ok C₃ (o := 8) (a := 8) (b := 4) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [f₃, f₂, f₁, h4]; exact Nat.mod_lt _ (by omega))) fun u₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
@@ -268,7 +270,7 @@ theorem coArith_ok (C : CtxOk base bytes len args .wide M s) {mp mq qi : Nat}
     have v := VG.Proof.Dsa.mont_scale C.coprime (out := sv u₄.mem base len .wide 8) (input := qi)
       (c := 2 ^ (8 * bc len .wide)) (by rw [V₄, q₃, q₂, q₁, h8, f₃, f₂, f₁, h4, RR])
     rwa [Nat.mod_eq_of_lt L₄] at v
-  have s₄ := mulR_sv C₃.inp F₄ C₃.inp.crt.room (j := 7) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have s₄ := mulR_sv C₃.inp F₄ C₃.inp.room (j := 7) (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.mono (cmul_ok C₄ (o := 7) (a := 7) (b := 8) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [Q₄]; exact Nat.mod_lt _ (by omega))) fun u ⟨C₅, K₅, F₅, L₅, V₅⟩ =>
       ⟨C₅, ?_, ?_, ?_⟩
@@ -290,7 +292,7 @@ theorem coArith_ok (C : CtxOk base bytes len args .wide M s) {mp mq qi : Nat}
       ((K₄.trans K₅).mono (by decide)))
 
 /-- A wide slot from 9 on into the wide slot `d` below 9. -/
-theorem copyDown_ok (h : In base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd : d ≤ 8) :
+theorem copyDown_ok (h : In Ex base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd : d ≤ 8) :
     WP isa (copy (.slot .wide j) (.slot .wide d) (one .wide)) s fun u =>
       Outside base (lo len (.slot .wide d)) (bc len .wide) s.mem u.mem ∧
       sv u.mem base len .wide d = val32 s.mem base (lo len (.slot .wide j)) (cwc len .wide) ∧
@@ -312,7 +314,7 @@ theorem copyDown_ok (h : In base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j) (
   · rw [cw1] at V; exact V
 
 /-- The coefficient's changes keep the wide slots from 9 on. -/
-theorem coR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+theorem coR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (coR len)) m m') (R : CallRoom sp base bytes) {d k : Nat}
     (hd : lo len (.slot .wide 9) ≤ d) (hk : d + 4 * k ≤ bytes) : val32 m' base d k = val32 m base d k := by
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
@@ -323,7 +325,7 @@ theorem coR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
 
 /-- `h = (m_p - m_q mod p) qInv mod p` into the wide slot 7, for `p` (wide slot 10), `m_p` and `m_q`
 (wide slots 16 and 17) and `qInv` (wide slot 14), in the context of `p`. -/
-theorem coefficient_ok (h : In base bytes len args s) {p mp mq qi : Nat}
+theorem coefficient_ok (h : In Ex base bytes len args s) {p mp mq qi : Nat}
     (hp : val32 s.mem base (lo len (.slot .wide 10)) (cwc len .wide) = p)
     (hmp : val32 s.mem base (lo len (.slot .wide 16)) (cwc len .wide) = mp) (hmpl : mp < safeM p)
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (cwc len .wide) = mq)
@@ -350,7 +352,7 @@ theorem coefficient_ok (h : In base bytes len args s) {p mp mq qi : Nat}
     rw [Nat.succ_mul] at c
     have ej : lo len (.slot .wide j) = numBase + j * st len .wide := rfl
     omega
-  have room := h.crt.room
+  have room := h.room
   -- Reading the key's components through the coefficient's frame.
   have rd : ∀ {u : State} {j : Nat}, Frame (frameR base (s.gpr .esp) (coR len)) s.mem u.mem → 9 ≤ j → j ≤ 17 →
       val32 u.mem base (lo len (.slot .wide j)) (cwc len .wide) =
@@ -385,7 +387,7 @@ theorem coefficient_ok (h : In base bytes len args s) {p mp mq qi : Nat}
   have F₅ := F₄.trans (co_of_outside h O₅ (cs (by decide)))
   -- The context, kept by the copies.
   have K₃₅ : Keeps [.eax, .ebx, .ecx, .edx, .ebp] u₂ u₅ := (K₃.trans K₄).trans K₅
-  have C₅ : CtxOk base bytes len args .wide (safeM p) u₅ := by
+  have C₅ : CtxOk Ex base bytes len args .wide (safeM p) u₅ := by
     refine C₂.keepF K₃₅ (by decide) (by decide)
       (ws := [(lo len (.slot .wide 6), bc len .wide), (lo len (.slot .wide 5), bc len .wide),
         (lo len (.slot .wide 8), bc len .wide)]) ?_ ?_ ?_

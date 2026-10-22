@@ -18,6 +18,8 @@ working space may change but the saved registers' (`rtBody`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.Crt (componentValue componentArguments accepted outputValue)
@@ -97,7 +99,7 @@ theorem Comps.keep {m₀ m m' : Mem} (c : Comps base len args m₀ m)
     by rw [k (by decide) (by decide) (by omega)]; exact c.dq, by rw [k (by decide) (by decide) (by omega)]; exact c.qi⟩
 
 /-- The wide slots 9 to 17, within the working space. -/
-theorem wide_hi (h : In base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hw : w ≤ 2 * cwc len .wide) :
+theorem wide_hi (h : RIn base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hw : w ≤ 2 * cwc len .wide) :
     numBase ≤ lo len (.slot .wide j) ∧ lo len (.slot .wide j) + 4 * w ≤ lo len (.slot .wide 18) ∧
       lo len (.slot .wide 18) ≤ bytes := by
   have f := h.slot_fit .wide (j := 18) (by decide)
@@ -110,8 +112,8 @@ theorem wide_hi (h : In base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj :
   omega
 
 /-- The components read and the key and input accepted or not. -/
-theorem front_ok (h : In base bytes len args s) {P : Prog isa} {Q : State → Prop}
-    (k : ∀ u, In base bytes len args u → Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) s.mem u.mem →
+theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → Prop}
+    (k : ∀ u, RIn base bytes len args u → Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) s.mem u.mem →
       Comps base len args s.mem u.mem →
       u.mem.readW (off base accOff) 32 = cmask (decide (accepted s.mem args)) →
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u → WP isa P u Q) :
@@ -135,7 +137,7 @@ theorem front_ok (h : In base bytes len args s) {P : Prog isa} {Q : State → Pr
   rw [sp₁] at F₂
   have C₂ : Comps base len args s.mem u₂.mem :=
     Comps.keep ⟨N₁, X₁, P₁, Q₁, DP₁, DQ₁, QI₁⟩ fun hj9 hj hw =>
-      valR_keep h₁ F₂ (sp₁ ▸ h₁.crt.room) (wide_hi h hj9 (by omega) hw).1
+      valR_keep h₁ F₂ (sp₁ ▸ h₁.room) (wide_hi h hj9 (by omega) hw).1
         (by have := wide_hi h hj9 (by omega) hw; omega)
   refine k u₂ h₂ ?_ C₂ ?_ (K₁.trans K₂)
   · refine (body_of_outside O₁ (.inr ⟨by omega, by omega⟩) (by omega)).trans (toBody F₂ ?_ (by omega))
@@ -150,7 +152,7 @@ theorem front_ok (h : In base bytes len args s) {P : Prog isa} {Q : State → Pr
     rfl
 
 /-- A power keeps the acceptance mask. -/
-theorem stR_acc (h : In base bytes len args s) {sp : BitVec 32} {o : Nat} (ho : o ≤ 19) {m m' : Mem}
+theorem stR_acc (h : RIn base bytes len args s) {sp : BitVec 32} {o : Nat} (ho : o ≤ 19) {m m' : Mem}
     (F : Frame (frameR base sp (stR len o)) m m') (R : CallRoom sp base bytes) :
     m'.readW (off base accOff) 32 = m.readW (off base accOff) 32 := by
   have f := h.slot_fit .wide (j := 8) (by decide)
@@ -163,11 +165,11 @@ theorem stR_acc (h : In base bytes len args s) {sp : BitVec 32} {o : Nat} (ho : 
   apply BitVec.eq_of_toNat_eq
   show w32 m' base accOff = w32 m base accOff
   rw [← w32_val32_one, ← w32_val32_one]
-  refine frameR_val32 F R h.crt.scratch.nowrap (by simp only [accOff]; omega) ?_ (stR_fit h ho)
+  refine frameR_val32 F R h.scratch.nowrap (by simp only [accOff]; omega) ?_ (stR_fit h ho)
   intro q hq; simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl <;> simp only [accOff] <;> omega
 
-theorem stR_body (h : In base bytes len args s) {o : Nat} (ho : o ≤ 19) : ∀ q ∈ stR len o, Body bytes q := by
+theorem stR_body (h : RIn base bytes len args s) {o : Nat} (ho : o ≤ 19) : ∀ q ∈ stR len o, Body bytes q := by
   have fit := stR_fit h ho
   have T := h.table_fit .wide
   have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
@@ -191,7 +193,7 @@ theorem fits_half {m : Mem} {i : Nat} (hl : (args (i + 1)).toNat ≤ bc len .hal
   exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
 
 /-- A power keeps the components. -/
-theorem Comps.stR (h : In base bytes len args s) {o : Nat} (ho16 : 16 ≤ o) (ho : o ≤ 17) {sp : BitVec 32}
+theorem Comps.stR (h : RIn base bytes len args s) {o : Nat} (ho16 : 16 ≤ o) (ho : o ≤ 17) {sp : BitVec 32}
     {m₀ m m' : Mem} (F : Frame (frameR base sp (stR len o)) m m') (R : CallRoom sp base bytes)
     (c : Comps base len args m₀ m) : Comps base len args m₀ m' :=
   Comps.keep c fun {j w} hj9 hj hw => by
@@ -208,9 +210,9 @@ theorem Comps.stR (h : In base bytes len args s) {o : Nat} (ho16 : 16 ≤ o) (ho
     exact stR_keep h ho16 ho F R (by omega) (by omega) (.inl (by omega))
 
 /-- Both factors' powers: `x^dP mod p` into the wide slot 16, `x^dQ mod q` into 17. -/
-theorem powers_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem)
+theorem powers_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem)
     (dpl : args 11 = args 7) (dql : args 13 = args 9) {P : Prog isa} {Q : State → Prop}
-    (k : ∀ u, In base bytes len args u → Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) s.mem u.mem →
+    (k : ∀ u, RIn base bytes len args u → Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) s.mem u.mem →
       Comps base len args m₀ u.mem →
       u.mem.readW (off base accOff) 32 = s.mem.readW (off base accOff) 32 →
       val32 u.mem base (lo len (.slot .wide 16)) (2 * cwc len .wide) =
@@ -231,7 +233,7 @@ theorem powers_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base le
     (fun hl => ⟨fits_half hl, fits_half (args := args) (len := len) (m := m₀) (i := 10) (show (args 11).toNat ≤ _ by rw [dpl]; exact hl)⟩))
     fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (stR_fit h (by decide))
-  have c₁ : Comps base len args m₀ u₁.mem := Comps.stR h (by decide) (by decide) F₁ h.crt.room c
+  have c₁ : Comps base len args m₀ u₁.mem := Comps.stR h (by decide) (by decide) F₁ h.room c
   refine WP.seq (WP.mono (power_ok h₁ (f := 11) (e := 13) (o := 17) (l := 9) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) c₁.q c₁.dq c₁.x
     (fun hl => ⟨fits_half hl, fits_half (args := args) (len := len) (m := m₀) (i := 12) (show (args 13).toNat ≤ _ by rw [dql]; exact hl)⟩))
@@ -239,16 +241,16 @@ theorem powers_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base le
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (stR_fit h (by decide))
   rw [sp₁] at F₂
-  have c₂ : Comps base len args m₀ u₂.mem := Comps.stR h (by decide) (by decide) F₂ h.crt.room c₁
+  have c₂ : Comps base len args m₀ u₂.mem := Comps.stR h (by decide) (by decide) F₂ h.room c₁
   have M16 : val32 u₂.mem base (lo len (.slot .wide 16)) (2 * cwc len .wide) =
       val32 u₁.mem base (lo len (.slot .wide 16)) (2 * cwc len .wide) :=
-    stR_keep h (o := 17) (by decide) (by decide) F₂ h.crt.room (by omega) (by omega) (.inl (by omega))
+    stR_keep h (o := 17) (by decide) (by decide) F₂ h.room (by omega) (by omega) (.inl (by omega))
   refine k u₂ h₂ ((toBody F₁ (stR_body h (by decide)) (by omega)).trans (toBody F₂ (stR_body h (by decide)) (by omega)))
     c₂ ?_ (by rw [M16, V₁]) V₂ (K₁.trans K₂)
-  rw [stR_acc h (by decide) F₂ h.crt.room, stR_acc h (by decide) F₁ h.crt.room]
+  rw [stR_acc h (by decide) F₂ h.room, stR_acc h (by decide) F₁ h.room]
 
 /-- Changes to ranges apart from the acceptance mask keep it. -/
-theorem acc_keep (h : In base bytes len args s) {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
+theorem acc_keep (h : RIn base bytes len args s) {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
     (F : Frame (frameR base sp ws) m m') (R : CallRoom sp base bytes) (fit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
     (hw : ∀ p ∈ ws, p.1 + p.2 ≤ accOff ∨ accOff + 4 ≤ p.1) :
     m'.readW (off base accOff) 32 = m.readW (off base accOff) 32 := by
@@ -259,10 +261,10 @@ theorem acc_keep (h : In base bytes len args s) {sp : BitVec 32} {ws : List (Nat
   apply BitVec.eq_of_toNat_eq
   show w32 m' base accOff = w32 m base accOff
   rw [← w32_val32_one, ← w32_val32_one]
-  exact frameR_val32 F R h.crt.scratch.nowrap (by omega) (fun p hp => by have := hw p hp; omega) fit
+  exact frameR_val32 F R h.scratch.nowrap (by omega) (fun p hp => by have := hw p hp; omega) fit
 
 /-- The coefficient, the recombination and the result written out. -/
-theorem back_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem) {mp mq : Nat}
+theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem) {mp mq : Nat}
     (hmp : val32 s.mem base (lo len (.slot .wide 16)) (2 * cwc len .wide) = mp)
     (hmpl : mp < safeM (componentValue m₀ args 6)) (hmpb : mp < 2 ^ (32 * cwc len .wide))
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq) (hmqb : mq < 2 ^ (32 * cwc len .wide))
@@ -301,8 +303,8 @@ theorem back_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base len 
     hmpl (val32_low (b := cwc len .wide) (by rw [split]; exact hmq) hmqb) c.qi) fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (coR_fit h)
   have k₁ : ∀ {d k : Nat}, lo len (.slot .wide 9) ≤ d → d + 4 * k ≤ bytes →
-      val32 u₁.mem base d k = val32 s.mem base d k := fun hd hk => coR_keep h F₁ h.crt.room hd hk
-  have a₁ := acc_keep h F₁ h.crt.room (coR_fit h) (by
+      val32 u₁.mem base d k = val32 s.mem base d k := fun hd hk => coR_keep h F₁ h.room hd hk
+  have a₁ := acc_keep h F₁ h.room (coR_fit h) (by
     intro q hq; simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl <;> dsimp only <;> omega)
   -- `m_q + q h`.
@@ -316,7 +318,7 @@ theorem back_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base len 
     intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
   rw [sp₁] at F₂
-  have a₂ := acc_keep h F₂ h.crt.room (by
+  have a₂ := acc_keep h F₂ h.room (by
     intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by
     intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -325,7 +327,7 @@ theorem back_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base len 
   unfold exportResult
   refine maskResult_ok h₂ (c := cb) (by rw [a₂, a₁, hacc]) fun u₃ O₃ V₃ K₃ => ?_
   have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega))
-  refine WP.mono (writeResult_ok h₃) fun t ⟨B, A, F, Kt⟩ => ⟨fun fits => ?_, ?_, ?_, ?_⟩
+  refine WP.mono (writeResult_ok h₃ h₃.crt.outFit h₃.crt.outWrite h₃.crt.outApart) fun t ⟨B, A, F, Kt⟩ => ⟨fun fits => ?_, ?_, ?_, ?_⟩
   · cases cb
     · rw [V₃] at B
       simp only [Bool.false_eq_true, ↓reduceIte] at B ⊢
@@ -363,7 +365,7 @@ theorem back_ok (h : In base bytes len args s) {m₀ : Mem} (c : Comps base len 
 
 /-- Private CRT at a run-time width: the result written out, cleared unless the key and the input are
 accepted, and the acceptance in `eax`. -/
-theorem sized_ok (h : In base bytes len args s)
+theorem sized_ok (h : RIn base bytes len args s)
     (valid : Spec.Rsa.modulusValid (componentValue s.mem args 2) len = true) :
     WP isa sized s fun t =>
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =

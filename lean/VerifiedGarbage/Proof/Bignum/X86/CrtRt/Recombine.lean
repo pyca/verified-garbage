@@ -14,6 +14,8 @@ when it fits.
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
@@ -25,7 +27,7 @@ abbrev reR (len : Nat) : List (Nat × Nat) :=
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem recombine_ok (h : In base bytes len args s) {q hc mq : Nat}
+theorem recombine_ok (h : In Ex base bytes len args s) {q hc mq : Nat}
     (hq : val32 s.mem base (lo len (.slot .wide 11)) (cwc len .wide) = q)
     (hh : val32 s.mem base (lo len (.slot .wide 7)) (cwc len .wide) = hc)
     (hmq : val32 s.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq) :
@@ -38,7 +40,7 @@ theorem recombine_ok (h : In base bytes len args s) {q hc mq : Nat}
   have bw := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .wide
   have bl := h.bytes_lt
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f19 := h.slot_fit .wide (j := 19) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e7 : lo len (.slot .wide 7) = numBase + 7 * st len .wide := rfl
@@ -72,7 +74,7 @@ theorem recombine_ok (h : In base bytes len args s) {q hc mq : Nat}
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
   have M₂ : val32 u₂.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq := by
-    rw [prodR_keep h₁ F₂ (sp₁ ▸ h₁.crt.room) (by omega) (by omega),
+    rw [prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega) (by omega),
       O₁.val32 (.inr (by omega)) (by omega), hmq]
   -- `m_q + q h`.
   refine WP.mono (chainAdd_ok h₂ (o := .slot .wide 19) (a := prod) (b := .slot .wide 17) (two_ok .wide)

@@ -20,6 +20,8 @@ big-endian bytes (`load_ok`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (zeroLoop_ok selectLoop_ok reduceLoop_ok compareLoop_ok byteAddr_ptr)
@@ -66,11 +68,11 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- Registers changed, memory kept: the inputs hold. -/
-theorem In.regs (h : In base bytes len args s) {t : State} {rs : List Reg} (K : Keeps rs s t) (m : t.mem = s.mem)
-    (di : .edi ∉ rs := by decide) (sp : .esp ∉ rs := by decide) : In base bytes len args t :=
+theorem In.regs (h : In Ex base bytes len args s) {t : State} {rs : List Reg} (K : Keeps rs s t) (m : t.mem = s.mem)
+    (di : .edi ∉ rs := by decide) (sp : .esp ∉ rs := by decide) : In Ex base bytes len args t :=
   h.keep K di sp (by rw [m]; exact Outside.refl _ _ _ _)
 
-theorem zero_ok (h : In base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n)
+theorem zero_ok (h : In Ex base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n)
     (hx : lo len x + cb len n ≤ bytes) :
     WP isa (zero x n) s fun u => Outside base (lo len x) (cb len n) s.mem u.mem ∧
       val32 u.mem base (lo len x) (cw len n) = 0 ∧ Keeps [.eax, .ecx, .edx, .ebp] s u := by
@@ -90,12 +92,12 @@ theorem zero_ok (h : In base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n)
     (cnt_toNat h.upper' N (by rw [uw.other _ (by decide), cv])) uw.gpr) fun t ⟨O, V, Kt⟩ => ?_
   refine ⟨by rw [← mw, ce]; exact O, V, Kw.trans (Kt.mono (by decide))⟩
 
-theorem setSmall_ok (h : In base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n)
+theorem setSmall_ok (h : In Ex base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n)
     (hx : lo len x + cb len n ≤ bytes) {v : Nat} (hv : v < 2 ^ 32) :
     WP isa (setSmall x n v) s fun u => Outside base (lo len x) (cb len n) s.mem u.mem ∧
       val32 u.mem base (lo len x) (cw len n) = v ∧ Keeps [.eax, .ecx, .edx, .ebp] s u := by
   have bl := h.bytes_lt
-  have hn := h.crt.scratch.nowrap
+  have hn := h.scratch.nowrap
   have ce := cb_eq (len := len) N
   have cp := cw_pos (n := n) h.lower'
   unfold setSmall
@@ -126,7 +128,7 @@ theorem setSmall_ok (h : In base bytes len args s) {x : Loc} {n : Cnt} (N : CntO
 /-- The ranges of two numbers are apart. -/
 abbrev Apart (a k b l : Nat) : Prop := a + k ≤ b ∨ b + l ≤ a
 
-theorem select_ok (h : In base bytes len args s) {x d : Loc} {n : Cnt} (N : CntOk n)
+theorem select_ok (h : In Ex base bytes len args s) {x d : Loc} {n : Cnt} (N : CntOk n)
     (hx : lo len x + cb len n ≤ bytes) (hd : lo len d + cb len n ≤ bytes)
     (hxd : Apart (lo len d) (cb len n) (lo len x) (cb len n)) {k : Bool} (hk : s.gpr .ecx = cmask k) :
     WP isa (select x d n) s fun u => Outside base (lo len d) (cb len n) s.mem u.mem ∧
@@ -157,12 +159,12 @@ theorem select_ok (h : In base bytes len args s) {x d : Loc} {n : Cnt} (N : CntO
     fun t ⟨O, V, _, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (Kw'.mono (by decide)).trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← mw']; exact O.mono (Nat.zero_le _) (by omega)
-  refine wp_movS ((h.crt.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
+  refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
   have e : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
   refine ⟨by rw [u₁.mem, ← mw', ce]; exact O, by rw [u₁.mem, V, mw'],
     PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .edx, .ebp]) (Kall.trans (u₁.keeps.mono (by decide))) e⟩
 
-theorem copy_ok (h : In base bytes len args s) {x d : Loc} {n : Cnt} (N : CntOk n)
+theorem copy_ok (h : In Ex base bytes len args s) {x d : Loc} {n : Cnt} (N : CntOk n)
     (hx : lo len x + cb len n ≤ bytes) (hd : lo len d + cb len n ≤ bytes)
     (hxd : Apart (lo len d) (cb len n) (lo len x) (cb len n)) :
     WP isa (copy x d n) s fun u => Outside base (lo len d) (cb len n) s.mem u.mem ∧

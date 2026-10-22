@@ -19,6 +19,8 @@ checks of a context's code, which hold for both (`winChecks`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (Both)
@@ -51,10 +53,10 @@ theorem winChecks (c : Ctx) : WinChecks c := by
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {sp : BitVec 32}
 
-theorem nwR_sv3 (h : In base bytes len args s) {m m' : Mem}
+theorem nwR_sv3 (h : In Ex base bytes len args s) {m m' : Mem}
     (F : Frame (frameR base sp (nwR len c)) m m') (R : CallRoom sp base bytes) :
     sv m' base len c 3 = sv m base len c 3 := by
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
@@ -68,17 +70,17 @@ theorem nwR_sv3 (h : In base bytes len args s) {m m' : Mem}
   rcases hp with rfl | rfl <;> dsimp only <;> omega
 
 /-- A window's run: slots 3 and 6 and the table below the modulus, the count `n` in `esi`. -/
-abbrev WinSt (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
+abbrev WinSt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
     (n : Nat) (s : State) : Prop :=
-  WSt base bytes len args sp c ks 16 s ∧ s.gpr .esi = BitVec.ofNat 32 n
+  WSt Ex base bytes len args sp c ks 16 s ∧ s.gpr .esi = BitVec.ofNat 32 n
 
-theorem nextWindow_wst {n : Nat} (W : WinSt base bytes len args sp c [3, 6] n s) :
-    WP isa (nextWindow c) s fun u => WinSt base bytes len args sp c [3, 6] n u ∧ w32 u.mem base winOff < 16 := by
+theorem nextWindow_wst {n : Nat} (W : WinSt Ex base bytes len args sp c [3, 6] n s) :
+    WP isa (nextWindow c) s fun u => WinSt Ex base bytes len args sp c [3, 6] n u ∧ w32 u.mem base winOff < 16 := by
   obtain ⟨⟨M, C, Hk, He, A, sp₀⟩, e⟩ := W
   have h := C.inp
   refine WP.mono (nextWindow_ok h c) fun u ⟨F, Wn, _, K⟩ => ?_
-  obtain ⟨Y, T⟩ := nwR_keep h F h.crt.room
-  have Y3 := nwR_sv3 h F h.crt.room
+  obtain ⟨Y, T⟩ := nwR_keep h F h.room
+  have Y3 := nwR_sv3 h F h.room
   refine ⟨⟨⟨M, C.keepF2 K (by decide) (by decide) F (fun p hp => wR_fit h c p (wR_sub_nw len c p hp))
     (fun p hp => wR_hdr len c p (wR_sub_nw len c p hp)), fun j hj => ?_, fun j hj => by rw [T j hj]; exact He j hj,
     A.keep K, (K.1 _ (by decide)).trans sp₀⟩, (K.1 _ (by decide)).trans e⟩, ?_⟩
@@ -90,8 +92,8 @@ theorem nextWindow_wst {n : Nat} (W : WinSt base bytes len args sp c [3, 6] n s)
     have := val32_lt s.mem base (lo len (.slot c 8)) (cwc len c)
     simp only [sv]; omega
 
-theorem selectWindow_wst {n : Nat} (W : WinSt base bytes len args sp c [3, 6] n s ∧ w32 s.mem base winOff < 16) :
-    WP isa (selectWindow c) s (WinSt base bytes len args sp c [3, 6, 7] n) := by
+theorem selectWindow_wst {n : Nat} (W : WinSt Ex base bytes len args sp c [3, 6] n s ∧ w32 s.mem base winOff < 16) :
+    WP isa (selectWindow c) s (WinSt Ex base bytes len args sp c [3, 6, 7] n) := by
   obtain ⟨⟨⟨M, C, Hk, He, A, sp₀⟩, e⟩, hw⟩ := W
   have h := C.inp
   have bl := h.bytes_lt
@@ -127,9 +129,9 @@ theorem selectWindow_wst {n : Nat} (W : WinSt base bytes len args sp c [3, 6] n 
   · obtain ⟨tj0, tj⟩ := te_le (len := len) (c := c) hj
     rw [Outside.val32 O (.inr (by omega)) (by omega)]; exact He j hj
 
-theorem dec_wst {n : Nat} (hn0 : 0 < n) (hn : n < 2 ^ 32) (W : WinSt base bytes len args sp c [3, 6] n s) :
+theorem dec_wst {n : Nat} (hn0 : 0 < n) (hn : n < 2 ^ 32) (W : WinSt Ex base bytes len args sp c [3, 6] n s) :
     WP isa (.block [.alu .sub .esi (.imm 1)]) s fun u =>
-      WinSt base bytes len args sp c [3, 6] (n - 1) u ∧ u.zf = some (decide (n = 1)) := by
+      WinSt Ex base bytes len args sp c [3, 6] (n - 1) u ∧ u.zf = some (decide (n = 1)) := by
   obtain ⟨⟨M, C, Hk, He, A, sp₀⟩, e⟩ := W
   refine wp_subZ rfl fun u a z => WP.block_nil ?_
   have sub : BitVec.ofNat 32 n - 1 = BitVec.ofNat 32 (n - 1) := VG.Proof.Mont.X86.Dynamic.counter_sub hn hn0
@@ -141,10 +143,10 @@ theorem dec_wst {n : Nat} (hn0 : 0 < n) (hn : n < 2 ^ 32) (W : WinSt base bytes 
   rw [zz]
 
 theorem windowStep_relCT (hc : WinChecks c) {n : Nat} (hn0 : 0 < n) (hn : n < 2 ^ 32) :
-    RelCT isa (Both (WinSt base bytes len args sp c [3, 6] n)) (windowStep c)
-      (Both fun u => WinSt base bytes len args sp c [3, 6] (n - 1) u ∧ u.zf = some (decide (n = 1))) := by
-  have sq : RelCT isa (Both (WinSt base bytes len args sp c [3, 6] n)) (square c)
-      (Both (WinSt base bytes len args sp c [3, 6] n)) :=
+    RelCT isa (Both (WinSt Ex base bytes len args sp c [3, 6] n)) (windowStep c)
+      (Both fun u => WinSt Ex base bytes len args sp c [3, 6] (n - 1) u ∧ u.zf = some (decide (n = 1))) := by
+  have sq : RelCT isa (Both (WinSt Ex base bytes len args sp c [3, 6] n)) (square c)
+      (Both (WinSt Ex base bytes len args sp c [3, 6] n)) :=
     mul_wst_relCT (X := fun s => s.gpr .esi = BitVec.ofNat 32 n) (X' := fun s => s.gpr .esi = BitVec.ofNat 32 n)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.m666 (ks' := [3, 6]) (by decide)
       (by decide) (by decide) fun _ _ e K => (K.1 _ (by decide)).trans e
@@ -160,9 +162,9 @@ theorem windowStep_relCT (hc : WinChecks c) {n : Nat} (hn0 : 0 < n) (hn : n < 2 
   exact taint_both (fun _ _ W₁ W₂ => W₁.1.agree W₂.1) _ hc.dec fun _ W => dec_wst hn0 hn W
 
 theorem windowLoop_relCT (hc : WinChecks c) {N : Nat} (hN : 0 < N) (hN32 : N < 2 ^ 32) :
-    RelCT isa (Both (WinSt base bytes len args sp c [3, 6] N)) (.loop (windowStep c) .ne)
-      (Both (WinSt base bytes len args sp c [3, 6] 0)) := by
-  refine (relCT_countLoop (I := fun j => WinSt base bytes len args sp c [3, 6] (N - j)) hN fun j hj => ?_).mono
+    RelCT isa (Both (WinSt Ex base bytes len args sp c [3, 6] N)) (.loop (windowStep c) .ne)
+      (Both (WinSt Ex base bytes len args sp c [3, 6] 0)) := by
+  refine (relCT_countLoop (I := fun j => WinSt Ex base bytes len args sp c [3, 6] (N - j)) hN fun j hj => ?_).mono
     (fun _ _ h => by simpa only [Nat.sub_zero] using h) (fun _ _ h => by simpa only [Nat.sub_self] using h)
   refine (windowStep_relCT hc (n := N - j) (by omega) (by omega)).mono (fun _ _ h => h) ?_
   rintro s t ⟨⟨W₁, z₁⟩, ⟨W₂, z₂⟩⟩
@@ -172,9 +174,9 @@ theorem windowLoop_relCT (hc : WinChecks c) {N : Nat} (hN : 0 < N) (hN32 : N < 2
   simp only [d] at z₁ z₂
   exact ⟨⟨W₁, z₁⟩, ⟨W₂, z₂⟩⟩
 
-theorem count_wst (W : TSt base bytes len args sp c [3, 5, 6] 16 s) :
+theorem count_wst (W : TSt Ex base bytes len args sp c [3, 5, 6] 16 s) :
     WP isa (.block (widthC 0 c .esi ++ ([.alu .add .esi (.reg .esi)] : List Instr))) s
-      (WinSt base bytes len args sp c [3, 6] (2 * bc len c)) := by
+      (WinSt Ex base bytes len args sp c [3, 6] (2 * bc len c)) := by
   obtain ⟨⟨M, C, Hk, He, A, sp₀⟩, -⟩ := W
   have h := C.inp
   have hb := bc_le h.upper' c
@@ -189,8 +191,8 @@ theorem count_wst (W : TSt base bytes len args sp c [3, 5, 6] 16 s) :
 
 /-- A windowed power's runs, from slots 3 and 4 below the modulus. -/
 theorem windowPower_relCT (hc : WinChecks c) :
-    RelCT isa (Both (WSt base bytes len args sp c [3, 4] 0)) (windowPower c)
-      (Both (WSt base bytes len args sp c [6] 0)) := by
+    RelCT isa (Both (WSt Ex base bytes len args sp c [3, 4] 0)) (windowPower c)
+      (Both (WSt Ex base bytes len args sp c [6] 0)) := by
   unfold windowPower
   refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hc.m643 (ks' := [3, 4, 6]) (by decide) (by decide) (by decide)) ?_
