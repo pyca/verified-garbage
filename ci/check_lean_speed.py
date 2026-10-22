@@ -125,6 +125,11 @@ HEAVY_HUBS_ALLOWED = {
 # variants). Each pays the import once, for itself, so they are not counted
 # among a heavy module's importers.
 LAW_VARIANT = re.compile(r"^VerifiedGarbage\.Variants\.\w+\.\w+\.Law$")
+# A generic file (`Generic/<Iface…>/<Target>/<Alg>.lean`) is likewise imported
+# by nothing (the emitter applies it to the variants): one whose functions call
+# an implementation proved with heavy algebra (GHASH's PMULL) pays the import
+# for itself alone, so it is not counted either.
+GENERIC_LEAF = re.compile(r"^VerifiedGarbage\.Generic\.")
 DECIDE_CONFIG = re.compile(r"\bdecide\s*:=\s*true\b")
 DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
 BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
@@ -308,7 +313,7 @@ def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]
                 if i not in seen:
                     seen.add(i)
                     todo.append(i)
-        seen = {i for i in seen if not (LAW_VARIANT.match(i) and not importers[i])}
+        seen = {i for i in seen if not ((LAW_VARIANT.match(i) or GENERIC_LEAF.match(i)) and not importers[i])}
         if len(seen) > HEAVY_IMPORTERS:
             out.append((m, heavy, len(seen)))
     return out
