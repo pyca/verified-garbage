@@ -25,6 +25,9 @@ def Res (P : RP) (σ s : State) : Prop :=
   Bo P σ s ∧ Spec.Rsa.writtenAll s.mem [(State.addr P.pP, P.K), (State.addr P.qP, P.K)] (s.gpr .r0)
     ((Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1.map fun v => [v.1, v.2])
 
+abbrev BodyVerified (body : Prog isa) : Prop :=
+  ∀ {P : RP}, VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K) body (Res P)
+
 section
 variable {P : RP}
 
@@ -70,32 +73,40 @@ theorem fail_res {E : State → Prop} (hE : ∀ σ, E σ → (Spec.Rsa.primesKey
   · exact bp
   · exact bq
 
-/-- Once `n` is known valid. -/
-theorem valid_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
-    VP (fun σ s => True ∧ Bs P σ s) valid (Res P) := by
+/-- Convert shared factor extraction's output to the public result. -/
+theorem finish_resWith {E : State → Prop} {F : FinishInputs P} {σ s : State}
+    (h : Fe (F := F) P E σ s)
+    (result : (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 =
+      if F.ok σ then some (Spec.Rsa.i2osp (bigF (F := F) P σ) P.K,
+        Spec.Rsa.i2osp (smallF (F := F) P σ) P.K) else none) : Res P σ s := by
+  obtain ⟨_, bo, bp, bq, ret⟩ := h
+  refine ⟨bo, ?_⟩
+  rw [result]
+  by_cases yes : F.ok σ = true
+  · simp only [yes, ite_true, Option.map_some]
+    refine ⟨by rw [ret]; simp only [okF, yes, b2n]; rfl, ?_⟩
+    simp only [List.map_cons, List.map_nil, bp, bq, outP, outQ, okF, yes, ite_true]
+  · have no : F.ok σ = false := Bool.eq_false_iff.mpr yes
+    simp only [no, Bool.false_eq_true, ite_false, Option.map_none]
+    refine ⟨by rw [ret]; simp only [okF, no, b2n]; rfl, fun o ho => ?_⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
+    rcases ho with rfl | rfl
+    · rw [bp]; simp [outP, okF, no]
+    · rw [bq]; simp [outQ, okF, no]
+
+abbrev RestStart (P : RP) : State → State → Prop := fun σ s =>
+  (In P σ ∧ goOn P σ = true) ∧ KS P σ (Aload P σ) [aN] (AWs P σ) [wM, wZ] (Vs P σ) [sBit] s ∧ Ws s P.B P.Z P.W 22
+
+/-- Validate and form the exponent using the shared entry path. -/
+theorem validWith_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) (work : Prog isa)
+    (run : VP (RestStart P) work (Res P)) :
+    VP (fun σ s => True ∧ Bs P σ s) (validWith work) (Res P) := by
   refine (numbers_vp (E := fun _ => True)).seq (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_)
   · show some s₁.z = some s₂.z
     rw [h₁.2.2.2, h₂.2.2.2, goOn_eq hv h₁.2.1.bs.pre, goOn_eq hv h₂.2.1.bs.pre]
-  · refine (rest_vp hv).mono (fun σ s ⟨⟨_, h, hw, z⟩, ev⟩ => ⟨⟨h.bs.pre, ?_⟩, h, hw⟩) fun σ s ⟨⟨⟨pre, hg⟩, hgo⟩, h, bp, bq, r0⟩ => ?_
-    · have : some s.z = some true := ev
-      rw [← z]; simpa using this
-    · refine ⟨h, ?_⟩
-      have hnt1 : 1 ≤ P.nt := by
-        have := goOn_eq hv pre; rw [hg] at this
-        have : 0 < P.nt := by simpa [eq_comm] using this
-        omega
-      rw [result_eq hv (valid_facts hv (by have := pre.k1; omega)).2.1 (n_lt pre) pre hg hgo hnt1]
-      by_cases ho : okF P σ = true
-      · simp only [ho, ite_true, Option.map_some]
-        refine ⟨by rw [r0, ho]; rfl, ?_⟩
-        simp only [List.map_cons, List.map_nil, bp, bq, outP, outQ, ho, ite_true]
-      · have ho' : okF P σ = false := by simpa using ho
-        simp only [ho', Bool.false_eq_true, ite_false, Option.map_none]
-        refine ⟨by rw [r0, ho']; rfl, fun o hoo => ?_⟩
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hoo
-        rcases hoo with rfl | rfl
-        · rw [bp]; simp [outP, ho']
-        · rw [bq]; simp [outQ, ho']
+  · refine run.mono (fun σ s ⟨⟨_, h, hw, z⟩, ev⟩ => ⟨⟨h.bs.pre, ?_⟩, h, hw⟩) (fun _ _ h => h)
+    have condition : some s.z = some true := ev
+    rw [← z]; simpa using condition
   · refine (fail_vp (E := fun σ => In P σ ∧ goOn P σ = false)).mono
       (fun σ s ⟨⟨_, h, _, z⟩, ev⟩ => ⟨⟨h.bs.pre, ?_⟩, h.bs.bo⟩)
       fun σ s h => fail_res (E := fun σ => In P σ ∧ goOn P σ = false) (fun σ e => ?_) h
@@ -103,18 +114,34 @@ theorem valid_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
       rw [← z]; simpa using this
     · exact primesKey_none hv e.1 e.2
 
+/-- The original search supplies the same shared entry path. -/
+theorem valid_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
+    VP (fun σ s => True ∧ Bs P σ s) valid (Res P) := by
+  refine validWith_vp hv rest ((rest_vp hv).mono (fun _ _ h => h) ?_)
+  intro σ s h
+  obtain ⟨pre, go⟩ := h.1.1
+  have tries : 1 ≤ P.nt := by
+    have equation := goOn_eq hv pre
+    rw [go] at equation
+    have positive : 0 < P.nt := of_decide_eq_true equation.symm
+    omega
+  exact finish_resWith h (result_eq hv (valid_facts hv (by have := pre.k1; omega)).2.1
+    (n_lt pre) pre go h.1.2 tries)
+
 theorem primesKey_invalid (hv : Spec.Rsa.modulusValid P.n P.K = false) {σ : State} (pre : In P σ) :
     (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 = none := by
   have hl : P.nB.length = P.K := by rw [← pre.nB]; simp [Spec.Rsa.bytesAt]
   simp only [Spec.Rsa.primesKey, hl, show Spec.Rsa.os2ip P.nB = P.n from rfl, hv, Bool.false_eq_true, ite_false]
 
 /-- The body after the entry: Z iff `n` is valid. -/
-theorem body_vp : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K) (.ite .eq valid fail) (Res P) := by
+theorem bodyWith_vp (checked : Prog isa)
+    (run : Spec.Rsa.modulusValid P.n P.K = true →
+      VP (fun σ s => True ∧ Bs P σ s) checked (Res P)) : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K) (.ite .eq checked fail) (Res P) := by
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_
   · show some s₁.z = some s₂.z
     rw [h₁.2, h₂.2]
   · refine VP.of_imp (p := Spec.Rsa.modulusValid P.n P.K = true) (fun σ s ⟨⟨_, z⟩, ev⟩ => ?_)
-      fun hv => (valid_vp hv).mono (fun σ s ⟨⟨h, _⟩, _⟩ => ⟨trivial, h⟩) fun _ _ h => h
+      fun hv => (run hv).mono (fun σ s ⟨⟨h, _⟩, _⟩ => ⟨trivial, h⟩) fun _ _ h => h
     have : some s.z = some true := ev
     rw [← z]; simpa using this
   · refine (fail_vp (E := fun σ => In P σ ∧ Spec.Rsa.modulusValid P.n P.K = false)).mono
@@ -123,6 +150,10 @@ theorem body_vp : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n 
         (fun σ e => primesKey_invalid e.2 e.1) h
     have : some s.z = some false := ev
     rw [← z]; simpa using this
+
+
+theorem body_vp : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
+    (.ite .eq valid fail) (Res P) := bodyWith_vp valid valid_vp
 
 end
 

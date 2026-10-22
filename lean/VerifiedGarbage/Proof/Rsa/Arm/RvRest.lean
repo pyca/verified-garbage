@@ -31,6 +31,16 @@ theorem VP.of_imp {F G : State → State → Prop} {c : Prog isa} {p : Prop} (hp
 section
 variable {P : RP}
 
+/-- Shared factor extraction for either recovery search. -/
+theorem finWith_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
+    {E : State → Prop} (F : FinishInputs P) :
+    VP (FinishStart P E F) fin (Fe (F := F) P E) := by
+  have hn0 : 0 < P.n := by omega
+  simp only [fin, seqs]
+  exact VP.seq (finYWith_vp hn F) (VP.seq (gcdSet_vp hn nl F)
+    (VP.seq (inverse_vp hn nl F) (VP.seq (divSet_vp F)
+      (VP.seq (div_vp hn0 F) (VP.seq (order_vp hn0 nl F) (stores_vp hn0 F))))))
+
 theorem fin_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} :
     VP (Cf P E (Jl P)) fin (Fe P E) := by
   have hn0 : 0 < P.n := by omega
@@ -110,15 +120,16 @@ theorem sub32_one {w y : Nat} (h1 : 1 ≤ y) (h2 : y < 2 ^ (32 * w)) : sub32 w y
   VG.Proof.Rsa.sub32_one h1 h2
 
 /-- The result: the factors if the last candidate gave them. -/
-theorem result_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
+theorem resultWith_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
     {σ : State} (pre : In P σ) (hg : goOn P σ = true) (hgo : gos P σ 100 = gos P σ (100 - Jl P))
-    (hnt1 : 1 ≤ P.nt) :
+    (hnt1 : 1 ≤ P.nt) (F : FinishInputs P)
+    (rootEq : (if F.ok σ then some (F.value σ) else none) =
+      recoverStep P.n (tv P σ) (rv P σ) (Jl P + 2)) :
     (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 =
-      if okF P σ then some (Spec.Rsa.i2osp (bigF P σ) P.K, Spec.Rsa.i2osp (smallF P σ) P.K) else none := by
-  obtain ⟨ht1, htc, -, hnt⟩ := rest_facts hv pre hg
+      if okF (F := F) P σ then some (Spec.Rsa.i2osp (bigF (F := F) P σ) P.K, Spec.Rsa.i2osp (smallF (F := F) P σ) P.K) else none := by
+  obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg
   have hle : P.nt ≤ 100 := by rw [← hnt]; exact VG.Proof.Rsa.go_le _ _ _ _ (Nat.le_refl _)
   have hJ : Jl P < recoverTries := by unfold recoverTries; simp only [Jl]; omega
-  have ok := ok_eq σ (Jl P) ht1 htc
   have g := VG.Proof.Rsa.go_eq P.n (tv P σ) (rv P σ) hJ
   have hgo2 : recoverPrimes.go P.n (tv P σ) (rv P σ) recoverTries =
       recoverPrimes.go P.n (tv P σ) (rv P σ) (recoverTries - Jl P) := hgo
@@ -127,24 +138,32 @@ theorem result_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (n
   rw [hgo2, g]
   cases hs : recoverStep P.n (tv P σ) (rv P σ) (Jl P + 2) with
   | some y =>
-    have hok : okF P σ = true := by show (sqst P σ (Jl P) P.c).2.2 = true; rw [ok, hs]; rfl
-    have hy : yF P σ = y := by
-      have := VG.Proof.Rsa.sq_result (n := P.n) (r := rv P σ) (g := Jl P + 2) ht1 htc
-      rw [hs] at this
-      have e : sqRes (sqst P σ (Jl P) P.c) = some y := this
-      simp only [sqRes, hok, ite_true, Option.some.injEq] at e
-      exact e
+    have link : (if F.ok σ then some (F.value σ) else none) = some y := by
+      simpa only [hs] using rootEq
+    have hok : okF (F := F) P σ = true := by
+      by_contra no
+      have no' : F.ok σ = false := Bool.eq_false_iff.mpr no
+      simp only [no', Bool.false_eq_true, ite_false] at link
+      cases link
+    have hy : yF (F := F) P σ = y := by
+      change F.ok σ = true at hok
+      simpa only [hok, ite_true, Option.some.injEq] using link
     have y1 := VG.Proof.Rsa.recoverStep_some hs
     have hy1 : 1 ≤ y := by
       rcases Nat.eq_zero_or_pos y with h | h
       · rw [h] at y1; simp at y1
       · exact h
-    have hyn : y < P.n := by rw [← hy]; exact sqst_lt (by omega) σ _ _
-    have ym : ym1 P σ = y - 1 := by simp only [ym1]; rw [hy]; exact sub32_one hy1 (by omega)
+    have hyn : y < P.n := by rw [← hy]; exact F.bounded σ (by omega)
+    have ym : ym1 (F := F) P σ = y - 1 := by simp only [ym1]; rw [hy]; exact sub32_one hy1 (by omega)
     rw [hok]
     simp only [ite_true, Option.map_some, bigF, smallF, qF, pF, ym]
   | none =>
-    have hok : okF P σ = false := by show (sqst P σ (Jl P) P.c).2.2 = false; rw [ok, hs]; rfl
+    have link : (if F.ok σ then some (F.value σ) else none) = none := by
+      simpa only [hs] using rootEq
+    have hok : okF (F := F) P σ = false := by
+      by_cases yes : F.ok σ = true
+      · simp only [yes, ite_true] at link; cases link
+      · exact Bool.eq_false_iff.mpr yes
     have hnt2 : (recoverPrimes.go P.n (tv P σ) (rv P σ) recoverTries).2 = P.nt := hnt
     have hj : Jl P < (recoverPrimes.go P.n (tv P σ) (rv P σ) recoverTries).2 := by rw [hnt2]; simp only [Jl]; omega
     have cc := VG.Proof.Rsa.cand_cond P.n (tv P σ) (rv P σ) (j := Jl P) hj hgo2
@@ -157,6 +176,16 @@ theorem result_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (n
     show Option.map _ (recoverPrimes.go P.n (tv P σ) (rv P σ) (recoverTries - (Jl P + 1))).1 = none
     rw [show recoverTries - (Jl P + 1) = recoverTries - recoverTries by rw [h100]; rfl, VG.Proof.Rsa.go_last]
     rfl
+
+theorem result_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
+    {σ : State} (pre : In P σ) (hg : goOn P σ = true) (hgo : gos P σ 100 = gos P σ (100 - Jl P))
+    (hnt1 : 1 ≤ P.nt) :
+    (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 =
+      if okF P σ then some (Spec.Rsa.i2osp (bigF P σ) P.K, Spec.Rsa.i2osp (smallF P σ) P.K) else none := by
+  obtain ⟨ht1, htc, -, -⟩ := rest_facts hv pre hg
+  refine resultWith_eq hv hn1 nl pre hg hgo hnt1 (legacyFinish P) ?_
+  change sqRes (sqst P σ (Jl P) P.c) = _
+  exact VG.Proof.Rsa.sq_result ht1 htc
 
 /-- Facts of a valid modulus. -/
 theorem valid_facts (hv : Spec.Rsa.modulusValid P.n P.K = true) (hk : 2 ≤ P.K) :

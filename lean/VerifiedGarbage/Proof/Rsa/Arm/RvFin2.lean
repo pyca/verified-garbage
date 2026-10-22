@@ -16,35 +16,35 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa (b2n)
 
 /-- `y - 1` modulo `2^(32 w)`, and the factor `gcd(y - 1, n)`. -/
-abbrev ym1 (P : RP) (σ : State) : Nat := sub32 P.w (yF P σ) 1
-abbrev pF (P : RP) (σ : State) : Nat := Nat.gcd (ym1 P σ) P.n
+abbrev ym1 (P : RP) (σ : State) (F : FinishInputs P := legacyFinish P) : Nat := sub32 P.w (yF (F := F) P σ) 1
+abbrev pF (P : RP) (σ : State) (F : FinishInputs P := legacyFinish P) : Nat := Nat.gcd (ym1 (F := F) P σ) P.n
 
 /-- `inverse`'s start. -/
-def AG (P : RP) (σ : State) : Nat → Nat :=
-  upd (upd (upd (upd (upd (upd (upd (upd (fun _ => 0) aN P.n) 0 (ym1 P σ)) 1 P.n) aM P.n) 2 1) 3 0) aZero 0)
+def AG (P : RP) (σ : State) (F : FinishInputs P := legacyFinish P) : Nat → Nat :=
+  upd (upd (upd (upd (upd (upd (upd (upd (fun _ => 0) aN P.n) 0 (ym1 (F := F) P σ)) 1 P.n) aM P.n) 2 1) 3 0) aZero 0)
     aNM (sub32 P.w 0 P.n)
 abbrev LG : List Nat := [aNM, aZero, 3, 2, aM, 1, 0, aN]
 
 /-- After `p`. -/
-abbrev Fp (P : RP) (E : State → Prop) : State → State → Prop :=
-  Sk P E (fun σ => upd (upd (fun _ => 0) aN P.n) 1 (pF P σ)) [1, aN] (fun _ _ => 0) []
-    (fun σ => upd (fun _ => 0) sMask (b2n (okF P σ))) [sMask] P.w nArr
+abbrev Fp (P : RP) (E : State → Prop) (F : FinishInputs P := legacyFinish P) : State → State → Prop :=
+  Sk P E (fun σ => upd (upd (fun _ => 0) aN P.n) 1 (pF (F := F) P σ)) [1, aN] (fun _ _ => 0) []
+    (fun σ => upd (fun _ => 0) sMask (b2n (okF (F := F) P σ))) [sMask] P.w nArr
 
 section
 variable {P : RP}
 
 /-- `inverse`'s start. -/
-theorem gcdSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} :
-    VP (Fy P E) gcdSet (Sk P E (AG P) LG (fun _ _ => 0) [] (fun σ => upd (fun _ => 0) sMask (b2n (okF P σ))) [sMask]
+theorem gcdSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} (F : FinishInputs P := legacyFinish P) :
+    VP (Fy (F := F) P E) gcdSet (Sk P E (AG (F := F) P) LG (fun _ _ => 0) [] (fun σ => upd (fun _ => 0) sMask (b2n (okF (F := F) P σ))) [sMask]
       P.w nArr) := by
   have hn0 : 0 < P.n := by omega
   have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega)
   simp only [gcdSet, seqs]
   refine VP.seq ((Sk.psub3 ym1_taint (o := 0) (a := mY) (b := aOne) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun σ _ => ⟨?_, ?_⟩).mono (fun _ _ h => h) fun _ _ h => h.1) ?_
-  · have e : (upd (upd (AY P σ) aZ 0) aOne 1) mY = yF P σ := by simp [AY, upd, mY, aZ, aOne]
-    rw [e]; exact Nat.lt_trans (sqst_lt hn0 σ _ _) nl
-  · have e : (upd (upd (AY P σ) aZ 0) aOne 1) aOne = 1 := by simp [upd, aOne]
+  · have e : (upd (upd (AY (F := F) P σ) aZ 0) aOne 1) mY = yF (F := F) P σ := by simp [AY, upd, mY, aZ, aOne]
+    rw [e]; exact Nat.lt_trans (F.bounded σ hn0) nl
+  · have e : (upd (upd (AY (F := F) P σ) aZ 0) aOne 1) aOne = 1 := by simp [upd, aOne]
     rw [e]; exact w1
   refine VP.seq (Sk.pcopy oneN_taint (o := 1) (a := aN) (by decide) (by decide) (by decide) (by decide)) ?_
   refine VP.seq (Sk.pcopy mN_taint (o := aM) (a := aN) (by decide) (by decide) (by decide) (by decide)) ?_
@@ -66,20 +66,20 @@ theorem gcdSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E 
   · intro d hd; exact ⟨hd, rfl⟩
 
 /-- `inverse`: `[1] = gcd([0], n)`. -/
-theorem inverse_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} :
-    VP (Sk P E (AG P) LG (fun _ _ => 0) [] (fun σ => upd (fun _ => 0) sMask (b2n (okF P σ))) [sMask] P.w nArr)
-      inverse (Fp P E) := by
+theorem inverse_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} (F : FinishInputs P := legacyFinish P) :
+    VP (Sk P E (AG (F := F) P) LG (fun _ _ => 0) [] (fun σ => upd (fun _ => 0) sMask (b2n (okF (F := F) P σ))) [sMask] P.w nArr)
+      inverse (Fp (F := F) P E) := by
   refine VP.of_ct (fun σ₁ σ₂ s t tr1 tr2 u v h e1 e2 =>
     ⟨inverse_ct s t tr1 tr2 u v trivial trivial
       ⟨by rw [h.1.2.2.r7, h.2.2.2.r7], by rw [h.1.2.2.r8, h.2.2.2.r8], by rw [h.1.2.2.r9, h.2.2.2.r9]⟩ e1 e2,
       trivial⟩) fun σ s ⟨e, h, hw⟩ => ?_
   have sz := h.sizes
   refine WP.mono (inverse_ok hw (by decide) (by decide)) fun t ⟨hwt, k, r, f⟩ => ⟨e, ?_, hwt⟩
-  have g : ∀ j ∈ LG, num s.mem P.B P.w j = AG P σ j := fun j hj => h.arrs j hj
+  have g : ∀ j ∈ LG, num s.mem P.B P.w j = AG (F := F) P σ j := fun j hj => h.arrs j hj
   have vNM : num s.mem P.B P.w aNM = sub32 P.w 0 P.n := by rw [g aNM (by simp)]; simp [AG, upd]
   have vM : num s.mem P.B P.w aM = P.n := by rw [g aM (by simp)]; simp [AG, upd, aM, aZero, aNM]
   have vZ : num s.mem P.B P.w aZero = 0 := by rw [g aZero (by simp)]; simp [AG, upd, aZero, aNM]
-  have v0 : num s.mem P.B P.w 0 = ym1 P σ := by rw [g 0 (by simp)]; simp [AG, upd, aZero, aNM, aM]
+  have v0 : num s.mem P.B P.w 0 = ym1 (F := F) P σ := by rw [g 0 (by simp)]; simp [AG, upd, aZero, aNM, aM]
   have v1 : num s.mem P.B P.w 1 = P.n := by rw [g 1 (by simp)]; simp [AG, upd, aZero, aNM, aM]
   have v2 : num s.mem P.B P.w 2 = 1 := by rw [g 2 (by simp)]; simp [AG, upd, aZero, aNM]
   have v3 : num s.mem P.B P.w 3 = 0 := by rw [g 3 (by simp)]; simp [AG, upd, aZero, aNM]

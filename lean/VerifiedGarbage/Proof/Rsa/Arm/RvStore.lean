@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual

@@ -353,11 +353,16 @@ def fin : Prog isa := seqs [finY, gcdSet, inverse, divSet, Rsa.Arm.Div.code, ord
 def rest : Prog isa := seqs [halving, mont, candLoop, fin]
 
 /-- Once `n` is known valid. -/
-def valid : Prog isa := .seq numbers (.ite .eq rest fail)
+def validWith (work : Prog isa) : Prog isa := .seq numbers (.ite .eq work fail)
+
+def valid : Prog isa := validWith rest
 
 /-- `vg_rsa_recover_primes`. -/
-def code : Prog isa :=
+def codeWith (body : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block entry) (.seq (.ite .eq valid fail) (.block PcFn.restore))) (.pop .r12 56)
+    (.seq (.block entry) (.seq body (.block PcFn.restore))) (.pop .r12 56)
+
+/-- The original recovery body in the shared ABI wrapper. -/
+def code : Prog isa := codeWith (.ite .eq valid fail)
 
 end VG.Impl.Rsa.Arm.Recover

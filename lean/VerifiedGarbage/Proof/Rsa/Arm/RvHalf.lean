@@ -25,12 +25,12 @@ open VG.Proof.Rsa (halveStep)
 /-- `(m, t)` after `k` halvings. -/
 abbrev hvs (P : RP) (σ : State) (k : Nat) : Nat × Nat := halveStep^[k] (mv P σ, 0)
 
-def AWh (P : RP) (σ : State) (k : Nat) : Nat → Nat := fun _ => (hvs P σ k).1
+def AWh (P : RP) (σ : State) (k : Nat) : Nat → Nat := upd (fun _ => (hvs P σ k).1) wM (mv P σ)
 def Vh (P : RP) (σ : State) (k : Nat) : Nat → Nat := upd (upd (fun _ => 0) sTc (hvs P σ k).2) sCnt (P.c - k)
 
 /-- After `k` halvings. -/
 def HI (P : RP) (σ : State) (k : Nat) (s : State) : Prop :=
-  KS P σ (Aload P σ) [aN] (AWh P σ k) [wR] (Vh P σ k) [sTc, sCnt] s ∧ Ws s P.B P.Z P.W 22
+  KS P σ (Aload P σ) [aN] (AWh P σ k) [wR, wM] (Vh P σ k) [sTc, sCnt] s ∧ Ws s P.B P.Z P.W 22
 
 theorem hvs_le (P : RP) (σ : State) (k : Nat) : (hvs P σ k).2 ≤ k :=
   VG.Proof.Rsa.halve_count_le (mv P σ) k
@@ -46,27 +46,30 @@ theorem halfBody_ok {P : RP} {σ s : State} {k : Nat} (h : HI P σ k s) (hk : k 
   have ht := hvs_le P σ k
   generalize eR : (hvs P σ k).1 = R at *
   generalize eT : (hvs P σ k).2 = T at *
-  have aR : AWh P σ k wR = R := eR
+  have aR : AWh P σ k wR = R := by simpa only [AWh, upd_ne _ _ (show wR ≠ wM by decide)] using eR
   have vT : Vh P σ k sTc = T := by simp [Vh, upd, sTc, sCnt, eT]
   have vC : Vh P σ k sCnt = P.c - k := by simp [Vh, upd]
-  have aW : AWh P σ k = fun _ => R := funext fun _ => eR
+  have aW : AWh P σ k = upd (fun _ => R) wM (mv P σ) := by simp only [AWh, eR]
   rw [aW] at h
   unfold halfBody
   simp only [seqs]
   refine WP.seq (WP.mono (h.copy_W hw (o := wU) (a := wR) (by decide) (by simp) (by decide)
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s1 ⟨h1, hw1, _⟩ => ?_)
-  rw [upd_noop rfl] at h1
+  rw [upd_noop (A := upd (fun _ => R) wM (mv P σ)) (j := wU)
+    (by simp [upd, wU, wM, wR])] at h1
   refine WP.seq (WP.mono (h1.copy_W hw1 (o := wH) (a := wR) (by decide) (by simp) (by decide)
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s2 ⟨h2, hw2, _⟩ => ?_)
-  rw [upd_noop rfl] at h2
+  rw [upd_noop (A := upd (fun _ => R) wM (mv P σ)) (j := wH)
+    (by simp [upd, wH, wM, wR])] at h2
   refine WP.seq (wp_mov (op2_imm (by decide)) fun s3 u3 => WP.block_nil ?_)
   obtain ⟨h3, hw3⟩ := h2.reg hw2 (u3.rest (ws := [.r11]) (by simp)) u3.mem
   refine WP.seq (WP.mono (h3.half_W hw3 (j := wH) (by simp) (by rw [u3.gpr]; rfl)
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s4 ⟨h4, hw4, _⟩ => ?_)
+  rw [show upd (fun _ => R) wM (mv P σ) wH = R from rfl] at h4
   refine WP.seq ?_
   unfold halfBit
   refine h4.bitOf_W hw4 (j := wR) (by simp) (by decide) fun s5 h5 hw5 _ => ?_
-  have b5 : upd (fun _ => R) wH (R / 2) wR % 2 = R % 2 := by rw [upd_ne _ _ (by decide)]
+  have b5 : upd (upd (fun _ => R) wM (mv P σ)) wH (R / 2) wR % 2 = R % 2 := by simp [upd, wR, wM, wH]
   rw [b5] at h5
   refine h5.ldrSlot hw5 (d := sBit) (r := .r1) (by simp) (by decide) fun s6 h6 hw6 u6 => ?_
   refine wp_dp (op2_imm (by decide)) fun s7 u7 => ?_
@@ -99,15 +102,18 @@ theorem halfBody_ok {P : RP} {σ s : State} {k : Nat} (h : HI P σ k s) (hk : k 
   · have hs := hvs_succ P σ k
     rw [show hvs P σ k = (R, T) from Prod.ext eR eT] at hs
     refine ht.mono (fun j hj => ⟨by simpa using hj, rfl⟩) (fun j hj => ?_) (fun d hd => ?_)
-    · simp only [List.mem_singleton] at hj; subst hj
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+      rcases hj with rfl | rfl
+      swap
+      · exact ⟨by simp, by simp [upd, AWh, wM, wR, wH]⟩
       refine ⟨by simp, ?_⟩
-      have sv : upd (upd (upd (Vh P σ k) sBit (R % 2)) sBit (1 - R % 2)) sTc (T + (1 - R % 2)) sBit =
-          1 - R % 2 := by rw [upd_ne _ _ (by decide), upd_self]
       simp only [AWh, hs, halveStep]
-      rw [upd_self, sv, upd_ne (fun _ => R) (R / 2) (show wU ≠ wH by decide), upd_self]
+      dsimp [upd, sBit, sTc, wR, wM, wU, wH]
       by_cases e : R % 2 = 0
       · simp only [e, ite_true]; split <;> omega
-      · simp only [e, ite_false]; split <;> omega
+      · have odd : R % 2 = 1 := by omega
+        simp [odd]
+
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl
       · refine ⟨by simp, ?_⟩

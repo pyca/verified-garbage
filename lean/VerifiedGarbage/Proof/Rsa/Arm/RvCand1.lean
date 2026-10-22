@@ -87,7 +87,7 @@ theorem candSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (h101 : 101 < P.n) {E : State 
         simp [Ae, AM, upd, mG, mY, mBase, iG, aZ, aO, aN, aOne, aNg, mR2, gR, Ov, Nat.mod_one]
     · intro x hx
       simp only [LWe, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl <;> simp [AWe, AWh, upd]
+      rcases hx with rfl | rfl <;> simp [AWe, AWh, upd, wR, wM, wRc]
     · intro x hx
       simp only [LSe, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp [Vc, upd, sCnt, sCand, sTc]
