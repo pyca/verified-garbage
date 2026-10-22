@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       base_commit:
-        description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
+        description: The commit to compare against, as a full or abbreviated SHA, a branch or a tag (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
         description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm)
@@ -64,11 +64,23 @@ jobs:
           ARCHES: ${{ inputs.arches }}
           CPU_FEATURES: ${{ inputs.cpu_features }}
           MODULES: ${{ inputs.modules }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "base=$BASE_COMMIT" >> "$GITHUB_OUTPUT"
+          # actions/checkout takes a full SHA or a branch or tag name, and
+          # fails on an abbreviated SHA: resolve whichever was given to the
+          # full SHA (the API takes all three), once, for every job.
+          base=
+          if [ -n "$BASE_COMMIT" ]; then
+            if ! base=$(gh api "repos/$GITHUB_REPOSITORY/commits/$BASE_COMMIT" --jq .sha); then
+              echo "::error::base_commit '$BASE_COMMIT' is no commit, branch or tag of $GITHUB_REPOSITORY"
+              exit 1
+            fi
+            echo "Base: $BASE_COMMIT = $base"
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
 
   compare:
     needs: arches
