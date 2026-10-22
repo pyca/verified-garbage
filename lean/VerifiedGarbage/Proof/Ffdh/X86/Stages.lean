@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+public import VerifiedGarbage.Proof.Framework.RelCTChain
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # FFDH on i686: the stages on the wide slots
 
 `pSetup_ok`: p (from the bytes of argument 2) in wide slot 9, one in 14 and
-`p − 1` in 15.
+`p − 1` in 15. A branch on ZF after a stage is a `Gate`: a condition
+that ZF tells, which runs from the same public values agree on.
 -/
 
 @[expose] public section
@@ -515,5 +518,40 @@ theorem Step.ops (h : In Ex base bytes len args s) {u : State}
     Step Ex base bytes len args s u :=
   ⟨h.keepF K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this) F
     (stR_fit h (by decide)), fR_widen F (stR_inF h), K.mono hrs⟩
+
+/-! ## Branches -/
+
+/-- A chain of stages, then the rest. -/
+theorem WP.chain_split {l : List (Prog isa)} {rest : Prog isa} {s : State} {P Q : State → Prop}
+    (h : WP isa (Prog.chain l (.block [])) s P) (k : ∀ u, P u → WP isa rest u Q) :
+    WP isa (Prog.chain l rest) s Q := by
+  induction l generalizing s with
+  | nil => exact k _ (WP.block_nil_iff.mp h)
+  | cons c l ih => exact WP.seq (WP.mono (WP.seq_iff.mp h) fun u hu => ih hu)
+
+/-- ZF tells whether `C` holds. -/
+def Gate (u : State) (C : Prop) : Prop := ∃ b, isa.eval .e u = some b ∧ (b = true ↔ C)
+
+theorem Gate.of_eval {u : State} {C : Prop} {b : Bool} (h : isa.eval .e u = some b) (hb : b = true ↔ C) :
+    Gate u C := ⟨b, h, hb⟩
+
+theorem Gate.keep {u v : State} {C : Prop} (G : Gate u C) (z : v.zf = u.zf) : Gate v C := by
+  obtain ⟨b, h, hb⟩ := G
+  exact ⟨b, by show v.zf = _; rw [z]; exact h, hb⟩
+
+/-- Two states that tell the same condition branch alike. -/
+theorem Gate.agree {u v : State} {C : Prop} (G₁ : Gate u C) (G₂ : Gate v C) : isa.eval .e u = isa.eval .e v := by
+  obtain ⟨b₁, h₁, i₁⟩ := G₁
+  obtain ⟨b₂, h₂, i₂⟩ := G₂
+  rw [h₁, h₂]
+  congr 1
+  cases b₁ <;> cases b₂ <;> simp_all
+
+/-- A branch on a gate: `th` when `C` holds, `el` otherwise. -/
+theorem WP.gate {u : State} {C : Prop} (G : Gate u C) {th el : Prog isa} {Q : State → Prop}
+    (ht : C → WP isa th u Q) (he : ¬ C → WP isa el u Q) : WP isa (.ite .e th el) u Q := by
+  obtain ⟨b, h, hb⟩ := G
+  refine WP.ite b h (fun e => ht (hb.mp e)) fun e => he fun c => ?_
+  rw [hb.mpr c] at e; cases e
 
 end VG.Proof.Ffdh.X86

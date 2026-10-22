@@ -40,12 +40,21 @@ theorem subgroup_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.m
   rw [V6, V3, h10, h11] at R
   exact (Step.ops h F K).res R
 
-/-- q divides `p − 1`, then `g^q mod p = 1`; q is odd and above 2, `p − 1` in the wide slot 15. -/
-theorem divides_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
-    (h10 : sv s.mem base len .wide 10 = g) (h11 : sv s.mem base len .wide 11 = q)
-    (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) (q2 : 2 < q) (qodd : q % 2 = 1) :
-    WP isa divides s (Res base len s (if (p - 1) % q = 0 ∧ g ^ q % p = 1 then 1 else 0)) := by
-  unfold divides
+/-- `divides` up to its branch. -/
+abbrev dividesFront : List (Prog isa) :=
+  [copy (.slot .wide 11) (.slot .wide 0) (one .wide), prepare .wide, copy (.slot .wide 15) (.slot .wide 5) (one .wide),
+    CrtRt.mul .wide 6 5 3, zero (.slot .wide 17) (one .wide), equal (.slot .wide 6) (.slot .wide 17) (one .wide),
+    Impl.Ffdh.X86.testMask]
+
+theorem divides_eq : divides = Prog.chain dividesFront (.ite .e (Impl.Ffdh.X86.ret 0) subgroup) := rfl
+
+/-- The context of q, and ZF telling whether q does not divide `p − 1`. -/
+theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
+    (h11 : sv s.mem base len .wide 11 = q) (h15 : sv s.mem base len .wide 15 = p - 1) (qodd : q % 2 = 1)
+    (q2 : 2 < q) :
+    WP isa (Prog.chain dividesFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
+      Gate u (¬ (p - 1) % q = 0) ∧
+      ∀ j, 9 ≤ j → j ≤ 19 → j ≠ 17 → sv u.mem base len .wide j = sv s.mem base len .wide j := by
   -- The context of q.
   refine WP.seq (WP.mono (copyIn_ok h (j := 11) (d := 0) (by decide) (by decide) (by decide))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
@@ -86,39 +95,54 @@ theorem divides_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.me
   have six₅ : sv u₅.mem base len .wide 6 = sv u₄.mem base len .wide 6 := slotKeep C₄.inp (by decide) (by decide) O₅
   refine WP.seq (WP.mono (eqW_ok S₅.inp (a := 6) (b := 17) (by decide) (by decide)) fun u₆ ⟨m₆, e₆, K₆⟩ => ?_)
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.regs S₅.inp m₆ K₆
-  refine WP.seq (WP.mono (testMask_ok e₆) fun u₇ ⟨z₇, m₇, K₇⟩ => ?_)
+  refine WP.seq (WP.mono (testMask_ok e₆) fun u₇ ⟨z₇, m₇, K₇⟩ => WP.block_nil ?_)
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.regs S₆.inp m₇ K₇
   have S := ((((((S₁.trans S₂).trans S₃).trans S₄).trans S₅).trans S₆).trans S₇)
   rw [six₅, Z₅] at z₇
   have red := VG.Proof.Ffdh.redc_zero (r := sv u₄.mem base len .wide 6) (Q := q) (X := p - 1)
     (n := 8 * bc len .wide) qodd L₄ V₄
-  refine WP.ite _ z₇ (fun hb => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun hb => ?_)
-  · have : ¬ (p - 1) % q = 0 := by
-      intro e; have := red.mpr e; simp [this] at hb
-    simp only [this, false_and, ↓reduceIte]; exact R
-  · have e0 : sv u₄.mem base len .wide 6 = 0 := by simpa using hb
-    have dv : (p - 1) % q = 0 := red.mp e0
-    have kk : ∀ {j}, 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] → sv u₇.mem base len .wide j = sv s.mem base len .wide j := by
-      intro j hj
-      have hj' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨hj.1, hj.2.1, by simp⟩
-      have hj5 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [5] := ⟨hj.1, hj.2.1, by simp; omega⟩
-      have hj0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [0] := ⟨hj.1, hj.2.1, by simp; omega⟩
-      rw [m₇, m₆, k₅.slot_eq hj, k₄.slot_eq hj', k₃.slot_eq hj5, k₂.slot_eq hj', k₁.slot_eq hj0]
-    refine WP.mono (subgroup_ok S₇.inp (p := p) (g := g) (q := q) (by rw [kk (by decide), h9])
-      (by rw [kk (by decide), h10]) (by rw [kk (by decide), h11]) gt odd) fun t R => S.res ?_
+  refine ⟨S, Gate.of_eval z₇ ?_, fun j h9 h19 h17 => ?_⟩
+  · simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not]
+    exact not_congr red
+  · have hj' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨h9, h19, by simp⟩
+    have hj5 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [5] := ⟨h9, h19, by simp; omega⟩
+    have hj0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [0] := ⟨h9, h19, by simp; omega⟩
+    have hj17 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] := ⟨h9, h19, by simp; omega⟩
+    rw [m₇, m₆, k₅.slot_eq hj17, k₄.slot_eq hj', k₃.slot_eq hj5, k₂.slot_eq hj', k₁.slot_eq hj0]
+
+theorem divides_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
+    (h10 : sv s.mem base len .wide 10 = g) (h11 : sv s.mem base len .wide 11 = q)
+    (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) (q2 : 2 < q) (qodd : q % 2 = 1) :
+    WP isa divides s (Res base len s (if (p - 1) % q = 0 ∧ g ^ q % p = 1 then 1 else 0)) := by
+  rw [divides_eq]
+  refine WP.chain_split (dividesFront_ok h h11 h15 qodd q2) fun u ⟨S, G, kk⟩ => WP.gate G
+    (fun nd => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun dv => ?_)
+  · simp only [nd, false_and, ↓reduceIte]; exact R
+  · have dv : (p - 1) % q = 0 := Classical.not_not.mp dv
+    refine WP.mono (subgroup_ok S.inp (p := p) (g := g) (q := q) (by rw [kk 9 (by decide) (by decide) (by decide), h9])
+      (by rw [kk 10 (by decide) (by decide) (by decide), h10]) (by rw [kk 11 (by decide) (by decide) (by decide), h11])
+      gt odd) fun t R => S.res ?_
     simp only [dv, true_and]; exact R
 
-/-- q (the domain's third component) odd with `2 < q < p − 1`, then `divides`. -/
-theorem withQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
-    {p g : Nat} (h9 : sv s.mem base len .wide 9 = p) (h10 : sv s.mem base len .wide 10 = g)
-    (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) :
-    WP isa withQ s (Res base len s
-      (if (comp s.mem args len 2 % 2 = 1 ∧ 2 < comp s.mem args len 2 ∧ comp s.mem args len 2 < p - 1) ∧
-        ((p - 1) % comp s.mem args len 2 = 0 ∧ g ^ comp s.mem args len 2 % p = 1) then 1 else 0)) := by
+/-- `withQ` up to its branch. -/
+abbrev withQFront : List (Prog isa) :=
+  [load (.slot .wide 11) (one .wide) 6 7, setSmall (.slot .wide 16) (one .wide) 2,
+    lessThan (.slot .wide 16) (.slot .wide 11) (one .wide), .block [.store (sc maskOff) .ecx],
+    lessThan (.slot .wide 11) (.slot .wide 15) (one .wide),
+    .block ([.alu .and .ecx (.mem (sc maskOff))] ++ Impl.Ffdh.X86.CheckDomain.oddMask), Impl.Ffdh.X86.testMask]
+
+theorem withQ_eq : withQ = Prog.chain withQFront (.ite .e (Impl.Ffdh.X86.ret 0) divides) := rfl
+
+/-- q into slot 11, and ZF telling whether q is not odd with `2 < q < p − 1`. -/
+theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
+    {p : Nat} (h15 : sv s.mem base len .wide 15 = p - 1) :
+    WP isa (Prog.chain withQFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
+      Gate u (¬ (comp s.mem args len 2 % 2 = 1 ∧ 2 < comp s.mem args len 2 ∧ comp s.mem args len 2 < p - 1)) ∧
+      sv u.mem base len .wide 11 = comp s.mem args len 2 ∧
+      ∀ j, 9 ≤ j → j ≤ 19 → j ≠ 11 → j ≠ 16 → sv u.mem base len .wide j = sv s.mem base len .wide j := by
   generalize hq : comp s.mem args len 2 = q
   have mo : maskOff = 12 := rfl
   have nb : numBase = 3336 := rfl
-  unfold withQ
   refine WP.seq (WP.mono (loadComp_ok h G (k := 2) (j := 11) (by decide) (by omega) (by decide))
     fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
   rw [hq] at V₁
@@ -146,26 +170,33 @@ theorem withQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.regs S₅.inp m₆ K₆
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.regs S₆.inp m₇ K₇
   rw [m₆, m₅, q₄] at e₇
-  refine WP.seq (WP.mono (testMask_ok e₇) fun u₈ ⟨z₈, m₈, K₈⟩ => ?_)
+  refine WP.seq (WP.mono (testMask_ok e₇) fun u₈ ⟨z₈, m₈, K₈⟩ => WP.block_nil ?_)
   have S₈ : Step Ex base bytes len args u₇ u₈ := Step.regs S₇.inp m₈ K₈
   have S := ((((((S₁.trans S₂).trans S₃).trans S₄).trans S₅).trans S₆).trans S₇).trans S₈
-  refine WP.ite _ z₈ (fun hb => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun hb => ?_)
-  · have : ¬ (q % 2 = 1 ∧ 2 < q ∧ q < p - 1) := by
-      intro ⟨a, b, c⟩
-      simp [a, b, c] at hb
-    simp only [this, false_and, ↓reduceIte]; exact R
-  · have c : q % 2 = 1 ∧ 2 < q ∧ q < p - 1 := by
-      simp only [Bool.not_eq_eq_eq_not, Bool.not_false, Bool.and_eq_true, decide_eq_true_eq] at hb
-      exact ⟨hb.2, hb.1.2, hb.1.1⟩
-    have kk : ∀ {j}, 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [11, 16] → sv u₈.mem base len .wide j = sv s.mem base len .wide j := by
-      intro j hj
-      have h16 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16] := ⟨hj.1, hj.2.1, by simp at hj ⊢; omega⟩
-      have h11 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [11] := ⟨hj.1, hj.2.1, by simp at hj ⊢; omega⟩
-      have h0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨hj.1, hj.2.1, by simp⟩
-      rw [m₈, m₇, m₆, m₅, k₄.slot_eq h0, m₃, k₂.slot_eq h16, k₁.slot_eq h11]
-    have q₈ : sv u₈.mem base len .wide 11 = q := by rw [m₈, m₇, m₆, m₅, q₄]
-    refine WP.mono (divides_ok S₈.inp (p := p) (g := g) (q := q) (by rw [kk (by decide), h9])
-      (by rw [kk (by decide), h10]) q₈ (by rw [kk (by decide), h15]) gt odd c.2.1 c.1) fun t R => S.res ?_
+  refine ⟨S, Gate.of_eval z₈ ?_, by rw [m₈, m₇, m₆, m₅, q₄], fun j h9 h19 h11 h16 => ?_⟩
+  · by_cases a : q % 2 = 1 <;> by_cases b : 2 < q <;> by_cases c : q < p - 1 <;> simp [a, b, c]
+  · have h16' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16] := ⟨h9, h19, by simp; omega⟩
+    have h11' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [11] := ⟨h9, h19, by simp; omega⟩
+    have h0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨h9, h19, by simp⟩
+    rw [m₈, m₇, m₆, m₅, k₄.slot_eq h0, m₃, k₂.slot_eq h16', k₁.slot_eq h11']
+
+/-- q (the domain's third component) odd with `2 < q < p − 1`, then `divides`. -/
+theorem withQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
+    {p g : Nat} (h9 : sv s.mem base len .wide 9 = p) (h10 : sv s.mem base len .wide 10 = g)
+    (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) :
+    WP isa withQ s (Res base len s
+      (if (comp s.mem args len 2 % 2 = 1 ∧ 2 < comp s.mem args len 2 ∧ comp s.mem args len 2 < p - 1) ∧
+        ((p - 1) % comp s.mem args len 2 = 0 ∧ g ^ comp s.mem args len 2 % p = 1) then 1 else 0)) := by
+  rw [withQ_eq]
+  refine WP.chain_split (withQFront_ok h G h15) fun u ⟨S, Gt, q₈, kk⟩ => ?_
+  generalize hq : comp s.mem args len 2 = q at Gt q₈ ⊢
+  refine WP.gate Gt (fun nc => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun c => ?_)
+  · simp only [nc, false_and, ↓reduceIte]; exact R
+  · have c := Classical.not_not.mp c
+    refine WP.mono (divides_ok S.inp (p := p) (g := g) (q := q)
+      (by rw [kk 9 (by decide) (by decide) (by decide) (by decide), h9])
+      (by rw [kk 10 (by decide) (by decide) (by decide) (by decide), h10]) q₈
+      (by rw [kk 15 (by decide) (by decide) (by decide) (by decide), h15]) gt odd c.2.1 c.1) fun t R => S.res ?_
     simp only [c, true_and, and_self]; exact R
 
 theorem argNum_comp (m : Mem) (args : Nat → BitVec 32) (len : Nat) : argNum m args 2 len = comp m args len 0 := by
@@ -177,31 +208,35 @@ theorem argNum_comp (m : Mem) (args : Nat → BitVec 32) (len : Nat) : argNum m 
 abbrev domBytes (m : Mem) (args : Nat → BitVec 32) (dlen : Nat) : List Byte :=
   Spec.Rsa.bytesAt m (byteAddr (args 2)) dlen
 
-/-- For a valid modulus p: `1 < g < p − 1`, then q if there is one. -/
-theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
+/-- `checked` up to its first branch. -/
+abbrev checkedFront : List (Prog isa) :=
+  [Impl.Ffdh.X86.pSetup, load (.slot .wide 10) (one .wide) 4 5, Impl.Ffdh.X86.rangeMask 10, Impl.Ffdh.X86.testMask]
+
+theorem checked_eq : checked = Prog.chain checkedFront (.ite .e (Impl.Ffdh.X86.ret 0)
+    (.seq (.block Impl.Ffdh.X86.qTest) (.ite .e (Impl.Ffdh.X86.ret 1) withQ))) := rfl
+
+/-- p, one, g and `p − 1` into slots 9, 14, 10 and 15, and ZF telling whether g is out of range. -/
+theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
     (valid : Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) :
-    WP isa checked s (Res base len s
-      (if Spec.Ffdh.domainValid len (domBytes s.mem args dlen) then 1 else 0)) := by
+    WP isa (Prog.chain checkedFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
+      Gate u (¬ (1 < comp s.mem args len 1 ∧ comp s.mem args len 1 < comp s.mem args len 0 - 1)) ∧
+      sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 10 = comp s.mem args len 1 ∧
+      sv u.mem base len .wide 15 = comp s.mem args len 0 - 1 := by
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
-  have h2 : 2 * len ≤ dlen := by omega
-  have hp := comp_p s.mem args h2
-  have hg := comp_g s.mem args h2
-  generalize hP : comp s.mem args len 0 = p at valid hp
-  generalize hG : comp s.mem args len 1 = g at hg
+  generalize hP : comp s.mem args len 0 = p at valid
+  generalize hG : comp s.mem args len 1 = g
   have mv := valid
   unfold Spec.Rsa.modulusValid at mv
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
-  have podd : p % 2 = 1 := mv.1.1.1
-  have pgt : 1 < p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega
-  unfold checked
   -- p, one and `p − 1`.
   refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
     (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
         rwa [BitVec.add_zero] at this)
-    (G.apart.sub_left (Region.sub_prefix (by omega))) (by rw [argNum_comp, hP]; omega))
+    (G.apart.sub_left (Region.sub_prefix (by omega)))
+    (by rw [argNum_comp, hP]; have := Nat.two_pow_pos 511; have := mv.1.1.2; omega))
     fun u₁ ⟨I₁, F₁, k₁, V9, V14, V15, K₁⟩ => ?_)
   rw [argNum_comp, hP] at V9 V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
@@ -215,25 +250,47 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
   rw [V₂, k₂.slot_eq, k₂.slot_eq, V14, V15] at e₃
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.word S₂.inp (by decide) O₃ K₃
   have k₃ := kept_word S₂.inp (d := maskOff) (by decide) (by decide) O₃
-  refine WP.seq (WP.mono (testMask_ok e₃) fun u₄ ⟨z₄, m₄, K₄⟩ => ?_)
+  refine WP.seq (WP.mono (testMask_ok e₃) fun u₄ ⟨z₄, m₄, K₄⟩ => WP.block_nil ?_)
   have S₄ : Step Ex base bytes len args u₃ u₄ := Step.regs S₃.inp m₄ K₄
-  have S := ((S₁.trans S₂).trans S₃).trans S₄
+  refine ⟨((S₁.trans S₂).trans S₃).trans S₄, Gate.of_eval z₄ ?_, ?_, ?_, ?_⟩
+  · by_cases a : 1 < g <;> by_cases b : g < p - 1 <;> simp [a, b]
+  · rw [m₄, k₃.slot_eq, k₂.slot_eq, V9]
+  · rw [m₄, k₃.slot_eq, V₂]
+  · rw [m₄, k₃.slot_eq, k₂.slot_eq, V15]
+
+/-- For a valid modulus p: `1 < g < p − 1`, then q if there is one. -/
+theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (valid : Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) :
+    WP isa checked s (Res base len s
+      (if Spec.Ffdh.domainValid len (domBytes s.mem args dlen) then 1 else 0)) := by
+  have dl := G.dl
+  have fit := G.fit
+  have lw := G.lower
+  have h2 : 2 * len ≤ dlen := by omega
+  have hp := comp_p s.mem args h2
+  have hg := comp_g s.mem args h2
+  rw [checked_eq]
+  refine WP.chain_split (checkedFront_ok h G hb40 valid) fun u₄ ⟨S, Gt, V9, V10, V15⟩ => ?_
+  generalize hP : comp s.mem args len 0 = p at valid hp V9 V15 Gt
+  generalize hG : comp s.mem args len 1 = g at hg V10 Gt
+  have mv := valid
+  unfold Spec.Rsa.modulusValid at mv
+  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
+  have podd : p % 2 = 1 := mv.1.1.1
+  have pgt : 1 < p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega
   have iff := VG.Proof.Ffdh.domainValid_iff len (domBytes s.mem args dlen)
   rw [← hp, ← hg] at iff
-  refine WP.ite _ z₄ (fun hb => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun hb => ?_)
-  · have : ¬ (1 < g ∧ g < p - 1) := by
-      intro ⟨a, b⟩; simp [a, b] at hb
-    have nv : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = false := by
+  refine WP.gate Gt (fun bad => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun grange => ?_)
+  · have nv : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = false := by
       cases e : Spec.Ffdh.domainValid len (domBytes s.mem args dlen)
       · rfl
-      · exact absurd (iff.mp e).2.1 this
+      · exact absurd (iff.mp e).2.1 bad
     simp only [nv, Bool.false_eq_true, ↓reduceIte]; exact R
-  have grange : 1 < g ∧ g < p - 1 := by
-    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, Bool.and_eq_true, decide_eq_true_eq] at hb
-    exact ⟨hb.2, hb.1⟩
+  have grange : 1 < g ∧ g < p - 1 := Classical.not_not.mp grange
   have G₄ := G.keep ⟨rfl, rfl⟩ S.keeps
-  refine WP.seq (WP.mono (qTest_ok S₄.inp G.e3 G.e12 dl) fun u₅ ⟨z₅, m₅, K₅⟩ => ?_)
-  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp m₅ K₅
+  refine WP.seq (WP.mono (qTest_ok S.inp G.e3 G.e12 dl) fun u₅ ⟨z₅, m₅, K₅⟩ => ?_)
+  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S.inp m₅ K₅
   have S' := S.trans S₅
   refine WP.ite _ z₅ (fun hb => WP.mono (ret_res (base := base) (len := len)) fun t R => S'.res ?_) (fun hb => ?_)
   · have e2 : dlen = 2 * len := by simpa using hb
@@ -247,12 +304,8 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
       omega
     subst e3
     have hq := comp_q (len := len) s.mem args
-    have kk : ∀ {j}, 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [10] → sv u₅.mem base len .wide j = sv u₁.mem base len .wide j := by
-      intro j hj
-      have h0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨hj.1, hj.2.1, by simp⟩
-      rw [m₅, m₄, k₃.slot_eq h0, k₂.slot_eq hj]
-    refine WP.mono (withQ_ok S₅.inp (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [kk (by decide), V9])
-      (by rw [m₅, m₄, k₃.slot_eq, V₂]) (by rw [kk (by decide), V15]) pgt podd) fun t R => S'.res ?_
+    refine WP.mono (withQ_ok S₅.inp (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [m₅, V9])
+      (by rw [m₅, V10]) (by rw [m₅, V15]) pgt podd) fun t R => S'.res ?_
     rw [comp_keep h G hb40 S'.frame (by omega)] at R
     generalize hQ : comp s.mem args len 2 = Q at R hq
     have key : Spec.Ffdh.domainValid len (domBytes s.mem args (3 * len)) = true ↔
@@ -280,6 +333,26 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
       rw [show (if (Q % 2 = 1 ∧ 2 < Q ∧ Q < p - 1) ∧ ((p - 1) % Q = 0 ∧ g ^ Q % p = 1) then 1 else 0) = 0 from
         ite_eq_right_iff.mpr fun h' => absurd h' hc] at R
       exact R
+
+/-- RSA's check of p's bytes: ZF telling whether p is a valid modulus. -/
+theorem bodyFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr) :
+    WP isa (.seq (.block PublicFn.modulusArgs) (.block modulusCheck)) s fun v => Step Ex base bytes len args s v ∧
+      v.mem = s.mem ∧ Gate v (Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) := by
+  have fit := G.fit
+  have dl := G.dl
+  have lw := G.lower
+  refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide) (h.arg (i := 2) (by decide))
+    (h.arg (i := 3) (by decide))) fun u ⟨P, C, M, K⟩ => ?_)
+  have S₁ : Step Ex base bytes len args s u := Step.regs h M K
+  have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
+    rw [P, K.2.1, K.2.2]
+    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+    rwa [BitVec.add_zero] at this
+  refine WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega) rd (by rw [C, G.e3]))
+    fun v ⟨Z, Mv, Kv⟩ => ?_
+  rw [P, M, show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) = comp s.mem args len 0 from
+    argNum_comp s.mem args len] at Z
+  exact ⟨S₁.trans (Step.regs S₁.inp Mv Kv), Mv.trans M, Gate.of_eval Z Iff.rfl⟩
 
 /-- `vg_ffdh_check_domain`'s body: 1 exactly when the domain is valid. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
