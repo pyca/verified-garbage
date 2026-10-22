@@ -48,29 +48,29 @@ abbrev argNum (m : Mem) (args : Nat → BitVec 32) (p L : Nat) : Nat :=
 the first slot but the saved mask and acceptance words where it writes them. -/
 structure Kept (base : Addr) (len : Nat) (js : List Nat) (ds : List Nat) (m m' : Mem) : Prop where
   slots : ∀ j, 9 ≤ j → j ≤ 19 → j ∉ js → sv m' base len .wide j = sv m base len .wide j
-  words : ∀ d, 8 ≤ d → d + 4 ≤ numBase → d ∉ ds → w32 m' base d = w32 m base d
+  words : ∀ d, 8 ≤ d → d + 4 ≤ numBase → d % 4 = 0 → d ∉ ds → w32 m' base d = w32 m base d
 
 theorem Kept.trans {js ds : List Nat} {m₁ m₂ m₃ : Mem} (k₁ : Kept base len js ds m₁ m₂)
     (k₂ : Kept base len js ds m₂ m₃) : Kept base len js ds m₁ m₃ :=
   ⟨fun j a b c => (k₂.slots j a b c).trans (k₁.slots j a b c),
-    fun d a b c => (k₂.words d a b c).trans (k₁.words d a b c)⟩
+    fun d a b e c => (k₂.words d a b e c).trans (k₁.words d a b e c)⟩
 
 theorem Kept.mono {js ds js' ds' : List Nat} {m m' : Mem} (k : Kept base len js ds m m')
     (hj : ∀ j ∈ js, j ∈ js' := by decide) (hd : ∀ d ∈ ds, d ∈ ds' := by decide) : Kept base len js' ds' m m' :=
-  ⟨fun j a b c => k.slots j a b fun hm => c (hj j hm), fun d a b c => k.words d a b fun hm => c (hd d hm)⟩
+  ⟨fun j a b c => k.slots j a b fun hm => c (hj j hm), fun d a b e c => k.words d a b e fun hm => c (hd d hm)⟩
 
-theorem Kept.refl (m : Mem) : Kept base len [] [] m m := ⟨fun _ _ _ _ => rfl, fun _ _ _ _ => rfl⟩
+theorem Kept.refl (m : Mem) : Kept base len [] [] m m := ⟨fun _ _ _ _ => rfl, fun _ _ _ _ _ => rfl⟩
 
 /-- A number written into wide slot `a`. -/
 theorem kept_slot (h : In Ex base bytes len args s) {m m' : Mem} {a : Nat}
     (O : Outside base (lo len (.slot .wide a)) (bc len .wide) m m') : Kept base len [a] [] m m' :=
   ⟨fun j _ hj hn => slotKeep h hj (fun e => hn (by simp [e])) O,
-    fun _ _ hd _ => slotKeep_w32 h O hd⟩
+    fun _ _ hd _ _ => slotKeep_w32 h O hd⟩
 
 /-- The operations of a context. -/
 theorem kept_ops (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (stR len 0)) m m') (R : CallRoom sp base bytes) : Kept base len [] [] m m' :=
-  ⟨fun _ a b _ => opsKeep_sv h F R a b, fun _ a b _ => opsKeep_w32 h F R a b⟩
+  ⟨fun _ a b _ => opsKeep_sv h F R a b, fun _ a b _ _ => opsKeep_w32 h F R a b⟩
 
 /-- One writes `ws` and keeps the others. -/
 theorem Kept.slot_eq {js ds : List Nat} {m m' : Mem} (k : Kept base len js ds m m') {j : Nat}
@@ -78,8 +78,8 @@ theorem Kept.slot_eq {js ds : List Nat} {m m' : Mem} (k : Kept base len js ds m 
   k.slots j hj.1 hj.2.1 hj.2.2
 
 theorem Kept.word_eq {js ds : List Nat} {m m' : Mem} (k : Kept base len js ds m m') {d : Nat}
-    (hd : 8 ≤ d ∧ d + 4 ≤ numBase ∧ d ∉ ds := by decide) : w32 m' base d = w32 m base d :=
-  k.words d hd.1 hd.2.1 hd.2.2
+    (hd : 8 ≤ d ∧ d + 4 ≤ numBase ∧ d % 4 = 0 ∧ d ∉ ds := by decide) : w32 m' base d = w32 m base d :=
+  k.words d hd.1 hd.2.1 hd.2.2.1 hd.2.2.2
 
 /-- p into wide slot 9, one into 14 and `p − 1` into 15. -/
 theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32 len)
@@ -378,5 +378,142 @@ theorem rangeMask_ok (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 19)
   refine ⟨h₃.regs K M, ?_, by rw [M, m₃, ← m₁]; exact O₂, ?_⟩
   · rw [E, v a ha, v 15 (by decide), w1]
   · exact ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans ((K₃.mono (by decide)).trans (K.mono (by decide)))
+
+/-! ## The operations on wide slots, by value -/
+
+theorem lessW_ok (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 27) (hb : b ≤ 27) :
+    WP isa (lessThan (.slot .wide a) (.slot .wide b) (one .wide)) s fun u => u.mem = s.mem ∧
+      u.gpr .ecx = cmask (decide (sv s.mem base len .wide a < sv s.mem base len .wide b)) ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .esi] s u :=
+  WP.mono (lessThan_ok h (one_ok .wide) (slot_fit1 h ha) (slot_fit1 h hb)) fun u ⟨m, e, K⟩ =>
+    ⟨m, by rw [e, cw1], K⟩
+
+theorem eqW_ok (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 27) (hb : b ≤ 27) :
+    WP isa (equal (.slot .wide a) (.slot .wide b) (one .wide)) s fun u => u.mem = s.mem ∧
+      u.gpr .ecx = cmask (decide (sv s.mem base len .wide a = sv s.mem base len .wide b)) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u :=
+  WP.mono (equal_ok h (one_ok .wide) (slot_fit1 h ha) (slot_fit1 h hb)) fun u ⟨m, e, K⟩ =>
+    ⟨m, by rw [e, cw1], K⟩
+
+theorem setW_ok (h : In Ex base bytes len args s) {a v : Nat} (ha : a ≤ 27) (hv : v < 2 ^ 32) :
+    WP isa (setSmall (.slot .wide a) (one .wide) v) s fun u =>
+      Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem u.mem ∧ sv u.mem base len .wide a = v ∧
+      Keeps [.eax, .ecx, .edx, .ebp] s u :=
+  WP.mono (setSmall_ok h (one_ok .wide) (slot_fit1 h ha) hv) fun u ⟨O, V, K⟩ =>
+    ⟨by rw [cb1] at O; exact O, by rw [cw1] at V; exact V, K⟩
+
+theorem zeroW_ok (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 27) :
+    WP isa (zero (.slot .wide a) (one .wide)) s fun u =>
+      Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem u.mem ∧ sv u.mem base len .wide a = 0 ∧
+      Keeps [.eax, .ecx, .edx, .ebp] s u :=
+  WP.mono (zero_ok h (one_ok .wide) (slot_fit1 h ha)) fun u ⟨O, V, K⟩ =>
+    ⟨by rw [cb1] at O; exact O, by rw [cw1] at V; exact V, K⟩
+
+/-- A number written into a wide slot (to 27), within `fR`. -/
+theorem slotF (h : In Ex base bytes len args s) {sp : BitVec 32} {a : Nat} (ha : a ≤ 27) {m m' : Mem}
+    (O : Outside base (lo len (.slot .wide a)) (bc len .wide) m m') : Frame (frameR base sp (fR len)) m m' :=
+  fR_of_outside h O (slot_inF ha (by have est : st len .wide = 2 * bc len .wide + 32 := rfl; omega))
+
+/-- A header word written, within `fR`. -/
+theorem wordF (h : In Ex base bytes len args s) {sp : BitVec 32} {d : Nat} (hd : d + 4 ≤ 32) {m m' : Mem}
+    (O : Outside base d 4 m m') : Frame (frameR base sp (fR len)) m m' :=
+  fR_of_outside h O (.inl hd)
+
+/-- A header word written keeps the wide slots. -/
+theorem kept_word (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤ numBase) (h4 : d % 4 = 0) {m m' : Mem}
+    (O : Outside base d 4 m m') : Kept base len [] [d] m m' := by
+  have bl := h.bytes_lt
+  have nb : numBase = 3336 := rfl
+  refine ⟨fun j hj9 hj _ => ?_, fun e he he' e4 hn => ?_⟩
+  · have := slot_fit1 h (j := j) (by omega)
+    have := lo_wide len j
+    have ce := cb_eq (len := len) (one_ok .wide)
+    rw [cw1] at ce
+    rw [cb1] at *
+    exact O.val32 (.inr (by omega)) (by omega)
+  · exact O.w32 (by simp only [List.mem_singleton] at hn; omega) (by omega)
+
+/-- What a stage leaves: the status `r`, the changes within `fR`, and the registers. -/
+def Res (base : Addr) (len : Nat) (s : State) (r : Nat) (t : State) : Prop :=
+  t.gpr .eax = BitVec.ofNat 32 r ∧ Frame (frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+    Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
+
+/-- A stage's result after one before it. -/
+theorem Res.after {u t : State} {r : Nat} (R : Res base len u r t) {rs : List Reg} (K : Keeps rs s u)
+    (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide)
+    (F : Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem) : Res base len s r t := by
+  obtain ⟨E, F', K'⟩ := R
+  rw [K.1 _ (by intro hm; have := hrs _ hm; simp at this)] at F'
+  exact ⟨E, F.trans F', (K.mono hrs).trans K'⟩
+
+/-- The status `r`. -/
+theorem ret_res {r : Nat} : WP isa (Impl.Ffdh.X86.ret r) s (Res base len s r) :=
+  WP.mono ret_ok fun _ ⟨E, M, K⟩ => ⟨E, by rw [M]; exact Frame.refl _ _, K.mono (by decide)⟩
+
+/-- The status of a comparison of two wide slots. -/
+theorem eqStatus_res (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 27) (hb : b ≤ 27) :
+    WP isa (Impl.Ffdh.X86.eqStatus a b) s
+      (Res base len s (if sv s.mem base len .wide a = sv s.mem base len .wide b then 1 else 0)) := by
+  refine WP.seq (WP.mono (eqW_ok h ha hb) fun u ⟨m, e, K⟩ => WP.mono (retMask_ok e) fun t ⟨E, M, K'⟩ => ?_)
+  refine ⟨by rw [E]; split <;> simp_all, by rw [M, m]; exact Frame.refl _ _, K.trans (K'.mono (by decide))⟩
+
+/-! ## Stages -/
+
+/-- A stage from `s` to `u`: the inputs at `u`, the changes within `fR`, and the registers. -/
+structure Step (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (s u : State) : Prop where
+  inp : In Ex base bytes len args u
+  frame : Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem
+  keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
+
+theorem Step.trans {u t : State} (A : Step Ex base bytes len args s u) (B : Step Ex base bytes len args u t) :
+    Step Ex base bytes len args s t := by
+  obtain ⟨I, F, K⟩ := B
+  rw [A.keeps.1 _ (by decide)] at F
+  exact ⟨I, A.frame.trans F, A.keeps.trans K⟩
+
+theorem Step.res {u t : State} {r : Nat} (A : Step Ex base bytes len args s u) (R : Res base len u r t) :
+    Res base len s r t :=
+  R.after A.keeps (fun _ h => h) A.frame
+
+theorem Step.esp {u : State} (A : Step Ex base bytes len args s u) : u.gpr .esp = s.gpr .esp := A.keeps.1 _ (by decide)
+
+/-- A stage changing one wide slot. -/
+theorem Step.slot (h : In Ex base bytes len args s) {u : State} {a : Nat} (ha : a ≤ 27)
+    (O : Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem u.mem) {rs : List Reg}
+    (K : Keeps rs s u) (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide) :
+    Step Ex base bytes len args s u := by
+  have bl := h.bytes_lt
+  have := slot_fit1 h ha
+  rw [cb1] at this
+  exact ⟨h.keep K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this)
+    (O.mono (Nat.zero_le _) (by omega)), slotF h ha O, K.mono hrs⟩
+
+/-- A stage changing a header word below the saved registers. -/
+theorem Step.word (h : In Ex base bytes len args s) {u : State} {d : Nat} (hd : d + 4 ≤ 32)
+    (O : Outside base d 4 s.mem u.mem) {rs : List Reg} (K : Keeps rs s u)
+    (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide) :
+    Step Ex base bytes len args s u := by
+  have bl := h.bytes_lt
+  have nd := h.need
+  have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
+  have nb : numBase = 3336 := rfl
+  exact ⟨h.keep K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this)
+    (O.mono (Nat.zero_le _) (by omega)), wordF h hd O, K.mono hrs⟩
+
+/-- A stage that changes no memory. -/
+theorem Step.regs (h : In Ex base bytes len args s) {u : State} (m : u.mem = s.mem) {rs : List Reg}
+    (K : Keeps rs s u) (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide) :
+    Step Ex base bytes len args s u :=
+  ⟨h.regs K m (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this),
+    by rw [m]; exact Frame.refl _ _, K.mono hrs⟩
+
+/-- A stage of the operations of a context. -/
+theorem Step.ops (h : In Ex base bytes len args s) {u : State}
+    (F : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem) {rs : List Reg} (K : Keeps rs s u)
+    (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide) :
+    Step Ex base bytes len args s u :=
+  ⟨h.keepF K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this) F
+    (stR_fit h (by decide)), fR_widen F (stR_inF h), K.mono hrs⟩
 
 end VG.Proof.Ffdh.X86
