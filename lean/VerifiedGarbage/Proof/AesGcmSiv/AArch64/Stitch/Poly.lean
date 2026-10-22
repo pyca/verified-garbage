@@ -34,6 +34,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcmSiv.AArch64 (Prm Lay Env Perm envRegs Absorbed AbsPost absR absorbR absorbR_buf absR_sub
   elemsAt absorb_ok lens_ok tagIn_ok tagInMem tagInMem_frame tagInMem_bytes polyR PolyPost absorbR_H)
+open VG.Proof.GcmSiv.Words (hkeyOf tagInputG)
 open VG.Proof.AesGcm.AArch64 (GcmImpl Others covers_left lsr_ofNat eval_zero add_ofNat_assoc length_bytesAt)
 open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly PrepPow rev64b_read blockAt_store ext8_ext8)
 open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
@@ -240,5 +241,121 @@ theorem polyBatch_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : Stat
     rw [m₂]
     exact f₁.readW (r := ⟨p.D, p.n⟩) (Offset.contains_base p.D (by omega) (by omega))
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dT) (by decide)
+
+theorem pad16_append {a b : List Byte} (ha : a.length % 16 = 0) :
+    Spec.GcmSiv.pad16 (a ++ b) = a ++ Spec.GcmSiv.pad16 b := by
+  simp only [Spec.GcmSiv.pad16, List.length_append, List.append_assoc]
+  congr 3; omega
+
+/-- The elements of the data padded: those of its batches, then those of
+the rest padded. -/
+theorem elems_split (m : Mem) (D : Addr) (n : Nat) :
+    Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt m D n)) =
+      elemsAt m D (8 * (n / 128)) ++
+        Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt m (D + BitVec.ofNat 64 (128 * (n / 128))) (n - 128 * (n / 128)))) := by
+  have e := Proof.Cmac.bytesAt_add m D (128 * (n / 128)) (n - 128 * (n / 128))
+  rw [show 128 * (n / 128) + (n - 128 * (n / 128)) = n by omega] at e
+  rw [e, pad16_append (by rw [length_bytesAt]; omega),
+    GcmSiv.elems_append (by rw [length_bytesAt]; omega),
+    show 128 * (n / 128) = 16 * (8 * (n / 128)) by omega, GcmSiv.elems_bytesAt]
+
+/-- The start of `ifBatch`: `x9` the number of batches. -/
+theorem batchHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (.block [.lsr .x .x9 .x26 7]) t fun t₁ => t₁.gpr .x9 = BitVec.ofNat 64 (p.n / 128) ∧
+      Env p t₁ ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr :=
+  WP.run ⟨_, by grun [], rfl⟩ fun t₁ ht₁ => by
+    subst ht₁
+    refine ⟨by simp [gpr_write, E.x26, lsr_ofNat _ _ L.n_lt], E.write (by decide) _, rfl, rfl, rfl⟩
+
+/-- `rest`: the data past its batches. -/
+theorem rest_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (.block rest) t fun t₁ =>
+      t₁.gpr .x27 = p.D + BitVec.ofNat 64 (128 * (p.n / 128)) ∧
+      t₁.gpr .x28 = BitVec.ofNat 64 (p.n - 128 * (p.n / 128)) ∧
+      Env p t₁ ∧ Others [.x9, .x27, .x28] t t₁ ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr :=
+  WP.run ⟨_, by simp only [rest]; grun [], rfl⟩ fun t₁ ht₁ => by
+    subst ht₁
+    have hl : (BitVec.ofNat 64 p.n >>> 7) <<< 7 = BitVec.ofNat 64 (128 * (p.n / 128)) := by
+      rw [lsr_ofNat _ _ L.n_lt, Proof.AesGcmSiv.AArch64.ofNat_lsl]; congr 1; omega
+    refine ⟨by simp [gpr_write, E.x25, E.x26, hl], ?_, ?_, by others_tac, rfl, rfl, rfl⟩
+    · simp [gpr_write, E.x26, hl, Proof.AesGcm.AArch64.ofNat_sub (show 128 * (p.n / 128) ≤ p.n by omega) L.n_lt]
+    · exact ((((E.write (by decide) _).write (by decide) _).write (by decide) _).write (by decide) _)
+
+/-- `polyData`: the data padded absorbed. -/
+theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (polyData v.callees) t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem p.D p.n))) t) := by
+  have hn := L.n_lt
+  unfold polyData ifBatch
+  -- The batches.
+  have hb : WP isa (.seq (.block [.lsr .x .x9 .x26 7]) (.ite (.zero .x .x9) (.block [])
+      (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq ghLoop (.block ghFinish))))) t
+      (Absorbed p (absR p.W) (elemsAt t.mem p.D (8 * (p.n / 128))) t) := by
+    refine WP.seq (WP.mono (batchHead_ok L E) fun t₁ ⟨x9₁, E₁, m₁, rd₁, wr₁⟩ => ?_)
+    refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₁ (by omega)) (fun h => ?_) (fun h => ?_)
+    · have h0 : p.n / 128 = 0 := by simpa using h
+      refine WP.block_nil ⟨E₁, rd₁, wr₁, by rw [m₁]; exact Frame.refl _ _, ?_⟩
+      rw [h0, m₁]; simp [elemsAt, ghashFrom]
+    · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
+      exact WP.mono (polyBatch_ok hP gh L E₁ h1) fun t₂ A => by rw [m₁] at A; exact A.of_eq m₁ rd₁ wr₁
+  refine WP.seq (WP.mono hb fun t₂ A => ?_)
+  -- The rest.
+  refine WP.seq (WP.mono (rest_ok L A.env) fun t₃ ⟨x27₃, x28₃, E₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
+  have hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₃.rd ++ t₃.wr) := by
+    rw [rd₃, wr₃, A.rd, A.wr]
+    exact covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega) hn)
+  have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+    L.d_w.sub_left (Offset.sub_base p.D (by omega))
+  refine WP.mono (absorb_ok v L E₃ hc (by omega) (by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega)]
+      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega)
+    dW x27₃ x28₃) fun t₄ P₄ => ?_
+  have e : bytesAt t₃.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) =
+      bytesAt t.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) := by
+    rw [m₃]
+    exact Proof.AesGcm.AArch64.bytesAt_frame A.frame (fun r hr => dW.sub_right (by
+      simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact Proof.AesGcmSiv.AArch64.Lay.wSub (by decide))) (by omega)
+  rw [e] at P₄
+  rw [elems_split]
+  exact AbsPost.trans L (A.sub (absR_sub p.W)) (P₄.of_eq m₃ rd₃ wr₃)
+
+/-- `polyval` with `polyData` (`Proof.AesGcmSiv.AArch64.polyval_ok`). -/
+theorem polyval_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+    (hG : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 64) =
+      hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16)))
+    (hY : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 80) = 0) :
+    WP isa (Impl.AesGcmSiv.AArch64.Stitch.polyval v.callees) t (PolyPost p t) := by
+  -- The additional data.
+  refine WP.seq (WP.of_runBlock ⟨_, by grun [], ?_⟩)
+  refine WP.seq (WP.mono (absorb_ok v L ((E.write (by decide) _).write (by decide) _) (by simp only [rd_write, wr_write]; exact E.perm.aad) L.al_lt L.aw L.a_w
+    (by simp [gpr_write, E.x23]) (by simp [gpr_write, E.x24])) fun t₂ P₂ => ?_)
+  simp only [mem_write] at P₂
+  have P₂' := P₂.of_eq (t := t) rfl rfl rfl
+  -- The data.
+  refine WP.seq (WP.mono (polyData_ok hP gh v L P₂.env) fun t₄ P₄ => ?_)
+  rw [Proof.AesGcm.AArch64.bytesAt_frame P₂.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega)] at P₄
+  have P₂₄ := AbsPost.trans L P₂' P₄
+  -- The lengths.
+  refine WP.seq (WP.mono (lens_ok v L P₂₄.env) fun t₅ P₅ => ?_)
+  have P₂₅ := AbsPost.trans L P₂₄ P₅
+  -- The tag input.
+  obtain ⟨t₆, run₆, hm₆, ho₆, sp₆, rd₆, wr₆⟩ := tagIn_ok P₂₅.env
+  refine WP.of_runBlock ⟨t₆, run₆, P₂₅.env.keep (fun q hq => ho₆ q (by
+      simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₆ rd₆ wr₆,
+    by rw [rd₆, P₂₅.rd], by rw [wr₆, P₂₅.wr], ?_, ?_⟩
+  · refine (P₂₅.frame.mono fun q hq => List.mem_cons_of_mem _ hq).trans ?_
+    rw [hm₆]
+    exact (tagInMem_frame _ _ _).mono fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self
+  · have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
+      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
+    have nN : bytesAt t₅.mem p.N 12 = bytesAt t.mem p.N 12 :=
+      Proof.AesGcm.AArch64.bytesAt_frame P₂₅.frame (absorbR_buf L.n_w) (by decide)
+    rw [hm₆, tagInMem_bytes, nN, P₂₅.out, hG, hY, tagInputG, length_bytesAt, length_bytesAt,
+      GcmSiv.elems_append (hp _ _), GcmSiv.elems_append (GcmSiv.pad16_mod _),
+      GcmSiv.elems_single (bs := Spec.GcmSiv.le64 (8 * p.al) ++ Spec.GcmSiv.le64 (8 * p.n))
+        (by simp [Spec.GcmSiv.le64])]
+    simp only [mem_write]
 
 end VG.Proof.AesGcmSiv.AArch64.Stitch
