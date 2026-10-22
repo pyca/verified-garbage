@@ -559,6 +559,7 @@ end VG.Proof.ChaCha20Poly1305
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -852,6 +853,7 @@ the Poly1305 state for it.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -2111,6 +2113,7 @@ to a multiple of 16: `msg ++ x ++ pad16 x`.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20Poly1305 (pad16)
@@ -3189,6 +3192,7 @@ tags, and restoring the registers.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -4101,6 +4105,7 @@ end VG.Proof.ChaCha20Poly1305.X86_64
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
@@ -4373,6 +4378,7 @@ checked.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 variable {e : Bool}
 

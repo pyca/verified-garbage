@@ -694,6 +694,7 @@ absorbed) are public too (`AfterS`).
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Proof.ChaCha20 (ctr)
 open VG.Spec.ChaCha20 (stateAt keystream initState)
 open VG.Spec.Poly1305 (Repr bytesAt)
@@ -1678,6 +1679,7 @@ otherwise.
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 /-- The stitched loops never write the stack pointer, for either rounds. -/
 theorem bulkO_spSafe (vl : Bool) : (bulkO vl).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -1963,6 +1965,7 @@ absorbed, and the bytes left are `L - 512 t`.
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Proof.ChaCha20.X86_64.Avx2 (Holds Consts Incs stR bufR slotsR dR5 DWin W2 plus hiR
   setup_ok finish_ok W2_frame incs_frame hiR_slots hiR_sub slotsR_sub plus_block ks_shift ctr_add)
 open VG.Proof.ChaCha20 (CState ctr)
@@ -2205,6 +2208,7 @@ are the rest.
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Proof.ChaCha20.X86_64.Avx2 (Consts stR bufR)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Proof.ChaCha20 (ctr)
@@ -2909,6 +2913,7 @@ the counter `bulkO` leaves.
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Proof.ChaCha20 (ctr)
 open VG.Spec.ChaCha20 (stateAt keystream initState)
 open VG.Spec.Poly1305 (Repr bytesAt)
@@ -3824,6 +3829,7 @@ As `open_correct`, with `cryptO` (`cryptO_ok`) in place of `open`'s
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
@@ -3897,6 +3903,7 @@ correctness (`LO`).
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Spec.Poly1305 (bytesAt)
 
 /-- Before chunk `t` of `open`, for some key and entry. -/
@@ -4152,6 +4159,7 @@ call of `vg_chacha20_xor` on the rest by the implementation's own proof.
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Proof.ChaCha20 (ctr)
 open VG.Spec.ChaCha20 (stateAt keystream initState)
 open VG.Spec.Poly1305 (Repr bytesAt)
@@ -4812,6 +4820,7 @@ end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 theorem twoKs_spSafe (vl : Bool) : (twoKs vl).all (fun i => !X86_64.isa.writesSp i) = true := by
   cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
