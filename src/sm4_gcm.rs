@@ -2,21 +2,17 @@
 //! the Internet-Draft draft-ribose-cfrg-sm4-10) as its block cipher, the
 //! `AEAD_SM4_GCM` of RFC 8998 §3.5.1, with 16-byte keys.
 //!
-//! The block-cipher work is verified assembly: `vg_sm4_expand_key`
-//! (contract `VG.Spec.Sm4.expandKeyContract`) writes the key schedule, and
-//! `vg_sm4_ctr32` (`VG.Spec.Sm4.ctr32Contract`) is counter mode with GCM's
-//! `inc₃₂` over whole blocks, bitsliced SM4 with no table lookups: it
-//! computes the hash subkey `H = CIPH_K(0¹²⁸)` (§7.1 step 1, the zero block
-//! from the zero counter block), encrypts and decrypts the text from
-//! `inc₃₂(J₀)` (step 3), and masks the tag, `GCTR_K(J₀, S)` (step 6). GHASH
-//! (§6.4) is `vg_ghash` (`VG.Spec.Gcm.ghashContract`), or on CPUs with
-//! PCLMULQDQ and SSSE3 `vg_ghash_pclmul`, and on x86-64 CPUs with VPCLMULQDQ
-//! and AVX2 too `vg_ghash_vpclmul` (`Ghash`). This module composes them: it
-//! forms `J₀` (§7.1 step 2), feeds GHASH the additional data, the ciphertext,
-//! their zero padding and their lengths (step 5), keeps the partial blocks
-//! of a message given in pieces, and checks the lengths of §5.2.1.1. Every
-//! branch it takes depends only on lengths; the tags are compared in
-//! constant time (`crate::ct::eq`).
+//! Key setup, in-place AEAD and the streaming operations are verified
+//! assembly, with the contracts of `VG.Spec.Sm4.Gcm`: `vg_sm4_gcm_init`
+//! (`initContract`) writes the key context (SM4's key schedule and the hash
+//! subkey `H`, in AES-GCM's layout), `vg_sm4_gcm_seal` and `vg_sm4_gcm_open`
+//! (`sealContract`, `openContract`) are GCM-AE and GCM-AD (§7), and
+//! `vg_sm4_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
+//! `_verify` keep a streaming state (`VG.Spec.Gcm.StreamRepr`). `open` and
+//! `verify` check the tag, in constant time, and `open` decrypts only if it
+//! matches. They encrypt with `vg_sm4_ctr32`, bitsliced SM4 with no table
+//! lookups. This module checks the lengths of §5.2.1.1, which the assembly
+//! does not, and holds the key context and the state.
 //!
 //! An [`Sm4Gcm`] is a key: it encrypts and decrypts whole messages at once,
 //! and starts incremental ones with [`Sm4Gcm::encryptor`] and
@@ -25,6 +21,13 @@
 //! may act on it before its `finalize` has succeeded. When the whole message
 //! fits in memory, [`Sm4Gcm::decrypt_in_place`] checks the tag before it
 //! decrypts.
+//!
+//! The functions but `init` are emitted once for each implementation of
+//! `vg_ghash` they call, which have the same contract: CPUs with PCLMULQDQ
+//! and SSSE3 run the `_pclmul` instances (with `vg_ghash_pclmul`), and CPUs
+//! with VPCLMULQDQ and AVX2 too the `_vpclmul` ones (with
+//! `vg_ghash_vpclmul`, eight blocks at a time in 256-bit registers). Which
+//! one a key calls depends only on the CPU.
 //!
 //! # Tags
 //!
@@ -39,17 +42,22 @@
 
 #![cfg(target_arch = "x86_64")]
 
-use crate::arch::gcm::vg_ghash;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::gcm::{
-    VG_GHASH_PCLMUL_FEATURES, VG_GHASH_VPCLMUL_FEATURES, vg_ghash_pclmul, vg_ghash_vpclmul,
+use crate::arch::sm4_gcm::{
+    VG_SM4_GCM_SEAL_PCLMUL_FEATURES, VG_SM4_GCM_SEAL_VPCLMUL_FEATURES, vg_sm4_gcm_init,
+    vg_sm4_gcm_open, vg_sm4_gcm_open_pclmul, vg_sm4_gcm_open_vpclmul, vg_sm4_gcm_seal,
+    vg_sm4_gcm_seal_pclmul, vg_sm4_gcm_seal_vpclmul, vg_sm4_gcm_stream_aad,
+    vg_sm4_gcm_stream_aad_pclmul, vg_sm4_gcm_stream_aad_vpclmul, vg_sm4_gcm_stream_decrypt,
+    vg_sm4_gcm_stream_decrypt_pclmul, vg_sm4_gcm_stream_decrypt_vpclmul,
+    vg_sm4_gcm_stream_encrypt, vg_sm4_gcm_stream_encrypt_pclmul,
+    vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish, vg_sm4_gcm_stream_finish_pclmul,
+    vg_sm4_gcm_stream_finish_vpclmul, vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_init_pclmul,
+    vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify, vg_sm4_gcm_stream_verify_pclmul,
+    vg_sm4_gcm_stream_verify_vpclmul,
 };
-use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_gcm::vg_sm4_ctr32;
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
-/// A 16-byte block: a tag, or a block of GHASH or of counter mode.
+/// A 16-byte block: a tag.
 pub type Block = [u8; 16];
 
 /// The longest plaintext, in bytes: `2^39 − 256` bits (§5.2.1.1).
@@ -58,61 +66,45 @@ const MAX_TEXT: u64 = (1 << 36) - 32;
 /// to whole bytes (§5.2.1.1).
 const MAX_AAD: u64 = (1 << 61) - 1;
 
-/// The most blocks of text counter mode transforms before GHASH hashes
-/// them: 4 KiB, which stays in the L1 cache between the two passes.
-const CHUNK: usize = 4096;
-
-/// The implementations of GHASH (`vg_ghash` and its variants, all with the
-/// contract `VG.Spec.Gcm.ghashContract`).
+/// The implementations of GHASH the functions call (`vg_ghash` and its
+/// variants): each is an instance of every `vg_sm4_gcm_*` function but
+/// `init`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Ghash {
-    /// Constant-time scalar code, for the target's baseline ISA.
+    /// The baseline ISA: `vg_ghash`.
     Scalar,
-    /// PCLMULQDQ, one block at a time (and SSSE3's byte reversal).
-    #[cfg(target_arch = "x86_64")]
+    /// PCLMULQDQ, one block at a time (and SSSE3's byte reversal): the
+    /// `_pclmul` instances.
     Pclmul,
-    /// VPCLMULQDQ, eight blocks at a time in 256-bit registers.
-    #[cfg(target_arch = "x86_64")]
+    /// VPCLMULQDQ, eight blocks at a time in 256-bit registers: the
+    /// `_vpclmul` instances.
     Vpclmul,
 }
 
-impl Ghash {
-    /// The best implementation a CPU with the features `f` can run.
-    pub(crate) fn select(f: Features) -> Ghash {
-        #[cfg(target_arch = "x86_64")]
-        if f.contains(VG_GHASH_VPCLMUL_FEATURES) {
-            return Ghash::Vpclmul;
+/// The instance of a function for `ghash`: the baseline one, then the
+/// `_pclmul` and `_vpclmul` ones.
+macro_rules! instance {
+    ($ghash:expr, $scalar:ident, $pclmul:ident, $vpclmul:ident) => {
+        match $ghash {
+            Ghash::Scalar => $scalar,
+            Ghash::Pclmul => $pclmul,
+            Ghash::Vpclmul => $vpclmul,
         }
-        #[cfg(target_arch = "x86_64")]
-        if f.contains(VG_GHASH_PCLMUL_FEATURES) {
-            return Ghash::Pclmul;
-        }
-        let _ = f;
-        Ghash::Scalar
-    }
+    };
+}
 
-    /// Continues GHASH with the hash subkey `h` from `y` over the whole
-    /// blocks of `data` (whose length is a multiple of 16).
-    fn run(self, h: &Block, y: &mut Block, data: &[u8]) {
-        debug_assert_eq!(data.len() % 16, 0);
-        let (p, n) = (data.as_ptr().cast(), data.len() / 16);
-        let mut scratch = [0u64; 32];
-        // SAFETY: `h` and `y` are 16-byte blocks, `data` holds `n` whole
-        // blocks, and `scratch` (a local) is 256 bytes: distinct objects
-        // valid for the reads and writes of the signature, none of them on
-        // the callee's stack or wrapping around. The CPU has the features of
-        // the implementation `select` chose.
-        unsafe {
-            match self {
-                Ghash::Scalar => vg_ghash(h, y, p, n, &mut scratch),
-                #[cfg(target_arch = "x86_64")]
-                Ghash::Pclmul => vg_ghash_pclmul(h, y, p, n, &mut scratch),
-                #[cfg(target_arch = "x86_64")]
-                Ghash::Vpclmul => vg_ghash_vpclmul(h, y, p, n, &mut scratch),
-            }
+impl Ghash {
+    /// The best implementation a CPU with the features `f` can run: the
+    /// features of its instances are `seal`'s, which are every other
+    /// function's (those of the implementation of `vg_ghash`).
+    fn select(f: Features) -> Ghash {
+        if f.contains(VG_SM4_GCM_SEAL_VPCLMUL_FEATURES) {
+            Ghash::Vpclmul
+        } else if f.contains(VG_SM4_GCM_SEAL_PCLMUL_FEATURES) {
+            Ghash::Pclmul
+        } else {
+            Ghash::Scalar
         }
-        // The scalar code leaves products of `h` and the data there.
-        zeroize(&mut scratch);
     }
 }
 
@@ -152,6 +144,15 @@ fn add_len(len: u64, n: usize, max: u64) -> Result<u64, ()> {
     }
 }
 
+/// Checks that a nonce is not empty (§5.2.1.1; it is shorter than `2^61`
+/// bytes, as no buffer is that long).
+fn check_nonce(nonce: &[u8]) -> Result<(), Error> {
+    if nonce.is_empty() {
+        return Err(Error::InvalidNonceLength);
+    }
+    Ok(())
+}
+
 /// Fails to compile unless `N` is between 4 and 16 bytes, inclusive.
 macro_rules! assert_tag_length {
     ($n:expr) => {
@@ -164,35 +165,24 @@ macro_rules! assert_tag_length {
     };
 }
 
-/// `inc₃₂` (§6.2): the last 32 bits of `x`, as a big-endian integer, plus
-/// one, modulo `2³²`.
-fn inc32(x: &Block) -> Block {
-    let mut y = *x;
-    let c = u32::from_be_bytes([x[12], x[13], x[14], x[15]]).wrapping_add(1);
-    y[12..].copy_from_slice(&c.to_be_bytes());
-    y
-}
-
-/// An SM4-GCM key: its SM4 key schedule and its hash subkey `H`. Its
-/// [`encrypt_in_place`](Self::encrypt_in_place) and
+/// An SM4-GCM key: its key context (SM4's key schedule and the hash subkey
+/// `H`). Its [`encrypt_in_place`](Self::encrypt_in_place) and
 /// [`decrypt_in_place`](Self::decrypt_in_place) (or
 /// [`decrypt_in_place_truncated`](Self::decrypt_in_place_truncated)) are the
 /// one-shot AEAD; [`encryptor`](Self::encryptor) and
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
 pub struct Sm4Gcm {
-    /// The key schedule `vg_sm4_expand_key` writes.
-    schedule: [u8; 128],
-    /// The hash subkey `H = CIPH_K(0¹²⁸)`.
-    h: Block,
-    /// The implementation of GHASH.
+    /// The key context `vg_sm4_gcm_init` writes (`VG.Spec.Sm4.Gcm.KeyRepr`).
+    ctx: [u64; 32],
+    /// The implementation of GHASH the functions called call.
     ghash: Ghash,
 }
 
 impl Drop for Sm4Gcm {
+    /// Wipes the key context.
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
-        zeroize(&mut self.h);
+        zeroize(&mut self.ctx);
     }
 }
 
@@ -202,62 +192,16 @@ impl Sm4Gcm {
 
     /// Prepares a 16-byte SM4 key.
     pub fn new(key: &[u8; 16]) -> Self {
-        Self::with_ghash(key, Ghash::select(detected()))
-    }
-
-    /// `new`, with the implementation of GHASH `ghash`.
-    fn with_ghash(key: &[u8; 16], ghash: Ghash) -> Self {
         let mut k = Sm4Gcm {
-            schedule: [0; 128],
-            h: [0; 16],
-            ghash,
+            ctx: [0; 32],
+            ghash: Ghash::select(detected()),
         };
-        // SAFETY: `key` and `k.schedule` are separate valid buffers of the
-        // required sizes. The function zeroes its working space on its own
-        // stack before returning.
-        unsafe { vg_sm4_expand_key(key, &mut k.schedule) };
-        // §7.1 step 1: `H` is the encryption of the zero block, the first
-        // block of counter mode on a zero block from the zero counter block.
-        let mut h = [0; 16];
-        k.ctr32(&mut [0; 16], &mut h);
-        k.h = h;
+        // SAFETY: `key` is valid for reads of 16 bytes and `k.ctx` for reads
+        // and writes of 256. They are distinct objects, so they do not
+        // overlap each other or anything on the stack, or wrap around the end
+        // of the address space. The function needs no CPU feature.
+        unsafe { vg_sm4_gcm_init(key, &mut k.ctx) };
         k
-    }
-
-    /// Counter mode with `inc₃₂` on the whole blocks of `blocks` (whose
-    /// length is a multiple of 16), in place, from the counter block
-    /// `counter`, which it leaves at the next one.
-    fn ctr32(&self, counter: &mut Block, blocks: &mut [u8]) {
-        debug_assert_eq!(blocks.len() % 16, 0);
-        // SAFETY: `blocks` holds `len / 16` whole blocks, and it, `counter`
-        // and the schedule are separate valid objects of the sizes of the
-        // signature, none of them on the callee's stack. The function zeroes
-        // its working space on its own stack before returning.
-        unsafe {
-            vg_sm4_ctr32(
-                &self.schedule,
-                counter,
-                blocks.as_mut_ptr().cast(),
-                blocks.len() / 16,
-            )
-        };
-    }
-
-    /// Counter mode with `inc₃₂` on `data` of any length, from `counter`:
-    /// a partial last block is XORed with the first bytes of the next
-    /// keystream block.
-    fn crypt(&self, counter: &mut Block, data: &mut [u8]) {
-        let whole = data.len() / 16 * 16;
-        let (blocks, rest) = data.split_at_mut(whole);
-        self.ctr32(counter, blocks);
-        if !rest.is_empty() {
-            let mut ks = [0; 16];
-            self.ctr32(counter, &mut ks);
-            for (x, k) in rest.iter_mut().zip(&ks) {
-                *x ^= k;
-            }
-            zeroize(&mut ks);
-        }
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -274,11 +218,37 @@ impl Sm4Gcm {
         data: &mut [u8],
     ) -> Result<Block, Error> {
         // Check the lengths before encrypting anything.
+        check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        let mut s = Stream::<false>::new(self, nonce)?;
-        s.update_aad(aad)?;
-        s.update(data)?;
-        Ok(s.finish())
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        let seal = instance!(
+            self.ghash,
+            vg_sm4_gcm_seal,
+            vg_sm4_gcm_seal_pclmul,
+            vg_sm4_gcm_seal_vpclmul
+        );
+        let mut tag: Block = [0; 16];
+        // SAFETY: `self.ctx` is the key context `vg_sm4_gcm_init` wrote,
+        // valid for reads of 256 bytes; `nonce` and `aad` are valid for reads
+        // and `data` for reads and writes of their lengths, and `tag` (a
+        // local) for reads and writes of 16 bytes. They are distinct objects
+        // (`data` a unique borrow), so the writable ones overlap nothing
+        // else, nor anything on the stack, and none wraps around the end of
+        // the address space. The CPU has the features of the implementation
+        // selected.
+        unsafe {
+            seal(
+                &self.ctx,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+            )
+        };
+        Ok(tag)
     }
 
     /// GCM-AD (§7.2): if the 16-byte `tag` authenticates the ciphertext in
@@ -303,10 +273,8 @@ impl Sm4Gcm {
     /// leaves `data` unchanged.
     ///
     /// `N` must be between 4 and 16, inclusive; any other length is an
-    /// error when the call is compiled. It is a type parameter, fixed in the
-    /// caller's code, so that it cannot come from the message. SP 800-38D
-    /// Appendix C restricts 4- and 8-byte tags to applications that bound the
-    /// length of the messages and the number of decryptions under one key.
+    /// error when the call is compiled (see the
+    /// [module documentation](self#tags)).
     pub fn decrypt_in_place_truncated<const N: usize>(
         &self,
         nonce: &[u8],
@@ -315,18 +283,36 @@ impl Sm4Gcm {
         tag: &[u8; N],
     ) -> Result<(), Error> {
         assert_tag_length!(N);
+        check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        let mut s = Stream::<true>::new(self, nonce)?;
-        s.update_aad(aad)?;
-        // Hash the ciphertext, and decrypt it only once the tag is right.
-        s.start_text();
-        s.absorb(data, 0);
-        s.text_len = data.len() as u64;
-        let mut counter = s.counter;
-        s.verify(tag)?;
-        self.crypt(&mut counter, data);
-        zeroize(&mut counter);
-        Ok(())
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        let open = instance!(
+            self.ghash,
+            vg_sm4_gcm_open,
+            vg_sm4_gcm_open_pclmul,
+            vg_sm4_gcm_open_vpclmul
+        );
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag` valid
+        // for reads of its `N` bytes, between 4 and 16 (`vg_sm4_gcm_open`
+        // rejects any other length).
+        let ok = unsafe {
+            open(
+                &self.ctx,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag.as_ptr(),
+                N,
+            )
+        };
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
     }
 
     /// Starts an incremental encryption under `nonce`.
@@ -345,106 +331,52 @@ impl Sm4Gcm {
 }
 
 /// The state of an incremental encryption or decryption (`DECRYPT`), which
-/// [`Sm4GcmEncryptor`] and [`Sm4GcmDecryptor`] wrap: what GCM-AE or GCM-AD
-/// keeps of a message given in pieces, as `VG.Spec.Gcm.StreamRepr` describes
-/// it, and the lengths absorbed so far.
+/// [`Sm4GcmEncryptor`] and [`Sm4GcmDecryptor`] wrap: the key, the streaming
+/// state, and the lengths absorbed so far.
 #[derive(Clone)]
 struct Stream<'a, const DECRYPT: bool> {
     key: &'a Sm4Gcm,
-    /// The pre-counter block `J₀` (§7.1 step 2).
-    j0: Block,
-    /// GHASH of the whole blocks of `A ‖ 0ᵛ ‖ C` so far.
-    y: Block,
-    /// The bytes of the string GHASH absorbs that do not fill a block yet:
-    /// the last `aad_len mod 16` bytes of the additional data before the
-    /// text, and the last `text_len mod 16` of the ciphertext after it.
-    buf: Block,
-    /// The next counter block.
-    counter: Block,
-    /// If the text ends in a partial block, its keystream block, whose
-    /// bytes after the first `text_len mod 16` the next piece uses.
-    ks: Block,
+    /// The streaming state `vg_sm4_gcm_stream_init` writes and the other
+    /// functions update (`VG.Spec.Gcm.StreamRepr`).
+    state: [u64; 10],
     aad_len: u64,
     text_len: u64,
-    /// Whether the text has begun (and the additional data was padded).
+    /// Whether [`update`](Self::update) has been called.
     in_text: bool,
 }
 
 impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
-    /// Wipes the state (the key wipes itself).
+    /// Wipes the streaming state (the key wipes itself).
     fn drop(&mut self) {
-        zeroize(&mut self.j0);
-        zeroize(&mut self.y);
-        zeroize(&mut self.buf);
-        zeroize(&mut self.counter);
-        zeroize(&mut self.ks);
+        zeroize(&mut self.state);
     }
 }
 
 impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
     /// Starts a message under `key` and `nonce`.
     fn new(key: &'a Sm4Gcm, nonce: &[u8]) -> Result<Self, Error> {
-        // A nonce is shorter than `2^61` bytes (§5.2.1.1), as no buffer is
-        // that long, but it must not be empty.
-        if nonce.is_empty() {
-            return Err(Error::InvalidNonceLength);
-        }
+        check_nonce(nonce)?;
         let mut s = Stream {
             key,
-            j0: [0; 16],
-            y: [0; 16],
-            buf: [0; 16],
-            counter: [0; 16],
-            ks: [0; 16],
+            state: [0; 10],
             aad_len: 0,
             text_len: 0,
             in_text: false,
         };
-        // §7.1 step 2: `IV ‖ 0³¹ ‖ 1` for a 96-bit IV, and otherwise
-        // `GHASH_H(IV ‖ 0^(s+64) ‖ [len(IV)]₆₄)`.
-        if nonce.len() == 12 {
-            s.j0[..12].copy_from_slice(nonce);
-            s.j0[15] = 1;
-        } else {
-            s.absorb(nonce, 0);
-            s.pad(nonce.len() % 16);
-            let mut lens = [0; 16];
-            lens[8..].copy_from_slice(&(nonce.len() as u64).wrapping_mul(8).to_be_bytes());
-            key.ghash.run(&key.h, &mut s.y, &lens);
-            s.j0 = s.y;
-            s.y = [0; 16];
-        }
-        // §7.1 step 3: the text's counter blocks start at `inc₃₂(J₀)`.
-        s.counter = inc32(&s.j0);
+        let init = instance!(
+            key.ghash,
+            vg_sm4_gcm_stream_init,
+            vg_sm4_gcm_stream_init_pclmul,
+            vg_sm4_gcm_stream_init_vpclmul
+        );
+        // SAFETY: `key.ctx` is a key context (as in
+        // `Sm4Gcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
+        // for reads of `nonce.len()`, and `s.state` for reads and writes of
+        // 80. They are distinct objects, so the writable one overlaps nothing
+        // else, nor anything on the stack, and none wraps around. The CPU has
+        // the features of the implementation selected.
+        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
         Ok(s)
-    }
-
-    /// Continues GHASH over `data`, with `filled` bytes (below 16) of the
-    /// string already in `buf`: whole blocks into `y`, the rest to `buf`.
-    fn absorb(&mut self, mut data: &[u8], filled: usize) {
-        let k = self.key;
-        if filled != 0 {
-            let take = data.len().min(16 - filled);
-            self.buf[filled..filled + take].copy_from_slice(&data[..take]);
-            data = &data[take..];
-            if filled + take < 16 {
-                return;
-            }
-            k.ghash.run(&k.h, &mut self.y, &self.buf);
-        }
-        let whole = data.len() / 16 * 16;
-        k.ghash.run(&k.h, &mut self.y, &data[..whole]);
-        self.buf[..data.len() - whole].copy_from_slice(&data[whole..]);
-    }
-
-    /// Pads the `filled` bytes in `buf` with zeros to a block, and absorbs
-    /// it (nothing if there are none).
-    fn pad(&mut self, filled: usize) {
-        if filled != 0 {
-            self.buf[filled..].fill(0);
-            let k = self.key;
-            k.ghash.run(&k.h, &mut self.y, &self.buf);
-        }
     }
 
     /// Absorbs more additional data, which must all come before the text.
@@ -454,100 +386,120 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         }
         let aad_len =
             add_len(self.aad_len, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        self.absorb(aad, (self.aad_len % 16) as usize);
+        let f = instance!(
+            self.key.ghash,
+            vg_sm4_gcm_stream_aad,
+            vg_sm4_gcm_stream_aad_pclmul,
+            vg_sm4_gcm_stream_aad_vpclmul
+        );
+        // SAFETY: as in `new`; `self.state` represents a message with
+        // `self.aad_len` bytes of additional data and no text yet.
+        unsafe {
+            f(
+                &self.key.ctx,
+                &mut self.state,
+                self.aad_len,
+                aad.as_ptr(),
+                aad.len(),
+            )
+        };
         self.aad_len = aad_len;
         Ok(())
     }
 
-    /// Pads the additional data (`0ᵛ`) before the first of the text.
-    fn start_text(&mut self) {
-        if !self.in_text {
-            self.pad((self.aad_len % 16) as usize);
-            self.in_text = true;
-        }
-    }
-
     /// Encrypts (or, if `DECRYPT`, decrypts) the next `data.len()` bytes of
-    /// the text in place, and absorbs the ciphertext.
+    /// the text in place.
     fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        self.start_text();
-        let key = self.key;
-        let mut pos = (self.text_len % 16) as usize;
-        let mut rest = data;
-        // The rest of a partial block, with its keystream block.
-        if pos != 0 {
-            let take = rest.len().min(16 - pos);
-            let (head, tail) = rest.split_at_mut(take);
-            self.text(head, pos, |s, head| {
-                for (x, k) in head.iter_mut().zip(&s.ks[pos..]) {
-                    *x ^= k;
-                }
-            });
-            pos = (pos + take) % 16;
-            rest = tail;
-        }
-        // Whole blocks, a chunk at a time.
-        if pos == 0 {
-            let whole = rest.len() / 16 * 16;
-            let (blocks, tail) = rest.split_at_mut(whole);
-            for chunk in blocks.chunks_mut(CHUNK) {
-                self.text(chunk, 0, |s, chunk| key.ctr32(&mut s.counter, chunk));
-            }
-            // A partial last block, with the next keystream block.
-            if !tail.is_empty() {
-                self.ks = [0; 16];
-                key.ctr32(&mut self.counter, &mut self.ks);
-                self.text(tail, 0, |s, tail| {
-                    for (x, k) in tail.iter_mut().zip(&s.ks) {
-                        *x ^= k;
-                    }
-                });
-            }
-        }
+        self.in_text = true;
+        let f = if DECRYPT {
+            instance!(
+                self.key.ghash,
+                vg_sm4_gcm_stream_decrypt,
+                vg_sm4_gcm_stream_decrypt_pclmul,
+                vg_sm4_gcm_stream_decrypt_vpclmul
+            )
+        } else {
+            instance!(
+                self.key.ghash,
+                vg_sm4_gcm_stream_encrypt,
+                vg_sm4_gcm_stream_encrypt_pclmul,
+                vg_sm4_gcm_stream_encrypt_vpclmul
+            )
+        };
+        // SAFETY: as in `new`, with `data` valid for reads and writes of
+        // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
+        // `self.state` represents a message with `self.aad_len` bytes of
+        // additional data and `self.text_len` of text.
+        unsafe {
+            f(
+                &self.key.ctx,
+                &mut self.state,
+                self.aad_len,
+                self.text_len,
+                data.as_mut_ptr(),
+                data.len(),
+            )
+        };
         self.text_len = text_len;
         Ok(())
     }
+}
 
-    /// Transforms the text `data` (by `f`), which starts at byte `filled`
-    /// of a block, and absorbs the ciphertext: after the transformation when
-    /// encrypting, before when decrypting.
-    fn text(&mut self, data: &mut [u8], filled: usize, f: impl FnOnce(&mut Self, &mut [u8])) {
-        if DECRYPT {
-            self.absorb(data, filled);
-            f(self, data);
-        } else {
-            f(self, data);
-            self.absorb(data, filled);
-        }
-    }
-
-    /// Finishes the message and returns its 16-byte tag (§7.1 steps 5–6):
-    /// GHASH over the padding and the lengths, masked with `CIPH_K(J₀)`.
-    fn finish(&mut self) -> Block {
-        self.start_text();
-        self.pad((self.text_len % 16) as usize);
-        let mut lens = [0; 16];
-        lens[..8].copy_from_slice(&self.aad_len.wrapping_mul(8).to_be_bytes());
-        lens[8..].copy_from_slice(&self.text_len.wrapping_mul(8).to_be_bytes());
-        let k = self.key;
-        k.ghash.run(&k.h, &mut self.y, &lens);
-        let mut tag = self.y;
-        let mut j0 = self.j0;
-        k.ctr32(&mut j0, &mut tag);
-        zeroize(&mut j0);
+impl Stream<'_, false> {
+    /// Finishes the message and returns its 16-byte tag.
+    fn finish(mut self) -> Block {
+        let f = instance!(
+            self.key.ghash,
+            vg_sm4_gcm_stream_finish,
+            vg_sm4_gcm_stream_finish_pclmul,
+            vg_sm4_gcm_stream_finish_vpclmul
+        );
+        let mut tag: Block = [0; 16];
+        // SAFETY: as in `update`, with `tag` (a local) valid for reads and
+        // writes of 16 bytes. `update_aad` and `update` checked the lengths
+        // (§5.2.1.1).
+        unsafe {
+            f(
+                &self.key.ctx,
+                &mut self.state,
+                self.aad_len,
+                self.text_len,
+                &mut tag,
+            )
+        };
         tag
     }
+}
 
-    /// Finishes the message and checks the received prefix `tag` of its
-    /// tag in constant time. Callers check at compile time that its length is
-    /// between 4 and 16.
-    fn verify(&mut self, tag: &[u8]) -> Result<(), Error> {
-        let mut full = self.finish();
-        let ok = crate::ct::eq(&full[..tag.len()], tag);
-        zeroize(&mut full);
-        if ok { Ok(()) } else { Err(Error::TagMismatch) }
+impl Stream<'_, true> {
+    /// Finishes the message and checks the received prefix in constant time.
+    /// Callers check at compile time that its length is between 4 and 16.
+    fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
+        let f = instance!(
+            self.key.ghash,
+            vg_sm4_gcm_stream_verify,
+            vg_sm4_gcm_stream_verify_pclmul,
+            vg_sm4_gcm_stream_verify_vpclmul
+        );
+        // SAFETY: as in `finish`, with the received tag `tag` valid for
+        // reads of its length.
+        let ok = unsafe {
+            f(
+                &self.key.ctx,
+                &mut self.state,
+                self.aad_len,
+                self.text_len,
+                tag.as_ptr(),
+                tag.len(),
+            )
+        };
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
     }
 }
 
@@ -555,9 +507,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 /// additional data with [`update_aad`](Self::update_aad), then the plaintext
 /// with [`update`](Self::update), in pieces of any length, and the tag from
 /// [`finalize`](Self::finalize).
-///
-/// It borrows its [`Sm4Gcm`], so a key encrypts many messages without
-/// expanding it again.
 #[derive(Clone)]
 pub struct Sm4GcmEncryptor<'a> {
     stream: Stream<'a, false>,
@@ -576,9 +525,8 @@ impl Sm4GcmEncryptor<'_> {
     }
 
     /// Finishes the message and returns its full 16-byte tag. A protocol
-    /// that sends a shorter tag sends its first bytes. GCM leaves no
-    /// buffered text to return.
-    pub fn finalize(mut self) -> Block {
+    /// that sends a shorter tag sends its first bytes.
+    pub fn finalize(self) -> Block {
         self.stream.finish()
     }
 }
@@ -629,7 +577,7 @@ impl Sm4GcmDecryptor<'_> {
     /// `N` must be between 4 and 16, inclusive; any other length is an
     /// error when the call is compiled (see the
     /// [module documentation](self#tags)).
-    pub fn finalize_truncated<const N: usize>(mut self, tag: &[u8; N]) -> Result<(), Error> {
+    pub fn finalize_truncated<const N: usize>(self, tag: &[u8; N]) -> Result<(), Error> {
         assert_tag_length!(N);
         self.stream.verify(tag)
     }
@@ -639,53 +587,20 @@ impl Sm4GcmDecryptor<'_> {
 mod tests {
     extern crate std;
 
-    use super::{Error, Ghash, MAX_AAD, MAX_TEXT, Sm4Gcm, Stream, add_len, inc32};
+    use super::{Error, Ghash, MAX_AAD, MAX_TEXT, Sm4Gcm, Stream, add_len};
     use crate::cpu::{Features, detected};
-    use crate::sm4_ecb::Sm4Ecb;
-    use std::vec::Vec;
 
     /// The implementation of GHASH chosen for each set of features.
     #[test]
     fn ghash_backend() {
         let f = |names: &[&str]| Ghash::select(Features::of(names));
         assert_eq!(f(&[]), Ghash::Scalar);
-        #[cfg(target_arch = "x86_64")]
-        {
-            assert_eq!(f(&["pclmulqdq"]), Ghash::Scalar);
-            assert_eq!(f(&["pclmulqdq", "ssse3"]), Ghash::Pclmul);
-            let all = ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"];
-            assert_eq!(f(&all), Ghash::Vpclmul);
-            assert_eq!(f(&all[1..]), Ghash::Pclmul);
-        }
+        assert_eq!(f(&["pclmulqdq"]), Ghash::Scalar);
+        assert_eq!(f(&["pclmulqdq", "ssse3"]), Ghash::Pclmul);
+        let all = ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"];
+        assert_eq!(f(&all), Ghash::Vpclmul);
+        assert_eq!(f(&all[1..]), Ghash::Pclmul);
         assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
-    }
-
-    /// `vg_sm4_ctr32` steps only the last 32 bits of the counter block,
-    /// across their wrap to zero, as `inc32`, against SM4-ECB on the counter
-    /// blocks.
-    #[test]
-    fn ctr32_wraps() {
-        let k = [7; 16];
-        let key = Sm4Gcm::new(&k);
-        let ecb = Sm4Ecb::new(&k);
-        let mut start = [0xff; 16];
-        start[12..].copy_from_slice(&0xffff_fff0u32.to_be_bytes());
-        let n = 40;
-        let mut counters = Vec::new();
-        let mut c = start;
-        for _ in 0..n {
-            counters.extend_from_slice(&c);
-            c = inc32(&c);
-        }
-        ecb.encrypt(&mut counters).unwrap();
-        let data: Vec<u8> = (0..16 * n).map(|i| i as u8).collect();
-        let mut out = data.clone();
-        let mut ctr = start;
-        key.ctr32(&mut ctr, &mut out);
-        assert_eq!(ctr, c);
-        assert_eq!(ctr[..12], start[..12]);
-        let expected: Vec<u8> = data.iter().zip(&counters).map(|(x, k)| x ^ k).collect();
-        assert_eq!(out, expected);
     }
 
     /// The text of a message is checked against its limits before
