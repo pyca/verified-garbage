@@ -32,7 +32,7 @@ def Geometry.ending (g : Geometry) : BitVec 32 := g.candidate + BitVec.ofNat 32 
 
 structure Geometry.Valid (g : Geometry) : Prop where
   positive : 0 < g.w
-  widthBound : g.w ≤ 64
+  widthBound : g.w ≤ 128
   limitPositive : 0 < g.limit
   limitBound : g.limit ≤ 1024
   candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32
