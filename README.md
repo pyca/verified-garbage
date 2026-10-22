@@ -1246,6 +1246,22 @@ yours to keep:
 
 </tr>
 
+<tr>
+
+<td>SM4-GCM</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
 </table>
 
 ### KDFs
