@@ -12,7 +12,10 @@ two computations of eight or four blocks:
 * if at least 512 bytes remain, eight blocks (the counters `c, …, c + 7`
   modulo 2³², `c` being word 12 of the state) are XORed into the next 512
   bytes, and word 12 advanced by 8;
-* then, if more than 256 bytes remain, eight blocks are computed: the first
+* then, if 257 to 320 bytes remain, five (`part5`): the first four XORed
+  into the next 256 bytes, the fifth stored to `buf[0, 64)` and as many of
+  its bytes as remain XORed into the data;
+* if 321 to 511 remain, eight blocks are computed: the first
   four XORed into the next 256 bytes, the other four stored to `buf[0, 256)`
   and as many of their bytes as remain XORed into the data
   (`XorBuf.xorBuf`);
@@ -167,6 +170,41 @@ def finish2 : List Instr :=
   gather .xmm0 .xmm1 .xmm2 .xmm3 .xmm8 .xmm9 .xmm10 .xmm11 ++
   gather .xmm4 .xmm5 .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm11
 
+/-! ## Five blocks
+
+For 257 to 320 bytes: the eight blocks of `part`, with the second set's
+instructions of the rounds in their 128-bit forms (VEX `vpaddd`, `vpxor`,
+`vpshufd`, EVEX `vprold`), on `xmm4 … xmm7`: only its first block, in lane 0,
+is computed, and its other lanes are zero. On CPUs that run a 512-bit
+instruction as two halves (AMD Zen 4), a 128-bit one costs a quarter of
+the second set's issue slots, and the rounds, bound by the latency of a
+quarter round, take about as long as those of four blocks. -/
+
+/-- `op xmm d, xmm a, xmm b`. -/
+def v128 (op : VBinOp) (d a b : XReg) : Instr := .vop (.vbin op .l128 d a b)
+
+/-- `half2`, with the second set's instructions on 128 bits. -/
+def half5 (r₁ r₂ : BitVec 8) : List Instr :=
+  [z .vpaddd .xmm0 .xmm0 .xmm1, v128 .vpaddd .xmm4 .xmm4 .xmm5,
+   z .vpxord .xmm3 .xmm3 .xmm0, v128 .vpxor .xmm7 .xmm7 .xmm4,
+   .zop (.vprold .xmm3 .xmm3 r₁), .vop (.vprold .l128 .xmm7 .xmm7 r₁),
+   z .vpaddd .xmm2 .xmm2 .xmm3, v128 .vpaddd .xmm6 .xmm6 .xmm7,
+   z .vpxord .xmm1 .xmm1 .xmm2, v128 .vpxor .xmm5 .xmm5 .xmm6,
+   .zop (.vprold .xmm1 .xmm1 r₂), .vop (.vprold .l128 .xmm5 .xmm5 r₂)]
+
+/-- `rot2`, with the second set's on 128 bits. -/
+def rot5 (o₁ o₂ o₃ : BitVec 8) : List Instr :=
+  rot .xmm1 .xmm2 .xmm3 o₁ o₂ o₃ ++
+    [.vop (.vpshufd .l128 .xmm5 .xmm5 o₁), .vop (.vpshufd .l128 .xmm6 .xmm6 o₂),
+     .vop (.vpshufd .l128 .xmm7 .xmm7 o₃)]
+
+def doubleRound5 : List Instr :=
+  half5 16 12 ++ half5 8 7 ++ rot5 0x39 0x4e 0x93 ++ half5 16 12 ++ half5 8 7 ++ rot5 0x93 0x4e 0x39
+
+def rounds5 : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (rounds5 n) (.block doubleRound5)
+
 /-- XOR the 64 bytes in `x` into the data at `rsi + off`, through `zmm8`. -/
 def xor64 (x : XReg) (off : Nat) : List Instr :=
   [.vmovdqu32Load .xmm8 (at_ .rsi off), z .vpxord .xmm8 .xmm8 x, .vmovdqu32Store (at_ .rsi off) .xmm8]
@@ -266,6 +304,14 @@ def part : Prog isa :=
     xor256 .xmm0 .xmm1 .xmm2 .xmm3 0 ++ store .xmm4 .xmm5 .xmm6 .xmm7 ++
     ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf))
 
+/-- 257 to 320 bytes: `part`, with `rounds5`: the first four blocks into the
+next 256 bytes of data, the fifth into `buf[0, 64)` (the rest of `buf[0,
+256)` is not keystream), and the rest of the data from there. -/
+def part5 : Prog isa :=
+  .seq (.block setup2) (.seq (rounds5 10) (.seq (.block (finish2 ++
+    xor256 .xmm0 .xmm1 .xmm2 .xmm3 0 ++ store .xmm4 .xmm5 .xmm6 .xmm7 ++
+    ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf))
+
 /-- 513 to 768 bytes: twelve blocks, the first eight into the next 512 bytes
 of data, the others into `buf` and the rest of the data from there. -/
 def part3 : Prog isa :=
@@ -287,7 +333,8 @@ def tail : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 512)])
   (.seq (.ite .b (.block []) full)
   (.seq (.block [.alu .cmp .rdx (.imm 257)])
-  (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) part)
+  (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small))
+    (.seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part)))
     (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
 
 end VG.Impl.ChaCha20.X86_64.Avx512Tail

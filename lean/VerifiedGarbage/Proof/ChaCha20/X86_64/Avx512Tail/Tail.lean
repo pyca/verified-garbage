@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Rounds5
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -480,6 +481,78 @@ increments (`inc3Q`). -/
 def p3Pairs : List (Nat × BitVec 64) :=
   [(0, 8), (8, 0), (16, 9), (24, 0), (32, 10), (40, 0), (48, 11), (56, 0)]
 
+theorem part5_eq : part5 = .seq (.block setup2) (.seq (rounds5 10) (.seq
+    (.block ((finish2 ++ xor256 .xmm0 .xmm1 .xmm2 .xmm3 0 ++ store .xmm4 .xmm5 .xmm6 .xmm7) ++
+      ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf)) := by
+  simp only [part5, List.append_assoc]
+
+/-- The first five blocks of `vs5` are those of `vs`. -/
+theorem plus_vs5 (vs : Nat → CState) (s : State) (S : CState) {j : Nat} (hj : j < 5) :
+    plus (vs5 vs s) S j = plus vs S j := by
+  simp only [plus, vs5, hj, ite_true]
+
+theorem part5T_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 256 < eL s₀ - p) (hlt : eL s₀ - p < 321)
+    {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
+    WP isa part5 s (Done s₀) := by
+  have hL := eL_lt s₀
+  have hw : p + 4 * 64 ≤ eL s₀ := by omega_arith
+  have hc : Ctx 64 s := ctx_of hp hw (by decide) h.rdi hr9 h.rsi h.wr
+  have hi : Incs s.mem (s.gpr .r9) := by rw [hr9]; exact h.incs
+  rw [part5_eq]
+  refine WP.seq (WP.mono (setup2_ok (Or.inr rfl) hc hi) fun s₁ ⟨hz₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
+  refine WP.seq (WP.mono (rounds5_ok hz₁.hb5 10) fun s₂ ⟨hz₂, sm₂⟩ => ?_)
+  have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
+  have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
+  have wr₂ : s₂.wr = s.wr := sm₂.wr.trans wr₁
+  have rd₂ : s₂.rd = s.rd := sm₂.rd.trans rd₁
+  have hc₂ : Ctx 64 s₂ := ctx_of hp hw (by decide) (by rw [g₂]; exact h.rdi) (by rw [g₂]; exact hr9)
+    (by rw [g₂]; exact h.rsi) (by rw [wr₂]; exact h.wr)
+  have hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
+  refine WP.seq (WP.block_append (WP.mono (part_ok hc₂ hi₂ hz₂.hb2) fun s₃ ⟨d₃, b₃, f₃, g₃, rd₃, wr₃⟩ => ?_))
+  have g₃' : s₃.gpr = s.gpr := g₃.trans g₂
+  refine WP.mono (adv256_ok (s₀ := s₀) (p := p) (by omega_arith) (by rw [g₃']; exact h.rsi)
+    (by rw [g₃']; exact h.rdx)) fun s₄ ⟨e₁, e₂, e₃, m₄, rd₄, wr₄⟩ => ?_
+  have g₄ : ∀ r, r ≠ .rsi → r ≠ .rdx → s₄.gpr r = s.gpr r := fun r a b => by rw [e₃ r a b, g₃']
+  have ws : wregs 64 s₂ = [⟨ebp s₀, 256⟩, win s₀ p 256] := by
+    simp only [wregs, win, g₂, hr9, h.rsi, Nat.reduceMul]
+  rw [ws, m₂] at f₃
+  have hS : S0 s₂ = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, g₂, m₂, h.rdi]; exact h.cnt
+  have hS' : S0 s = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, h.rdi]; exact h.cnt
+  have nb : ∀ k < eL s₀, ¬ (⟨ebp s₀, 256⟩ : Region).Contains (edp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun k hk hc => hp.d_b _ (in_dR hk) (Region.sub_prefix (by omega_arith) _ hc)
+  refine fromBuf_ok hp (p := p + 256) (n := eL s₀ - (p + 256)) (by omega_arith) (by omega_arith) e₁
+    (by rw [g₄ _ (by decide) (by decide)]; exact hr9) e₂ (rd₄.trans (rd₃.trans (rd₂.trans h.rd)))
+    (wr₄.trans (wr₃.trans (wr₂.trans h.wr)))
+    (fun r hr => by obtain ⟨_, a, b⟩ := calleeSaved_ne hr; rw [g₄ r a b]; exact h.keep r hr)
+    (fun k hk => ?_) (fun k hk => ?_) (fun k hk => ?_) ?_
+  · rw [m₄]
+    by_cases hkp : k < p
+    · rw [f₃ _ (by
+        intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact nb k (by omega_arith)
+        · exact not_win (by omega_arith) (by omega_arith) (.inl hkp)), h.data k (by omega_arith), ite_eq_left hkp]
+    · have x := d₃ (k - p) (by omega_arith)
+      rw [g₂, h.rsi, m₂, hS, ← ea_win (by omega_arith), plus_vs5 _ _ _ (by omega_arith)] at x
+      rw [x, h.data k (by omega_arith), ite_eq_right hkp, ks_at h.dvd (by omega_arith) (by omega_arith), ← hS']
+  · rw [m₄, add_ofNat, f₃ _ (by
+      intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact nb _ (by omega_arith)
+      · exact not_win (by omega_arith) (by omega_arith) (.inr (by omega_arith))), h.data _ (by omega_arith), ite_eq_right (by omega_arith)]
+  · rw [m₄, show ebp s₀ + BitVec.ofNat 64 k = s₂.gpr .r9 + BitVec.ofNat 64 k by rw [g₂, hr9], b₃ k (by omega_arith),
+      plus_vs5 _ _ _ (by omega_arith),
+      hS, ks_at h.dvd (by omega_arith) (by omega_arith), ← hS',
+      show (p + 256 + k - p) / 64 = 4 + k / 64 by omega_arith, show (p + 256 + k - p) % 64 = k % 64 by omega_arith]
+  · rw [m₄]
+    refine h.frame.trans (f₃.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨Avx2.bufR (ebp s₀), by simp, Region.sub_prefix (by omega_arith)⟩
+    · exact ⟨edR s₀, by simp, win_sub (by omega_arith)⟩
+
+/-! ## Twelve blocks -/
+
 theorem p3_eq : Impl.ChaCha20.X86_64.Avx2.storeQ inc3Off inc3Q = Avx2.pairsCode p3Pairs := rfl
 
 theorem p3Pairs_le : ∀ p ∈ p3Pairs, p.1 + 8 ≤ 64 := by decide
@@ -623,6 +696,19 @@ theorem cmp_ok {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) (hr9 : s
       TInv s₀ p s' ∧ s'.gpr .r9 = ebp s₀ ∧ s'.cf = some (decide (eL s₀ - p < 257)) := by
   have hL := eL_lt s₀
   have se : BitVec.signExtend 64 (257 : BitVec 32) = 257 := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+    State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se]
+  refine ⟨⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, h.dvd, h.keep, h.rd, h.wr, h.cnt, h.data, h.incs, h.frame⟩,
+    hr9, ?_⟩
+  rw [h.rdx, toNat_ofNat_lt (by omega_arith)]
+  rfl
+
+theorem cmp321_ok {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
+    WP isa (.block [.alu .cmp .rdx (.imm 321)]) s fun s' =>
+      TInv s₀ p s' ∧ s'.gpr .r9 = ebp s₀ ∧ s'.cf = some (decide (eL s₀ - p < 321)) := by
+  have hL := eL_lt s₀
+  have se : BitVec.signExtend 64 (321 : BitVec 32) = 321 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
     State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se]
@@ -828,13 +914,14 @@ theorem tail_eq : tail =
     .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 512)])
     (.seq (.ite .b (.block []) full)
     (.seq (.block [.alu .cmp .rdx (.imm 257)])
-    (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) part)
+    (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small))
+      (.seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part)))
       (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)])))) := rfl
 
 theorem rest_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 512) {s : State} (h : TInv s₀ p s)
     (hr9 : s.gpr .r9 = ebp s₀) (hc : s.cf = some (decide (eL s₀ - p < 257))) :
-    WP isa (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) part) s
-      (Fin s₀) := by
+    WP isa (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small))
+      (.seq (.block [.alu .cmp .rdx (.imm 321)]) (.ite .b part5 part))) s (Fin s₀) := by
   refine WP.ite (decide (eL s₀ - p < 257)) (by simp [eval, hc]) (fun hs => ?_) (fun hs => ?_)
   · simp only [decide_eq_true_eq] at hs
     refine WP.seq (WP.mono (test_ok h hr9) fun s₂ ⟨h₂, r₂, z₂⟩ => ?_)
@@ -844,7 +931,12 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 5
     · simp only [decide_eq_false_iff_not] at he
       exact smallT_ok hp (by omega_arith) (by omega_arith) h₂ r₂
   · simp only [decide_eq_false_iff_not] at hs
-    exact WP.mono (partT_ok hp (by omega_arith) hlt h hr9) fun _ d => d.fin hp
+    refine WP.seq (WP.mono (cmp321_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
+    refine WP.ite (decide (eL s₀ - p < 321)) (by simp [eval, c₁]) (fun h5 => ?_) (fun h5 => ?_)
+    · simp only [decide_eq_true_eq] at h5
+      exact WP.mono (part5T_ok hp (by omega_arith) h5 h₁ r₁) fun _ d => d.fin hp
+    · simp only [decide_eq_false_iff_not] at h5
+      exact WP.mono (partT_ok hp (by omega_arith) hlt h₁ r₁) fun _ d => d.fin hp
 
 theorem fin_ok {s₀ s : State} (h : Fin s₀ s) :
     WP isa (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]) s fun s' =>

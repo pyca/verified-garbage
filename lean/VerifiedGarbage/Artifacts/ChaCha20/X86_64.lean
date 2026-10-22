@@ -40,11 +40,12 @@ def artifacts : List Artifact := [
     notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain; then \
         twelve blocks in three sets of `zmm` registers, four blocks to a set, for 513 to 768 \
         bytes left, one more pass of sixteen for 769 to 1023, and at most two computations of \
-        eight or four blocks for fewer."]
+        eight or four blocks for fewer; for 257 to 320 bytes left, five blocks: the second set \
+        on 128-bit registers (AVX-512VL's `vprold`)."]
     code := Impl.ChaCha20.X86_64.Avx512.xor
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512.xor_verified
-    features := ["avx", "avx512f"] },
+    features := ["avx", "avx512f", "avx512vl"] },
   Spec.ChaCha20.xorApi.artifact X86_64.target {
     suffix := "_avx512vl"
     notes := ["For CPUs with AVX-512 whose clock a 512-bit instruction lowers for a while \

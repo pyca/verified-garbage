@@ -155,7 +155,7 @@ def avx512 : XorImpl where
   mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_avx512"
-  features := ["avx", "avx512f"]
+  features := ["avx", "avx512f", "avx512vl"]
   poly := .avx512
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
 
@@ -175,7 +175,7 @@ def ifma : XorImpl where
   mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"
-  features := ["avx", "avx512f"]
+  features := ["avx", "avx512f", "avx512vl"]
   poly := .ifma
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
 
