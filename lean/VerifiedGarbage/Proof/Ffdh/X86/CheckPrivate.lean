@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
@@ -67,6 +68,118 @@ theorem loadX_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len
   refine WP.mono (load_ok h (one_ok .wide) (slot_fit1 h (j := 13) (by decide)) (p := 10) (l := 11) (L := xl)
     (by decide) (by decide) X.e11 X.pos (by rw [cb1]; omega) X.fit X.rd X.apart)
     fun u ⟨V, O, K⟩ => ⟨by rw [cw1] at V; exact V, by rw [cb1] at O; exact O, K⟩
+
+/-- A number of `L` bytes into the top of the wide context's slot `d`, kept by its context: the bytes'
+value times `2^(8 (Bc − L))`. -/
+theorem loadTopCtx_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {d p l L : Nat} (hd1 : 1 ≤ d)
+    (hd : d ≤ 8) (hp : p < 18) (hl : l < 18) (hlen : args l = BitVec.ofNat 32 L) (hL : 0 < L) (hLl : L ≤ len)
+    (fit : (args p).toNat + L ≤ 2 ^ 32) (rd : InRegions (s.rd ++ s.wr) (byteAddr (args p)) L)
+    (apart : Region.Disjoint ⟨byteAddr (args p), L⟩ ⟨base, bytes⟩) :
+    WP isa (loadTop (.slot .wide d) (one .wide) p l) s fun u =>
+      CtxOk Ex base bytes len args .wide M u ∧
+      sv u.mem base len .wide d =
+        2 ^ (8 * (bc len .wide - L)) * Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args p)) L) ∧
+      Outside base (lo len (.slot .wide d)) (bc len .wide) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have h := C.inp
+  have bl := h.bytes_lt
+  have lb := len_le_bc len
+  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have ed : lo len (.slot .wide d) = numBase + d * st len .wide := rfl
+  have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
+  have d8 := Nat.mul_le_mul_right (st len .wide) hd
+  have d1 := Nat.mul_le_mul_right (st len .wide) hd1
+  refine WP.mono (loadTop_ok h (one_ok .wide) (slot_fit1 h (j := d) (by omega)) (p := p) (l := l) (L := L) hp hl hlen
+    hL (by rw [cb1]; omega) fit rd apart) fun u ⟨V, O, K⟩ => ?_
+  rw [cb1] at O V
+  rw [cw1] at V
+  exact ⟨C.keepF K (by decide) (by decide) (ws := [(lo len (.slot .wide d), bc len .wide)])
+      (frameR_of_outside O (by omega) (by simp))
+      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
+      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega), V, O, K⟩
+
+/-- The exponent's top `2 L` windows, of a number of `L` bytes at the top of `Bc`: the number. -/
+theorem top_windows {E L B : Nat} (hL : L ≤ B) :
+    2 ^ (8 * (B - L)) * E * 16 ^ (2 * L) / 2 ^ (8 * B) = E := by
+  rw [show (16 : Nat) ^ (2 * L) = 2 ^ (8 * L) by rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega,
+    Nat.mul_comm (2 ^ _) E, Nat.mul_assoc, ← Nat.pow_add, show 8 * (B - L) + 8 * L = 8 * B by omega]
+  exact Nat.mul_div_cancel _ (Nat.two_pow_pos _)
+
+/-- The steps of `powTop` before its power. -/
+abbrev topFront (b : Nat) : List (Prog isa) :=
+  [Impl.Ffdh.X86.ctxP, copy (.slot .wide b) (.slot .wide 5) (one .wide), loadTop (.slot .wide 8) (one .wide) 10 11]
+
+theorem powTop_eq (b : Nat) :
+    Impl.Ffdh.X86.powTop b = Prog.chain (topFront b) (windowPowerWith .wide (lenCount 11)) := rfl
+
+/-- p's context, the number in slot `b` in slot 5, and x at the top of slot 8. -/
+theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) {P b : Nat} (hb9 : 9 ≤ b)
+    (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
+    WP isa (Prog.chain (topFront b) (.block [])) s fun u =>
+      CtxOk Ex base bytes len args .wide P u ∧ sv u.mem base len .wide 3 = 1 ∧
+      sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % P ∧
+      sv u.mem base len .wide 5 = sv s.mem base len .wide b ∧
+      sv u.mem base len .wide 8 = 2 ^ (8 * (bc len .wide - xl)) * xv s.mem args xl ∧
+      Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have bl := h.bytes_lt
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have e5 := lo_wide len 5
+  have e8 := lo_wide len 8
+  have nb : numBase = 3336 := rfl
+  have xf := X.fit
+  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  refine WP.seq (WP.mono (ctxP_ok h hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  have h₁ := C₁.inp
+  refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
+  have C₂ : CtxOk Ex base bytes len args .wide P u₂ := by
+    refine C₁.keepF (regs := [.eax, .ebx, .ecx, .edx, .ebp]) K₂ (by decide) (by decide)
+      (ws := [(lo len (.slot .wide 5), bc len .wide)]) (frameR_of_outside O₂ (by omega) (by simp)) ?_ ?_
+    · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega
+    · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega
+  have G₂ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₁.mem u₂.mem :=
+    stR_of_outside h (by decide) O₂ ⟨_, by simp, slot_in h .wide (j := 5) (by decide)⟩
+  have S₂ : Step Ex base bytes len args s u₂ := Step.ops h (F₁.trans G₂) (K₁.trans (K₂.mono (by decide)))
+  have X₂ := X.keep ⟨rfl, rfl⟩ S₂.keeps
+  refine WP.seq (WP.mono (loadTopCtx_ok C₂ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide)
+    (by decide) (by decide) X₂.e11 X₂.pos X₂.le X₂.fit X₂.rd X₂.apart) fun u₃ ⟨C₃, V₃, O₃, K₃⟩ => WP.block_nil ?_)
+  rw [bytes_keep h X.apart (by omega) hx40 S₂.frame] at V₃
+  have G₃ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₂.mem u₃.mem :=
+    stR_of_outside h (by decide) O₃ ⟨_, by simp, slot_in h .wide (j := 8) (by decide)⟩
+  refine ⟨C₃, ?_, ?_, ?_, V₃, (F₁.trans G₂).trans G₃,
+    (k₁.trans (kept_ops h G₂ h.room)).trans (kept_ops h G₃ h.room), S₂.keeps.trans (K₃.mono (by decide))⟩
+  · rw [slotKeep C₂.inp (by decide) (by decide) O₃, slotKeep h₁ (by decide) (by decide) O₂, one₁]
+  · rw [slotKeep C₂.inp (by decide) (by decide) O₃, slotKeep h₁ (by decide) (by decide) O₂, R₁]
+  · rw [slotKeep C₂.inp (by decide) (by decide) O₃, V₂, k₁.slots b hb9 hb (by simp)]
+
+/-- The number in slot `b` to the power of x, raised over x's `xl` bytes from the top of slot 8. -/
+theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) {P b : Nat} (hb9 : 9 ≤ b)
+    (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
+    WP isa (Impl.Ffdh.X86.powTop b) s fun u =>
+      CtxOk Ex base bytes len args .wide P u ∧
+      sv u.mem base len .wide 6 = sv s.mem base len .wide b ^ xv s.mem args xl % P ∧
+      sv u.mem base len .wide 3 = 1 ∧
+      Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have xp := X.pos
+  have xle := X.le
+  have lb := len_le_bc len
+  have bw := bc_eq_cwc len .wide
+  rw [powTop_eq]
+  refine WP.chain_split (topFront_ok h X hx40 hb9 hb hP) fun u₃ ⟨C₃, one₃, R₃, B₃, V₃, F₃, k₃, K₃⟩ => ?_
+  refine WP.mono (windowPowerWith_ok C₃ one₃ R₃ (N := 2 * xl) (by omega) (by omega) fun t Ct =>
+    wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
+      ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
+        rw [a₂.gpr, a₁.gpr, X.e11, BitVec.ofNat_add_ofNat]; congr 1; omega⟩) fun u ⟨C, F, K, Y⟩ => ?_
+  rw [V₃, show 32 * cwc len .wide = 8 * bc len .wide by omega, top_windows (by omega), B₃] at Y
+  have sp₃ : u₃.gpr .esp = s.gpr .esp := K₃.1 _ (by decide)
+  rw [sp₃] at F
+  have G := stR_widen F (pwR_in C₃.inp .wide 0)
+  refine ⟨C, Y, ?_, F₃.trans G, k₃.trans (kept_ops h G h.room), K₃.trans K⟩
+  rw [pwR_sv3 C₃.inp F (by rw [← sp₃]; exact C₃.inp.room), one₃]
 
 /-- A copy of the wide slot 15 into 16. -/
 theorem copy1516_ok (h : In Ex base bytes len args s) :
@@ -288,7 +401,8 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
 /-- y in range and `g^x mod M = y`, as a status. -/
 theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h12 : sv s.mem base len .wide 12 = y)
-    (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
+    (X : XGeo args base bytes len xl s.rd s.wr) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40))
+    (hx : xv s.mem args xl = x) (h14 : sv s.mem base len .wide 14 = 1)
     (h15 : sv s.mem base len .wide 15 = pm1 len p) :
     WP isa Impl.Ffdh.X86.CheckPrivate.pair s (Res base len s
       ((decide (g ^ x % safeM p = y) && (decide (y < pm1 len p) && decide (1 < y))).toNat)) := by
@@ -304,9 +418,13 @@ theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.word I₁ (by omega) O₂ K₂
   have k₂ := kept_word I₁ (d := accOff) (by omega) (by decide) O₂
   have k₁₂ : Kept base len [] [maskOff, accOff] s.mem u₂.mem := k₁.mono.trans k₂.mono
-  refine WP.seq (WP.mono (powP_ok S₂.inp (P := safeM p) (b := 10) (e := 13) (by decide) (by decide) (by decide)
-    (by decide) (by rw [k₁₂.slot_eq, h9])) fun u₃ ⟨C₃, Y₃, _, F₃, k₃, K₃⟩ => ?_)
-  rw [k₁₂.slot_eq, k₁₂.slot_eq, h10, h13] at Y₃
+  have S₁₂ := S₁.trans S₂
+  have xf := X.fit
+  refine WP.seq (WP.mono (powTop_ok S₂.inp (X.keep ⟨rfl, rfl⟩ S₁₂.keeps) (by rw [S₁₂.esp]; exact hx40)
+    (P := safeM p) (b := 10) (by decide) (by decide) (by rw [k₁₂.slot_eq, h9]))
+    fun u₃ ⟨C₃, Y₃, _, F₃, k₃, K₃⟩ => ?_)
+  have xe : xv u₂.mem args xl = x := by rw [xv, bytes_keep h X.apart (by omega) hx40 S₁₂.frame]; exact hx
+  rw [k₁₂.slot_eq, h10, xe] at Y₃
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.ops S₂.inp F₃ K₃
   refine WP.seq (WP.mono (eqW_ok C₃.inp (a := 6) (b := 12) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
   rw [Y₃, k₃.slot_eq, k₁₂.slot_eq, h12] at e₄
@@ -335,9 +453,10 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have hpa := comp_p s.mem args h2
   have hga := comp_g s.mem args h2
   rw [body_eq]
-  refine WP.chain_split (front_ok h G Y X hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, V13, V14, V15⟩ => ?_
+  refine WP.chain_split (front_ok h G Y X hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, _, V14, V15⟩ => ?_
   refine WP.gate Gt (fun inval => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨2, S.res R, ?_⟩)
-    (fun val => WP.mono (pair_ok S.inp V9 V10 V12 V13 V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
+    (fun val => WP.mono (pair_ok (x := xv s.mem args xl) S.inp V9 V10 V12 (X.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact hx40)
+      (by have := X.fit; rw [xv, bytes_keep h X.apart (by omega) hx40 S.frame]) V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
   · intro _
     simp only [expected, Spec.Ffdh.privateStatus, inval, Bool.not_false, ↓reduceIte]
   · intro v

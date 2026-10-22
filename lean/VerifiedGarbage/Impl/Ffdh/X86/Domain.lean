@@ -122,6 +122,11 @@ def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) (prepare .wide)
 def powP (b e : Nat) : Prog isa :=
   .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (copy (sl e) (sl 8) n1) (windowPower .wide)))
 
+/-- Slot 6 the number in slot `b` to the power of x (synthetic arguments 10 and 11), modulo p: x is
+loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
+def powTop (b : Nat) : Prog isa :=
+  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) (windowPowerWith .wide (lenCount 11))))
+
 /-- `ecx` all ones if `1 < [a] < p − 1`, else zero, through the mask word. -/
 def rangeMask (a : Nat) : Prog isa :=
   .seq (lessThan (sl 14) (sl a) n1) (.seq (.block [.store (sc maskOff) .ecx])
@@ -220,9 +225,10 @@ def scalarMask : Prog isa :=
   .seq (lessThan (sl 13) (sl 16) n1)
     (.block [.alu .and .ecx (.mem (sc maskOff)), .alu .and .ecx (.mem (sc accOff))])
 
-/-- `1 < y < p − 1` and `g^x mod p = y`; a power of the checked generator is in its subgroup. -/
+/-- `1 < y < p − 1` and `g^x mod p = y`, x raised over its `x_len` bytes; a power of the checked
+generator is in its subgroup. -/
 def pair : Prog isa :=
-  .seq (rangeMask 12) <| .seq (.block [.store (sc accOff) .ecx]) <| .seq (powP 10 13) <|
+  .seq (rangeMask 12) <| .seq (.block [.store (sc accOff) .ecx]) <| .seq (powTop 10) <|
   .seq (equal (sl 6) (sl 12) n1) (.seq (.block [.alu .and .ecx (.mem (sc accOff))]) retMask)
 
 def body : Prog isa :=
