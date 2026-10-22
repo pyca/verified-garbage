@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -19,6 +20,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -93,6 +95,23 @@ theorem rel_next {F₁ F₂ G₁ G₂ : State → Prop} {c : Prog isa}
     (hw₁ : ∀ s, F₁ s → WP isa c s G₁) (hw₂ : ∀ s, F₂ s → WP isa c s G₂) :
     RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) c fun s₁ s₂ => G₁ s₁ ∧ G₂ s₂ :=
   (rel_wp h (fun _ _ h => h) hw₁ hw₂).mono (fun _ _ h => h) fun _ _ h => h.2
+
+/-- A block followed by code, related as the block's two parts and the code. -/
+theorem rel_seq_block_split {P Q : State → State → Prop} {l₁ l₂ : List Instr} {c : Prog isa}
+    (h : RelCT isa P (.seq (.block l₁) (.seq (.block l₂) c)) Q) : RelCT isa P (.seq (.block (l₁ ++ l₂)) c) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with | seq b₁ k₁ => cases e₂ with | seq b₂ k₂ =>
+  rw [Exec.block_iff, execBlock_append] at b₁ b₂
+  obtain ⟨⟨m₁, u₁⟩, a₁, d₁⟩ := Option.bind_eq_some_iff.mp b₁
+  obtain ⟨⟨m₂, u₂⟩, a₂, d₂⟩ := Option.bind_eq_some_iff.mp b₂
+  obtain ⟨⟨n₁, w₁⟩, c₁, f₁⟩ := Option.map_eq_some_iff.mp d₁
+  obtain ⟨⟨n₂, w₂⟩, c₂, f₂⟩ := Option.map_eq_some_iff.mp d₂
+  simp only [Prod.mk.injEq] at f₁ f₂
+  obtain ⟨rfl, rfl⟩ := f₁
+  obtain ⟨rfl, rfl⟩ := f₂
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.block a₁) (.seq (.block c₁) k₁)) (.seq (.block a₂) (.seq (.block c₂) k₂))
+  simp only [List.append_assoc] at ht ⊢
+  exact ⟨ht, hq⟩
 
 /-! ## `cond` -/
 
@@ -320,6 +339,72 @@ theorem copyC_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩)
     (fun _ h => copyC_sj C hn5 h32 h) (fun _ h => copyC_sj C' hn5 h32 h)
+
+/-- `copyCG`: its tests are on public lengths, and each copy addresses
+memory from them. -/
+theorem copyCG_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
+    RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
+      copyCG fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
+  have h32' := h32
+  simp only [nb16] at h32'
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have dD := C.dE
+  have keep : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} {s t : State}, SJ s₀ Ctx W SP A D R al n J tl s →
+      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr →
+      (∀ r l, t.zlane r l = s.zlane r l) → SJ s₀ Ctx W SP A D R al n J tl t := fun S g m rd wr z =>
+    ⟨S.sm.keep dD (rs := []) (fun x _ => by rw [m]) (fun r hr => by cases hr)
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide)) rd wr,
+      fun l hl => by rw [z, S.z0 l hl], fun l hl => by rw [z, S.z1 l hl]⟩
+  have w₁ : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
+      WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 192)]) s fun t =>
+        t.cf = some (decide (n < 192)) ∧ SJ s₀ Ctx W SP A D R al n J tl t := fun s S =>
+    WP.mono (guard1_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r208 (by omega))
+      fun _ ⟨c, g, m, rd, wr, z⟩ => ⟨c, keep S g m rd wr z⟩
+  have w₂ : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
+      WP isa (.block [.mov .rax (.mem (at_ .r15 leadO)), .alu .add .rax (.mem (at_ .r15 naO)),
+        .alu .test .rax (imm 3)]) s fun t =>
+        t.zf = some (decide ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4 = 0)) ∧
+          SJ s₀ Ctx W SP A D R al n J tl t := fun s S =>
+    WP.mono (guard2_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272 (by omega))
+      fun _ ⟨c, g, m, rd, wr, z⟩ => ⟨c, keep S g m rd wr z⟩
+  have wG : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
+      WP isa (.block gArgs) s fun t =>
+        t.gpr .rdi = W + BitVec.ofNat 64 (512 + 16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) -
+          (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4)) ∧
+        t.gpr .r8 = BitVec.ofNat 64 (16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4)) ∧
+        t.gpr .rsi = D - BitVec.ofNat 64 (16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4)) ∧
+        t.gpr .r9 = BitVec.ofNat 64 (16 * ((4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al) % 4) + n) :=
+    fun s S => by
+      obtain ⟨t, run, di, r8, si, r9, -⟩ := gArgs_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272
+        S.sm.r200 S.sm.r208 (by omega)
+      exact WP.of_runBlock ⟨t, run, di, r8, si, r9⟩
+  refine rel_next ?_ (fun _ h => copyCG_sj C h32 h) (fun _ h => copyCG_sj C' h32 h)
+  have cC : RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
+      copyC fun _ _ => True := (copyC_rel C C' hn5 h32).mono (fun _ _ h => h) fun _ _ _ => trivial
+  have b1 := rel_next (rel_taint (P := fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧
+      SJ s₀' Ctx W SP A D R al n J' tl' s₂) [.r15] (fun _ _ h r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.sm.env.r15, h.2.sm.env.r15]) ⟨_, by taint_decide⟩)
+    w₁ w₁
+  refine RelCT.seq b1 (RelCT.ite (fun _ _ h => (eval_b h.1.1).trans (eval_b h.2.1).symm)
+    (cC.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
+  have b2 := rel_next (rel_taint (P := fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧
+      SJ s₀' Ctx W SP A D R al n J' tl' s₂) [.r15] (fun _ _ h r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.sm.env.r15, h.2.sm.env.r15]) ⟨_, by taint_decide⟩)
+    w₂ w₂
+  refine RelCT.seq (b2.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
+    (rel_ite_e (fun _ _ h => h.1.1.trans h.2.1.symm) (cC.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
+  refine (?_ : RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
+    copyG fun _ _ => True).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
+  exact rel_seq_block_split (rel_piece [.rdi, .r8, .rsi, .r9] (fun _ h => h.sm.env) (fun _ h => h.sm.env)
+    (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ wG wG (fun _ _ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · rw [h₁.1, h₂.1]
+      · rw [h₁.2.1, h₂.2.1]
+      · rw [h₁.2.2.1, h₂.2.2.1]
+      · rw [h₁.2.2.2, h₂.2.2.2]) ⟨_, by taint_decide⟩)
 
 theorem lens_rel (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
@@ -668,7 +753,7 @@ theorem openShort_rel (hF : ShortFacts) {pw gh : Prog isa} {tm tm' : Mem → Mem
       (F₂ := fun u => SM s₀' Ctx W SP A D R al n (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np 12))
         (BitVec.ofNat 64 t) u ∧ bytesAt u.mem A al = bytesAt s₀'.mem A al ∧ bytesAt u.mem D n = bytesAt s₀'.mem D n)
     ((RelCT.seq (pw_rel C C' hpc hpw hpw' h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq
-      (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyC_rel C C' hn5 h32)
+      (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyCG_rel C C' hn5 h32)
       (RelCT.seq (lens_rel C C' hal5 hn5 h32) (RelCT.seq (gh_rel C C' hpc.gh hpw.gh hpw'.gh h32)
       (chkTail_rel C C' hT hT' hTar hTar' oA)))))))).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
     (fun _ ⟨S, a, d⟩ => front_ok C hpw hR.symm hal5 hn5 h32 S a d fun _ F =>

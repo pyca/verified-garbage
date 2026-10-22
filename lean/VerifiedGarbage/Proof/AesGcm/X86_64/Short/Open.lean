@@ -148,8 +148,9 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
     simpa only [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] using this
   refine WP.seq (WP.mono (copyCG_ok s (lead := 4 * grp al n - (nb16 al + nb16 n + 1)) (na := nb16 al) (n := n)
     S.env.r15 S.env.perm.w S.r296 S.r272 S.r200 S.r208 (by omega_arith)
-    (by rw [S.rd, S.wr]; exact C.data.ok.rd) dW hz)
-    fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_)
+    (by rw [S.rd, S.wr]; exact C.data.ok.rd) dW)
+    fun s₂ ⟨_, mE₂, g₂, rd₂, wr₂, z₂⟩ => ?_)
+  have m₂ := mE₂ hz
   rw [F.dat] at m₂
   have fC : Frame [⟨W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)), n⟩]
       s.mem s₂.mem := by

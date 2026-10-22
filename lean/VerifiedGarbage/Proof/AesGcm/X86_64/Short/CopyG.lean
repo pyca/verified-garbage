@@ -374,15 +374,20 @@ theorem getD_map_range {α : Type} (f : Nat → α) {n i : Nat} (d : α) (h : i 
     ((List.range n).map f).getD i d = f i := by
   simp [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range h]
 
+/-- The memory after `copyG`'s groups, from `m`: the first group at `P`, the
+whole groups after it, and the last. -/
+def gWrites (m : Mem) (D P : Addr) (c n q : Nat) : Mem :=
+  writeBytes (writeBytes (writeBytes m P (headBytes m (D - BitVec.ofNat 64 c) P c)) (P + BitVec.ofNat 64 64)
+      (bytesAt m (D - BitVec.ofNat 64 c + BitVec.ofNat 64 64) (64 * (q - 1))))
+    (P + BitVec.ofNat 64 (64 * q)) (tailBytes m (D - BitVec.ofNat 64 c + BitVec.ofNat 64 (64 * q)) ((c + n) % 64))
+
 /-- The groups `copyG` stores, over `G` holding zeros from the text on, are the
 text written at `P + c`. -/
 theorem copyG_mem (m : Mem) (D P : Addr) {c n q : Nat} (hc : c < 64) (hq : q = (c + n) / 64) (h2 : 2 ≤ q)
     (hn : n < 2 ^ 60)
     (hz : ∀ o, c ≤ o → o < 64 * q + 64 → m (P + BitVec.ofNat 64 o) = 0) :
-    writeBytes (writeBytes (writeBytes m P (headBytes m (D - BitVec.ofNat 64 c) P c)) (P + BitVec.ofNat 64 64)
-        (bytesAt m (D - BitVec.ofNat 64 c + BitVec.ofNat 64 64) (64 * (q - 1))))
-      (P + BitVec.ofNat 64 (64 * q)) (tailBytes m (D - BitVec.ofNat 64 c + BitVec.ofNat 64 (64 * q)) ((c + n) % 64)) =
-    writeBytes m (P + BitVec.ofNat 64 c) (bytesAt m D n) := by
+    gWrites m D P c n q = writeBytes m (P + BitVec.ofNat 64 c) (bytesAt m D n) := by
+  unfold gWrites
   have hS : ∀ o, c ≤ o → D - BitVec.ofNat 64 c + BitVec.ofNat 64 o = D + BitVec.ofNat 64 (o - c) := fun o h => by
     rw [show BitVec.ofNat 64 o = BitVec.ofNat 64 c + BitVec.ofNat 64 (o - c) by rw [ofNat_add_ofNat]; congr 1; omega,
       ← BitVec.add_assoc, BitVec.sub_add_cancel]
@@ -433,8 +438,7 @@ theorem tailBytes_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {A 
 
 /-- What `copyG` needs: `W` (`r15`) with `lead`, `na`, `D` and `n` in it,
 the `n` bytes of text at `D` readable and apart from `W`, at least 192 of
-them, the text starting off a group of `G` and ending before its last block,
-and `G` zero from the text on. -/
+them, and the text starting off a group of `G` and ending before its last block. -/
 structure CopyGPre (s : State) (W D : Addr) (lead na n : Nat) : Prop where
   r15 : s.gpr .r15 = W
   hw : Covers [⟨W, 2560⟩] s.wr
@@ -447,17 +451,17 @@ structure CopyGPre (s : State) (W D : Addr) (lead na n : Nat) : Prop where
   fit : 16 * (lead + na) + n ≤ 496
   rd : Covers [⟨D, n⟩] (s.rd ++ s.wr)
   disj : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
-  zero : ∀ j, 16 * (lead + na) ≤ j → j < 512 → s.mem (W + BitVec.ofNat 64 (512 + j)) = 0
 
 theorem copyG_ok (s : State) {W D : Addr} {lead na n : Nat} (h : CopyGPre s W D lead na n) :
     WP isa copyG s fun s' =>
-      s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 (512 + 16 * (lead + na))) (bytesAt s.mem D n) ∧
+      s'.mem = gWrites s.mem D (W + BitVec.ofNat 64 (512 + 16 * (lead + na - (lead + na) % 4)))
+        (16 * ((lead + na) % 4)) n ((16 * ((lead + na) % 4) + n) / 64) ∧
+      Frame [⟨W + BitVec.ofNat 64 512, 512⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rsi → r ≠ .rdi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ ZKeep [.xmm4, .xmm6] s s' := by
   have hfit := h.fit
   have h192 := h.n192
   have hsh := h.sh
-  have hzero := h.zero
   have hrd := h.rd
   have hdisj := h.disj
   have hw := h.hw
@@ -548,13 +552,74 @@ theorem copyG_ok (s : State) {W D : Addr} {lead na n : Nat} (h : CopyGPre s W D 
   have htail : tailBytes t₂.mem (D - BitVec.ofNat 64 c + BitVec.ofNat 64 (64 * q)) ((c + n) % 64) =
       tailBytes s.mem (D - BitVec.ofNat 64 c + BitVec.ofNat 64 (64 * q)) ((c + n) % 64) :=
     tailBytes_frame f₁₂ (dD (by omega) (by omega)) (by omega)
-  refine ⟨?_, fun r a b c' d e f g' => by rw [g₃ r a b, g₂ r g', gg₁ r a b c' d e f g'],
+  have f₃ : Frame [⟨P + BitVec.ofNat 64 (64 * q), 64⟩] t₂.mem t₃.mem := by
+    rw [m₃]; exact writeBytes_frame' _ (by simp [tailBytes])
+  refine ⟨?_, ?_, fun r a b c' d e f g' => by rw [g₃ r a b, g₂ r g', gg₁ r a b c' d e f g'],
     by rw [rd₃, rd₂, rd₁, rd₀], by rw [wr₃, wr₂, wr₁, wr₀], ?_⟩
-  · rw [m₃, htail, m₂, hmid, m₁, m₀, copyG_mem s.mem D P (by omega) hq.symm (by omega) (by omega)
-      (fun o hco ho => by rw [hPo, Nat.add_assoc]; exact hzero _ (by omega) (by omega)), hPo,
-      show 512 + 16 * (t - t % 4) + c = 512 + 16 * t by omega]
+  · rw [m₃, htail, m₂, hmid, m₁, m₀]; rfl
+  · refine ((f₁₂.mono (rs' := [⟨P, 64⟩, ⟨P + BitVec.ofNat 64 64, 64 * (q - 1)⟩,
+      ⟨P + BitVec.ofNat 64 (64 * q), 64⟩]) (by simp)).trans (f₃.mono (by simp))).sub fun r hr => ?_
+    have hG : ∀ {o k : Nat}, 16 * (t - t % 4) + o + k ≤ 512 →
+        Region.Sub ⟨P + BitVec.ofNat 64 o, k⟩ ⟨W + BitVec.ofNat 64 512, 512⟩ := fun {o k} hk => by
+      rw [hPo, Nat.add_assoc, ← Offset.add_add W 512 (16 * (t - t % 4) + o)]
+      exact Offset.sub_base _ hk
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    refine ⟨_, List.mem_singleton_self _, ?_⟩
+    rcases hr with rfl | rfl | rfl
+    · have := hG (o := 0) (k := 64) (by omega)
+      rwa [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at this
+    · exact hG (by omega)
+    · exact hG (by omega)
   · exact (((ZKeep.mono (rs := []) (fun r _ l _ => z₀ r l) (by simp)).trans z₁).trans (z₂.mono (by simp))).trans
       (z₃.mono (by simp))
+
+/-- `copyCG`'s first test: `n` compared with 192. -/
+theorem guard1_ok (s : State) {W : Addr} {n : Nat} (h15 : s.gpr .r15 = W) (hw : Covers [⟨W, 2560⟩] s.wr)
+    (hn : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n) (hn5 : n < 2 ^ 63) :
+    WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 192)]) s fun u =>
+      u.cf = some (decide (n < 192)) ∧ (∀ r, r ≠ .rax → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧
+      u.wr = s.wr ∧ ∀ r l, u.zlane r l = s.zlane r l := by
+  have r₄ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off hw (by decide) (by decide))
+  obtain ⟨u₁, run₁, ax₁, g₁, m₁, rd₁, wr₁, z₁⟩ : ∃ u₁, runBlock isa [.mov .rax (.mem (at_ .r15 lenO))] s = some u₁ ∧
+      u₁.gpr .rax = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .rax → u₁.gpr r = s.gpr r) ∧ u₁.mem = s.mem ∧ u₁.rd = s.rd ∧
+      u₁.wr = s.wr ∧ ∀ r l, u₁.zlane r l = s.zlane r l := by
+    refine ⟨_, by xrun [h15, hn, r₄, lenO], ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg]
+    · intro r a; simp [gpr_setReg, a]
+    · simp only [mem_setReg]
+    · simp only [rd_setReg]
+    · simp only [wr_setReg]
+    · intro r l; simp only [zlane_setReg]
+  obtain ⟨u₂, run₂, -, cf₂, g₂, m₂, rd₂, wr₂⟩ := cmpImm_ok u₁ .rax ax₁ (by omega) (show 192 < 2 ^ 31 by decide)
+  refine WP.block_append_iff.mpr (WP.of_runBlock ⟨u₁, run₁, WP.of_runBlock ⟨u₂, run₂, cf₂,
+    fun r a => by rw [g₂, g₁ r a], by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], fun r l => ?_⟩⟩)
+  rw [show u₂.zlane r l = u₁.zlane r l by
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, imm] at run₂
+      cases run₂; rfl, z₁ r l]
+
+/-- `copyCG`'s second test: `lead + na` tested for a multiple of 4. -/
+theorem guard2_ok (s : State) {W : Addr} {lead na : Nat} (h15 : s.gpr .r15 = W) (hw : Covers [⟨W, 2560⟩] s.wr)
+    (hlead : s.mem.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 lead)
+    (hna : s.mem.readW (W + BitVec.ofNat 64 272) 64 = BitVec.ofNat 64 na) (hl : lead + na < 2 ^ 63) :
+    WP isa (.block [.mov .rax (.mem (at_ .r15 leadO)), .alu .add .rax (.mem (at_ .r15 naO)),
+        .alu .test .rax (imm 3)]) s fun u =>
+      u.zf = some (decide ((lead + na) % 4 = 0)) ∧ (∀ r, r ≠ .rax → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧
+      u.rd = s.rd ∧ u.wr = s.wr ∧ ∀ r l, u.zlane r l = s.zlane r l := by
+  have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 296) 8 := in_left (in_off hw (by decide) (by decide))
+  have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 272) 8 := in_left (in_off hw (by decide) (by decide))
+  have e₁ : BitVec.ofNat 64 lead + BitVec.ofNat 64 na = BitVec.ofNat 64 (lead + na) := ofNat_add_ofNat _ _
+  have e₂ : BitVec.ofNat 64 (lead + na) &&& 3#64 = BitVec.ofNat 64 ((lead + na) % 4) := ofNat_and3 (by omega)
+  refine WP.of_runBlock ⟨_, by xrun [h15, hlead, hna, r₁, r₂, leadO, naO, e₁], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [zf_arithFlags]
+    simp only [gpr_setReg, gpr_arithFlags, ite_true, imm, e₂]
+    have hx : (lead + na) % 4 < 4 := Nat.mod_lt _ (by decide)
+    generalize (lead + na) % 4 = x at hx ⊢
+    rcases (by omega : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3) with rfl | rfl | rfl | rfl <;> decide
+  · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
+  · simp only [mem_setReg, mem_arithFlags]
+  · simp only [rd_setReg, rd_arithFlags]
+  · simp only [wr_setReg, wr_arithFlags]
+  · intro r l; simp only [zlane_setReg, zlane_arithFlags]
 
 /-- `copyCG`: the text copied to `G`, by `copyG` from 192 bytes on unless it
 starts at a group, otherwise by `copyC`. -/
@@ -563,17 +628,20 @@ theorem copyCG_ok (s : State) {W D : Addr} {lead na n : Nat} (h15 : s.gpr .r15 =
     (hna : s.mem.readW (W + BitVec.ofNat 64 272) 64 = BitVec.ofNat 64 na)
     (hD : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D)
     (hn : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n) (hfit : 16 * (lead + na) + n ≤ 496)
-    (hrd : Covers [⟨D, n⟩] (s.rd ++ s.wr)) (hdisj : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
-    (hzero : ∀ j, 16 * (lead + na) ≤ j → j < 512 → s.mem (W + BitVec.ofNat 64 (512 + j)) = 0) :
+    (hrd : Covers [⟨D, n⟩] (s.rd ++ s.wr)) (hdisj : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
     WP isa copyCG s fun s' =>
-      s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 (512 + 16 * (lead + na))) (bytesAt s.mem D n) ∧
+      Frame [⟨W + BitVec.ofNat 64 512, 512⟩] s.mem s'.mem ∧
+      ((∀ j, 16 * (lead + na) ≤ j → j < 512 → s.mem (W + BitVec.ofNat 64 (512 + j)) = 0) →
+        s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 (512 + 16 * (lead + na))) (bytesAt s.mem D n)) ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rsi → r ≠ .rdi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ ZKeep [.xmm4, .xmm6] s s' := by
   -- `copyC`, from any state with `s`'s registers and memory but `rax` and the flags.
   have viaC : ∀ u : State, u.gpr .r15 = W → u.mem = s.mem → u.rd = s.rd → u.wr = s.wr →
       (∀ r, r ≠ .rax → u.gpr r = s.gpr r) → (∀ r l, u.zlane r l = s.zlane r l) →
       WP isa copyC u fun s' =>
-        s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 (512 + 16 * (lead + na))) (bytesAt s.mem D n) ∧
+        Frame [⟨W + BitVec.ofNat 64 512, 512⟩] s.mem s'.mem ∧
+        ((∀ j, 16 * (lead + na) ≤ j → j < 512 → s.mem (W + BitVec.ofNat 64 (512 + j)) = 0) →
+          s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 (512 + 16 * (lead + na))) (bytesAt s.mem D n)) ∧
         (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rsi → r ≠ .rdi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧
         s'.rd = s.rd ∧ s'.wr = s.wr ∧ ZKeep [.xmm4, .xmm6] s s' := by
     intro u u15 um urd uwr ug uz
@@ -586,66 +654,44 @@ theorem copyCG_ok (s : State) {W D : Addr} {lead na n : Nat} (h15 : s.gpr .r15 =
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨⟨W, 2560⟩, List.mem_singleton_self _, 512 + 16 * (lead + na), rfl, by dsimp only; omega⟩) hw,
       hdisj.sub_right (Offset.sub_base W (by omega))⟩) fun u₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_⟩)
-    refine ⟨by rw [m₂, m₁, um], fun r a b c' d e f g' => by rw [g₂ r a e g', g₁ r d c' b, ug r a],
+    have hm : u₂.mem = writeBytes s.mem (W + BitVec.ofNat 64 (512 + 16 * (lead + na))) (bytesAt s.mem D n) := by
+      rw [m₂, m₁, um]
+    refine ⟨by
+        rw [hm]
+        refine (writeBytes_frame' _ (length_bytesAt _ _ _)).sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [← Offset.add_add W 512 (16 * (lead + na))]
+        exact Offset.sub_base _ (by omega),
+      fun _ => hm, fun r a b c' d e f g' => by rw [g₂ r a e g', g₁ r d c' b, ug r a],
       by rw [rd₂, rd₁, urd], by rw [wr₂, wr₁, uwr], ?_⟩
     exact (ZKeep.mono (rs := []) (fun r _ l _ => by rw [z₁ r l, uz r l]) (by simp)).trans (z₂.mono (by simp))
-  have r₄ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off hw (by decide) (by decide))
-  have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 296) 8 := in_left (in_off hw (by decide) (by decide))
-  have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 272) 8 := in_left (in_off hw (by decide) (by decide))
   -- `n` compared with 192.
-  obtain ⟨u₁, run₁, ax₁, g₁, m₁, rd₁, wr₁, z₁⟩ : ∃ u₁, runBlock isa [.mov .rax (.mem (at_ .r15 lenO))] s = some u₁ ∧
-      u₁.gpr .rax = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .rax → u₁.gpr r = s.gpr r) ∧ u₁.mem = s.mem ∧ u₁.rd = s.rd ∧
-      u₁.wr = s.wr ∧ ∀ r l, u₁.zlane r l = s.zlane r l := by
-    refine ⟨_, by xrun [h15, hn, r₄, lenO], ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg]
-    · intro r a; simp [gpr_setReg, a]
-    · simp only [mem_setReg]
-    · simp only [rd_setReg]
-    · simp only [wr_setReg]
-    · intro r l; simp only [zlane_setReg]
-  obtain ⟨u₂, run₂, -, cf₂, g₂, m₂, rd₂, wr₂⟩ := cmpImm_ok u₁ .rax ax₁ (by omega) (show 192 < 2 ^ 31 by decide)
-  refine WP.seq (WP.block_append_iff.mpr (WP.of_runBlock ⟨u₁, run₁, WP.of_runBlock ⟨u₂, run₂, ?_⟩⟩))
-  have gu₂ : ∀ r, r ≠ .rax → u₂.gpr r = s.gpr r := fun r a => by rw [g₂, g₁ r a]
-  have zu₂ : ∀ r l, u₂.zlane r l = s.zlane r l := fun r l => by
-    rw [show u₂.zlane r l = u₁.zlane r l by
-      obtain ⟨u₂', e⟩ : ∃ x, x = u₂ := ⟨_, rfl⟩
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, imm] at run₂
-      cases run₂; rfl, z₁ r l]
+  refine WP.seq (WP.mono (guard1_ok s h15 hw hn (by omega)) fun u₂ ⟨cf₂, gu₂, m₂, rd₂, wr₂, zu₂⟩ => ?_)
   refine WP.ite (decide (n < 192)) (by simp only [eval, cf₂]) (fun hb => ?_) (fun hb => ?_)
-  · exact viaC u₂ (by rw [gu₂ _ (by decide), h15]) (by rw [m₂, m₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) gu₂ zu₂
+  · exact viaC u₂ (by rw [gu₂ _ (by decide), h15]) m₂ rd₂ wr₂ gu₂ zu₂
   have h192 : 192 ≤ n := by simpa using hb
   -- `lead + na` tested for a multiple of 4.
-  obtain ⟨u₃, run₃, zf₃, g₃, m₃, rd₃, wr₃, z₃⟩ : ∃ u₃, runBlock isa [.mov .rax (.mem (at_ .r15 leadO)),
-      .alu .add .rax (.mem (at_ .r15 naO)), .alu .test .rax (imm 3)] u₂ = some u₃ ∧
-      u₃.zf = some (decide ((lead + na) % 4 = 0)) ∧ (∀ r, r ≠ .rax → u₃.gpr r = s.gpr r) ∧ u₃.mem = s.mem ∧
-      u₃.rd = s.rd ∧ u₃.wr = s.wr ∧ ∀ r l, u₃.zlane r l = s.zlane r l := by
-    have h15₂ : u₂.gpr .r15 = W := by rw [gu₂ _ (by decide), h15]
-    have m₂' : u₂.mem = s.mem := by rw [m₂, m₁]
-    have r₁' : InRegions (u₂.rd ++ u₂.wr) (W + BitVec.ofNat 64 296) 8 := by rw [rd₂, wr₂, rd₁, wr₁]; exact r₁
-    have r₂' : InRegions (u₂.rd ++ u₂.wr) (W + BitVec.ofNat 64 272) 8 := by rw [rd₂, wr₂, rd₁, wr₁]; exact r₂
-    have hl₂ : u₂.mem.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 lead := by rw [m₂']; exact hlead
-    have hn₂ : u₂.mem.readW (W + BitVec.ofNat 64 272) 64 = BitVec.ofNat 64 na := by rw [m₂']; exact hna
-    have e₁ : BitVec.ofNat 64 lead + BitVec.ofNat 64 na = BitVec.ofNat 64 (lead + na) := ofNat_add_ofNat _ _
-    have e₂ : BitVec.ofNat 64 (lead + na) &&& 3#64 = BitVec.ofNat 64 ((lead + na) % 4) := ofNat_and3 (by omega)
-    refine ⟨_, by xrun [h15₂, hl₂, hn₂, r₁', r₂', leadO, naO, e₁], ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [zf_arithFlags]
-      simp only [gpr_setReg, gpr_arithFlags, ite_true, imm, e₂]
-      have hx : (lead + na) % 4 < 4 := Nat.mod_lt _ (by decide)
-      generalize (lead + na) % 4 = x at hx ⊢
-      rcases (by omega : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3) with rfl | rfl | rfl | rfl <;> decide
-    · intro r a; simp [gpr_setReg, gpr_arithFlags, a, gu₂ r a]
-    · simp only [mem_setReg, mem_arithFlags]; exact m₂'
-    · simp only [rd_setReg, rd_arithFlags]; rw [rd₂, rd₁]
-    · simp only [wr_setReg, wr_arithFlags]; rw [wr₂, wr₁]
-    · intro r l; simp only [zlane_setReg, zlane_arithFlags]; exact zu₂ r l
-  refine WP.seq (WP.of_runBlock ⟨u₃, run₃, ?_⟩)
+  refine WP.seq (WP.mono (guard2_ok u₂ (lead := lead) (na := na) (by rw [gu₂ _ (by decide), h15])
+    (by rw [wr₂]; exact hw) (by rw [m₂]; exact hlead) (by rw [m₂]; exact hna) (by omega))
+    fun u₃ ⟨zf₃, g₃', m₃', rd₃', wr₃', z₃'⟩ => ?_)
+  have g₃ : ∀ r, r ≠ .rax → u₃.gpr r = s.gpr r := fun r a => by rw [g₃' r a, gu₂ r a]
+  have m₃ : u₃.mem = s.mem := by rw [m₃', m₂]
+  have rd₃ : u₃.rd = s.rd := by rw [rd₃', rd₂]
+  have wr₃ : u₃.wr = s.wr := by rw [wr₃', wr₂]
+  have z₃ : ∀ r l, u₃.zlane r l = s.zlane r l := fun r l => by rw [z₃', zu₂]
   refine WP.ite (decide ((lead + na) % 4 = 0)) (by simp only [eval, zf₃]) (fun hb => ?_) (fun hb => ?_)
   · exact viaC u₃ (by rw [g₃ _ (by decide), h15]) m₃ rd₃ wr₃ g₃ z₃
   have hsh : (lead + na) % 4 ≠ 0 := by simpa using hb
   refine WP.mono (copyG_ok u₃ ⟨by rw [g₃ _ (by decide), h15], by rw [wr₃]; exact hw, by rw [m₃]; exact hlead,
     by rw [m₃]; exact hna, by rw [m₃]; exact hD, by rw [m₃]; exact hn, h192, hsh, hfit,
-    by rw [rd₃, wr₃]; exact hrd, hdisj, fun j a b => by rw [m₃]; exact hzero j a b⟩)
-    fun s' ⟨m', g', rd', wr', z'⟩ => ⟨by rw [m', m₃], fun r a b c' d e f g'' => by rw [g' r a b c' d e f g'', g₃ r a],
+    by rw [rd₃, wr₃]; exact hrd, hdisj⟩)
+    fun s' ⟨m', f', g', rd', wr', z'⟩ => ⟨by rw [← m₃]; exact f', fun hz => by
+      rw [m', m₃, copyG_mem s.mem D _ (by omega) rfl (by omega) (by omega) (fun o hco ho => ?_)]
+      · rw [Offset.add_add, show 512 + 16 * (lead + na - (lead + na) % 4) + 16 * ((lead + na) % 4) =
+          512 + 16 * (lead + na) by omega]
+      · rw [Offset.add_add, Nat.add_assoc]
+        exact hz _ (by omega) (by omega),
+      fun r a b c' d e f g'' => by rw [g' r a b c' d e f g'', g₃ r a],
       by rw [rd', rd₃], by rw [wr', wr₃], (ZKeep.mono (rs := []) (fun r _ l _ => z₃ r l) (by simp)).trans z'⟩
 
 end VG.Proof.AesGcm.X86_64.Short
