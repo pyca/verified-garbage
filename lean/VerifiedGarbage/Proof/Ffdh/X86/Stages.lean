@@ -87,12 +87,12 @@ theorem Kept.word_eq {js ds : List Nat} {m m' : Mem} (k : Kept base len js ds m 
 /-- p into wide slot 9, one into 14 and `p − 1` into 15. -/
 theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32 len)
     (fit : (args 2).toNat + len ≤ 2 ^ 32) (rd : InRegions (s.rd ++ s.wr) (byteAddr (args 2)) len)
-    (apart : Region.Disjoint ⟨byteAddr (args 2), len⟩ ⟨base, bytes⟩) (pos : 0 < argNum s.mem args 2 len) :
+    (apart : Region.Disjoint ⟨byteAddr (args 2), len⟩ ⟨base, bytes⟩) :
     WP isa Impl.Ffdh.X86.pSetup s fun u =>
       In Ex base bytes len args u ∧ Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Kept base len [9, 14, 15] [] s.mem u.mem ∧
       sv u.mem base len .wide 9 = argNum s.mem args 2 len ∧ sv u.mem base len .wide 14 = 1 ∧
-      sv u.mem base len .wide 15 = argNum s.mem args 2 len - 1 ∧
+      (0 < argNum s.mem args 2 len → sv u.mem base len .wide 15 = argNum s.mem args 2 len - 1) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have bl := h.bytes_lt
   have f9 := slot_fit1 h (j := 9) (by decide)
@@ -131,14 +131,15 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
     have F₂ := fR_of_outside h (sp := s.gpr .esp) O₂ (slot_inF (by decide) bst)
     have F₃ := fR_of_outside h (sp := s.gpr .esp) O₃ (slot_inF (by decide) bst)
     exact (F₁.trans F₂).trans F₃
-  · have lt := val32_lt u.mem base (lo len (.slot .wide 15)) (cwc len .wide)
-    have lt9 : argNum s.mem args 2 len < 2 ^ (32 * cwc len .wide) := by
-      rw [← e9]; exact val32_lt _ _ _ _
-    change sv u.mem base len .wide 15 < _ at lt
-    rw [show val32 u₂.mem base (lo len (.slot .wide 14)) (cwc len .wide) = 1 from e14,
-      show val32 u₂.mem base (lo len (.slot .wide 9)) (cwc len .wide) = argNum s.mem args 2 len from e9] at V₃
-    change sv u.mem base len .wide 15 + 1 = _ at V₃
-    cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V₃ <;> omega
+  · intro pos
+    have lt := val32_lt u.mem base (lo len (.slot .wide 15)) (cwc len .wide)
+      have lt9 : argNum s.mem args 2 len < 2 ^ (32 * cwc len .wide) := by
+        rw [← e9]; exact val32_lt _ _ _ _
+      change sv u.mem base len .wide 15 < _ at lt
+      rw [show val32 u₂.mem base (lo len (.slot .wide 14)) (cwc len .wide) = 1 from e14,
+        show val32 u₂.mem base (lo len (.slot .wide 9)) (cwc len .wide) = argNum s.mem args 2 len from e9] at V₃
+      change sv u.mem base len .wide 15 + 1 = _ at V₃
+      cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V₃ <;> omega
 
 /-- Where the wide slots lie. -/
 theorem lo_wide (len j : Nat) : lo len (.slot .wide j) = numBase + j * st len .wide := rfl
@@ -165,8 +166,7 @@ theorem copyIn_ok (h : In Ex base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j) 
   · rw [cw1] at V; exact V
 
 /-- The context of p, in the wide slot 9: p in slot 0, one in 3, `R² mod p` in 4 and the inverse. -/
-theorem ctxP_ok (h : In Ex base bytes len args s) {P : Nat} (hP : sv s.mem base len .wide 9 = P) (gt : 1 < P)
-    (odd : P % 2 = 1) :
+theorem ctxP_ok (h : In Ex base bytes len args s) {P : Nat} (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa Impl.Ffdh.X86.ctxP s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧ sv u.mem base len .wide 3 = 1 ∧
       sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % P ∧
@@ -180,7 +180,7 @@ theorem ctxP_ok (h : In Ex base bytes len args s) {P : Nat} (hP : sv s.mem base 
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
   refine WP.mono (prepCtx_ok h₁ .wide) fun u ⟨C, one, R2, F, K⟩ => ?_
-  rw [V₁, hP, safeM_of gt odd] at C R2
+  rw [V₁, hP] at C R2
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F
   have F₁ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
@@ -214,7 +214,7 @@ theorem pwR_sv3 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
 
 /-- Slot 6 the wide slot `b` to the power of the wide slot `e`, modulo p (in the wide slot 9). -/
 theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 19) (he9 : 9 ≤ e)
-    (he : e ≤ 19) (hP : sv s.mem base len .wide 9 = P) (gt : 1 < P) (odd : P % 2 = 1) :
+    (he : e ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa (Impl.Ffdh.X86.powP b e) s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧
       sv u.mem base len .wide 6 = sv s.mem base len .wide b ^ sv s.mem base len .wide e % P ∧
@@ -231,7 +231,7 @@ theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) 
   have e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
   unfold Impl.Ffdh.X86.powP
-  refine WP.seq (WP.mono (ctxP_ok h hP gt odd) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (ctxP_ok h hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
   refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))

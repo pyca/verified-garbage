@@ -34,8 +34,8 @@ theorem subgroup_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.m
     (odd : p % 2 = 1) :
     WP isa subgroup s (Res base len s (if g ^ q % p = 1 then 1 else 0)) := by
   unfold subgroup
-  refine WP.seq (WP.mono (powP_ok h (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide) h9 gt odd)
-    fun u ⟨C, V6, V3, F, _, K⟩ => ?_)
+  refine WP.seq (WP.mono (powP_ok h (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide)
+    (by rw [h9, safeM_of gt odd])) fun u ⟨C, V6, V3, F, _, K⟩ => ?_)
   refine WP.mono (eqStatus_res C.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
   rw [V6, V3, h10, h11] at R
   exact (Step.ops h F K).res R
@@ -235,10 +235,10 @@ theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base 
   refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
     (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
         rwa [BitVec.add_zero] at this)
-    (G.apart.sub_left (Region.sub_prefix (by omega)))
-    (by rw [argNum_comp, hP]; have := Nat.two_pow_pos 511; have := mv.1.1.2; omega))
+    (G.apart.sub_left (Region.sub_prefix (by omega))))
     fun u₁ ⟨I₁, F₁, k₁, V9, V14, V15, K₁⟩ => ?_)
   rw [argNum_comp, hP] at V9 V15
+  have V15 := V15 (by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega)
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   -- g, and its range.
   refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega)
