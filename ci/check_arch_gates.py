@@ -90,6 +90,10 @@ def required(text, mods):
             if "::".join(parts[:n]) in mods:
                 used.add("::".join(parts[:n]))
                 break
+    # These inherent curve methods live in a module with narrower target
+    # support than the curve types reexported by ec, ecdh and ecdsa.
+    if re.search(r"::(?:compress|decompress)_public_key\s*\(", text):
+        used.add("ec::compressed")
     archs = ARCHES
     for u in used:
         archs &= mods[u]

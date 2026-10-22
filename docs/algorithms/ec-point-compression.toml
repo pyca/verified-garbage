@@ -2,4 +2,4 @@ name = "SEC 1 EC point compression"
 family = "Key agreement"
 specs = ["EcKey/Compressed", "EcKey/Compressed/Contract"]
 modules = ["src/ec/compressed.rs"]
-asm = []
+asm = ["ec_p192_compressed", "ec_p224_compressed", "ec_p256_compressed", "ec_p384_compressed", "ec_p521_compressed", "ec_secp256k1_compressed", "ec_brainpoolp256r1_compressed", "ec_brainpoolp384r1_compressed", "ec_brainpoolp512r1_compressed"]

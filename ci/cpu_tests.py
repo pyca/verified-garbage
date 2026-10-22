@@ -140,9 +140,10 @@ GROUPS = {
         "tests": ["cavp::dsa", "wycheproof::dsa"],
     },
     "ecdsa": {
-        "lib": ["ecdsa", "ec::validate"],
+        "lib": ["ecdsa", "ec::validate", "ec::compressed"],
         "tests": [
             "cavp::ecdsa_p256",
+            "wycheproof::ec_compressed",
             "wycheproof::ecdsa_p224",
             "wycheproof::ecdsa_p256",
             "wycheproof::ecdsa_p384",
@@ -189,7 +190,7 @@ GROUPS = {
         "tests": ["rfc6979::p224::p224_sha224"],
     },
     "p256": {
-        "lib": ["ec::p256", "ecdsa::p256", "ec::validate::tests::p256"],
+        "lib": ["ec::p256", "ecdsa::p256", "ec::validate::tests::p256", "ec::compressed::tests::p256"],
         "tests": [
             "cavp::ecdh_p256",
             "cavp::ecdsa_p256",
@@ -203,7 +204,7 @@ GROUPS = {
         "tests": ["rfc6979::p256::p256_sha256", "rfc6979::p256::p256_sha384"],
     },
     "p521": {
-        "lib": ["ec::p521", "ecdsa::p521", "ec::validate::tests::p521"],
+        "lib": ["ec::p521", "ecdsa::p521", "ec::validate::tests::p521", "ec::compressed::tests::p521"],
         "tests": [
             "cavp::ecdh_p521",
             "rfc6979::p521",
@@ -212,7 +213,7 @@ GROUPS = {
         ],
     },
     "p384": {
-        "lib": ["ec::p384", "ecdsa::p384", "ec::validate::tests::p384"],
+        "lib": ["ec::p384", "ecdsa::p384", "ec::validate::tests::p384", "ec::compressed::tests::p384"],
         "tests": [
             "cavp::ecdh_p384",
             "rfc6979::p384",
