@@ -80,6 +80,25 @@ structure SLoop (E : Env) (g : Geo) (R : Option Spec.Dsa.Params) (s : State) (k 
   spec : Spec.Dsa.generateParameters.attempt (8 * g.pLen) (hList E) (8 * g.qLen) ((seedList E).drop k)
     (E.witT.drop u) = R
 
+/-- Whether a seed's result goes on to the next seed. -/
+def contOf : Option (Option Spec.Dsa.Params × Spec.RsaKeyGen.Rand) → Bool
+  | some (none, _) => true
+  | _ => false
+
+/-- The witnesses a seed's result leaves. -/
+def restOf : Option (Option Spec.Dsa.Params × Spec.RsaKeyGen.Rand) → Spec.RsaKeyGen.Rand
+  | some (_, r) => r
+  | none => []
+
+/-- Whether the search goes on after seed `k`, from witness cursor `u`. -/
+def sCont (E : Env) (g : Geo) (k u : Nat) : Bool :=
+  decide (E.seedsLen - k * E.qLen ≠ 0) &&
+    contOf (seedResult (8 * g.pLen) (8 * g.qLen) (chunk E k) (hList E) (E.witT.drop u))
+
+/-- The witness cursor after seed `k`. -/
+def sNext (E : Env) (g : Geo) (k u : Nat) : Nat :=
+  E.witLen - (restOf (seedResult (8 * g.pLen) (8 * g.qLen) (chunk E k) (hList E) (E.witT.drop u))).length
+
 /-- One seed: the loop exits with the search's result, or goes on. -/
 theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
     {R : Option Spec.Dsa.Params} {s : State} {k u : Nat} {t : State} (L : SLoop E g R s k u t) :
@@ -89,8 +108,9 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
           .store (sc fSeed) .eax, .mov .eax (.mem (sc fSeedLeft)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.qLen)),
           .store (sc fSeedLeft) .eax]]),
       .block (cmpF fStatus 0)]) t fun t' =>
-      (t'.zf = some false ∧ SKeep E g s t' ∧ SRes E g t'.mem R) ∨
-      (t'.zf = some true ∧ (k + 1) * E.qLen ≤ E.seedsLen ∧ ∃ u', SLoop E g R s (k + 1) u' t') := by
+      (t'.zf = some false ∧ sCont E g k u = false ∧ SKeep E g s t' ∧ SRes E g t'.mem R) ∨
+      (t'.zf = some true ∧ sCont E g k u = true ∧ (k + 1) * E.qLen ≤ E.seedsLen ∧
+        SLoop E g R s (k + 1) (sNext E g k u) t') := by
   have sz := v.size_ge
   have bd := G.bounds
   have nw := v.scratchFit
@@ -115,7 +135,7 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       (g₂ _ (by decide)) rd₂ wr₂ sy₂
     refine cmpF_end K₂.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega)
       (by rw [m₂, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ z₃ => ?_
-    refine .inl ⟨z₃, K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, ?_⟩
+    refine .inl ⟨z₃, by simp [sCont, h0], K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, ?_⟩
     have hN : E.seedT.length / E.qLen ≤ k := by
       rw [hl]; exact Nat.div_le_of_le_mul (by rw [Nat.mul_comm]; omega)
     have hR : R = none := by
@@ -182,12 +202,20 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     · -- A tape ran out.
       refine cmpF_end K₈.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega)
         (st₈ 2 AR) (by decide) (by decide) fun t₉ g₉ m₉ rd₉ wr₉ sy₉ z₉ =>
-          .inl ⟨z₉, K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉, ?_⟩
+          .inl ⟨z₉, by simp [sCont, hSR, contOf], K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉, ?_⟩
       rw [← spec]; show _ = _; rw [m₉, st₈ 2 AR]
     · -- On to the next seed.
       obtain ⟨st₂, u', hu', fu₂, du⟩ := AR
+      have wl : E.witT.length = E.witLen := by rw [← L.keep.base.wit, VG.Proof.Bignum.bytesAt_length]
+      have hu'' : u' = sNext E g k u := by
+        have := congrArg List.length du
+        rw [List.length_drop, wl] at this
+        simp only [sNext, hSR, restOf]
+        omega
+      subst hu''
       refine cmpF_end K₈.base.scr (o := fStatus) (v := 0) (w := 0) (by simp only [fStatus, hdr]; omega)
-        (st₈ 0 st₂) (by decide) (by decide) fun t₉ g₉ m₉ rd₉ wr₉ sy₉ z₉ => .inr ⟨z₉, hk1, u', ?_⟩
+        (st₈ 0 st₂) (by decide) (by decide) fun t₉ g₉ m₉ rd₉ wr₉ sy₉ z₉ =>
+          .inr ⟨z₉, by simp [sCont, hne, hSR, contOf], hk1, ?_⟩
       refine ⟨K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉, ?_, ?_, by rw [m₉, st₈ 0 st₂], ?_, hu',
         hk1, by rw [du]; exact spec⟩
       · rw [m₉, m₈, ws _ (by simp only [fSeed, sState, hdr]; omega) (by simp only [fSeedLeft, sState, hdr]; omega)
@@ -199,7 +227,7 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       obtain ⟨st₂, pk₂⟩ := AR
       refine cmpF_end K₈.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega)
         (st₈ 1 st₂) (by decide) (by decide) fun t₉ g₉ m₉ rd₉ wr₉ sy₉ z₉ =>
-          .inl ⟨z₉, K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉, ?_⟩
+          .inl ⟨z₉, by simp [sCont, hSR, contOf], K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉, ?_⟩
       rw [← spec]
       refine ⟨by rw [m₉, st₈ 1 st₂], ?_⟩
       rw [m₉, m₈, Env.Chg.scratch v ((Env.Chg.refl [(fSeedLeft, 4)] t₅.mem).store (List.mem_singleton_self _)
@@ -228,9 +256,9 @@ theorem search_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
       SLoop E g (Spec.Dsa.generateParameters.attempt (8 * g.pLen) (hList E) (8 * g.qLen) (seedList E) E.witT) s k u t)
     (fun m t ⟨k, u, hm, L⟩ => WP.mono (sBody_ok G v hp hq L) fun t' h => ?_) (E.seedsLen / E.qLen + 1) s
     ⟨0, 0, by omega, L₀⟩
-  rcases h with ⟨z, K, res⟩ | ⟨z, hk1, u', L'⟩
+  rcases h with ⟨z, _, K, res⟩ | ⟨z, _, hk1, L'⟩
   · exact .inl ⟨z, K, res⟩
   · have : k + 1 ≤ E.seedsLen / E.qLen := (Nat.le_div_iff_mul_le (by omega)).mpr hk1
-    exact .inr ⟨z, m - 1, by omega, k + 1, u', by omega, L'⟩
+    exact .inr ⟨z, m - 1, by omega, k + 1, _, by omega, L'⟩
 
 end VG.Proof.Dsa.X86.Generation
