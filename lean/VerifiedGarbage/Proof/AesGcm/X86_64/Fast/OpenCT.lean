@@ -106,8 +106,8 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
   let FinC : State → Prop := fun s => FinI Ctx W SP D R r s ∧ Covers [⟨D, r⟩] (s.rd ++ s.wr)
   have wPow : ∀ s, FinI Ctx W SP D R r s ∧ Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) ∧ Covers [⟨D, r⟩] (s.rd ++ s.wr) →
       WP isa (.block finPowP) s FinC := fun s h =>
-    WP.mono (Fast.finPowP_run s h.1.env.r13 (in_off h.2.1 (show 272 + 16 ≤ 1024 by decide) (by decide))
-      (in_off h.2.1 (show 256 + 16 ≤ 1024 by decide) (by decide))) fun _ ⟨_, _, _, _, o⟩ =>
+    WP.mono (Fast.finPowP_run s h.1.env.r13 (in_off h.2.1 (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
+      (in_off h.2.1 (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))) fun _ ⟨_, _, _, _, o⟩ =>
       ⟨h.1.keep (fun g hg => o.gpr g (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> decide)) o.rd o.wr (by rw [o.mem]; exact Frame.refl _ _),

@@ -83,8 +83,8 @@ theorem finOk_finishP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
   have cov₃ := X.cov
   rw [← rd₃, ← wr₃] at cov₃
   unfold Short.finishP
-  refine WP.seq (WP.mono (finPowP_ok hF s₃ he₃.r13 (in_off cov₃ (show 272 + 16 ≤ 1024 by decide) (by decide))
-    (in_off cov₃ (show 256 + 16 ≤ 1024 by decide) (by decide)) p0.2 p0.1) fun s₄ ⟨x0, x1, h1, h2, o₄⟩ => ?_)
+  refine WP.seq (WP.mono (finPowP_ok hF s₃ he₃.r13 (in_off cov₃ (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
+    (in_off cov₃ (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₄ ⟨x0, x1, h1, h2, o₄⟩ => ?_)
   have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₃.keep (fun g hg => o₄.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₄.rd o₄.wr

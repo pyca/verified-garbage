@@ -76,7 +76,7 @@ theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : 
   have ct : (below SP 8).Disjoint ⟨Ctx + BitVec.ofNat 64 272, 16⟩ :=
     (X.ct.sub_left (below_sub (by decide) (by decide))).sub_right s272
   have inH : InRegions (s₁.rd ++ s₁.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
-    rw [E.rd, E.wr]; exact in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by decide)
+    rw [E.rd, E.wr]; exact in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))
   have hP : IsH1 (ctxH s.mem Ctx) (s₁.mem.readW (Ctx + BitVec.ofNat 64 272) 128) := by
     have e := (X.ok 0 (by have := hpn.1; omega)).2
     simp only [Nat.mul_zero, Nat.add_zero] at e

@@ -254,8 +254,8 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   rw [show ctxH s.mem Ctx = H by rw [ctxH_eq, hH]] at p0
   unfold tagP Impl.AesGcm.X86_64.FastOpen.lenTest
-  refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by decide))
-    (in_off X.cov (show 256 + 16 ≤ 1024 by decide) (by decide)) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
+  refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
+    (in_off X.cov (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
   have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => o₁.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₁.rd o₁.wr
