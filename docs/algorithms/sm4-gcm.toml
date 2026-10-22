@@ -1,0 +1,5 @@
+name = "SM4-GCM"
+family = "AEADs"
+specs = ["Sm4", "Gcm", "Sm4/Gcm"]
+modules = ["src/sm4_gcm.rs"]
+asm = ["sm4", "sm4_gcm", "gcm"]

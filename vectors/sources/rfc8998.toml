@@ -1,0 +1,5 @@
+name = "RFC 8998, ShangMi (SM) Cipher Suites for TLS 1.3 (the SM4-GCM test vector in Appendix A.1)"
+directories = ["rfc8998"]
+url = "https://www.rfc-editor.org/rfc/rfc8998.txt"
+sha256 = "de2b7d694de1981464dacb6c3e5aaf45583a26e702fe523f25be4fd28eb85d78"
+retrieved = 2026-10-22
