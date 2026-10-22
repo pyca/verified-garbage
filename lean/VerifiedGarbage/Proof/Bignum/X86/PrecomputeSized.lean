@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.X86.PublicSetupFast
 
 /-! # Correct precomputation for a validated modulus of a fixed width -/
 

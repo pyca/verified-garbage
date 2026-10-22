@@ -33,7 +33,7 @@ theorem combSquares_ok {s : State} {base : Addr} {n size m o g E count : Nat}
     Context n m base size t ∧ t.gpr .esi = BitVec.ofNat 32 (count-i) ∧
     wordsVal t.mem base (slot n o) n = Spec.Rsa.powMod g (2^i*E) m * 2^(64*n) % m ∧
     Outs base ranges s.mem t.mem ∧ Keeps powerClob s t
-  unfold VG.Impl.Mont.X86.Dynamic.repeatSquares
+  unfold VG.Impl.Mont.X86.Dynamic.repeatSquares repeatSquaresWith
   refine WP.seq (wp_movS rfl fun u U _ => WP.block_nil ?_)
   have K : Keeps powerClob s u := U.keeps.mono (by decide)
   have init : I 0 u := by
@@ -42,7 +42,7 @@ theorem combSquares_ok {s : State} {base : Addr} {n size m o g E count : Nat}
     simpa only [U.mem, Nat.pow_zero, Nat.one_mul] using V
   refine WP.mono (countLoop hc I ?_ init) fun t ⟨Ct, _, Vt, Ot, Kt⟩ => ⟨Ct, Vt, Ot, Kt⟩
   rintro i t hi ⟨Ct, counter, value, O, Kt⟩
-  unfold squareStep
+  unfold squareStepWith
   refine WP.seq (WP.mono (context_mul_ok Ct ho ho ho ho0 ho1 ho2 ho2 ho2
     (by rw [value]; exact Nat.mod_lt _ (by have := Ct.gt_one; omega)) ho1 ho1)
     fun v ⟨Cv, Kv, lt, product⟩ => ?_)

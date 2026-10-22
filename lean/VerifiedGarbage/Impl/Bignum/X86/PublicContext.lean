@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Layout
 public import VerifiedGarbage.Impl.Mont.X86.Inverse
-public import VerifiedGarbage.Impl.Mont.X86.Power
+public import VerifiedGarbage.Impl.Mont.X86.PublicPower
+public import VerifiedGarbage.Impl.Mont.X86.RepeatSquares
 public import VerifiedGarbage.Impl.Mont.X86.Dynamic
 
 /-! # Compact Montgomery workspace for public RSA on i686
@@ -31,10 +32,14 @@ def operand (i : Nat) : Prop := i < 8 ∧ i ≠ 2 ∧ i ≠ 3
 def multiply (n o a b : Nat) : Prog isa :=
   Dynamic.mul (modulus n) inverseOffset (slot n 2) (slot n o) (slot n a) (slot n b)
 
-/-- Set up the low-word Montgomery inverse, one, and R² modulo the modulus. -/
-def setup (n : Nat) : Prog isa :=
+/-- The low-word inverse and ordinary one are shared by both setup phases. -/
+def start (n : Nat) : Prog isa :=
   .seq (.block (Dynamic.setupInverse (slot n 0) inverseOffset))
-    (.seq (Dynamic.one n (slot n 4))
-      (Dynamic.powerTwo (modulus n) (slot n 2) (slot n 5) (128 * n)))
+    (Dynamic.one n (slot n 4))
+
+/-- Public-modulus seed followed by six shared Montgomery squares. -/
+def setup (n : Nat) : Prog isa :=
+  .seq (start n) (.seq (Dynamic.publicPower (modulus n) (slot n 2) (slot n 5))
+    (Dynamic.repeatSquaresWith (multiply n 5 5 5) 6))
 
 end VG.Impl.Bignum.X86.PublicContext
