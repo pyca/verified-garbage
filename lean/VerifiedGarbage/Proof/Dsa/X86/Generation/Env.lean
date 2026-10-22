@@ -85,8 +85,16 @@ structure Env.Valid (E : Env) : Prop where
   outStack : E.outRegion.Disjoint E.stackRegion
   scratchStack : E.scratchRegion.Disjoint E.stackRegion
   tableFit : E.table.toNat + 8192 ≤ 2 ^ 32
+  ptrs : E.out.toNat < 2 ^ 32 ∧ E.seeds.toNat < 2 ^ 32 ∧ E.hs.toNat < 2 ^ 32 ∧ E.wit.toNat < 2 ^ 32
+  lens : E.seedsLen < 2 ^ 32 ∧ E.hsLen < 2 ^ 32 ∧ E.witLen < 2 ^ 32
   tableFar : E.tableRegion.Disjoint E.scratchRegion ∧ E.tableRegion.Disjoint E.outRegion ∧
     E.tableRegion.Disjoint E.stackRegion
+
+theorem Env.Valid.pLen_ge {E : Env} (v : E.Valid) : 128 ≤ E.pLen := by
+  rcases v.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+
+theorem Env.Valid.size_ge {E : Env} (v : E.Valid) : 73728 ≤ E.size := by
+  have := v.pLen_ge; have := v.room; omega
 
 /-- What every stage keeps: the working space in `edi`, the stack pointer,
 the permissions, the table and the tapes, and the state words that hold the

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.Generation
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
 public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
@@ -55,34 +56,6 @@ theorem padBytes_length {n : Nat} (h : n + 9 ≤ 64) : (padBytes n).length = 64 
   simp only [padBytes, List.length_append, List.length_singleton, List.length_replicate, List.length_map,
     List.length_range]
   omega
-
-/-- `d := edi + o`. -/
-theorem scr_ok {d : Reg} {o : Nat} {is : List Instr} {s : State} {Q : State → Prop}
-    (k : ∀ s', s'.gpr d = s.gpr .edi + BitVec.ofNat 32 o → (∀ r, r ≠ d → s'.gpr r = s.gpr r) →
-      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms → WP isa (.block is) s' Q) :
-    WP isa (.block (scr d o ++ is)) s Q := by
-  simp only [scr, List.cons_append, List.nil_append]
-  exact wp_mov fun s₁ u₁ => wp_addi fun s₂ u₂ => k s₂ (by rw [u₂.gpr, u₁.gpr])
-    (fun r hr => by rw [u₂.other r hr, u₁.other r hr]) (by rw [u₂.mem, u₁.mem]) (by rw [u₂.rd, u₁.rd])
-    (by rw [u₂.wr, u₁.wr]) (by rw [u₂.syms, u₁.syms])
-
-/-- `edi + d`, widened: the address `d` bytes into the working space. -/
-theorem Scr.wide {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat} (hd : d < size) :
-    (s.gpr .edi + BitVec.ofNat 32 d).setWidth 64 = off base d :=
-  hs.ea hd
-
-theorem Scr.toNat_add {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat} (hd : d < size) :
-    (s.gpr .edi + BitVec.ofNat 32 d).toNat = base.toNat + d := by
-  have := hs.nowrap; have := hs.edi_toNat
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), hs.edi_toNat,
-    Nat.mod_eq_of_lt (by omega)]
-
-/-- A part of the working space is within the writable regions. -/
-theorem Scr.covers {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
-    (h : d + n ≤ size) : Covers [⟨off base d, n⟩] s.wr :=
-  Covers.of_sub fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, hs.wr, d, rfl, h⟩
 
 theorem contains_start (p : Addr) {n k : Nat} (h : n ≤ k) : (⟨p, k⟩ : Region).Contains p n := by
   simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega

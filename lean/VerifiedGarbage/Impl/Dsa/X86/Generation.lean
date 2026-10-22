@@ -173,12 +173,14 @@ def hash (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst : Nat) : P
 /-! ## Calls -/
 
 /-- A probable-prime test of the candidate at its place in `sPP`, with the
-witnesses left: its result into `fRes`, and the octets it read added to
-`fUsed` unless it ran out. -/
+witnesses left (none, at the start of the tape, once all are read): its
+result into `fRes`, and the octets it read added to `fUsed` unless it ran
+out. -/
 def test (name : String) (callee : Prog isa) : Prog isa := seqs [
-  .block ([.mov .ecx (.mem (sc fUsed)), .mov .edx (.mem (sc fWit)), .alu .add .edx (.reg .ecx),
-    .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.reg .ecx)] ++ scr .eax sPP ++
-    [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut),
+  .block [.mov .ecx (.mem (sc fUsed)), .mov .edx (.mem (sc fWit)), .alu .add .edx (.reg .ecx),
+    .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.reg .ecx)],
+  .ite .e (.block [.mov .edx (.mem (sc fWit))]) (.block []),
+  .block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut),
   .frame (.push [.ebp, .ebx, .edx, .ecx, .eax]) (.call name callee) (.pop .ecx 5),
   .block [.store (sc fRes) .eax, .alu .cmp .eax (.imm 0)],
   .ite .e (.block [])
