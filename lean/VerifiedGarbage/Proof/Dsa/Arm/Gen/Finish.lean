@@ -176,7 +176,7 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
 theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → State → Prop}
     (hF : ∀ σ s, F σ s → St G c X σ s) (hcl : (sPacked, Spec.Dsa.encodeParams G.pLen G.qLen a) ∈ c.cl)
     (hL : g.pLen = G.pLen) (hQ : g.qLen = G.qLen) :
-    VP F (seqs [.block [ld .r0 fOut], .block (scr g.pLen .r1 sPacked ++ [.movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))]),
+    VP F (seqs [.block [ld .r0 fOut], .block (scr g.pLen .r1 sPacked ++ ([.movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))] : List Instr)),
       VG.Impl.Bignum.Arm.copyBytes, .block [.mov .r0 (.imm 1)]]) (fun σ t => FO G (some a) σ t ∧ X σ) := by
   -- After the pointers and the count.
   let P₂ : State → State → Prop := fun σ t => ∃ s, St G c X σ s ∧ Rest [.r0, .r1, .r12, .lr] s t ∧

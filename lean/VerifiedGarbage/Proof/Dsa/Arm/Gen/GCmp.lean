@@ -70,9 +70,9 @@ theorem ltS_vp {d a b : Nat} (c1 : Cert7 (sub3 aTmp a b)) (c2 : Cert7 (.block [.
   VP.seq (sub3b_vp c1 (by decide) ha hb hta htb htl) (strR11_vp c2 hd)
 
 /-- The header word `d` := `[a]` and `[b]` (each 0 or 1); Z iff it is 0. -/
-theorem andCmp_vp {d a b : Nat} (cert : Cert7 (.block (andS d a b ++ [.ldr .r1 .r8 d, .cmp .r1 (.imm 0)])))
+theorem andCmp_vp {d a b : Nat} (cert : Cert7 (.block (andS d a b ++ ([.ldr .r1 .r8 d, .cmp .r1 (.imm 0)] : List Instr))))
     (hd : KlsOk d) (ha : a ∈ c.kls) (hb : b ∈ c.kls) (ba : c.KV a ≤ 1) (bb : c.KV b ≤ 1) :
-    VP (St G c X) (.block (andS d a b ++ [.ldr .r1 .r8 d, .cmp .r1 (.imm 0)]))
+    VP (St G c X) (.block (andS d a b ++ ([.ldr .r1 .r8 d, .cmp .r1 (.imm 0)] : List Instr)))
       (fun σ t => St G { c with KV := KU c.KV d (if c.KV a = 1 ∧ c.KV b = 1 then 1 else 0), kls := d :: c.kls } X σ t ∧
         isa.eval .eq t = some (decide ¬(c.KV a = 1 ∧ c.KV b = 1))) := by
   refine ks_vp cert (fun σ s h => h.1) fun σ s ⟨h, x⟩ => ?_

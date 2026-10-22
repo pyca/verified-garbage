@@ -50,7 +50,7 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
     (hctx : contextBytes n ≤ wa G.pLen) {pv hv ev : Nat} (hodd : pv % 2 = 1) (hgt : 1 < pv) {cl' : Claims}
     (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ Apart sA (wa G.pLen) x) :
     VP (fun σ s => St G c X σ s ∧ PowIn G n e pv hv ev s.mem)
-      (.seq (.block (scr L .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa L / 8))])) (.call name code))
+      (.seq (.block (scr L .r0 sA ++ ([.movw .r1 (BitVec.ofNat 16 (wa L / 8))] : List Instr))) (.call name code))
       (fun σ t => St G { c with cl := cl' } X σ t ∧
         (t.mem.read (G.sa (sA + resS n)) (8 * n)).toNat = hv ^ ev % pv) := by
   subst hL

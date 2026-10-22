@@ -114,7 +114,7 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
       (VG.Impl.Rsa.Arm.Keys.seqs [copyN (scr G.pLen .r0 (sA + g.powMod)) (ptr .r1 aP) G.pLen,
         copyN (scr G.pLen .r0 (sA + g.powBase)) (ptr .r1 aH) G.pLen,
         copyN (scr G.pLen .r0 (sA + g.powExp)) (ptr .r1 aE) (4 * g.e),
-        .block (scr G.pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa G.pLen / 8))]),
+        .block (scr G.pLen .r0 sA ++ ([.movw .r1 (BitVec.ofNat 16 (wa G.pLen / 8))] : List Instr)),
         .call g.powName g.powCode,
         copyN (ptr .r0 aG) (scr G.pLen .r1 (sA + g.powRes)) G.pLen,
         VG.Impl.Rsa.Arm.Keys.seqs (ltS slG aOne aG),

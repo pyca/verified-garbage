@@ -28,9 +28,9 @@ variable {G : GP} {c : Cfg} {X : State → Prop}
 
 /-- The check's arguments. -/
 theorem cargs_vp (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
-    VP (St G c X) (.block (scr G.pLen .r0 sPacked ++ [.movw .r1 (BitVec.ofNat 16 (2 * G.pLen + G.qLen)),
-        .movw .r2 (BitVec.ofNat 16 G.pLen), .mov .r3 (.imm (BitVec.ofNat 32 G.qLen))] ++ scr G.pLen .r4 sA ++
-        [.movw .r5 (BitVec.ofNat 16 (wa G.pLen / 8))]))
+    VP (St G c X) (.block (scr G.pLen .r0 sPacked ++ ([.movw .r1 (BitVec.ofNat 16 (2 * G.pLen + G.qLen)),
+        .movw .r2 (BitVec.ofNat 16 G.pLen), .mov .r3 (.imm (BitVec.ofNat 32 G.qLen))] : List Instr) ++ scr G.pLen .r4 sA ++
+        ([.movw .r5 (BitVec.ofNat 16 (wa G.pLen / 8))] : List Instr)))
       (fun σ s => St G c X σ s ∧ CArgs G s) := by
   refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
       (.block (scr 128 .r0 sPacked ++ [.movw .r1 (BitVec.ofNat 16 1), .movw .r2 (BitVec.ofNat 16 1),

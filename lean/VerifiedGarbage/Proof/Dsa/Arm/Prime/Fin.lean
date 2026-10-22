@@ -233,7 +233,7 @@ theorem mrPart_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
 
 /-- Trial division rejected the candidate: 2, having read nothing. -/
 theorem composite_vp (hE : ∀ σ, E σ → In P σ ∧ compv P σ = true) :
-    VP (S2 P E) (.block ([.mov .r3 (.imm 0)] ++ Impl.Dsa.Arm.ProbablePrime.done 2)) (RF P E (statD P) (usedD P)) := by
+    VP (S2 P E) (.block (([.mov .r3 (.imm 0)] : List Instr) ++ Impl.Dsa.Arm.ProbablePrime.done 2)) (RF P E (statD P) (usedD P)) := by
   have hr : ∀ σ, E σ → res P σ = some (false, rB P σ) := fun σ e => by
     have pre := (hE σ e).1
     have sz := pre.sizes

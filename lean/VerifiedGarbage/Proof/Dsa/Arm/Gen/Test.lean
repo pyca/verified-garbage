@@ -63,7 +63,7 @@ theorem SS.slotV {σ s : State} {c : Cfg} (h : SS G σ c s) {o : Nat} (ho : o �
 variable {c : Cfg} {X : State → Prop}
 
 theorem targs1_vp {L : Nat} (hL : L = G.pLen) :
-    VP (St G c X) (.block (scr L .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa L / 8))]))
+    VP (St G c X) (.block (scr L .r0 sA ++ ([.movw .r1 (BitVec.ofNat 16 (wa L / 8))] : List Instr)))
       (fun σ s => St G c X σ s ∧ s.gpr .r0 = G.scr + BitVec.ofNat 32 sA ∧ s.gpr .r1 = BitVec.ofNat 32 (wa L / 8)) := by
   refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
       (.block (scr 128 .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 5)])), rfl⟩
@@ -162,7 +162,7 @@ theorem targs4_vp {L u : Nat} :
 theorem targs_vp {L u : Nat} (hL : L = G.pLen) (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS)
     (hUv : c.V fUsed = BitVec.ofNat 32 u) :
     VP (St G c X) (VG.Impl.Rsa.Arm.Keys.seqs [
-        .block (scr L .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa L / 8))]),
+        .block (scr L .r0 sA ++ ([.movw .r1 (BitVec.ofNat 16 (wa L / 8))] : List Instr)),
         .block [ld .r4 fUsed, ld .r2 fWit, ld .r3 fWitLen],
         .block [.dp .add .r2 .r2 (.reg .r4), .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut, .cmp .r3 (.imm 0)],
         .ite .eq (.block [ld .r2 fWit]) (.block [])])

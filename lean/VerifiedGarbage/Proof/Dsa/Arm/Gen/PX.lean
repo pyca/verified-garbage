@@ -152,7 +152,7 @@ theorem topX_vp {P Q : State → State → Prop} {c : State → Cfg} {L N : Nat}
     (hb : ∀ σ s, P σ s → Spec.Rsa.bytesAt s.mem (G.sa sX) N = bs)
     (k : ∀ σ s t, P σ s → Rest [.r0, .r1, .r12] s t → Frame [G.rs sX N] s.mem t.mem →
       Spec.Rsa.bytesAt t.mem (G.sa sX) N = topCut bs 7 → Q σ t) :
-    VP P (.block (scr L .r0 sX ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0])) Q := by
+    VP P (.block (scr L .r0 sX ++ ([.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0] : List Instr))) Q := by
   refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
       (.block (scr 128 .r0 sX ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0])), rfl⟩
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s hs => ?_

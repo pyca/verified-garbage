@@ -40,7 +40,7 @@ variable {G : GP} {c : Cfg} {X : State → Prop}
 /-- Z iff the `pLen` big-endian bytes of `pv` at `sPBE` are below `2^(8 pLen − 1)`. -/
 theorem topBit_vp {L pv : Nat} (hL : L = G.pLen) (hc : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c.cl)
     (hpv : pv < 256 ^ G.pLen) :
-    VP (St G c X) (.block (scr L .r0 sPBE ++ [.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)]))
+    VP (St G c X) (.block (scr L .r0 sPBE ++ ([.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)] : List Instr)))
       (fun σ t => St G c X σ t ∧ isa.eval .eq t = some (decide (pv < 2 ^ (8 * G.pLen - 1)))) := by
   refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
       (.block (scr 128 .r0 sPBE ++ [.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)])), rfl⟩
