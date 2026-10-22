@@ -337,60 +337,6 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     g.finish();
 }
 
-/// Benchmarks HMAC with the hash `H` and `md` with a key made once (32
-/// bytes), against OpenSSL's and, if it has the hash, aws-lc-rs's `aws_lc`:
-/// `Hmac::mac_keyed` of a computation made once with `new`; aws-lc-rs's
-/// `hmac::sign` with a `hmac::Key` made once; OpenSSL's `Signer` of a `PKey`
-/// made once, which its API has no way to copy keyed.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-))]
-pub(crate) fn hmac_keyed_group<H: verified_garbage::hmac::HmacHash>(
-    c: &mut Criterion,
-    name: &str,
-    md: MessageDigest,
-    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
-) {
-    use verified_garbage::hmac::Hmac;
-    let key = [0x0b; 32];
-    let pkey = PKey::hmac(&key).unwrap();
-    let keyed = Hmac::<H>::new(&key);
-    let mut g = c.benchmark_group(name);
-    for size in SIZES {
-        g.throughput(Throughput::Bytes(size as u64));
-        let data = vec![0x5a; size];
-        assert_eq!(
-            keyed.mac_keyed(&data).as_ref(),
-            Hmac::<H>::mac(&key, &data).as_ref()
-        );
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| black_box(&keyed).mac_keyed(black_box(&data)))
-        });
-        let mut out = [0u8; 64];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                let mut s = Signer::new(md, black_box(&pkey)).unwrap();
-                s.sign_oneshot(&mut out, black_box(&data)).unwrap()
-            })
-        });
-        if let Some(alg) = aws_lc {
-            use aws_lc_rs::hmac;
-            let k = hmac::Key::new(alg, &key);
-            assert_eq!(
-                hmac::sign(&k, &data).as_ref(),
-                keyed.mac_keyed(&data).as_ref()
-            );
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
-                b.iter(|| hmac::sign(black_box(&k), black_box(&data)))
-            });
-        }
-    }
-    g.finish();
-}
-
 /// Benchmarks PBKDF2 with the hash of `vg` and `md` against OpenSSL's and,
 /// if it has the hash, aws-lc-rs's `aws_lc`, of a 32-byte password, deriving
 /// `len` bytes (a digest), with the sizes as the iteration counts.

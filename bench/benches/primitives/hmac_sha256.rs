@@ -21,10 +21,4 @@ pub fn bench(c: &mut Criterion) {
         MessageDigest::sha256(),
         Some(aws_lc_rs::hmac::HMAC_SHA256),
     );
-    crate::hmac_keyed_group::<Sha256>(
-        c,
-        "hmac-sha256-keyed",
-        MessageDigest::sha256(),
-        Some(aws_lc_rs::hmac::HMAC_SHA256),
-    );
 }

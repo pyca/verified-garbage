@@ -19,7 +19,6 @@ pub fn bench(c: &mut Criterion) {
     let md = MessageDigest::from_name("SHA512-224").unwrap();
     crate::hmac_group(c, "hmac-sha512-224", Hmac::<Sha512_224>::mac, md, None);
     crate::hmac_verify_group::<Sha512_224>(c, "hmac-sha512-224-verify", md, None);
-    crate::hmac_keyed_group::<Sha512_224>(c, "hmac-sha512-224-keyed", md, None);
 }
 
 #[cfg(not(any(
