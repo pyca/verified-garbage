@@ -83,12 +83,12 @@ def fHi : Nat := hdr + 76
 
 /-- The hash value, the block right after it, and the compression
 function's scratch space. -/
-def sState : Nat := 7680
-def sHScr : Nat := 7808
+def sState : Nat := 7296
+def sHScr : Nat := 7424
 /-- `X`, big-endian; the high hash may start up to 12 bytes before it. -/
-def sX : Nat := 8208
+def sX : Nat := 8032
 /-- p||q||g, big-endian. -/
-def sPk : Nat := 8704
+def sPk : Nat := 8448
 /-- The arrays of 32-bit words, little-endian. -/
 def arr (k : Nat) : Nat := 9728 + 400 * k
 /-- The probable-prime test's working space, and its 64-bit words. -/
@@ -99,7 +99,7 @@ def sChk : Nat := 26880
 
 /-- The arrays: the dividend `X` and then the quotient, the remainder, the
 divisor `2 q`, the division's temporary, `X`, `p − 1`, `(p − 1) / q`, 1, a
-temporary, `h` and `p`. -/
+temporary (`q`, then the comparisons'), `h` and `p`. -/
 def aQt : Nat := arr 0
 def aRm : Nat := arr 1
 def aDv : Nat := arr 2
@@ -147,30 +147,24 @@ def orByte (o v : Nat) : List Instr :=
 
 /-! ## Hashes -/
 
-/-- A hash function by its compression function: the bytes of the hash
-value, its initial value, the compression function and the code writing
-the digest of the hash value at `ebx` to `eax`. -/
-structure Hash where
-  N : Nat
-  iv : List (BitVec 32)
-  compN : String
-  compC : Prog isa
-  out : List Instr
-
 /-- The end of the block of a message of `n` bytes: `0x80`, zeros and the
 length in bits, big-endian, in 8 bytes. -/
 def padBytes (n : Nat) : List Byte :=
   [(0x80 : Byte)] ++ List.replicate (64 - 9 - n) (0 : Byte) ++
     (List.range 8).map fun i => BitVec.ofNat 8 ((8 * n) >>> (8 * (7 - i)))
 
+/-- The little-endian bytes of the words `iv`. -/
+def ivBytes (iv : List (BitVec 32)) : List Byte :=
+  iv.flatMap fun w => (List.range 4).map fun i => w.extractLsb' (8 * i) 8
+
 /-- The initial value into the hash value at `ebx`. -/
 def ivStore (iv : List (BitVec 32)) : List Instr :=
-  iv.zipIdx.flatMap fun (v, k) => [.mov .ecx (.imm v), .store (at_ .ebx (4 * k)) .ecx]
+  Impl.Pbkdf2.Md.X86.storeW .ebx 0 (ivBytes iv) iv.length
 
-/-- The message of `n` bytes in the block hashed, its digest to
-`scratch + dst`. -/
-def hash (H : Hash) (n dst : Nat) : Prog isa := seqs [
-  .block (scr .ebx sState ++ ivStore H.iv ++
+/-- The message of `n` bytes in the block hashed from the initial value
+`iv`, its digest to `scratch + dst`. -/
+def hash (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst : Nat) : Prog isa := seqs [
+  .block (scr .ebx sState ++ ivStore iv ++
     Impl.Pbkdf2.Md.X86.storeW .ebx (H.N + n) (padBytes n) ((64 - n) / 4) ++
     [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] ++ scr .ebp sHScr),
   Impl.MdStream.X86.compressAt H.compN H.compC .ebx .ebp,
@@ -216,8 +210,8 @@ def pArith (pLen qLen : Nat) : Prog isa :=
   let n := pLen / 4
   seqs [
     loadS (pLen / 8) aQt sX pLen, loadS (pLen / 8) aX sX pLen,
-    loadS (pLen / 8) aDv (sPk + pLen) qLen, .block [.mov .eax (.imm 0), .store (sc (aDv + 4 * n)) .eax],
-    chainW .adc (n + 1) aDv aDv aDv,
+    loadS (pLen / 8) aTmp (sPk + pLen) qLen, .block [.mov .eax (.imm 0), .store (sc (aTmp + 4 * n)) .eax],
+    chainW .adc (n + 1) aDv aTmp aTmp,
     Rsa.X86.Div.code n aQt aRm aDv aDt,
     chainW .sbb n aPm1 aX aRm,
     chainW .adc n aE aQt aQt,
@@ -233,7 +227,9 @@ structure Geo where
   qLen : Nat
   /-- The 32-bit words of `(p − 1) / q` for the exponentiation. -/
   e : Nat
-  H : Hash
+  /-- The hash function, by its compression function, and its initial value. -/
+  H : Impl.Pbkdf2.Md.X86.Hash
+  iv : List (BitVec 32)
   qName : String
   qCode : Prog isa
   pName : String
@@ -259,7 +255,7 @@ def seedIn : Prog isa := copyTo [.mov .esi (.mem (sc fSeed))] (sState + g.H.N) g
 /-- q from the seed: hashed, shaped into p||q||g, and tested. -/
 def qPart : Prog isa := seqs [
   g.seedIn,
-  hash g.H g.qLen (sPk + g.pLen),
+  hash g.H g.iv g.qLen (sPk + g.pLen),
   .block (orByte (sPk + g.pLen) 0x80 ++ orByte (sPk + g.pLen + g.qLen - 1) 1),
   copyS (sPP + (ProbablePrime.layout (8 * g.qLen)).candidate) (sPk + g.pLen) g.qLen,
   test g.qName g.qCode]
@@ -270,7 +266,7 @@ def pHash (j : Nat) : Prog isa := seqs [
   .block (scr .edx (sState + g.H.N + g.qLen - 1) ++
     [.mov .ecx (.mem (sc fOffset)), .alu .add .ecx (.imm (BitVec.ofNat 32 j))]),
   addBE g.qLen,
-  hash g.H g.qLen (sX + g.pLen - (j + 1) * g.qLen)]
+  hash g.H g.iv g.qLen (sX + g.pLen - (j + 1) * g.qLen)]
 
 /-- `X`: the hashes, the top bit set. -/
 def pX : Prog isa :=
