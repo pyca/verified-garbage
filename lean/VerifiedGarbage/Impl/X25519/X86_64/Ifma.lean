@@ -201,13 +201,10 @@ def vswap : List Instr :=
     [perm 10 j (ord 2 3 0 1), v .vpxor 10 10 j, v .vpand 10 10 15, v .vpxor j j 10]
 
 /-- `(A, B, C, D) = (x₂ + z₂, x₂ - z₂, x₃ + z₃, x₃ - z₃)` into `ymm0–ymm4`,
-not carried. The lanes `(x₂, x₂, x₃, x₃)` and `(z₂, z₂, z₃, z₃)` come from
-`vpunpcklqdq` and `vpunpckhqdq` of a limb with itself, which stay within each
-128-bit half (one cycle) where `vpermq` crosses them (three cycles, on one
-port). -/
+not carried. -/
 def stage1a : List Instr :=
   (List.range 5).flatMap fun j =>
-    [v .vpunpcklqdq 10 j j, v .vpunpckhqdq 11 j j, ld 12 (kb j), v .vpsubq 12 12 11,
+    [perm 10 j (ord 0 0 2 2), perm 11 j (ord 1 1 3 3), ld 12 (kb j), v .vpsubq 12 12 11,
       blend 11 11 12 (lanes false true false true), v .vpaddq j 10 11]
 
 /-- `(A, B, D, C)` into `ymm16–ymm20` and `(A, B, A, B)` into `ymm5–ymm9`. -/
