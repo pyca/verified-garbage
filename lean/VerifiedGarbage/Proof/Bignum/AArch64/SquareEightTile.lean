@@ -61,7 +61,7 @@ theorem triRows_ok {s0 : State} {B : Addr} {Z eA eT : Nat} (n : Nat) (hn : n ≤
           Square.crossValue s0.mem B eA (n + 1 + 1) := by
         rw [hcross, ← hv, Nat.mul_add]; grind
       have hp : 2 ^ (64 * (2 * (n + 1) + 1)) = 2 ^ (64 * (n + 1)) * 2 ^ (64 * (n + 1 + 1)) := by
-        rw [← Nat.pow_add]; congr 1; omega
+        rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega)
       rw [hp] at hlt
       exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) (e ▸ hlt))
     refine WP.mono (triRow_ok (j := n + 1) (by omega) (by omega) (hs.congr kt.wr)
