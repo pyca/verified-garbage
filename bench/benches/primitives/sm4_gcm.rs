@@ -10,7 +10,12 @@ use criterion::Criterion;
 /// The library modules whose code these benchmarks run.
 pub const USES: &[&str] = &["sm4_gcm", "sm4", "gcm"];
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -115,5 +120,10 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "aarch64"
+)))]
 pub fn bench(_: &mut Criterion) {}

@@ -6,6 +6,11 @@
 //! SP 800-38D's Algorithm 1 computes it, on every length of nonce, additional
 //! data and text up to a few blocks, and longer texts.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 
 mod sm4_gcm;
