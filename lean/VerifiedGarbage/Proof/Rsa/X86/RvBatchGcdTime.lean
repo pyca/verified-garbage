@@ -27,10 +27,10 @@ open VG.Proof.Rsa (sub32)
  theorem batchBody_trace {g : Geo} {s0 t0 s t : State} {V W : Nat → Nat} {m y z : Nat}
     (h : KS g s0 (AG g.w m y) liveG (fun _ => 0) [] V [sMask] s)
     (j : KS g t0 (AG g.w m z) liveG (fun _ => 0) [] W [sMask] t) (odd : m%2=1)
+    {hint : VG.Taint.Hint VG.X86.Taint.T}
     (check : (VG.Taint.check taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.GcdBatch.offset g.w 15))
       (VG.Impl.Rsa.X86.GcdBatch.body g.w)
-      (VG.Taint.hintOf taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.GcdBatch.offset g.w 15))
-        (VG.Impl.Rsa.X86.GcdBatch.body g.w))).isSome=true)
+      hint).isSome=true)
     {tr ur : List Leak} {sf tf : State}
     (es : Exec isa (VG.Impl.Rsa.X86.GcdBatch.body g.w) s tr sf)
     (et : Exec isa (VG.Impl.Rsa.X86.GcdBatch.body g.w) t ur tf) : tr=ur := by
@@ -53,10 +53,10 @@ open VG.Proof.Rsa (sub32)
     (width : 2*Spec.Rsa.modulusWords (len+8)=words)
     (choiceCheck : (VG.Taint.check taint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice len))
       (VG.Taint.hintOf taint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice len)))).isSome=true)
+    {hint : VG.Taint.Hint VG.X86.Taint.T}
     (bodyCheck : (VG.Taint.check taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.GcdBatch.offset words 15))
       (VG.Impl.Rsa.X86.GcdBatch.body words)
-      (VG.Taint.hintOf taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.GcdBatch.offset words 15))
-        (VG.Impl.Rsa.X86.GcdBatch.body words))).isSome=true)
+      hint).isSome=true)
     (other : RelCT isa (fun s t =>
       KS g s0 (AG g.w m y) liveG (fun _ => 0) [] V [sMask] s ∧
       KS g t0 (AG g.w m z) liveG (fun _ => 0) [] W [sMask] t) fallback (fun _ _ => True)) :
@@ -91,10 +91,13 @@ open VG.Proof.Rsa (sub32)
       KS g t0 (AG g.w m z) liveG (fun _ => 0) [] W [sMask] t)
       (VG.Impl.Rsa.X86.GcdBatch.dispatch
         (VG.Impl.Rsa.X86.KeyRt.gcd VG.Impl.Rsa.X86.RecoverRt.nar)) (fun _ _ => True) := by
+  obtain ⟨_, body66_check⟩ := GcdBatch.body66_check
+  obtain ⟨_, body98_check⟩ := GcdBatch.body98_check
+  obtain ⟨_, body130_check⟩ := GcdBatch.body130_check
   unfold VG.Impl.Rsa.X86.GcdBatch.dispatch
-  exact batchChoose_relCT (len := 256) (words := 66) pg odd (by decide) (by decide) batchChoice256Check GcdBatch.body66_check
-    (batchChoose_relCT (len := 384) (words := 98) pg odd (by decide) (by decide) batchChoice384Check GcdBatch.body98_check
-      (batchChoose_relCT (len := 512) (words := 130) pg odd (by decide) (by decide) batchChoice512Check GcdBatch.body130_check
+  exact batchChoose_relCT (len := 256) (words := 66) pg odd (by decide) (by decide) batchChoice256Check body66_check
+    (batchChoose_relCT (len := 384) (words := 98) pg odd (by decide) (by decide) batchChoice384Check body98_check
+      (batchChoose_relCT (len := 512) (words := 130) pg odd (by decide) (by decide) batchChoice512Check body130_check
         (pub_relCT' pg scalarGcdCheck (fun _ h => KS.stage h) (fun _ h => KS.stage h))))
 
  theorem factors_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B V W : Nat → Nat}

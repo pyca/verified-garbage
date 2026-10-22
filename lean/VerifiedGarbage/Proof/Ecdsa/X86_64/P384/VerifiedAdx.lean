@@ -134,13 +134,16 @@ theorem pre_of_x {s : State} (h : signX86_64.pre s) : Pre p384x s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
+/-- The inlining checks, shared by correctness and the two call wrappers. -/
+theorem sign_inlineOk_adx : signP384Adx.InlineOk = true := by lit_decide
+
 theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hL hT) (pre_of_x hs) p384x_mulBase
-  have hok : signP384Adx.InlineOk = true := by lit_decide
+  have hok := sign_inlineOk_adx
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : signP384Adx.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
     rw [Code.allInstrs_inline]; lit_decide
@@ -183,7 +186,7 @@ theorem sign_verified_adx (hL : Law Spec.P384.curve)
     (hI : InvSounds) :
     Verified X86_64.target signP384Adx
       (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (sign_x86_adx hL hT hI) sign_ct_adx implies8
+  Verified.of_inline_ct sign_inlineOk_adx (sign_x86_adx hL hT hI) sign_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 
 /-- `sign_call_x86` with BMI2 and ADX. -/
@@ -191,7 +194,7 @@ theorem sign_call_x86_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
     ∃ t s', Exec isa signP384Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86_adx hL hT hI)
+  ok_of_inline (k := signX86_64) sign_inlineOk_adx (sign_x86_adx hL hT hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.P384

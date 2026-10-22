@@ -34,8 +34,9 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.CrtValuesRt VG.P
  theorem inverseBody_trace {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' w n : Nat} {sp : BitVec 32}
     (hn : 16≤n) (nl : n≤1024) (hw : w=2*n) (he : n%2=0) (width : kw len=w)
     (pb : (args 9).toNat≤4*n)
+    {hint : VG.Taint.Hint VG.X86.Taint.T}
     (check : (VG.Taint.check taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.InvBatch.offset w 15)) (VG.Impl.Rsa.X86.InvBatch.body w n)
-      (VG.Taint.hintOf taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.InvBatch.offset w 15)) (VG.Impl.Rsa.X86.InvBatch.body w n))).isSome=true) :
+      hint).isSome=true) :
     RelCT isa (Pair args base size len P Q P' Q' sp) (VG.Impl.Rsa.X86.InvBatch.body w n) (fun _ _ => True) := by
   intro s t tr ur sf tf ⟨⟨hs,ps⟩,⟨ht,pt⟩⟩ es et
   have ws := hs.ws.ws.workspace

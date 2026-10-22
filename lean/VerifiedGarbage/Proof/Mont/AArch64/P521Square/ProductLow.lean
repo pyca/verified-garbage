@@ -48,6 +48,12 @@ theorem low_ok (s : State) (hz : s.gpr .x30=0) :
  have k5 := k5.mono (show ∀r∈_,r∈lowClob by decide)
  have K6 := K5.trans k5
  rw [K5.gpr .x2 (by decide),K5.gpr .x3 (by decide),K5.gpr .x4 (by decide),K5.gpr .x5 (by decide),K5.gpr .x6 (by decide),K5.gpr .x7 (by decide),K5.gpr .x8 (by decide),K5.gpr .x9 (by decide)] at e5
+ -- Substitute each accumulated sum before asking arithmetic to eliminate the carry.
+ rw [e0] at e1
+ rw [e1] at e2
+ rw [e2] at e3
+ rw [e3] at e4
+ rw [e4] at e5
  refine ⟨?_,K6⟩
  have expand := low_expand (s.gpr .x2).toNat (s.gpr .x3).toNat (s.gpr .x4).toNat (s.gpr .x5).toNat (s.gpr .x6).toNat (s.gpr .x7).toNat (s.gpr .x8).toNat (s.gpr .x9).toNat
  have hb : ((s.gpr .x2).toNat + 18446744073709551616*(s.gpr .x3).toNat + 340282366920938463463374607431768211456*(s.gpr .x4).toNat + 6277101735386680763835789423207666416102355444464034512896*(s.gpr .x5).toNat + 115792089237316195423570985008687907853269984665640564039457584007913129639936*(s.gpr .x6).toNat + 2135987035920910082395021706169552114602704522356652769947041607822219725780640550022962086936576*(s.gpr .x7).toNat + 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306816*(s.gpr .x8).toNat + 726838724295606890549323807888004534353641360687318060281490199180639288113397923326191050713763565560762521606266177933534601628614656*(s.gpr .x9).toNat) < 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 := by
@@ -59,8 +65,9 @@ theorem low_ok (s : State) (hz : s.gpr .x30=0) :
   have h5 := (s.gpr .x7).isLt
   have h6 := (s.gpr .x8).isLt
   have h7 := (s.gpr .x9).isLt
-  omega
+  -- This bound uses only the input words, not the product/carry equations above.
+  omega_using [h0, h1, h2, h3, h4, h5, h6, h7]
  have hbb := Nat.mul_lt_mul'' hb hb
  rw [outRegs_value,lowRegs_value]
- omega_using [e0,e1,e2,e3,e4,e5,expand,hbb]
+ omega_using [e5,expand,hbb]
 end VG.Proof.Mont.AArch64.P521Square

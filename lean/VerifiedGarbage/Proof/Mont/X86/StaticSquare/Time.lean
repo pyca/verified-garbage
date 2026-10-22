@@ -35,6 +35,9 @@ open VG VG.X86 VG.Proof.Mont.X86.Rt
   · exact other.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
 
  theorem dispatch_relCT : RelCT isa (VG.X86.Taint.Agree rtTaint) Impl.Mont.X86.Rt.StaticSquare.dispatch (fun _ _ => True) := by
+  obtain ⟨_, square64_check⟩ := square64_check
+  obtain ⟨_, square96_check⟩ := square96_check
+  obtain ⟨_, square128_check⟩ := square128_check
   unfold Impl.Mont.X86.Rt.StaticSquare.dispatch
   refine VG.RelCT.seq aliasChoice_relCT ?_
   refine VG.RelCT.ite (fun _ _ h => h.2) ?_ ?_
