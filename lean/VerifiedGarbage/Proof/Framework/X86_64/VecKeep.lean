@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 
 `scalCode` (`Impl/X86_64Scal.lean`) holds of code whose every instruction is one of a few scalar ones
 (moves, loads and stores of general-purpose registers, their arithmetic, `bswap`,
-`lea` of a static, `mul`, `imul`, `mulx`, `adcx`, `adox`, `cmov`, 32-bit arithmetic,
+`lea` of a static, `mul`, `imul`, `shld`, `btr`, `mulx`, `adcx`, `adox`, `cmov`, 32-bit arithmetic,
 stores and `bswap`):
 such code leaves `xmm` and `ymmHi` as they are (`WP.vecKeep`), which a proof
 about it need not state.
@@ -81,6 +81,8 @@ theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s
        split at h
        · split at h <;> (cases h; exact ⟨rfl, rfl⟩)
        · cases h)
+    | (unfold execShld at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
+    | (unfold execBtr at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
 
 theorem execBlock_vec : ∀ {is : List Instr}, is.all scalarI = true → ∀ {s s' : State} {t : List Leak},
     execBlock isa is s = some (s', t) → s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi

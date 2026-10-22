@@ -21,7 +21,7 @@ read nothing else but, for `movq r64, xmm`, an SSE register. -/
 def scalarI : Instr → Bool
   | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movzx16 .. | .movImm64 .. | .leaSym .. | .mul ..
   | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. | .bswap ..
-  | .store32 .. | .store16 .. | .bswap32 .. | .movqR .. => true
+  | .store32 .. | .store16 .. | .bswap32 .. | .movqR .. | .imul3 .. | .shld .. | .btr .. => true
   | _ => false
 
 /-- Whether every instruction of `c`, and of the functions it calls, is in
