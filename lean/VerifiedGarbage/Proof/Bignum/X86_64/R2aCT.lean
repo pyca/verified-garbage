@@ -30,6 +30,8 @@ import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.WordStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
+public import VerifiedGarbage.Proof.Bignum.Recip
+meta import VerifiedGarbage.Proof.Bignum.Recip
 
 /-!
 # `R² mod m` by word steps with ADX: constant time but for `m`
@@ -47,7 +49,7 @@ and `choice` branches on the top bit of `m` and on `w` (`choice_ct`).
 namespace VG.Proof.Bignum.X86_64.R2ax
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Bignum.X86_64.R2Adx
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.WordStep
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.WordStep VG.Proof.Bignum.Recip
 
 /-! ## A step -/
 
