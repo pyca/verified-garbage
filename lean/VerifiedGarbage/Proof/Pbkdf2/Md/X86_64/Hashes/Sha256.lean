@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -23,7 +25,8 @@ code is the generic Merkle–Damgård code (`Stream.params`), its specification
 `Spec.Hmac.sha256S`. The facts about the code HMAC and PBKDF2 add, which do not
 depend on `v`, are checked once (`coreOK`).
 
-`stream v` are the streaming `update` and `finalize` made with `v`, which
+`stream v` are the streaming `update` and `finalize` made with `v`, and the
+one-shot `digest` (`Proof/Sha256/X86_64/OneShot.lean`), which
 `Generic/MdHash/X86_64/Stream.lean` emits from their `Api`s, named with
 its suffix.
 -/
@@ -218,7 +221,15 @@ def stream : List StreamFn := [
     contract := Spec.Sha256.finalizeScratchContract X86_64.abi 8
     stack := 8
     verified := Proof.Sha256.X86_64.Shared.finalizeScratch v.ok v.mxcsr
-    spSafe := Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe }]
+    spSafe := Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe },
+  { api := Spec.Sha256.digest256Api
+    code := Proof.Sha256.X86_64.OneShot.digest (Impl.MdStream.X86_64.out32 8 true) Spec.Sha256.H0 v.callee
+    contract := Spec.Sha256.digestContract X86_64.abi 32 Spec.Sha256.hash (8 + Proof.Sha256.X86_64.OneShot.frame)
+    stack := 8 + Proof.Sha256.X86_64.OneShot.frame
+    verified := Proof.Sha256.X86_64.OneShot.verified Proof.Sha256.X86_64.OneShot.code256
+      Proof.Sha256.X86_64.OneShot.init_check256 Proof.Sha256.X86_64.OneShot.hash_take v.ok v.mxcsr v.spSafe
+      v.noStack
+    spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code256 Spec.Sha256.H0 v.spSafe }]
 
 /-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
 theorem pss_sha256 : Proof.RsaPss.X86_64.PssChecks Impl.Sha256.X86_64.Stream.params 32 := by
