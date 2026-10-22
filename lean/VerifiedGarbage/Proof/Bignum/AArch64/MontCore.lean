@@ -223,7 +223,7 @@ def MmUse (o a b : Nat) : Prop :=
   (o = aR2 ∧ a = aR2 ∧ b = aOne) ∨ (o = aXm ∧ a = aX ∧ b = aOne) ∨ (o = aXm ∧ a = aY ∧ b = aR2) ∨
   (o = aY ∧ a = aXm ∧ b = aY) ∨ (o = aX ∧ a = aX ∧ b = aR2) ∨ (o = aX ∧ a = aX ∧ b = aY) ∨
   (o = aY ∧ a = aXm ∧ b = aX) ∨ (o = aXm ∧ a = aXm ∧ b = aR2) ∨
-  (o = aY ∧ a = aX ∧ b = aY)
+  (o = aY ∧ a = aX ∧ b = aY) ∨ (o = aY ∧ a = aR2 ∧ b = aY)
 
 /-- An implementation `mm o a b` of Montgomery multiplication in the working
 space of the public-key operation (with `m` in array `aN` and working arrays
@@ -281,7 +281,7 @@ def Mont.basic : Mont where
     intro o a b h
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
+      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
     exact mm_ct (by decide) (by decide) (by decide) (by taint_decide)
 
 end VG.Proof.Bignum.AArch64
