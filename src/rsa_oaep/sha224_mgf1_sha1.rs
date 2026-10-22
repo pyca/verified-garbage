@@ -7,7 +7,12 @@
 //! (`Sha224Backend`, `Sha1Backend`) and of the RSA operation (`crate::rsa::Backend`).
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -25,6 +30,11 @@ super::oaep_pair!(28, Sha224Backend, Sha1Backend {
         decrypt_ifma: vg_rsa_oaep_sha224_mgf1_sha1_decrypt_crt_ifma [VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_CRT_IFMA_FEATURES],
         decrypt_umaal: vg_rsa_oaep_sha224_mgf1_sha1_decrypt_umaal [VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_UMAAL_FEATURES],
         encrypt_umaal: vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_umaal [VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES],
+    },
+    #[cfg(target_arch = "x86")]
+    (ShaNi, ShaNi) => {
+        encrypt: vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_sha256_shani_sha1_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA256_SHANI_SHA1_SHANI_FEATURES],
+        decrypt: vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha256_shani_sha1_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_SHA256_SHANI_SHA1_SHANI_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     (ShaNi, ShaNi) => {
@@ -54,6 +64,16 @@ super::oaep_pair!(28, Sha224Backend, Sha1Backend {
     // (`sha` and `ssse3`; on AArch64, `sha2`), and SHA-224's AVX2 code
     // is chosen only without them: no CPU selects these pairs
     // (`backend_features` checks it).
+    #[cfg(target_arch = "x86")]
+    (Scalar, ShaNi) => {
+        encrypt: vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_sha1_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_FEATURES],
+        decrypt: vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha1_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_SHA1_SHANI_FEATURES],
+    },
+    #[cfg(target_arch = "x86")]
+    (ShaNi, Scalar) => {
+        encrypt: vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_sha256_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES],
+        decrypt: vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha256_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_SHA256_SHANI_FEATURES],
+    },
     #[cfg(target_arch = "x86_64")]
     (Scalar, ShaNi) => {
         encrypt: vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_mgf1_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_MGF1_SHANI_FEATURES],
