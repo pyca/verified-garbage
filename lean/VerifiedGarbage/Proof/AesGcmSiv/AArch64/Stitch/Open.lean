@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM-SIV on AArch64, eight blocks at a time: decryption
@@ -209,5 +210,172 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : Stat
     rw [← elemsAt_eq hr]
     exact List.map_congr_left fun i hi =>
       (readW_of_dataInv hp.n16 O.ci.data (List.mem_range.mp hi) (Nat.le_refl _)).symm
+
+/-! ## The data -/
+
+/-- The elements of the first `k` blocks of `n` bytes, from the bytes. -/
+theorem elemsAt_of_getD {m₁ m₂ : Mem} {D : Addr} {n k : Nat} (hk : 16 * k ≤ n)
+    (h : ∀ q < 16 * k, (bytesAt m₁ D n).getD q 0 = (bytesAt m₂ D n).getD q 0) :
+    elemsAt m₁ D k = elemsAt m₂ D k := by
+  refine List.map_congr_left fun i hi => congrArg _ (GcmSiv.ext_getD (by simp [Proof.Cmac.bytesAt_length]) fun t ht => ?_)
+  have hi' := List.mem_range.mp hi
+  rw [Proof.Cmac.bytesAt_length] at ht
+  have e := h (16 * i + t) (by omega)
+  rw [Proof.Cmac.getD_bytesAt _ _ (by omega), Proof.Cmac.getD_bytesAt _ _ (by omega)] at e
+  rw [Proof.Cmac.getD_bytesAt _ _ ht, Proof.Cmac.getD_bytesAt _ _ ht, Offset.add_add, e, ← Offset.add_add]
+
+/-- What `openData` leaves, from `t`. -/
+structure OpenPost (p : Prm) (t t' : State) : Prop where
+  env : Env p t'
+  rd : t'.rd = t.rd
+  wr : t'.wr = t.wr
+  frame : Frame (cryR p.W p.D p.n ++ absorbR p.W) t.mem t'.mem
+  data : bytesAt t'.mem p.D p.n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
+    (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n)
+  out : blockAt t'.mem (p.W + BitVec.ofNat 64 80) =
+    ghashFrom (blockAt t.mem (p.W + BitVec.ofNat 64 64)) (blockAt t.mem (p.W + BitVec.ofNat 64 80))
+      (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t'.mem p.D p.n)))
+
+open VG.Proof.AesGcmSiv.AArch64 (cryptHead_ok headMem TailPost key_cryR) in
+theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (openData v.callees) t (OpenPost p t) := by
+  have hw := L.ww
+  have hn := L.n_lt
+  obtain ⟨t₁, run₁, hm₁, _, _, _, ho₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
+  have hcl : ∀ y, (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R y).length = 16 :=
+    GcmSiv.ctxCiph_length _ _ _
+  have hxl : (bytesAt t.mem p.D p.n).length = p.n := Proof.Cmac.bytesAt_length _ _ _
+  -- What the parts miss.
+  have dCry : ∀ {d k : Nat}, d + k ≤ 96 → ∀ r ∈ cryR p.W p.D p.n, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
+    fun {d k} h r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact (L.d_w' (by omega)).symm
+  have dAbs : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ absR p.W, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
+    fun {d k} h r hr => by
+      simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  have dKey : ∀ r ∈ cryR p.W p.D p.n ++ absR p.W,
+      (⟨p.W + BitVec.ofNat 64 240, 16 * (p.R + 1)⟩ : Region).Disjoint r := fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact (key_cryR L r hr).sub_left (Region.sub_prefix L.rounds_le)
+    · simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      have := L.rounds_le
+      rcases hr with rfl | rfl
+      · exact L.w_w (.inr (by omega)) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  have f₁ : Frame [⟨p.W + BitVec.ofNat 64 96, 16⟩] t.mem t₁.mem := by
+    rw [hm₁, headMem, show p.W + BitVec.ofNat 64 104 = p.W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by
+      rw [Proof.AesGcm.AArch64.add_ofNat_assoc]]
+    exact Proof.Cmac.frame_store2 _ _ _
+  have d96 : ∀ {d k : Nat}, d + k ≤ 96 → ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)],
+      (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q := fun {d k} h q hq => by
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  have dD : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨p.D, p.n⟩ : Region).Disjoint q := fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq; exact L.d_w' (by decide)
+  have hx₁ : bytesAt t₁.mem p.D p.n = bytesAt t.mem p.D p.n :=
+    Proof.AesGcm.AArch64.bytesAt_frame f₁ dD (Nat.le_of_lt hn)
+  have hc₁ : Spec.GcmSiv.ctxCiph t₁.mem (p.W + BitVec.ofNat 64 240) p.R =
+      Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R := by
+    unfold Spec.GcmSiv.ctxCiph
+    rw [Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact (L.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rounds_le))
+      (by have := L.rounds_le; omega)]
+  have hH₁ : blockAt t₁.mem (p.W + BitVec.ofNat 64 64) = blockAt t.mem (p.W + BitVec.ofNat 64 64) :=
+    Proof.AesGcm.AArch64.blockAt_frame f₁ (d96 (by decide))
+  have hY₁ : blockAt t₁.mem (p.W + BitVec.ofNat 64 80) = blockAt t.mem (p.W + BitVec.ofNat 64 80) :=
+    Proof.AesGcm.AArch64.blockAt_frame f₁ (d96 (by decide))
+  have hicb : bytesAt t₁.mem (p.W + BitVec.ofNat 64 96) 16 =
+      Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16) := by
+    rw [hm₁, headMem, show p.W + BitVec.ofNat 64 104 = p.W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by
+        rw [Proof.AesGcm.AArch64.add_ofNat_assoc], Proof.Cmac.bytesAt_store2, ← GcmSiv.initialCounter_words,
+      Proof.Cmac.le8_readW, Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
+  have h4 := Proof.Cmac.bytesAt_add t₁.mem (p.W + BitVec.ofNat 64 96) 4 12
+  rw [show 4 + 12 = 16 from rfl, hicb, Proof.AesGcm.AArch64.add_ofNat_assoc] at h4
+  have C₀ : CtrSt p.W (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) 0 t₁.mem := by
+    refine ⟨?_, ?_⟩
+    · rw [GcmSiv.readW32_leNat, Nat.add_zero, h4, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
+    · rw [h4, List.drop_left' (Proof.Cmac.bytesAt_length _ _ _)]
+  have E₁ : Env p t₁ := E.keep (fun r hr => ho₁ r (by
+    simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  -- The batches.
+  have hb : WP isa (ifBatch (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
+      (.seq (byRounds openLoop) (.block (ctrFinish ++ ghFinish))))) t₁
+      (OBatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
+        (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n) t₁) := by
+    unfold ifBatch
+    refine WP.seq (WP.mono (batchHead_ok L E₁) fun t₂ ⟨x9₂, E₂, m₂, rd₂, wr₂⟩ => ?_)
+    refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₂ (by omega)) (fun h => ?_) (fun h => ?_)
+    · have h0 : p.n / 128 = 0 := by simpa using h
+      refine WP.block_nil ⟨E₂, rd₂, wr₂, ?_, ?_, by rw [m₂]; exact Frame.refl _ _, ?_⟩
+      · rw [h0, m₂]; exact C₀
+      · rw [h0, m₂, Nat.mul_zero, GcmSiv.ctrPart_zero, hx₁]
+      · rw [h0, m₂]; simp [elemsAt, ghashFrom]
+    · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
+      rw [← m₂] at C₀
+      refine WP.mono (openBatch_ok hP gh L E₂ C₀ h1) fun t₃ B => ?_
+      rw [m₂, hc₁, hx₁] at B
+      exact ⟨B.env, by rw [B.rd, rd₂], by rw [B.wr, wr₂], B.ctr, B.data, by rw [← m₂]; exact B.frame,
+        by rw [B.out, m₂]⟩
+  refine WP.seq (WP.mono hb fun t₂ B => ?_)
+  have hc₂ : Spec.GcmSiv.ctxCiph t₂.mem (p.W + BitVec.ofNat 64 240) p.R =
+      Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R := by
+    rw [← hc₁]; unfold Spec.GcmSiv.ctxCiph
+    rw [Proof.AesGcm.AArch64.bytesAt_frame B.frame dKey (by have := L.rounds_le; omega)]
+  -- The rest, decrypted.
+  refine WP.seq (WP.mono (cryptRest_ok v L B.env hxl B.ctr B.data hc₂) fun t₃ T => ?_)
+  -- The rest, absorbed.
+  refine WP.seq (WP.mono (rest_ok L T.env) fun t₄ ⟨x27₄, x28₄, E₄, _, m₄, rd₄, wr₄⟩ => ?_)
+  have hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₄.rd ++ t₄.wr) := by
+    rw [rd₄, wr₄, T.rd, T.wr, B.rd, B.wr, rd₁, wr₁]
+    exact Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega) hn)
+  have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+    L.d_w.sub_left (Offset.sub_base p.D (by omega))
+  refine WP.mono (absorb_ok v L E₄ hc (by omega) (by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega)]
+      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega)
+    dW x27₄ x28₄) fun t₅ P₅ => ?_
+  have d₅ : bytesAt t₅.mem p.D p.n = bytesAt t₃.mem p.D p.n := by
+    rw [Proof.AesGcm.AArch64.bytesAt_frame P₅.frame (absorbR_buf L.d_w) (Nat.le_of_lt hn), m₄]
+  have hd₅ : bytesAt t₅.mem p.D p.n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
+      (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n) := by
+    rw [d₅, T.data, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl])]
+  refine ⟨P₅.env, by rw [P₅.rd, rd₄, T.rd, B.rd, rd₁], by rw [P₅.wr, wr₄, T.wr, B.wr, wr₁], ?_, hd₅, ?_⟩
+  · have g₁ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t.mem t₁.mem := f₁.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
+    have g₂ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₁.mem t₂.mem := B.frame.mono fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact List.mem_append_left _ hr
+      · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
+    have g₃ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₂.mem t₄.mem := by
+      rw [m₄]; exact T.frame.mono fun r hr => List.mem_append_left _ hr
+    have g₄ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₄.mem t₅.mem :=
+      P₅.frame.mono fun r hr => List.mem_append_right _ hr
+    exact ((g₁.trans g₂).trans g₃).trans g₄
+  · have hH₄ : blockAt t₄.mem (p.W + BitVec.ofNat 64 64) = blockAt t.mem (p.W + BitVec.ofNat 64 64) := by
+      rw [m₄, Proof.AesGcm.AArch64.blockAt_frame T.frame (dCry (by decide)),
+        Proof.AesGcm.AArch64.blockAt_frame B.frame (fun r hr => by
+          rcases List.mem_append.mp hr with hr | hr
+          · exact dCry (by decide) r hr
+          · exact dAbs (by decide) r hr), hH₁]
+    have hY₄ : blockAt t₄.mem (p.W + BitVec.ofNat 64 80) = blockAt t₂.mem (p.W + BitVec.ofNat 64 80) := by
+      rw [m₄, Proof.AesGcm.AArch64.blockAt_frame T.frame (dCry (by decide))]
+    have hr₅ : bytesAt t₅.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) =
+        bytesAt t₄.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) :=
+      Proof.AesGcm.AArch64.bytesAt_frame P₅.frame (absorbR_buf dW) (by omega)
+    have he : elemsAt t₅.mem p.D (8 * (p.n / 128)) = elemsAt t₂.mem p.D (8 * (p.n / 128)) := by
+      refine elemsAt_of_getD (n := p.n) (by omega) fun q hq => ?_
+      rw [d₅, T.data, B.data, GcmSiv.getD_ctrPart _ _ _ _ (by rw [hxl]; omega),
+        GcmSiv.getD_ctrPart _ _ _ _ (by rw [hxl]; omega), ite_eq_left (by omega), ite_eq_left (by omega)]
+    rw [P₅.out, hH₄, hY₄, B.out, hH₁, hY₁, elems_split t₅.mem, Proof.Gcm.ghashFrom_append, he, hr₅]
 
 end VG.Proof.AesGcmSiv.AArch64.Stitch
