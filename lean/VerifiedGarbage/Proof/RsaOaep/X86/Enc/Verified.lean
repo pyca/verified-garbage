@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86.Enc.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaOaep.X86.Certs
+import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaPss.X86.NoSp
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
@@ -48,38 +49,9 @@ theorem body_vp (P : EP) (c : Ver.PublicImpl) : VP (S h P) (encBody h.H g.H c.na
 
 /-! ## The stack -/
 
-theorem callInit_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (callInit G) := noSp_pushCall hG.initSp
-theorem callUpd_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (callUpd G) := noSp_pushCall hG.updSp
-theorem callFin_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (callFin G) := noSp_pushCall hG.finSp
-
-theorem mgfXor_noSp : NoSp (mgfXor g.H) := by
-  obtain ⟨p1, p2, -⟩ := g.certs.parts
-  have i := callInit_noSp g.H g.ok
-  have u := callUpd_noSp g.H g.ok
-  have f := callFin_noSp g.H g.ok
-  simp only [mgfXor, mgfRound, seqs, countLoop]
-  repeat' (first
-    | with_reducible apply noSp_seq | with_reducible apply noSp_loop
-    | exact i | exact u | exact f | exact p1 | exact p2
-    | exact NoSp.of_all (by decide +kernel))
-
-theorem hashLabel_noSp {j o : Nat} (hj : NoSp (.block (updLabArgs j) : Prog isa))
-    (ho : NoSp (.block (finLabArgs j o) : Prog isa)) : NoSp (hashLabel h.H j o) := by
-  have i := callInit_noSp h.H h.ok
-  have u := callUpd_noSp h.H h.ok
-  have f := callFin_noSp h.H h.ok
-  simp only [hashLabel, seqs]
-  repeat' (first
-    | with_reducible apply noSp_seq
-    | exact i | exact u | exact f | exact hj | exact ho
-    | exact NoSp.of_all (by decide +kernel))
-
 theorem body_noSp (c : Ver.PublicImpl) : NoSp (encBody h.H g.H c.name c.code) := by
   obtain ⟨-, -, p3, -, p5, -, p7, p8, p9, -⟩ := h.certs.parts
-  have hm := mgfXor_noSp g
+  have hm := mgfX_noSp g
   have hl := hashLabel_noSp h (j := 6) (o := Impl.RsaPss.X86.oDig) (NoSp.of_all (by decide +kernel))
     (NoSp.of_all (by decide +kernel))
   have hc := c.noSp
