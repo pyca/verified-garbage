@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOddP
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
@@ -241,6 +242,10 @@ negated), `dbl` doubling a point in place. -/
 def mulQJO (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block (maskK c)) (.seq (jwinPrepO c) (.seq ((jwinCfgO c).windowO dbl) (.block (fixSign c))))
 
+/-- `mulQJO`, its selections woven into the additions (`JacWinCfg.windowOP`). -/
+def mulQJOP (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block (maskK c)) (.seq (jwinPrepO c) (.seq ((jwinCfgO c).windowOP dbl) (.block (fixSign c))))
+
 /-- The inversion of `mulQJA`'s table: `R.z^(p-2)` into the selected entry's
 `X` (`E.x`), its working area that of `invWin`. -/
 def invJA : InvCfg := .ofMod c.MP' (jwinCfg c).E.x (c.sl RZ) (bitsAt c.n 2) c.C.p
@@ -303,6 +308,10 @@ def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
 /-- `vg_ecdh_<curve>` by odd windows in Jacobian coordinates (`mulQJO`), for
 a curve of prime order with `n mod 64 < 33`. -/
 def exchangeJO (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJO c dbl)
+
+/-- `vg_ecdh_<curve>` by odd windows, the selections woven into the
+additions. -/
+def exchangeJOP (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJOP c dbl)
 
 /-- `vg_ecdh_<curve>` by the Jacobian window method with an affine table, for
 a curve of prime order. -/
