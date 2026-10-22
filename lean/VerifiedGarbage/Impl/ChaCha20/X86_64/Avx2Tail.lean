@@ -294,18 +294,24 @@ def roundsS (vl : Bool) (S : Nat) : Nat → Prog isa
 
 /-! ## The tail -/
 
-/-- XOR the `rdx` bytes of keystream in `buf` into the data. -/
-def fromBuf : Prog isa := XorBuf.xorBuf .rsi .r9
+/-- XOR the `rdx` bytes of keystream in `buf` into the data at `rsi`: 32 at
+a time through `ymm0` and `ymm1` while at least 32 remain, then eight and
+one at a time (`XorBuf.xorBufX`, with the data's address in `r10`); with
+`vl` (`vg_chacha20_xor_avx512vl`), eight and one at a time
+(`XorBuf.xorBuf`). -/
+def fromBuf (vl : Bool) : Prog isa :=
+  if vl then XorBuf.xorBuf .rsi .r9
+  else .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .r9)]) (XorBuf.xorBufX 5 .r10)
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
 def last (vl : Bool) : Prog isa :=
   .seq (.block setup) (.seq (roundsS vl 2 10) (.seq (.block (addIn ++
-    storeSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSet .xmm4 .xmm5 .xmm6 .xmm7 128)) fromBuf))
+    storeSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSet .xmm4 .xmm5 .xmm6 .xmm7 128)) (fromBuf vl)))
 
 /-- At most 128 bytes: two blocks into `buf`, and the data from there. -/
 def last1 (vl : Bool) : Prog isa :=
   .seq (.block setup1) (.seq (roundsS vl 1 10) (.seq (.block (addIn1 ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))
-    fromBuf))
+    (fromBuf vl)))
 
 /-- At most 64 bytes, by `vg_chacha20_xor`, whose one block takes less time
 than several in vector registers (here and in `vg_chacha20_xor_avx512`); it
@@ -323,7 +329,7 @@ def last3 (vl : Bool) : Prog isa :=
   .seq (.block setup3) (.seq (roundsS vl 3 10) (.seq (.block (addIn3 ++
     xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
     storeSetT .xmm8 .xmm9 .xmm10 .xmm11 0 ++
-    ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf))
+    ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) (fromBuf vl)))
 
 /-- Fewer than 257 bytes. -/
 def rest (vl : Bool) : Prog isa :=

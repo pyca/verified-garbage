@@ -42,6 +42,7 @@ namespace VG.Impl.ChaCha20Poly1305.X86_64.SealSplit
 
 open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_)
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width copyBytes)
 
 /-- `work` into `rax`. A block of its own, so that the constant-time
