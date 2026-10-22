@@ -88,7 +88,7 @@ def partC : List Instr :=
 
 /-- The next octet. -/
 def partD : List Instr :=
-  [.alu .add .esi (.imm 1), .alu .add .ecx (.imm 1), .alu .cmp .ecx (.mem (PublicRt.argAt 0 3))]
+  [.alu .add .esi (.imm 1), .alu .add .ecx (.imm 1), .mov .edx (.mem (PublicRt.argAt 0 3)), .alu .cmp .ecx (.reg .edx)]
 
 theorem scanStep_eq : GenerateKey.scanStep = partA ++ (partB ++ (partC ++ partD)) := rfl
 
@@ -178,17 +178,16 @@ theorem partC_ok (h : In Ex base bytes len args s) {c : Bool} (hp : s.gpr .ebp =
 theorem partD_ok {L : BitVec 32} (hL : readSrc s (.mem (PublicRt.argAt 0 3)) = some L) :
     WP isa (.block partD) s fun u =>
       u.gpr .esi = s.gpr .esi + 1 ∧ u.gpr .ecx = s.gpr .ecx + 1 ∧ u.zf = some (s.gpr .ecx + 1 - L == 0) ∧
-        u.mem = s.mem ∧ Keeps [.esi, .ecx] s u := by
+        u.mem = s.mem ∧ Keeps [.esi, .ecx, .edx] s u := by
   refine wp_addS rfl fun u1 a1 _ => ?_
   refine wp_addS rfl fun u2 a2 _ => ?_
-  have k2 : Keeps [.esi, .ecx] s u2 := (a1.keeps.mono (by decide)).widen a2.keeps
-  refine wp_cmpS ((argument_keep k2 (by decide) (by rw [a2.mem, a1.mem]) 3).trans hL) fun t f z =>
-    WP.block_nil ⟨?_, ?_, ?_, ?_, k2.widen (f.keeps [])⟩
-  · rw [f.gpr, a2.other _ (by decide), a1.gpr]
-  · rw [f.gpr, a2.gpr, a1.other _ (by decide)]
-  · rw [z, a2.gpr, a1.other _ (by decide)]
-  · rw [f.mem, a2.mem, a1.mem]
-
+  have k2 : Keeps [.esi, .ecx, .edx] s u2 := (a1.keeps.mono (by decide)).widen a2.keeps
+  refine wp_movS ((argument_keep k2 (by decide) (by rw [a2.mem, a1.mem]) 3).trans hL) fun u3 a3 _ => ?_
+  refine wp_cmpS rfl fun t f z => WP.block_nil ⟨?_, ?_, ?_, ?_, (k2.widen a3.keeps).widen (f.keeps [])⟩
+  · simp only [f.gpr, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · simp only [f.gpr, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · rw [z]; simp only [upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · rw [f.mem, a3.mem, a2.mem, a1.mem]
 
 /-- Where the bound's octets are: `len` of them at `bp`, readable, apart from the working space and
 the stack below `sp`. -/
@@ -341,46 +340,45 @@ theorem init_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32
   have k0 := Keeps.refl [.eax, .ebx, .ecx, .esi] s
   refine wp_movS (rd 12 (by decide) k0 rfl) fun u1 a1 _ => ?_
   have k1 := k0.widen a1.keeps
-  refine wp_subS (rd 3 (by decide) k1 a1.mem) fun u2 a2 _ => ?_
-  have k2 := k1.widen a2.keeps
-  refine wp_subS (rd 3 (by decide) k2 (by rw [a2.mem, a1.mem])) fun u3 a3 _ => ?_
-  have k3 := k2.widen a3.keeps
-  refine wp_movS (rd 2 (by decide) k3 (by rw [a3.mem, a2.mem, a1.mem])) fun u4 a4 _ => ?_
-  have k4 := k3.widen a4.keeps
-  refine wp_addS rfl fun u5 a5 _ => ?_
+  refine wp_movS (rd 3 (by decide) k1 a1.mem) fun u2 a2 _ => ?_
+  refine wp_subS rfl fun u3 a3 _ => ?_
+  refine wp_subS rfl fun u4 a4 _ => ?_
+  have k4 := ((k1.widen a2.keeps).widen a3.keeps).widen a4.keeps
+  refine wp_movS (rd 2 (by decide) k4 (by rw [a4.mem, a3.mem, a2.mem, a1.mem])) fun u5 a5 _ => ?_
   refine wp_addS rfl fun u6 a6 _ => ?_
-  have k6 := (k4.widen a5.keeps).widen a6.keeps
-  have m6 : u6.mem = s.mem := by rw [a6.mem, a5.mem, a4.mem, a3.mem, a2.mem, a1.mem]
-  refine wp_movS (rd 3 (by decide) k6 m6) fun u7 a7 _ => ?_
-  refine wp_subS rfl fun u8 a8 _ => ?_
-  refine wp_movS rfl fun u9 a9 _ => ?_
+  refine wp_addS rfl fun u7 a7 _ => ?_
+  have k7 := ((k4.widen a5.keeps).widen a6.keeps).widen a7.keeps
+  have m7 : u7.mem = s.mem := by rw [a7.mem, a6.mem, a5.mem, a4.mem, a3.mem, a2.mem, a1.mem]
+  refine wp_movS (rd 3 (by decide) k7 m7) fun u8 a8 _ => ?_
+  refine wp_subS rfl fun u9 a9 _ => ?_
   refine wp_movS rfl fun u10 a10 _ => ?_
-  have k10 := (((k6.widen a7.keeps).widen a8.keeps).widen a9.keeps).widen a10.keeps
-  have m10 : u10.mem = s.mem := by rw [a10.mem, a9.mem, a8.mem, a7.mem, m6]
-  have s10 : Scr u10 base bytes := h.scratch.of_keeps k10 (by decide)
-  refine wp_storeS (s10.ea (d := tbOff) (by omega)) (s10.write (d := tbOff) (n := 4) r16) fun u11 m11 => ?_
-  have s11 : Scr u11 base bytes := s10.of_keeps (m11.keeps []) (by decide)
-  refine wp_storeS (s11.ea (d := foundOff) (by omega)) (s11.write (d := foundOff) (n := 4) r20) fun t m12 =>
+  refine wp_movS rfl fun u11 a11 _ => ?_
+  have k11 := (((k7.widen a8.keeps).widen a9.keeps).widen a10.keeps).widen a11.keeps
+  have m11 : u11.mem = s.mem := by rw [a11.mem, a10.mem, a9.mem, a8.mem, m7]
+  have s11 : Scr u11 base bytes := h.scratch.of_keeps k11 (by decide)
+  refine wp_storeS (s11.ea (d := tbOff) (by omega)) (s11.write (d := tbOff) (n := 4) r16) fun u12 m12 => ?_
+  have s12 : Scr u12 base bytes := s11.of_keeps (m12.keeps []) (by decide)
+  refine wp_storeS (s12.ea (d := foundOff) (by omega)) (s12.write (d := foundOff) (n := 4) r20) fun t m13 =>
     WP.block_nil ?_
-  have e0 : u10.gpr .eax = 0 := a10.gpr
-  have O11 : Outside base tbOff 4 u10.mem u11.mem := by rw [m11.mem]; exact writeW32_outside _ _ _ (by decide)
-  have O12 : Outside base foundOff 4 u11.mem t.mem := by rw [m12.mem]; exact writeW32_outside _ _ _ (by decide)
-  have S10 : Step Ex base bytes len args s u10 := Step.regs h m10 k10
-  have S11 : Step Ex base bytes len args u10 u11 := Step.word S10.inp (by decide) O11 (m11.keeps [])
-  have S12 : Step Ex base bytes len args u11 t := Step.word S11.inp (by decide) O12 (m12.keeps [])
-  refine ⟨(S10.trans S11).trans S12, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have k11 := kept_word S10.inp (d := tbOff) (by decide) (by decide) O11
-    have k12 := kept_word S11.inp (d := foundOff) (by decide) (by decide) O12
-    rw [← m10]; exact k11.mono.trans k12.mono
-  · simp only [m12.gpr, m11.gpr, upd_get a10, upd_get a9, upd_get a8, upd_get a7, upd_get a6, upd_get a5,
-      upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  have e0 : u11.gpr .eax = 0 := a11.gpr
+  have O12 : Outside base tbOff 4 u11.mem u12.mem := by rw [m12.mem]; exact writeW32_outside _ _ _ (by decide)
+  have O13 : Outside base foundOff 4 u12.mem t.mem := by rw [m13.mem]; exact writeW32_outside _ _ _ (by decide)
+  have S11 : Step Ex base bytes len args s u11 := Step.regs h m11 k11
+  have S12 : Step Ex base bytes len args u11 u12 := Step.word S11.inp (by decide) O12 (m12.keeps [])
+  have S13 : Step Ex base bytes len args u12 t := Step.word S12.inp (by decide) O13 (m13.keeps [])
+  refine ⟨(S11.trans S12).trans S13, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · have k12 := kept_word S11.inp (d := tbOff) (by decide) (by decide) O12
+    have k13 := kept_word S12.inp (d := foundOff) (by decide) (by decide) O13
+    rw [← m11]; exact k12.mono.trans k13.mono
+  · simp only [m13.gpr, m12.gpr, upd_get a11, upd_get a10, upd_get a9, upd_get a8, upd_get a7, upd_get a6,
+      upd_get a5, upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
     rw [BitVec.add_zero]
-  · simp only [m12.gpr, m11.gpr, upd_get a10, upd_get a9, reduceCtorEq, ite_true, ite_false]; rfl
-  · simp only [m12.gpr, m11.gpr, upd_get a10, upd_get a9, upd_get a8, upd_get a7, reduceCtorEq, ite_true,
+  · simp only [m13.gpr, m12.gpr, upd_get a11, upd_get a10, reduceCtorEq, ite_true, ite_false]; rfl
+  · simp only [m13.gpr, m12.gpr, upd_get a11, upd_get a10, upd_get a9, upd_get a8, reduceCtorEq, ite_true,
       ite_false, scanAt, hl, h3]
     rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
-  · rw [m12.mem, Mem.readW_writeW_self32, m11.gpr, e0]; rfl
-  · rw [m12.mem, tb_found_sep, m11.mem, Mem.readW_writeW_self32, e0]; rfl
+  · rw [m13.mem, Mem.readW_writeW_self32, m12.gpr, e0]; rfl
+  · rw [m13.mem, tb_found_sep, m12.mem, Mem.readW_writeW_self32, e0]; rfl
 
 /-- The bits up to the top one of a word. -/
 def smear32 (x : BitVec 32) : BitVec 32 :=

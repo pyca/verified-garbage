@@ -77,7 +77,7 @@ def cutB : List Instr := [.movzx8 .edx ⟨.esi, 0⟩, .alu .and .edx (.reg .eax)
 
 def cutC : List Instr :=
   [.alu .add .esi (.imm 1), .alu .add .ebx (.imm 1), .alu .add .ecx (.imm 1),
-    .alu .cmp .ecx (.mem (PublicRt.argAt 0 3))]
+    .mov .eax (.mem (PublicRt.argAt 0 3)), .alu .cmp .ecx (.reg .eax)]
 
 theorem cutStep_eq : GenerateKey.cutStep = cutA ++ (cutB ++ cutC) := rfl
 
@@ -151,18 +151,18 @@ theorem cutB_ok {ar ax : Addr} (har : s.ea ⟨.esi, 0⟩ = ar) (hr : InRegions (
 theorem cutC_ok {L : BitVec 32} (hL : readSrc s (.mem (PublicRt.argAt 0 3)) = some L) :
     WP isa (.block cutC) s fun u =>
       u.gpr .esi = s.gpr .esi + 1 ∧ u.gpr .ebx = s.gpr .ebx + 1 ∧ u.gpr .ecx = s.gpr .ecx + 1 ∧
-        u.zf = some (s.gpr .ecx + 1 - L == 0) ∧ u.mem = s.mem ∧ Keeps [.esi, .ebx, .ecx] s u := by
+        u.zf = some (s.gpr .ecx + 1 - L == 0) ∧ u.mem = s.mem ∧ Keeps [.esi, .ebx, .ecx, .eax] s u := by
   refine wp_addS rfl fun u1 a1 _ => ?_
   refine wp_addS rfl fun u2 a2 _ => ?_
   refine wp_addS rfl fun u3 a3 _ => ?_
-  have k3 : Keeps [.esi, .ebx, .ecx] s u3 := ((a1.keeps.mono (by decide)).widen a2.keeps).widen a3.keeps
-  refine wp_cmpS ((argument_keep k3 (by decide) (by rw [a3.mem, a2.mem, a1.mem]) 3).trans hL) fun t f z =>
-    WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, k3.widen (f.keeps [])⟩
-  · simp only [f.gpr, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
-  · simp only [f.gpr, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
-  · simp only [f.gpr, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
-  · rw [z]; simp only [upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
-  · rw [f.mem, a3.mem, a2.mem, a1.mem]
+  have k3 : Keeps [.esi, .ebx, .ecx, .eax] s u3 := ((a1.keeps.mono (by decide)).widen a2.keeps).widen a3.keeps
+  refine wp_movS ((argument_keep k3 (by decide) (by rw [a3.mem, a2.mem, a1.mem]) 3).trans hL) fun u4 a4 _ => ?_
+  refine wp_cmpS rfl fun t f z => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, (k3.widen a4.keeps).widen (f.keeps [])⟩
+  · simp only [f.gpr, upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · simp only [f.gpr, upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · simp only [f.gpr, upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · rw [z]; simp only [upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false]
+  · rw [f.mem, a4.mem, a3.mem, a2.mem, a1.mem]
 
 end
 

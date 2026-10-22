@@ -55,8 +55,8 @@ def args : Args := { out := some 0, dom := 4, dlen := 5, plen := 6, y := some 2,
 
 /-- `esi` the bound's octets: the domain's third component with q, else its first. -/
 def boundPtr : List Instr :=
-  [.mov .eax (.mem (argAt 0 12)), .alu .sub .eax (.mem (argAt 0 3)), .alu .sub .eax (.mem (argAt 0 3)),
-    .mov .esi (.mem (argAt 0 2)), .alu .add .esi (.reg .eax), .alu .add .esi (.reg .eax)]
+  [.mov .eax (.mem (argAt 0 12)), .mov .ecx (.mem (argAt 0 3)), .alu .sub .eax (.reg .ecx),
+    .alu .sub .eax (.reg .ecx), .mov .esi (.mem (argAt 0 2)), .alu .add .esi (.reg .eax), .alu .add .esi (.reg .eax)]
 
 /-- The scan's start: `ld = p_len − 1` (`ebx`), `i = 0` (`ecx`), no octet nor flag. -/
 def scanInit : List Instr :=
@@ -71,7 +71,7 @@ def scanStep : List Instr :=
     .mov .edx (.reg .ebx), .alu .xor .edx (.reg .ecx), .alu .and .edx (.reg .ebp), .alu .xor .ebx (.reg .edx),
     .mov .edx (.mem (sc tbOff)), .alu .xor .eax (.reg .edx), .alu .and .eax (.reg .ebp), .alu .xor .edx (.reg .eax),
     .store (sc tbOff) .edx,
-    .alu .add .esi (.imm 1), .alu .add .ecx (.imm 1), .alu .cmp .ecx (.mem (argAt 0 3))]
+    .alu .add .esi (.imm 1), .alu .add .ecx (.imm 1), .mov .edx (.mem (argAt 0 3)), .alu .cmp .ecx (.reg .edx)]
 
 /-- `ld` and the mask `t` of the octet's bits to the header. -/
 def scanEnd : List Instr :=
@@ -93,7 +93,8 @@ def cutStep : List Instr :=
     .mov .eax (.mem (sc tOff)), .alu .xor .eax (.imm 0xFF), .alu .and .eax (.reg .ebp), .alu .xor .eax (.mem (sc tOff)),
     .alu .xor .edx (.imm 0xFFFFFFFF), .alu .and .eax (.reg .edx),
     .movzx8 .edx ⟨.esi, 0⟩, .alu .and .edx (.reg .eax), .store8 ⟨.ebx, 0⟩ .dl,
-    .alu .add .esi (.imm 1), .alu .add .ebx (.imm 1), .alu .add .ecx (.imm 1), .alu .cmp .ecx (.mem (argAt 0 3))]
+    .alu .add .esi (.imm 1), .alu .add .ebx (.imm 1), .alu .add .ecx (.imm 1), .mov .eax (.mem (argAt 0 3)),
+    .alu .cmp .ecx (.reg .eax)]
 
 def cut : Prog isa := .seq (.block cutInit) (.loop (.block cutStep) .ne)
 
