@@ -271,36 +271,9 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     verified := openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
     features := v.stitchFeatures }]
 
-/-- How the `*_store_powers` functions store the powers. -/
-def storePowersNote (v : GcmImpl) (g : GhashStoreImpl) (name : String) : String :=
-  "It computes as `" ++ name ++ v.suffix ++ "` does on the path for TLS records (a 12-byte nonce and at most \
-    16 bytes of additional data), calling `" ++ g.fn.name ++ "` once, on the whole blocks of the text, which \
-    also stores the powers of `H` to `pw`."
-
-/-- `vg_aes_gcm_seal_store_powers` and `vg_aes_gcm_open_store_powers`, calling
-`g` on the path for TLS records, the only one their contracts allow. -/
-def storePowersArtifacts (v : GcmImpl) (g : GhashStoreImpl) : List Artifact :=
-  [Spec.Gcm.sealStorePowersApi.artifact AArch64.target {
-    suffix := v.suffix
-    notes := [note v, storePowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealStCode v g)
-    stack := 2592
-    verified := sealStCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Pmull.prepPow
-      Proof.Gcm.AArch64.Stitch.gh8Ok g
-    features := v.stitchFeatures },
-  Spec.Gcm.openStorePowersApi.artifact AArch64.target {
-    suffix := v.suffix
-    notes := [note v, storePowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openStCode v g)
-    stack := 2592
-    verified := openStCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Pmull.prepPow
-      Proof.Gcm.AArch64.Stitch.gh8Ok g
-    features := v.stitchFeatures }]
-
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   artifactsOf v.impl ++ artifactsGather v.impl ++
-    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD [] ++
-    (v.impl.gh.storePowers.map (storePowersArtifacts v.impl)).getD []
+    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm

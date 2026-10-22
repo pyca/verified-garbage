@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -37,12 +38,12 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.AArch64.Pmull.ghashW
     verified := Proof.Gcm.AArch64.Pmull.ghashW_verified
     features := ["aes"] },
-  Spec.Gcm.ghashStorePowersApi.artifact AArch64.target {
+  Spec.Gcm.derivePrepared8Api.artifact AArch64.target {
     suffix := "_aes"
-    notes := ["Uses PMULL as `vg_ghash_aes` does, computing `H'` to `H'⁸` on every call and storing them \
-        to `pw` after the hash."]
-    code := Impl.Gcm.AArch64.Pmull.ghashS
-    verified := Proof.Gcm.AArch64.Pmull.ghashS_verified
+    notes := ["Uses PMULL: copies the key context, then computes `H'` to `H'⁸` (`H'ᵏ = Hᵏ · x⁻¹`) \
+        from its hash subkey and stores them after it, as `vg_ghash_with_powers_aes` reads them."]
+    code := Impl.AesGcm.AArch64.Prepared.derive
+    verified := Proof.AesGcm.AArch64.derive_verified Proof.Gcm.AArch64.Pmull.prepPow
     features := ["aes"] }]
 
 end VG.Artifacts.Gcm.AArch64
