@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddP
 public import VerifiedGarbage.Proof.Weierstrass.OddWin
 import VerifiedGarbage.Proof.Weierstrass.X86_64.OddScalar
