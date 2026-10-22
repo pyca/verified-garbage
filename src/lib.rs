@@ -149,6 +149,7 @@ pub mod sm4_cbc;
 pub mod sm4_cfb;
 pub mod sm4_ctr;
 pub mod sm4_ecb;
+pub mod sm4_gcm;
 pub mod sm4_ofb;
 pub mod triple_des_cbc;
 pub mod triple_des_cfb;
