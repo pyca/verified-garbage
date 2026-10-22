@@ -37,7 +37,8 @@ use crate::arch::aes::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes::{
-    VG_AES_DECRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES,
+    VG_AES_DECRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN,
+    VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN,
     vg_aes_decrypt_blocks_vaes, vg_aes_encrypt_blocks_vaes,
 };
 use crate::arch::aes::{vg_aes_decrypt_blocks, vg_aes_encrypt_blocks, vg_aes_expand_key};
@@ -176,8 +177,8 @@ impl AesEcb {
         let written = instance!(
             self.backend,
             SCRATCH,
-            SCRATCH,
-            SCRATCH,
+            ENCRYPT_AESNI_WRITTEN,
+            VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN,
             VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN
         );
         self.crypt(buffer, f, written)
@@ -239,6 +240,13 @@ impl AesEcb {
 /// `vg_aes_decrypt_blocks`, in bytes: the bytes a function without a smaller
 /// `Artifact.written` may write.
 const SCRATCH: usize = size_of::<[u64; 256]>();
+
+/// The bytes of the working space `vg_aes_encrypt_blocks_aesni` writes: none
+/// on x86-64; on x86, where it saves registers there, all of them.
+#[cfg(target_arch = "x86_64")]
+const ENCRYPT_AESNI_WRITTEN: usize = VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN;
+#[cfg(target_arch = "x86")]
+const ENCRYPT_AESNI_WRITTEN: usize = SCRATCH;
 
 /// The signature of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`.
 #[cfg(target_arch = "x86_64")]
