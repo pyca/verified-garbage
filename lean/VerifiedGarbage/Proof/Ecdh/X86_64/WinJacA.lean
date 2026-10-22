@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacAP
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
@@ -14,7 +14,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 # ECDH on x86-64: `[d]P` by 5-bit windows with an affine table
 
 `Cfg.mulQJA`: `mulQJ` (`WinJac.lean`) with the window method's table made
-affine (`JacWinCfg.windowA`, `winJacA_ok`). Its inversion leaves `R.z^(p-2)`
+affine and, where it applies, each selection woven into the addition before
+it (`JacWinCfg.windowAW`, `winJacAW_ok`). Its inversion leaves `R.z^(p-2)`
 in the selected entry's `X` (`E.x`, a slot of the grid). Written out
 (`Cfg.invJA`, `invSpecJA`), it writes the temporary area and the working area
 of `invWin`, over the table of the bits of `n - 2`, below the window's table
@@ -451,7 +452,7 @@ theorem mulQJA_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
       rw [F₃.onep, show 2 ^ (64 * c.n) % c.C.p = c.mont 1 by simp [Cfg.mont, Cfg.R], toM_cmont hc]; rfl
     · rw [hJ] at ht
       exact b₃ t (by omega_arith)
-  refine WP.mono (winJacA_ok (jwLayQ hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
+  refine WP.mono (winJacAW_ok (jwLayQ hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn17 hn64 hP
     (by rw [hJ]; exact hrec) (invSpecJAP hc h46) hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄', M₄, L₄, R₄⟩ => ?_
   have U₄ : Unch base (winXJ c ++ slW c (otherJ ++ gridJ ++ [TMP]) ++ pwW c) s₃.mem s₄.mem :=
