@@ -187,4 +187,13 @@ theorem Env.Chg.val32 {E : Env} (v : E.Valid) {os : List (Nat × Nat)} {m m' : M
   VG.Proof.Mont.val32_congr fun j hj => congrArg BitVec.toNat (Env.Chg.word v h (by omega) fun o ho =>
     ⟨(hos o ho).1, by rcases (hos o ho).2 with h | h <;> omega⟩)
 
+/-- A change within ranges is one within ranges around them. -/
+theorem Env.Chg.widen {E : Env} {os os' : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m')
+    (hw : ∀ o ∈ os, ∃ o' ∈ os', o'.1 ≤ o.1 ∧ o.1 + o.2 ≤ o'.1 + o'.2) : E.Chg os' m m' :=
+  Env.Chg.of_frame h fun r hr => by
+    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
+    rcases hr with ⟨o, ho, rfl⟩ | rfl
+    · obtain ⟨o', ho', h1, h2⟩ := hw o ho; exact Env.in_range ho' h1 h2
+    · exact Env.in_stack (fun _ h => h)
+
 end VG.Proof.Dsa.X86.Generation

@@ -32,21 +32,6 @@ def pDig (g : Geo) (seed : List Byte) (offset j : Nat) : List Byte :=
 /-- The ranges hash `j` changes. -/
 def hRanges (g : Geo) (j : Nat) : List (Nat × Nat) := [(sState, 128), (sHScr, 560), (hashAt g j, g.qLen)]
 
-/-- A change within ranges is one within ranges around them. -/
-theorem Env.Chg.widen {E : Env} {os os' : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m')
-    (hw : ∀ o ∈ os, ∃ o' ∈ os', o'.1 ≤ o.1 ∧ o.1 + o.2 ≤ o'.1 + o'.2) : E.Chg os' m m' :=
-  Env.Chg.of_frame h fun r hr => by
-    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
-    rcases hr with ⟨o, ho, rfl⟩ | rfl
-    · obtain ⟨o', ho', h1, h2⟩ := hw o ho; exact Env.in_range ho' h1 h2
-    · exact Env.in_stack (fun _ h => h)
-
-theorem GeoOk.bounds {g : Geo} (G : GeoOk g) :
-    20 ≤ g.qLen ∧ g.qLen ≤ 32 ∧ 128 ≤ g.pLen ∧ g.pLen ≤ 384 ∧ (g.count + 1) * g.qLen ≤ g.pLen + 12 ∧
-      g.pLen ≤ (g.count + 1) * g.qLen := by
-  unfold Geo.count
-  rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
-
 theorem pxRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart (pxRanges g) := by
   have sz := v.size_ge
   have b := G.bounds
