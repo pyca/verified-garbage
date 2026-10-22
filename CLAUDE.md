@@ -708,6 +708,12 @@ changing them.
 
 ## Measuring CI
 
+When asked to check or analyze CI metrics, follow
+[Collecting and analyzing CI metrics](ci/metrics-analysis.md). Start with the
+retained artifacts and their coverage, not a local build. The guide covers
+time-window downloads with uv, splitting/reassembling uploads with checksums,
+and streaming analysis of large bundles.
+
 Every CI run keeps a `ci-metrics` artifact (`ci/ci_metrics.py`, the last
 steps of `all-green`), for 30 days: every
 job's and step's queue and run times, the Lean build's plan, and what each

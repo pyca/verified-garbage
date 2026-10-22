@@ -1,5 +1,10 @@
 # Historical Lean planning data
 
+For a request to check or analyze CI metrics, follow the
+[collection, upload, and analysis workflow](metrics-analysis.md). It includes
+a standalone uv downloader for a time window, gzip bundles, verified upload
+parts, and a streaming summary for large datasets.
+
 Every CI run attempts to upload `ci-metrics.json` as the `ci-metrics`
 artifact. Retention is explicitly 30 days. The one-day `lean-plan` and
 compiled build artifacts remain short-lived: the metrics embed the plan,
