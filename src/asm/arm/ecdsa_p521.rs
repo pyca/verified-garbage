@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field elements and scalars are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction; the 66-byte encodings are read and written a 32-bit word at a time, the top word's two bytes from the first four or a byte at a time, and the hash's integer is shifted right by its last 7 bits. `[k]G` is a double-and-add ladder over all 576 bits of the nine words of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
+/// The function saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field elements and scalars are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction; the 66-byte encodings are read and written a 32-bit word at a time, the top word's two bytes from the first four or a byte at a time, and the hash's integer is shifted right by its last 7 bits. `[k]G` is a double-and-add ladder over all 528 bits of the 66-byte encoding of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -1246,7 +1246,7 @@ and r7, r7, #1
 strb r7, [r5, #1159]
 cmp r11, #0
 bne 22b
-mov r11, #576
+mov r11, #528
 23:
 sub r11, r11, #1
 mov r10, lr
@@ -3405,7 +3405,7 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function is `vg_ecdsa_p521_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p521`'s checks of the public key: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and scalars are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction, and the hash's integer is shifted right by its last 7 bits. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 576 bits of the nine words of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina, which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
+/// The function is `vg_ecdsa_p521_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p521`'s checks of the public key: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and scalars are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction, and the hash's integer is shifted right by its last 7 bits. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 528 bits of `u` and `v` (their 66-byte width), with the complete addition formulas of Renes, Costello and Batina, which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
 ///
 /// # Safety
 ///
@@ -6619,7 +6619,7 @@ and r7, r7, #1
 strb r7, [r5, #7]
 cmp r11, #0
 bne 24b
-mov r11, #576
+mov r11, #528
 25:
 sub r11, r11, #1
 mov r10, lr
@@ -7815,7 +7815,7 @@ and r7, r7, #1
 strb r7, [r5, #7]
 cmp r11, #0
 bne 26b
-mov r11, #576
+mov r11, #528
 27:
 sub r11, r11, #1
 mov r10, lr

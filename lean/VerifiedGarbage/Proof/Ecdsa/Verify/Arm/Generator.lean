@@ -35,10 +35,7 @@ theorem generatorWP_ladder {c : Cfg} (hc : CfgOk c) {s₀ : State} {base : Addr}
     {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {symbols : String → BitVec 32} :
     GeneratorWP c (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) s₀ base k Q symbols := by
   intro s hs hf F hlt hstep hR bits _ _ _
-  have enc : encodable (BitVec.ofNat 32 (64*c.n))=true := by
-    have en : ∀ n<10,encodable (BitVec.ofNat 32 (64*n))=true := by decide
-    exact en _ hc.n10
   exact Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt (unitMod_pow_two hc.p_odd _)
-    (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt hstep hR bits enc
+    (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt hstep hR (fun t ht => bits t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) (scalarBits_enc hc)
 
 end VG.Proof.Ecdsa.Verify.Arm

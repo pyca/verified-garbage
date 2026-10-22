@@ -339,8 +339,10 @@ theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.Arm.Cfg.ladderQ c) size 8192 
     ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
-    bitsAt_le c h7 (j := 0) (by decide), ?_⟩
+    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega,
+      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega⟩,
+    (by have := bitsAt_le c h7 (j := 0) (by decide); have := hc.len_hi;
+        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, PX, PY, ONEP])
@@ -402,11 +404,11 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
   rz_lt : sv c base s' RZ < c.C.p
 
 /-- The ladder, from `R = O`, then `Z^(p-2)`, for any invariant `Q` that an
-iteration keeps and that `Q (64 n)` accepts `O`. -/
+iteration keeps and that `Q (8 len)` accepts `O`. -/
 theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     {g : Reg → BitVec 32}
     (F : Fixed c base g s.mem) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q) (hO : Q (64 * c.n) 0 1 0)
+    (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q) (hO : Q (8 * c.C.len) 0 1 0)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -437,14 +439,14 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     · exact lt_of_eq_of_lt hrx (by omega)
     · exact lt_of_eq_of_lt hry (hmont _)
     · exact lt_of_eq_of_lt hrz (by omega)
-  have hR : Q (64 * c.n) (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
+  have hR : Q (8 * c.C.len) (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
       (tmv c.C c.n base s (c.sl RZ)) := by
     show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
     rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
     exact hO
   refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := k)
     (ladLayQ hc) (ladWkQ hc) hc.fp ladPtQ hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt
-    hstep hR ht₀ henc)
+    hstep hR (fun t ht => ht₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) (scalarBits_enc hc))
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWxQ_eq] at U₅
   have hs₅ := hs.of_rest K₅ (by decide)

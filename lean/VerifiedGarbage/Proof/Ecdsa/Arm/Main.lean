@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
@@ -192,7 +193,8 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hS.fixed
-  have hkl : kv c A s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
+  have hkl : kv c A s₀ < 2 ^ (8 * c.C.len) :=
+    Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _)
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have hlt : ∀ x ∈ ladR c.ladderCfg, wordsVal s.mem base x c.MP'.n < c.C.p := by
     intro x hx
@@ -216,7 +218,7 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
     rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
     exact rep_affine' hC _ _
   have hR : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c A s₀ >>> (64 * c.n)) (G c.C)) := by
+      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c A s₀ >>> (8 * c.C.len)) (G c.C)) := by
     show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
     rw [hS.rx, hS.ry, hS.rz, toM_cmont hc, toM_zero, shiftRight_eq_zero hkl, mul_zero_pt]
     exact rep_infinity' hC
@@ -226,11 +228,10 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
     (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
       rw [F.b3p]; exact toM_cmont hc _) hG
-  have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
-    have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
-    exact this _ h7
+  have henc := scalarBits_enc hc
   refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
-    (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt hstep hR hS.t₀ henc)
+    (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt hstep hR
+      (fun t ht => hS.t₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_
   rw [Nat.shiftRight_zero] at R₅
   exact ⟨K₅,U₅,M₅,L₅,R₅⟩
