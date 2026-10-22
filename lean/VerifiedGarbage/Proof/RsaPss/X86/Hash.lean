@@ -85,6 +85,8 @@ structure PssHash where
   len : ∀ n, n < 2 ^ 29 →
     ok.md.lenBytes n = List.replicate (H.L - 8) 0 ++ Proof.MdStream.bytes64 H.be (BitVec.ofNat 64 (8 * n))
   L8 : 8 ≤ H.L
+  L16 : H.L ≤ 16
+  NLB : H.N + H.L ≤ H.B
   /-- The hash function as RSA's padding takes it. -/
   G : Spec.Mgf1.Hash
   hash : ∀ x, G.hash x = ok.hH.SH.H.hash x

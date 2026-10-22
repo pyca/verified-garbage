@@ -31,6 +31,8 @@ def sha256 (v : Backend) : PssHash where
   ok := Proof.Pbkdf2.Md.X86.sha256Ok v.stream v.cmpN v.comp
   len _ _ := rfl
   L8 := Nat.le_refl _
+  L16 := by show 8 ≤ 16; decide
+  NLB := by show 32 + 8 ≤ 64; decide
   G := Spec.Mgf1.sha256
   hash _ := rfl
   glen := rfl
