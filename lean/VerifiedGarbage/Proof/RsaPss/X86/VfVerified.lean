@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.VfMain
 import VerifiedGarbage.Proof.RsaPss.X86.NoSp
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Contract
@@ -128,6 +129,9 @@ theorem code_ct (c : Ver.PublicImpl) : ConstantTime isa (spec h.G).pre (spec h.G
 
 theorem code_noSp (c : Ver.PublicImpl) : NoSp (verifyCode h c) :=
   noSp_frame rfl rfl (noSp_seq (noSp_frame rfl rfl (body_noSp h c)) restore_noSp)
+
+theorem code_sp (c : Ver.PublicImpl) : (verifyCode h c).all (fun i => !isa.writesSp i) = true :=
+  Proof.Rsa.X86.PrivChecked.noSp_allStack (code_noSp h c)
 
 /-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`, calling `c`, meets the shared
 contract (satisfiable, `VfSat.lean`). -/

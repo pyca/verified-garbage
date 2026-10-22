@@ -136,6 +136,9 @@ theorem code_ct (v : CrtImpl) : ConstantTime isa (spec h.G).pre (spec h.G).pub (
 theorem code_noSp (v : CrtImpl) : NoSp (signCode h v) :=
   noSp_frame rfl rfl (noSp_seq (noSp_frame rfl rfl (body_noSp h v)) restore_noSp)
 
+theorem code_sp (v : CrtImpl) : (signCode h v).all (fun i => !isa.writesSp i) = true :=
+  Proof.Rsa.X86.PrivChecked.noSp_allStack (code_noSp h v)
+
 /-- `vg_rsa_pss_<H>_mgf1_<H>_sign`, calling `vg_rsa_private_checked` over `v`, meets the shared
 contract (satisfiable, `SgSat.lean`). -/
 theorem sign_verified (hsat : ∃ s, (spec h.G).pre s) (v : CrtImpl) :
