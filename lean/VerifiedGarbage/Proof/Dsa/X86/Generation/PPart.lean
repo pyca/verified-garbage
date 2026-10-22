@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
+import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86.Syms
@@ -36,10 +37,23 @@ def PRes (E : Env) (g : Geo) (Q : Nat) (m : Mem) : Option (Option Nat × Spec.Rs
   | some (none, rest) => m.readW (off E.base fP) 32 = BitVec.ofNat 32 2 ∧
       ∃ u, u ≤ E.witLen ∧ m.readW (off E.base fUsed) 32 = BitVec.ofNat 32 u ∧ E.witT.drop u = rest
   | some (some p, rest) => m.readW (off E.base fP) 32 = BitVec.ofNat 32 1 ∧
+      2 ^ (8 * g.pLen - 1) ≤ p ∧ p < 2 ^ (8 * g.pLen) ∧ p % 2 = 1 ∧
       (∃ u, u ≤ E.witLen ∧ m.readW (off E.base fUsed) 32 = BitVec.ofNat 32 u ∧ E.witT.drop u = rest) ∧
       Spec.Rsa.bytesAt m (off E.base sPk) g.pLen = Spec.Dsa.encodeBE g.pLen p ∧
       val32 m E.base aPm1 (g.pLen / 4) = p - 1 ∧ val32 m E.base aE (g.pLen / 4) = (p - 1) / Q ∧
-      val32 m E.base aP (g.pLen / 4) = p
+      val32 m E.base aP (g.pLen / 4) = p ∧ val32 m E.base aOne (g.pLen / 4) = 1
+
+theorem pcand_bounds {g : Geo} (G : GeoOk g) {E : Env} {k offset Q : Nat} :
+    pcand g E k offset Q < 2 ^ (8 * g.pLen) ∧ pcand g E k offset Q % 2 = 1 := by
+  have bd := G.bounds
+  have hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * g.qLen) bs).length = 8 * g.qLen := fun bs => by
+    rw [← G.seedHash, G.hash.hash_length, G.N]
+  unfold pcand
+  rw [pCandidate_shaped (by omega) hlen]
+  have sh := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * g.pLen) (by omega)
+    (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) ((8 * g.pLen - 1) / (8 * g.qLen) + 1))
+  have := pReduction_le (q := Q) sh.1
+  exact ⟨by dsimp only; omega, pReduction_odd _ _⟩
 
 /-- What p's search keeps. -/
 structure PKeep (E : Env) (g : Geo) (k Q : Nat) (s t : State) : Prop where
@@ -137,8 +151,9 @@ theorem pBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
           rw [← spec]; simp only [hlt, hr, ↓reduceIte]
         refine ⟨1, by rw [A.fp]; simp only [hlt, hr, ↓reduceIte, pCode], by decide, .inr ⟨by decide, ?_⟩⟩
         rw [hR]
-        refine ⟨by rw [A.fp]; simp only [hlt, hr, ↓reduceIte, pCode], ⟨E.witLen - rest.length, by omega, ?_, cur⟩,
-          A.pk, A.pm1, A.e, A.pv⟩
+        have pb := pcand_bounds G (E := E) (k := k) (offset := 1 + c * (g.count + 1)) (Q := Q)
+        refine ⟨by rw [A.fp]; simp only [hlt, hr, ↓reduceIte, pCode], by omega, pb.1, pb.2,
+          ⟨E.witLen - rest.length, by omega, ?_, cur⟩, A.pk, A.pm1, A.e, A.pv, A.one⟩
         rw [A.used]; simp only [hlt, hr, ↓reduceIte, nextUsed]
   obtain ⟨F, hF, Fl, out⟩ := out
   -- What the counter keeps.

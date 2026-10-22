@@ -80,7 +80,8 @@ theorem pArith_ok {pLen qLen : Nat} (hl : pLen = 128 ∨ pLen = 256 ∨ pLen = 3
       val32 t.mem base aE (pLen / 4) = (X - X % (2 * Q)) / Q ∧
       val32 t.mem base aP (pLen / 4) = X - X % (2 * Q) + 1 ∧
       Spec.Rsa.bytesAt t.mem (off base sPk) pLen = Spec.Dsa.encodeBE pLen (X - X % (2 * Q) + 1) ∧
-      Outs base (aRanges pLen) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+      Outs base (aRanges pLen) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
+      val32 t.mem base aOne (pLen / 4) = 1 := by
   have nw := hs.nowrap
   have sl := hs.size_lt
   -- The sizes.
@@ -251,7 +252,7 @@ theorem pArith_ok {pLen qLen : Nat} (hl : pLen = 128 ∨ pLen = 256 ∨ pLen = 3
     (by rw [h2, P₁₀, show 8 * pLen = 32 * n by omega]; omega)) fun t ⟨B₁₁, F₁₁, K₁₁⟩ => ?_
   have O₁₁ := outside_of_frame F₁₁ (by simp only [sPk]; omega)
   rw [h2, P₁₀] at B₁₁
-  refine ⟨?_, ?_, ?_, B₁₁, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, B₁₁, ?_, ?_, ?_⟩
   · rw [O₁₁.val32 (by simp only [aPm1, sPk, arr]; omega) (by simp only [aPm1, arr]; omega), Pm₁₀]
   · rw [O₁₁.val32 (by simp only [aE, sPk, arr]; omega) (by simp only [aE, arr]; omega), E₁₀']
   · rw [O₁₁.val32 (by simp only [aP, sPk, arr]; omega) (by simp only [aP, arr]; omega), P₁₀]
@@ -275,5 +276,7 @@ theorem pArith_ok {pLen qLen : Nat} (hl : pLen = 128 ∨ pLen = 256 ∨ pLen = 3
   · exact K₁.trans (K₂.trans (K₃.trans (K₄.trans ((K₅.mono (by decide)).trans ((K₆.mono (by decide)).trans
       ((K₇.mono (by decide)).trans ((K₈.mono (by decide)).trans ((K₉.mono (by decide)).trans
       ((K₁₀.mono (by decide)).trans (K₁₁.mono (by decide)))))))))))
+  · rw [O₁₁.val32 (by simp only [aOne, sPk, arr]; omega) (by simp only [aOne, arr]; omega),
+      O₁₀.val32 (by simp only [aP, aOne, arr]; omega) (by simp only [aOne, arr]; omega), V₉]
 
 end VG.Proof.Dsa.X86.Generation

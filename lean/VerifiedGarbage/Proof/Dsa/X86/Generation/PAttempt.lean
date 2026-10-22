@@ -57,6 +57,7 @@ structure PAPost (E : Env) (g : Geo) (k offset Q used : Nat) (s t : State) : Pro
   pm1 : val32 t.mem E.base aPm1 (g.pLen / 4) = pcand g E k offset Q - 1
   e : val32 t.mem E.base aE (g.pLen / 4) = (pcand g E k offset Q - 1) / Q
   pv : val32 t.mem E.base aP (g.pLen / 4) = pcand g E k offset Q
+  one : val32 t.mem E.base aOne (g.pLen / 4) = 1
   fp : t.mem.readW (off E.base fP) 32 = BitVec.ofNat 32
     (if pcand g E k offset Q < 2 ^ (8 * g.pLen - 1) then 4
       else pCode (Spec.Dsa.probablePrime (pcand g E k offset Q) (E.witT.drop used)))
@@ -128,7 +129,7 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
   have lens : g.pLen = 128 ∨ g.pLen = 256 ∨ g.pLen = 384 := by
     rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
   refine WP.seq (VG.X86.WP.mono_syms (pArith_ok lens ⟨bd.1, bd.2.1⟩ X₁.base.scr sz X₁.x hQ₁ hQ0)
-    fun t₂ ⟨P₂, E₂, V₂, K₂, O₂, Kr₂⟩ sy₂ => ?_)
+    fun t₂ ⟨P₂, E₂, V₂, K₂, O₂, Kr₂, One₂⟩ sy₂ => ?_)
   have hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * g.qLen) bs).length = 8 * g.qLen := fun bs => by
     rw [← G.seedHash, G.hash.hash_length, G.N]
   have pEq : Spec.Ffdh.candidateOf (8 * g.pLen)
@@ -211,7 +212,8 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
   · -- Below `2^(L − 1)`: skipped.
     have hlt : pc < 2 ^ (8 * g.pLen - 1) := top.mp (of_decide_eq_true hlo)
     subst hpc
-    refine ⟨B₅, by rw [m₅]; exact K₂, by rw [m₅]; exact P₂, by rw [m₅]; exact E₂, by rw [m₅]; exact V₂, ?_, ?_,
+    refine ⟨B₅, by rw [m₅]; exact K₂, by rw [m₅]; exact P₂, by rw [m₅]; exact E₂, by rw [m₅]; exact V₂,
+      by rw [m₅]; exact One₂, ?_, ?_,
       by rw [m₅]; exact C₂, by rw [rd₅, rd₂], by rw [wr₅, wr₂], by rw [sy₅, sy₂s]⟩
     · simp only [m₅, hP₂, hlt, ↓reduceIte]
     · simp only [m₅, hU₂, hlt, ↓reduceIte]
@@ -288,7 +290,7 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
         val32 t.mem E.base d (g.pLen / 4) = val32 t₂.mem E.base d (g.pLen / 4) := fun h₁ h₂ => by
       rw [Env.Chg.val32 v Ct (by simp only [sPP] at h₁; omega) (fPR (by right; simp only [fP, hdr]; omega)
         (by simp only [sPP] at h₁; omega)), keep7 h₁ h₂]
-    refine ⟨Bt, ?_, ?_, ?_, ?_, ?_, ?_, Cp.trans (Ct.widen fun o ho => ⟨o, by
+    refine ⟨Bt, ?_, ?_, ?_, ?_, ?_, ?_, ?_, Cp.trans (Ct.widen fun o ho => ⟨o, by
         simp only [List.mem_singleton] at ho; rw [ho]; simp [paRanges], Nat.le_refl _, Nat.le_refl _⟩),
       by rw [rdt, P.rd, K₆.2.1, rd₅, rd₂], by rw [wrt, P.wr, K₆.2.2, wr₅, wr₂],
       by rw [syt, P.syms, sy₆, sy₅, sy₂s]⟩
@@ -302,6 +304,7 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
     · rw [arrV (by simp only [aPm1, arr, sPP]; omega) (by simp only [aPm1, arr]; omega), P₂]
     · rw [arrV (by simp only [aE, arr, sPP]; omega) (by simp only [aE, arr]; omega), E₂]
     · rw [arrV (by simp only [aP, arr, sPP]; omega) (by simp only [aP, arr]; omega), V₂]
+    · rw [arrV (by simp only [aOne, arr, sPP]; omega) (by simp only [aOne, arr]; omega), One₂]
     · simp only [hge, ↓reduceIte, hr]; exact fpt
     · simp only [hge, ↓reduceIte, hr]
       rw [Env.Chg.word v Ct (by simp only [fUsed, hdr]; omega) (fPR (by left; simp only [fUsed, fP, hdr]; omega)
