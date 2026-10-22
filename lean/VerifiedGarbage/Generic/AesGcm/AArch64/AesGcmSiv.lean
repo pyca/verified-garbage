@@ -101,7 +101,7 @@ def stitchNote (v : GcmImpl) (isSeal : Bool) : List String :=
       encrypts them eight blocks at a time with the AES instructions"
     else "decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight \
       blocks at a time, in one loop that interleaves the AES rounds with the PMULL products, their sums and \
-      their reduction (" ++ e3 ++ "), from a table of the powers of the key") ++
+      their reduction, " ++ e3 ++ ", from a table of the powers of the key") ++
     "; the rest of the data goes as without them."] else []
 
 /-- The artifacts calling the implementations `v`. -/
