@@ -265,22 +265,38 @@ theorem DrawEnd.regs {s₀ t : State} {w : Nat} {T : List Byte} {D : Option (Boo
     DrawEnd Ex base bytes len args s₀ w T D u :=
   ⟨E.toMid.regs K m hrs, by rw [m]; exact E.status, by rw [m]; exact E.used⟩
 
+/-- A draw's witness for `w` from the tape `T` at `c`, whether it is in range, whether the draws go
+on after it with `n` to go, and how many are then left: functions of the public values alone. -/
+def drawA (w : Nat) (T : List Byte) (c : Nat) : Nat :=
+  Spec.Rsa.os2ip ((T.drop c).take (Spec.Ffdh.witnessOctets w)) % 2 ^ Spec.RsaKeyGen.bitLength (w - 1)
+
+def drawRange (w : Nat) (T : List Byte) (c : Nat) : Bool := decide (2 ≤ drawA w T c ∧ drawA w T c < w - 1)
+
+def drawCont (w n : Nat) (T : List Byte) (c : Nat) : Bool :=
+  decide (Spec.Ffdh.witnessOctets w ≤ T.length - c) &&
+    (!drawRange w T c || (Spec.Ffdh.mrRound w (drawA w T c) && decide (n ≠ 1)))
+
+def drawN (w n : Nat) (T : List Byte) (c : Nat) : Nat := if drawRange w T c then n - 1 else n
+
 /-- Where a draw leaves the phase: on to the next draw with as good a result, or its end. -/
 abbrev DrawOut (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (s₀ : State) (w : Nat) (T : List Byte) (n c : Nat) (u : State) : Prop :=
   (∃ n' c', DrawAt Ex base bytes len args s₀ w T n' c' u ∧ 1 ≤ n' ∧ c < c' ∧ c' ≤ T.length ∧
-      ParameterCandidate.checkWitnesses w n' (T.drop c') = ParameterCandidate.checkWitnesses w n (T.drop c)) ∨
+      ParameterCandidate.checkWitnesses w n' (T.drop c') = ParameterCandidate.checkWitnesses w n (T.drop c) ∧
+      n' = drawN w n T c ∧ c' = c + Spec.Ffdh.witnessOctets w ∧ drawCont w n T c = true) ∨
     (DrawEnd Ex base bytes len args s₀ w T (ParameterCandidate.checkWitnesses w n (T.drop c)) u ∧
-      drawStatus (ParameterCandidate.checkWitnesses w n (T.drop c)) ≠ 0)
+      drawStatus (ParameterCandidate.checkWitnesses w n (T.drop c)) ≠ 0 ∧ drawCont w n T c = false)
 
 /-- The status tested: ZF while the draws go on. -/
 theorem drawFin_ok {s₀ u : State} {w n c : Nat} {T : List Byte} (O : DrawOut Ex base bytes len args s₀ w T n c u) :
     WP isa (.block [.mov .eax (.mem (sc stOff)), .alu .cmp .eax (.imm 0)]) u fun v =>
       (isa.eval .e v = some true ∧ ∃ n' c', DrawAt Ex base bytes len args s₀ w T n' c' v ∧ 1 ≤ n' ∧ c < c' ∧
         c' ≤ T.length ∧
-        ParameterCandidate.checkWitnesses w n' (T.drop c') = ParameterCandidate.checkWitnesses w n (T.drop c)) ∨
+        ParameterCandidate.checkWitnesses w n' (T.drop c') = ParameterCandidate.checkWitnesses w n (T.drop c) ∧
+        n' = drawN w n T c ∧ c' = c + Spec.Ffdh.witnessOctets w ∧ drawCont w n T c = true) ∨
       (isa.eval .e v = some false ∧
-        DrawEnd Ex base bytes len args s₀ w T (ParameterCandidate.checkWitnesses w n (T.drop c)) v) := by
+        DrawEnd Ex base bytes len args s₀ w T (ParameterCandidate.checkWitnesses w n (T.drop c)) v ∧
+        drawCont w n T c = false) := by
   have hst : ∃ M : Mid Ex base bytes len args s₀ w T u, True := by
     rcases O with ⟨_, _, A, _⟩ | ⟨E, _⟩
     · exact ⟨A.toMid, trivial⟩
@@ -294,9 +310,9 @@ theorem drawFin_ok {s₀ u : State} {w n c : Nat} {T : List Byte} (O : DrawOut E
   have zv : isa.eval .e v = some (decide (w32 u.mem base stOff = 0)) := by
     show v.zf = _
     rw [z, U₁.gpr, show ∀ x : BitVec 32, x - 0 = x from fun x => by simp, ofNat_beq_zero (BitVec.isLt _)]
-  rcases O with ⟨n', c', A, h1, h2, h3, h4⟩ | ⟨E, ne⟩
-  · exact .inl ⟨by rw [zv, A.st]; rfl, n', c', A.regs K m, h1, h2, h3, h4⟩
-  · exact .inr ⟨by rw [zv, E.status]; simp [ne], E.regs K m⟩
+  rcases O with ⟨n', c', A, h1, h2, h3, h4, h5, h6, h7⟩ | ⟨E, ne, h7⟩
+  · exact .inl ⟨by rw [zv, A.st]; rfl, n', c', A.regs K m, h1, h2, h3, h4, h5, h6, h7⟩
+  · exact .inr ⟨by rw [zv, E.status]; simp [ne], E.regs K m, h7⟩
 
 theorem hdr_st : Hdr stOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
 theorem hdr_cnt : Hdr cntOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
@@ -372,9 +388,11 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
     WP isa draw t fun u =>
       (isa.eval .e u = some true ∧ ∃ n' c', DrawAt Ex base bytes len args s₀ w T n' c' u ∧ 1 ≤ n' ∧ c < c' ∧
         c' ≤ T.length ∧
-        ParameterCandidate.checkWitnesses w n' (T.drop c') = ParameterCandidate.checkWitnesses w n (T.drop c)) ∨
+        ParameterCandidate.checkWitnesses w n' (T.drop c') = ParameterCandidate.checkWitnesses w n (T.drop c) ∧
+        n' = drawN w n T c ∧ c' = c + Spec.Ffdh.witnessOctets w ∧ drawCont w n T c = true) ∨
       (isa.eval .e u = some false ∧
-        DrawEnd Ex base bytes len args s₀ w T (ParameterCandidate.checkWitnesses w n (T.drop c)) u) := by
+        DrawEnd Ex base bytes len args s₀ w T (ParameterCandidate.checkWitnesses w n (T.drop c)) u ∧
+        drawCont w n T c = false) := by
   have ht := A.step.inp
   have small := G.small
   have bw := bc_eq_cwc len .wide
@@ -388,7 +406,7 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   have kw : k ≤ 32 * cwc len .wide := by
     have := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp (Nat.lt_of_le_of_lt wb.1 hwl)
     omega
-  generalize hoo : Spec.Ffdh.witnessOctets w = o
+  obtain ⟨o, hoo⟩ : ∃ o, Spec.Ffdh.witnessOctets w = o := ⟨_, rfl⟩
   have ho : o = (k + 7) / 8 := by rw [← hoo, Spec.Ffdh.witnessOctets, hk]
   have ol : o < 2 ^ 32 := by
     have := bc_le ht.upper' .wide
@@ -415,14 +433,17 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   · -- Too few octets.
     have sh : T.length - c < o := by simpa using e
     have D := checkWitnesses_short (n := n₁) hoo (by omega) sh
-    refine WP.mono (setSt_ok G A₃.toMid (r := 3) (by decide)) fun u ⟨Mu, Wu, _⟩ => .inr ⟨⟨Mu, ?_, ?_⟩, ?_⟩
+    refine WP.mono (setSt_ok G A₃.toMid (r := 3) (by decide)) fun u ⟨Mu, Wu, _⟩ => .inr ⟨⟨Mu, ?_, ?_⟩, ?_, ?_⟩
     · rw [Wu, D]; rfl
     · intro b r e; rw [D] at e; cases e
     · rw [D]; decide
+    · simp only [drawCont, hoo, show ¬ o ≤ T.length - c by omega, decide_false, Bool.false_and]
   have co : c + o ≤ T.length := by simp at e; omega
   have D := checkWitnesses_draw (n := n₁) hoo (by omega) hk co
   generalize hx : Spec.Rsa.os2ip ((T.drop c).take o) = x at D
   generalize ha : x % 2 ^ k = a at D
+  have dA : drawA w T c = a := by rw [drawA, hoo, hk, hx, ha]
+  have dR : drawRange w T c = decide (2 ≤ a ∧ a < w - 1) := by rw [drawRange, dA]
   have ob : o ≤ bc len .wide := by omega
   have h₃ := A₃.step.inp
   -- The witness's octets.
@@ -464,8 +485,10 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   refine WP.ite _ E₄ (fun e => WP.block_nil ?_) fun e => ?_
   · -- Out of range: drawn again.
     have nr : ¬ (2 ≤ a ∧ a < w - 1) := by simp at e; omega
-    refine .inl ⟨n₁ + 1, c + o, ⟨M₄, by rw [oct₄, hoo], by rw [bits₄, hk], cur₄, cnt₄, st₄⟩, by omega, by omega, co, ?_⟩
-    rw [D, ite_eq_right nr]
+    refine .inl ⟨n₁ + 1, c + o, ⟨M₄, by rw [oct₄, hoo], by rw [bits₄, hk], cur₄, cnt₄, st₄⟩, by omega, by omega, co, ?_,
+      by rw [drawN, dR, decide_eq_false nr]; rfl, by rw [hoo], ?_⟩
+    · rw [D, ite_eq_right nr]
+    · rw [drawCont, dR, decide_eq_false nr, hoo, decide_eq_true (by omega : o ≤ T.length - c)]; rfl
   have r : 2 ≤ a ∧ a < w - 1 := by simp at e; omega
   refine WP.seq (WP.mono (round_ok M₄.prep a₄ hw3 hodd) fun u₅ ⟨S₅, P₅, H₅, k₅⟩ => ?_)
   have M₅ := M₄.next G S₅ P₅ k₅
@@ -482,13 +505,14 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
     have mf : Spec.Ffdh.mrRound w a = false := by simpa using e
     have D' : ParameterCandidate.checkWitnesses w (n₁ + 1) (T.drop c) = some (false, T.drop (c + o)) := by
       rw [D, ite_eq_left r, mf]; rfl
-    refine WP.mono (setSt_ok G M₇ (r := 2) (by decide)) fun u ⟨Mu, Wu, ku⟩ => .inr ⟨⟨Mu, ?_, ?_⟩, ?_⟩
+    refine WP.mono (setSt_ok G M₇ (r := 2) (by decide)) fun u ⟨Mu, Wu, ku⟩ => .inr ⟨⟨Mu, ?_, ?_⟩, ?_, ?_⟩
     · rw [Wu, D']; rfl
     · intro b r' e'
       rw [D'] at e'
       cases e'
       exact ⟨c + o, by rw [ku.word_eq, cur₇], co, rfl⟩
     · rw [D']; simp [drawStatus]
+    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega : o ≤ T.length - c), dA, mf]; rfl
   -- The round passed.
   have mt : Spec.Ffdh.mrRound w a = true := by simpa using e
   have D' : ParameterCandidate.checkWitnesses w (n₁ + 1) (T.drop c) =
@@ -500,15 +524,19 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   · subst n0
     have D'' : ParameterCandidate.checkWitnesses w (0 + 1) (T.drop c) = some (true, T.drop (c + o)) := by
       rw [D']; rfl
-    refine .inr ⟨⟨Mu, ?_, ?_⟩, ?_⟩
+    refine .inr ⟨⟨Mu, ?_, ?_⟩, ?_, ?_⟩
     · rw [Su, D'']; rfl
     · intro b r' e'
       rw [D''] at e'
       cases e'
       exact ⟨c + o, curu, co, rfl⟩
     · rw [D'']; simp [drawStatus]
-  · refine .inl ⟨n₁, c + o, ⟨Mu, ?_, ?_, curu, Cu, by rw [Su]; simp [n0]⟩, by omega, by omega, co, D'.symm⟩
+    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega : o ≤ T.length - c), dA, mt]; rfl
+  · refine .inl ⟨n₁, c + o, ⟨Mu, ?_, ?_, curu, Cu, by rw [Su]; simp [n0]⟩, by omega, by omega, co, D'.symm,
+      by rw [drawN, dR, decide_eq_true r]; rfl, by rw [hoo], ?_⟩
     · rw [ku.word_eq, k₇.word_eq, oct₄, hoo]
     · rw [ku.word_eq, k₇.word_eq, bits₄, hk]
+    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega : o ≤ T.length - c), dA, mt,
+        decide_eq_true (by omega : n₁ + 1 ≠ 1)]; rfl
 
 end VG.Proof.Ffdh.X86.Cand

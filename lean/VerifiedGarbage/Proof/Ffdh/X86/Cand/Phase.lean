@@ -71,7 +71,7 @@ theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args 
     fun u E => ?_)
   · rintro m t ⟨n', c', rfl, A, hn', hc', hD⟩
     refine WP.mono (draw_ok G₀ hw3 hodd hwl A hn' hc') fun u o => ?_
-    rcases o with ⟨ev, n'', c'', A', h1, h2, h3, h4⟩ | ⟨ev, E⟩
+    rcases o with ⟨ev, n'', c'', A', h1, h2, h3, h4, -⟩ | ⟨ev, E, -⟩
     · exact .inr ⟨ev, T.length - c'', by omega, n'', c'', rfl, A', h1, h3, by rw [h4, hD]⟩
     · exact .inl ⟨ev, by rw [hD] at E; exact E⟩
   refine wp_movS (hdr_read E.step.inp hdr_st) fun v U _ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
