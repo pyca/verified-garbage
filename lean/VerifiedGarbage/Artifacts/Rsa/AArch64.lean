@@ -41,8 +41,11 @@ def windowHelper : Artifact :=
 
 def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelper,
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: R² mod n from `2^(b - 1)`, for n of `b` bits and `w` words, by \
-        constant-time doublings to `2^w R mod n`, then six Montgomery squarings."]
+    notes := ["Baseline AArch64: R² mod n, for n of `w` words whose top bit is set (every modulus of a \
+        whole number of words), by `w` word steps of long division from `R - n`, each step's quotient \
+        estimated from the top words with a reciprocal of n's top word, and n added back only while the \
+        remainder is negative, by a branch on values of n alone; for other n, from `2^(b - 1)`, for n \
+        of `b` bits, by doublings to `2^w R mod n`, then six Montgomery squarings."]
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact AArch64.target {

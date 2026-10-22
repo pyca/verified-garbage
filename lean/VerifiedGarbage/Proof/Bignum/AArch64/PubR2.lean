@@ -247,4 +247,19 @@ theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (h
   · refine WP.mono (r2dFast_ok g hZ hw (by omega) (by rw [ht]; exact hn) hodd (by rw [ht]; exact hd))
       fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
 
+/-- `R² mod m` as `r2_ok` computes it, by the steps for a public `m`. -/
+theorem r2Pub_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (hg : Good s B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw30 : w < 2 ^ 30) (hn : wv s.mem B (slot w aN) w = N)
+    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) (hodd : N % 2 = 1)
+    (hlo : 2 ^ (64 * (w - 1)) ≤ N) :
+    WP isa (seqs (r2StepsPub M.mm)) s fun t => Good t B Z w minv ∧
+      wv t.mem B (slot w aR2) w < N ∧ wv t.mem B (slot w aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧
+      Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  show WP isa (R2Div.choicePub (seqs (r2StepsOld M.mm))) s _
+  refine r2dChoicePub_ok hg hZ (by omega) (by omega) (fun t g ht k _ => ?_) (fun t g ht k hd => ?_)
+  · refine WP.mono (r2Old_ok M g hZ hw hw30 (by rw [ht]; exact hn) (by rw [ht]; exact hinv) hodd hlo)
+      fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
+  · refine WP.mono (r2dFastPub_ok g hZ hw (by omega) (by rw [ht]; exact hn) hodd (by rw [ht]; exact hd))
+      fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
+
 end VG.Proof.Bignum.AArch64

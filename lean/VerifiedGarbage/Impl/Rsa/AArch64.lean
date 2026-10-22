@@ -76,6 +76,12 @@ def r2StepsOld (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
 number of words, and by `r2StepsOld` otherwise. -/
 def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [R2Div.choice (seqs (r2StepsOld mul))]
 
+/-- `r2Steps` for a public `m`, whose steps branch on the sign of `t`
+(`R2Div.choicePub`): for `vg_rsa_public_precompute`, whose timing may depend
+on `n`. -/
+def r2StepsPub (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  [R2Div.choicePub (seqs (r2StepsOld mul))]
+
 /-! ## `vg_rsa_public_precompute`
 
 `(pre, pre_len, n, n_len, scratch, scratch_len)`, all in registers: `pre`
@@ -100,7 +106,7 @@ def pcOut : List (Prog isa) := [
   .block [movi .x0 1]]
 
 /-- The computation, once `m` is known valid. -/
-def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (pcLoad ++ (r2Steps mul ++ pcOut))
+def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (pcLoad ++ (r2StepsPub mul ++ pcOut))
 
 /-- `vg_rsa_public_precompute`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=

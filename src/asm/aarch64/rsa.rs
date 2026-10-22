@@ -12127,7 +12127,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// Baseline AArch64: R² mod n from `2^(b - 1)`, for n of `b` bits and `w` words, by constant-time doublings to `2^w R mod n`, then six Montgomery squarings.
+/// Baseline AArch64: R² mod n, for n of `w` words whose top bit is set (every modulus of a whole number of words), by `w` word steps of long division from `R - n`, each step's quotient estimated from the top words with a reciprocal of n's top word, and n added back only while the remainder is negative, by a branch on values of n alone; for other n, from `2^(b - 1)`, for n of `b` bits, by doublings to `2^w R mod n`, then six Montgomery squarings.
 ///
 /// # Safety
 ///
@@ -12369,24 +12369,7 @@ lsl x13, x12, #3
 add x13, x8, x13
 ldr x3, [x13, #0]
 lsr x3, x3, #63
-sub x15, x7, x3
-add x16, x8, #0
-add x17, x9, #0
-add x14, x12, #0
-adds x3, x7, x7
-213:
-ldr x4, [x17, #0]
-and x4, x4, x15
-ldr x3, [x16, #0]
-adcs x3, x3, x4
-str x3, [x16, #0]
-add x16, x16, #8
-add x17, x17, #8
-sub x14, x14, #1
-cbnz x14, 213b
-ldr x3, [x16, #0]
-adc x3, x3, x7
-str x3, [x16, #0]
+cbz x3, 213f
 lsl x13, x12, #3
 add x13, x8, x13
 ldr x3, [x13, #0]
@@ -12396,7 +12379,7 @@ add x16, x8, #0
 add x17, x9, #0
 add x14, x12, #0
 adds x3, x7, x7
-214:
+215:
 ldr x4, [x17, #0]
 and x4, x4, x15
 ldr x3, [x16, #0]
@@ -12405,20 +12388,53 @@ str x3, [x16, #0]
 add x16, x16, #8
 add x17, x17, #8
 sub x14, x14, #1
-cbnz x14, 214b
+cbnz x14, 215b
 ldr x3, [x16, #0]
 adc x3, x3, x7
 str x3, [x16, #0]
+b 214f
+213:
+214:
+lsl x13, x12, #3
+add x13, x8, x13
+ldr x3, [x13, #0]
+lsr x3, x3, #63
+cbz x3, 216f
+lsl x13, x12, #3
+add x13, x8, x13
+ldr x3, [x13, #0]
+lsr x3, x3, #63
+sub x15, x7, x3
+add x16, x8, #0
+add x17, x9, #0
+add x14, x12, #0
+adds x3, x7, x7
+218:
+ldr x4, [x17, #0]
+and x4, x4, x15
+ldr x3, [x16, #0]
+adcs x3, x3, x4
+str x3, [x16, #0]
+add x16, x16, #8
+add x17, x17, #8
+sub x14, x14, #1
+cbnz x14, 218b
+ldr x3, [x16, #0]
+adc x3, x3, x7
+str x3, [x16, #0]
+b 217f
+216:
+217:
 add x16, x8, #0
 add x17, x11, #0
 add x14, x12, #0
-215:
+219:
 ldr x3, [x16, #0]
 str x3, [x17, #0]
 add x16, x16, #8
 add x17, x17, #8
 sub x14, x14, #1
-cbnz x14, 215b
+cbnz x14, 219b
 ldr x13, [x0, #208]
 sub x13, x13, #1
 str x13, [x0, #208]
@@ -12434,27 +12450,27 @@ ldr x3, [x4, #0]
 movz x9, #1, lsl #0
 movz x13, #64, lsl #0
 sub x6, x3, #1
-cbz x6, 216f
-218:
+cbz x6, 220f
+222:
 lsr x3, x3, #1
 add x9, x9, x9
 sub x13, x13, #1
 sub x6, x3, #1
-cbnz x6, 218b
-b 217f
-216:
-217:
+cbnz x6, 222b
+b 221f
+220:
+221:
 str x13, [x0, #208]
 sub x13, x12, #1
 ldr x8, [x0, #96]
 movz x7, #0, lsl #0
 add x16, x8, #0
 add x14, x12, #2
-219:
+223:
 str x7, [x16, #0]
 add x16, x16, #8
 sub x14, x14, #1
-cbnz x14, 219b
+cbnz x14, 223b
 lsl x16, x13, #3
 add x16, x8, x16
 str x9, [x16, #0]
@@ -12462,7 +12478,7 @@ ldr x13, [x0, #208]
 ldr x12, [x0, #48]
 add x13, x13, x12
 str x13, [x0, #208]
-220:
+224:
 ldr x5, [x0, #96]
 ldr x10, [x0, #64]
 ldr x8, [x0, #80]
@@ -12473,14 +12489,14 @@ add x17, x5, #0
 add x16, x8, #0
 add x14, x12, #0
 adds x3, x7, x7
-221:
+225:
 ldr x3, [x17, #0]
 adcs x3, x3, x3
 str x3, [x16, #0]
 add x17, x17, #8
 add x16, x16, #8
 sub x14, x14, #1
-cbnz x14, 221b
+cbnz x14, 225b
 adc x3, x7, x7
 str x3, [x16, #0]
 add x16, x8, #0
@@ -12488,7 +12504,7 @@ add x17, x10, #0
 add x13, x6, #0
 add x14, x12, #0
 subs x3, x7, x7
-222:
+226:
 ldr x3, [x16, #0]
 ldr x4, [x17, #0]
 sbcs x3, x3, x4
@@ -12497,12 +12513,12 @@ add x16, x16, #8
 add x17, x17, #8
 add x13, x13, #8
 sub x14, x14, #1
-cbnz x14, 222b
+cbnz x14, 226b
 ldr x3, [x16, #0]
 sbcs x3, x3, x7
 add x16, x8, #0
 add x14, x12, #0
-223:
+227:
 ldr x3, [x16, #0]
 ldr x4, [x6, #0]
 csel x3, x4, x3, hs
@@ -12511,42 +12527,42 @@ add x16, x16, #8
 add x6, x6, #8
 add x5, x5, #8
 sub x14, x14, #1
-cbnz x14, 223b
+cbnz x14, 227b
 ldr x13, [x0, #208]
 sub x13, x13, #1
 str x13, [x0, #208]
-cbnz x13, 220b
+cbnz x13, 224b
 movz x13, #6, lsl #0
 str x13, [x0, #208]
-224:
+228:
 mov v31.d[0], x30
 bl {vg_rsa_square_4_4}
 umov x30, v31.d[0]
 ldr x13, [x0, #208]
 sub x13, x13, #1
 str x13, [x0, #208]
-cbnz x13, 224b
+cbnz x13, 228b
 26:
 ldr x12, [x0, #48]
 ldr x16, [x0, #64]
 ldr x17, [x0, #128]
 add x14, x12, #0
-225:
+229:
 ldr x3, [x16, #0]
 str x3, [x17, #0]
 add x16, x16, #8
 add x17, x17, #8
 sub x14, x14, #1
-cbnz x14, 225b
+cbnz x14, 229b
 ldr x16, [x0, #96]
 add x14, x12, #0
-226:
+230:
 ldr x3, [x16, #0]
 str x3, [x17, #0]
 add x16, x16, #8
 add x17, x17, #8
 sub x14, x14, #1
-cbnz x14, 226b
+cbnz x14, 230b
 movz x0, #1, lsl #0
 b 21f
 20:
@@ -12556,11 +12572,11 @@ add x2, x2, #7
 lsr x2, x2, #3
 lsl x2, x2, #1
 movz x3, #0, lsl #0
-227:
+231:
 str x3, [x1, #0]
 add x1, x1, #8
 sub x2, x2, #1
-cbnz x2, 227b
+cbnz x2, 231b
 movz x0, #0, lsl #0
 21:
 ret
