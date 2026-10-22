@@ -238,13 +238,10 @@ def fixSign : List Instr :=
     sel c.n (c.sl RY) (c.sl RY) (c.sl PT)
 
 /-- `[d]P` into `R` by odd windows (of `d`, or of `n - d` and then `R`
-negated), `dbl` doubling a point in place. -/
+negated), `dbl` doubling a point in place, each window's selection woven
+into the addition before it where that applies (`JacWinCfg.windowOW`). -/
 def mulQJO (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrepO c) (.seq ((jwinCfgO c).windowO dbl) (.block (fixSign c))))
-
-/-- `mulQJO`, its selections woven into the additions (`JacWinCfg.windowOP`). -/
-def mulQJOP (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrepO c) (.seq ((jwinCfgO c).windowOP dbl) (.block (fixSign c))))
+  .seq (.block (maskK c)) (.seq (jwinPrepO c) (.seq ((jwinCfgO c).windowOW dbl) (.block (fixSign c))))
 
 /-- The inversion of `mulQJA`'s table: `R.z^(p-2)` into the selected entry's
 `X` (`E.x`), its working area that of `invWin`. -/
@@ -308,10 +305,6 @@ def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
 /-- `vg_ecdh_<curve>` by odd windows in Jacobian coordinates (`mulQJO`), for
 a curve of prime order with `n mod 64 < 33`. -/
 def exchangeJO (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJO c dbl)
-
-/-- `vg_ecdh_<curve>` by odd windows, the selections woven into the
-additions. -/
-def exchangeJOP (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJOP c dbl)
 
 /-- `vg_ecdh_<curve>` by the Jacobian window method with an affine table, for
 a curve of prime order. -/

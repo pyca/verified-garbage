@@ -177,9 +177,12 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       `a = -3` (with a halving modulo `p` in place of multiplications by small constants) and the \
       addition in place of the digit's entry, selected in constant time by loading all sixteen \
       entries, " ++
-      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time") ++
-      ", and keeping (by masks) the one of the digit's magnitude, its `y` negated by a mask of its \
-      sign, by Jacobian addition with the entry's `Z²` and `Z³`, whose exceptional cases (an \
+      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time with SSE2") ++
+      ", and keeping (by masks of a counter's equality to the digit's magnitude) the one of the \
+      magnitude, its `y` negated by a mask of its sign; each digit's entry is selected while the \
+      addition before it runs, its loads spread among the addition's field operations and kept \
+      in vector registers until the addition has read the previous entry; the addition is \
+      Jacobian, with the entry's `Z²` and `Z³`, and its exceptional cases (an \
       operand at infinity, equal or opposite points) do not arise for `d < n`, the digits being \
       odd and the partial sums odd, nonzero and below `n`; the result's `y` is negated, by a \
       mask, for an even `d`; `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \

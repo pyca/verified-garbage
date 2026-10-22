@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddP
 public import VerifiedGarbage.Proof.Weierstrass.OddWin
 import VerifiedGarbage.Proof.Weierstrass.X86_64.OddScalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
@@ -24,7 +25,8 @@ For four or six words and a curve of prime order `n` with `n` odd and
 table of bits read from bit 1); `mulQJO_ok`: `d` reduced below `2^nbits`
 (`maskK`), `k = d` if `d` is odd, else `n - d` (`oddScalar`), `k + 32^J - 1`
 and its bits (`jwinPrepO`), the odd window method on the peer's point (or
-`G`), `R`'s `y` negated for an even `d` (`fixSign`: `[n - d]P = -[d]P`,
+`G`), its selections woven into its additions where that applies
+(`winJacOW_ok`), `R`'s `y` negated for an even `d` (`fixSign`: `[n - d]P = -[d]P`,
 `OddWin.mul_oddK`), then the signature's power: `R` represents `[d]P` for
 `d < n` (`MulOk`). It writes what `mulQJ` does (`mulQJW`).
 -/
@@ -196,7 +198,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     have : 2 ^ (64 * c.n) ≤ 2 ^ (5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1) :=
       Nat.pow_le_pow_right (by decide) hJ5
     omega
-  refine WP.seq (WP.mono (winJacO_ok (jwLayQO hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
+  refine WP.seq (WP.mono (winJacOW_ok (jwLayQO hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn2 hn64 hnb hP
     hkJ hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄, M₄, L₄, R₄⟩ => ?_)
   rw [show jwW (jwQO c) = jwW (jwQ c) from rfl, jwW_eq] at U₄

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardFieldI
+public import VerifiedGarbage.Impl.X86_64Scal
 
 /-!
 # The odd window method on x86-64, its selections woven into the additions
@@ -22,7 +23,10 @@ With AVX2 the entries are selected 32 bytes at a time (`selEntryY`); without,
 counter `xmm11` and the broadcast magnitude `xmm13` (`pcmpeqd`), as with
 AVX2, so that no part of the selection needs a general-purpose register but
 `rdx`. Digit `J - 2`'s entry is selected before the loop (`firstOP`), and the
-last addition, digit `0`'s, selects none (`lastO`).
+last addition, digit `0`'s, selects none (`lastO`). The weaving applies to
+four words (an entry of ten 16-byte pieces, five 32-byte ones), at least
+three digits, and an addition of scalar code (`weaveOk`); `windowOW` falls
+back to `windowO` elsewhere.
 -/
 
 @[expose] public section
@@ -120,6 +124,15 @@ def firstOP : List Instr :=
 def windowOP (dbl : Pt → Prog isa) : Prog isa :=
   .seq K.buildO <| .seq (.block K.firstOP) <| .seq (.loop (K.stepOP dbl) .ne) <| .seq (K.lastO dbl) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
+
+/-- Whether the woven selection applies: four words, at least three digits,
+and an addition whose operations, forwarded or not, are of scalar code. -/
+def weaveOk : Bool :=
+  decide (K.M.n = 4) && decide (3 ≤ K.J) && K.addOpsO.all fun op =>
+    (ForwardField.code K.M op).all scalarI && scalCode ((opCall? K.M op).getD (.block (ForwardField.code K.M op)))
+
+/-- `windowOP` where it applies (`weaveOk`), else `windowO`. -/
+def windowOW (dbl : Pt → Prog isa) : Prog isa := if K.weaveOk then K.windowOP dbl else K.windowO dbl
 
 end JacWinCfg
 
