@@ -102,6 +102,7 @@ structure HashOk (Gh : Hash) where
   P : VG.Impl.MdStream.Arm.Params
   md : MdStream.Md P.B P.N P.L
   hB : P.B = 64
+  hL : P.L = 8
   hN : P.N = 4 * Gh.k
   hso : P.so = 112
   hk : Gh.k ≤ 8

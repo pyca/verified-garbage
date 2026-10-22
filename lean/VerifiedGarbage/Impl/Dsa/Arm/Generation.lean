@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
-public import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Impl.Sha1.Arm
+public import VerifiedGarbage.Impl.Sha256.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
@@ -140,6 +140,12 @@ structure Hash where
   iv : List (BitVec 32)
   name : String
   code : Prog isa
+
+/-- SHA-1, for a 160-bit q. -/
+def sha1 : Hash := ⟨5, Spec.Sha1.H0.toList, "vg_sha1_compress", VG.Impl.Sha1.Arm.compress⟩
+
+/-- SHA-256. -/
+def sha256 : Hash := ⟨8, Spec.Sha256.H0.toList, "vg_sha256_compress", VG.Impl.Sha256.Arm.compress⟩
 
 /-- A 32-bit constant into `r1`. -/
 def const (v : BitVec 32) : List Instr :=
