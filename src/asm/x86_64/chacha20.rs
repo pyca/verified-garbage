@@ -19912,61 +19912,40 @@ vmovdqu YMMWORD PTR [rcx+96], ymm12
 mov r9, rcx
 add rsi, 384
 sub rdx, 384
-mov r10, rsi
-mov rsi, r9
 mov ecx, 0
 mov rax, rdx
-shr rax, 5
+shr rax, 3
 je 260f
 262:
-vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
-vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
-vpxor ymm0, ymm0, ymm1
-vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
-add rcx, 32
+mov r8, QWORD PTR [rsi+rcx*1]
+xor r8, QWORD PTR [r9+rcx*1]
+mov QWORD PTR [rsi+rcx*1], r8
+add rcx, 8
 sub rax, 1
 jne 262b
 jmp 261f
 260:
 261:
-mov rdi, r10
-add rdi, rcx
-add rsi, rcx
-sub rdx, rcx
-mov ecx, 0
-mov rax, rdx
-shr rax, 3
+cmp rcx, rdx
 je 263f
 265:
-mov r8, QWORD PTR [rdi+rcx*1]
-xor r8, QWORD PTR [rsi+rcx*1]
-mov QWORD PTR [rdi+rcx*1], r8
-add rcx, 8
-sub rax, 1
+movzx eax, BYTE PTR [rsi+rcx*1]
+movzx r8d, BYTE PTR [r9+rcx*1]
+xor rax, r8
+mov BYTE PTR [rsi+rcx*1], al
+add rcx, 1
+cmp rcx, rdx
 jne 265b
 jmp 264f
 263:
 264:
-cmp rcx, rdx
-je 266f
-268:
-movzx eax, BYTE PTR [rdi+rcx*1]
-movzx r8d, BYTE PTR [rsi+rcx*1]
-xor rax, r8
-mov BYTE PTR [rdi+rcx*1], al
-add rcx, 1
-cmp rcx, rdx
-jne 268b
-jmp 267f
-266:
-267:
 vzeroupper
 mov rsi, r9
 jmp 259f
 258:
 mov r9, rcx
 cmp rdx, 257
-jb 269f
+jb 266f
 vmovdqu ymm14, YMMWORD PTR [r9+128]
 vmovdqu ymm15, YMMWORD PTR [r9+160]
 vmovdqu ymm12, YMMWORD PTR [r9+224]
@@ -20951,58 +20930,37 @@ vperm2i128 ymm12, ymm10, ymm11, 49
 vmovdqu YMMWORD PTR [r9+96], ymm12
 add rsi, 256
 sub rdx, 256
-mov r10, rsi
-mov rsi, r9
 mov ecx, 0
 mov rax, rdx
-shr rax, 5
+shr rax, 3
+je 268f
+270:
+mov r8, QWORD PTR [rsi+rcx*1]
+xor r8, QWORD PTR [r9+rcx*1]
+mov QWORD PTR [rsi+rcx*1], r8
+add rcx, 8
+sub rax, 1
+jne 270b
+jmp 269f
+268:
+269:
+cmp rcx, rdx
 je 271f
 273:
-vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
-vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
-vpxor ymm0, ymm0, ymm1
-vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
-add rcx, 32
-sub rax, 1
+movzx eax, BYTE PTR [rsi+rcx*1]
+movzx r8d, BYTE PTR [r9+rcx*1]
+xor rax, r8
+mov BYTE PTR [rsi+rcx*1], al
+add rcx, 1
+cmp rcx, rdx
 jne 273b
 jmp 272f
 271:
 272:
-mov rdi, r10
-add rdi, rcx
-add rsi, rcx
-sub rdx, rcx
-mov ecx, 0
-mov rax, rdx
-shr rax, 3
-je 274f
-276:
-mov r8, QWORD PTR [rdi+rcx*1]
-xor r8, QWORD PTR [rsi+rcx*1]
-mov QWORD PTR [rdi+rcx*1], r8
-add rcx, 8
-sub rax, 1
-jne 276b
-jmp 275f
-274:
-275:
-cmp rcx, rdx
-je 277f
-279:
-movzx eax, BYTE PTR [rdi+rcx*1]
-movzx r8d, BYTE PTR [rsi+rcx*1]
-xor rax, r8
-mov BYTE PTR [rdi+rcx*1], al
-add rcx, 1
-cmp rcx, rdx
-jne 279b
-jmp 278f
-277:
-278:
-jmp 270f
-269:
+jmp 267f
+266:
 cmp rdx, 129
-jb 280f
+jb 274f
 vmovdqu ymm8, YMMWORD PTR [r9+128]
 vmovdqu ymm9, YMMWORD PTR [r9+160]
 vmovdqu ymm12, YMMWORD PTR [r9+224]
@@ -21648,60 +21606,39 @@ vperm2i128 ymm10, ymm4, ymm5, 49
 vmovdqu YMMWORD PTR [r9+192], ymm10
 vperm2i128 ymm10, ymm6, ymm7, 49
 vmovdqu YMMWORD PTR [r9+224], ymm10
-mov r10, rsi
-mov rsi, r9
-mov ecx, 0
-mov rax, rdx
-shr rax, 5
-je 282f
-284:
-vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
-vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
-vpxor ymm0, ymm0, ymm1
-vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
-add rcx, 32
-sub rax, 1
-jne 284b
-jmp 283f
-282:
-283:
-mov rdi, r10
-add rdi, rcx
-add rsi, rcx
-sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 285f
-287:
-mov r8, QWORD PTR [rdi+rcx*1]
-xor r8, QWORD PTR [rsi+rcx*1]
-mov QWORD PTR [rdi+rcx*1], r8
+je 276f
+278:
+mov r8, QWORD PTR [rsi+rcx*1]
+xor r8, QWORD PTR [r9+rcx*1]
+mov QWORD PTR [rsi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 287b
-jmp 286f
-285:
-286:
+jne 278b
+jmp 277f
+276:
+277:
 cmp rcx, rdx
-je 288f
-290:
-movzx eax, BYTE PTR [rdi+rcx*1]
-movzx r8d, BYTE PTR [rsi+rcx*1]
+je 279f
+281:
+movzx eax, BYTE PTR [rsi+rcx*1]
+movzx r8d, BYTE PTR [r9+rcx*1]
 xor rax, r8
-mov BYTE PTR [rdi+rcx*1], al
+mov BYTE PTR [rsi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 290b
-jmp 289f
-288:
-289:
-jmp 281f
+jne 281b
+jmp 280f
+279:
 280:
+jmp 275f
+274:
 test rdx, rdx
-je 291f
+je 282f
 cmp rdx, 65
-jb 293f
+jb 284f
 vmovdqu ymm8, YMMWORD PTR [r9+128]
 vmovdqu ymm9, YMMWORD PTR [r9+160]
 vmovdqu ymm12, YMMWORD PTR [r9+224]
@@ -22028,65 +21965,44 @@ vperm2i128 ymm10, ymm0, ymm1, 49
 vmovdqu YMMWORD PTR [r9+64], ymm10
 vperm2i128 ymm10, ymm2, ymm3, 49
 vmovdqu YMMWORD PTR [r9+96], ymm10
-mov r10, rsi
-mov rsi, r9
-mov ecx, 0
-mov rax, rdx
-shr rax, 5
-je 295f
-297:
-vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
-vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
-vpxor ymm0, ymm0, ymm1
-vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
-add rcx, 32
-sub rax, 1
-jne 297b
-jmp 296f
-295:
-296:
-mov rdi, r10
-add rdi, rcx
-add rsi, rcx
-sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 298f
-2100:
-mov r8, QWORD PTR [rdi+rcx*1]
-xor r8, QWORD PTR [rsi+rcx*1]
-mov QWORD PTR [rdi+rcx*1], r8
+je 286f
+288:
+mov r8, QWORD PTR [rsi+rcx*1]
+xor r8, QWORD PTR [r9+rcx*1]
+mov QWORD PTR [rsi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2100b
-jmp 299f
-298:
-299:
+jne 288b
+jmp 287f
+286:
+287:
 cmp rcx, rdx
-je 2101f
-2103:
-movzx eax, BYTE PTR [rdi+rcx*1]
-movzx r8d, BYTE PTR [rsi+rcx*1]
+je 289f
+291:
+movzx eax, BYTE PTR [rsi+rcx*1]
+movzx r8d, BYTE PTR [r9+rcx*1]
 xor rax, r8
-mov BYTE PTR [rdi+rcx*1], al
+mov BYTE PTR [rsi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2103b
-jmp 2102f
-2101:
-2102:
-jmp 294f
-293:
+jne 291b
+jmp 290f
+289:
+290:
+jmp 285f
+284:
 vzeroupper
 call {vg_chacha20_xor}
 mov r9, rsi
-294:
-jmp 292f
-291:
-292:
-281:
-270:
+285:
+jmp 283f
+282:
+283:
+275:
+267:
 vzeroupper
 mov rsi, r9
 259:
