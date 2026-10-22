@@ -343,21 +343,21 @@ class FetchHistory(unittest.TestCase):
         with zipfile.ZipFile(data, "w") as z:
             z.writestr("ci-metrics.json", '{"version": 2}')
         paths = []
-        def gh(path, *args):
+        def gh(path, *args, output=None):
             paths.append(path)
             if "workflows/ci.yml/runs?" in path:
                 first = 1 if path.endswith("page=1") else 101
                 return json.dumps({"workflow_runs": [{"id": i} for i in range(first, first + 100)]}).encode()
             if "artifacts?" in path:
-                return b'{"artifacts": [{"id": 42, "expired": false}]}'
-            return data.getvalue()
+                return b'{"artifacts": [{"id": 42, "name": "ci-metrics", "expired": false}]}'
+            output.write(data.getvalue())
         with tempfile.TemporaryDirectory() as tmp:
             out = pathlib.Path(tmp)
             for i in range(1, 101):
                 (out / f"{i}.json").write_text("existing")
             with mock.patch.object(ci_metrics, "gh", gh), mock.patch("sys.stderr"):
                 ci_metrics.fetch(out, 105, "o/r")
-            self.assertEqual(len(list(out.glob("*.json"))), 105)
+            self.assertEqual(len(list(out.glob("[0-9]*.json"))), 105)
             self.assertEqual((out / "1.json").read_text(), "existing")
             self.assertEqual(json.loads((out / "105.json").read_text()), {"version": 2})
         self.assertIn("repos/o/r/actions/workflows/ci.yml/runs?per_page=100&page=2", paths)
