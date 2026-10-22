@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
 
 /-!
 # The pipeline's loops on fewer blocks than it takes
