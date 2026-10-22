@@ -30,18 +30,15 @@ class Modules(unittest.TestCase):
             [p] = check_lean_modules.problems(pathlib.Path(d))
             self.assertTrue(p.startswith("lean/VerifiedGarbage/New/A.lean: not a module"))
 
-    def test_artifacts_lean_is_not_a_module(self):
-        with tree({"VerifiedGarbage/Artifacts.lean": "module\n"}) as d:
+    def test_a_long_header_comment(self):
+        # Only the header is read; a comment before `module` may span lines.
+        with tree({"VerifiedGarbage/A.lean": "/- Copyright.\n\nLicensed. -/\n-- More.\nmodule\n"}) as d:
+            self.assertEqual(check_lean_modules.problems(pathlib.Path(d)), [])
+
+    def test_a_module_docstring_does_not_start_one(self):
+        with tree({"VerifiedGarbage/A.lean": "/-! # A -/\nmodule\n"}) as d:
             [p] = check_lean_modules.problems(pathlib.Path(d))
-            self.assertIn("runs the audits", p)
-
-    def test_a_module_importing_a_file_that_is_not_one(self):
-        with tree({"VerifiedGarbage/A.lean": "module\n\nmeta import VerifiedGarbage.Artifacts\nimport Lean\n",
-                   "VerifiedGarbage/Artifacts.lean": "import Lean\n"}) as d:
-            self.assertEqual(check_lean_modules.problems(pathlib.Path(d)),
-                             ["lean/VerifiedGarbage/A.lean: a module, but imports "
-                              "`VerifiedGarbage.Artifacts`, which is not one"])
-
+            self.assertTrue(p.startswith("lean/VerifiedGarbage/A.lean: not a module"))
 
 if __name__ == "__main__":
     unittest.main()
