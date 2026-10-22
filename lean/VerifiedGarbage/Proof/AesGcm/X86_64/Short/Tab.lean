@@ -117,7 +117,7 @@ structure ShortFacts : Prop where
   pp2 : ∀ H : Block, IsH2 H (hInvF (hpow H 1)) (hInvF (hpow H 2))
   /-- The powers the 256-bit loop's out-of-place setup stores give the
   products of an encryption body (for `seal_split`'s one pass). -/
-  setupFin : VG.Proof.Gcm.X86_64.StitchR.SetupFin
+  setupFin : ∀ (np : Nat) (hpn : 8 ≤ np ∧ np ≤ 24), VG.Proof.Gcm.X86_64.StitchR.SetupFin np hpn
   /-- What the 512-bit loops leave over the groups at `src` (for
   `seal_split`'s one pass). -/
   phaseOneZ : VG.Proof.Gcm.X86_64.StitchZHTo.PhaseOne

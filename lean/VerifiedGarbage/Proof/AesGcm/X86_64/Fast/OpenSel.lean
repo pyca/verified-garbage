@@ -23,7 +23,7 @@ and `K[1]` (`tagP_okP`), and `tailK`, which decrypts the bytes left with it
 
 namespace VG.Proof.AesGcm.X86_64.FastOpen
 
-variable {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24}
+variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
 
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64
@@ -50,9 +50,9 @@ theorem tagP_spSafe : (Impl.AesGcm.X86_64.FastOpen.tagP : Prog isa).all (fun i =
 theorem tagP_xdepth : (Impl.AesGcm.X86_64.FastOpen.tagP : Prog isa).x86_64Depth = 0 := by decide +kernel
 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
-theorem openSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hnp)) {ks : Prog isa} (hks : KsOk ks)
-    {other : Prog isa} (ho : LongOk (CtxMode.preparedN np hnp) other) :
-    LongOk (CtxMode.preparedN np hnp) (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks any) := by
+theorem openSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn)) {ks : Prog isa} (hks : KsOk ks)
+    {other : Prog isa} (ho : LongOk (CtxMode.preparedN np hpn) other) :
+    LongOk (CtxMode.preparedN np hpn) (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks any) := by
   intro s s₂ Ctx W SP Np A D T nl al n t C X E hNp hnl hal hTa hTar hTr oT oA htl hok
   unfold Impl.AesGcm.X86_64.FastOpen.sel
   refine WP.seq (WP.mono (condE_ok C E hnl hal) fun s₃ ⟨hz, E₃, K⟩ => ?_)
