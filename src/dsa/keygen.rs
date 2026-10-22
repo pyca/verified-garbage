@@ -2,7 +2,12 @@
 //! `[1, q)` by rejection, then `y = g^x mod p`, for a domain the caller
 //! assures is prime.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use alloc::{vec, vec::Vec};
 
@@ -26,7 +31,7 @@ impl PrivateKey {
     /// `g` must have `p`'s width and `x` must have `q`'s width.
     /// Checks the domain's algebraic consistency and `0 < x < q`;
     /// callers must assure domain primality separately.
-    /// Available on x86, x86-64 and AArch64.
+    /// Available on x86, x86-64, AArch64 and 32-bit ARM.
     pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
         if !matches!(
             (p.len(), q.len()),
