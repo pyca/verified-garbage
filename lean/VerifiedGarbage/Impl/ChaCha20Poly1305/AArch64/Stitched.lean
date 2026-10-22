@@ -33,7 +33,7 @@ and only the rest with those calls:
   direction needs; when decrypting more than `Pad.threshold` bytes, or
   between 64 and 256 or above 320 that are not whole blocks, the stream
   encrypts eight or four blocks of zeros at `ctx[768, 1280)` instead, which the rest is XORed
-  with (`openRest`).
+  with (`openRest`, which `sealRest` runs when encrypting).
 
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
 prologue saved them, and `restore` restores them.
@@ -187,8 +187,8 @@ def atMost (k : Nat) : List Instr := [.subImm .x .x9 .x23 1, .lsr .x .x9 .x9 k]
 /-- `x9 = 0` iff `x23 ≥ 321` (for `x23` below `2^63`): `(x23 - 321) >> 63`. -/
 def above320 : List Instr := [.subImm .x .x9 .x23 321, .lsr .x .x9 .x9 63]
 
-/-- The rest when decrypting (`x22`, `x23` bytes, fewer than 512). Above
-`Pad.threshold`, through the keystream of eight blocks (`padRest c 512`).
+/-- The rest (`x22`, `x23` bytes, fewer than 512), when decrypting or (by
+`sealRest`) encrypting. Above `Pad.threshold`, through the keystream of eight blocks (`padRest c 512`).
 Otherwise with `cryptRest`, unless the rest is not whole blocks and the
 stream (`Small.lean`) would compute two blocks with the scalar block
 function, or a partial last block after its vector kernel: from 65 to 255
@@ -208,13 +208,21 @@ def openRest (c : XorCallee) : Prog isa :=
                     (.ite (.zero .x .x9) (padRest c 512) (cryptRest c)))))))))
       (padRest c 512))
 
+/-- The rest when encrypting, after the chunks and `Tail.rest` (the stream's
+arguments: `x1`, `x2` bytes, fewer than 512), by `openRest`. `x22` and
+`x23` (the data to absorb) are kept meanwhile in `x24` and `x25`, whose
+additional data is already absorbed. -/
+def sealRest (c : XorCallee) : Prog isa :=
+  .seq (.block [mov .x24 .x22, mov .x25 .x23, mov .x22 .x1, mov .x23 .x2])
+    (.seq (openRest c) (.block [mov .x22 .x24, mov .x23 .x25]))
+
 /-- `sealStitched` but for the tag. -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (cryptStitched c.sve true)
-  (.seq (.call c.name c.code)
+  (.seq (sealRest c)
   (.seq (macPad .x22 .x23)
     absorbLengths)))))
 

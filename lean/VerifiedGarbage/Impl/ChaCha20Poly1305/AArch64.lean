@@ -31,8 +31,10 @@ The working space (`workLen` = 1280 bytes, called the context below):
   (`Stitched.lean`'s `OpenPad`).
 
 `x21` holds the context, `x22` the data, `x23` its length, `x24` the
-additional data and `x25` its length throughout: they are callee-saved, and
-no callee writes them (`vg_chacha20_xor` saves and restores `x19` and `x20`,
+additional data and `x25` its length throughout (but that, once the
+additional data is absorbed, `Stitched.lean`'s `sealRest` keeps `x22` and
+`x23` in `x24` and `x25` for a while): they are callee-saved, and no callee
+writes them (`vg_chacha20_xor` saves and restores `x19` and `x20`,
 which we therefore do not use), so they stay public for the constant-time
 analysis. No register is left for the address of `tag` throughout (the
 eight-block stream's code uses every other one), so it is saved in the

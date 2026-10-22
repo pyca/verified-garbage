@@ -425,7 +425,7 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
     omega
   refine ⟨⟨x21₇, un₇, by rw [spw, hc.inv.sp], rd₇', wr₇', hc.inv.saved.frame F (fun r hr => ?_),
       hc.inv.frame.trans (F.sub fun r hr => ?_)⟩, hM, by omega, by omega, fun h => by omega,
-    x0₇, by rw [x1₇, VG.Proof.ChaCha20.AArch64.Xor.add_ofNat],
+    by have := hc.lt; omega, x0₇, by rw [x1₇, VG.Proof.ChaCha20.AArch64.Xor.add_ofNat],
     by rw [x2₇, show L s₀ - 512 * T - min (L s₀ - 512 * T) 256 =
       L s₀ - (512 * T + min (L s₀ - 512 * T) 256) by omega], x3₇, x22₇, x23₇, fun hlt => ?_,
     fun k hk => ?_, hc.frame.trans F, ⟨?_, ?_, ?_⟩, fun r hr => (vw r hr).trans (hc.vec r hr)⟩

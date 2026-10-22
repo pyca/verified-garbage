@@ -520,6 +520,7 @@ structure Sealed (s₀ s : State) (key msg : List Byte) (P A : Nat) (u : State) 
   aP : A ≤ P
   a16 : A % 16 = 0
   p64 : P < L s₀ → P % 64 = 0
+  lt : L s₀ - P < 512
   x0 : u.gpr .x0 = off (cx s₀) 64
   x1 : u.gpr .x1 = dp s₀ + BitVec.ofNat 64 P
   x2 : u.gpr .x2 = BitVec.ofNat 64 (L s₀ - P)
@@ -537,7 +538,7 @@ structure Sealed (s₀ s : State) (key msg : List Byte) (P A : Nat) (u : State) 
 
 theorem Crypted.sealed {s₀ s : State} {key msg : List Byte} {T : Nat} {u : State}
     (h : Crypted true s₀ s key msg T u) : Sealed s₀ s key msg (512 * T) (pre true T) u :=
-  ⟨h.inv, h.le, pre_le true T, pre_mod true T, fun _ => by omega, h.x0, h.x1, h.x2, h.x3, h.x22, h.x23,
+  ⟨h.inv, h.le, pre_le true T, pre_mod true T, fun _ => by omega, h.lt, h.x0, h.x1, h.x2, h.x3, h.x22, h.x23,
     fun _ => by rw [h.cnt, show 512 * T / 64 = 8 * T by omega], h.data, h.frame,
     by simpa only [ite_true] using h.mac, h.vec⟩
 

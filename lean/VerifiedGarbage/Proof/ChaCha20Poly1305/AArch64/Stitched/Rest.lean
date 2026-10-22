@@ -149,7 +149,7 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
 
 /-- The data before the rest is kept. -/
 theorem prefix_rest {s₀ : State} (hp : APre e s₀) {m m' : Mem} {P n : Nat}
-    (hf : Frame [sub s₀ 64 384, restR s₀ P] m m') (hn : n ≤ P) (hP : P ≤ L s₀) :
+    (hf : Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] m m') (hn : n ≤ P) (hP : P ≤ L s₀) :
     bytesAt m' (dp s₀) n = bytesAt m (dp s₀) n := by
   simp only [bytesAt]
   apply List.map_congr_left
@@ -157,10 +157,12 @@ theorem prefix_rest {s₀ : State} (hp : APre e s₀) {m m' : Mem} {P n : Nat}
   have hi := List.mem_range.mp hi
   refine hf _ fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact fun hh => hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 384) (by lit_omega)) _ hh
       (data_in (by omega))
   · exact not_rest (by omega) hP
+  · exact fun hh => hp.c_d.sub_left (sub_ctx s₀ (k := 768) (n := 512) (by lit_omega)) _ hh
+      (data_in (by omega))
 
 /-- `cryptRest`'s arguments: the stream's, from the context and `x22`, `x23`. -/
 theorem restArgs_ok {s₀ : State} {w : State} (hx21 : w.gpr .x21 = cx s₀) :

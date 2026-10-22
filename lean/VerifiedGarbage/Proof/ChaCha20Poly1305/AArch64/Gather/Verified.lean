@@ -140,7 +140,7 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
     decide +kernel
   cases st <;>
   simp only [sealCode, sealMainCode, sealStitched, sealWith, sealMain, sealMainWith, sealStitchedMain, sealTail,
-    prologue, macPad,
+    sealRest, openRest, cryptRest, padRest, prologue, macPad,
     cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, hrest, Bool.and_true, Bool.true_and,
     Bool.false_eq_true, ite_false, ite_true, hpad] <;>
   decide +kernel

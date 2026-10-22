@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.SealRest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Rest
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
@@ -60,8 +61,8 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 The chunks encrypt the data's whole chunks and absorb all but the last of
 them (and with SVE2, if a rest remains, also the last while the next 256
 bytes' keystream is computed, of which up to the rest's length is used:
-`Tail.rest`); whatever is left is encrypted by `vg_chacha20_xor`, and absorbed
-with what was not.
+`Tail.rest`); whatever is left is encrypted by `sealRest`, and absorbed with what was
+not.
 -/
 
 @[expose] public section
@@ -96,18 +97,20 @@ theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤
 
 /-- The Poly1305 state after the chunks, from that before, through `rs`. -/
 theorem sealed_inv {s₀ : State} (hp : APre e s₀) {s u : State} {key msg : List Byte} {P A : Nat}
-    (hc : Sealed s₀ s key msg P A u) {s' : State} (hk : Kept [sub s₀ 64 384, dR s₀] u s') :
-    Inv0 s₀ s' :=
-  hc.inv.step hk (fun r hr => by
+    (hc : Sealed s₀ s key msg P A u) {s' : State}
+    (hk : KeptS [sub s₀ 64 384, dR s₀, sub s₀ 768 512] u s') : Inv0 s₀ s' :=
+  hc.inv.stepS hk (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
-      · exact ⟨dR s₀, by simp, fun _ h => h⟩)
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-      · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega)))
+      · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
+      · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
 
 theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
     WP isa (sealStitchedMain v.callee) s₀ (MainS s₀) := by
@@ -128,7 +131,7 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
       bytesAt_frame h₁.fine (by rdisj_all) hL']
   have R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
   refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp i₃ st₃ R₃).mono fun s₄ ⟨P, A, hc⟩ => ?_)
-  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.wr hc.cnt hc.data
+  refine WP.seq (sealRest_ok v hp hc.le hc.lt hc.p64 hc.inv.x21 hc.x1 hc.x2 hc.inv.rd hc.inv.wr hc.cnt hc.data
     |>.mono fun s₅ ⟨v₅, k₅, f₅, ct₅⟩ => ?_)
   rw [D₃] at ct₅
   have i₅ := sealed_inv hp hc k₅
@@ -136,8 +139,8 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   have hle := hc.le
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
     (srcAt hp (p := A) (by omega)) i₅.x21 i₅.rd i₅.wr
-    (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22])
-    (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
+    (by rw [k₅.cs _ (pres .x22) (by decide) (by decide) (pres30 .x22), hc.x22])
+    (by rw [k₅.cs _ (pres .x23) (by decide) (by decide) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
   have i₆ := mac_inv0 i₅ k₆
   refine WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_
   -- The message absorbed.
