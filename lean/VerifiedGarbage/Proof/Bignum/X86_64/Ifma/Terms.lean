@@ -18,7 +18,7 @@ of `a b`; `uT` the factor `u`, broadcast; `a2T` plus the low halves of
 `u m`; `cT` the carry of role 0's lane 0, in lane 0; `nT` role `k` after the
 shift (role `k + 1`, with the carry for role 0, and role 0's lanes moved
 down for role `R - 1`); `hT` plus the high halves of `u m` (and, for role
-`R - 1`, of `a b`).
+`R - 1`, of `a b`). Lane `p`'s temporary (`tN p`) is left with its `cT`.
 -/
 
 @[expose] public section
@@ -38,9 +38,9 @@ def lim : Reg → Nat := fun b =>
 /-- The register number of role `k` of prime `p` at step `i`. -/
 def regOf (p k i : Nat) : Nat := l.R * p + (k + i) % l.R
 
-/-- The zero register and the temporary. -/
+/-- The zero register and lane `p`'s temporary. -/
 def zN : Nat := l.nl * l.R + 2 * l.nl
-def tN : Nat := l.nl * l.R + 2 * l.nl + 1
+def tN (p : Nat) : Nat := l.nl * l.R + 2 * l.nl + 1 + p
 
 def bT (p i : Nat) : T := .bc (.lane0 (.ld .r9 (l.D * p + 32 * i)))
 def a1T (p k i : Nat) : T := .mad false (.reg (regOf l p k i)) (bT l p i) (.ld .r8 (l.D * p + 32 * k))
@@ -67,7 +67,7 @@ def expReg (i r : Nat) : T :=
   if r < l.nl * l.R then hT l (r / l.R) (roleOf l r i) i
   else if r < l.nl * l.R + l.nl then bT l (r - l.nl * l.R) i
   else if r < l.nl * l.R + 2 * l.nl then uT l (r - l.nl * l.R - l.nl) i
-  else if r = tN l then cT l (l.nl - 1) i else .reg r
+  else if zN l < r ∧ r ≤ zN l + l.nl then cT l (r - zN l - 1) i else .reg r
 
 /-! Equality of terms as the kernel evaluates it: a structural comparison,
 rather than the derived `DecidableEq`, whose evaluation was most of

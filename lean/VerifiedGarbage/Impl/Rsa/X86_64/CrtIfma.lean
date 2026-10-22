@@ -153,12 +153,13 @@ def vreg (n : Nat) : VReg :=
 variable (l : Lay)
 
 /-- The register of limb role `k` of lane `p` at step `i` of a block; then
-each lane's `b` and `u`, the zero register and a temporary. -/
+each lane's `b` and `u`, the zero register and each lane's temporary (one per
+lane, so that the lanes' chains through `u` share no register). -/
 def acc (p k i : Nat) : VReg := vreg (l.R * p + (k + i) % l.R)
 def bReg (p : Nat) : VReg := vreg (l.nl * l.R + p)
 def uReg (p : Nat) : VReg := vreg (l.nl * l.R + l.nl + p)
 def zReg : VReg := vreg (l.nl * l.R + 2 * l.nl)
-def tReg : VReg := vreg (l.nl * l.R + 2 * l.nl + 1)
+def tReg (p : Nat) : VReg := vreg (l.nl * l.R + 2 * l.nl + 1 + p)
 
 /-! ## The multiplication -/
 
@@ -177,12 +178,12 @@ def ammStep (i : Nat) : List Instr :=
   ps.flatMap (fun p => [.mov .rax (.mem (at_ .r9 (D * p + 32 * i))), .eop (.vmovq (bReg l p) .rax),
     .eop (.vpbroadcastq (bReg l p) (bReg l p))]) ++
   ps.flatMap (fun p => [loA p 0, loA p 1]) ++
-  ps.flatMap (fun p => [.eop (.bin .vpxorq (tReg l) (tReg l) (tReg l)),
-    .evMadd52Load false (tReg l) (acc l p 0 i) (at_ .r10 (D * p + l.oK0)),
-    .eop (.vpbroadcastq (uReg l p) (tReg l))]) ++
+  ps.flatMap (fun p => [.eop (.bin .vpxorq (tReg l p) (tReg l p) (tReg l p)),
+    .evMadd52Load false (tReg l p) (acc l p 0 i) (at_ .r10 (D * p + l.oK0)),
+    .eop (.vpbroadcastq (uReg l p) (tReg l p))]) ++
   ps.flatMap (fun p => [hiA p 0, loM p 0, loM p 1]) ++
-  ps.flatMap (fun p => [.eop (.shift .vpsrlq (tReg l) (acc l p 0 i) 52), .eop (.vmovqx (tReg l) (tReg l)),
-    .eop (.bin .vpaddq (acc l p 1 i) (acc l p 1 i) (tReg l)),
+  ps.flatMap (fun p => [.eop (.shift .vpsrlq (tReg l p) (acc l p 0 i) 52), .eop (.vmovqx (tReg l p) (tReg l p)),
+    .eop (.bin .vpaddq (acc l p 1 i) (acc l p 1 i) (tReg l p)),
     .eop (.valignq (acc l p 0 i) (zReg l) (acc l p 0 i) 1)]) ++
   ps.flatMap (fun p => [hiM p 0]) ++
   ps.flatMap (fun p => (List.range (l.R - 2)).flatMap fun j =>

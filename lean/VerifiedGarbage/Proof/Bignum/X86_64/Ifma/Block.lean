@@ -29,7 +29,8 @@ theorem AmmOk.bounds (hl : AmmOk l) : 2 ≤ l.R ∧ l.R ≤ 20 := by
   rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
 /-- The vector registers: the lanes' roles, each lane's `b` and `u`, the zero
-register and the temporary, of the 32. -/
+register and the first lane's temporary, of the 32 (the other lanes'
+temporaries `checkStep` evaluates). -/
 theorem AmmOk.regs (hl : AmmOk l) : 1 ≤ l.nl ∧ l.nl * l.R + 2 * l.nl + 1 < 32 := by
   rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
@@ -77,10 +78,9 @@ theorem expReg_regOf {p kk i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) (hk : kk < 
   exact mod_role hk (Nat.mod_lt _ (by omega))
 
 theorem expReg_zN (i : Nat) : expReg l i (zN l) = .reg (zN l) := by
-  simp only [expReg, zN, tN, show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R by omega,
+  simp only [expReg, zN, show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R by omega,
     show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + l.nl by omega,
-    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega,
-    show l.nl * l.R + 2 * l.nl ≠ l.nl * l.R + 2 * l.nl + 1 by omega, ite_false]
+    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega, Nat.lt_irrefl, false_and, ite_false]
 
 theorem ammStep_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.R) {L a m : Nat → Nat → Nat}
     {k b : Nat → Nat} (h : StepIn l s i L a m k b) (hc : Ctx (lim l) s) :
