@@ -32,6 +32,13 @@ on:
         description: Also run OpenSSL and aws-lc-rs, for reference, in a comparison with a commit (a run without one always does)
         type: boolean
         default: false
+      openssl_with_features:
+        description: With `openssl`, run OpenSSL and aws-lc-rs under VG_CPU_FEATURES configurations too (VG_CPU_FEATURES does not restrict them; see `openssl_ia32cap`)
+        type: boolean
+        default: false
+      openssl_ia32cap:
+        description: OPENSSL_ia32cap for OpenSSL's and aws-lc-rs's runs on x86 (both read it), to mask their CPU features, e.g. `~0x0:~0x10000` without AVX-512 (CPUID 7 EBX bit 16) or `~0x0:~0x60000010000` without AVX-512, VAES nor VPCLMULQDQ; the first value may not be empty (empty to leave it unset)
+        required: false
 
 permissions:
   contents: read
@@ -143,7 +150,11 @@ jobs:
           # OpenSSL's and aws-lc-rs's times are only a reference: a comparison
           # runs them when asked (a run without a base always does).
           OPENSSL: ${{ inputs.openssl && '--openssl' || '' }}
+          OPENSSL_WITH_FEATURES: ${{ inputs.openssl_with_features && '--openssl-with-features' || '' }}
+          IA32CAP: ${{ inputs.openssl_ia32cap }}
         run: |
+          # OpenSSL and aws-lc read it; the library does not.
+          if [ -n "$IA32CAP" ]; then export OPENSSL_ia32cap="$IA32CAP"; fi
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
