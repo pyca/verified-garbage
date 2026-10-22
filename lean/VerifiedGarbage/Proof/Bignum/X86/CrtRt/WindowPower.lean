@@ -102,13 +102,17 @@ theorem pwR_fit (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ pwR len 
   · exact fw _ (by simp)
   · exact ft _ (by simp)
 
-/-- An exponentiation: slot 6 set to slot 5 to the power of slot 8, modulo `M`. -/
-theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem base len c 3 = 1)
-    (h4 : sv s.mem base len c 4 = 2 ^ (16 * bc len c) % M) :
-    WP isa (windowPower c) s fun u =>
+/-- An exponentiation over the `N` windows `count` sets: slot 6 set to slot 5 to the power of the top
+`4 N` bits of slot 8, modulo `M`. -/
+theorem windowPowerWith_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem base len c 3 = 1)
+    (h4 : sv s.mem base len c 4 = 2 ^ (16 * bc len c) % M) {count : List Instr} {N : Nat} (hN0 : 0 < N)
+    (hN : N ≤ 2 * bc len c)
+    (hc : ∀ t, CtxOk Ex base bytes len args c M t → WP isa (.block count) t fun u =>
+      Keeps [.esi] t u ∧ u.mem = t.mem ∧ u.gpr .esi = BitVec.ofNat 32 N) :
+    WP isa (windowPowerWith c count) s fun u =>
       CtxOk Ex base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (pwR len c)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
-      sv u.mem base len c 6 = sv s.mem base len c 5 ^ sv s.mem base len c 8 % M := by
+      sv u.mem base len c 6 = sv s.mem base len c 5 ^ (sv s.mem base len c 8 * 16 ^ N / 2 ^ (32 * cwc len c)) % M := by
   have h := C.inp
   have hM := C.gt
   have bw := bc_eq_cwc len c
@@ -116,7 +120,7 @@ theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem b
   have hb := bc_le h.upper' c
   have RR : 2 ^ (16 * bc len c) = 2 ^ (8 * bc len c) * 2 ^ (8 * bc len c) := by
     rw [← Nat.pow_add]; congr 1; omega
-  unfold windowPower
+  unfold windowPowerWith
   -- One in Montgomery form into slot 6.
   refine WP.seq (WP.mono (cmul_ok C (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [h3]; exact hM)) fun s₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
@@ -147,16 +151,11 @@ theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem b
   have m8₃ := tabR_sv h₂ I₃.frame h₂.room (j := 8) (by decide) (by decide) (by decide)
   -- The count of windows.
   have C₃ := I₃.ctx
-  refine WP.seq (widthC_ok (k := 0) (c := c) (r := .esi) (is := [_]) C₃.inp.width h.upper' fun s₄ K₄ M₄ e₄ =>
-    wp_addS rfl fun s₅ a₅ _ => WP.block_nil ?_)
-  have C₅ : CtxOk Ex base bytes len args c M s₅ := C₃.regs (K₄.trans (a₅.keeps.mono (by decide))) (by rw [a₅.mem, M₄])
-  have mem₅ : s₅.mem = s₃.mem := by rw [a₅.mem, M₄]
-  let N := 2 * bc len c
+  refine WP.seq (WP.mono (hc s₃ C₃) fun s₅ ⟨K₅, mem₅, esi₅⟩ => ?_)
+  have C₅ : CtxOk Ex base bytes len args c M s₅ := C₃.regs K₅ mem₅
   let P := 2 ^ (32 * cwc len c)
   let E := sv s.mem base len c 8
   let b := sv s.mem base len c 5
-  have esi₅ : s₅.gpr .esi = BitVec.ofNat 32 N := by
-    rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega
   have E₅ : sv s₅.mem base len c 8 = E := by rw [sv, mem₅]; simp only [sv] at m8₃ m8₂ m8₁ ⊢; rw [m8₃, m8₂, m8₁]
   have Y₅ : sv s₅.mem base len c 6 = 2 ^ (8 * bc len c) % M := by
     rw [sv, mem₅]; simp only [sv] at m6₃ m6₂ Y₁ ⊢; rw [m6₃, m6₂, Y₁]
@@ -195,7 +194,7 @@ theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem b
   · have sp₁ : s₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
     have sp₂ : s₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
     have sp₃ : s₃.gpr .esp = s.gpr .esp := (I₃.keeps.1 _ (by decide)).trans sp₂
-    have sp₅ : s₅.gpr .esp = s.gpr .esp := by rw [a₅.other _ (by decide), K₄.1 _ (by decide), sp₃]
+    have sp₅ : s₅.gpr .esp = s.gpr .esp := by rw [K₅.1 _ (by decide), sp₃]
     rw [sp₁] at F₂
     have F₃ := I₃.frame
     rw [sp₂] at F₃
@@ -217,13 +216,29 @@ theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem b
     exact ((((sub m6 F₁).trans (sub m5 F₂)).trans (sub mt F₃)).trans
       (by rw [← mem₅]; exact sub mw F₆)).trans (sub m6 Fu)
   · exact (((((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans I₃.keeps).trans
-      ((K₄.trans (a₅.keeps.mono (by decide))).mono (by decide))).trans K₆).trans (Ku.mono (by decide))
+      (K₅.mono (by decide))).trans K₆).trans (Ku.mono (by decide))
   · have fin := Y₆
-    rw [show N = 8 * cwc len c by omega, VG.Proof.Mont.X86.Dynamic.window_all] at fin
     have v := VG.Proof.Dsa.mont_decode (A := sv s₆.mem base len c 6) (out := sv u.mem base len c 6) C.coprime
       (by rw [fin, Nat.mod_mod]) (by rw [Vu, one₆, one₅])
     rw [Nat.mod_eq_of_lt Lu] at v
     exact v
+
+/-- An exponentiation: slot 6 set to slot 5 to the power of slot 8, modulo `M`. -/
+theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem base len c 3 = 1)
+    (h4 : sv s.mem base len c 4 = 2 ^ (16 * bc len c) % M) :
+    WP isa (windowPower c) s fun u =>
+      CtxOk Ex base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (pwR len c)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
+      sv u.mem base len c 6 = sv s.mem base len c 5 ^ sv s.mem base len c 8 % M := by
+  have h := C.inp
+  have bw := bc_eq_cwc len c
+  have g := bc_ge h.lower' c
+  have hb := bc_le h.upper' c
+  refine WP.mono (windowPowerWith_ok C h3 h4 (N := 2 * bc len c) (by omega) (Nat.le_refl _) fun t Ct =>
+    widthC_ok (k := 0) (c := c) (r := .esi) (is := [_]) Ct.inp.width h.upper' fun s₄ K₄ M₄ e₄ =>
+      wp_addS rfl fun s₅ a₅ _ => WP.block_nil ⟨K₄.trans (a₅.keeps.mono (by decide)), by rw [a₅.mem, M₄], by
+        rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega⟩) fun u ⟨Cu, Fu, Ku, Vu⟩ => ⟨Cu, Fu, Ku, ?_⟩
+  rw [Vu, show 2 * bc len c = 8 * cwc len c by omega, VG.Proof.Mont.X86.Dynamic.window_all]
 
 end
 

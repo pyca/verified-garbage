@@ -239,10 +239,11 @@ namespace Exchange
 
 def args : Args := { out := some 0, dom := 2, dlen := 3, plen := 4, y := some 7, x := some 5, ws := 9 }
 
-/-- `z = y^x mod p` in slot 6, its range as the acceptance mask, and `z` or zeros to the output. -/
+/-- `z = y^x mod p` in slot 6, its range as the acceptance mask, and `z` or zeros to the output.
+x is loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def body : Prog isa :=
-  .seq pSetup <| .seq ctxP <| .seq (load (sl 5) n1 8 9) <| .seq (load (sl 8) n1 10 11) <|
-  .seq (windowPower .wide) <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
+  .seq pSetup <| .seq ctxP <| .seq (load (sl 5) n1 8 9) <| .seq (loadTop (sl 8) n1 10 11) <|
+  .seq (windowPowerWith .wide (lenCount 11)) <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
   .seq (copy (sl 6) (sl 19) n1) exportResult
 
 def code : Prog isa := wrap args body

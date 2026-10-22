@@ -68,17 +68,55 @@ theorem loadCtx_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {d p l
       (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
       (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega), V, O, K⟩
 
+/-- A number of `L` bytes into the top of the wide context's slot `d`, kept by its context: the bytes'
+value times `2^(8 (Bc − L))`. -/
+theorem loadTopCtx_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {d p l L : Nat} (hd1 : 1 ≤ d)
+    (hd : d ≤ 8) (hp : p < 18) (hl : l < 18) (hlen : args l = BitVec.ofNat 32 L) (hL : 0 < L) (hLl : L ≤ len)
+    (fit : (args p).toNat + L ≤ 2 ^ 32) (rd : InRegions (s.rd ++ s.wr) (byteAddr (args p)) L)
+    (apart : Region.Disjoint ⟨byteAddr (args p), L⟩ ⟨base, bytes⟩) :
+    WP isa (loadTop (.slot .wide d) (one .wide) p l) s fun u =>
+      CtxOk Ex base bytes len args .wide M u ∧
+      sv u.mem base len .wide d =
+        2 ^ (8 * (bc len .wide - L)) * Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args p)) L) ∧
+      Outside base (lo len (.slot .wide d)) (bc len .wide) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have h := C.inp
+  have bl := h.bytes_lt
+  have lb := len_le_bc len
+  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have ed : lo len (.slot .wide d) = numBase + d * st len .wide := rfl
+  have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
+  have d8 := Nat.mul_le_mul_right (st len .wide) hd
+  have d1 := Nat.mul_le_mul_right (st len .wide) hd1
+  refine WP.mono (loadTop_ok h (one_ok .wide) (slot_fit1 h (j := d) (by omega)) (p := p) (l := l) (L := L) hp hl hlen
+    hL (by rw [cb1]; omega) fit rd apart) fun u ⟨V, O, K⟩ => ?_
+  rw [cb1] at O V
+  rw [cw1] at V
+  exact ⟨C.keepF K (by decide) (by decide) (ws := [(lo len (.slot .wide d), bc len .wide)])
+      (frameR_of_outside O (by omega) (by simp))
+      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
+      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega), V, O, K⟩
+
+/-- The exponent's top `2 L` windows, of a number of `L` bytes at the top of `Bc`: the number. -/
+theorem top_windows {E L B : Nat} (hL : L ≤ B) :
+    2 ^ (8 * (B - L)) * E * 16 ^ (2 * L) / 2 ^ (8 * B) = E := by
+  rw [show (16 : Nat) ^ (2 * L) = 2 ^ (8 * L) by rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega,
+    Nat.mul_comm (2 ^ _) E, Nat.mul_assoc, ← Nat.pow_add, show 8 * (B - L) + 8 * L = 8 * B by omega]
+  exact Nat.mul_div_cancel _ (Nat.two_pow_pos _)
+
 /-- The body up to the power. -/
 abbrev exFront : List (Prog isa) :=
   [Impl.Ffdh.X86.pSetup, Impl.Ffdh.X86.ctxP, load (.slot .wide 5) (one .wide) 8 9,
-    load (.slot .wide 8) (one .wide) 10 11]
+    loadTop (.slot .wide 8) (one .wide) 10 11]
 
 /-- The body after the power. -/
 abbrev exTail : Prog isa :=
   Prog.chain [Impl.Ffdh.X86.rangeMask 6, .block [.store (sc accOff) .ecx],
     copy (.slot .wide 6) (.slot .wide 19) (one .wide)] exportResult
 
-theorem body_eq : Impl.Ffdh.X86.Exchange.body = Prog.chain exFront (.seq (windowPower .wide) exTail) := rfl
+theorem body_eq : Impl.Ffdh.X86.Exchange.body =
+    Prog.chain exFront (.seq (windowPowerWith .wide (lenCount 11)) exTail) := rfl
 
 /-- p's context, with y in slot 5 and x in 8. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
@@ -88,7 +126,8 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
     WP isa (Prog.chain exFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       CtxOk Ex base bytes len args .wide (safeM (comp s.mem args len 0)) u ∧ sv u.mem base len .wide 3 = 1 ∧
       sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % safeM (comp s.mem args len 0) ∧
-      sv u.mem base len .wide 5 = yv s.mem args len ∧ sv u.mem base len .wide 8 = xv s.mem args xl ∧
+      sv u.mem base len .wide 5 = yv s.mem args len ∧
+      sv u.mem base len .wide 8 = 2 ^ (8 * (bc len .wide - xl)) * xv s.mem args xl ∧
       sv u.mem base len .wide 14 = 1 ∧ sv u.mem base len .wide 15 = pm1 len (comp s.mem args len 0) := by
   have dl := G.dl
   have fit := G.fit
@@ -117,7 +156,7 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.slot C₂.inp (by decide) O₃ K₃
   have S₁₃ := S₁₂.trans S₃
   have X₃ := X.keep ⟨rfl, rfl⟩ S₁₃.keeps
-  refine WP.seq (WP.mono (loadCtx_ok C₃ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (loadTopCtx_ok C₃ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide) (by decide)
     (by decide) X₃.e11 X₃.pos X₃.le X₃.fit X₃.rd X₃.apart) fun u₄ ⟨C₄, V₄, O₄, K₄⟩ => WP.block_nil ?_)
   rw [bytes_keep h X.apart (by omega) hx40 S₁₃.frame] at V₄
   have S₄ : Step Ex base bytes len args u₃ u₄ := Step.slot C₃.inp (by decide) O₄ K₄
@@ -185,8 +224,16 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   rw [body_eq]
   refine WP.chain_split (front_ok h G Y X hy40 hx40) fun u ⟨S, C, one, R2, V5, V8, V14, V15⟩ => ?_
   -- z.
-  refine WP.seq (WP.mono (windowPower_ok C one R2) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
-  rw [V5, V8, show yv s.mem args len ^ xv s.mem args xl % safeM (comp s.mem args len 0) = z from hz] at Y₅
+  have xp := X.pos
+  have xle := X.le
+  have lb := len_le_bc len
+  have bw := bc_eq_cwc len .wide
+  refine WP.seq (WP.mono (windowPowerWith_ok C one R2 (N := 2 * xl) (by omega) (by omega) fun t Ct =>
+    wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
+      ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
+        rw [a₂.gpr, a₁.gpr, X.e11, BitVec.ofNat_add_ofNat]; congr 1; omega⟩) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
+  rw [V8, show 32 * cwc len .wide = 8 * bc len .wide by omega, top_windows (by omega)] at Y₅
+  rw [V5, show yv s.mem args len ^ xv s.mem args xl % safeM (comp s.mem args len 0) = z from hz] at Y₅
   have G₅ := stR_widen F₅ (pwR_in C.inp .wide 0)
   have S₅ : Step Ex base bytes len args u u₅ := Step.ops C.inp G₅ K₅
   have k₅ := kept_ops C.inp G₅ C.inp.room

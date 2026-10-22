@@ -13458,8 +13458,16 @@ add ebx, edx
 add ebx, edx
 add ebx, edx
 add ebx, edx
-mov esi, DWORD PTR [esp+44]
+mov edx, DWORD PTR [esp+8]
+add edx, 7
+shr edx, 3
+add edx, edx
+add edx, edx
+add edx, edx
+add ebx, edx
 mov ecx, DWORD PTR [esp+48]
+sub ebx, ecx
+mov esi, DWORD PTR [esp+44]
 add esi, ecx
 sub esi, 1
 224:
@@ -13930,12 +13938,7 @@ add edx, eax
 add edx, eax
 cmp esi, edx
 jne 228b
-mov esi, DWORD PTR [esp+8]
-add esi, 7
-shr esi, 3
-add esi, esi
-add esi, esi
-add esi, esi
+mov esi, DWORD PTR [esp+48]
 add esi, esi
 230:
 lea esp, [esp-36]
