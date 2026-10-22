@@ -13,10 +13,10 @@ namespace VG.Proof.RsaKeyGen.X86.PreparedR2
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 open VG.Impl.Bignum.X86.PublicContext
 
-theorem doubles_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+theorem doublesAt_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (S : Ready g c capacity p s) (bound : g.w ≤ 64) (odd : c % 2 = 1)
-    (top : 2 ^ (64 * g.w - 1) ≤ c) :
-    WP isa (VG.Impl.RsaKeyGen.X86.FastR2.doubles (modulus g.w) (g.array 2) (g.array 6)) s fun t =>
+    {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) (top : 2 ^ e ≤ c) :
+    WP isa (VG.Impl.RsaKeyGen.X86.FastR2.doublesAt (modulus g.w) e (g.array 2) (g.array 6)) s fun t =>
       Ready g c capacity p t ∧
       val32 t.mem g.W (g.array 6) g.words = 2 ^ g.w * 2 ^ (64 * g.w) % c ∧
       Outs g.W (phaseRanges g) s.mem t.mem ∧ Keeps VG.Proof.Mont.X86.Dynamic.powerClob s t := by
@@ -28,8 +28,8 @@ theorem doubles_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat
     rw [Prepared.slot_eq]
     unfold Geometry.words at apart
     omega
-  refine WP.mono (FastR2.doubles_ok S.scratch (Prepared.dynamicModulus v S.modulus)
-    (Prepared.layout v) apart' bound odd top) fun t ⟨value, _, O, K⟩ => ?_
+  refine WP.mono (FastR2.doublesAt_ok S.scratch (Prepared.dynamicModulus v S.modulus)
+    (Prepared.layout v) apart' bound odd positive eLt top) fun t ⟨value, _, O, K⟩ => ?_
   change Outs g.W [(g.array 6, 8 * g.w), ((modulus g.w).tmp, 8 * g.w),
     (g.array 2, accLen (modulus g.w))] s.mem t.mem at O
   change Outs g.W [(g.array 6, 8 * g.w), (slot g.w 1, 8 * g.w),
@@ -44,5 +44,14 @@ theorem doubles_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat
   unfold Geometry.words
   rw [← wordsVal_eq_val32]
   exact value
+
+theorem doubles_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (S : Ready g c capacity p s) (bound : g.w ≤ 64) (odd : c % 2 = 1)
+    (top : 2 ^ (64 * g.w - 1) ≤ c) :
+    WP isa (VG.Impl.RsaKeyGen.X86.FastR2.doubles (modulus g.w) (g.array 2) (g.array 6)) s fun t =>
+      Ready g c capacity p t ∧
+      val32 t.mem g.W (g.array 6) g.words = 2 ^ g.w * 2 ^ (64 * g.w) % c ∧
+      Outs g.W (phaseRanges g) s.mem t.mem ∧ Keeps VG.Proof.Mont.X86.Dynamic.powerClob s t :=
+  doublesAt_ready v S bound odd (e := 64 * g.w - 1) (by have := v.minWidth; omega) (by have := v.minWidth; omega) top
 
 end VG.Proof.RsaKeyGen.X86.PreparedR2

@@ -25,20 +25,30 @@ theorem mulY {mont : Prog isa} (H : NoSp mont) (name : String) (array : Nat) :
   simp only [VG.Impl.MillerRabin.X86.mulY, Code.allInstrs, checked H]
   rfl
 
-theorem r2_doubles (M : VG.Impl.Mont.Mod) (acc out : Nat) : NoSp (FastR2.doubles M acc out) := by
-  unfold FastR2.doubles FastR2.seed
+theorem r2_doublesAt (M : VG.Impl.Mont.Mod) (e acc out : Nat) : NoSp (FastR2.doublesAt M e acc out) := by
+  unfold FastR2.doublesAt FastR2.seedAt
   exact sequence (constant _ _ _) (NoSp.of_all (by rfl))
 
-theorem fastR2 {square : Prog isa} (H : NoSp square) (M : VG.Impl.Mont.Mod) (acc out : Nat) :
-    NoSp (FastR2.code M acc out square) := by
-  unfold FastR2.code
-  apply sequence (r2_doubles M acc out)
+theorem r2_doubles (M : VG.Impl.Mont.Mod) (acc out : Nat) : NoSp (FastR2.doubles M acc out) :=
+  r2_doublesAt M _ acc out
+
+theorem fastR2At {square : Prog isa} (H : NoSp square) (M : VG.Impl.Mont.Mod) (e acc out : Nat) :
+    NoSp (FastR2.codeAt M e acc out square) := by
+  unfold FastR2.codeAt
+  apply sequence (r2_doublesAt M e acc out)
   change NoSp (.seq square (.seq square (.seq square (.seq square (.seq square square)))))
   exact sequence H (sequence H (sequence H (sequence H (sequence H H))))
 
-theorem r2 {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (PreparedR2.code w name mont) := by
-  unfold PreparedR2.code
-  exact sequence (fastR2 (mulY H name 6) _ _ _) (NoSp.of_all (by rfl))
+theorem fastR2 {square : Prog isa} (H : NoSp square) (M : VG.Impl.Mont.Mod) (acc out : Nat) :
+    NoSp (FastR2.code M acc out square) :=
+  fastR2At H M _ acc out
+
+theorem r2At {mont : Prog isa} (H : NoSp mont) (e w : Nat) (name : String) : NoSp (PreparedR2.codeAt e w name mont) := by
+  unfold PreparedR2.codeAt
+  exact sequence (fastR2At (mulY H name 6) _ _ _ _) (NoSp.of_all (by rfl))
+
+theorem r2 {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (PreparedR2.code w name mont) :=
+  r2At H _ w name
 
 theorem constants {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (Constants.code w name mont) := by
   unfold Constants.code
