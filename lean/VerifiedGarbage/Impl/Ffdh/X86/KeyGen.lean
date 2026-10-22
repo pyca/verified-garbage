@@ -132,9 +132,10 @@ end GenerateKey
 
 namespace KeyInit
 
-/-- `(state, p_len)`: `edx := 1` exactly when `64 ≤ p_len ≤ 1024`, by the borrows of two comparisons. -/
+/-- `(state, p_len)`: `edx := 1` exactly when `64 ≤ p_len ≤ 1024`, by the borrows of two comparisons
+(`edx` cleared first, so that the mask is public). -/
 def validate : List Instr :=
-  [.mov .ecx (.mem (PublicFn.argument 0)), .mov .eax (.mem (PublicFn.argument 1)),
+  [.mov .ecx (.mem (PublicFn.argument 0)), .mov .eax (.mem (PublicFn.argument 1)), .mov .edx (.imm 0),
     .alu .cmp .eax (.imm 64), .alu .sbb .edx (.reg .edx), .alu .xor .edx (.imm 0xFFFFFFFF),
     .alu .cmp .eax (.imm 1025), .alu .sbb .eax (.reg .eax), .alu .and .edx (.reg .eax), .alu .and .edx (.imm 1)]
 
