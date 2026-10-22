@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -91,6 +92,17 @@ def artifacts : List Artifact := [
     verified := Proof.Ffdh.X86.Cand.verified
     spSafe := Proof.Ffdh.X86.Shape.candidate_spSafe
     consts := VG.Impl.RsaKeyGen.TrialTable32.consts
-    stack := 116 }]
+    stack := 116 },
+  Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
+    notes := ["The whole parameter search runs in verified code: candidate retries, the 64-bit attempt \
+      count, the octets each candidate consumes, and the next entropy request, computed without a branch. \
+      Each attempt calls `vg_ffdh_parameter_candidate_sieved` with its nine arguments in a 36-byte frame; \
+      the candidate writes its `used` into the state. Timing depends on the tape and the controller's \
+      public words."]
+    code := Impl.Ffdh.X86.ParamSearch.code
+    verified := Proof.Ffdh.X86.PSearch.verified
+    spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe
+    consts := VG.Impl.RsaKeyGen.TrialTable32.consts
+    stack := 156 }]
 
 end VG.Artifacts.Ffdh.X86
