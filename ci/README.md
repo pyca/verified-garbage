@@ -1,5 +1,10 @@
 # Historical Lean planning data
 
+For a request to check or analyze CI metrics, follow the
+[collection, upload, and analysis workflow](metrics-analysis.md). It includes
+`ci_metrics.py fetch` time windows, offline gzip bundle export, verified upload
+parts, and a streaming summary for large datasets.
+
 Every CI run attempts to upload `ci-metrics.json` as the `ci-metrics`
 artifact. Retention is explicitly 30 days. The one-day `lean-plan` and
 compiled build artifacts remain short-lived: the metrics embed the plan,
@@ -14,8 +19,9 @@ python3 ci/ci_metrics.py summary .ci-metrics/<run-id>.json
 
 The limit counts recent workflow runs inspected, including runs without
 metrics, rather than artifacts downloaded. Fetch paginates beyond 100 runs
-and skips files already present. Collection is best effort and does not
-block the CI verdict; a cancelled run or collector timeout may have no
+and skips files already present. Local fetch records coverage and provenance
+in `collection.json`; use `[0-9]*.json` for metrics-only directory readers.
+The CI collector is best effort and does not block the CI verdict; a cancelled run or collector timeout may have no
 artifact. Do not treat the retained sample as all CI attempts.
 
 ## Version 2

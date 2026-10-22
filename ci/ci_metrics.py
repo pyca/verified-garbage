@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Records what a CI run did and how long it took, for later analysis.
 
 The last steps of every run (`all-green`'s, in ci.yml) collect, into one
@@ -33,20 +37,31 @@ artifacts remain readable; collection never requires a successful build.
   ci_metrics.py fetch OUT [LIMIT] download the metrics of the last LIMIT
                                   (100) runs of ci.yml that have them into
                                   OUT/<run>.json, with `gh`, skipping those
-                                  there
+                                  there; --hours or --start/--end select a
+                                  creation-time window instead of a count
+  ci_metrics.py bundle OUT --output FILE.json.gz
+                                  export the last fetch selection for sharing
+
+See ci/metrics-analysis.md for collection, transport, and analysis guidance.
 """
 
+import argparse
 import concurrent.futures
 import datetime
+import gzip
 import io
+import itertools
 import json
+import math
 import os
 import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 import zipfile
 import time
+from urllib.parse import urlencode
 
 VERSION = 3
 COLLECT_DEADLINE = None
@@ -402,9 +417,10 @@ def summary(m):
     return "\n".join(out) + "\n"
 
 
-def gh(path, *args):
+def gh(path, *args, output=None):
     timeout = None if COLLECT_DEADLINE is None else max(0.001, min(5, COLLECT_DEADLINE - time.monotonic()))
-    return subprocess.run(["gh", "api", *args, path], check=True, capture_output=True, timeout=timeout).stdout
+    streams = {"capture_output": True} if output is None else {"stdout": output, "stderr": subprocess.PIPE}
+    return subprocess.run(["gh", "api", *args, path], check=True, timeout=timeout, **streams).stdout
 
 
 def fetch_plan(repo, run_id, attempt):
@@ -491,25 +507,230 @@ def _collect_this_run():
     return metrics
 
 
-def fetch(out, limit, repo="pyca/verified-garbage"):
+RUN_FIELDS = ("id", "html_url", "head_sha", "head_branch", "event", "created_at",
+              "status", "conclusion", "run_attempt")
+FETCH_ERRORS = (OSError, ValueError, KeyError, RuntimeError, zipfile.BadZipFile,
+                OverflowError, subprocess.CalledProcessError, subprocess.TimeoutExpired)
+
+
+def fetch_error(error):
+    """gh redirect errors can contain signed storage credentials in the URL."""
+    text = (error.stderr.decode(errors="replace") if isinstance(error, subprocess.CalledProcessError)
+            and error.stderr else str(error))
+    return re.sub(r'(https?://[^\s?"\\]+)\?[^\s"\\]+', r'\1?[redacted]', text).strip()
+
+
+def fetch_pages(endpoint, key, filtered=False):
+    page = 1
+    while True:
+        separator = "&" if "?" in endpoint else "?"
+        data = json.loads(gh(f"{endpoint}{separator}per_page=100&page={page}"))
+        if filtered and data["total_count"] > 1000:
+            raise ValueError("GitHub limits filtered run searches to 1000 results; use a smaller time window")
+        yield from data[key]
+        if len(data[key]) < 100:
+            return
+        page += 1
+
+
+def utc_stamp(value):
+    return value.astimezone(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def write_collection(path, data):
+    """Replace the selection/state atomically, leaving metrics files intact."""
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     prefix=".collection-", delete=False) as stream:
+        temporary = pathlib.Path(stream.name)
+        try:
+            json.dump(data, stream, indent=2)
+            stream.write("\n")
+        except BaseException:
+            stream.close()
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def download_metrics(base, artifact, dest):
+    # The ZIP is spooled to disk. Parse only this artifact, retaining its
+    # embedded provenance; copy the original metrics bytes to the cache.
+    with tempfile.TemporaryFile() as packed:
+        gh(f"{base}/artifacts/{artifact['id']}/zip", output=packed)
+        packed.seek(0)
+        with zipfile.ZipFile(packed) as archive:
+            with archive.open("ci-metrics.json") as source:
+                document = json.load(source)
+            if not isinstance(document, dict):
+                raise ValueError("ci-metrics.json must be an object")
+            embedded_run = document.get("run")
+            del document
+            target = dest.open("xb")
+            try:
+                with target, archive.open("ci-metrics.json") as source:
+                    while block := source.read(1024 * 1024):
+                        target.write(block)
+            except BaseException:
+                dest.unlink(missing_ok=True)
+                raise
+    return embedded_run
+
+
+def fetch(out, limit=None, repo="pyca/verified-garbage", *, hours=None, start=None, end=None, workflow="ci.yml"):
+    """Resume individual files and record the current selection in collection.json.
+
+    cached_runs retains provenance across selections; runs contains only this
+    invocation's successful/cached entries. Export uses runs, never all files
+    left over in OUT from earlier windows.
+    """
+    window = hours is not None or start is not None or end is not None
+    if window:
+        if limit is not None:
+            raise ValueError("a run-count limit cannot be combined with a time window")
+        if hours is None and start is None:
+            raise ValueError("--end requires --hours or --start")
+        if hours is not None and start is not None:
+            raise ValueError("choose --hours or --start")
+        end = end or datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+        start = start or end - datetime.timedelta(hours=hours)
+        if start.tzinfo is None or end.tzinfo is None or start >= end:
+            raise ValueError("start and end must include timezones, with start before end")
+    else:
+        limit = 100 if limit is None else limit
+        if limit <= 0:
+            raise ValueError("run-count limit must be positive")
+    if not re.fullmatch(r"[\w.-]+/[\w.-]+", repo):
+        raise ValueError("repository must be owner/repo")
     out.mkdir(parents=True, exist_ok=True)
-    # Keep the page size constant: changing it on the last page changes
-    # GitHub's offset, repeating runs and missing the end of the window.
-    for offset in range(0, limit, 100):
-        runs = json.loads(gh(f"repos/{repo}/actions/workflows/ci.yml/runs?per_page=100&page={offset // 100 + 1}"))
-        for run in runs["workflow_runs"][:min(100, limit - offset)]:
-            dest = out / f"{run['id']}.json"
-            if dest.exists():
-                continue
-            arts = json.loads(gh(f"repos/{repo}/actions/runs/{run['id']}/artifacts?name=ci-metrics"))["artifacts"]
-            arts = [a for a in arts if not a["expired"]]
-            if not arts:
-                continue
-            data = zipfile.ZipFile(io.BytesIO(gh(f"repos/{repo}/actions/artifacts/{arts[0]['id']}/zip")))
-            dest.write_bytes(data.read("ci-metrics.json"))
-            print(dest, file=sys.stderr)
-        if len(runs["workflow_runs"]) < 100:
-            break
+    state = out / "collection.json"
+    previous = json.loads(state.read_text()) if state.exists() else {}
+    if previous and (previous.get("schema_version") != 1 or previous.get("repository") != repo
+                     or previous.get("workflow") != workflow):
+        raise ValueError("collection directory belongs to a different repository/workflow or unsupported schema")
+    collection = {"schema_version": 1, "repository": repo, "workflow": workflow,
+                  "start": utc_stamp(start) if start else None, "end": utc_stamp(end) if end else None,
+                  "limit": limit, "window_basis": "workflow run created_at" if window else "recent workflow run count",
+                  "downloaded_at": utc_stamp(datetime.datetime.now(datetime.timezone.utc)),
+                  "selection_complete": False, "inspected_runs": 0, "runs": [], "missing": [], "errors": [],
+                  "cached_runs": previous.get("cached_runs", {})}
+    base = f"repos/{repo}/actions"
+    endpoint = f"{base}/workflows/{workflow}/runs"
+    if window:
+        endpoint += "?" + urlencode({"created": f"{utc_stamp(start)}..{utc_stamp(end)}"})
+    try:
+        runs = fetch_pages(endpoint, "workflow_runs", filtered=window)
+        for run in itertools.islice(runs, limit):
+            collection["inspected_runs"] += 1
+            meta = {k: run.get(k) for k in RUN_FIELDS}
+            run_id = str(int(run["id"]))
+            dest = out / f"{run_id}.json"
+            artifact = None
+            try:
+                if dest.exists():
+                    old = collection["cached_runs"].get(run_id, {})
+                    row = old | {"run": meta, "file": dest.name, "cached": True,
+                                 "provenance": old.get("provenance", "legacy_local"),
+                                 "artifact_id": old.get("artifact_id")}
+                else:
+                    arts = [a for a in fetch_pages(f"{base}/runs/{run_id}/artifacts?name=ci-metrics", "artifacts")
+                            if a["name"] == "ci-metrics"]
+                    retained = [a for a in arts if not a.get("expired")]
+                    if not retained:
+                        collection["missing"].append({"run": meta, "reason": "Only expired ci-metrics artifacts" if arts
+                                                      else "No ci-metrics artifact"})
+                        continue
+                    artifact = max(retained, key=lambda a: a["id"])
+                    embedded_run = download_metrics(base, artifact, dest)
+                    row = {"run": meta, "downloaded_run": meta, "metrics_run": embedded_run,
+                           "downloaded_at": utc_stamp(datetime.datetime.now(datetime.timezone.utc)),
+                           "file": dest.name, "artifact_id": artifact["id"], "cached": False,
+                           "provenance": "downloaded", "artifact": artifact}
+                    print(dest, file=sys.stderr)
+                collection["runs"].append(row)
+                collection["cached_runs"][run_id] = row
+            except FETCH_ERRORS as error:
+                failure = {"run": meta, "error": fetch_error(error)}
+                if artifact is not None:
+                    failure["artifact_id"] = artifact["id"]
+                collection["errors"].append(failure)
+                print(f"Run {run_id}: {failure['error']}", file=sys.stderr)
+        collection["selection_complete"] = True
+    except FETCH_ERRORS as error:
+        collection["errors"].append({"stage": "list_runs", "error": fetch_error(error)})
+    finally:
+        write_collection(state, collection)
+    print(f"Inspected {collection['inspected_runs']} runs; {len(collection['runs'])} local metrics; "
+          f"{len(collection['missing'])} missing; {len(collection['errors'])} errors. See {state}", file=sys.stderr)
+    return 1 if collection["errors"] else 0
+
+
+def bundle(out, output):
+    """Export the last fetch selection, one metrics document at a time."""
+    if output.suffix != ".gz":
+        raise ValueError("bundle output must end in .gz")
+    collection = json.loads((out / "collection.json").read_text())
+    if collection.get("schema_version") != 1:
+        raise ValueError("unsupported collection schema")
+    header = {k: v for k, v in collection.items() if k not in ("cached_runs", "runs")}
+    output.parent.mkdir(parents=True, exist_ok=True)
+    raw = output.open("xb")
+    try:
+        with raw, gzip.open(raw, "wt", encoding="utf-8", compresslevel=6) as stream:
+            stream.write(json.dumps(header)[:-1] + ',"runs":[')
+            for index, row in enumerate(collection["runs"]):
+                name = f"{int(row['run']['id'])}.json"
+                if row["file"] != name:
+                    raise ValueError("collection metrics filenames must match their run IDs")
+                document = json.loads((out / name).read_bytes())
+                if not isinstance(document, dict):
+                    raise ValueError(f"{name} must be a metrics object")
+                if index:
+                    stream.write(",")
+                json.dump({k: v for k, v in row.items() if k != "file"} |
+                          {"files": {"ci-metrics.json": document}}, stream, separators=(",", ":"))
+                del document
+            stream.write("]}\n")
+    except BaseException:
+        output.unlink(missing_ok=True)
+        raise
+
+
+def fetch_timestamp(value):
+    try:
+        result = datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if result.tzinfo is None:
+            raise ValueError("include a timezone, for example 2026-10-21T12:00:00Z")
+        return result.astimezone(datetime.timezone.utc)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+
+
+def positive_hours(value):
+    number = float(value)
+    if not math.isfinite(number) or number <= 0:
+        raise argparse.ArgumentTypeError("hours must be positive and finite")
+    return number
+
+
+def fetch_command(args):
+    parser = argparse.ArgumentParser(prog="ci_metrics.py fetch")
+    parser.add_argument("out", type=pathlib.Path)
+    parser.add_argument("limit", nargs="?", type=int, help="recent runs to inspect (default: 100)")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--hours", type=positive_hours)
+    selection.add_argument("--start", type=fetch_timestamp)
+    parser.add_argument("--end", type=fetch_timestamp)
+    parser.add_argument("--repository", "--repo", default="pyca/verified-garbage")
+    parser.add_argument("--workflow", default="ci.yml")
+    options = parser.parse_args(args)
+    try:
+        return fetch(options.out, options.limit, options.repository, hours=options.hours,
+                     start=options.start, end=options.end, workflow=options.workflow)
+    except FETCH_ERRORS as error:
+        parser.exit(1, f"Error: {fetch_error(error)}\n")
 
 
 def main(args):
@@ -519,8 +740,17 @@ def main(args):
     if len(args) == 2 and args[0] == "summary":
         sys.stdout.write(summary(json.loads(pathlib.Path(args[1]).read_text())))
         return 0
-    if len(args) in (2, 3) and args[0] == "fetch":
-        fetch(pathlib.Path(args[1]), int(args[2]) if len(args) == 3 else 100)
+    if args and args[0] == "fetch":
+        return fetch_command(args[1:])
+    if args and args[0] == "bundle":
+        parser = argparse.ArgumentParser(prog="ci_metrics.py bundle")
+        parser.add_argument("out", type=pathlib.Path)
+        parser.add_argument("--output", type=pathlib.Path, required=True)
+        options = parser.parse_args(args[1:])
+        try:
+            bundle(options.out, options.output)
+        except FETCH_ERRORS as error:
+            parser.exit(1, f"Error: {fetch_error(error)}\n")
         return 0
     print(__doc__, file=sys.stderr)
     return 2
