@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
@@ -554,5 +557,240 @@ theorem front_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args
   · rw [k₆.slot_eq]; exact V₅
   · rw [k₆.slot_eq, v14]
   · rw [k₆.slot_eq, v15, hP]
+
+/-- For a valid domain, the code's scalar is the attempt's. -/
+theorem scalar_eq {dlen : Nat} {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr) (m : Mem)
+    (v : Spec.Ffdh.domainValid len (domOf m args dlen) = true) :
+    scalarOf m args len dlen =
+      Spec.Ffdh.scalarOfOctets (CheckPrivate.params m args len dlen) (Spec.Rsa.bytesAt m (byteAddr (args 10)) len) := by
+  have lw := G.lower
+  have dl := G.dl
+  have hd : (domOf m args dlen).length = 2 * len ∨ (domOf m args dlen).length = 3 * len := by
+    rw [VG.Proof.Bignum.bytesAt_length]; exact dl
+  have mv := VG.Proof.Ffdh.domainValid_mod v
+  unfold Spec.Rsa.modulusValid at mv
+  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
+  have hl : (bndOf m args len dlen).length = len := KeyScalar.bnd_length hd
+  have ne : bndOf m args len dlen ≠ [] := by intro e; rw [e] at hl; simp at hl; omega
+  refine KeyScalar.cut_eq (by omega) hd (fun _ => ⟨mv.1.1.1, ?_⟩) (VG.Proof.Bignum.bytesAt_length _ _ _) ?_
+  · have := Nat.two_pow_pos 511; have := mv.1.1.2; change 1 < (Spec.Ffdh.domainOf len _).p; omega
+  · have b := ((bndOf m args len dlen)[VG.Proof.Ffdh.lead (bndOf m args len dlen)]'(VG.Proof.Ffdh.lead_lt ne)).isLt
+    rw [BitVec.toNat_ofNat, ← VG.Proof.Ffdh.getD_of (VG.Proof.Ffdh.lead_lt ne),
+      Nat.mod_eq_of_lt (KeyScalar.smearN_lt _ (BitVec.isLt _)), KeyScalar.smearN_eq _ (BitVec.isLt _)]
+
+/-! ## The body -/
+
+theorem fail_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
+    (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr) (h9a : args 9 = BitVec.ofNat 32 len)
+    (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩) :
+    WP isa GenerateKey.fail s fun t =>
+      t.gpr .eax = BitVec.ofNat 32 2 ∧
+      Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = List.replicate len 0 ∧
+      Spec.Rsa.bytesAt t.mem (byteAddr (args 8)) len = List.replicate len 0 ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+        s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have ao : accOff = 8 := rfl
+  have nb : numBase = 3336 := rfl
+  unfold GenerateKey.fail
+  refine WP.seq (show WP isa (.block ([.mov .ecx (.imm 0)] ++ [.store (sc accOff) .ecx])) s _ from
+    WP.block_append (wp_movS rfl fun u a _ => WP.block_nil ?_))
+  have hu : In Ex base bytes len args u := h.regs a.keeps a.mem
+  refine WP.mono (storeMask_ok hu (d := accOff) (c := false) (by omega) a.gpr) fun v ⟨I, O, W, _, K⟩ => ?_
+  have S : Step Ex base bytes len args s v := (Step.regs h a.mem a.keeps).trans (Step.word hu (by omega) O K)
+  refine WP.seq (WP.mono (outputs_ok I (by rw [S.esp]; exact Ox.keep rfl S.keeps) (by rw [S.esp]; exact Oy.keep rfl S.keeps)
+    h9a xy W rfl rfl (fun e => nomatch e) (fun e => nomatch e)) fun w ⟨Bx, By, _, F, Kw⟩ => ?_)
+  refine WP.mono ret_ok fun t ⟨E, M, Kt⟩ => ⟨E, ?_, ?_, ?_, (S.keeps.trans Kw).trans (Kt.mono (by decide))⟩
+  · rw [M, Bx]; exact VG.Proof.Bignum.i2osp_zero' _
+  · rw [M, By]; exact VG.Proof.Bignum.i2osp_zero' _
+  · rw [M]; rw [S.esp] at F
+    exact (S.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans F
+
+/-- What the contract asks of the status and the outputs, for a valid domain. -/
+def KeyPost (len dlen : Nat) (m : Mem) (args : Nat → BitVec 32) (r : Nat) (m' : Mem) : Prop :=
+  Spec.Ffdh.domainValid len (domOf m args dlen) = true →
+    let a := CheckPrivate.params m args len dlen
+    let x := Spec.Ffdh.scalarOfOctets a (Spec.Rsa.bytesAt m (byteAddr (args 10)) len)
+    r = Spec.Ffdh.keyStatus a x ∧
+      if Spec.Ffdh.keyStatus a x = 1 then
+        Spec.Rsa.bytesAt m' (byteAddr (args 0)) len = Spec.Rsa.i2osp x len ∧
+          Spec.Rsa.bytesAt m' (byteAddr (args 8)) len = Spec.Rsa.i2osp (Spec.Rsa.powMod a.g x a.p) len
+      else Spec.Rsa.bytesAt m' (byteAddr (args 0)) len = List.replicate len 0 ∧
+        Spec.Rsa.bytesAt m' (byteAddr (args 8)) len = List.replicate len 0
+
+/-- `y`'s acceptance is `publicValid`'s, for a valid p. -/
+theorem accept_iff {dlen : Nat} {a : Spec.Ffdh.Parameters} {p q y : Nat} (hp : a.p = p) (p1 : 1 < p)
+    (hq : a.q = if dlen = 2 * len then none else some q) :
+    accept len dlen p q p y = true ↔ Spec.Ffdh.publicValid ⟨a, y⟩ = true := by
+  simp only [accept]
+  rw [VG.Proof.Ffdh.publicValid_eq, hp, hq, pm1_of (by omega)]
+  by_cases e : dlen = 2 * len
+  · simp only [e, ↓reduceIte, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq, reduceCtorEq,
+      false_implies, implies_true, and_true]
+    exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩
+  · simp only [e, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq, Option.some.injEq, forall_eq']
+    exact ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨⟨b, a⟩, c⟩, fun ⟨⟨a, b⟩, c⟩ => ⟨⟨b, a⟩, c⟩⟩
+
+/-- A component's number fits its `len` octets. -/
+theorem comp_lt (m : Mem) (k : Nat) : comp m args len k < 2 ^ (8 * len) := by
+  have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt m (byteAddr (args 2) + BitVec.ofNat 64 (k * len)) len)
+  rw [VG.Proof.Bignum.bytesAt_length, VG.Proof.Bignum.pow256_eq] at this
+  exact this
+
+theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
+    (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
+    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 40))
+    (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩)
+    (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
+    (h9a : args 9 = BitVec.ofNat 32 len) (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩) :
+    WP isa GenerateKey.body s fun t => ∃ r, t.gpr .eax = BitVec.ofNat 32 r ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+        s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ KeyPost len dlen s.mem args r t.mem := by
+  have fit := G.fit
+  have dl := G.dl
+  have lw := G.lower
+  have h2 : 2 * len ≤ dlen := by omega
+  unfold GenerateKey.body
+  refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide) (h.arg (i := 2) (by decide))
+    (h.arg (i := 3) (by decide))) fun u ⟨P, Cc, M, K⟩ => ?_)
+  have S₁ : Step Ex base bytes len args s u := Step.regs h M K
+  have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
+    rw [P, K.2.1, K.2.2]
+    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+    rwa [BitVec.add_zero] at this
+  refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega) rd (by rw [Cc, G.e3]))
+    fun v ⟨Z, Mv, Kv⟩ => ?_)
+  rw [P, M] at Z
+  have e0 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) = comp s.mem args len 0 :=
+    CheckDomain.argNum_comp s.mem args len
+  rw [e0] at Z
+  have S := S₁.trans (Step.regs S₁.inp Mv Kv)
+  have Mvs : v.mem = s.mem := Mv.trans M
+  -- A domain that is valid has a valid modulus.
+  have vmod : Spec.Ffdh.domainValid len (domOf s.mem args dlen) = true →
+      Spec.Rsa.modulusValid (comp s.mem args len 0) len = true := fun e => by
+    have := VG.Proof.Ffdh.domainValid_mod e
+    rwa [← comp_p s.mem args h2] at this
+  refine WP.ite _ Z (fun valid => ?_) (fun invalid => WP.mono ret_ok fun t ⟨E, Mt, Kt⟩ =>
+    ⟨0, E, ?_, S.keeps.trans (Kt.mono (by decide)), fun e => absurd (vmod e) (by rw [invalid]; decide)⟩)
+  swap
+  · rw [Mt, Mvs]; exact Frame.refl _ _
+  -- A valid modulus: the key pair.
+  have sp : v.gpr .esp = s.gpr .esp := S.esp
+  have G' := G.keep ⟨rfl, rfl⟩ S.keeps
+  have Cv : KeyCut.CutGeo base bytes len (args 10) (args 0) (v.gpr .esp) v.rd v.wr := by
+    rw [sp, S.keeps.2.1, S.keeps.2.2]; exact C
+  rw [main_eq]
+  refine WP.chain_split (front_ok S.inp G' (by rw [sp]; exact hb40) Cv rWs (by rw [sp]; exact r40) domX)
+    fun u F => ?_
+  have Ku : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := S.keeps.trans F.keeps
+  have spu : u.gpr .esp = s.gpr .esp := by rw [F.keeps.1 _ (by decide), sp]
+  have Ox' : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [spu]; exact Ox.keep rfl Ku
+  have Oy' : OutAt args base bytes len 8 (u.gpr .esp) u.wr := by rw [spu]; exact Oy.keep rfl Ku
+  have FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ ::
+      frameR base (u.gpr .esp) (fR len)) u.mem t.mem →
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+        s.mem t.mem := fun {t} Ft => by
+    have Fv := F.frame
+    have Fs := S.frame
+    rw [sp] at Fv
+    rw [spu] at Ft
+    refine ((Fs.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans
+      (Fv.mono fun r hr => ?_)).trans Ft
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact List.mem_cons_self ..
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)
+  have pvOf : Spec.Ffdh.domainValid len (domOf s.mem args dlen) = true →
+      Spec.Ffdh.parametersValid (CheckPrivate.params s.mem args len dlen) = true := fun e => by
+    unfold Spec.Ffdh.domainValid at e
+    simp only [Bool.and_eq_true] at e
+    exact e.1
+  have gate := F.gate
+  rw [Mvs] at gate
+  refine WP.gate gate (fun inval => WP.mono (fail_ok F.inp Ox' Oy' h9a xy) fun t ⟨E, Bx, By, Ft, Kt⟩ =>
+    ⟨2, E, FF Ft, Ku.trans Kt, fun e => ?_⟩) (fun val => ?_)
+  · rw [scalar_eq G s.mem e] at inval
+    have ks : Spec.Ffdh.keyStatus (CheckPrivate.params s.mem args len dlen)
+        (Spec.Ffdh.scalarOfOctets (CheckPrivate.params s.mem args len dlen)
+          (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len)) = 2 := by
+      unfold Spec.Ffdh.keyStatus; rw [inval]; rfl
+    refine ⟨ks.symm, ?_⟩
+    simp only [ks]
+    exact ⟨Bx, By⟩
+  · have v9 := F.v9
+    have v10 := F.v10
+    have v13 := F.v13
+    have v15 := F.v15
+    have v16 := F.v16
+    rw [Mvs] at v9 v10 v13 v15 v16
+    have hl : (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len).length = len := VG.Proof.Bignum.bytesAt_length _ _ _
+    have xlt : scalarOf s.mem args len dlen < 2 ^ (8 * len) := by
+      have hb : (bndOf s.mem args len dlen).length = len :=
+        KeyScalar.bnd_length (by rw [VG.Proof.Bignum.bytesAt_length]; exact dl)
+      have ne : bndOf s.mem args len dlen ≠ [] := by intro e; rw [e] at hb; simp at hb; omega
+      have ll := VG.Proof.Ffdh.lead_lt ne
+      have := VG.Proof.Bignum.os2ip_lt (KeyScalar.cut (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len)
+        (VG.Proof.Ffdh.lead (bndOf s.mem args len dlen)) (maskOf s.mem args len dlen))
+      rw [KeyScalar.cut_length _ (by omega), hl, VG.Proof.Bignum.pow256_eq] at this
+      exact this
+    have Plt : safeM (comp s.mem args len 0) < 2 ^ (8 * len) := by
+      unfold safeM
+      split
+      · exact comp_lt s.mem 0
+      · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 ≤ 8 * len by omega)
+        have : (2 : Nat) ^ 8 = 256 := rfl
+        omega
+    refine WP.mono (tail_ok F.inp (G.keep ⟨rfl, rfl⟩ Ku) Ox' Oy' h9a xy v9 rfl v10 v13 F.v14 v15 v16 xlt Plt
+      (Nat.lt_trans Nat.zero_lt_one (safeM_gt _))) fun t ⟨E, Bx, By, Ft, Kt⟩ =>
+      ⟨_, E, FF Ft, Ku.trans Kt, fun e => ?_⟩
+    dsimp only
+    have mv := vmod e
+    unfold Spec.Rsa.modulusValid at mv
+    simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
+    have p1 : 1 < comp s.mem args len 0 := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega
+    have sP : safeM (comp s.mem args len 0) = comp s.mem args len 0 := safeM_of p1 mv.1.1.1
+    have hpa := comp_p s.mem args h2
+    have hga := comp_g s.mem args h2
+    have hqa : (CheckPrivate.params s.mem args len dlen).q =
+        if dlen = 2 * len then none else some (comp s.mem args len 2) := by
+      rcases dl with e | e
+      · simp only [e, ↓reduceIte]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega)
+      · have : ¬ 3 * len = 2 * len := by omega
+        simp only [e, this, ↓reduceIte]; exact comp_q s.mem args
+    have pv : Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) (scalarOf s.mem args len dlen) = true := by
+      cases c : Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) (scalarOf s.mem args len dlen)
+      · exact absurd c val
+      · rfl
+    rw [sP] at E Bx By ⊢
+    rw [scalar_eq G s.mem e] at E Bx By pv ⊢
+    rw [VG.Proof.Ffdh.KeyScalar.keyStatus_eq (pvOf e), pv, VG.Proof.Bignum.powMod_eq]
+    generalize Spec.Ffdh.scalarOfOctets (CheckPrivate.params s.mem args len dlen)
+      (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len) = x at E Bx By pv ⊢
+    have ai := accept_iff (len := len) (dlen := dlen) (y := comp s.mem args len 1 ^ x % comp s.mem args len 0)
+      hpa.symm p1 hqa
+    rw [show (CheckPrivate.params s.mem args len dlen).g = comp s.mem args len 1 from hga.symm,
+      show (CheckPrivate.params s.mem args len dlen).p = comp s.mem args len 0 from hpa.symm]
+    simp only [Bool.true_eq_false, ↓reduceIte]
+    by_cases hc : accept len dlen (comp s.mem args len 0) (comp s.mem args len 2) (comp s.mem args len 0)
+      (comp s.mem args len 1 ^ x % comp s.mem args len 0) = true
+    · rw [hc] at E Bx By ⊢
+      rw [ai.mp hc]
+      simp only [↓reduceIte] at E Bx By ⊢
+      exact ⟨trivial, Bx, By⟩
+    · have hc' : accept len dlen (comp s.mem args len 0) (comp s.mem args len 2) (comp s.mem args len 0)
+          (comp s.mem args len 1 ^ x % comp s.mem args len 0) = false := by simpa using hc
+      have hv : Spec.Ffdh.publicValid ⟨CheckPrivate.params s.mem args len dlen,
+          comp s.mem args len 1 ^ x % comp s.mem args len 0⟩ = false := by
+        cases c : Spec.Ffdh.publicValid ⟨CheckPrivate.params s.mem args len dlen,
+          comp s.mem args len 1 ^ x % comp s.mem args len 0⟩
+        · rfl
+        · exact absurd (ai.mpr c) hc
+      rw [hc'] at E Bx By ⊢
+      rw [hv]
+      simp only [Bool.false_eq_true, ↓reduceIte] at E Bx By ⊢
+      exact ⟨trivial, by rw [Bx]; exact VG.Proof.Bignum.i2osp_zero' _, by rw [By]; exact VG.Proof.Bignum.i2osp_zero' _⟩
 
 end VG.Proof.Ffdh.X86.KeyGen
