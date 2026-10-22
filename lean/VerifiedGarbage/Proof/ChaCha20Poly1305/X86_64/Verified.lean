@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchPad
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
@@ -208,17 +209,17 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x8008, 8⟩],
                  wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1752).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig,
     Spec.ChaCha20Poly1305.sealPost, X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
 theorem seal_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42 («seal» v.callee v.poly))
-      (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744) :=
-  X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+      (Impl.StackScratch.X86_64.withStackArgScratchWipedXP 1728 1 8 42 («seal» v.callee v.poly))
+      (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1752) :=
+  X86_64.Pad.Verified.stackArgScratchWipedXP (pad := 8) (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
     (n := 212) (post := Spec.ChaCha20Poly1305.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (bytes := 1720) (k := 42) (seal_verified v) (by decide) (by decide) (by decide)
+    (bytes := 1728) (k := 42) (seal_verified v) (by decide) (by decide) (by decide)
     (seal_spSafe v) (seal_xdepth v) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
     sealFrameSat_pre
 
@@ -227,17 +228,17 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 8⟩],
                  wr := [⟨0x2100, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract X86_64.abi 1744).pre s := by
+theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract X86_64.abi 1752).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
     Spec.ChaCha20Poly1305.openPost, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
 
 theorem open_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42 («open» v.callee v.poly))
-      (Spec.ChaCha20Poly1305.openContract X86_64.abi 1744) :=
-  X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+      (Impl.StackScratch.X86_64.withStackArgScratchWipedXP 1728 1 8 42 («open» v.callee v.poly))
+      (Spec.ChaCha20Poly1305.openContract X86_64.abi 1752) :=
+  X86_64.Pad.Verified.stackArgScratchWipedXP (pad := 8) (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
     (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (bytes := 1720) (k := 42) (open_verified v) (by decide) (by decide) (by decide)
+    (bytes := 1728) (k := 42) (open_verified v) (by decide) (by decide) (by decide)
     (open_spSafe v) (open_xdepth v) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
     openFrameSat_pre
 

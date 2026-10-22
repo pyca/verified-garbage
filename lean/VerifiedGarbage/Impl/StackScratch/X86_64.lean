@@ -95,4 +95,20 @@ def wipeAtX (off n : Nat) : List Instr := .xop (.bin .pxor .xmm0 .xmm0) :: wipeS
 def withStackArgScratchWipedX (bytes m n : Nat) (c : Prog isa) : Prog isa :=
   withStackArgScratch bytes m (.seq c (.block (wipeAtX (16 + 8 * m) n)))
 
+/-- `setArgs`, with the buffer `pad` bytes further up the frame, at
+`rsp + 16 + 8m + pad`: for code whose buffer must keep an alignment the
+frame's own would not give it. -/
+def setArgsP (bytes m pad : Nat) : List Instr :=
+  (List.range m).flatMap (copyArg bytes) ++
+    [.mov .rax (.reg .rsp), .alu .add .rax (.imm (BitVec.ofNat 32 (16 + 8 * m + pad))),
+      .store { base := .rsp, disp := ((8 + 8 * m : Nat) : Int) } .rax]
+
+/-- `withStackArgScratch`, with the buffer at `rsp + 16 + 8m + pad` (`setArgsP`). -/
+def withStackArgScratchP (bytes m pad : Nat) (c : Prog isa) : Prog isa :=
+  .frame (.alloc bytes) (.seq (.block (setArgsP bytes m pad)) c) (.free bytes)
+
+/-- `withStackArgScratchWipedX`, with the buffer at `rsp + 16 + 8m + pad`. -/
+def withStackArgScratchWipedXP (bytes m pad n : Nat) (c : Prog isa) : Prog isa :=
+  withStackArgScratchP bytes m pad (.seq c (.block (wipeAtX (16 + 8 * m + pad) n)))
+
 end VG.Impl.StackScratch.X86_64
