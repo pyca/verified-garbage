@@ -264,10 +264,12 @@ theorem loop_noexc (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve 
   · rw [hadd] at h
     exact Window5.mul_ne_infinity hO hP hP0 h0 hS.1 h
 
-/-- The table's co-Z addition `[2m - 1]P + [2]P`, `1 ≤ m ≤ 15`, for `n > 33`. -/
+/-- The table's co-Z addition `[2m - 1]P + [2]P`, `1 ≤ m ≤ 15`, for `n > 33`: the
+points differ and are not opposite. -/
 theorem tbl_noexc (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
     (hP0 : P ≠ .infinity) (hn : 34 ≤ C.n) {m : Nat} (h1 : 1 ≤ m) (h15 : m ≤ 15) :
-    mul 2 P ≠ mul (2 * m - 1) P ∧ Spec.Weierstrass.add (mul 2 P) (mul (2 * m - 1) P) ≠ .infinity := by
+    mul (2 * m - 1) P ≠ mul 2 P ∧
+      Spec.Weierstrass.add (mul (2 * m - 1) P) (mul 2 P) ≠ .infinity := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · have h' : zmul ((2 : Nat) : Int) P = zmul ((2 * m - 1 : Nat) : Int) P := by
       rw [zmul_natCast, zmul_natCast, h]
@@ -282,7 +284,7 @@ theorem tbl_noexc (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C
     · exact Window5.not_dvd_of_pos_lt (n := C.n) (x := ((2 * m - 1 : Nat) : Int) - (2 : Nat))
         (by omega) (by omega) hd'
   · rw [hC.add_mul_mul hP] at h
-    exact Window5.mul_ne_infinity hO hP hP0 (m := 2 + (2 * m - 1)) (by omega) (by omega) h
+    exact Window5.mul_ne_infinity hO hP hP0 (m := 2 * m - 1 + 2) (by omega) (by omega) h
 
 /-! ## Odd scalars -/
 

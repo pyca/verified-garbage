@@ -340,7 +340,7 @@ theorem JacWinFixed.unchA (hL : JacWinLay K size) {base : Addr} {s s' : State} {
         · exact hL.lay.tmp x (ro_mem hx)
         · exact h x (ro_mem hx)) (by have := hL.le (ro_mem hx); omega_arith)
   have tv : ∀ x ∈ jwRo K, tmv C K.M.n base s' x = tmv C K.M.n base s x := fun x hx => tmv_congr (ro x hx)
-  refine ⟨by rw [ro _ (by jw_mem)]; exact hF.zero, fun x hx => ?_, ?_, ?_, fun t ht => ?_⟩
+  refine ⟨⟨by rw [ro _ (by jw_mem)]; exact hF.zero, fun x hx => ?_, ?_, ?_⟩, fun t ht => ?_⟩
   · have hx' : x ∈ jwRo K := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> jw_mem
@@ -380,7 +380,7 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   have pc : ∀ r ∈ powClob K.M.n, r ∈ invClob K.M.n := fun r h => List.mem_cons_of_mem _ h
   rw [JacWinCfg.windowA]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs₀ hM₀ hF₀) fun s₁ ⟨F₁, T₁⟩ => ?_)
+  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs₀ hM₀ hF₀.toJacWinPt) fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (normA_ok hL hp hC hpn hone_lt hone hI F₁.scr F₁.mod T₁)
     fun s ⟨hs, Kn, Un, hM, T₂, O₂⟩ => ?_)
   have U₀ : Unch base (jwW K ++ IW) s₀.mem s.mem := (F₁.unch.trans Un).mono fun w hw => by

@@ -14,7 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 A point with its cached powers in five slots (`JPt`: Jacobian coordinates
 `X`, `Y`, `Z ≠ 0`, then `Z²` and `Z³`), as `T` and each entry of the table
-hold them (`JTblOk`); what the method reads at the start (`JacWinFixed`); what
+hold them (`JTblOk`); what the method reads at the start (`JacWinPt`,
+`JacWinFixed`); what
 the method needs of the doubling it is given (`DblOk`); and the frame of the
 whole method (`JFrame`).
 -/
@@ -91,14 +92,18 @@ theorem loopW_apart (hL : JacWinLay K size) {i : Nat} (hi : i < 80) :
     · exact jg_apart K (by have := List.mem_range.mp hc; omega)
   · exact hL.lay.tmp _ (jg_mem (by omega))
 
-/-- What the method reads and never writes, at the start: zero, `P` (affine:
-`Z` is Montgomery's one), and the table of the bits of `k + offset J`. -/
-structure JacWinFixed (K : JacWinCfg) (C : Curve) (base : Addr) (s₀ : State) (P : Point C) (k : Nat) :
-    Prop where
+/-- What the method reads and never writes, but the table of bits: zero and
+`P` (affine: `Z` is Montgomery's one). -/
+structure JacWinPt (K : JacWinCfg) (C : Curve) (base : Addr) (s₀ : State) (P : Point C) : Prop where
   zero : wordsVal s₀.mem base K.zero K.M.n = 0
   ro_lt : ∀ x ∈ [K.P.x, K.P.y, K.P.z], wordsVal s₀.mem base x K.M.n < C.p
   pt : Rep C (tmv C K.M.n base s₀ K.P.x) (tmv C K.M.n base s₀ K.P.y) (tmv C K.M.n base s₀ K.P.z) P
   pz : tmv C K.M.n base s₀ K.P.z = 1
+
+/-- What the method reads and never writes, at the start: zero, `P`, and the
+table of the bits of `k + offset J`. -/
+structure JacWinFixed (K : JacWinCfg) (C : Curve) (base : Addr) (s₀ : State) (P : Point C) (k : Nat) :
+    Prop extends JacWinPt K C base s₀ P where
   bits : ∀ t < 5 * K.J, s₀.mem (off base (K.bits + t)) =
     if (k + JacWinCfg.offset K.J).testBit t then 1 else 0
 
