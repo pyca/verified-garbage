@@ -8,7 +8,8 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 
 Baseline instructions; no additional CPU feature is required. Inputs are x0
 and x1, output x2, scratch x3. Scratch holds R at offset 0 and its permuted
-copy at offset 1024. Each row or column is loaded into sixteen registers
+copy at offset 1024; R and the output are computed two words at a time, in
+v0 and v1. Each row or column is loaded into sixteen registers
 (x0–x2, x4–x16), permuted there with x17 as the only temporary, and stored
 back; the output pointer waits in v16 meanwhile. Every address is a public
 pointer plus a fixed offset; there are no branches, calls, stack accesses,
@@ -66,27 +67,27 @@ def permuteAt (index : Fin 16 → Fin 128) : Prog isa :=
   .seq (.block ((List.finRange 16).map (loadWord index))) <|
   .seq permute (.block ((List.finRange 16).map (storeWord index)))
 
-/-- Copy one word of X XOR Y into both scratch blocks. -/
-def initWord (i : Nat) : List Instr := [
-  .ldr .x .x8 .x0 (8 * i), .ldr .x .x9 .x1 (8 * i),
-  .logic .eor .x .x8 .x8 .x9,
-  .str .x .x8 .x3 (8 * i), .str .x .x8 .x3 (1024 + 8 * i)]
+/-- Copy two words of X XOR Y into both scratch blocks. -/
+def initPair (i : Nat) : List Instr := [
+  .ldrq .v0 .x0 (16 * i), .ldrq .v1 .x1 (16 * i),
+  .vop (.logic .eor .v0 .v0 .v1),
+  .strq .v0 .x3 (16 * i), .strq .v0 .x3 (1024 + 16 * i)]
 
-/-- XOR the original R into the permuted word and write the output. -/
-def finishWord (i : Nat) : List Instr := [
-  .ldr .x .x8 .x3 (1024 + 8 * i), .ldr .x .x9 .x3 (8 * i),
-  .logic .eor .x .x8 .x8 .x9, .str .x .x8 .x2 (8 * i)]
+/-- XOR the original R into two permuted words and write the output. -/
+def finishPair (i : Nat) : List Instr := [
+  .ldrq .v0 .x3 (1024 + 16 * i), .ldrq .v1 .x3 (16 * i),
+  .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x2 (16 * i)]
 
 /-- The complete compression function. The input pointers are `x0,x1`,
 the output pointer is `x2`, and scratch is `x3`. -/
 def compress : Prog isa :=
-  .seq (.block ((List.range 128).flatMap initWord)) <|
+  .seq (.block ((List.range 64).flatMap initPair)) <|
   .seq (.block [.vop (.dup .d2 .v16 .x2)]) <|
   .seq ((List.finRange 8).foldr (fun row rest =>
     .seq (permuteAt (Spec.Argon2.rowIndex row)) rest) (.block [])) <|
   .seq ((List.finRange 8).foldr (fun col rest =>
     .seq (permuteAt (Spec.Argon2.colIndex col)) rest) (.block [])) <|
   .seq (.block [.umov .x .x2 .v16 0]) <|
-  .block ((List.range 128).flatMap finishWord)
+  .block ((List.range 64).flatMap finishPair)
 
 end VG.Impl.Argon2.AArch64

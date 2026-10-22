@@ -322,7 +322,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
     ⟨rfl, rfl, by simp [hrd], by simp [hrd], hx, hy⟩
   unfold Impl.Argon2.AArch64.compress
   apply WP.seq
-  refine (init_prefix 128 (by decide) s scr inputs).mono ?_
+  refine (init_prefix 64 (by decide) s scr inputs).mono ?_
   rintro s1 ⟨hinit, _hf1, hk1⟩
   obtain ⟨horig, hwork⟩ := initialized_blocks hinit
   have scr1 := scr.of_copy hk1
@@ -345,7 +345,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   have scr5 : Scratch s5 (s.gpr .x3) :=
     ⟨by rw [hk5 .x3 (by decide)]; exact scr4.reg, by rw [hw5]; exact scr4.wr⟩
   have hw5' : s5.wr = s.wr := hw5.trans (hk4.2.2.1.trans (hk3.2.2.1.trans (hw2.trans hk1.2.2)))
-  refine (finish_prefix 128 (by decide) s5 scr5 hout5
+  refine (finish_prefix 64 (by decide) s5 scr5 hout5
     (by rw [hw5', hwr]; simp) hout.symm).mono ?_
   rintro t ⟨hfinish, _hf, _hk⟩
   have ho := original_preserved (hf3.trans hf4)
