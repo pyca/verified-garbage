@@ -312,10 +312,15 @@ def pHash (j : Nat) : Prog isa := seqs [
   seedAdd g.pLen g.qLen j,
   hash g.pLen g.G (sX + g.pLen - (j + 1) * g.qLen)]
 
+/-- The first `m` hashes of `X`. -/
+def pHashes : Nat → Prog isa
+  | 0 => .block []
+  | m + 1 => .seq (pHashes m) (g.pHash m)
+
 /-- `X`: the hashes, the top bit set. -/
 def pX : Prog isa :=
-  seqs ((List.range (g.count + 1)).map g.pHash ++
-    [.block (scr g.pLen .r0 sX ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0])])
+  .seq (g.pHashes (g.count + 1))
+    (.block (scr g.pLen .r0 sX ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0]))
 
 /-- A counter's candidate: `fP` := 0 if the witnesses ran out, 1 if it is a
 probable prime, else as it was. -/
