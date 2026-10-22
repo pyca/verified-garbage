@@ -83,6 +83,24 @@ theorem padTail_length {B N L : Nat} (md : MdStream.Md B N L) {n : Nat} (hn : n 
     md.lenBytes_length]
   omega
 
+/-- The seed at `k` (at `fSeed`) to `sMsg`. -/
+theorem seedCopy_vp {L k : Nat} (hL : L = G.pLen) (hk : k + G.qLen ≤ G.seedsLen) (hq0 : 0 < G.qLen)
+    (hq16 : G.qLen < 2 ^ 16) (hqK : G.qLen ≤ sK G.pLen) (hsb : G.seedsB.length = G.seedsLen)
+    (hS : fSeed ∈ c.LS) (hSv : c.V fSeed = G.seeds + BitVec.ofNat 32 k) {cl' : Claims}
+    (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ Apart sMsg G.qLen x) :
+    VP (St G c X) (copyN (scr L .r0 sMsg) [ld .r1 fSeed] G.qLen)
+      (St G { c with cl := (sMsg, seedAt G k) :: cl' } X) := by
+  have hsl : (seedAt G k).length = G.qLen := by
+    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega
+  refine copyR_vp (c := fun _ => c) (fun σ s h => h.1) hL (by decide) (by decide)
+    (x := G.seeds + BitVec.ofNat 32 k) (fun σ s h => (h.1.slotV hS).trans hSv) hq0 hq16
+    (by subst hL; simp only [sMsg]; omega) (fun σ s h => h.1.gi.seedSrc hk hq0) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
+  rw [h.gi.seedBytes hk] at e
+  refine h.of_scr R (o := sMsg) (n := G.qLen) (by simp only [sMsg]; omega) (f.mono (by simp)) fun y hy => ?_
+  rcases List.mem_cons.mp hy with rfl | hy
+  · exact .inr ⟨by rw [hsl]; exact e, by simp only [sMsg, hsl]; omega⟩
+  · exact .inl (hcl y hy)
+
 /-- q from the seed at `k`, tested with the witnesses from `u`. -/
 theorem qPart_vp {g : Geo} (HO : HashOk g.G) (ok : PrimeOk (8 * G.qLen) g.qCode)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
@@ -126,15 +144,9 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) (ok : PrimeOk (8 * G.qLen) g.qCode)
   refine VP.seq (G := St G c1 X) ?_ (VP.seq (G := St G c2 X) ?_ (VP.seq (G := St G c3 X) ?_
     (VP.seq (G := St G c4 X) ?_ ?_)))
   · -- The seed, before the padding.
-    refine copyR_vp (c := fun _ => c) (fun σ s h => h.1) rfl (by decide) (by decide)
-      (x := G.seeds + BitVec.ofNat 32 k) (fun σ s h => (h.1.slotV hS).trans hSv) hq0 (by omega)
-      (by simp only [sMsg]; omega) (fun σ s h => h.1.gi.seedSrc hk hq0) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
-    rw [h.gi.seedBytes hk, hsd] at e
-    refine h.of_scr R (o := sMsg) (n := G.qLen) (by simp only [sMsg]; omega) (f.mono (by simp)) fun y hy => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-    rcases hy with rfl | rfl
-    · exact .inr ⟨by rw [hsl]; exact e, by simp only [sMsg, hsl]; omega⟩
-    · exact .inl ⟨hpad, .inr (by simp only [sMsg]; omega)⟩
+    have := seedCopy_vp (X := X) (cl' := [(G.qLen, pad)]) rfl hk hq0 (by omega) (by omega) hsb hS hSv fun y hy => by
+      rw [List.mem_singleton] at hy; subst hy; exact ⟨hpad, .inr (by simp only [sMsg]; omega)⟩
+    rwa [hsd] at this
   · -- The hash.
     refine hash_vp HO (c := fun _ => c1) (fun σ s h => h.1) rfl (msg := fun _ => sd) (dst := sQ)
       (fun σ s ⟨h, _⟩ => ⟨by omega, ?_⟩) (by decide) (by simp only [sQ, sA]; omega)

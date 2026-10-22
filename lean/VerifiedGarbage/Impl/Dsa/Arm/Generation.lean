@@ -128,6 +128,13 @@ def addStep : List Instr :=
 def addBE (n : Nat) : Prog isa :=
   .seq (.block [.mov .r2 (.imm (BitVec.ofNat 32 n))]) (.loop (.block addStep) .ne)
 
+/-- `offset + j` (the frame word `fOffset` plus `j`) added to the `n`-byte
+seed at `sMsg`. -/
+def seedAdd (L n j : Nat) : Prog isa := seqs [
+  .block (scr L .r0 (sMsg + n - 1)), .block [ld .r1 fOffset],
+  .block [.dp .add .r1 .r1 (.imm (BitVec.ofNat 32 j))],
+  addBE n]
+
 /-- A byte zeroed: `strb r3`, then on. -/
 def zeroStep : List Instr := [.strb .r3 .r0 0, .dp .add .r0 .r0 (.imm 1), .subs .lr .lr (.imm 1)]
 
@@ -302,9 +309,7 @@ def qPart : Prog isa := seqs [
 /-- The hash of `seed + offset + j`, into its place in `X`. -/
 def pHash (j : Nat) : Prog isa := seqs [
   copyN (scr g.pLen .r0 sMsg) [ld .r1 fSeed] g.qLen,
-  .block (scr g.pLen .r0 (sMsg + g.qLen - 1)), .block [ld .r1 fOffset],
-  .block [.dp .add .r1 .r1 (.imm (BitVec.ofNat 32 j))],
-  addBE g.qLen,
+  seedAdd g.pLen g.qLen j,
   hash g.pLen g.G (sX + g.pLen - (j + 1) * g.qLen)]
 
 /-- `X`: the hashes, the top bit set. -/
