@@ -143,22 +143,33 @@ theorem qword_zero_app (x : BitVec 64) : qword ((0 : BitVec 64) ++ x) 0 = x := b
   simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
   simp [hi]
 
-/-- `yconst4 r q₀ q₁ q₂ q₃`: the lanes of `ymm r` are `q₁ ++ q₀` and `q₃ ++ q₂`. -/
+/-- `yconst4 r q₀ q₁ q₂ q₃`: the lanes of `ymm r` are `q₁ ++ q₀` and `q₃ ++ q₂`,
+when `ytab` holds the constant (which `decide` checks for literals). -/
 theorem yconst4_ok {r : XReg} (_hr0 : r ≠ .xmm0) (_hr1 : r ≠ .xmm1) (q₀ q₁ q₂ q₃ : BitVec 64) {is : List Instr}
     {s : State} {Q : State → Prop}
     (k : ∀ s', s'.lane r 0 = (q₁ ++ q₀ : BitVec 128) → s'.lane r 1 = (q₃ ++ q₂ : BitVec 128) →
       (∀ x, x ≠ r → x ≠ .xmm0 → x ≠ .xmm1 → ∀ l < 2, s'.lane x l = s.lane x l) →
       (∀ g, g ≠ .rax → s'.gpr g = s.gpr g) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
-      WP isa (.block is) s' Q) :
+      WP isa (.block is) s' Q)
+    (hq : ytab.getD (4 * yfind q₀ q₁ q₂ q₃ ytab) 0 = q₀ ∧ ytab.getD (4 * yfind q₀ q₁ q₂ q₃ ytab + 1) 0 = q₁ ∧
+      ytab.getD (4 * yfind q₀ q₁ q₂ q₃ ytab + 2) 0 = q₂ ∧ ytab.getD (4 * yfind q₀ q₁ q₂ q₃ ytab + 3) 0 = q₃ ∧
+      4 * yfind q₀ q₁ q₂ q₃ ytab + 4 ≤ ytab.length := by decide +kernel) :
     WP isa (.block (yconst4 r q₀ q₁ q₂ q₃ ++ is)) s Q := by
   simp only [yconst4, List.cons_append, List.nil_append]
-  have u1 := GUpd.setReg s .rax (s.syms (yname q₀ q₁ q₂ q₃))
-  refine WP.cons (s' := s.setReg .rax (s.syms (yname q₀ q₁ q₂ q₃))) rfl ?_
-  generalize s.setReg .rax (s.syms (yname q₀ q₁ q₂ q₃)) = s1 at u1
-  have hb : s1.gpr .rax = s1.syms (yname q₀ q₁ q₂ q₃) := by rw [u1.gpr, u1.syms]
-  refine S4.wp_vtbl (o := 0) hb (by simp only [State.ea, at_, hb]; simp) (by simp) fun s2 u2 => k s2 ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  · rw [u2.val 0 (by decide)]; rfl
-  · rw [u2.val 1 (by decide)]; rfl
+  generalize yfind q₀ q₁ q₂ q₃ ytab = i at hq
+  obtain ⟨h0, h1, h2, h3, hl⟩ := hq
+  have hlen : ytab.length = 168 := rfl
+  have u1 := GUpd.setReg s .rax (s.syms "VG_MLKEM_YCONSTS")
+  refine WP.cons (s' := s.setReg .rax (s.syms "VG_MLKEM_YCONSTS")) rfl ?_
+  generalize s.setReg .rax (s.syms "VG_MLKEM_YCONSTS") = s1 at u1
+  have hb : s1.gpr .rax = s1.syms "VG_MLKEM_YCONSTS" := by rw [u1.gpr, u1.syms]
+  have ho : (s1.ea (at_ .rax (32 * i)) - s1.syms "VG_MLKEM_YCONSTS").toNat = 8 * (4 * i) := by
+    simp only [State.ea, at_, hb, BitVec.ofInt_natCast, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    omega
+  refine S4.wp_vtbl (o := 4 * i) hb ho hl fun s2 u2 => k s2 ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · rw [u2.val 0 (by decide)]; simp only [ite_true, h0, h1]
+  · rw [u2.val 1 (by decide)]
+    simp only [Nat.one_ne_zero, ite_false, h2, h3]
   · intro x h1 _ _ l hl
     rw [u2.other x h1 l hl, u1.lane]
   · intro g hg
