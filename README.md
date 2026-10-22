@@ -1252,7 +1252,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ GHASH with PCLMULQDQ, or VPCLMULQDQ and AVX2</td>
 
 <td>❌</td>
 
