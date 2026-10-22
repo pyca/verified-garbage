@@ -37,10 +37,14 @@ theorem encrypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 (AesXts.
   WP.withPreservedV (crypt_wp true v.encOk v.encNoFrames (fun R w m p => (aesWith_state R w m p).symm) hs)
     (encrypt_keepsV v)
 
-theorem encrypt_verified (v : BlocksImpl) :
-    Verified AArch64.target (encrypt v.enc) (Spec.Xts.aesEncryptContract AArch64.abi) :=
-  Verified.of_correct (encrypt_correct v)
-    (crypt_ct true v.encOk v.encCt v.encNoFrames fun R w m p => (aesWith_state R w m p).symm)
+/-- `Verified` against the shared contract, from correctness and constant time against
+`modeAArch64 (xtsMode true)`. -/
+theorem encrypt_verified_of {c : Prog isa}
+    (ok : ∀ s, (modeAArch64 (AesXts.xtsMode true)).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (modeAArch64 (AesXts.xtsMode true)).post s s')
+    (ct : ConstantTime isa (modeAArch64 (AesXts.xtsMode true)).pre (modeAArch64 (AesXts.xtsMode true)).pub c) :
+    Verified AArch64.target c (Spec.Xts.aesEncryptContract AArch64.abi) :=
+  Verified.of_correct ok ct
     { pre := by sig_implies_pre [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs]
       -- `xtsMode.chain` counts the blocks, which are `n`.
@@ -58,6 +62,11 @@ theorem encrypt_verified (v : BlocksImpl) :
       sat := by sig_implies_sat [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs] [sat] using sat }
 
+theorem encrypt_verified (v : BlocksImpl) :
+    Verified AArch64.target (encrypt v.enc) (Spec.Xts.aesEncryptContract AArch64.abi) :=
+  encrypt_verified_of (encrypt_correct v)
+    (crypt_ct true v.encOk v.encCt v.encNoFrames fun R w m p => (aesWith_state R w m p).symm)
+
 theorem decrypt_keepsV (v : BlocksImpl) : (decrypt v.dec).allInstrs keepsV = true := by
   simp only [decrypt, crypt, batch, pass, Code.allInstrs, v.decKeepsV]; decide +kernel
 
@@ -66,10 +75,14 @@ theorem decrypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 (AesXts.
   WP.withPreservedV (crypt_wp false v.decOk v.decNoFrames (fun R w m p => (aesInvWith_state R w m p).symm) hs)
     (decrypt_keepsV v)
 
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified AArch64.target (decrypt v.dec) (Spec.Xts.aesDecryptContract AArch64.abi) :=
-  Verified.of_correct (decrypt_correct v)
-    (crypt_ct false v.decOk v.decCt v.decNoFrames fun R w m p => (aesInvWith_state R w m p).symm)
+/-- `Verified` against the shared contract, from correctness and constant time against
+`modeAArch64 (xtsMode false)`. -/
+theorem decrypt_verified_of {c : Prog isa}
+    (ok : ∀ s, (modeAArch64 (AesXts.xtsMode false)).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (modeAArch64 (AesXts.xtsMode false)).post s s')
+    (ct : ConstantTime isa (modeAArch64 (AesXts.xtsMode false)).pre (modeAArch64 (AesXts.xtsMode false)).pub c) :
+    Verified AArch64.target c (Spec.Xts.aesDecryptContract AArch64.abi) :=
+  Verified.of_correct ok ct
     { pre := by sig_implies_pre [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs]
       -- `xtsMode.chain` counts the blocks, which are `n`.
@@ -86,5 +99,10 @@ theorem decrypt_verified (v : BlocksImpl) :
         AArch64.abi, AArch64.argRegs]
       sat := by sig_implies_sat [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs] [sat] using sat }
+
+theorem decrypt_verified (v : BlocksImpl) :
+    Verified AArch64.target (decrypt v.dec) (Spec.Xts.aesDecryptContract AArch64.abi) :=
+  decrypt_verified_of (decrypt_correct v)
+    (crypt_ct false v.decOk v.decCt v.decNoFrames fun R w m p => (aesInvWith_state R w m p).symm)
 
 end VG.Proof.AesXts.AArch64
