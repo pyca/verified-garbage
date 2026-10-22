@@ -10,29 +10,36 @@ import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
-/-! Four independent load/BIT pairs, sharing one row-comparison mask. -/
+/-! Independent load/BIT pairs (four or eight), sharing one row-comparison mask. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
-open VG.Impl.Rsa.AArch64.WindowSelectVector (accs)
+open VG.Impl.Rsa.AArch64.WindowSelectVector (accsWide)
 
-def acc (i : Nat) : VReg := accs[i]!
+def acc (i : Nat) : VReg := accsWide[i]!
 def loadBits (n : Nat) : List Instr := (List.range n).flatMap fun i =>
   [.ldrq .v21 .x16 (16 * i), .vop (.bsel .bit (acc i) .v21 .v20)]
 def written : List VReg := [.v21, .v16, .v17, .v18, .v19]
 
-theorem acc_facts : ∀ i < 4, acc i ≠ .v20 ∧ acc i ≠ .v21 ∧ acc i ∈ written := by decide
+/-- The registers `loadBits n` writes. -/
+def loaded (n : Nat) : List VReg := .v21 :: (List.range n).map acc
 
-theorem acc_ne : ∀ i < 4, ∀ j < 4, i ≠ j → acc i ≠ acc j := by decide
+theorem acc_facts : ∀ i < 8, acc i ≠ .v20 ∧ acc i ≠ .v21 := by decide
+
+theorem v20_not_loaded {n : Nat} (hn : n ≤ 8) : VReg.v20 ∉ loaded n := by
+  simp only [loaded, List.mem_cons, List.mem_map, List.mem_range, not_or, not_exists, not_and]
+  exact ⟨by decide, fun i hi h => (acc_facts i (by omega)).1 h⟩
+
+theorem acc_ne : ∀ i < 8, ∀ j < 8, i ≠ j → acc i ≠ acc j := by decide
 
 theorem loadBits_ok (n : Nat) {s : State} {choose : Prop} [Decidable choose]
-    (hn : n ≤ 4) (hm : s.v .v20 = if choose then BitVec.allOnes 128 else 0)
+    (hn : n ≤ 8) (hm : s.v .v20 = if choose then BitVec.allOnes 128 else 0)
     (hld : ∀ i < n, InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16) :
     WP isa (.block (loadBits n)) s fun t =>
-      (∀ i < 4, t.v (acc i) = if i < n ∧ choose then
+      (∀ i < 8, t.v (acc i) = if i < n ∧ choose then
         s.mem.read (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16 else s.v (acc i)) ∧
-      VKeep written s t := by
+      VKeep (loaded n) s t := by
   induction n with
   | zero =>
     apply WP.block_nil
@@ -42,8 +49,8 @@ theorem loadBits_ok (n : Nat) {s : State} {choose : Prop} [Decidable choose]
       [.ldrq .v21 .x16 (16 * n), .vop (.bsel .bit (acc n) .v21 .v20)] by
         simp [loadBits, List.range_succ], WP.block_append_iff]
     refine WP.mono (ih (by omega) (fun i hi => hld i (by omega))) fun t ⟨hv, kt⟩ => ?_
-    refine WP.mono (loadBit_value (choose := choose) (acc_facts n (by omega)).2.1 (by omega)
-      (by rw [kt.v .v20 (by decide)]; exact hm)
+    refine WP.mono (loadBit_value (choose := choose) (acc_facts n (by omega)).2 (by omega)
+      (by rw [kt.v .v20 (v20_not_loaded (by omega))]; exact hm)
       (by rw [kt.rd, kt.wr, kt.gpr]; exact hld n (by omega))) fun u ⟨hu, ku⟩ => ?_
     refine ⟨?_, (kt.trans ku).mono ?_⟩
     · intro i hi
@@ -53,14 +60,16 @@ theorem loadBits_ok (n : Nat) {s : State} {choose : Prop} [Decidable choose]
         simp only [Nat.lt_irrefl, false_and, ite_false, Nat.lt_succ_self, true_and]
       · rw [ku.v (acc i) (by
           simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-          exact ⟨(acc_facts i hi).2.1, acc_ne i hi n (by omega) he⟩), hv i hi]
+          exact ⟨(acc_facts i hi).2, acc_ne i hi n (by omega) he⟩), hv i hi]
         have heq : i < n + 1 ↔ i < n := by omega
         simp only [heq]
     · intro r hr
-      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with hr | rfl | rfl
-      · exact hr
-      · decide
-      · exact (acc_facts n (by omega)).2.2
+      simp only [loaded, List.mem_append, List.mem_cons, List.mem_map, List.mem_range,
+        List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with (rfl | ⟨a, ha, rfl⟩) | rfl | rfl
+      · exact Or.inl rfl
+      · exact Or.inr ⟨a, by omega, rfl⟩
+      · exact Or.inl rfl
+      · exact Or.inr ⟨n, by omega, rfl⟩
 
 end VG.Proof.Bignum.AArch64.WindowVector

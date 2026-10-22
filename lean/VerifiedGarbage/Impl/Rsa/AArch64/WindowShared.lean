@@ -19,7 +19,7 @@ def step : Prog isa := .seq (WindowArithmetic.square 6)
   (.block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit])
 def squares : Prog isa := .loop step (.nonzero .x .x3)
 def core : Prog isa := .seq squares
-  (.seq (WindowSelectVector.blocked 32) (WindowArithmetic.product 6 6 5))
+  (.seq (WindowSelectVector.vector 32) (WindowArithmetic.product 6 6 5))
 def work : Prog isa := .seq (.block [movi .x3 5, sth .x3 Crt.sBit]) core
 def fast : Prog isa := .seq (.block save)
   (.seq work (.seq (.block restore) (.block WindowFive.resetWindow)))

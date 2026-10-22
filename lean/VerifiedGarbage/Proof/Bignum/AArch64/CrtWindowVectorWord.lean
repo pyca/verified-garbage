@@ -43,7 +43,7 @@ theorem bit_mask (d n : BitVec 128) (c : Prop) [Decidable c] :
 /-- A fixed-address load and BIT either replace the entire accumulator or
 leave it unchanged. Memory, scalar registers and all other vectors are intact. -/
 theorem loadBit_ok {s : State} {r : VReg} {i : Nat} {choose : Prop} [Decidable choose]
-    (hr' : r ≠ .v21) (hi : i < 4)
+    (hr' : r ≠ .v21) (hi : i < 8)
     (hm : s.v .v20 = if choose then BitVec.allOnes 128 else 0)
     (hld : InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16) :
     WP isa (.block [.ldrq .v21 .x16 (16 * i), .vop (.bsel .bit r .v21 .v20)]) s fun t =>
@@ -81,7 +81,7 @@ theorem VKeep.mono {xs ys : List VReg} {s t : State}
   ⟨h.gpr, h.mem, h.rd, h.wr, h.sp, fun r hr => h.v r (fun hx => hr (hs r hx))⟩
 
 theorem loadBit_value {s : State} {r : VReg} {i : Nat} {choose : Prop} [Decidable choose]
-    (hr : r ≠ .v21) (hi : i < 4)
+    (hr : r ≠ .v21) (hi : i < 8)
     (hm : s.v .v20 = if choose then BitVec.allOnes 128 else 0)
     (hld : InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16) :
     WP isa (.block [.ldrq .v21 .x16 (16 * i), .vop (.bsel .bit r .v21 .v20)]) s fun t =>

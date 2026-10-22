@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorDispatch
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 
 @[expose] public section
@@ -35,7 +35,7 @@ theorem core_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}
   have et : wv a.mem P (slot w (8+v)) w = wv s.mem P (slot w (8+v)) w :=
     fa.wv_eq (fun r hr => by have := crtWinRanges_ent w v r hr; omega)
       (by have := CrtWindowFive.ent32_le w hv; have := hc.scrT.nowrap; omega)
-  refine WP.seq (WP.mono (WindowVector.blocked_ok ca (by omega) hw' hmod hv ta.tab
+  refine WP.seq (WP.mono (WindowVector.vector_ok ca (by omega) hw' hmod hv ta.tab
     (by rw [ha _ (by decide) (by decide)]; exact hnib)) fun b ⟨cb,tb,fb,kb⟩ => ?_)
   have ey := WindowFive.selection_keeps_y fb ca.good.scr.nowrap
   refine WP.mono (WindowArithmetic.product_ok (o := aY) (a := aY) (b := Crt.aT)

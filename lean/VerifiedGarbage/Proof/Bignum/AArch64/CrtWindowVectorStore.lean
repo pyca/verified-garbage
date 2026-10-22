@@ -14,7 +14,7 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 
-/-! Store a selected 64-byte block while preserving its source snapshot. -/
+/-! Store a selected 64- or 128-byte block while preserving its source snapshot. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowVector
@@ -42,7 +42,7 @@ theorem write16_byte (m source : Mem) (dst src : Addr) {j : Nat} (hj : j < 16) :
   simp only [Mem.write, Mem.sub_ofNat_toNat dst (show j < 2 ^ 64 by omega), hj, ite_true,
     Mem.extractLsb'_read source src hj]
 
-theorem storePair_ok {s : State} {r : VReg} {i : Nat} (hi : i < 4)
+theorem storePair_ok {s : State} {r : VReg} {i : Nat} (hi : i < 8)
     (hw : InRegions s.wr (s.gpr .x17 + BitVec.ofNat 64 (16 * i)) 16) :
     WP isa (.block [.strq r .x17 (16 * i)]) s fun t =>
       (t.mem = s.mem.write (s.gpr .x17 + BitVec.ofNat 64 (16 * i)) 16 (s.v r) ∧
@@ -62,7 +62,7 @@ structure StoreInv (s : State) (B : Addr) (dst src n : Nat) (t : State) : Prop w
   bytes : ∀ j < 16 * n, t.mem (off B (dst + j)) = s.mem (off B (src + j))
 
 theorem stores_ok (n : Nat) {s : State} {B : Addr} {dst src : Nat}
-    (hn : n ≤ 4) (hptr : s.gpr .x17 = off B dst) (hd : dst + 16 * n ≤ 2 ^ 64)
+    (hn : n ≤ 8) (hptr : s.gpr .x17 = off B dst) (hd : dst + 16 * n ≤ 2 ^ 64)
     (hv : ∀ i < n, s.v (acc i) = s.mem.read (off B (src + 16 * i)) 16)
     (hw : ∀ i < n, InRegions s.wr (off B (dst + 16 * i)) 16) :
     WP isa (.block (stores n)) s (StoreInv s B dst src n) := by

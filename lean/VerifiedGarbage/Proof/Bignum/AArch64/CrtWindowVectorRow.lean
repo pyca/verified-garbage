@@ -45,10 +45,10 @@ theorem selectRow_ok {s : State} {j v : Nat} (hj : j < 32) (hv : v < 32)
   refine WP.mono (compare_ok (by omega) (by omega) h23 h22) fun a ⟨ha, ka⟩ => ?_
   refine WP.mono (loadBits_ok (choose := j = v) 4 (by decide) ha
     (fun i hi => by rw [ka.rd, ka.wr, ka.gpr]; exact hld i hi)) fun t ⟨ht, kt⟩ => ?_
-  refine ⟨?_, ka.trans kt⟩
+  refine ⟨?_, (ka.trans kt).mono (by decide)⟩
   intro i hi
-  rw [ht i hi, ka.mem, ka.gpr, ka.v (acc i) (by
-    simpa only [List.mem_singleton] using (acc_facts i hi).1)]
+  rw [ht i (by omega), ka.mem, ka.gpr, ka.v (acc i) (by
+    simpa only [List.mem_singleton] using (acc_facts i (by omega)).1)]
   simp only [hi, true_and]
 
 /-- No SIMD value controls a row's addresses or instruction sequence. -/

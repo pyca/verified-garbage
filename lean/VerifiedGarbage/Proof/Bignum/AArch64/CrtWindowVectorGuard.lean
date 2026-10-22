@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorDispatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
@@ -12,7 +12,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
@@ -77,7 +77,7 @@ theorem selected_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : 
       (fun _ => ?_) (by simp)
     by_cases hd : w % 8 = 0
     · refine WP.ite true (by rw [eval_zero,h4,hd]; rfl) (fun _ => ?_) (by simp)
-      exact WP.mono (blocked_ok ctx fast hw' hd hv tab nib) fun t ⟨ct,hy,hf,kt⟩ =>
+      exact WP.mono (vector_ok ctx fast hw' hd hv tab nib) fun t ⟨ct,hy,hf,kt⟩ =>
         ⟨ct,hm ▸ hy,hm ▸ hf,(ku.trans kt).mono (by decide)⟩
     · exact WP.ite false (by rw [eval_zero,h4,eq_zero_iff,BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt (show w % 8 < 2 ^ 64 by omega),decide_eq_false hd]) (by simp) (fun _ => slow)
@@ -115,7 +115,7 @@ theorem selected_ct : RelCT isa (Two VG.Proof.Bignum.AArch64.WindowFive.SelP)
   · refine two_ite ?_ ?_ ?_
     · intro p s t hs ht
       rw [eval_zero,eval_zero,hs.1.rem,ht.1.rem]
-    · exact two_map id (fun _ _ h => ⟨h.1.1.sel,guard_width h.1.1 h.1.2⟩) blocked_ct
+    · exact two_map id (fun _ _ h => ⟨h.1.1.sel,guard_width h.1.1 h.1.2⟩) vector_ct
     · exact two_map id (fun _ _ h => h.1.1.sel) Selector.scalar.ct
   · exact two_map id (fun _ _ h => h.1.sel) Selector.scalar.ct
 

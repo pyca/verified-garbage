@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorDispatch
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTLoop
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -51,12 +51,12 @@ theorem core_ct : RelCT isa (Two CorePre)
   refine RelCT.seq (two_post (two_map id (fun _ _ h => ⟨fast_loose h.1,h.2⟩)
     (loop_ct.mono (fun _ _ h => h) (fun _ _ _ => True.intro))) squares_post) ?_
   refine RelCT.seq (two_post (Ψ := fun p => BlockedRedc.FastW (workspace p))
-    (two_map id ?_ WindowVector.blocked_ct) ?_)
+    (two_map id ?_ WindowVector.vector_ct) ?_)
     (two_map workspace (fun _ _ h => h) WindowArithmetic.product_ct)
   · rintro p s ⟨mi,X,Xc,v,hc,ht,hw,hw',hd,hv,hn⟩
     exact ⟨⟨mi,X,Xc,v,hc,by change 2 ≤ p.wx; omega,hw',hv,ht.tab,hn⟩,by change 8 ≤ p.wx; omega⟩
   · rintro p s ⟨mi,X,Xc,v,hc,ht,hw,hw',hd,hv,hn⟩
-    exact WP.mono (WindowVector.blocked_ok hc (by omega) hw' hd hv ht.tab hn)
+    exact WP.mono (WindowVector.vector_ok hc (by omega) hw' hd hv ht.tab hn)
       fun t ⟨ct,_⟩ => ⟨⟨mi,ct.good,Nat.le_refl _⟩,hw,hd⟩
 
 theorem init_post (p : XPub) (s : State) (h : FastPre p s) :
