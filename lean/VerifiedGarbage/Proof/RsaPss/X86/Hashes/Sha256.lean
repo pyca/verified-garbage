@@ -22,8 +22,8 @@ def sha256Shape : Impl.Pbkdf2.Md.X86.Hash :=
     Impl.Sha256.X86.Stream.params.out⟩
 
 theorem sha256Certs : Certs sha256Shape := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    exact ⟨_, by taint_decide⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-256 with the backend `v`, as RSASSA-PSS on x86 uses it. -/
 def sha256 (v : Backend) : PssHash where

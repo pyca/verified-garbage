@@ -32,6 +32,15 @@ open VG.Impl.RsaPkcs1Sig.X86 (argOff)
 abbrev TaintOk (rs : List Reg) (c : Prog isa) : Prop :=
   ∃ hc, (VG.Taint.check VG.X86.taint (τr rs) c hc).isSome = true
 
+/-- The blocks whose immediates depend on the hash function, and its digest
+code: none writes `esp` (`Certs.sp`). -/
+def spBlocks (H : Hash) : Prog isa :=
+  seqs [.block (lenSet H), .block (clrArgs oLen H.B), .block (clrArgs oY H.B), .block (padArgs H),
+    .block (padBody H), .block (blkSet H), .block (cmpSet H), .block (selSet H), outPart H, .block (mgfSeed H),
+    .block (ctrSet H), .block (xorSet H), .block (mgfNext H), .block (params H), .block (cpDig H 16),
+    .block (cpDig H 4), .block (lenArgs H 18), .block (lenArgs H 7), .block (cpSalt H), .block (putH H),
+    .block (fxSalt H), .block (cpDb H), .block (passSet H), .block (anyLen H), .block (cmpArgs H)]
+
 /-- The taint checks of the pieces whose immediates depend on the hash
 function: the blocks from states where only `esp` and `ebp` are known to
 agree, and the padding loop's body. -/
@@ -61,6 +70,7 @@ structure Certs (H : Hash) : Prop where
   passSet : TaintOk [.esp, .ebp] (.block (passSet H))
   anyLen : TaintOk [.esp, .ebp] (.block (anyLen H))
   cmpArgs : TaintOk [.esp, .ebp] (.block (cmpArgs H))
+  sp : NoSp (spBlocks H)
 
 /-- What the pieces of code `Certs` checks read of a hash function: its
 sizes and its digest code. The taint checks need closed code, so they are
@@ -72,7 +82,7 @@ def shapeOf (H : Hash) : Hash :=
 theorem Certs.of_shape {H : Hash} (h : Certs (shapeOf H)) : Certs H :=
   ⟨h.lenSet, h.clrB, h.clrY, h.padArgs, h.padBody, h.blkSet, h.cmpSet, h.selSet, h.outPart, h.mgfSeed,
     h.ctrSet, h.xorSet, h.mgfNext, h.params, h.cpDig16, h.cpDig4, h.lenArgs18, h.lenArgs7, h.cpSalt, h.putH,
-    h.fxSalt, h.cpDb, h.passSet, h.anyLen, h.cmpArgs⟩
+    h.fxSalt, h.cpDb, h.passSet, h.anyLen, h.cmpArgs, h.sp⟩
 
 /-- A hash function, as RSASSA-PSS on x86 uses it. -/
 structure PssHash where
