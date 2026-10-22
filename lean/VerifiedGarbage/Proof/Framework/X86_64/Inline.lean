@@ -133,6 +133,10 @@ theorem setVy_withRegions (s : State) (rd wr : List Region) (r : VReg) (v : BitV
     (s.withRegions rd wr).setVy r v = (s.setVy r v).withRegions rd wr := by
   cases r <;> rfl
 
+theorem setVz_withRegions (s : State) (rd wr : List Region) (r : VReg) (l0 l1 l2 l3 : BitVec 128) :
+    (s.withRegions rd wr).setVz r l0 l1 l2 l3 = (s.setVz r l0 l1 l2 l3).withRegions rd wr := by
+  cases r <;> rfl
+
 theorem store256_widen (hc : Covers s.wr wr) {a : Addr} {v : BitVec 256} (h : s.store256 a v = some s') :
     (s.withRegions rd wr).store256 a v = some (s'.withRegions rd wr) := by
   simp only [State.store256] at h
@@ -303,6 +307,16 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
       setVy_withRegions]
     rfl
   | evStore m r => exact store256_widen hw h
+  | ezop op =>
+    simp only [exec, Option.some.injEq] at h ⊢; subst h
+    cases op <;> exact setVz_withRegions _ _ _ _ _ _ _ _
+  | ezLoad d m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [exec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load512_widen hc hv, Option.map_some,
+      setVz_withRegions]
+  | ezStore m r => exact store512_widen hw h
   | kLoad k d m =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨v, hv, rfl⟩ := h
@@ -456,6 +470,12 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact ⟨rfl, rfl⟩
   | evStore m r =>
     simp only [exec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+  | ezop op =>
+    simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EZOp.exec_eq op s]; exact ⟨rfl, rfl⟩
+  | ezLoad d m =>
+    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact ⟨rfl, rfl⟩
+  | ezStore m r =>
+    simp only [exec, State.store512] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | kLoad k d m | kLoad8 k d m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; exact ⟨rfl, rfl⟩
@@ -527,6 +547,13 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact Frame.refl _ _
   | evStore m r =>
     simp only [exec, State.store256] at h; split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
+  | ezop op =>
+    simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EZOp.exec_eq op s]; exact Frame.refl _ _
+  | ezLoad d m =>
+    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact Frame.refl _ _
+  | ezStore m r =>
+    simp only [exec, State.store512] at h; split at h <;> cases h
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | kLoad k d m | kLoad8 k d m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact Frame.refl _ _
@@ -747,6 +774,11 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · simp only [exec, State.store256] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
       rw [Taint.setVy_eq]
+    · simp only [exec, Option.some.injEq] at h; subst h; rename_i op
+      rw [Taint.EZOp.exec_eq op s]
+    · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
+      rw [Taint.setVz_eq]
+    · simp only [exec, State.store512] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl

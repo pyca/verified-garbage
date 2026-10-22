@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Avx512
 
 /-!
-# x86-64 EVEX-encoded instructions on 256-bit registers, `ymm0`–`ymm31`
+# x86-64 EVEX-encoded instructions on `ymm0`–`ymm31` and `zmm0`–`zmm31`
 
 **Trusted.** The EVEX-encoded instructions of the x86-64 model in
 `TCB/X86_64/Isa.lean` whose operands are 256-bit (`ymm`) vector registers,
@@ -172,5 +172,76 @@ def EOp.exec : EOp → State → State
     s.setVy d (ternlog (lane256 dv 1) (lane256 av 1) (lane256 bv 1) n ++
       ternlog (lane256 dv 0) (lane256 av 0) (lane256 bv 0) n)
   | .vprorq d a n, s => s.setVy d (lanes256 (fun x _ => rorQwords x n) (s.vy a) (s.vy a))
+
+/-! ## `EVEX.512` forms on all thirty-two registers
+
+The unmasked `EVEX.512` forms of VPADDQ, VPXORQ, VPANDQ, VPORQ, VPTERNLOGQ
+and VPRORQ, of any of `zmm0`–`zmm31` (SDM Vol. 2 §2.7.1: `EVEX.R'` and
+`EVEX.V'` extend the register specifiers to five bits, and `EVEX.L'L = 10`
+selects 512 bits). Each writes all 512 bits of its destination, which is
+`MAXVL` (no zeroing above it). They need AVX512F alone (SDM Vol. 2, each
+instruction's "Opcode/Instruction" table: the `EVEX.512` forms list
+`AVX512F` under "CPUID Feature Flag"). -/
+
+namespace State
+
+/-- Lane `i` (bits `128i+127:128i`, `i` from 0 to 3) of `zmm` register `r`. -/
+def vzlane (s : State) : VReg → Nat → BitVec 128
+  | .lo r, i => s.zlane r i
+  | .hi r, i => s.zlaneH r i
+
+/-- The 512 bits of `zmm` register `r`. -/
+def vz (s : State) (r : VReg) : BitVec 512 :=
+  s.vzlane r 3 ++ s.vzlane r 2 ++ s.vzlane r 1 ++ s.vzlane r 0
+
+/-- Write an unmasked `EVEX.512` instruction's result to `r`, lanes 0 to 3
+from `l0` to `l3`. -/
+def setVz (s : State) : VReg → BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128 → State
+  | .lo r, l0, l1, l2, l3 => s.setZ r l0 l1 l2 l3
+  | .hi r, l0, l1, l2, l3 => s.setZH r l0 l1 l2 l3
+
+end State
+
+/-- `EVEX.512` instructions on any of `zmm0`–`zmm31`, unmasked and without
+embedded broadcast or rounding (`EVEX.aaa = 000`, `EVEX.b = 0`), that write
+only a vector register. -/
+inductive EZOp
+  /-- `vop zmm1, zmm2, zmm3`: VPADDQ (`EVEX.512.66.0F.W1 D4 /r`), VPXORQ
+  (`EVEX.512.66.0F.W1 EF /r`), VPANDQ (`EVEX.512.66.0F.W1 DB /r`) or VPORQ
+  (`EVEX.512.66.0F.W1 EB /r`) -/
+  | bin (op : EBinOp) (dst src1 src2 : VReg)
+  /-- `vpternlogq zmm1, zmm2, zmm3, imm8` (`EVEX.512.66.0F3A.W1 25 /r ib`) -/
+  | vpternlogq (dst src1 src2 : VReg) (imm : BitVec 8)
+  /-- `vprorq zmm1, zmm2, imm8` (`EVEX.512.66.0F.W1 72 /0 ib`) -/
+  | vprorq (dst src : VReg) (count : BitVec 8)
+  deriving DecidableEq, Repr
+
+/-- Semantics of the `EVEX.512` instructions, each the pseudocode of its
+`EVEX.256` form (`EOp.exec`) with `(KL, VL) = (8, 512)`: the same operation on
+each quadword `j` from 0 to 7, so on each of the four 128-bit lanes.
+
+* `bin`: SDM Vol. 2, "PADDB/PADDW/PADDD/PADDQ", "PXOR", "PAND" and "POR",
+  each "EVEX encoded versions" with `(KL, VL) = (8, 512)`, no write mask and
+  a register `SRC2`: `DEST[i+63:i] := SRC1[i+63:i] + SRC2[i+63:i]` (VPADDQ),
+  `… BITWISE XOR …` (VPXORQ), `… BITWISE AND …` (VPANDQ), `… BITWISE OR …`
+  (VPORQ), so `EBinOp.sse` on each lane.
+* `vpternlogq`: SDM Vol. 2, "VPTERNLOGD/VPTERNLOGQ—Bitwise Ternary Logic",
+  "VPTERNLOGQ (EVEX encoded versions)" with `(KL, VL) = (8, 512)`: `FOR k :=
+  0 TO 63 … DEST[j][k] := imm[(DEST[i+k] << 2) + (SRC1[ i+k ] << 1) + SRC2[
+  i+k ]]`, bit by bit, so `ternlog` on each lane.
+* `vprorq`: SDM Vol. 2, "VPRORD/VPRORVD/VPRORQ/VPRORVQ—Bit Rotate Right",
+  "VPRORQ (EVEX encoded versions, imm8)" with `(KL, VL) = (8, 512)`:
+  `DEST[i+63:i] := RIGHT_ROTATE_QWORDS(SRC1[i+63:i], imm8)`, so `rorQwords`
+  on each lane. -/
+def EZOp.exec : EZOp → State → State
+  | .bin op d a b, s =>
+    let f (i : Nat) := op.sse.eval (s.vzlane a i) (s.vzlane b i)
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
+  | .vpternlogq d a b n, s =>
+    let f (i : Nat) := ternlog (s.vzlane d i) (s.vzlane a i) (s.vzlane b i) n
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
+  | .vprorq d a n, s =>
+    let f (i : Nat) := rorQwords (s.vzlane a i) n
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
 
 end VG.X86_64

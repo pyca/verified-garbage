@@ -62,11 +62,13 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | stmxcsr m => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
   | vmovdqu32Store m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
   | evStore m r => simp only [exec, State.store256] at h; split at h <;> cases h; rfl
+  | ezStore m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
   | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
   | zop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
   | eop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
-  | evLoad d | evMadd52Load _ d =>
+  | ezop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EZOp.exec_eq op s]
+  | evLoad d | evMadd52Load _ d | ezLoad d =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
   | mov | mov32 | movzx8 | movzx16 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst | vpbroadcastdZ | zbcstd
   | vpmadd52Load | kLoad | kLoad8 =>

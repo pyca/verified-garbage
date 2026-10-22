@@ -326,6 +326,13 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
   | evStore m r => exact store256_patch hc _ _
+  | ezop op =>
+    simp only [exec, Option.map_some]; congr 1
+    cases op <;> simp only [EZOp.exec, State.setVz] <;> (try split) <;> rfl
+  | ezLoad d m =>
+    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load512_patch hc]
+    congr 1; funext v; cases d <;> rfl
+  | ezStore m r => exact store512_patch hc _ _
   | kLoad k d m =>
     simp only [exec, Option.map_map]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,

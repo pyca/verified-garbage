@@ -42,6 +42,7 @@ deriving instance Lean.ToExpr for ZBcstDOp
 deriving instance Lean.ToExpr for VReg
 deriving instance Lean.ToExpr for EBinOp
 deriving instance Lean.ToExpr for EOp
+deriving instance Lean.ToExpr for EZOp
 deriving instance Lean.ToExpr for Cond
 deriving instance Lean.ToExpr for Instr
 

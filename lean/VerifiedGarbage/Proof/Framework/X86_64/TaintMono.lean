@@ -548,7 +548,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     exact ⟨_, rfl, h.upd (set_mono hw d (RegSet.mem_of_subset hw.xregs)) h.flags (h.killM d) empty_subset'⟩
   | movdquLoad _ m | vmovdquLoad _ _ m | vbroadcasti128 _ m | vbinLoad _ _ _ _ m | vmovdqu32Load _ m
   | vbroadcasti32x4 _ m | vbroadcasti32x4H _ m | zbcst _ _ _ m | vpbroadcastdZ _ m | zbcstd _ _ _ m | vpmadd52Load _ _ _ m | evLoad _ m
-  | evMadd52Load _ _ _ m =>
+  | evMadd52Load _ _ _ m | ezLoad _ m =>
     exact h.memSomeX hs
   | ldmxcsr m => exact h.memSome hs
   | kLoad k _ m | kLoad8 k _ m =>
@@ -565,6 +565,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     rw [ite_t (hw.pubM hk)]
     exact h.store m (by decide) id hs
   | evStore m _ => exact h.store m (by decide) id hs
+  | ezStore m _ => exact h.store m (by decide) id hs
   | movdquStore m _ => exact h.store m (by decide) id hs
   | vmovdquStore l m _ => cases l <;> exact h.store m (by decide) id hs
   | vmovdqu32Store m _ => exact h.store m (by decide) id hs
@@ -579,7 +580,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       simp only [step, Option.some.injEq] at hs ⊢
       cases hs
       exact ⟨_, rfl, h.clearX⟩
-  | vop _ | zop _ | eop _ =>
+  | vop _ | zop _ | eop _ | ezop _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.clearX⟩
@@ -873,7 +874,7 @@ theorem ne_of_clobbers {i : Instr} {d : Reg} {j : Nat} (hd : clobbers i d = true
 theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat} (hc : NoWrite i j)
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
-  case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore =>
+  case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore | ezStore =>
     rw [storeStep_regs hs]; exact hr
   case kStore | kStore8 =>
     simp only [step] at hs

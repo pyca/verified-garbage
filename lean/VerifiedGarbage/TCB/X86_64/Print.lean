@@ -237,6 +237,15 @@ def EOp.asm : EOp → String
   | .vpternlogq d a b n => s!"vpternlogq {d.yname}, {a.yname}, {b.yname}, {n.toNat}"
   | .vprorq d r n => s!"vprorq {d.yname}, {r.yname}, {n.toNat}"
 
+/-- The name of the `zmm` register of a `VReg`. -/
+def VReg.zname (r : VReg) : String := "z" ++ (r.name.drop 1).toString
+
+/-- The mnemonics of the `EVEX.512` forms of `Evex.lean`. -/
+def EZOp.asm : EZOp → String
+  | .bin op d a b => s!"{op.name} {d.zname}, {a.zname}, {b.zname}"
+  | .vpternlogq d a b n => s!"vpternlogq {d.zname}, {a.zname}, {b.zname}, {n.toNat}"
+  | .vprorq d r n => s!"vprorq {d.zname}, {r.zname}, {n.toNat}"
+
 def Src.str : Src → String
   | .reg r => r.name
   | .imm v => toString v.toInt
@@ -314,6 +323,9 @@ def Instr.asm : Instr → List String
   | .eop op => [op.asm]
   | .evLoad d m => [s!"vmovdqu64 {d.yname}, {m.strV .l256}"]
   | .evStore m r => [s!"vmovdqu64 {m.strV .l256}, {r.yname}"]
+  | .ezop op => [op.asm]
+  | .ezLoad d m => [s!"vmovdqu64 {d.zname}, {m.str512}"]
+  | .ezStore m r => [s!"vmovdqu64 {m.str512}, {r.zname}"]
   | .evMadd52Load hi d a m =>
     [s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {m.strV .l256}"]
   | .kLoad k d m => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
@@ -364,11 +376,12 @@ def Instr.memOps : Instr → List MemOp
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .vpbroadcastdZ _ m | .zbcstd _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
+  | .ezLoad _ m | .ezStore m _
   | .kLoad8 _ _ m | .kStore8 m _ _
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
-  | .vpmovmskb .. | .zop _ | .eop _
+  | .vpmovmskb .. | .zop _ | .eop _ | .ezop _
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ => []
 

@@ -66,6 +66,10 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
   | evLoad d m | evMadd52Load _ d _ m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
   | evStore m r => simp only [exec, State.store256] at h; split at h <;> cases h; rfl
+  | ezop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EZOp.exec_eq op s]
+  | ezLoad d m =>
+    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
+  | ezStore m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
   | kLoad k d m | kLoad8 k d m => simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
   | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
