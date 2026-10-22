@@ -38381,13 +38381,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -38459,13 +38455,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -38537,13 +38529,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -38615,13 +38603,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -67715,13 +67699,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -67793,13 +67773,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -67871,13 +67847,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -67949,13 +67921,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -204887,13 +204855,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -204965,13 +204929,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -205043,13 +205003,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -205121,13 +205077,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -233365,13 +233317,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -233443,13 +233391,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -233521,13 +233465,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -233599,13 +233539,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -370538,13 +370474,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -370616,13 +370548,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -370694,13 +370622,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -370772,13 +370696,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -398466,13 +398386,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -398544,13 +398460,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -398622,13 +398534,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -398700,13 +398608,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -535718,13 +535622,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -535796,13 +535696,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -535874,13 +535770,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -535952,13 +535844,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -543252,13 +543140,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -543330,13 +543214,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -543408,13 +543288,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -543486,13 +543362,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -562704,13 +562576,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -562782,13 +562650,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -562860,13 +562724,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -562938,13 +562798,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -569382,13 +569238,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -569460,13 +569312,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -569538,13 +569386,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -569616,13 +569460,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -588835,13 +588675,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -588913,13 +588749,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -588991,13 +588823,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -589069,13 +588897,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -594963,13 +594787,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -595041,13 +594861,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -595119,13 +594935,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -595197,13 +595009,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -614499,13 +614307,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -614577,13 +614381,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -614655,13 +614455,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -614733,13 +614529,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -643833,13 +643625,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -643911,13 +643699,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -643989,13 +643773,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -644067,13 +643847,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -781005,13 +780781,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -781083,13 +780855,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -781161,13 +780929,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -781239,13 +781003,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -809483,13 +809243,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -809561,13 +809317,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -809639,13 +809391,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -809717,13 +809465,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -946656,13 +946400,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -946734,13 +946474,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -946812,13 +946548,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -946890,13 +946622,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -974584,13 +974312,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -974662,13 +974386,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -974740,13 +974460,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -974818,13 +974534,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1111840,13 +1111552,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1111918,13 +1111626,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1111996,13 +1111700,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1112074,13 +1111774,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1119374,13 +1119070,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1119452,13 +1119144,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1119530,13 +1119218,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1119608,13 +1119292,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1138826,13 +1138506,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1138904,13 +1138580,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1138982,13 +1138654,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1139060,13 +1138728,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1145504,13 +1145168,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1145582,13 +1145242,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1145660,13 +1145316,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1145738,13 +1145390,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1164957,13 +1164605,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1165035,13 +1164679,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1165113,13 +1164753,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1165191,13 +1164827,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1171085,13 +1170717,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1171163,13 +1170791,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1171241,13 +1170865,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1171319,13 +1170939,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1190621,13 +1190237,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1190699,13 +1190311,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1190777,13 +1190385,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1190855,13 +1190459,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1219955,13 +1219555,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1220033,13 +1219629,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1220111,13 +1219703,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1220189,13 +1219777,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1357127,13 +1356711,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1357205,13 +1356785,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1357283,13 +1356859,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1357361,13 +1356933,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1385605,13 +1385173,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1385683,13 +1385247,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1385761,13 +1385321,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1385839,13 +1385395,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1522778,13 +1522330,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1522856,13 +1522404,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1522934,13 +1522478,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1523012,13 +1522552,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1550706,13 +1550242,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1550784,13 +1550316,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1550862,13 +1550390,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1550940,13 +1550464,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1687962,13 +1687482,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1688040,13 +1687556,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1688118,13 +1687630,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1688196,13 +1687704,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1695496,13 +1695000,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1695574,13 +1695074,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1695652,13 +1695148,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1695730,13 +1695222,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1714948,13 +1714436,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1715026,13 +1714510,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1715104,13 +1714584,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1715182,13 +1714658,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1721626,13 +1721098,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1721704,13 +1721172,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1721782,13 +1721246,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1721860,13 +1721320,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1741079,13 +1740535,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1741157,13 +1740609,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1741235,13 +1740683,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1741313,13 +1740757,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1747207,13 +1746647,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1747285,13 +1746721,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1747363,13 +1746795,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1747441,13 +1746869,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1766743,13 +1766167,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1766821,13 +1766241,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1766899,13 +1766315,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1766977,13 +1766389,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1796077,13 +1795485,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1796155,13 +1795559,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1796233,13 +1795633,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1796311,13 +1795707,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1933249,13 +1932641,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1933327,13 +1932715,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1933405,13 +1932789,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1933483,13 +1932863,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1961727,13 +1961103,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1961805,13 +1961177,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1961883,13 +1961251,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -1961961,13 +1961325,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2098900,13 +2098260,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2098978,13 +2098334,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2099056,13 +2098408,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2099134,13 +2098482,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2126828,13 +2126172,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2126906,13 +2126246,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2126984,13 +2126320,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2127062,13 +2126394,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2264084,13 +2263412,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2264162,13 +2263486,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2264240,13 +2263560,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2264318,13 +2263634,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2271618,13 +2270930,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2271696,13 +2271004,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2271774,13 +2271078,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2271852,13 +2271152,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2291070,13 +2290366,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2291148,13 +2290440,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2291226,13 +2290514,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2291304,13 +2290588,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2297748,13 +2297028,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2297826,13 +2297102,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2297904,13 +2297176,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2297982,13 +2297250,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2317201,13 +2316465,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2317279,13 +2316539,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2317357,13 +2316613,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2317435,13 +2316687,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2323329,13 +2322577,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2323407,13 +2322651,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2323485,13 +2322725,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2323563,13 +2322799,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2342865,13 +2342097,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2342943,13 +2342171,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2343021,13 +2342245,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2343099,13 +2342319,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2372199,13 +2371415,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2372277,13 +2371489,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2372355,13 +2371563,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2372433,13 +2371637,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2509371,13 +2508571,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2509449,13 +2508645,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2509527,13 +2508719,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2509605,13 +2508793,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2537849,13 +2537033,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2537927,13 +2537107,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2538005,13 +2537181,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2538083,13 +2537255,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2675022,13 +2674190,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2675100,13 +2674264,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2675178,13 +2674338,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2675256,13 +2674412,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2702950,13 +2702102,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2703028,13 +2702176,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2703106,13 +2702250,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2703184,13 +2702324,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2840206,13 +2839342,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2840284,13 +2839416,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2840362,13 +2839490,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2840440,13 +2839564,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2847740,13 +2846860,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2847818,13 +2846934,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2847896,13 +2847008,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2847974,13 +2847082,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2867192,13 +2866296,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2867270,13 +2866370,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2867348,13 +2866444,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2867426,13 +2866518,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2873870,13 +2872958,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2873948,13 +2873032,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2874026,13 +2873106,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2874104,13 +2873180,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2893323,13 +2892395,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2893401,13 +2892469,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2893479,13 +2892543,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2893557,13 +2892617,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2899451,13 +2898507,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2899529,13 +2898581,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2899607,13 +2898655,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2899685,13 +2898729,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2918987,13 +2918027,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2919065,13 +2918101,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2919143,13 +2918175,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2919221,13 +2918249,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2948321,13 +2947345,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2948399,13 +2947419,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2948477,13 +2947493,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -2948555,13 +2947567,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3085493,13 +3084501,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3085571,13 +3084575,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3085649,13 +3084649,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3085727,13 +3084723,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3113971,13 +3112963,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3114049,13 +3113037,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3114127,13 +3113111,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3114205,13 +3113185,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3251144,13 +3250120,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3251222,13 +3250194,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3251300,13 +3250268,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3251378,13 +3250342,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3279072,13 +3278032,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3279150,13 +3278106,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3279228,13 +3278180,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3279306,13 +3278254,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3416328,13 +3415272,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3416406,13 +3415346,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3416484,13 +3415420,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3416562,13 +3415494,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3423862,13 +3422790,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3423940,13 +3422864,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3424018,13 +3422938,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3424096,13 +3423012,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3443314,13 +3442226,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3443392,13 +3442300,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3443470,13 +3442374,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3443548,13 +3442448,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3449992,13 +3448888,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3450070,13 +3448962,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3450148,13 +3449036,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3450226,13 +3449110,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3469445,13 +3468325,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3469523,13 +3468399,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3469601,13 +3468473,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3469679,13 +3468547,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3475573,13 +3474437,9 @@ mov QWORD PTR [rdi+216], rax
 mov rbx, QWORD PTR [rdi+216]
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3475651,13 +3474511,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 16
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3475729,13 +3474585,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 32
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2
@@ -3475807,13 +3474659,9 @@ mov rbx, QWORD PTR [rdi+216]
 shr rbx, 48
 and rbx, 65535
 mov rcx, rbx
-mov rax, rbx
-mul rcx
-mov esi, 2
-sub rsi, rax
-mov rax, rcx
-mul rsi
-mov rcx, rax
+add rcx, rcx
+add rcx, rbx
+xor rcx, 2
 mov rax, rbx
 mul rcx
 mov esi, 2

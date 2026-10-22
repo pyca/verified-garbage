@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialInverse
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
@@ -187,7 +188,7 @@ theorem trialEntry_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg 
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (entryLoad_ok hg hZ hi hj hT) fun s₁ ⟨hbx₁, hm₁, k₁⟩ => ?_
   rw [hsp] at hbx₁
-  refine WP.mono (minv_ok s₁ (by rw [hbx₁]; exact hodd)) fun s₂ ⟨h15, k₂, hm₂⟩ => ?_
+  refine WP.mono (trialInverse_ok s₁ (by rw [hbx₁]; exact hodd)) fun s₂ ⟨h15, k₂, hm₂⟩ => ?_
   rw [hbx₁] at h15
   have hbx₂ : (s₂.gpr .rbx).toNat = sp := by rw [k₂.gpr (by decide)]; exact hbx₁
   have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)

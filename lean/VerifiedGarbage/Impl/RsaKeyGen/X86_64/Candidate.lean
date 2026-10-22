@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.TrialInverse
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Core
 
 /-!
@@ -189,7 +190,7 @@ def redc32 : List Instr :=
 `kT2`. -/
 def trialEntry (j : Nat) : List (Prog isa) := [
   .block (([.mov .rbx (.mem (hdr kT1))] : List Instr) ++ (if j = 0 then [] else [.shift .shr .rbx (16 * j)]) ++
-    ([.alu .and .rbx (.imm 0xFFFF)] : List Instr) ++ minv ++
+    ([.alu .and .rbx (.imm 0xFFFF)] : List Instr) ++ trialInverse ++
     ([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)] : List Instr)),
   wordLoop 0 (([.mov .rsi (.mem (ix .r8 .r14)), .mov32 .rax (.reg .rsi)] : List Instr) ++ redc32 ++
     ([.mov .rax (.reg .rsi), .shift .shr .rax 32] : List Instr) ++ redc32),
