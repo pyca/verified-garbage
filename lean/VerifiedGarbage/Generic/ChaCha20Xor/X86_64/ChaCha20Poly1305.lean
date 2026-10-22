@@ -150,13 +150,13 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   | .avx512 | .ifma => [
     Spec.ChaCha20Poly1305.sealSplitApi.artifact X86_64.target {
       suffix := v.suffix
-      notes := [xorNote v, splitNote]
+      notes := [xorNote v.split, splitNote]
       code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
-        (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
+        (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.split.callee v.split.poly)
       stack := 1800
-      verified := Split.sealSplit_framed v
-      spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
-      features := features v }]
+      verified := Split.sealSplit_framed v.split
+      spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v.split)
+      features := features v.split }]
   | _ => []
 
 end VG.Generic.ChaCha20Xor.X86_64.ChaCha20Poly1305

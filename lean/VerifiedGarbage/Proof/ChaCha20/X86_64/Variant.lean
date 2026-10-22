@@ -251,6 +251,19 @@ theorem small_callee (v : XorImpl) : v.small.callee = v.callee.small := by
   · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_true, asAvx2]
   · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_false, Bool.false_eq_true]; rfl
 
+/-- `vg_chacha20_xor_avx512` with `vg_poly1305_blocks_ifma`: what the IFMA
+instance of `vg_chacha20_poly1305_seal_split` calls (`split`), its own
+`vg_chacha20_xor_split_avx512` code inline being `vg_chacha20_xor_avx512`'s,
+without AVX-512VL. -/
+def ifmaSplit : XorImpl := { avx512 with suffix := "_ifma", poly := .ifma,
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩) }
+
+/-- The implementation `v`'s `vg_chacha20_poly1305_seal_split` calls:
+`ifmaSplit` for IFMA, otherwise `v`. -/
+def split (v : XorImpl) : XorImpl := match v.poly with
+  | .ifma => ifmaSplit
+  | _ => v
+
 end XorImpl
 
 end VG.Proof.ChaCha20.X86_64

@@ -36,11 +36,11 @@ of its own. -/
 def sealSplitFn (v : XorImpl) : SealSplitFn where
   name := Spec.ChaCha20Poly1305.sealSplitApi.name ++ v.suffix
   code := withStackArgScratchWipedX 1736 3 42
-    (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
-  verified := Split.sealSplit_framed v
-  sp := SpSafe.of_all (X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v))
+    (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.split.callee v.split.poly)
+  verified := Split.sealSplit_framed v.split
+  sp := SpSafe.of_all (X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v.split))
   depth := by
-    have := Split.sealSplitFor_xdepth v
+    have := Split.sealSplitFor_xdepth v.split
     simp only [withStackArgScratchWipedX, withStackArgScratch, Code.x86_64Depth, X86_64.Instr.frameBytes,
       Nat.zero_max, Nat.max_zero, Nat.max_le]
     omega
@@ -57,7 +57,7 @@ theorem sealGather_spSafe (v : XorImpl) :
     (sealGather (width v) (sealSplitFn v).name (sealSplitFn v).code).all
       (fun i => !X86_64.isa.writesSp i) = true := by
   have hc : (sealSplitFn v).code.all (fun i => !X86_64.isa.writesSp i) = true :=
-    X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
+    X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v.split)
   simp only [sealGather, Code.all, hc, Bool.and_true]
   cases width v <;> decide +kernel
 
