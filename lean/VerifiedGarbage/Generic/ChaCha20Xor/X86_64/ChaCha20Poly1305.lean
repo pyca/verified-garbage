@@ -5,7 +5,6 @@ import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchPad
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
@@ -123,20 +122,20 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
     suffix := v.suffix
     notes := sealNotes v
-    code := Impl.StackScratch.X86_64.withStackArgScratchWipedXP 1728 1 8 42
+    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1728 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
     stack := 1752
     verified := Stitch.sealFor_framed v
-    spSafe := X86_64.Pad.withStackArgScratchWipedXP_spSafe (Stitch.sealFor_spSafe v)
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.sealFor_spSafe v)
     features := features v },
   Spec.ChaCha20Poly1305.openApi.artifact X86_64.target {
     suffix := v.suffix
     notes := openNotes v
-    code := Impl.StackScratch.X86_64.withStackArgScratchWipedXP 1728 1 8 42
+    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1728 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)
     stack := 1752
     verified := Stitch.openFor_framed v
-    spSafe := X86_64.Pad.withStackArgScratchWipedXP_spSafe (Stitch.openFor_spSafe v)
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
     features := openFeatures v },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
     suffix := v.suffix
