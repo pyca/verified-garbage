@@ -79484,105 +79484,29 @@ sub r9, 1
 jne 225b
 mov rax, QWORD PTR [r15+208]
 cmp rax, 192
-jb 230f
-mov rax, QWORD PTR [r15+296]
-add rax, QWORD PTR [r15+272]
-test rax, 3
-je 232f
+jae 230f
 mov rdi, QWORD PTR [r15+296]
 add rdi, QWORD PTR [r15+272]
-mov r8, rdi
-and r8, 3
-sub rdi, r8
 shl rdi, 4
 add rdi, r15
 add rdi, 512
-shl r8, 4
 mov rsi, QWORD PTR [r15+200]
-sub rsi, r8
-mov r9, QWORD PTR [r15+208]
-add r9, r8
-mov rcx, r8
-mov rax, -1
-shl rax, cl
-kmovq k1, rax
-vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi]
-vmovdqu32 zmm6, ZMMWORD PTR [rdi]
-vporq zmm4, zmm4, zmm6
-vmovdqu32 ZMMWORD PTR [rdi], zmm4
-mov r10d, 64
-mov r8, r9
+mov rcx, QWORD PTR [r15+208]
+mov r10d, 0
+mov r8, rcx
 shr r8, 6
 shl r8, 6
+cmp r8, 0
+je 232f
 234:
 vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
 vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
 add r10, 64
 cmp r10, r8
 jne 234b
-mov rcx, r9
-mov eax, 1
-shl rax, cl
-sub rax, 1
-kmovq k1, rax
-vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
-vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
 jmp 233f
 232:
-mov rdi, QWORD PTR [r15+296]
-add rdi, QWORD PTR [r15+272]
-shl rdi, 4
-add rdi, r15
-add rdi, 512
-mov rsi, QWORD PTR [r15+200]
-mov rcx, QWORD PTR [r15+208]
-mov r10d, 0
-mov r8, rcx
-shr r8, 6
-shl r8, 6
-cmp r8, 0
-je 235f
-237:
-vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
-vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
-add r10, 64
-cmp r10, r8
-jne 237b
-jmp 236f
-235:
-236:
-mov eax, 1
-shl rax, cl
-sub rax, 1
-kmovq k1, rax
-vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
-kmovq k1, rax
-vmovdqu8 ZMMWORD PTR [rdi+r10*1] {{k1}}, zmm4
 233:
-jmp 231f
-230:
-mov rdi, QWORD PTR [r15+296]
-add rdi, QWORD PTR [r15+272]
-shl rdi, 4
-add rdi, r15
-add rdi, 512
-mov rsi, QWORD PTR [r15+200]
-mov rcx, QWORD PTR [r15+208]
-mov r10d, 0
-mov r8, rcx
-shr r8, 6
-shl r8, 6
-cmp r8, 0
-je 238f
-240:
-vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
-vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
-add r10, 64
-cmp r10, r8
-jne 240b
-jmp 239f
-238:
-239:
 mov eax, 1
 shl rax, cl
 sub rax, 1
@@ -80202,6 +80126,82 @@ mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 lea rsp, [rsp+2608]
 ret
+230:
+mov rax, QWORD PTR [r15+296]
+add rax, QWORD PTR [r15+272]
+test rax, 3
+je 235f
+mov rdi, QWORD PTR [r15+296]
+add rdi, QWORD PTR [r15+272]
+mov r8, rdi
+and r8, 3
+sub rdi, r8
+shl rdi, 4
+add rdi, r15
+add rdi, 512
+shl r8, 4
+mov rsi, QWORD PTR [r15+200]
+sub rsi, r8
+mov r9, QWORD PTR [r15+208]
+add r9, r8
+mov rcx, r8
+mov rax, -1
+shl rax, cl
+kmovq k1, rax
+vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi]
+vmovdqu32 zmm6, ZMMWORD PTR [rdi]
+vporq zmm4, zmm4, zmm6
+vmovdqu32 ZMMWORD PTR [rdi], zmm4
+mov r10d, 64
+mov r8, r9
+shr r8, 6
+shl r8, 6
+237:
+vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
+add r10, 64
+cmp r10, r8
+jne 237b
+mov rcx, r9
+mov eax, 1
+shl rax, cl
+sub rax, 1
+kmovq k1, rax
+vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
+jmp 236f
+235:
+mov rdi, QWORD PTR [r15+296]
+add rdi, QWORD PTR [r15+272]
+shl rdi, 4
+add rdi, r15
+add rdi, 512
+mov rsi, QWORD PTR [r15+200]
+mov rcx, QWORD PTR [r15+208]
+mov r10d, 0
+mov r8, rcx
+shr r8, 6
+shl r8, 6
+cmp r8, 0
+je 238f
+240:
+vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
+add r10, 64
+cmp r10, r8
+jne 240b
+jmp 239f
+238:
+239:
+mov eax, 1
+shl rax, cl
+sub rax, 1
+kmovq k1, rax
+vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
+kmovq k1, rax
+vmovdqu8 ZMMWORD PTR [rdi+r10*1] {{k1}}, zmm4
+236:
+jmp 231b
 .p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
@@ -93275,105 +93275,29 @@ sub r9, 1
 jne 219b
 mov rax, QWORD PTR [r15+208]
 cmp rax, 192
-jb 224f
-mov rax, QWORD PTR [r15+296]
-add rax, QWORD PTR [r15+272]
-test rax, 3
-je 226f
+jae 224f
 mov rdi, QWORD PTR [r15+296]
 add rdi, QWORD PTR [r15+272]
-mov r8, rdi
-and r8, 3
-sub rdi, r8
 shl rdi, 4
 add rdi, r15
 add rdi, 512
-shl r8, 4
 mov rsi, QWORD PTR [r15+200]
-sub rsi, r8
-mov r9, QWORD PTR [r15+208]
-add r9, r8
-mov rcx, r8
-mov rax, -1
-shl rax, cl
-kmovq k1, rax
-vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi]
-vmovdqu32 zmm6, ZMMWORD PTR [rdi]
-vporq zmm4, zmm4, zmm6
-vmovdqu32 ZMMWORD PTR [rdi], zmm4
-mov r10d, 64
-mov r8, r9
+mov rcx, QWORD PTR [r15+208]
+mov r10d, 0
+mov r8, rcx
 shr r8, 6
 shl r8, 6
+cmp r8, 0
+je 226f
 228:
 vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
 vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
 add r10, 64
 cmp r10, r8
 jne 228b
-mov rcx, r9
-mov eax, 1
-shl rax, cl
-sub rax, 1
-kmovq k1, rax
-vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
-vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
 jmp 227f
 226:
-mov rdi, QWORD PTR [r15+296]
-add rdi, QWORD PTR [r15+272]
-shl rdi, 4
-add rdi, r15
-add rdi, 512
-mov rsi, QWORD PTR [r15+200]
-mov rcx, QWORD PTR [r15+208]
-mov r10d, 0
-mov r8, rcx
-shr r8, 6
-shl r8, 6
-cmp r8, 0
-je 229f
-231:
-vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
-vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
-add r10, 64
-cmp r10, r8
-jne 231b
-jmp 230f
-229:
-230:
-mov eax, 1
-shl rax, cl
-sub rax, 1
-kmovq k1, rax
-vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
-kmovq k1, rax
-vmovdqu8 ZMMWORD PTR [rdi+r10*1] {{k1}}, zmm4
 227:
-jmp 225f
-224:
-mov rdi, QWORD PTR [r15+296]
-add rdi, QWORD PTR [r15+272]
-shl rdi, 4
-add rdi, r15
-add rdi, 512
-mov rsi, QWORD PTR [r15+200]
-mov rcx, QWORD PTR [r15+208]
-mov r10d, 0
-mov r8, rcx
-shr r8, 6
-shl r8, 6
-cmp r8, 0
-je 232f
-234:
-vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
-vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
-add r10, 64
-cmp r10, r8
-jne 234b
-jmp 233f
-232:
-233:
 mov eax, 1
 shl rax, cl
 sub rax, 1
@@ -94521,6 +94445,82 @@ mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 lea rsp, [rsp+2608]
 ret
+224:
+mov rax, QWORD PTR [r15+296]
+add rax, QWORD PTR [r15+272]
+test rax, 3
+je 229f
+mov rdi, QWORD PTR [r15+296]
+add rdi, QWORD PTR [r15+272]
+mov r8, rdi
+and r8, 3
+sub rdi, r8
+shl rdi, 4
+add rdi, r15
+add rdi, 512
+shl r8, 4
+mov rsi, QWORD PTR [r15+200]
+sub rsi, r8
+mov r9, QWORD PTR [r15+208]
+add r9, r8
+mov rcx, r8
+mov rax, -1
+shl rax, cl
+kmovq k1, rax
+vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi]
+vmovdqu32 zmm6, ZMMWORD PTR [rdi]
+vporq zmm4, zmm4, zmm6
+vmovdqu32 ZMMWORD PTR [rdi], zmm4
+mov r10d, 64
+mov r8, r9
+shr r8, 6
+shl r8, 6
+231:
+vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
+add r10, 64
+cmp r10, r8
+jne 231b
+mov rcx, r9
+mov eax, 1
+shl rax, cl
+sub rax, 1
+kmovq k1, rax
+vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
+jmp 230f
+229:
+mov rdi, QWORD PTR [r15+296]
+add rdi, QWORD PTR [r15+272]
+shl rdi, 4
+add rdi, r15
+add rdi, 512
+mov rsi, QWORD PTR [r15+200]
+mov rcx, QWORD PTR [r15+208]
+mov r10d, 0
+mov r8, rcx
+shr r8, 6
+shl r8, 6
+cmp r8, 0
+je 232f
+234:
+vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
+add r10, 64
+cmp r10, r8
+jne 234b
+jmp 233f
+232:
+233:
+mov eax, 1
+shl rax, cl
+sub rax, 1
+kmovq k1, rax
+vmovdqu8 zmm4 {{k1}}{{z}}, ZMMWORD PTR [rsi+r10*1]
+kmovq k1, rax
+vmovdqu8 ZMMWORD PTR [rdi+r10*1] {{k1}}, zmm4
+230:
+jmp 225b
 .p2align 6",
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
+import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
@@ -667,7 +668,9 @@ theorem copyCG_ok (s : State) {W D : Addr} {lead na n : Nat} (h15 : s.gpr .r15 =
     exact (ZKeep.mono (rs := []) (fun r _ l _ => by rw [z₁ r l, uz r l]) (by simp)).trans (z₂.mono (by simp))
   -- `n` compared with 192.
   refine WP.seq (WP.mono (guard1_ok s h15 hw hn (by omega)) fun u₂ ⟨cf₂, gu₂, m₂, rd₂, wr₂, zu₂⟩ => ?_)
-  refine WP.ite (decide (n < 192)) (by simp only [eval, cf₂]) (fun hb => ?_) (fun hb => ?_)
+  refine WP.iteCold_iff.mpr (WP.ite (!decide (n < 192)) (by show u₂.cf.map _ = _; rw [cf₂]; rfl)
+    (fun hb => ?_) (fun hb => ?_))
+  rotate_left
   · exact viaC u₂ (by rw [gu₂ _ (by decide), h15]) m₂ rd₂ wr₂ gu₂ zu₂
   have h192 : 192 ≤ n := by simpa using hb
   -- `lead + na` tested for a multiple of 4.

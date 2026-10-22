@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
+import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -21,6 +22,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
+meta import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -387,8 +389,8 @@ theorem copyCG_rel (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
       SJ s₀' Ctx W SP A D R al n J' tl' s₂) [.r15] (fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.sm.env.r15, h.2.sm.env.r15]) ⟨_, by taint_decide⟩)
     w₁ w₁
-  refine RelCT.seq b1 (RelCT.ite (fun _ _ h => (eval_b h.1.1).trans (eval_b h.2.1).symm)
-    (cC.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
+  refine RelCT.seq b1 (RelCT.iteCold (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm) ?_
+    (cC.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)))
   have b2 := rel_next (rel_taint (P := fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧
       SJ s₀' Ctx W SP A D R al n J' tl' s₂) [.r15] (fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.sm.env.r15, h.2.sm.env.r15]) ⟨_, by taint_decide⟩)

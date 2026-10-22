@@ -180,12 +180,15 @@ def copyG : Prog isa := .seq (.block (gArgs ++ gHead)) (.seq (.loop (.block gBod
 /-- The ciphertext into `G`: by `copyG` from 192 bytes on unless the text
 starts at a group (`t` a multiple of 4), otherwise by `copyC`, which on an
 Intel Xeon with AVX-512 is as fast or faster there (by up to 10% at 16 to
-128 bytes). The branches are on the lengths only. -/
+128 bytes). The branches are on the lengths only. Shorter texts fall
+through to `copyC` as before; the longer ones' code is out of line
+(`Code.iteCold`), after the function's return. -/
 def copyCG : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 192)])
-    (.ite .b copyC
+    (Code.iteCold .ae
       (.seq (.block [.mov .rax (.mem (at_ .r15 leadO)), .alu .add .rax (.mem (at_ .r15 naO)), .alu .test .rax (imm 3)])
-        (.ite .e copyC copyG)))
+        (.ite .e copyC copyG))
+      copyC)
 
 /-! ## The powers -/
 
