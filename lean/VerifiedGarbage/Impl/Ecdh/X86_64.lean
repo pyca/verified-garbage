@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOddP
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacAP
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
@@ -271,9 +272,11 @@ def invJAProg : Prog isa :=
   if c.n = 6 ∧ c.inverse.isSome then invJACall c else InvCfg.inv (invJA c)
 
 /-- `[d]P` into `R` by the Jacobian window method with the table made affine
-(`JacWinCfg.windowA`), `dbl` doubling a point in place. -/
+(`JacWinCfg.windowA`), `dbl` doubling a point in place, each window's
+selection woven into the addition before it where that applies
+(`JacWinCfg.windowAW`). -/
 def mulQJA (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowA (invJAProg c) dbl))
+  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowAW (invJAProg c) dbl))
 
 /-! ## Windows of 4 bits in Jacobian coordinates, for a curve of prime order
 

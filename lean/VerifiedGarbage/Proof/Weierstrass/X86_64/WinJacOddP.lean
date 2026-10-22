@@ -176,11 +176,9 @@ theorem addO_post (hL : JacWinLay K size) (hC : Law C) (hM3 : AM3 C) (hO : Prime
   rw [(Rv _ (by simp)).1, (Rv _ (by simp)).1, (Rv _ (by simp)).1, vx, vy, vz]
   exact hR
 
-theorem chunkO_zero (K : JacWinCfg) : K.chunkO 0 = 0 := by
-  rw [JacWinCfg.chunkO, Nat.mul_zero, Nat.zero_div]
+theorem chunkO_zero (K : JacWinCfg) : K.chunkO 0 = 0 := chunkW_zero _
 
-theorem chunkO_last (K : JacWinCfg) (h : 0 < K.nAddO) : K.chunkO K.nAddO = 16 := by
-  rw [JacWinCfg.chunkO, Nat.mul_div_cancel _ h]
+theorem chunkO_last (K : JacWinCfg) (h : 0 < K.nAddO) : K.chunkO K.nAddO = 16 := chunkW_last h
 
 /-- `ZF` for `m = 1`, with `rbx = m`. -/
 theorem cmpRbx1_ok (s : State) {m : Nat} (hm : m < 2 ^ 63) (hb : s.gpr .rbx = BitVec.ofNat 64 m) :

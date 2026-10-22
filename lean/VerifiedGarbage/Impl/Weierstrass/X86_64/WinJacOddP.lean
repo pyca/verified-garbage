@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardFieldI
 public import VerifiedGarbage.Impl.X86_64Scal
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.SelWeave
 
 /-!
 # The odd window method on x86-64, its selections woven into the additions
@@ -35,18 +36,6 @@ namespace VG.Impl.Weierstrass.X86_64
 
 open VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 
-/-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
-apart, with SSE2: the mask of `xmm11 = xmm13` (both broadcasts of a
-doubleword: `m` and the magnitude) in `xmm15`, `xmm11` incremented by
-`xmm12` (one in every doubleword), and the entry's `np` 16-byte pieces kept
-in the accumulators under the mask, through `xmm14`, as `selEntryAt` keeps
-them. -/
-def selEntryX (st np : Nat) (m : Nat) : List Instr :=
-  [.xop (.bin .movdqa .xmm15 .xmm11), .xop (.bin .pcmpeqd .xmm15 .xmm13), .xop (.bin .paddd .xmm11 .xmm12)] ++
-  (List.range np).flatMap fun c =>
-    [.movdquLoad .xmm14 (tblAt (st * (m - 1) + 16 * c)), .xop (.bin .pand .xmm14 .xmm15),
-      .xop (.bin .por (selAcc c) .xmm14)]
-
 namespace JacWinCfg
 
 variable (K : JacWinCfg)
@@ -54,42 +43,23 @@ variable (K : JacWinCfg)
 /-- The addition's field operations. -/
 def nAddO : Nat := K.addOpsO.length
 
-/-- The entries selected before field operation `i` of the addition is done:
-`16 i / nAddO`, all sixteen after the last. -/
-def chunkO (i : Nat) : Nat := 16 * i / K.nAddO
+/-- The entries selected before field operation `i` of the addition is done
+(`chunkW`). -/
+def chunkO (i : Nat) : Nat := chunkW K.nAddO i
 
-/-- Entry `m` of the table at `rdx` kept in the accumulators: with AVX2 32
-bytes at a time, else 16. -/
-def selEntryP (m : Nat) : List Instr :=
-  if K.avx2 then selEntryY K.st K.np32 (qY K.np16) m else selEntryX K.st K.np16 m
+/-- Entry `m` of the table at `rdx`, its five coordinates kept in the
+accumulators. -/
+def selEntryP (m : Nat) : List Instr := selEntryW K.avx2 K.st K.np16 m
 
-/-- After field operation `i`: `rdx = rdi + tbl`, and entries
-`chunkO i + 1 … chunkO (i + 1)` kept in the accumulators. -/
-def selChunkO (i : Nat) : List Instr :=
-  if K.chunkO (i + 1) = K.chunkO i then [] else
-  [.mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl))] ++
-  (List.range (K.chunkO (i + 1) - K.chunkO i)).flatMap fun e => K.selEntryP (K.chunkO i + e + 1)
+/-- After field operation `i`: entries `chunkO i + 1 … chunkO (i + 1)` kept in
+the accumulators (`selChunkW`). -/
+def selChunkO (i : Nat) : List Instr := selChunkW K.avx2 K.tbl K.st K.np16 K.nAddO i
 
-/-- The magnitude in `r8` broadcast to `xmm13` (`ymm13` with AVX2), one to
-`xmm12` and the counter (`ymm14` with AVX2, else `xmm11`), through `rcx`,
-and the accumulators cleared. -/
-def selSetP : List Instr :=
-  if K.avx2 then
-    [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
-      .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
-    (List.range K.np32).map fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))
-  else
-    [.xop (.movq .xmm13 .r8), .xop (.pshufd .xmm13 .xmm13 0), .mov32 .rcx (.imm 1),
-      .xop (.movq .xmm12 .rcx), .xop (.pshufd .xmm12 .xmm12 0), .xop (.bin .movdqa .xmm11 .xmm12)] ++
-    (List.range K.np16).map fun c => .xop (.bin .pxor (selAcc c) (selAcc c))
+/-- The selection of an entry's five coordinates set up (`selSetW`). -/
+def selSetP : List Instr := selSetW K.avx2 K.np16
 
-/-- The accumulators stored to `T` (and the upper halves of the `ymm`
-registers cleared, with AVX2). -/
-def storeP : List Instr :=
-  if K.avx2 then
-    (List.range K.np32).map (fun c => .vmovdquStore .l256 (sc (K.T + 16 * qY K.np16 c)) (selAcc c)) ++
-      [.vop .vzeroupper]
-  else (List.range K.np16).map fun c => .movdquStore (sc (K.T + 16 * c)) (selAcc c)
+/-- The accumulators stored to `T` (`storeW`). -/
+def storeP : List Instr := storeW K.avx2 K.T K.np16
 
 /-- Before digit `j = rbx`'s addition: digit `j - 1`'s entry into `r8`, and
 the selection set up for it. -/
