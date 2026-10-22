@@ -229,10 +229,11 @@ def jwinPrepO : Prog isa :=
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
 /-- `R`'s `y` negated if `d` is even, as `R` is then `[n - d]P = -[d]P`:
-`-y` into `[neg]`, selected by the mask of `d`'s low bit, `([D] ∧ 1) - 1`. -/
+`-y` into `PT`'s slot, selected by the mask of `d`'s low bit, from its table
+of bits: `b_0 - 1`. -/
 def fixSign : List Instr :=
   Mont.X86_64.sub c.MP' (c.sl PT) (c.sl ZERO) (c.sl RY) ++
-    [.mov .rcx (.mem (sc (c.sl D))), .alu .and .rcx (.imm 1), .alu .sub .rcx (.imm 1)] ++
+    [.movzx8 .rcx (sc (bitsAt c.n 0)), .alu .sub .rcx (.imm 1)] ++
     sel c.n (c.sl RY) (c.sl RY) (c.sl PT)
 
 /-- `[d]P` into `R` by odd windows (of `d`, or of `n - d` and then `R`
