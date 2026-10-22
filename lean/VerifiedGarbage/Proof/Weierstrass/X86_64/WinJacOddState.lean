@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.OddWin
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 
 /-!
 # The odd window method on x86-64: what holds between its steps
@@ -86,12 +87,22 @@ theorem RStO.rbxKeeps (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s�
     (W := []) (by rw [m]; exact Unch.refl _ _ _) (by simp), fun j h1 hj => (h.tbl j h1 hj).congr
     fun c _ => by rw [m], fun x hx => by rw [m]; exact h.lt x hx, by rw [e, e, e]; exact h.rep⟩
 
+/-- What the loop's doublings write: the other slots and the temporary area,
+not the grid. -/
+def jwOthW (K : JacWinCfg) : List (Nat × Nat) := (jwOther K).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)]
+
+theorem jwOthW_loopW (K : JacWinCfg) : ∀ w ∈ jwOthW K, w ∈ jwLoopW K := by
+  intro w hw
+  rcases List.mem_append.mp hw with hw | hw
+  · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw; exact other_loopW hx
+  · rw [List.mem_singleton.mp hw]; exact tmp_loopW
+
 /-- One doubling of `R`. -/
 theorem dblRO_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State}
     (h : RStO K C base size P s₀ Q s) :
     WP isa (dbl K.R).inline s fun t => RStO K C base size P s₀ (Spec.Weierstrass.add Q Q) t ∧
-      t.gpr .rbx = s.gpr .rbx ∧ Unch base (jwLoopW K) s.mem t.mem := by
+      t.gpr .rbx = s.gpr .rbx ∧ Unch base (jwOthW K) s.mem t.mem := by
   have hs := h.fr.scr
   have hn := hs.nowrap
   have hRo : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ jwOther K := by
@@ -104,10 +115,18 @@ theorem dblRO_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M
     simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> jw_mem
   refine WP.mono (hD hL.lay hL.rcbW_R hsl I0 hQ h.rep) fun t ⟨k, E, I, J⟩ => ?_
-  have U : Unch base (jwLoopW K) s.mem t.mem :=
-    k.loopW (rcbW_loopW fun x hx => other_loopW (hRo x hx))
+  have hRw : ∀ x ∈ rcbW K.S K.R, x ∈ jwOther K := by
+    intro x hx
+    simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> jw_mem
+  have U' : Unch base (jwOthW K) s.mem t.mem := (ProgKeep.unch k).mono fun w hw => by
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw
+      exact List.mem_append_left _ (List.mem_map_of_mem (hRw x hx))
+    · exact List.mem_append_right _ hw
+  have U : Unch base (jwLoopW K) s.mem t.mem := U'.mono (jwOthW_loopW K)
   refine ⟨⟨h.fr.next hL (k.scr hs) k.regs U (jwLoopW_sub K), h.tbl.loopW hL U hn (by decide),
-    fun x hx => I.lt x hx, ?_⟩, k.gpr _ (rbx_not_clob _), U⟩
+    fun x hx => I.lt x hx, ?_⟩, k.gpr _ (rbx_not_clob _), U'⟩
   have e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = E x := fun x hx => I.val x hx
   rw [e _ (by simp), e _ (by simp), e _ (by simp)]
   exact J
@@ -117,13 +136,13 @@ theorem dblsO_ok (hL : JacWinLay K size) (hC : Law C) {dbl : Pt → Prog isa} (h
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State} {e j : Nat} (hj : j < 4096)
     (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h : RStO K C base size P s₀ (mul e Q) s) :
     WP isa (K.dbls dbl).inline s fun t => RStO K C base size P s₀ (mul (32 * e) Q) t ∧
-      t.gpr .rbx = BitVec.ofNat 64 j ∧ Unch base (jwLoopW K) s.mem t.mem := by
+      t.gpr .rbx = BitVec.ofNat 64 j ∧ Unch base (jwOthW K) s.mem t.mem := by
   rw [JacWinCfg.dbls]
   simp only [Code.inline]
   refine WP.seq (WP.mono (addRbx_ok s (c := 5 * 4096) (by decide) hb) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have m₁ : s₁.mem = s.mem := k₁.2.1
   refine aeLoop_ok (n := 5) (Inv := fun i t => RStO K C base size P s₀ (mul (2 ^ (5 - i) * e) Q) t ∧
-      t.gpr .rbx = BitVec.ofNat 64 (j + 4096 * i) ∧ Unch base (jwLoopW K) s.mem t.mem)
+      t.gpr .rbx = BitVec.ofNat 64 (j + 4096 * i) ∧ Unch base (jwOthW K) s.mem t.mem)
     (fun i t h1 h5 ⟨R, b, U⟩ => ?_) (fun t ⟨R, b, U⟩ => ⟨by simpa using R, by simpa using b, U⟩) (by decide)
     ⟨by simpa using h.rbxKeeps hL k₁, by rw [b₁], by rw [m₁]; exact Unch.refl _ _ _⟩
   rw [JacWinCfg.dblStep]
