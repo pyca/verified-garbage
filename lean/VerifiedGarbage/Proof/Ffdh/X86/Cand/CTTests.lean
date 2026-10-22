@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
-import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTPhase
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTPhase
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
@@ -184,7 +184,7 @@ abbrev Passed (Ex : List Region → List Region → Prop) (base : Addr) (bytes l
 
 /-- A phase and what follows it, for runs with the same modulus, count and cursor. -/
 theorem phasePass_trace {up : BitVec 32} {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length)
-    {j w n c : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hck : ACheck (prepHead j)) (hw3 : 3 ≤ w) (hodd : w % 2 = 1)
+    {j w n c : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hck : PrepHeadCk j) (hw3 : 3 ≤ w) (hodd : w % 2 = 1)
     (hn1 : 1 ≤ n) (hcT : c ≤ T.length) {Pre : State → Prop}
     (hPre : ∀ x, Pre x → TCtx Ex base bytes len args sp up T x ∧ sv x.mem base len .wide j = w ∧
       w32 x.mem base octOff = Spec.Ffdh.witnessOctets w ∧ w32 x.mem base kOff = Spec.RsaKeyGen.bitLength (w - 1) ∧
