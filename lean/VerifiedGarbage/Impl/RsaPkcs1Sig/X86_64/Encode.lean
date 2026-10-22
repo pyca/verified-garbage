@@ -103,13 +103,22 @@ def encode : Prog isa :=
         (.seq (.block [.mov .rax (.reg .r10), .alu .add .rax (.imm 11), .alu .cmp .rcx (.reg .rax)])
           (.ite .b fail write))))
 
+/-- One byte of `compare`: `rdx := rdx | ([rdi + r11] ^ [rsi + r11])`. -/
+def cmpByte : List Instr :=
+  [.movzx8 .rax { base := .rdi, index := some .r11 }, .movzx8 .r10 { base := .rsi, index := some .r11 },
+    .alu .xor .rax (.reg .r10), .alu .or .rdx (.reg .rax), .alu .add .r11 (.imm 1), .alu .cmp .r11 (.reg .rcx)]
+
+/-- One word of `compare`: the same for the 8 bytes at `r11`. -/
+def cmpWord : List Instr :=
+  [.mov .rax (.mem { base := .rdi, index := some .r11 }), .alu .xor .rax (.mem { base := .rsi, index := some .r11 }),
+    .alu .or .rdx (.reg .rax), .alu .add .r11 (.imm 8), .alu .cmp .r11 (.reg .rcx)]
+
 /-- `rdx := OR of [rdi + i] ^ [rsi + i]` for `i < rcx` (at least 1), through
-the index `r11`: zero exactly when the two buffers are equal. It writes
-`rax`, `rdx`, `r10` and `r11`. -/
+the index `r11`, eight bytes at a time if `rcx` is a multiple of 8 and one at
+a time if not: zero exactly when the two buffers are equal. It writes `rax`,
+`rdx`, `r10` and `r11`. -/
 def compare : Prog isa :=
-  .seq (.block [.mov32 .r11 (.imm 0), .mov32 .rdx (.imm 0)])
-    (.loop (.block [.movzx8 .rax { base := .rdi, index := some .r11 },
-      .movzx8 .r10 { base := .rsi, index := some .r11 }, .alu .xor .rax (.reg .r10),
-      .alu .or .rdx (.reg .rax), .alu .add .r11 (.imm 1), .alu .cmp .r11 (.reg .rcx)]) .ne)
+  .seq (.block [.mov32 .r11 (.imm 0), .mov32 .rdx (.imm 0), .mov .rax (.reg .rcx), .alu .and .rax (.imm 7)])
+    (.ite .e (.loop (.block cmpWord) .ne) (.loop (.block cmpByte) .ne))
 
 end VG.Impl.RsaPkcs1Sig.X86_64

@@ -223,11 +223,10 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
     have hcx₅ : t₅.gpr .rcx = s.gpr .rcx := by
       rw [hK₅.gpr (by decide), hs₄.1, hK₃.gpr (by decide), hcx₂]
     have he₅ : Env s t₅ := he₄.regs (hK₅.gpr (by decide)) hm₅ hK₅.2.1 hK₅.2.2
-    have hr5 : ∀ i < k, InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
-        InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rsi + BitVec.ofNat 64 i) 1 := fun i hi => by
+    have hr5 : InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rdi) k ∧ InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rsi) k := by
       rw [hdi₅, hsi₅, he₅.wr]
-      obtain ⟨r₁, h₁, c₁⟩ := frame_bytes' hp (d := oEM1) (n := k) (by unfold oEM1 frameBytes; omega_arith) i hi
-      obtain ⟨r₂, h₂, c₂⟩ := frame_bytes' hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega_arith) i hi
+      obtain ⟨r₁, h₁, c₁⟩ := frame_span' hp (d := oEM1) (n := k) (by unfold oEM1 frameBytes; omega_arith)
+      obtain ⟨r₂, h₂, c₂⟩ := frame_span' hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega_arith)
       exact ⟨⟨r₁, List.mem_append_right _ h₁, c₁⟩, ⟨r₂, List.mem_append_right _ h₂, c₂⟩⟩
     refine WP.seq (WP.mono (compare_ok (by rw [hcx₅]) (by omega_arith) hr5) fun t₆ ⟨hK₆, hm₆, hdx₆⟩ => ?_)
     have he₆ : Env s t₆ := he₅.regs (hK₆.gpr (by decide)) hm₆ hK₆.2.1 hK₆.2.2
@@ -249,7 +248,7 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
       rw [hl'] at this
       rw [hm₃, h8₂]; exact this
     have hdiff : (t₆.gpr .rdx = 0) ↔ em = em' := by
-      rw [hdx₆, hdi₅, hsi₅, setWidth_byte_eq_zero, VG.Proof.Ct.diff_zero, ← bytesAt_eq_iff, hm₅, hs₄.2.1, h1, h2]
+      rw [hdx₆, hdi₅, hsi₅, EqBytes, ← bytesAt_eq_iff, hm₅, hs₄.2.1, h1, h2]
     have hw0 : Bignum.word t₆.mem (fb s) 0 = st := by
       rw [hm₆, hm₅, hs₄.2.1, hm₃, h8₂, slot_keep (frame_writeBytes _ _ _) (fun r hr => ?_), hst]
       rw [List.mem_singleton.mp hr, hl']

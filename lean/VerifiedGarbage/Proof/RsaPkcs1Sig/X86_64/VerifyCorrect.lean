@@ -58,6 +58,12 @@ theorem frame_bytes {s : State} {d n : Nat} (hp : PreV s) (h : d + n ≤ frameBy
   rw [show off (fb s) d + BitVec.ofNat 64 i = off (fb s) (d + i) from off_off _ _ _]
   exact Offset.contains_base _ (by omega) (by unfold frameBytes at *; omega)
 
+/-- The `n` bytes at offset `d` of the frame are writable. -/
+theorem frame_span {s : State} {d n : Nat} (hp : PreV s) (h : d + n ≤ frameBytes) :
+    InRegions (⟨fb s, frameBytes⟩ :: s.wr) (off (fb s) d) n := by
+  have := fb_toNat hp
+  exact ⟨_, List.mem_cons_self .., Offset.contains_base _ (by omega) (by unfold frameBytes at *; omega)⟩
+
 /-! ## The blocks after the call -/
 
 theorem test0_ok (t : State) :
@@ -228,11 +234,10 @@ theorem afterPub_checked (out : Option (List Byte)) {s t : State} (hp : PreV s) 
       have hcx₅ : t₅.gpr .rcx = s.gpr .rsi := by
         rw [hK₅.gpr (by decide), hs₄.1, hK₃.gpr (by decide), hcx₂]
       have he₅ : Env s t₅ := he₄.regs (hK₅.gpr (by decide)) hm₅ hK₅.2.1 hK₅.2.2
-      have hr5 : ∀ i < k, InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
-          InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rsi + BitVec.ofNat 64 i) 1 := fun i hi => by
+      have hr5 : InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rdi) k ∧ InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rsi) k := by
         rw [hdi₅, hsi₅, he₅.wr]
-        obtain ⟨r₁, h₁, c₁⟩ := frame_bytes hp (d := oEM1) (n := k) (by unfold oEM1 frameBytes; omega) i hi
-        obtain ⟨r₂, h₂, c₂⟩ := frame_bytes hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega) i hi
+        obtain ⟨r₁, h₁, c₁⟩ := frame_span hp (d := oEM1) (n := k) (by unfold oEM1 frameBytes; omega)
+        obtain ⟨r₂, h₂, c₂⟩ := frame_span hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega)
         exact ⟨⟨r₁, List.mem_append_right _ h₁, c₁⟩, ⟨r₂, List.mem_append_right _ h₂, c₂⟩⟩
       refine WP.seq (WP.mono (compare_ok (by rw [hcx₅]) (by omega) hr5) fun t₆ ⟨hK₆, hm₆, hdx₆⟩ => ?_)
       refine WP.mono (result_ok t₆) fun u ⟨hK, hm, hax'⟩ => ⟨?_, ?_, ?_⟩
@@ -253,8 +258,8 @@ theorem afterPub_checked (out : Option (List Byte)) {s t : State} (hp : PreV s) 
           rw [hl'] at this
           rw [hm₃, h8₂]; exact this
         have hm6 : t₆.mem = t₃.mem := by rw [hm₆, hm₅, hs₄.2.1]
-        rw [hax', hdx₆, hdi₅, hsi₅]
-        simp only [setWidth_byte_eq_zero, VG.Proof.Ct.diff_zero, ← bytesAt_eq_iff, hm₅, hs₄.2.1, h1, h2]
+        rw [hax']
+        simp only [hdx₆, hdi₅, hsi₅, EqBytes, ← bytesAt_eq_iff, hm₅, hs₄.2.1, h1, h2]
         by_cases hq : em = em' <;> simp [hq]
       · rw [hm, hm₆, hm₅, hs₄.2.1, hm₃, h8₂]
         have hf := frame_writeBytes t₂.mem (off (fb s) oEM2) em'
