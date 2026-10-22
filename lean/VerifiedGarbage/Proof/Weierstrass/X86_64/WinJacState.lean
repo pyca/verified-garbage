@@ -205,6 +205,19 @@ theorem jwOthW_loopW (K : JacWinCfg) : ∀ w ∈ jwOthW K, w ∈ jwLoopW K := by
   · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw; exact other_loopW hx
   · rw [List.mem_singleton.mp hw]; exact tmp_loopW
 
+theorem other_othW {x : Nat} (h : x ∈ jwOther K) : (x, 8 * K.M.n) ∈ jwOthW K :=
+  List.mem_append_left _ (List.mem_map_of_mem h)
+
+/-- `T`'s slots survive writes to the other slots and the temporary area. -/
+theorem ts_othW (hL : JacWinLay K size) {base : Addr} {m m' : Mem} (hU : Unch base (jwOthW K) m m')
+    (hn : base.toNat + size ≤ 2 ^ 64) : ∀ c < 5, wordsVal m' base (TS K c) K.M.n = wordsVal m base (TS K c) K.M.n :=
+  fun c hc => hU.wordsVal (fun w hw => by
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨o, ho, rfl⟩ := List.mem_map.mp hw
+      exact (hL.jg_apart (List.mem_append_right _ ho) (i := 80 + c) (by omega)).symm
+    · rw [List.mem_singleton.mp hw]; exact hL.lay.tmp _ (jg_mem (by omega)))
+    (by show jg K (80 + c) + 8 * K.M.n ≤ 2 ^ 64; have := hL.le (jg_mem (K := K) (i := 80 + c) (by omega)); omega)
+
 /-- What a field program writing slots the loop may write changes. -/
 theorem ProgKeep.loopW {base : Addr} {W : List Nat} {s t : State} (h : ProgKeep K.M base W s t)
     (hW : ∀ x ∈ W, (x, 8 * K.M.n) ∈ jwLoopW K) : Unch base (jwLoopW K) s.mem t.mem :=

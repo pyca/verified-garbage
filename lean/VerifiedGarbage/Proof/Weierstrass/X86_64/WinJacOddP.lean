@@ -180,23 +180,6 @@ theorem chunkO_zero (K : JacWinCfg) : K.chunkO 0 = 0 := chunkW_zero _
 
 theorem chunkO_last (K : JacWinCfg) (h : 0 < K.nAddO) : K.chunkO K.nAddO = 16 := chunkW_last h
 
-/-- `ZF` for `m = 1`, with `rbx = m`. -/
-theorem cmpRbx1_ok (s : State) {m : Nat} (hm : m < 2 ^ 63) (hb : s.gpr .rbx = BitVec.ofNat 64 m) :
-    WP isa (.block [.alu .cmp .rbx (.imm 1)]) s fun t => t.zf = some (decide (m = 1)) ∧ Keeps [] s t := by
-  have e : (BitVec.ofNat 64 m - BitVec.signExtend 64 (1 : BitVec 32) == 0) = decide (m = 1) := by
-    have hse : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
-    rw [hse]
-    by_cases h : m = 1
-    · subst h; decide
-    · rw [decide_eq_false h, beq_eq_false_iff_ne]
-      intro e
-      exact h (by bv_omega)
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
-    Option.some.injEq, exists_eq_left', hb, RegUpd.zf_arithFlags, e]
-  refine ⟨trivial, fun r _ => ?_, rfl, rfl, rfl⟩
-  simp only [RegUpd.gpr_arithFlags]
-
 /-- Before digit `rbx = j`'s addition: digit `j - 1`'s entry `a` set up for
 its selection, from `s`'s table. -/
 theorem prepO_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
@@ -253,42 +236,6 @@ theorem RStO.unchW (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s₀ s
     show toM _ _ _ = toM _ _ _; rw [e x hx]
   refine ⟨F, h.tbl.loopW hL (hU.mono hW) hn (by decide), fun x hx => by rw [e x hx]; exact h.lt x hx, ?_⟩
   rw [tv _ (by simp), tv _ (by simp), tv _ (by simp)]; exact h.rep
-
-/-- `R`'s slots miss `T`'s. -/
-theorem R_T_apart (hL : JacWinLay K size) :
-    ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)),
-      x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
-  intro x hx w hw
-  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-  have hxo : x ∈ jwOther K := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
-  exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega)
-
-/-- `R`'s slots miss what the negation writes. -/
-theorem R_neg_apart (hL : JacWinLay K size) :
-    ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)],
-      x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
-  intro x hx w hw
-  have hxo : x ∈ jwOther K := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl
-    · exact hL.ap_oth (i := 0) (j := 6) (by decide) (by decide) (by decide)
-    · exact hL.ap_oth (i := 1) (j := 6) (by decide) (by decide) (by decide)
-    · exact hL.ap_oth (i := 2) (j := 6) (by decide) (by decide) (by decide)
-  · exact hL.lay.tmp x (other_mem hxo)
-  · exact hL.jg_apart (List.mem_append_right _ hxo) (by decide)
-
-theorem neg_loopW (K : JacWinCfg) :
-    ∀ w ∈ [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)], w ∈ jwLoopW K := by
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl
-  · exact other_loopW (by jw_mem)
-  · exact tmp_loopW
-  · exact T_loopW K (show 1 < 5 by decide)
 
 /-- An iteration, `2 ≤ j < J`: `R = 32 R + [d_{j-1}]P`, with digit `j - 2`'s
 entry selected meanwhile into `T`. -/
@@ -395,19 +342,6 @@ theorem jstepOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p (
   have R₁₀ := (R₈.rbxKeeps hL k₉).rbxKeeps hL (k₁₀.mono (by simp))
   refine ⟨⟨⟨⟨Q', hQ', hQe', R₁₀⟩, by rw [k₁₀.1 _ (by simp), b₉, show j - 1 - 1 + 1 = j - 1 by omega]⟩, ?_⟩, z₁₀⟩
   exact P₈.congr fun c _ => by rw [k₁₀.2.1, k₉.2.1]
-
-/-- `R`'s slots miss what the entry writes. -/
-theorem R_ent_apart (hL : JacWinLay K size) :
-    ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
-      [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)], x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
-  intro x hx w hw
-  rcases List.mem_append.mp hw with hw | hw
-  · exact R_T_apart hL x hx w hw
-  · exact R_neg_apart hL x hx w (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-      rcases hw with h | h
-      · exact Or.inl h
-      · exact Or.inr (Or.inl h))
 
 /-- `rbx = J - 1`, `R = P`, and digit `J - 2`'s entry in `T`. -/
 theorem jfirstOP_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} (hP : onCurve C P = true)

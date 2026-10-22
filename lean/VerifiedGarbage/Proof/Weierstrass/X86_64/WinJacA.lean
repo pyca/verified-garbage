@@ -175,7 +175,7 @@ theorem jmaddA_post (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
       (tmv C K.M.n base s₄ K.R.z) (tmv C K.M.n base s₄ K.E.x) (tmv C K.M.n base s₄ K.E.y)) :
     WP isa (.block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
       selPt K.M.n K.R K.D K.R)) s₅ fun s₆ => JInvA K C base size P s₀ k (j - 1) s₆ ∧
-      Unch base (jwLoopW K) s₅.mem s₆.mem := by
+      Unch base (jwOthW K) s₅.mem s₆.mem := by
   have hn := F₄.scr.nowrap
   have hJ := hL.J
   obtain ⟨tx, ty, tz, -, -⟩ := hL.TS_eq
@@ -274,9 +274,9 @@ theorem jmaddA_post (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
       exact ⟨j1, tz1 h⟩)
   obtain ⟨Q', hQ', hQe', hR⟩ := hR
   have U₂₆ : Unch base (jwLoopW K) s₂.mem s₆.mem :=
-    ((U₄.trans U₅).trans U₆).mono fun w hw => by
+    ((U₄.trans U₅).trans (U₆.mono (jwOthW_loopW K))).mono fun w hw => by
       simp only [List.mem_append] at hw; rcases hw with (hw | hw) | hw <;> exact hw
-  refine ⟨⟨⟨⟨Q', hQ', hQe', F₆, ((R₂.tbl.loopW hL U₄ hn (by decide)).loopW hL U₅ hn (by decide)).loopW hL U₆ hn
+  refine ⟨⟨⟨⟨Q', hQ', hQe', F₆, ((R₂.tbl.loopW hL U₄ hn (by decide)).loopW hL U₅ hn (by decide)).loopW hL (U₆.mono (jwOthW_loopW K)) hn
     (by decide), fun x hx => ?_, ?_⟩, b₆⟩, O₂.loopW hL U₂₆ hn⟩, U₆⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl

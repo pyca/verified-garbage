@@ -18,7 +18,7 @@ vector registers until the addition and the masks after it
 for a negative digit (`finA`). Digit `J - 2`'s entry is selected before the
 loop (`firstAP`), and the last addition, digit `0`'s, selects none
 (`lastA`). The weaving applies to at least three digits, at most ten pieces,
-and an addition of scalar code (`weaveAOk`); `windowAW` falls back to
+and an addition and masks of scalar code (`weaveAOk`); `windowAW` falls back to
 `windowA` elsewhere.
 -/
 
@@ -86,10 +86,10 @@ def windowAP (inv : Prog isa) (dbl : Pt → Prog isa) : Prog isa :=
 
 /-- Whether the woven selection applies: at least three digits, an entry's
 `X` and `Y` of two to ten 16-byte pieces, and a mixed addition whose
-operations, written out, are of scalar code. -/
+operations, written out, and masks are of scalar code. -/
 def weaveAOk : Bool :=
   decide (3 ≤ K.J) && decide (2 ≤ K.M.n ∧ K.M.n ≤ 10) &&
-    (maddJ K.S K.R K.E K.D).all fun op => scalCode (opProg K.MI op)
+    ((maddJ K.S K.R K.E K.D).all fun op => scalCode (opProg K.MI op)) && K.masksA.all scalarI
 
 /-- `windowAP` where it applies (`weaveAOk`), else `windowA`. -/
 def windowAW (inv : Prog isa) (dbl : Pt → Prog isa) : Prog isa :=

@@ -134,7 +134,7 @@ theorem jmask0_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
     (hf : JFrame K C base size s₀ s) (hb : s.gpr .rbx = BitVec.ofNat 64 i) :
     WP isa (.block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
       selPt K.M.n K.R K.D K.R)) s fun t =>
-      JFrame K C base size s₀ t ∧ Unch base (jwLoopW K) s.mem t.mem ∧ t.gpr .rbx = BitVec.ofNat 64 i ∧
+      JFrame K C base size s₀ t ∧ Unch base (jwOthW K) s.mem t.mem ∧ t.gpr .rbx = BitVec.ofNat 64 i ∧
       ∀ c < 3, wordsVal t.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n =
         if magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0 then
           wordsVal s.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n
@@ -258,7 +258,7 @@ theorem jmask0_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
       · exact b64 _ mz
   refine ⟨F₆, (UD.trans UR).mono fun w hw => ?_, hb₅, fun c hc => ?_⟩
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with (rfl | rfl | rfl) | (rfl | rfl | rfl) <;> exact other_loopW (by jw_mem)
+    rcases hw with (rfl | rfl | rfl) | (rfl | rfl | rfl) <;> exact other_othW (by jw_mem)
   · have : c = 0 ∨ c = 1 ∨ c = 2 := by omega
     rcases this with rfl | rfl | rfl
     · show wordsVal s₅.mem base K.R.x K.M.n = _
@@ -294,7 +294,7 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   refine WP.mono (testRbx_ok s₅ (by omega) b₅) fun t ⟨z₆, k₆⟩ => ?_
   have m₆ : t.mem = s₅.mem := k₆.2.1
   refine ⟨F₅.next hL (F₅.scr.of_keeps k₆ (by decide)) ((Keeps.regs k₆).mono (by simp)) (W := [])
-    (by rw [m₆]; exact Unch.refl _ _ _) (by simp), by rw [m₆]; exact U₅, by rw [k₆.1 _ (by simp), b₅], z₆,
+    (by rw [m₆]; exact Unch.refl _ _ _) (by simp), by rw [m₆]; exact U₅.mono (jwOthW_loopW K), by rw [k₆.1 _ (by simp), b₅], z₆,
     fun c hc => by rw [m₆]; exact w₅ c hc⟩
 
 end VG.Proof.Weierstrass.X86_64

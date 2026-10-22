@@ -247,4 +247,53 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
   · rw [ha] at h ⊢
     rw [keepT 2 (by decide) (by decide), e₂' 2 (by decide), ite_eq_left_of_eq_true _ _ (eq_true h)]
 
+/-- `R`'s slots miss `T`'s. -/
+theorem R_T_apart (hL : JacWinLay K size) :
+    ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)),
+      x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
+  intro x hx w hw
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
+  have hxo : x ∈ jwOther K := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
+  exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega)
+
+/-- `R`'s slots miss what the negation writes. -/
+theorem R_neg_apart (hL : JacWinLay K size) :
+    ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)],
+      x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
+  intro x hx w hw
+  have hxo : x ∈ jwOther K := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact hL.ap_oth (i := 0) (j := 6) (by decide) (by decide) (by decide)
+    · exact hL.ap_oth (i := 1) (j := 6) (by decide) (by decide) (by decide)
+    · exact hL.ap_oth (i := 2) (j := 6) (by decide) (by decide) (by decide)
+  · exact hL.lay.tmp x (other_mem hxo)
+  · exact hL.jg_apart (List.mem_append_right _ hxo) (by decide)
+
+theorem neg_loopW (K : JacWinCfg) :
+    ∀ w ∈ [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)], w ∈ jwLoopW K := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact other_loopW (by jw_mem)
+  · exact tmp_loopW
+  · exact T_loopW K (show 1 < 5 by decide)
+
+/-- `R`'s slots miss what the entry writes. -/
+theorem R_ent_apart (hL : JacWinLay K size) :
+    ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
+      [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)], x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
+  intro x hx w hw
+  rcases List.mem_append.mp hw with hw | hw
+  · exact R_T_apart hL x hx w hw
+  · exact R_neg_apart hL x hx w (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      rcases hw with h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl h))
+
 end VG.Proof.Weierstrass.X86_64

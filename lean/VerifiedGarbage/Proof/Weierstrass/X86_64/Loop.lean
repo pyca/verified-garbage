@@ -102,4 +102,21 @@ theorem cmpRbxImm_ok (s : State) {j k : Nat} (hj' : j < 2 ^ 64) (hk : k < 2 ^ 31
     rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega)] at this
     exact h this
 
+/-- `ZF` for `m = 1`, with `rbx = m`. -/
+theorem cmpRbx1_ok (s : State) {m : Nat} (hm : m < 2 ^ 63) (hb : s.gpr .rbx = BitVec.ofNat 64 m) :
+    WP isa (.block [.alu .cmp .rbx (.imm 1)]) s fun t => t.zf = some (decide (m = 1)) ∧ Keeps [] s t := by
+  have e : (BitVec.ofNat 64 m - BitVec.signExtend 64 (1 : BitVec 32) == 0) = decide (m = 1) := by
+    have hse : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
+    rw [hse]
+    by_cases h : m = 1
+    · subst h; decide
+    · rw [decide_eq_false h, beq_eq_false_iff_ne]
+      intro e
+      exact h (by bv_omega)
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
+    Option.some.injEq, exists_eq_left', hb, RegUpd.zf_arithFlags, e]
+  refine ⟨trivial, fun r _ => ?_, rfl, rfl, rfl⟩
+  simp only [RegUpd.gpr_arithFlags]
+
 end VG.Proof.Weierstrass.X86_64
