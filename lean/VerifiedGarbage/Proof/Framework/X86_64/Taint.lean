@@ -268,8 +268,8 @@ def step (τ : T) : Instr → Option T
   | .alu op d src => aluStep τ op d src true
   | .alu32 op d src => aluStep τ op d src false
   -- The result is a function of the old value of `d`, and so are the
-  -- flags that change.
-  | .shift32 _ d _ | .shift _ d _ =>
+  -- flags that change (`btr` keeps ZF and leaves OF and SF undefined).
+  | .shift32 _ d _ | .shift _ d _ | .btr d _ =>
     some { τ with flags := τ.flags && pub τ d, bases := kill τ d, lo := .empty }
   | .bswap32 d | .bswap d => some { τ with bases := kill τ d, lo := .empty }
   -- `shl`/`shr`/`sar d, cl`: the result is a function of `d` and the count;
@@ -287,6 +287,15 @@ def step (τ : T) : Instr → Option T
     some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
   -- `imul` sets CF and OF from its operands, and leaves ZF and SF undefined.
   | .imul d r =>
+    let p := pub τ d && pub τ r
+    some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
+  -- So does `imul d, r, imm`, from `r` alone.
+  | .imul3 d r _ =>
+    let p := pub τ r
+    some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
+  -- `shld d, r, n`: the result and every flag it defines are functions of
+  -- `d` and `r` (OF is undefined unless `n = 1`).
+  | .shld d r _ =>
     let p := pub τ d && pub τ r
     some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
   | .movImm64 d _ => some { τ with regs := set τ d true, bases := kill τ d, lo := .empty }
@@ -826,7 +835,7 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .aluTbl _ d .. => some d
+  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
@@ -987,6 +996,19 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
   case imul r =>
     simp only [exec, execImul, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case imul3 r v =>
+    simp only [exec, execImul3, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case shld r n =>
+    simp only [exec, execShld] at h
+    split at h
+    · simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · cases h
+  case btr n =>
+    simp only [exec, execBtr] at h
+    split at h
+    · simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · cases h
   case movzx8 m | movzx16 m =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
@@ -1711,6 +1733,45 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, State.setFlags, and_self]
+  | imul3 d r v =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    simp only [exec, execImul3, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    have hv : pub τ r = true →
+        (s₁.gpr r).toInt * (v.signExtend 64).toInt = (s₂.gpr r).toInt * (v.signExtend 64).toInt :=
+      fun hp => by rw [ha.reg hp]
+    refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
+    simp only [State.setReg, hv hp, State.setFlags, and_self]
+  | shld d r n =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    by_cases hn : 1 ≤ n ∧ n ≤ 63
+    swap; · simp only [exec, execShld, hn, ↓reduceIte, reduceCtorEq] at e₁
+    simp only [exec, execShld, hn, and_self, ite_true, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    have hv : (pub τ d && pub τ r) = true → s₁.gpr d = s₂.gpr d ∧ s₁.gpr r = s₂.gpr r := fun hp => by
+      simp only [Bool.and_eq_true] at hp; exact ⟨ha.reg hp.1, ha.reg hp.2⟩
+    refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [(hv hp).1, (hv hp).2], fun hp => ?_⟩
+    simp only [State.setReg, (hv hp).1, (hv hp).2, State.setFlags, and_self]
+  | btr d n =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    by_cases hn : n < 64
+    swap; · simp only [exec, execBtr, hn, ↓reduceIte, reduceCtorEq] at e₁
+    simp only [exec, execBtr, hn, ite_true, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    refine ⟨fun r hr => ?_, fun hf => ?_⟩
+    · by_cases hrd : r = d
+      · subst hrd; simp only [State.setReg, ha.rf.1 r hr, ↓reduceIte]
+      · simp only [State.setReg, State.setFlags, hrd, ↓reduceIte]; exact ha.rf.1 r hr
+    · simp only [Bool.and_eq_true] at hf
+      have hd := ha.reg hf.2
+      obtain ⟨-, hz, -, -⟩ := ha.rf.2 hf.1
+      simp only [State.setReg, hd, State.setFlags, hz, and_self]
   | movzx8 d m | movzx16 d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -2058,7 +2119,7 @@ def stepK (τ : T) : Instr → Option T
   | .store16 m r => storeStepK τ m 2 (pub τ r)
   | .alu op d src => aluStepK τ op d src true
   | .alu32 op d src => aluStepK τ op d src false
-  | .shift32 _ d _ | .shift _ d _ =>
+  | .shift32 _ d _ | .shift _ d _ | .btr d _ =>
     some { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty }
   | .bswap32 d | .bswap d => some { τ with bases := killK τ d, lo := .empty }
   | .shiftCl _ d =>
@@ -2072,6 +2133,12 @@ def stepK (τ : T) : Instr → Option T
     let p := pub τ a && pub τ b
     some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
   | .imul d r =>
+    let p := pub τ d && pub τ r
+    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
+  | .imul3 d r _ =>
+    let p := pub τ r
+    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
+  | .shld d r _ =>
     let p := pub τ d && pub τ r
     some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
   | .movImm64 d _ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }
@@ -2327,7 +2394,7 @@ def stepKDFn : Instr → Step
   | .store16 m r => ⟨fun τ => storeStepKD τ m 2 (pub τ r)⟩
   | .alu op d src => ⟨fun τ => aluStepK τ op d src true⟩
   | .alu32 op d src => ⟨fun τ => aluStepK τ op d src false⟩
-  | .shift32 _ d _ | .shift _ d _ => ⟨fun τ =>
+  | .shift32 _ d _ | .shift _ d _ | .btr d _ => ⟨fun τ =>
     match τ with
     | ⟨rg, f, l, _, sl, _, x⟩ => some ⟨rg, f && pub τ d, l, killK τ d, sl, .empty, x⟩⟩
   | .bswap32 d | .bswap d => ⟨fun τ => match τ with
@@ -2349,6 +2416,16 @@ def stepKDFn : Instr → Step
       let p := pub τ a && pub τ b
       some ⟨setK τ d p, p, l, killK τ d, sl, .empty, x⟩⟩
   | .imul d r => ⟨fun τ =>
+    match τ with
+    | ⟨_, _, l, _, sl, _, x⟩ =>
+      let p := pub τ d && pub τ r
+      some ⟨setK τ d p, p, l, killK τ d, sl, .empty, x⟩⟩
+  | .imul3 d r _ => ⟨fun τ =>
+    match τ with
+    | ⟨_, _, l, _, sl, _, x⟩ =>
+      let p := pub τ r
+      some ⟨setK τ d p, p, l, killK τ d, sl, .empty, x⟩⟩
+  | .shld d r _ => ⟨fun τ =>
     match τ with
     | ⟨_, _, l, _, sl, _, x⟩ =>
       let p := pub τ d && pub τ r

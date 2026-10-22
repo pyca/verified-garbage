@@ -284,6 +284,8 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     congr 1; funext b; cases op <;> simp only [Option.map_some, Option.map_map] <;> rfl
   | shift32 op d n => simp only [exec, execShift32]; split <;> [cases op <;> rfl; rfl]
   | shift op d n => simp only [exec, execShift]; split <;> [cases op <;> rfl; rfl]
+  | shld d r n => simp only [exec, execShld]; split <;> rfl
+  | btr d n => simp only [exec, execBtr]; split <;> rfl
   | rorx32 d r n => simp only [exec, execRorx32]; split <;> rfl
   | rorx d r n => simp only [exec, execRorx]; split <;> rfl
   | movdquLoad d m =>

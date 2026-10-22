@@ -465,7 +465,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     cases writes op
     · exact h.regs
     · exact set_mono hw d hp
-  | shift32 _ d _ | shift _ d _ =>
+  | shift32 _ d _ | shift _ d _ | btr d _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     refine ⟨_, rfl, h.upd h.regs (fun hp => ?_) (h.killM d) empty_subset'⟩
@@ -499,11 +499,16 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     have hp : (pub τ a && pub τ b) = true → (pub σ a && pub σ b) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
     exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
-  | imul d r =>
+  | imul d r | shld d r _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     have hp : (pub τ d && pub τ r) = true → (pub σ d && pub σ r) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
+    exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
+  | imul3 d r _ =>
+    simp only [step, Option.some.injEq] at hs ⊢
+    cases hs
+    have hp : pub τ r = true → pub σ r = true := hw.pubM
     exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
   | movImm64 d _ =>
     simp only [step, Option.some.injEq] at hs ⊢

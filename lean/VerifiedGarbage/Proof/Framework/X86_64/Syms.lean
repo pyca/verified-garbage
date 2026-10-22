@@ -53,6 +53,9 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
   | rorx32 _ _ _ | rorx _ _ _ =>
     simp only [exec, execRorx32, execRorx] at h
     split at h <;> [(simp only [Option.some.injEq] at h; subst h; rfl); cases h]
+  | shld _ _ _ | btr _ _ =>
+    simp only [exec, execShld, execBtr] at h
+    split at h <;> [(simp only [Option.some.injEq] at h; subst h; rfl); cases h]
   | ldmxcsr m =>
     simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
     split at h <;> cases h; rfl
