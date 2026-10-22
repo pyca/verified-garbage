@@ -1,14 +1,20 @@
 //! FFDH component operations against OpenSSL and AWS-LC.
-// AWS-LC's pregenerated ARMv7 bindings omit its C DH API; aws-lc-rs
-// exposes no DH wrapper. ARMv7 compares with OpenSSL.
+// AWS-LC's C DH API is in aws-lc-sys's full bindings, which the benchmarks
+// build only on x86-64 and AArch64; aws-lc-rs exposes no DH wrapper. ARMv7 and
+// i686 compare with OpenSSL.
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[path = "../../support/ffdh.rs"]
 mod aws_lc;
 use criterion::Criterion;
 pub const USES: &[&str] = &["ffdh", "rsa_mont", "miller_rabin"];
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub fn bench(c: &mut Criterion) {
-    #[cfg(not(target_arch = "arm"))]
+    #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
     use crate::AWS_LC;
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
@@ -57,12 +63,12 @@ pub fn bench(c: &mut Criterion) {
             .unwrap(),
         )
         .unwrap();
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
         let aws_key = aws_lc::Dh::parameters(&p, &g, q.as_deref()).with_key(&y, &x);
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
         let aws_peer = aws_lc::Dh::parameters(&p, &g, q.as_deref())
             .with_key(peer.public_key().component(), peer.private_component());
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
         assert_eq!(
             aws_key.exchange(&aws_peer),
             key.exchange(peer.public_key()).unwrap()
@@ -70,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
         // OpenSSL's compute_key strips leading zero bytes; pad explicitly
         // to compare the complete operation cryptography needs.
         let mut group = c.benchmark_group("ffdh_exchange");
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| black_box(&aws_key).exchange(black_box(&aws_peer)))
         });
@@ -169,7 +175,7 @@ pub fn bench(c: &mut Criterion) {
         .unwrap();
         // Warm: params, including ARM's shared immutable context, already exists.
         let mut group = c.benchmark_group("ffdh_generate");
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())
         });
@@ -269,5 +275,10 @@ pub fn bench(c: &mut Criterion) {
         group.finish();
     }
 }
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+)))]
 pub fn bench(_c: &mut Criterion) {}

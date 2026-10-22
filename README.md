@@ -1724,7 +1724,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
