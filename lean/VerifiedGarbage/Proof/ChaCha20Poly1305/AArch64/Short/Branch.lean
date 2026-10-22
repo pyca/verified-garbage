@@ -184,4 +184,35 @@ theorem check_eval {sve : Bool} {s₀ s₁ : State} (h : s₁.gpr .x9 = checkVal
   have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) := eval_zero s₁ .x9
   rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, checkVal_eq sve (s₀.gpr .x5).isLt]
 
+/-- `x9`, zero iff there are fewer than 512 bytes (`wide`). -/
+theorem wide_ok (s₀ : State) :
+    WP isa (.block wide) s₀ fun s₁ => Agree s₀ s₁ ∧ s₁.gpr .x9 = s₀.gpr .x5 >>> 9 := by
+  have h : WP isa (.block wide) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
+      s₁.gpr .x9 = s₀.gpr .x5 >>> 9 ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
+    wp_lsr (by decide) fun s₁ u₁ => WP.block_nil
+      ⟨fun r h9 _ => u₁.other r h9, u₁.gpr, u₁.mem, u₁.rd, u₁.wr⟩
+  exact WP.mono (WP.preservedV (WP.withSp h) (by lit_decide))
+    fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
+
+/-- The branch: to the code without the prologue of five blocks iff fewer
+than 512 bytes. -/
+theorem wide_eval {s₀ s₁ : State} (h : s₁.gpr .x9 = s₀.gpr .x5 >>> 9) :
+    isa.eval (.zero .x .x9) s₁ = some (decide (L s₀ < 512)) := by
+  have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) := eval_zero s₁ .x9
+  rw [e, h]
+  refine congrArg some ?_
+  by_cases hz : s₀.gpr .x5 >>> 9 = 0
+  · rw [hz]
+    have := congrArg BitVec.toNat hz
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
+    have hp : 0 < 2 ^ 9 := by decide
+    simp only [beq_self_eq_true, L]
+    exact (decide_eq_true (by simp at this; omega)).symm
+  · rw [show (s₀.gpr .x5 >>> 9 == 0) = false from beq_eq_false_iff_ne.mpr hz]
+    refine (decide_eq_false fun hl => hz ?_).symm
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    simp only [L] at hl
+    simp; omega
+
 end VG.Proof.ChaCha20Poly1305.AArch64.Short

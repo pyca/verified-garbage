@@ -105,7 +105,14 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
     exact WP.mono (Pad.sealRoute_ok v hp₁ hlo h511) fun _ h => Short.MainS.agree ag h
   · split
-    · exact WP.mono (sealStitchedMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
+    · refine WP.seq (WP.mono (Short.wide_ok s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+      have hp₂ := Short.APre.agree ag₂ hp₁
+      refine WP.ite (decide (L s₁ < 512)) (Short.wide_eval x9₂) (fun _ => ?_) (fun h => ?_)
+      · exact WP.mono (sealMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+      · have hL : 512 ≤ L s₂ := by
+          have := of_decide_eq_false h
+          rw [L, ag₂.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+        exact WP.mono (sealStitchedMain_ok v hp₂ hL) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
     · exact WP.mono (sealMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
 
 theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
@@ -123,7 +130,14 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
     exact WP.mono (OpenPad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
   · split
-    · exact WP.mono (openStitchedMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
+    · refine WP.seq (WP.mono (Short.wide_ok s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+      have hp₂ := Short.APre.agree ag₂ hp₁
+      refine WP.ite (decide (L s₁ < 512)) (Short.wide_eval x9₂) (fun _ => ?_) (fun h => ?_)
+      · exact WP.mono (openMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
+      · have hL : 512 ≤ L s₂ := by
+          have := of_decide_eq_false h
+          rw [L, ag₂.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+        exact WP.mono (openStitchedMain_ok v hp₂ hL) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
     · exact WP.mono (openMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
 
 theorem seal_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : sealAArch64.pre s) :

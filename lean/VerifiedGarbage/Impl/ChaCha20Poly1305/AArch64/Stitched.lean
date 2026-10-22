@@ -48,11 +48,12 @@ open VG.Impl.ChaCha20.AArch64 (XorCallee)
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
 open VG.Impl.Poly1305.AArch64 (const64)
 
-/-- The counter set to 1, the stream's arguments set to the data (as in
-`cryptWith`), and `x5 = 1` if there are fewer than 512 bytes. -/
+/-- The stream's arguments set to the data from `x22` (`x23` bytes), with the
+state at `ctx + 64` (whose counter `ShortRest.stash` set), and `x5 = 1` if
+there are fewer than 512 bytes. -/
 def cryptSetup : List Instr :=
-  ([.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, mov .x1 .x22,
-    mov .x2 .x23, .addImm .x .x3 .x21 128] : List Instr) ++ VG.Impl.ChaCha20.AArch64.Mixed8.check
+  ([.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128] : List Instr) ++
+    VG.Impl.ChaCha20.AArch64.Mixed8.check
 
 /-- `x27` and `x28` saved, the clamped key stored at `ctx[288, 304)`, and the
 accumulator loaded into `x21`–`x23` (`x21`, the base, last). -/
@@ -208,28 +209,44 @@ def openRest (c : XorCallee) : Prog isa :=
                     (.ite (.zero .x .x9) (padRest c 512) (cryptRest c)))))))))
       (padRest c 512))
 
+/-- The data's first 256 bytes absorbed. -/
+def absorbFirst : Prog isa :=
+  .seq (.block [.addImm .x .x0 .x21 448, mov .x1 .x22, .movz .x .x2 16 0])
+    (.call "vg_poly1305_blocks" Impl.Poly1305.AArch64.Radix64.blocks)
+
+/-- `x22` and `x23` set to the data after its first 256 bytes. -/
+def skipFirst : List Instr := [.addImm .x .x22 .x22 256, .subImm .x .x23 .x23 256]
+
 /-- `sealStitched` but for the tag. -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
-  .seq prologue
+  .seq (Short.prologue c.sve)
+  (.seq (.block ShortRest.stash)
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
+  (.seq ShortRest.first
+  (.seq absorbFirst
+  (.seq (.block skipFirst)
   (.seq (cryptStitched c.sve true)
   (.seq (.call c.name c.code)
   (.seq (macPad .x22 .x23)
-    absorbLengths)))))
+    absorbLengths)))))))))
 
 def sealStitched (c : XorCallee) : Prog isa := .seq (sealStitchedMain c) sealTail
 
 /-- `openStitched` up to the tag computed. -/
 def openStitchedMain (c : XorCallee) : Prog isa :=
-  .seq prologue
+  .seq (Short.prologue c.sve)
+  (.seq (.block ShortRest.stash)
   (.seq (macPad .x24 .x25)
+  (.seq absorbFirst
+  (.seq ShortRest.first
   (.seq (.block lengths)
+  (.seq (.block skipFirst)
   (.seq (cryptStitched c.sve false)
   (.seq (macPad .x22 .x23)
   (.seq (openRest c)
   (.seq absorbLengths
-    (finalizeTo 48)))))))
+    (finalizeTo 48)))))))))))
 
 def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
@@ -304,20 +321,28 @@ def openRoute (c : XorCallee) : Prog isa :=
       .seq (.block (Pad.split false)) (.ite (.zero .x .x9) (Pad.openMain c) (OpenPad.openMain true))
     else OpenPad.openMain false))
 
+/-- `x9 = 0` iff there are fewer than 512 bytes: the lengths below `Short.lo`
+that `Short.check` leaves to the code without the prologue of five blocks,
+which the stitched code (from 512 bytes) does not take. -/
+def wide : List Instr := [.lsr .x .x9 .x5 9]
+
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
 checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route when
 encrypting and `openRoute` when decrypting (to `ShortRest.lean`'s code, which
 runs `Short.lean`'s up to 256, or `Pad.lean`'s, or `OpenPad`'s), and
-otherwise stitched with the eight-block kernel or not. -/
+otherwise stitched with the eight-block kernel from 512 bytes (`wide`) or
+not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (Pad.sealRoute c)
-      (if stitched then sealStitchedMain c else sealMain c))
+      (if stitched then .seq (.block wide) (.ite (.zero .x .x9) (sealMain c) (sealStitchedMain c))
+      else sealMain c))
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (openRoute c)
-      (if stitched then openStitchedMain c else openMain c))
+      (if stitched then .seq (.block wide) (.ite (.zero .x .x9) (openMain c) (openStitchedMain c))
+      else openMain c))
 
 /-- The code for a stream backend. -/
 def sealCode (c : XorCallee) (stitched : Bool) : Prog isa := .seq (sealMainCode c stitched) sealTail
