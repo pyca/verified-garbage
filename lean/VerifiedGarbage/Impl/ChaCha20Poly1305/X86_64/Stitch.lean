@@ -61,6 +61,7 @@ namespace VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 
 open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_)
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 /-- Offsets in `buf` (`ctx + 128`), in the Poly1305 state's working space
 (`ctx + 520 …`): `r12`, `r13`, `r14` stashed, and the bytes left. -/

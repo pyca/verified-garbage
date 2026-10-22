@@ -33,15 +33,16 @@ variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H)
 
 include hH K in
 theorem saltBack_safe : (saltBack H).allInstrs safeI = true := by
-  simp only [saltBack, fixedSaltBack, fixedSaltPrefix, genericSaltBack, seqs, clearY, copyDigest,
-    copyFixedSalt, copyDb, shift, shiftPass, cmpH, Code.allInstrs, ctHash_safe hH K,
+  simp only [saltBack, fixedSaltBack, fixedSaltPrefix, fixedHead, clearNb, padSalt, genericSaltBack, seqs, clearY,
+    copyDigest, copyFixedSalt, copyDb, shift, shiftPass, cmpH, Code.allInstrs, ctHash_safe hH K, fixedHash_safe hH K,
     rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include K in
 theorem saltBack_xd : (saltBack H).x86_64Depth = 8 := by
-  simp only [saltBack, fixedSaltBack, fixedSaltPrefix, genericSaltBack, seqs, clearY, copyDigest,
-    copyFixedSalt, copyDb, shift, shiftPass, cmpH, byteLoop, Code.x86_64Depth, ctHash_xd K]
+  simp only [saltBack, fixedSaltBack, fixedSaltPrefix, fixedHead, clearNb, padSalt, genericSaltBack, seqs, clearY,
+    copyDigest, copyFixedSalt, copyDb, shift, shiftPass, cmpH, byteLoop, Code.x86_64Depth, ctHash_xd K,
+    fixedHash_xd K]
   rfl
 
 include hH K in

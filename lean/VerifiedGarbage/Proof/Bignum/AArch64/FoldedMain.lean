@@ -19,7 +19,7 @@ def phases (M : Mont) : List (Prog isa) :=
   [M.mm aXm aX aR2, Folded.fastLoop M.mm, Folded.finishFused M.mm]
 
 theorem rest_eq (M : Mont) : Folded.rest M.mm =
-    seqs ((([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadBE] : List (Prog isa)) ++ setupSteps) ++
+    seqs ((([.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadW] : List (Prog isa)) ++ setupSteps) ++
       (phases M ++ outSteps)) := rfl
 
 /-- Every accepted cache is memory-safe. A valid cache additionally gives the
@@ -85,7 +85,7 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   refine WP.mono (outPhase_ok hg₄ hZ (by omega) (by omega) rfl
     (by rw [x₁₄ sOut (by decide)]; exact h.hO)
     (by rw [x₁₄ sK (by decide)]; exact h.hK) mask4
-    (fun j hj => by rw [k₁₄.wr]; exact h.out j hj) h.outSep)
+    (by rw [k₁₄.wr]; exact h.out) h.outSep)
     fun t ⟨bytes,ret,frame,kt⟩ => ⟨wv t₄.mem B (slot ((k+7)/8) aY) ((k+7)/8),?_,⟨?_,ret,
       fun a ha ha' => by rw [frame a ha',InScr.of_frm f₁₄ hle' a ha],
       (k₁₄.trans kt).mono (by decide)⟩⟩

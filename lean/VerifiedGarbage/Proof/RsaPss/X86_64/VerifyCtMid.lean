@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
@@ -150,5 +151,84 @@ theorem posCheck_ct (hc : VerifyChecks H.P H.D) :
     (by rw [hw 35 (by decide)]; simp only [vw, decide_eq_true_eq]) hpos hdx hsi h11) fun u ⟨L', k', R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (km_upd (km_upd (km_upd hw (by decide) _) (by decide) _) (by decide) _)
       ⟨pos, hpos, by simp [upd], by simp [upd]⟩, k'.2.1.trans hrd, hok⟩
+
+/-- Testing the public salt mode before the scan. -/
+theorem scanAny_ct : RelCT isa (Two (VAt (extra := extra) G (JT H)))
+    (.block [.mov .rax (.mem (sp sAny)), .alu .test .rax (.reg .rax)])
+    (Two fun a t => VAt (extra := extra) G (JT H) a t ∧
+      isa.eval .e t = some (decide (vw H a 35 = 0))) := by
+  obtain ⟨_, hc⟩ := vFixed.scanAny
+  refine two_post (vtwo (G := G) (H := H) [35] [] (fun _ => [])
+    (fun a t h => jm_vs h _) (fun _ => rfl) (by decide) hc)
+    fun a t ⟨s, S, v, hrd, hok⟩ => ?_
+  obtain ⟨V, W, R, hw, _⟩ := v.W
+  refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t.mem ∧
+    u.zf = some (decide (W 35 = 0))) ?_ rfl) fun u ⟨⟨hm, hz⟩, ku⟩ => ?_
+  · xrun [ea_sp, v.L.rsp, v.L.ld (d := sAny) (by decide), R.rd (d := sAny) 35 rfl (by decide)]
+    rw [BitVec.and_self]
+    rfl
+  · refine ⟨⟨s, S, v.keep ku hm (by decide) (fun _ hp => by cases hp), ku.2.1.trans hrd, hok⟩, ?_⟩
+    change u.zf = _
+    rw [hz, hw 35 (by decide), S.vw]
+
+/-- And the bound on the requested length. -/
+theorem scanLen_ct : RelCT isa (Two (VAt (extra := extra) G (JT H)))
+    (.block [.mov .rax (.mem (sp sSlen)), .alu .cmp .rax (.mem (sp sDb))])
+    (Two fun a t => VAt (extra := extra) G (JT H) a t ∧
+      isa.eval .b t = some (decide ((stackArg a 1).toNat < vdb H.D a))) := by
+  obtain ⟨_, hc⟩ := vFixed.scanLen
+  refine two_post (vtwo (G := G) (H := H) [24, 36] [] (fun _ => [])
+    (fun a t h => jm_vs h _) (fun _ => rfl) (by decide) hc)
+    fun a t ⟨s, S, v, hrd, hok⟩ => ?_
+  obtain ⟨V, W, R, hw, _⟩ := v.W
+  have hk2 := S.ps.k2
+  refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t.mem ∧
+    u.cf = some (decide ((stackArg s 1).toNat < vdb H.D s))) ?_ rfl) fun u ⟨⟨hm, hz⟩, ku⟩ => ?_
+  · xrun [ea_sp, v.L.rsp, v.L.ld (d := sSlen) (by decide), v.L.ld (d := sDb) (by decide),
+      R.rd (d := sSlen) 36 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide),
+      hw 36 (by decide), hw 24 (by decide)]
+    simp only [vw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show vdb H.D s < 2 ^ 64 by unfold vdb veml; omega)]
+  · refine ⟨⟨s, S, v.keep ku hm (by decide) (fun _ hp => by cases hp), ku.2.1.trans hrd, hok⟩, ?_⟩
+    change u.cf = _
+    rw [hz, S.arg1, S.vdb]
+
+variable (H) in
+/-- After the call, with the salt's length given and less than `DB`'s. -/
+def JTF (s t : State) : Prop := JT H s t ∧ (stackArg s 1).toNat < vdb H.D s
+
+include hH in
+theorem prefixCheck_ct (hc : VerifyChecks H.P H.D) :
+    RelCT isa (Two (VAt (extra := extra) G (JTF H))) (prefixCheck H) (Two (VAt (extra := extra) G (JM H (X7 H)))) := by
+  obtain ⟨_, hc⟩ := hc.prefixCheck
+  refine two_post (vtwo (G := G) (H := H) [23, 24, 36] [] (fun _ => []) (fun a t h => jm_vs (let ⟨s, S, h⟩ := h;
+    ⟨s, S, h.1⟩) _) (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, ⟨v, hrd, hok⟩, hlt⟩ => ?_
+  obtain ⟨V, W, R, hw, -⟩ := v.W
+  have hp := S.ps
+  have hk2 := hp.k2
+  have := vlo_le s
+  refine WP.mono (prefixCheck_ok hH v.L R (e := oEm + vlo s) (db := vdb H.D s) (sl := (stackArg s 1).toNat)
+    (hw 23 (by decide)) (hw 24 (by decide)) (by rw [hw 36 (by decide)]; simp [vw]) hlt
+    (by unfold vdb veml oEm oRsa; omega) (by unfold vdb veml; omega)) fun u ⟨L', k', a', _, R'⟩ =>
+    ⟨s, S, v.next L' k'.2.2 R' (km_upd (km_upd (km_upd hw (by decide) _) (by decide) _) (by decide) _)
+      ⟨vdb H.D s - (stackArg s 1).toNat - 1, by omega, ?_, by simp [upd]⟩, k'.2.1.trans hrd, hok⟩
+  simp only [upd, Nat.reduceEqDiff, ite_true]
+  congr 1
+  omega
+
+include hH in
+theorem scanCheck_ct (hc : VerifyChecks H.P H.D) :
+    RelCT isa (Two (VAt (extra := extra) G (JT H))) (scanCheck H) (Two (VAt (extra := extra) G (JM H (X7 H)))) := by
+  have generic := (posScan_ct (extra := extra) (G := G) (H := H)).seq (posCheck_ct (extra := extra) hH hc)
+  unfold scanCheck
+  refine scanAny_ct.seq (two_ite (fun a t₁ t₂ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_
+    (generic.mono (fun _ _ => two_mono fun _ _ h => h.1.1) fun _ _ h => h))
+  refine (scanLen_ct.seq (two_ite (fun a t₁ t₂ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_
+    (generic.mono (fun _ _ => two_mono fun _ _ h => h.1.1) fun _ _ h => h))).mono
+    (fun _ _ => two_mono fun _ _ h => h.1.1) (fun _ _ h => h)
+  refine (prefixCheck_ct hH hc).mono (fun _ _ => two_mono fun a t ⟨⟨⟨s, S, h⟩, hz⟩, hb⟩ => ?_) fun _ _ h => h
+  have hf : (stackArg a 1).toNat < vdb H.D a := by
+    rw [hz, Option.some.injEq, decide_eq_true_eq] at hb
+    exact hb
+  exact ⟨s, S, h, by rwa [S.arg1, S.vdb]⟩
 
 end VG.Proof.RsaPss.X86_64

@@ -119,6 +119,7 @@ namespace VG.Variants.P521.X86_64.Law
 open Proof.Weierstrass Proof.Weierstrass.X86_64
 
 def variant : HasLawInvOrd Spec.P521.curve :=
-  ⟨⟨Proof.P521.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩, Proof.P521.primeOrder⟩
+  ⟨⟨Proof.P521.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩, Proof.P521.primeOrder,
+    Proof.P521.killedByN⟩
 
 end VG.Variants.P521.X86_64.Law

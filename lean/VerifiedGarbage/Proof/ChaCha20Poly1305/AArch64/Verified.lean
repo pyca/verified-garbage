@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Pad
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.OpenPad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
@@ -120,7 +121,7 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     have h511 : L s₁ ≤ 511 := by
       have := (of_decide_eq_true h).2
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
-    exact WP.mono (Pad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
+    exact WP.mono (OpenPad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
   · split
     · exact WP.mono (openStitchedMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
     · exact WP.mono (openMain_ok v hp₁) fun _ h => Short.MainO.agree ag h

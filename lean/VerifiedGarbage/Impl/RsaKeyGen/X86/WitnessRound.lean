@@ -12,8 +12,12 @@ open VG VG.X86 VG.Impl.Mont.X86
 
 def uniformOffset : Nat := 144
 
-def code (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (WitnessLoad.code w) (.seq (.block [.store (sc uniformOffset) .eax])
+def codeAt (D k w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) :
+    Prog isa :=
+  .seq (WitnessLoad.codeAt D k w) (.seq (.block [.store (sc uniformOffset) .eax])
     (.seq (WitnessMont.code montName montCode) (RoundCall.code roundName roundCode)))
+
+def code (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
+  codeAt (8 * w) (2 * w) w montName montCode roundName roundCode
 
 end VG.Impl.RsaKeyGen.X86.WitnessRound

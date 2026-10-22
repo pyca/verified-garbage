@@ -23,4 +23,8 @@ open Spec.Weierstrass
 def PrimeOrder (C : Curve) : Prop :=
   ∀ P : Point C, onCurve C P = true → P ≠ .infinity → ∀ m : Nat, mul m P = .infinity → C.n ∣ m
 
+/-- `n` kills every point of `C`: `[n]P = O` (the group has `n` elements). -/
+def KilledByN (C : Curve) : Prop :=
+  ∀ P : Point C, onCurve C P = true → mul C.n P = .infinity
+
 end VG.Proof.Weierstrass

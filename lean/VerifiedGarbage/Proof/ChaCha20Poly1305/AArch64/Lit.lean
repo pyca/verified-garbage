@@ -13,6 +13,8 @@ meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
 
 /-!
 # ChaCha20-Poly1305 on AArch64: the code as literals

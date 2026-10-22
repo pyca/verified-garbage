@@ -58,7 +58,7 @@ structure Env (s₀ : State) (P : Nat → Block) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem Env.keys {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (h : Env s₀ P s) :
+theorem Env.keys {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo) (h : Env s₀ P s) :
     VG.Proof.Aes.X86_64.AesNi.Keys (nr s₀) (sch s₀) s :=
   ⟨by rw [h.rdi, sch_frame hp h.frame], by rcases hp.rounds with h | h | h <;> omega,
     fun j hj => by

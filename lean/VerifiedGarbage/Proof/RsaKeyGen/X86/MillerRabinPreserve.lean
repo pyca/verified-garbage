@@ -28,10 +28,10 @@ theorem step_header32 {g : Geometry} (v : g.Valid) {s t : Mem}
 
 theorem StateAt.next {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat} (S : StateAt P k n s)
     (T : Prepare.Data P.g P.candidate P.capacity P.p t)
-    (used : w32 t.mem P.g.W 152 = P.bytes * (k + 1) + P.bytes)
+    (used : w32 t.mem P.g.W 152 = P.start + P.bytes * k + P.bytes)
     (rounds : w32 t.mem P.g.W 176 = k + 1)
-    (uniform : w32 t.mem P.g.W 192 = (mrS P.candidate P.bytes P.entropy (k + 1)).2)
-    (atLoop : MrAt P.candidate P.checks P.twos.1 P.twos.2 P.bytes P.entropy (k + 1) (n - 1))
+    (uniform : w32 t.mem P.g.W 192 = (mrSB P.candidate P.bytes P.start P.entropy (k + 1)).2)
+    (atLoop : MrLoopAt P.candidate P.checks P.twos.1 P.twos.2 P.bytes P.start P.entropy (k + 1) (n - 1))
     (W : WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem)
     (F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem)
     (K : Keeps WitnessStep.clob s t) : StateAt P (k + 1) (n - 1) t := by
@@ -45,6 +45,6 @@ theorem StateAt.next {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat} (S
       · exact v.randSeparate
       · exact v.randStackFar) (by have := v.randLenFit; omega)).trans S.entropy
   · exact (BitVec.eq_of_toNat_eq (step_header32 v.geometry W (Or.inl rfl))).trans S.randPtr
-  · rw [used, Nat.mul_succ P.bytes (k + 1)]
+  · rw [used, Nat.mul_succ]; omega
 
 end VG.Proof.RsaKeyGen.X86.MillerRabinLoop

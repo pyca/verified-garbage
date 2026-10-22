@@ -19,13 +19,13 @@ theorem checks_bound (w : Nat) : checks w < 2 ^ 32 := by
   unfold checks
   split_ifs <;> decide
 
-theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (S : Prepare.Data g c capacity p s) :
-    WP isa (.block (code g.w)) s fun t =>
+theorem codeOf_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (S : Prepare.Data g c capacity p s) {checks : Nat} (checksFit : checks < 2 ^ 32) :
+    WP isa (.block (codeOf checks)) s fun t =>
       Prepare.Data g c capacity p t ∧ w32 t.mem g.W 176 = 0 ∧ w32 t.mem g.W 192 = 0 ∧
-      w32 t.mem g.W 200 = checks g.w ∧ Outs g.W ranges s.mem t.mem ∧ Keeps [.eax] s t := by
+      w32 t.mem g.W 200 = checks ∧ Outs g.W ranges s.mem t.mem ∧ Keeps [.eax] s t := by
   have head := v.headerFit
-  unfold code
+  unfold codeOf
   refine wp_movS rfl fun a A _ => ?_
   have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
   refine wp_storeS (Sa.ea (by omega)) (Sa.write (by omega)) fun b B => ?_
@@ -52,8 +52,15 @@ theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
     rfl
   · rw [Ot.w32 (by decide) (by decide), D.mem, w32_write_self, B.gpr, A.gpr]
     rfl
-  · rw [T.mem, w32_write_self, E.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (checks_bound g.w)]
+  · rw [T.mem, w32_write_self, E.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt checksFit]
   · exact ((Outs.of_outside Ob (by simp [ranges])).trans
       (Outs.of_outside Od (by simp [ranges]))).trans (Outs.of_outside Ot (by simp [ranges]))
+
+theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (S : Prepare.Data g c capacity p s) :
+    WP isa (.block (code g.w)) s fun t =>
+      Prepare.Data g c capacity p t ∧ w32 t.mem g.W 176 = 0 ∧ w32 t.mem g.W 192 = 0 ∧
+      w32 t.mem g.W 200 = checks g.w ∧ Outs g.W ranges s.mem t.mem ∧ Keeps [.eax] s t :=
+  codeOf_ok v S (checks_bound g.w)
 
 end VG.Proof.RsaKeyGen.X86.WitnessChecks

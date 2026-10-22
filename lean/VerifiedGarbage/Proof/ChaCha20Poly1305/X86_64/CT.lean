@@ -31,8 +31,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -89,6 +89,7 @@ it returns.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
@@ -558,6 +559,7 @@ end VG.Proof.ChaCha20Poly1305
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -851,6 +853,7 @@ the Poly1305 state for it.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -2110,6 +2113,7 @@ to a multiple of 16: `msg ++ x ++ pad16 x`.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20Poly1305 (pad16)
@@ -3188,6 +3192,7 @@ tags, and restoring the registers.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -3485,7 +3490,7 @@ theorem cryptSmall_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w 
   have rd₂' : s₂.rd = s₀.rd := by rw [rd₂, rd₁, h.rd]
   have dB : (dR s₀).Disjoint ⟨off (cx s₀) 736, L s₀⟩ :=
     hp.c_d.symm.sub_right (sub_ctx s₀ (k := 736) (n := L s₀) (by lit_omega))
-  refine WP.seq (WP.mono (XorBufX.xorBufX_ok hw (d := .r14) (by decide)
+  refine WP.seq (WP.mono (ChaCha20.X86_64.XorBufX.xorBufX_ok hw (d := .r14) (by decide)
     r14₂ rsi₂ (by rw [d₂]; exact hL s₀) hL9 dB
     ⟨dR s₀, by rw [wr₂']; exact hp.d_wr, Region.contains_self _ _⟩
     ⟨ctxR s₀, by rw [rd₂', wr₂']; simp [hp.ctx_wr], by
@@ -3747,7 +3752,7 @@ theorem cryptPre_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : Pa
       refine WP.seq (WP.mono (ptr_ok .rsi .r15 (k := 736) (by lit_omega) s₂) fun s₃ ⟨e3, g₃, rd₃, wr₃, m₃⟩ => ?_)
       have hwr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₂, wr₁, h.wr]
       have hrd₃ : s₃.rd = s₀.rd := by rw [rd₃, rd₂, rd₁, h.rd]
-      refine WP.mono (XorBufX.xorBufX_ok (wide_of v) (d := .r14) (by decide) (D := dp s₀) (B := off (cx s₀) 736)
+      refine WP.mono (ChaCha20.X86_64.XorBufX.xorBufX_ok (wide_of v) (d := .r14) (by decide) (D := dp s₀) (B := off (cx s₀) 736)
         (n := mOf v.callee.fold pass (L s₀))
         (by rw [g₃ _ (by decide), g₂, g₁ _ (by decide), h.r14]) (by rw [e3, g₂, g₁ _ (by decide), h.r15])
         (by rw [g₃ _ (by decide), g₂, d₁]) (by lit_omega)
@@ -4100,6 +4105,7 @@ end VG.Proof.ChaCha20Poly1305.X86_64
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
@@ -4372,6 +4378,7 @@ checked.
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 variable {e : Bool}
 

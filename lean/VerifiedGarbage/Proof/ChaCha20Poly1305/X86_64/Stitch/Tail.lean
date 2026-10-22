@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -535,7 +535,7 @@ theorem tailSg_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
       by rw [g₃]; exact t₃'.r14, by rw [g₃]; exact t₃'.r15, by rw [g₃]; exact t₃'.rsp, by rw [rd₃]; exact t₃'.rd,
       by rw [wr₃]; exact t₃'.wr⟩
   -- The bytes left.
-  refine WP.seq (WP.mono (XorBufX.xorBufX_ok (w := 5) (by decide) (d := .rbx) (by decide)
+  refine WP.seq (WP.mono (ChaCha20.X86_64.XorBufX.xorBufX_ok (w := 5) (by decide) (d := .rbx) (by decide)
     (D := dp + BitVec.ofNat 64 (o + N)) (B := bfA c) (n := n)
     t₃.rbx t₃.rsi t₃.rdx (by omega) hDB
     ⟨_, by rw [t₃.wr]; exact h.dw, Offset.contains_base _ (by omega) (by omega)⟩
@@ -815,7 +815,7 @@ theorem tailKXg_ok (vl pre : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0
       by rw [g₃]; exact t₃'.r14, by rw [g₃]; exact t₃'.r15, by rw [g₃]; exact t₃'.rsp, by rw [rd₃]; exact t₃'.rd,
       by rw [wr₃]; exact t₃'.wr⟩
   -- The bytes left.
-  refine WP.seq (WP.mono (XorBufX.xorBufX_ok (w := 5) (by decide) (d := .rbx) (by decide)
+  refine WP.seq (WP.mono (ChaCha20.X86_64.XorBufX.xorBufX_ok (w := 5) (by decide) (d := .rbx) (by decide)
     (D := dp + BitVec.ofNat 64 (o + N)) (B := kA (bfA c)) (n := n)
     t₃.rbx t₃.rsi t₃.rdx (by omega) hDK
     ⟨_, by rw [t₃.wr]; exact md, Offset.contains_base _ (by omega) (by omega)⟩

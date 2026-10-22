@@ -87,9 +87,10 @@ theorem addOrderOf_ne_two (hC : Good C) (Q : (wcC C).Point) : addOrderOf Q ≠ 2
     · exact Weierstrass.y_ne_zero hC.noTwoTorsion (wc_equation.mp h.1) h2y
 
 /-- On a curve with no point of order 2 whose base point has prime order `n`
-with `2p + 1 < 3n`, every point but `O` has order `n`. -/
-theorem primeOrder_of (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = true)
-    (hGn : mul C.n (G C) = .infinity) (hb : 2 * C.p + 1 < 3 * C.n) : PrimeOrder C := by
+with `2p + 1 < 3n`, `#E = n`. -/
+theorem card_eq_n (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = true)
+    (hGn : mul C.n (G C) = .infinity) (hb : 2 * C.p + 1 < 3 * C.n) :
+    Nat.card (wcC C).Point = C.n := by
   have : Fact C.n.Prime := ⟨hn⟩
   -- `G` has order `n` in `E`, so `n ∣ #E`.
   have hG0 : toW hC (G C) ≠ 0 := by
@@ -112,7 +113,13 @@ theorem primeOrder_of (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = tru
         ⟨C.n, by rw [hk, h, Nat.mul_comm]⟩
       exact absurd hQ (addOrderOf_ne_two hC Q)
   rw [hk1, Nat.mul_one] at hk
-  -- Every point but `O` has order `n`.
+  exact hk
+
+/-- On a curve with no point of order 2 whose base point has prime order `n`
+with `2p + 1 < 3n`, every point but `O` has order `n`. -/
+theorem primeOrder_of (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = true)
+    (hGn : mul C.n (G C) = .infinity) (hb : 2 * C.p + 1 < 3 * C.n) : PrimeOrder C := by
+  have hk := card_eq_n hC hn hG hGn hb
   intro P hP hPO m hm
   have hP0 : toW hC P ≠ 0 := fun h0 =>
     hPO (toW_inj hC hP rfl (h0.trans rfl))
@@ -124,5 +131,14 @@ theorem primeOrder_of (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = tru
   apply addOrderOf_dvd_of_nsmul_eq_zero
   rw [← toW_mul hC hP, hm]
   rfl
+
+/-- On such a curve, `n` kills every point: `#E = n`. -/
+theorem killedByN_of (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = true)
+    (hGn : mul C.n (G C) = .infinity) (hb : 2 * C.p + 1 < 3 * C.n) : KilledByN C := by
+  have hk := card_eq_n hC hn hG hGn hb
+  intro P hP
+  have h : C.n • toW hC P = 0 := by rw [← hk]; exact card_nsmul_eq_zero'
+  rw [← toW_mul hC hP] at h
+  exact toW_inj hC (hC.onCurve_mul hP _) rfl (h.trans rfl)
 
 end VG.Proof.Weierstrass

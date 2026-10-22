@@ -76,6 +76,7 @@ namespace VG.Impl.ChaCha20Poly1305.X86_64
 
 open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_)
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 /-- `r + d` into `d'`. -/
 def ptr (d' r : Reg) (k : Nat) : List Instr := [.mov d' (.reg r), .alu .add d' (.imm (BitVec.ofNat 32 k))]
@@ -368,32 +369,6 @@ def cryptArgsM : List Instr :=
   [.mov .rax (.reg .rdx), .shift .shr .rax 6, .alu .add .rax (.imm 1), .store32 (at_ .r15 112) .rax,
    .mov .rsi (.reg .r14), .alu .add .rsi (.reg .rdx), .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx),
    .mov .rdx (.reg .rax)] ++ ptr .rdi .r15 64 ++ ptr .rcx .r15 128
-
-/-- XOR the `2 ^ w` bytes at `rsi + rcx` into those at `d + rcx`, through
-`xmm0` and `xmm1` (or `ymm`, `zmm`), for `w` = 4, 5 or 6. -/
-def xData : Nat → Reg → List Instr
-  | 4, d => [.movdquLoad .xmm0 (ChaCha20.X86_64.XorBuf.idx d), .movdquLoad .xmm1 (ChaCha20.X86_64.XorBuf.idx .rsi),
-      .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (ChaCha20.X86_64.XorBuf.idx d) .xmm0]
-  | 5, d => [.vmovdquLoad .l256 .xmm0 (ChaCha20.X86_64.XorBuf.idx d),
-      .vmovdquLoad .l256 .xmm1 (ChaCha20.X86_64.XorBuf.idx .rsi), .vop (.vbin .vpxor .l256 .xmm0 .xmm0 .xmm1),
-      .vmovdquStore .l256 (ChaCha20.X86_64.XorBuf.idx d) .xmm0]
-  | _, d => [.vmovdqu32Load .xmm0 (ChaCha20.X86_64.XorBuf.idx d), .vmovdqu32Load .xmm1 (ChaCha20.X86_64.XorBuf.idx .rsi),
-      .zop (.zbin .vpxord .xmm0 .xmm0 .xmm1), .vmovdqu32Store (ChaCha20.X86_64.XorBuf.idx d) .xmm0]
-
-/-- `xData`, with `rcx` advanced past the bytes and `rax` counting down. -/
-def xBody (w : Nat) (d : Reg) : List Instr :=
-  xData w d ++ [.alu .add .rcx (.imm (BitVec.ofNat 32 (2 ^ w))), .alu .sub .rax (.imm 1)]
-
-/-- XORs the `rdx` bytes at `rsi` into the `rdx` bytes at `d`: `2 ^ w` at a
-time while at least that many remain (`rcx` counting the bytes done, `rax`
-the words left), then the rest by `XorBuf.xorBuf` from `rdi = d + rcx` and
-`rsi + rcx`. -/
-def xorBufX (w : Nat) (d : Reg) : Prog isa :=
-  .seq (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax w])
-  (.seq (.ite .e (.block []) (.loop (.block (xBody w d)) .ne))
-  (.seq (.block [.mov .rdi (.reg d), .alu .add .rdi (.reg .rcx), .alu .add .rsi (.reg .rcx),
-    .alu .sub .rdx (.reg .rcx)])
-    (ChaCha20.X86_64.XorBuf.xorBuf .rdi .rsi)))
 
 /-- More than `fold` bytes, up to the second call of `vg_chacha20_xor`: the
 first `m` (`foldM`; a multiple of 64, maybe 0) by XORing the keystream in

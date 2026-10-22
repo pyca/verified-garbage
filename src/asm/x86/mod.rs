@@ -239,6 +239,9 @@ pub(crate) mod ed25519_r32;
 pub(crate) mod ed448;
 
 #[rustfmt::skip]
+pub(crate) mod ffdh;
+
+#[rustfmt::skip]
 pub(crate) mod gcm;
 
 #[rustfmt::skip]
@@ -375,6 +378,9 @@ pub(crate) mod rsa_keygen;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_mont;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pkcs1_enc;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_pkcs1_sig;

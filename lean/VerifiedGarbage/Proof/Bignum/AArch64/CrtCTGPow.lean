@@ -47,7 +47,7 @@ namespace VG.Proof.Bignum.AArch64
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64
 open VG.Impl.Rsa.AArch64.Crt
 open VG.Proof.Bignum
-open VG.Proof.MlKem.AArch64 (Keep eval_nonzero)
+open VG.Proof.MlKem.AArch64 (Keep eval_nonzero eval_zero)
 
 /-! ## The bits of `D` -/
 
@@ -179,7 +179,7 @@ theorem kLoop_ct : RelCT isa (Two fun p s => 0 < nChunks p.w p.wx ∧ KL p 0 s)
 /-- After `gHead`: `D`. -/
 def GHd (sl : Nat) (p : GPub) (t : State) : Prop :=
   ∃ s, GPre sl p s ∧ t.gpr .x3 = BitVec.ofNat 64 (gD p.w p.wx) ∧
-    t.mem = s.mem.writeW (off p.B (8 * sD)) (BitVec.ofNat 64 (gD p.w p.wx)) ∧ Keep [.x3, .x4, .x5, .x7, .x8, .x12] s t
+    t.mem = s.mem.writeW (off p.B (8 * sD)) (BitVec.ofNat 64 (gD p.w p.wx)) ∧ Keep mmRegs s t
 
 /-- After `D`'s top bit into `sCnt`. -/
 def GTop (sl : Nat) (p : GPub) (t : State) : Prop :=
@@ -297,22 +297,172 @@ theorem gStart_ok (M : Mont) {sl : Nat} {p : GPub} {t : State} (h : GTop sl p t)
       Nat.mul_div_cancel _ (by decide)],
     hfr₄, (k₃.trans k₄).mono (by decide)⟩
 
-/-- `gPow sl`, given that the taint analysis checks the load of the
-prime's base. -/
-theorem gPow_ct_of {M : Mont} {sl : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.x0]) (.block [ldh .x5 sl]) hc).isSome = true) :
-    GPowCT M sl := by
-  unfold GPowCT
-  rw [gPow_eq]
-  refine RelCT.seqs_append (by simp [gHead]) (by simp) (RelCT.seq (two_post (Ψ := GHd sl) (gHead_ct hT)
-    fun p s h => ?_) ?_)
-  · obtain ⟨hg, hZ, hw, hw30, _, _, _, _, _, _, hsl, hX, hXw, hXr, hwx, hwx'⟩ := id h
-    exact WP.mono (gHead_ok hg hZ hw hw30 hsl hX hXw hXr hwx hwx') fun t ⟨h1, h2, h3⟩ => ⟨s, h, h1, h2, h3⟩
+/-- After `gHead`, and where `gSlow` starts: `D` in slot `sD`. -/
+def GSl (sl : Nat) (p : GPub) (t : State) : Prop :=
+  ∃ s, GPre sl p s ∧ t.mem = s.mem.writeW (off p.B (8 * sD)) (BitVec.ofNat 64 (gD p.w p.wx)) ∧ Keep mmRegs s t
+
+/-- `n`'s top word, which `gPow` tests. -/
+def GPub.top (p : GPub) : Nat := p.N / 2 ^ (64 * (p.w - 1))
+
+/-- After `gTest`. -/
+def GT2 (sl : Nat) (p : GPub) (t : State) : Prop :=
+  GSl sl p t ∧ t.gpr .x12 = BitVec.ofNat 64 p.w ∧ (t.gpr .x4).toNat = p.top
+
+/-- After `gCmp`. -/
+def GT3 (sl : Nat) (p : GPub) (t : State) : Prop :=
+  GSl sl p t ∧ t.gpr .x12 = BitVec.ofNat 64 p.w ∧ t.gpr .x13 = BitVec.ofNat 64 (gC p.w p.wx) ∧
+    t.gpr .x6 = BitVec.ofNat 64 (decide (gC p.w p.wx < p.w - 1)).toNat ∧ p.top ≠ 0
+
+/-- Where `gFast` starts. -/
+def GFs (sl : Nat) (p : GPub) (t : State) : Prop :=
+  GSl sl p t ∧ t.gpr .x12 = BitVec.ofNat 64 p.w ∧ t.gpr .x13 = BitVec.ofNat 64 (gC p.w p.wx) ∧
+    gC p.w p.wx < p.w - 1 ∧ p.top ≠ 0
+
+theorem GSl.good {sl : Nat} {p : GPub} {t : State} (h : GSl sl p t) :
+    Good t p.B p.Z p.w p.minv ∧ slot p.w 8 ≤ p.Z := by
+  obtain ⟨s, hs, hm, k⟩ := h
+  exact ⟨⟨hs.1.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hs.1.x0,
+    by rw [hm]; exact Hdr.store hs.1.hdr (by decide) (by decide) _⟩, hs.2.1⟩
+
+theorem GPre.hyp {sl : Nat} {p : GPub} {s : State} (h : GPre sl p s) : GHyp s p.B p.Z p.w p.minv p.N p.wx := by
+  obtain ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2, hone, _, _, _, _, hwx, hwx'⟩ := h
+  exact ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2, hone, hwx, hwx'⟩
+
+/-- `GSl` past a step that keeps the memory and the registers but `rs`. -/
+theorem GSl.step {sl : Nat} {p : GPub} {t t' : State} {rs : List Reg} (h : GSl sl p t) (hm : t'.mem = t.mem)
+    (k : Keep rs t t') (hrs : ∀ r ∈ rs, r ∈ mmRegs) : GSl sl p t' := by
+  obtain ⟨s, hs, hm₀, k₀⟩ := h
+  exact ⟨s, hs, hm.trans hm₀, (k₀.trans k).mono fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact hr
+    · exact hrs r hr⟩
+
+/-- `gSlow`: `D` into `x3`, its top bit, `Y := R` and the bits of `D`. -/
+theorem gSlow_ct (M : Mont) (sl : Nat) : RelCT isa (Two (GSl sl)) (gSlow M.mm) fun _ _ => True := by
+  rw [gSlow_eq]
+  refine RelCT.seq (two_piece (Ψ := GHd sl) [.x0] (pins_x0B (fun p => p.B) fun _ _ h => h.good.1.x0)
+    (by taint_decide) fun p t h => ?_) ?_
+  · obtain ⟨s, hs, hm, k⟩ := h
+    exact WP.mono (gLdD_ok hs.1 hs.2.1 hm k) fun t' ⟨h3, hm', k'⟩ =>
+      ⟨s, hs, h3, hm'.trans hm, (k.trans k').mono (by decide)⟩
   refine RelCT.assoc (RelCT.seq (gTop_ct sl) (RelCT.seq (two_post (two_map (fun p => p.L.ws)
     (fun p s h => ?_) (M.ct (by unfold MmUse; decide))) fun p s h => gStart_ok M h)
     ((gLoop_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial)))
   obtain ⟨_, ⟨_, hZ, _⟩, hg, _⟩ := h
   exact ⟨p.minv, hg, hZ⟩
+
+/-- `gFast`: `Y := 2^D`, then `Y := R² Y R⁻¹`. -/
+theorem gFast_ct (M : Mont) (sl : Nat) : RelCT isa (Two (GFs sl)) (gFast M.mm) fun _ _ => True := by
+  rw [gFast_eq, setWord_eq]
+  -- `x9 := 1`.
+  refine RelCT.seq (two_piece (Ψ := GFs sl) [] (pins_of (fun _ _ => 0) fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+    (by taint_decide) fun p t h => ?_) ?_
+  · refine WP.mono (WP.keep [.x9] (Q := fun t' => t'.mem = t.mem) (by brun) (by decide) (by decide)
+      (by decide +kernel)) fun t' ⟨hm, k⟩ => ?_
+    obtain ⟨hS, h12, h13, hc, htop⟩ := h
+    exact ⟨hS.step hm k (by decide), (k.gpr .x12 (by decide)).trans h12, (k.gpr .x13 (by decide)).trans h13,
+      hc, htop⟩
+  -- `Y := 2^D`.
+  refine RelCT.seq (two_post (Ψ := fun p t => Good t p.B p.Z p.w p.minv ∧ slot p.w 8 ≤ p.Z) ?_ ?_) ?_
+  · refine RelCT.seq (two_piece (Ψ := fun p t => GFs sl p t ∧ t.gpr .x8 = off p.B (slot p.w Public.aY) ∧
+        t.gpr .x7 = 0) [.x0] (pins_x0B (fun p => p.B) fun _ _ h => h.1.good.1.x0) (by taint_decide)
+        fun p t h => ?_)
+      (two_taint [.x8, .x7, .x12, .x13] (pins_of (fun p r => if r = .x8 then off p.B (slot p.w Public.aY) else
+        if r = .x7 then 0 else if r = .x12 then BitVec.ofNat 64 p.w else BitVec.ofNat 64 (gC p.w p.wx))
+          fun p t h r hr => by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+            rcases hr with rfl | rfl | rfl | rfl
+            · exact h.2.1
+            · exact h.2.2
+            · exact h.1.2.1
+            · exact h.1.2.2.1) (by taint_decide))
+    obtain ⟨hg, hZ⟩ := h.1.good
+    have hl : InRegions (t.rd ++ t.wr) (off p.B (8 * sArr Public.aY)) 8 :=
+      hg.scr.ld (by have := hdr_lt_slot p.w 8 (show sArr Public.aY < 32 by decide); omega)
+    refine WP.mono (WP.keep [.x7, .x8] (Q := fun t' => (t'.gpr .x8 = off p.B (slot p.w Public.aY) ∧
+        t'.gpr .x7 = 0) ∧ t'.mem = t.mem)
+      (by brun [hg.x0, hdr_enc (show sArr Public.aY < 32 by decide), hl, hg.hdr.harr Public.aY (by decide)])
+      (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨⟨h8, h7⟩, hm⟩, k⟩ => ⟨?_, h8, h7⟩
+    obtain ⟨hS, h12, h13, hc, htop⟩ := h
+    exact ⟨hS.step hm k (by decide), (k.gpr .x12 (by decide)).trans h12, (k.gpr .x13 (by decide)).trans h13,
+      hc, htop⟩
+  · intro p t ⟨hS, h12, h13, hc, htop⟩
+    obtain ⟨hg, hZ⟩ := hS.good
+    obtain ⟨_, hs, _, _⟩ := hS
+    refine WP.mono (setWord_ok hg.scr hg.x0 hg.hdr hZ h12 (by have := hs.2.2.2.1; omega) (o := Public.aY)
+      (by decide) (i := gC p.w p.wx) (by omega) h13) fun t' ⟨_, ho, k⟩ => ?_
+    have ha : Arrays p.B p.w [Public.aY] t.mem t'.mem :=
+      Arrays.of_outside (List.mem_singleton_self _) ho (Nat.le_refl _) (Nat.le_refl _)
+    exact ⟨⟨hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, hZ⟩
+  -- `Y := R² Y R⁻¹`.
+  exact two_map (fun p => p.L.ws) (fun p _ h => ⟨p.minv, h.1, h.2⟩) (M.ct (by unfold MmUse; decide))
+
+/-- `gPow sl`, given that the taint analysis checks the load of the
+prime's base: its branches are on `n`'s top word and the lengths, which the
+relation fixes. -/
+theorem gPow_ct_of {M : Mont} {sl : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x0]) (.block [ldh .x5 sl]) hc).isSome = true) :
+    GPowCT M sl := by
+  unfold GPowCT
+  rw [gPow_eq]
+  refine RelCT.seqs_append (by simp [gHead]) (by simp) (RelCT.seq (two_post (Ψ := GSl sl) (gHead_ct hT)
+    fun p s h => ?_) ?_)
+  · obtain ⟨hg, hZ, hw, hw30, _, _, _, _, _, _, hsl, hX, hXw, hXr, hwx, hwx'⟩ := id h
+    exact WP.mono (gHead_ok hg hZ hw hw30 hsl hX hXw hXr hwx hwx') fun t ⟨_, h2, h3⟩ =>
+      ⟨s, h, h2, h3.mono (by decide)⟩
+  show RelCT isa (Two (GSl sl)) (.seq (.block gTest) (.ite (.zero .x .x4) (gSlow M.mm)
+    (.seq (.block gCmp) (.ite (.zero .x .x6) (gSlow M.mm) (gFast M.mm))))) _
+  -- `n`'s top word.
+  have hTct : RelCT isa (Two (GSl sl)) (.block gTest) fun _ _ => True := by
+    rw [show gTest = ([ldh .x12 sW, ldh .x10 (sArr Public.aN)] : List Instr) ++
+      [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x10 .x13, ld .x4 .x13] from rfl]
+    refine RelCT.block_append (RelCT.seq (two_piece (Ψ := fun p t => t.gpr .x12 = BitVec.ofNat 64 p.w ∧
+        t.gpr .x10 = off p.B (slot p.w Public.aN)) [.x0] (pins_x0B (fun p => p.B) fun _ _ h => h.good.1.x0)
+        (by taint_decide) fun p t h => ?_)
+      (two_taint [.x10, .x12] (pins_of (fun p r => if r = .x10 then off p.B (slot p.w Public.aN) else
+        BitVec.ofNat 64 p.w) fun p t h r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact h.2
+          · exact h.1) (by taint_decide)))
+    obtain ⟨hg, hZ⟩ := h.good
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.B (8 * i)) 8 := fun i hi =>
+      hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
+    exact WP.mono (WP.keep [.x10, .x12] (Q := fun t' => t'.gpr .x12 = BitVec.ofNat 64 p.w ∧
+        t'.gpr .x10 = off p.B (slot p.w Public.aN))
+      (by brun [hg.x0, hdr_enc (show sW < 32 by decide), hdr_enc (show sArr Public.aN < 32 by decide),
+        hl sW (by decide), hl (sArr Public.aN) (by decide), hg.hdr.hw, hg.hdr.harr Public.aN (by decide)])
+      (by decide) (by decide) (by decide +kernel)) fun _ ⟨h', _⟩ => h'
+  refine RelCT.seq (two_post (Ψ := GT2 sl) hTct fun p t h => ?_) ?_
+  · obtain ⟨hg, hZ⟩ := h.good
+    obtain ⟨s, hs, hm, _⟩ := id h
+    have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+    have hT := wv_top t.mem p.B (slot p.w Public.aN) p.w (by have := hs.2.2.1; omega)
+    rw [hm, hdrStore_wv _ _ _ (by decide) (by decide) hn', hs.2.2.2.2.1, ← hm] at hT
+    exact WP.mono (gTest_ok hg.scr hg.x0 hg.hdr hZ hs.2.2.1 (by have := hs.2.2.2.1; omega))
+      fun t' ⟨h4, h12, hm', k⟩ => ⟨h.step hm' k (by decide), h12, by rw [h4, hT]; rfl⟩
+  refine two_ite (fun p s₁ s₂ h₁ h₂ => by
+      rw [eval_zero, eval_zero, gBeq_zero, gBeq_zero, h₁.2.2, h₂.2.2])
+    (two_map id (fun p t h => h.1.1) (gSlow_ct M sl)) ?_
+  -- `D / 64 < w - 1`.
+  refine RelCT.seq (two_piece (Ψ := GT3 sl) [.x0] (pins_x0B (fun p => p.B) fun _ _ h => h.1.1.good.1.x0)
+    (by taint_decide) fun p t h => ?_) ?_
+  · obtain ⟨⟨hS, h12, h4⟩, hne⟩ := h
+    have htop : p.top ≠ 0 := fun h0 => by
+      rw [eval_zero, gBeq_zero, h4, h0] at hne; exact absurd hne (by decide)
+    obtain ⟨hg, hZ⟩ := hS.good
+    obtain ⟨s, hs, hm, _⟩ := id hS
+    exact WP.mono (gCmp_ok hg.scr hg.x0 hZ hs.2.2.1 hs.2.2.2.1 hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+      hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 h12 (by rw [hm, word_writeW_self]))
+      fun t' ⟨h6, h13, h12', hm', k⟩ => ⟨hS.step hm' k (by decide), h12', h13, h6, htop⟩
+  refine two_ite (fun p s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2.2.2.1, h₂.2.2.2.1])
+    (two_map id (fun p t h => h.1.1) (gSlow_ct M sl)) (two_map id (fun p t h => ?_) (gFast_ct M sl))
+  obtain ⟨⟨hS, h12, h13, h6, htop⟩, hb⟩ := h
+  refine ⟨hS, h12, h13, ?_, htop⟩
+  by_contra hc
+  have hc' : ¬ gC p.w p.wx < p.w - 1 := hc
+  rw [eval_zero, h6, decide_eq_false hc'] at hb
+  exact absurd hb (by decide)
 
 theorem gPow_ct_P (M : Mont) : GPowCT M sWsP := gPow_ct_of (by taint_decide)
 

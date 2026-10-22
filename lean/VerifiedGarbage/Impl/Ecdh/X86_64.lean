@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOddP
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
@@ -216,6 +218,31 @@ place. -/
 def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
 
+/-- The odd window method's configuration: `jwinCfg`, its windows read from
+bit 1 of its table of bits (`JacWinCfg.windowO`). -/
+def jwinCfgO : JacWinCfg := { jwinCfg c with bits := c.winBits + 1 }
+
+/-- `k = d` if `d` is odd, else `n - d` (`oddScalar`, in `d`'s slot, through
+the window's), then `k + 32^J - 1` and its bits, from the slot of `d`. -/
+def jwinPrepO : Prog isa :=
+  .seq (.block (oddScalar c.n c.C.n (c.sl K) c.winK ++
+      WinCfg.addConst c.n (c.sl K) c.winK (32 ^ jwinJ c - 1)))
+    (bits c.winK c.winBits (8 * (c.n + 1)))
+
+/-- `R`'s `y` negated if `d` is even, as `R` is then `[n - d]P = -[d]P`:
+`-y` into `PT`'s slot, selected by the mask of `d`'s low bit, from its table
+of bits: `b_0 - 1`. -/
+def fixSign : List Instr :=
+  Mont.X86_64.sub c.MP' (c.sl PT) (c.sl ZERO) (c.sl RY) ++
+    [.movzx8 .rcx (sc (bitsAt c.n 0)), .alu .sub .rcx (.imm 1)] ++
+    sel c.n (c.sl RY) (c.sl RY) (c.sl PT)
+
+/-- `[d]P` into `R` by odd windows (of `d`, or of `n - d` and then `R`
+negated), `dbl` doubling a point in place, each window's selection woven
+into the addition before it where that applies (`JacWinCfg.windowOW`). -/
+def mulQJO (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block (maskK c)) (.seq (jwinPrepO c) (.seq ((jwinCfgO c).windowOW dbl) (.block (fixSign c))))
+
 /-- The inversion of `mulQJA`'s table: `R.z^(p-2)` into the selected entry's
 `X` (`E.x`), its working area that of `invWin`. -/
 def invJA : InvCfg := .ofMod c.MP' (jwinCfg c).E.x (c.sl RZ) (bitsAt c.n 2) c.C.p
@@ -274,6 +301,10 @@ def exchangeWith (mq : Prog isa) : Prog isa :=
 /-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime
 order. -/
 def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
+
+/-- `vg_ecdh_<curve>` by odd windows in Jacobian coordinates (`mulQJO`), for
+a curve of prime order with `n mod 64 < 33`. -/
+def exchangeJO (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJO c dbl)
 
 /-- `vg_ecdh_<curve>` by the Jacobian window method with an affine table, for
 a curve of prime order. -/

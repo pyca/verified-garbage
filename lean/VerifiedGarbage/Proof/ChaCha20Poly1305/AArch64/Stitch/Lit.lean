@@ -20,5 +20,7 @@ materialize_code Impl.ChaCha20Poly1305.AArch64.Stitch.bulkSeal
 materialize_code Impl.ChaCha20Poly1305.AArch64.Stitch.bulkOpen
 materialize_code Impl.ChaCha20Poly1305.AArch64.Stitch.bulkSealSve
 materialize_code Impl.ChaCha20Poly1305.AArch64.Stitch.bulkOpenSve
+materialize_code Impl.ChaCha20Poly1305.AArch64.Stitch.bulkPadNeon
+materialize_code Impl.ChaCha20Poly1305.AArch64.Stitch.bulkPadSve
 
 end VG

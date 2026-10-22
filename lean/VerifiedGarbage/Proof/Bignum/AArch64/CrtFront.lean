@@ -46,7 +46,7 @@ def nInput : List (Prog isa) := [
   setWord Public.aOne]
 
 theorem nSetup_eq (M : Mont) : nSetup M.mm =
-    pcLoad ++ (nInput ++ (r2Steps M.mm ++ [M.mm Public.aXm Public.aX Public.aR2])) := rfl
+    pcLoad ++ (nInput ++ (r2StepsPub M.mm ++ [M.mm Public.aXm Public.aX Public.aR2])) := rfl
 
 /-- `nInput`: `c` into `X`, the mask of `c < n` into `sMask`, and 1. -/
 theorem nInput_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {ip : Addr} {xb : List Byte} {N : Nat}
@@ -255,14 +255,14 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have hN0 := hdr_lt_slot ((k + 7) / 8) Public.aN (show 31 < 32 by decide)
   rw [nSetup_eq]
   -- The modulus and `-n⁻¹`.
-  refine wp_seqs_append (by simp [pcLoad]) (by simp [nInput])
+  refine wp_seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [nInput])
     (WP.mono (pcLoad_ok h.scr h.x0 hZ (by omega_using [hk1]) (by omega_using [hk2]) h.hK h.hN h.n h.nl hodd)
       fun t₁ ⟨minv, hg₁, hn₁, hi₁, f₁, k₁⟩ => ?_)
   have f₁' : Frm B (setupRanges ((k + 7) / 8)) s.mem t₁.mem :=
     f₁.mono (by simp [pcLoadRanges, setupRanges, loadRanges])
   have hh₁ := HFix.of_frm f₁' (keepsHdr_setupRanges _)
   -- The input, the mask of `c < n` and 1.
-  refine wp_seqs_append (by simp [nInput]) (by simp [r2Steps])
+  refine wp_seqs_append (by simp [nInput]) (by simp [r2StepsPub])
     (WP.mono (nInput_ok hg₁ hZ hk1 hk2 (by rw [hh₁ _ (by decide) (by decide)]; exact h.hK)
       (by rw [hh₁ _ (by decide) (by decide)]; exact h.hIn)
       (h.x.congrK (InScr.of_frm f₁' (hZs (setupRanges_le _))) k₁) h.xl hn₁)
@@ -277,8 +277,8 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
       rcases hr with rfl | rfl | rfl <;> simp only [Public.sMask, sFn] <;> omega_using [sNX, hN0, sNO]) (by omega_using [hn', lN])]; exact hi₁
   have f₂' : Frm B (setupRanges ((k + 7) / 8)) t₁.mem t₂.mem := f₂.mono (by simp [setupRanges, loadRanges])
   -- `R² mod n`.
-  refine wp_seqs_append (by simp [r2Steps]) (by simp)
-    (WP.mono (r2_ok M hg₂ hZ (by omega_using [hk1]) (by omega_using [hk2]) hN₂ hI₂ hodd hlo)
+  refine wp_seqs_append (by simp [r2StepsPub]) (by simp)
+    (WP.mono (r2Pub_ok M hg₂ hZ (by omega_using [hk1]) (by omega_using [hk2]) hN₂ hI₂ hodd hlo)
       fun t₃ ⟨hg₃, hlt₃, hr₃, f₃, k₃⟩ => ?_)
   have hX₃ : wv t₃.mem B (slot ((k + 7) / 8) Public.aX) ((k + 7) / 8) = Spec.Rsa.os2ip xb := by
     rw [f₃.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact hX₂

@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Impl.Rsa.AArch64
 
 /-! The public exponent 65537 needs sixteen squares and one ordinary-input
-multiply. That last product also converts out of Montgomery form. -/
+multiply. That last product also converts out of Montgomery form. The input
+and the result go a word at a time when their length is a multiple of eight
+(`loadW`, `storeW`). -/
 
 @[expose] public section
 namespace VG.Impl.Rsa.AArch64.Folded
@@ -35,7 +37,7 @@ def finishFused (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   (.ite (.zero .x .x3) (.block []) (finish mul))
 def rest (mul : Nat → Nat → Nat → Prog isa) : Prog isa := VG.Impl.Bignum.AArch64.seqs [
   .block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)],
-  loadBE,
+  loadW,
   -- The mask of `input < m`: all ones on a borrow.
   .block [ldh .x12 sW, ldh .x16 (sArr aX), ldh .x17 (sArr aN), movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7],
   cmpLoop,
@@ -46,7 +48,7 @@ def rest (mul : Nat → Nat → Nat → Prog isa) : Prog isa := VG.Impl.Bignum.A
   -- `X = input R mod m`, the exponentiation, and the result.
   mul aXm aX aR2, fastLoop mul, finishFused mul,
   .block [ldh .x8 (sArr aY), ldh .x1 sOut, ldh .x9 sK, .add .x .x1 .x1 .x9, ldh .x15 sMask],
-  storeBE,
+  storeW,
   .block [ldh .x0 sMask, movi .x3 1, .logic .and .x .x0 .x0 .x3]]
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
  .seq (.block (entry false)) (.seq (VG.Impl.Bignum.AArch64.seqs load)

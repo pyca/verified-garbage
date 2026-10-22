@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.FromBuf
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -26,7 +27,7 @@ open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.Avx2
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.ChaCha20 (Word stateAt keystream serialize)
 open VG.Proof.ChaCha20
-open VG.Proof.ChaCha20.X86_64.Avx512Tail (Done win win_sub not_win ks_at data_step fromBuf_ok fin_ok
+open VG.Proof.ChaCha20.X86_64.Avx512Tail (Done win win_sub not_win ks_at data_step fin_ok
   Done.fin r9_not_calleeSaved)
 
 /-! ## Writing out a row -/
@@ -416,7 +417,7 @@ theorem adv8_ok {s₀ : State} {p : Nat} (hge : 384 ≤ eL s₀ - p) {s : State}
 theorem last8_eq (vl : Bool) : last8 vl = .seq (.block setup) (.seq (roundsFor vl) (.seq
     (.block (finishWith xorRow8 ++ (move67 ++
       ([.mov .r9 (.reg .rcx), .alu .add .rsi (.imm 384), .alu .sub .rdx (.imm 384)] : List Instr))))
-    (.seq Impl.ChaCha20.X86_64.Avx2Tail.fromBuf (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)])))) := by
+    (.seq (Impl.ChaCha20.X86_64.Avx2Tail.fromBuf vl) (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)])))) := by
   simp only [last8, List.append_assoc]
 
 /-- The last 385 to 511 bytes, after `t` chunks. -/
@@ -537,7 +538,7 @@ theorem last8_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 38
     fun k hk => by
       rw [m₅]; exact F₄ _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact nb k hk _ (slotsR_sub _)
-  refine WP.seq (WP.mono (fromBuf_ok hp (p := 512 * t + 384) (n := eL s₀ - (512 * t + 384)) (by omega)
+  refine WP.seq (WP.mono (Avx2Tail.fromBufY_ok vl hp (p := 512 * t + 384) (n := eL s₀ - (512 * t + 384)) (by omega)
     (by omega) a₁ (by rw [a₃, g₄']; exact h.rcx) a₂ (by rw [rd₅, rd₄, rd₃, hr.rd, rd₁, h.rd])
     (by rw [wr₅, wr₄, wr₃, wr₂, h.wr]) (fun r hr => ?_) (fun k hk => ?_) (fun k hk => ?_)
     (fun k hk => ?_) ?_) fun s₆ d => fin_ok (d.fin hp))

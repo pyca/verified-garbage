@@ -143,7 +143,7 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     exact hC.one_ne_zero this.2.2
   rw [JacWinCfg.window]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF) fun s₁ ⟨F₁, T₁⟩ => ?_)
+  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF.toJacWinPt) fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ F₁ T₁) fun s₂ ⟨I₂, _⟩ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
     (Inv := fun j t => JInv K C base size P s k j t) (n := K.J - 1)

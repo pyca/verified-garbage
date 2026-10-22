@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import VerifiedGarbage.Proof.Bignum.AArch64.WordIOStore
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -244,15 +245,14 @@ structure OPub where
 def OPre (p : OPub) (s : State) : Prop :=
   ∃ c : Bool, Good s p.L.B p.L.Z p.L.w p.L.minv ∧ p.L.w = (p.k + 7) / 8 ∧ slot p.L.w 8 ≤ p.L.Z ∧ 1 ≤ p.k ∧
     p.k < 2 ^ 31 ∧ word s.mem p.L.B (8 * sOut) = p.op ∧ word s.mem p.L.B (8 * sK) = BitVec.ofNat 64 p.k ∧
-    word s.mem p.L.B (8 * sMask) = mask c ∧ (∀ j < p.k, InRegions s.wr (p.op + BitVec.ofNat 64 j) 1) ∧
+    word s.mem p.L.B (8 * sMask) = mask c ∧ InRegions s.wr p.op p.k ∧
     (∀ j < p.k, p.L.Z ≤ ofs p.L.B (p.op + BitVec.ofNat 64 j))
 
-/-- Before `storeBE`. -/
+/-- Before `storeW`. -/
 def O1 (p : OPub) (s : State) : Prop :=
   ∃ c : Bool, Scr s p.L.B p.L.Z ∧ s.gpr .x0 = p.L.B ∧ p.L.w = (p.k + 7) / 8 ∧ slot p.L.w 8 ≤ p.L.Z ∧
     1 ≤ p.k ∧ p.k < 2 ^ 31 ∧ s.gpr .x8 = off p.L.B (slot p.L.w aY) ∧ s.gpr .x1 = p.op + BitVec.ofNat 64 p.k ∧
-    s.gpr .x9 = BitVec.ofNat 64 p.k ∧ s.gpr .x15 = mask c ∧
-    (∀ j < p.k, InRegions s.wr (p.op + BitVec.ofNat 64 j) 1) ∧
+    s.gpr .x9 = BitVec.ofNat 64 p.k ∧ s.gpr .x15 = mask c ∧ InRegions s.wr p.op p.k ∧
     (∀ j < p.k, p.L.Z ≤ ofs p.L.B (p.op + BitVec.ofNat 64 j))
 
 /-- The result's store leaks the same in runs with the same working space,
@@ -273,7 +273,7 @@ theorem out_ct : RelCT isa (Two OPre) (seqs outSteps) fun _ _ => True := by
         hl (sArr aY) (by decide), hl sOut (by decide), hl sK (by decide),
         hl sMask (by decide), hg.hdr.harr aY (by decide), hO, hK, hM]) (by decide) (by decide) (by decide +kernel))
       fun t ⟨⟨h8, h1, h9, h15, hm⟩, k⟩ => ⟨c, hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0, hw, hZ,
-        hk1, hk, h8, h1, h9, h15, fun j hj => by rw [k.wr]; exact hout j hj, hsep⟩
+        hk1, hk, h8, h1, h9, h15, by rw [k.wr]; exact hout, hsep⟩
   refine RelCT.seq (two_piece (Ψ := fun p s => s.gpr .x0 = p.L.B) [.x8, .x1, .x9]
     (fun p s₁ s₂ ⟨_, _, _, _, _, _, _, a₁, b₁, c₁, _⟩ ⟨_, _, _, _, _, _, _, a₂, b₂, c₂, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -282,7 +282,7 @@ theorem out_ct : RelCT isa (Two OPre) (seqs outSteps) fun _ _ => True := by
       · rw [b₁, b₂]
       · rw [c₁, c₂]) (by taint_decide) ?_) ?_
   · rintro p s ⟨c, hs, h0, hw, hZ, hk1, hk, h8, h1, h9, h15, hout, hsep⟩
-    exact WP.mono (storeBE_ok hs h8 h1 h9 h15 hk1 hk hw
+    exact WP.mono (WordIO.storeW_ok hs h8 h1 h9 h15 hk1 hk hw
       (by have := slot_le (w := p.L.w) (show aY < 8 by decide); omega_using [hZ, this]) hout hsep)
       fun t ⟨_, _, _, _, k⟩ => (k.gpr .x0 (by decide)).trans h0
   exact two_taint [.x0] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -319,8 +319,8 @@ theorem PdPre.mem {s t : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Na
   { scr := h.scr.congr kp.wr, x0 := (kp.gpr .x0 hr).trans h.x0, z := h.z, k1 := h.k1, k2 := h.k2,
     hO := hm ▸ h.hO, hK := hm ▸ h.hK, hE := hm ▸ h.hE, hL := hm ▸ h.hL, hIn := hm ▸ h.hIn, hW := hm ▸ h.hW,
     hb := hm ▸ h.hb, n := hm ▸ h.n, r := hm ▸ h.r, odd := h.odd, n1 := h.n1, rlt := h.rlt,
-    x := h.x.congrK (by rw [hm]; exact InScr.refl _ _ _) kp, e := h.e.congrK (by rw [hm]; exact InScr.refl _ _ _) kp,
-    xl := h.xl, el := h.el, L1 := h.L1, L2 := h.L2, out := fun j hj => by rw [kp.wr]; exact h.out j hj,
+    x := h.x.congrK (by rw [hm]; exact InScr.refl _ _ _) kp, xspan := by rw [kp.rd, kp.wr]; exact h.xspan, e := h.e.congrK (by rw [hm]; exact InScr.refl _ _ _) kp,
+    xl := h.xl, el := h.el, L1 := h.L1, L2 := h.L2, out := by rw [kp.wr]; exact h.out,
     outSep := h.outSep }
 
 theorem DG.step {p : DPub} {xb : List Byte} {σ t t' : State} (h : DG p xb σ t)
@@ -339,7 +339,7 @@ def DIn (p : DPub) (s : State) : Prop :=
   DRel p s ∧ s.gpr .x1 = p.ip ∧ s.gpr .x2 = BitVec.ofNat 64 p.k ∧ s.gpr .x8 = off p.B (slot ((p.k + 7) / 8) aX)
 
 /-- The input's steps. -/
-def pdInSteps : List (Prog isa) := [.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadBE]
+def pdInSteps : List (Prog isa) := [.block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)], loadW]
 
 /-- The input leaks the same in runs with the same public data. -/
 theorem pdIn_ct : RelCT isa (Two DRel) (seqs pdInSteps) (Two fun (p : DPub) s => SR ⟨p.B, p.Z, ((p.k + 7) / 8)⟩ s) := by
@@ -377,7 +377,7 @@ theorem pdIn_ct : RelCT isa (Two DRel) (seqs pdInSteps) (Two fun (p : DPub) s =>
   have hn := h.scr.nowrap
   have hZ := h.z
   have hn' : p.B.toNat + slot ((p.k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hn, hZ]
-  refine WP.mono (loadArr_ok h.scr (by decide) hZ h.x h.xl (by omega_using [hk1]) (by omega_using [hk2]) h1 h2 h8) fun t ⟨_, ha, k⟩ =>
+  refine WP.mono (loadArrW_ok h.scr (by decide) hZ h.x h.xspan h.xl (by omega_using [hk1]) (by omega_using [hk2]) h1 h2 h8) fun t ⟨_, ha, k⟩ =>
     ⟨h.scr.congr k.wr, (k.gpr .x0 (by decide)).trans h.x0, hZ, show 2 ≤ (p.k + 7) / 8 by omega_using [hk1],
       show (p.k + 7) / 8 < 2 ^ 31 by omega_using [hk2], by rw [ha.hslot (by decide)]; exact h.hW,
       fun j hj => by rw [ha.hslot (by unfold sArr; omega_using [hj])]; exact h.hb j hj, ?_⟩
@@ -534,7 +534,7 @@ theorem dd_oPre {q : DPub × BitVec 64} {t : State} (h : DD q t) : OPre ⟨DPub.
   have hk2 := g.1.k2
   exact ⟨_, hg, rfl, g.1.z, show 1 ≤ q.1.k by omega_using [hk1], show q.1.k < 2 ^ 31 by omega_using [hk2],
     by rw [g.fixed sOut (by decide)]; exact g.1.hO, by rw [g.fixed sK (by decide)]; exact g.1.hK, g.2.2.2,
-    fun j hj => by rw [g.2.2.1.wr]; exact g.1.out j hj, g.1.outSep⟩
+    by rw [g.2.2.1.wr]; exact g.1.out, g.1.outSep⟩
 
 /-- `rest` leaks the same in runs with the same public data and `e`. -/
 theorem pdRest_ct : RelCT isa (Two DRel) (Precomputed.rest M.mm) fun _ _ => True := by

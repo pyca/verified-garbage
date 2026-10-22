@@ -12,7 +12,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof
 open VG.Impl.RsaKeyGen.X86.MillerRabinLoop
 
 theorem exhausted_again_ok {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
-    (short : ¬ P.bytes * (k + 1) + P.bytes ≤ P.randLen) :
+    (short : ¬ P.start + P.bytes * k + P.bytes ≤ P.randLen) :
     WP isa (.seq (.block exhausted) (.block again)) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧

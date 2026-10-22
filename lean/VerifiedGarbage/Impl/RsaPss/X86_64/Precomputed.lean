@@ -16,7 +16,7 @@ variable (H : Pbkdf2.Md.X86_64.Hash) (pubN : String) (pubC : Prog isa)
 
 def main : Prog isa :=
   seqs [.block dbSlots, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop,
-    posScan, posCheck H, saltBack H]
+    scanCheck H, saltBack H]
 
 def body : Prog isa :=
   seqs [.block (verifyPrologue ++ n0),

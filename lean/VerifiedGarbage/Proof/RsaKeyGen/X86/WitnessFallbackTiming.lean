@@ -10,9 +10,14 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 namespace VG.Proof.RsaKeyGen.X86.WitnessFallback
 open VG VG.X86 VG.Proof.Dsa.X86 VG.Proof.MillerRabin.X86 VG.Impl.RsaKeyGen.X86.WitnessFallback
 
+theorem codeAt_trace (k src : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block (codeAt k src))
+      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
+  erased_relCT (.block (codeAt k src)) (.block (codeAt 2 0)) (.block []) rfl rfl rfl (by decide +kernel)
+
 theorem code_trace (w src : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block (code w src))
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  erased_relCT (.block (code w src)) (.block (code 1 0)) (.block []) rfl rfl rfl (by decide +kernel)
+  codeAt_trace (2 * w) src
 
 end VG.Proof.RsaKeyGen.X86.WitnessFallback

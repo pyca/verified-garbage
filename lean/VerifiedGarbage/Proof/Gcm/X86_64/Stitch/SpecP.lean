@@ -112,6 +112,23 @@ theorem StitchOkM.weaken {M : CtxMode} {enc dec : Prog isa} {we wd le ld : Nat} 
   ⟨fun s₀ hp hm => h.1 s₀ (hp.ofLe (Nat.le_trans hle hp.base.nb16)) hm,
     fun s₀ hp hm => h.2 s₀ (hp.ofLe (Nat.le_trans hld hp.base.nb16)) hm⟩
 
+/-- Loops for a key context of kind `M` that take fewer blocks than a group,
+from `le` (`ld`) on: what `Blocks.fullBody` asks of the loops it runs on
+fewer than 16 blocks. -/
+def StitchOkSmall (M : CtxMode) (enc dec : Prog isa) (le ld : Nat) : Prop :=
+  (∀ s₀, SPreM M s₀ le → nb s₀ < 16 → WP isa enc s₀ (EPost s₀)) ∧
+    (∀ s₀, SPreM M s₀ ld → nb s₀ < 16 → WP isa dec s₀ (DPost s₀))
+
+/-- Loops that take any number of blocks from `le` (`ld`) on take fewer than
+16 too. -/
+theorem StitchOkM.small {M : CtxMode} {enc dec : Prog isa} {le ld : Nat} (h : StitchOkM M enc dec 1 1 le ld) :
+    StitchOkSmall M enc dec le ld :=
+  ⟨fun s₀ hp _ => h.1 s₀ hp (Nat.mod_one _), fun s₀ hp _ => h.2 s₀ hp (Nat.mod_one _)⟩
+
+/-- No loops need take fewer than 16 blocks from 16 on. -/
+theorem StitchOkSmall.of16 (M : CtxMode) (enc dec : Prog isa) : StitchOkSmall M enc dec 16 16 :=
+  ⟨fun _ hp h => absurd hp.base.nb16 (by omega), fun _ hp h => absurd hp.base.nb16 (by omega)⟩
+
 theorem StitchOk.toM {enc dec : Prog isa} (h : StitchOk enc dec) (M : CtxMode) : StitchOkM M enc dec :=
   ⟨fun s₀ hp => h.1 s₀ hp.base, fun s₀ hp => h.2 s₀ hp.base⟩
 

@@ -78,7 +78,7 @@ def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   cmpLoop,
   .block (borrowMask ++ [sth .x15 sMask, ldh .x12 sW, movi .x9 1, movi .x13 0]),
   setWord aOne] ++
-  r2Steps mul ++ [mul aXm aX aR2]
+  r2StepsPub mul ++ [mul aXm aX aR2]
 
 /-! ## The prime workspaces -/
 
@@ -226,15 +226,11 @@ def redc (mul : Nat → Nat → Nat → Prog isa) (j : Nat) : List (Prog isa) :=
     addMod aXc aXc aT,
     .block [ldh .x3 sRem]]) (.nonzero .x .x3)]
 
-/-- In `n`'s workspace: `[aY] := G = 2^E mod n` for `E = 64 w_X (K + 1)`,
-`K = ⌈w / w_X⌉`, the prime workspace's base in slot `slotWs`: `D = E - 64 w`
-(`x3` steps up by `w_X` while below `w`, into `K w_X`), then `Y = R mod n`
-and for each bit of `D` from the top, `Y := Y² R⁻¹` and doubled if the bit
-is set: `Y = 2^D R`. -/
-def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog isa) := [
-  .block [ldh .x5 slotWs, ldw .x5 .x5 sW, ldh .x12 sW, movi .x3 0, movi .x7 0, movi .x8 1],
-  .loop (.block [.add .x .x3 .x3 .x5, .subs .x .x4 .x3 .x12, .csel .x .x4 .x7 .x8]) (.nonzero .x .x4),
-  .block [.add .x .x3 .x3 .x5, .sub .x .x3 .x3 .x12, .lsl .x .x3 .x3 6, sth .x3 sD],
+/-- `G` the long way, after `gPow`'s head: `D` again into `x3`, `Y = R mod n`,
+and for each bit of `D` from the top, `Y := Y² R⁻¹` and doubled if the bit is
+set: `Y = 2^D R`. -/
+def gSlow (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  .block [ldh .x3 sD],
   topBit,
   .block [sth .x9 sCnt],
   mul aY aR2 aOne,
@@ -243,6 +239,37 @@ def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog is
     .block [ldh .x3 sD, ldh .x4 sCnt, .logic .and .x .x3 .x3 .x4],
     .ite (.nonzero .x .x3) (double aN aAcc aTmp aY) (.block []),
     .block [ldh .x3 sCnt, .lsr .x .x3 .x3 1, sth .x3 sCnt]]) (.nonzero .x .x3)]
+
+/-- `G` in one multiplication, `D = 64 c` with `c` in `x13` and `w` in `x12`:
+`Y := 2^D`, then `Y := R² Y R⁻¹ = 2^D R`. -/
+def gFast (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs [.block [movi .x9 1], setWord aY, mul aY aR2 aY]
+
+/-- `gPow`'s test of `n`'s top word, into `x4` (`w` into `x12`). -/
+def gTest : List Instr :=
+  [ldh .x12 sW, ldh .x10 (sArr aN), .lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x10 .x13,
+    ld .x4 .x13]
+
+/-- `gPow`'s test of `D / 64 < w - 1`, into `x6` (1 if so, 0 if not), with
+`D / 64` into `x13`. -/
+def gCmp : List Instr :=
+  [ldh .x13 sD, .lsr .x .x13 .x13 6, .subImm .x .x5 .x12 1, .subs .x .x6 .x13 .x5, movi .x7 0, movi .x8 1,
+    .cselc .x .x6 .x8 .x7 .lo]
+
+/-- In `n`'s workspace: `[aY] := G = 2^E mod n` for `E = 64 w_X (K + 1)`,
+`K = ⌈w / w_X⌉`, the prime workspace's base in slot `slotWs`: `D = E - 64 w`
+(`x3` steps up by `w_X` while below `w`, into `K w_X`; a multiple of 64),
+then `Y = 2^D R`: by `gFast` when `2^D < n`, which holds when `n`'s top word
+is not 0 and `D < 64 (w - 1)` (as it is for primes of half `n`'s length), and
+by `gSlow` otherwise. The tests are of `n` and the lengths, all public, as on
+x86-64. -/
+def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog isa) := [
+  .block [ldh .x5 slotWs, ldw .x5 .x5 sW, ldh .x12 sW, movi .x3 0, movi .x7 0, movi .x8 1],
+  .loop (.block [.add .x .x3 .x3 .x5, .subs .x .x4 .x3 .x12, .csel .x .x4 .x7 .x8]) (.nonzero .x .x4),
+  .block [.add .x .x3 .x3 .x5, .sub .x .x3 .x3 .x12, .lsl .x .x3 .x3 6, sth .x3 sD],
+  .block gTest,
+  .ite (.zero .x .x4) (gSlow mul)
+    (.seq (.block gCmp) (.ite (.zero .x .x6) (gSlow mul) (gFast mul)))]
 
 /-! ## The exponentiation
 

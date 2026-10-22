@@ -308,21 +308,23 @@ theorem guarded_ok {body : List Instr} {s₀ : State} {D P : Addr} {w n : Nat} (
     exact xloop_ok (by omega) hn' (XI.zero h9 h10 h11) hstep
 
 /-- The `n` bytes `o` bytes into the data XORed with the keystream at
-`ctx + k`. -/
-theorem xorKsFromAt_ok {s₀ s : State} (hp : APre e s₀) {k o n : Nat} (hkn : k + n ≤ 1280)
-    (hon : o + n ≤ L s₀)
-    (hx21 : s.gpr .x21 = cx s₀) (hx22 : s.gpr .x22 = dp s₀ + BitVec.ofNat 64 o)
-    (hx23 : s.gpr .x23 = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
-    WP isa (xorKsFrom k) s fun s' => Kept [dR s₀] s s' ∧ (∀ i < n,
+`ctx + k`, which `setup` points `x10` at. -/
+theorem xorKsWithAt_ok {s₀ s : State} (hp : APre e s₀) {setup : List Instr} {k o n : Nat}
+    (hkn : k + n ≤ 1280) (hon : o + n ≤ L s₀)
+    (hx23 : s.gpr .x23 = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    (hs : WP isa (.block setup) s fun s' =>
+      s'.gpr .x9 = dp s₀ + BitVec.ofNat 64 o ∧ s'.gpr .x10 = kpAt s₀ k ∧
+      s'.gpr .x11 = BitVec.ofNat 64 (n / 16) ∧
+      Kept [] s s' ∧ ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → s'.gpr r = s.gpr r) :
+    WP isa (xorKsWith setup) s fun s' => Kept [dR s₀] s s' ∧ (∀ i < n,
       s'.mem (dp s₀ + BitVec.ofNat 64 (o + i)) = s.mem (dp s₀ + BitVec.ofNat 64 (o + i)) ^^^
         s.mem (kpAt s₀ k + BitVec.ofNat 64 i)) ∧
       Frame [⟨dp s₀ + BitVec.ofNat 64 o, n⟩] s.mem s'.mem ∧
       ∀ r, r ∉ [Reg.x9, .x10, .x11, .x12, .x13] → s'.gpr r = s.gpr r := by
   have wd := hp.wrap_d
   have hn' : n < 2 ^ 64 := by omega
-  unfold xorKsFrom
-  refine WP.seq (WP.mono (setup_ok (k := k) (by omega) hn' hx21 hx22 hx23)
-    fun s₁ ⟨x9₁, x10₁, x11₁, k₁, gs₁⟩ => ?_)
+  unfold xorKsWith
+  refine WP.seq (WP.mono hs fun s₁ ⟨x9₁, x10₁, x11₁, k₁, gs₁⟩ => ?_)
   have hh₁ : XH s₁ (dp s₀ + BitVec.ofNat 64 o) (kpAt s₀ k) (16 * (n / 16)) := by
     have := xh hp (by rw [k₁.rd, hrd]) (by rw [k₁.wr, hwr]) (k := k) (o := o) (a := 0) (m := 16 * (n / 16))
       (by omega) (by omega)
@@ -398,6 +400,20 @@ theorem xorKsFromAt_ok {s₀ s : State} (hp : APre e s₀) {k o n : Nat} (hkn : 
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h9, h10, h11, h12, h13⟩ := hr
     rw [h₄.keep r h9 h10 h11 h12 h13, g₃ r h11, h₂.keep r h9 h10 h11 h12 h13, gs₁ r h9 h10 h11]
+
+/-- The `n` bytes `o` bytes into the data XORed with the keystream at
+`ctx + k`. -/
+theorem xorKsFromAt_ok {s₀ s : State} (hp : APre e s₀) {k o n : Nat} (hkn : k + n ≤ 1280)
+    (hon : o + n ≤ L s₀)
+    (hx21 : s.gpr .x21 = cx s₀) (hx22 : s.gpr .x22 = dp s₀ + BitVec.ofNat 64 o)
+    (hx23 : s.gpr .x23 = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (xorKsFrom k) s fun s' => Kept [dR s₀] s s' ∧ (∀ i < n,
+      s'.mem (dp s₀ + BitVec.ofNat 64 (o + i)) = s.mem (dp s₀ + BitVec.ofNat 64 (o + i)) ^^^
+        s.mem (kpAt s₀ k + BitVec.ofNat 64 i)) ∧
+      Frame [⟨dp s₀ + BitVec.ofNat 64 o, n⟩] s.mem s'.mem ∧
+      ∀ r, r ∉ [Reg.x9, .x10, .x11, .x12, .x13] → s'.gpr r = s.gpr r :=
+  xorKsWithAt_ok hp hkn hon hx23 hrd hwr
+    (setup_ok (k := k) (by omega) (by have := hp.wrap_d; omega) hx21 hx22 hx23)
 
 /-- The `n ≤ 256` bytes `o` bytes into the data XORed with the keystream. -/
 theorem xorKsAt_ok {s₀ s : State} (hp : APre e s₀) {o n : Nat} (hn : n ≤ 256) (hon : o + n ≤ L s₀)

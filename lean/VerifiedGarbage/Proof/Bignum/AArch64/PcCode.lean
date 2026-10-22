@@ -95,6 +95,7 @@ structure PcCtx (s : State) : Prop where
   hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8)
   hnb : Src s (s.gpr .x4) ((s.gpr .x5).toNat * 8) (s.gpr .x2)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
+  hnspan : InRegions (s.rd ++ s.wr) (s.gpr .x2) (s.gpr .x3).toNat
   hpw : ∀ i < 2 * (((s.gpr .x3).toNat + 7) / 8), InRegions s.wr (off (s.gpr .x0) (8 * i)) 8
   hps : ∀ j < 16 * (((s.gpr .x3).toNat + 7) / 8),
     (s.gpr .x5).toNat * 8 ≤ ofs (s.gpr .x4) (s.gpr .x0 + BitVec.ofNat 64 j)
@@ -108,7 +109,7 @@ theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   have hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hpre : (⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   exact ⟨hk1, hk2, hpl, by omega, hs, src_of_region (by rw [hrd]; simp) (by omega) dns,
-    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega) (by omega)⟩,
+    span_of_region (by rw [hrd]; simp), fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega) (by omega)⟩,
     fun j hj => out_scr dPs (contains_byte _ (by omega) (by omega))⟩
 
 theorem pcCode_correct (M : Mont) (s : State) (h : pcContract.pre s) :
@@ -167,7 +168,8 @@ theorem pcCode_correct (M : Mont) (s : State) (h : pcContract.pre s) :
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
         (s.gpr .x3).toNat = true := by simpa using hb
     refine WP.mono (pcMain_ok M hs₂ h0₂ hz hk1 hk2 (by rw [hm₂]; exact hO) (by rw [hm₂, hK, ofNat_toNat64])
-      (by rw [hm₂]; exact hN) (c.hnb.congrK i₂ kk) (bytesAt_length _ _ _) hv hw c.hps)
+      (by rw [hm₂]; exact hN) (c.hnb.congrK i₂ kk) (by rw [kk.rd, kk.wr]; exact c.hnspan) (bytesAt_length _ _ _)
+      hv hw c.hps)
       fun t ⟨ws, hws, hp⟩ => fin t ws true hp (by rw [hws]; rfl) fun h => absurd h (by decide)
 
 end VG.Proof.Bignum.AArch64
