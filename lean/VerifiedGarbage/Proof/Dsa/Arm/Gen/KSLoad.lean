@@ -49,76 +49,71 @@ theorem top_of_lt {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 2
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
 
-/-- Array `j` := the bytes `bs` that a claim puts at byte `o` of `scratch`. -/
-theorem loadS_vp {L j o n : Nat} {bs : List Byte} (cert : Cert7 (loadS L j o n)) (hL : L = G.pLen) (hj : j < nArrs) (hbs : (o, bs) ∈ c.cl)
-    (hn : bs.length = n) (hn0 : 0 < n) (hnw : n ≤ 4 * G.w) :
-    VP (St G c X) (loadS L j o n)
+/-- A taint certificate for a load, its source and length public. -/
+abbrev CertL (j : Nat) : Prop := ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
+  (VG.Impl.Rsa.Arm.CrtValues.load j) hc).isSome = true
+
+/-- Array `j` := the `n` bytes `bs` at `r4` (`r6 = n`), readable and apart from the key working space. -/
+theorem loadAt_vp {j n : Nat} {src : BitVec 32} {bs : List Byte} (cert : CertL j) (hj : j < nArrs) (hn : bs.length = n)
+    (hn0 : 0 < n) (hnw : n ≤ 4 * G.w)
+    (hsrc : ∀ σ s, St G c X σ s → Covers [⟨State.addr src, n⟩] (s.rd ++ s.wr) ∧
+      Region.Disjoint ⟨State.addr src, n⟩ G.rK ∧ src.toNat + n ≤ 2 ^ 32 ∧
+      Spec.Rsa.bytesAt s.mem (State.addr src) n = bs) :
+    VP (fun σ s => St G c X σ s ∧ s.gpr .r4 = src ∧ s.gpr .r6 = BitVec.ofNat 32 n)
+      (VG.Impl.Rsa.Arm.CrtValues.load j)
       (fun σ t => St G { c with A := KU c.A j (Spec.Dsa.decodeBE bs), live := j :: c.live } X σ t ∧
         Top G t.mem j) := by
-  refine ks_vp cert (fun σ s h => h.1) fun σ s ⟨h, x⟩ => ?_
-  subst hL
+  refine VP.taint [.r4, .r6, .r7, .r8, .r9] cert
+    (fun σ₁ σ₂ s₁ s₂ ⟨⟨h₁, _⟩, a₁, b₁⟩ ⟨⟨h₂, _⟩, a₂, b₂⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [a₁, a₂]
+      · rw [b₁, b₂]
+      · rw [h₁.r7, h₂.r7]
+      · rw [h₁.r8, h₂.r8]
+      · rw [h₁.r9, h₂.r9]) fun σ s ⟨⟨h, x⟩, p4, p6⟩ => ?_
+  obtain ⟨hR, sep, sfit, b⟩ := hsrc σ s ⟨h, x⟩
   have gi := h.gi
-  have big := gi.scrBig
-  have fit := gi.scrFit
   have l := h.lens
-  have oK : o + n ≤ sK G.pLen := by have := h.clOk _ hbs; simpa [hn] using this
-  have hw := h.wsWith (s.rd ++ [G.rs o n])
+  have hw := h.wsWith (s.rd ++ [⟨State.addr src, n⟩])
   have nw := hw.nowrap
-  have kb := h.kbNat
   have fa := hw.arr_fit hj
   have hS : S G.w = 4 * (G.w + 2) := rfl
   have w96 : G.w ≤ 96 := by simp only [GP.w]; omega
-  have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
-  have hR : Covers [G.rs o n] s.wr := (Covers.of_sub (rs' := [G.rScr]) fun r hr => by
-    rw [List.mem_singleton] at hr; subst hr
-    exact ⟨G.rScr, List.mem_singleton_self _, o, rfl, show o + n ≤ G.scrLen * 8 by omega⟩).trans
-    (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact inS)
   have ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
     hw.addr (by omega)
-  have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega)
-  have e : off (State.addr G.KB) (arr G.w j) = G.sa (sK G.pLen + arr G.w j) := by
-    rw [gi.kaddr]; simp only [off, GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  have b := h.sb _ hbs
-  simp only [hn] at b
+  have hrk : Region.Sub ⟨off (State.addr G.KB) (arr G.w j), 4 * (G.w + 2)⟩ G.rK :=
+    Offset.sub_base (State.addr G.KB) (by omega)
   refine h.ksWPr hR rfl (P := fun t =>
       val32 t.mem (State.addr (G.KB + BitVec.ofNat 32 (arr G.w j))) 0 (G.w + 2) = Spec.Rsa.os2ip bs ∧
       Frame [⟨State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)), 4 * (G.w + 2)⟩] s.mem t.mem ∧
-      Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r12, .lr] (s.withRegions (s.rd ++ [G.rs o n]) [G.rK]) t) ?_ ?_
-  · unfold loadS
-    refine WP.seq (scr_ok (s := s.withRegions (s.rd ++ [G.rs o n]) [G.rK]) (o := o) (d := .r4) h.r8 rfl l (by omega)
-      fun s₁ v₁ R₁ M₁ => wp_movw fun s₂ u₂ => WP.block_nil ?_)
-    unfold VG.Impl.Rsa.Arm.CrtValues.load
-    have hw₁ := (hw.rest R₁).of_upd u₂ (by decide) (by decide) (by decide)
-    refine WP.seq (ptr_ok hw₁ (r := .r0) (by decide) (by simp only [nArrs] at hj; omega) fun s₃ p₃ R₃ m₃ hw₃ => ?_)
+      Rest [.r0, .r1, .r2, .r3, .r5, .lr] (s.withRegions (s.rd ++ [⟨State.addr src, n⟩]) [G.rK]) t) ?_ ?_
+  · unfold VG.Impl.Rsa.Arm.CrtValues.load
+    refine WP.seq (ptr_ok hw (r := .r0) (by decide) (by simp only [nArrs] at hj; omega) fun s₃ p₃ R₃ m₃ hw₃ => ?_)
     refine wp_mov (op2_reg _ _) fun s₄ u₄ => ?_
     refine wp_dp (op2_imm (by decide)) fun s₅ u₅ => ?_
     refine wp_mov (op2_imm (by decide)) fun s₆ u₆ => WP.block_nil ?_
-    have mem6 : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, m₃, u₂.mem, M₁]; rfl
-    have R₆ : Rest [.r0, .r3, .r4, .r5, .r6, .r12, .lr] (s.withRegions (s.rd ++ [G.rs o n]) [G.rK]) s₆ :=
-      (R₁.mono (by simp)).trans ((u₂.rest (by simp)).trans ((R₃.mono (by simp)).trans
-        ((u₄.rest (by simp)).trans ((u₅.rest (by simp)).trans (u₆.rest (by simp))))))
+    have mem6 : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, m₃]; rfl
+    have R₆ : Rest [.r0, .r3, .r5, .lr] (s.withRegions (s.rd ++ [⟨State.addr src, n⟩]) [G.rK]) s₆ :=
+      (R₃.mono (by simp)).trans ((u₄.rest (by simp)).trans ((u₅.rest (by simp)).trans (u₆.rest (by simp))))
     have p0 : s₆.gpr .r0 = G.KB + BitVec.ofNat 32 (arr G.w j) := by
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), p₃]
-    have p4 : s₆.gpr .r4 = G.scr + BitVec.ofNat 32 o := by
-      rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), R₃.gpr _ (by decide),
-        u₂.other _ (by decide), v₁]
-    refine WP.mono (VG.Proof.Bignum.Arm.loadBE_ok s₆ (src := G.scr + BitVec.ofNat 32 o)
-      (dst := G.KB + BitVec.ofNat 32 (arr G.w j)) (n := G.w + 2) (k := n) hn0 (by omega) (by omega)
+    refine WP.mono (VG.Proof.Bignum.Arm.loadBE_ok s₆ (src := src)
+      (dst := G.KB + BitVec.ofNat 32 (arr G.w j)) (n := G.w + 2) (k := n) hn0 (by omega) (by omega) sfit
       (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega)
-      (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega)
-      ⟨G.rs o n, List.mem_append_left _ (by rw [R₆.rd]; simp), by rw [as]; exact Region.contains_self _ _⟩
+      ⟨⟨State.addr src, n⟩, List.mem_append_left _ (by rw [R₆.rd]; simp), Region.contains_self _ _⟩
       ⟨G.rK, by rw [R₆.wr]; exact List.mem_singleton_self _, by
         rw [ad]; exact Offset.contains_base (State.addr G.KB) (by omega) (by omega)⟩
-      (by rw [as, ad, e]; exact gi.sdisj (.inl (by omega)) (by omega) (by omega))
-      p0 p4 (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, p₃])
-      (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), R₃.gpr _ (by decide),
-        u₂.gpr, setWidth_ofNat16 (by omega)])
-      (by rw [u₆.other _ (by decide), u₅.gpr, dpVal, u₄.other _ (by decide), R₃.gpr _ (by decide),
-        u₂.other _ (by decide), R₁.gpr _ (by decide), hw.r9, BitVec.ofNat_add]; rfl)
+      (by rw [ad]; exact sep.sub_right hrk)
+      p0 (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), R₃.gpr _ (by decide)]; exact p4)
+      (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, p₃])
+      (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), R₃.gpr _ (by decide)]; exact p6)
+      (by rw [u₆.other _ (by decide), u₅.gpr, dpVal, u₄.other _ (by decide), R₃.gpr _ (by decide), hw.r9,
+        BitVec.ofNat_add]; rfl)
       (by rw [u₆.gpr])) ?_
     rintro t ⟨v, f, r⟩
     refine ⟨?_, ?_, (R₆.mono (by simp)).trans (r.mono (by simp))⟩
-    · rw [v, mem6, as, b]
+    · rw [v, mem6, b]
     · rw [← mem6]; exact f
   · intro t ⟨v, f, R⟩ hr hw' fK
     simp only [State.withRegions_mem] at v
@@ -134,8 +129,46 @@ theorem loadS_vp {L j o n : Nat} {bs : List Byte} (cert : Cert7 (loadS L j o n))
     have vw : num t.mem G.KB G.w j = Spec.Dsa.decodeBE bs := by
       rw [VG.Proof.Dsa.decodeBE_os2ip, ← v]
       exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 (by rw [v]; exact lt)
-    have R' : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r12, .lr] s t := ⟨R.gpr, hr, hw', R.sp⟩
+    have R' : Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := ⟨R.gpr, hr, hw', R.sp⟩
     exact ⟨⟨h.of_op R' fK hj k vw, x⟩, top_of_lt (by rw [v]; exact lt)⟩
+
+/-- Array `j` := the bytes `bs` that a claim puts at byte `o` of `scratch`. -/
+theorem loadS_vp {L j o n : Nat} {bs : List Byte} (cert : CertL j) (hL : L = G.pLen) (hj : j < nArrs) (hbs : (o, bs) ∈ c.cl)
+    (hn : bs.length = n) (hn0 : 0 < n) (hnw : n ≤ 4 * G.w) :
+    VP (St G c X) (loadS L j o n)
+      (fun σ t => St G { c with A := KU c.A j (Spec.Dsa.decodeBE bs), live := j :: c.live } X σ t ∧
+        Top G t.mem j) := by
+  subst hL
+  refine VP.seq (G := fun σ s => St G c X σ s ∧ s.gpr .r4 = G.scr + BitVec.ofNat 32 o ∧
+      s.gpr .r6 = BitVec.ofNat 32 n) (VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
+      (.block (scr 128 .r4 0 ++ [.movw .r6 (BitVec.ofNat 16 20)])), rfl⟩
+    (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.r8, h₂.1.r8])
+    fun σ s ⟨h, x⟩ => ?_) (loadAt_vp cert hj hn hn0 hnw fun σ s ⟨h, x⟩ => ?_)
+  · have big := h.gi.scrBig
+    have oK : o + n ≤ sK G.pLen := by have := h.clOk _ hbs; simpa [hn] using this
+    have w96 : G.w ≤ 96 := by have := h.lens; simp only [GP.w]; omega
+    refine scr_ok (d := .r4) (o := o) h.r8 rfl h.lens (by omega) fun s₁ v₁ R₁ M₁ => wp_movw fun s₂ u₂ =>
+      WP.block_nil ⟨⟨h.of_rest ((R₁.mono (by simp)).trans (u₂.rest (by simp)) : Rest [.r12, .r4, .r6] s s₂)
+        (by rw [u₂.mem, M₁]), x⟩, by
+        rw [u₂.other _ (by decide), v₁], by rw [u₂.gpr, setWidth_ofNat16 (by omega)]⟩
+  · have gi := h.gi
+    have big := gi.scrBig
+    have fit := gi.scrFit
+    have oK : o + n ≤ sK G.pLen := by have := h.clOk _ hbs; simpa [hn] using this
+    have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+    have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
+    have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega)
+    have b := h.sb _ hbs
+    simp only [hn] at b
+    rw [as]
+    refine ⟨(Covers.of_sub (rs' := [G.rScr]) fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact ⟨G.rScr, List.mem_singleton_self _, o, rfl, show o + n ≤ G.scrLen * 8 by omega⟩).trans
+      (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact List.mem_append_right _ inS),
+      ?_, ?_, b⟩
+    · show Region.Disjoint _ ⟨State.addr G.KB, _⟩
+      rw [gi.kaddr]; exact gi.sdisj (.inl oK) (by omega) big
+    · rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega
 
 end
 

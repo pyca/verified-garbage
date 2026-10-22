@@ -43,28 +43,16 @@ theorem pm1_eq (x q : Nat) :
 
 /-- The certificates of `pArith`'s pieces that depend on the geometry. -/
 structure PArithCerts (L Lq : Nat) : Prop where
-  ldQ : Cert7 (loadS L aQt sX L)
-  ldX : Cert7 (loadS L aX sX L)
-  ldD : Cert7 (loadS L aDv sQ Lq)
   st : Cert7 (storeBE L aP sPBE L)
 
 theorem pArithCerts_128 : PArithCerts 128 20 :=
-  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 128 aQt sX 128), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 128 aX sX 128), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 128 aDv sQ 20), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aP sPBE 128), rfl⟩⟩
+  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aP sPBE 128), rfl⟩⟩
 
 theorem pArithCerts_256 : PArithCerts 256 32 :=
-  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 256 aQt sX 256), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 256 aX sX 256), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 256 aDv sQ 32), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aP sPBE 256), rfl⟩⟩
+  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aP sPBE 256), rfl⟩⟩
 
 theorem pArithCerts_384 : PArithCerts 384 32 :=
-  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 384 aQt sX 384), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 384 aX sX 384), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (loadS 384 aDv sQ 32), rfl⟩,
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aP sPBE 384), rfl⟩⟩
+  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aP sPBE 384), rfl⟩⟩
 
 /-- The candidate p from X and q. -/
 abbrev pVal (x q : Nat) : Nat := x + 1 - x % (2 * q)
@@ -101,7 +89,7 @@ abbrev cD (c : Cfg) (G : GP) (x q : Nat) : Cfg :=
   { c with A := aD x q, live := [aQt, aRm, aDv, aX, aOne, aZero], KV := KU c.KV 16 G.w, kls := [16] }
 abbrev cM (c : Cfg) (x q : Nat) : Cfg := { c with A := aM x q, live := [aPm1, aQt, aOne], kls := [] }
 
-theorem pLoads_vp {xb qb : List Byte} (certs : PArithCerts G.pLen G.qLen)
+theorem pLoads_vp {xb qb : List Byte}
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
     (hx : (sX, xb) ∈ c.cl) (hxl : xb.length = G.pLen) (hqc : (sQ, qb) ∈ c.cl) (hql : qb.length = G.qLen) :
     VP (St G c X) (VG.Impl.Rsa.Arm.Keys.seqs [ksSetup, loadS G.pLen aQt sX G.pLen, loadS G.pLen aX sX G.pLen,
@@ -113,11 +101,14 @@ theorem pLoads_vp {xb qb : List Byte} (certs : PArithCerts G.pLen G.qLen)
       ⟨h.mono (fun o ho => ⟨ho, rfl⟩) (fun y hy => hy) (fun j hj => ⟨by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; rcases hj with rfl | rfl <;> decide, rfl⟩)
         (fun d hd => ⟨hd, rfl⟩), x⟩) ?_
-  refine VP.seq ((loadS_vp certs.ldQ rfl (by decide) (by exact hx) hxl (by omega) (by omega)).mono
+  refine VP.seq ((loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
+    (VG.Impl.Rsa.Arm.CrtValues.load aQt), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega) (by omega)).mono
     (fun _ _ h => h) fun _ _ h => h.1) ?_
-  refine VP.seq ((loadS_vp certs.ldX rfl (by decide) (by exact hx) hxl (by omega) (by omega)).mono
+  refine VP.seq ((loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
+    (VG.Impl.Rsa.Arm.CrtValues.load aX), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega) (by omega)).mono
     (fun _ _ h => h) fun _ _ h => h.1) ?_
-  exact loadS_vp certs.ldD rfl (by decide) (by exact hqc) hql (by omega) (by omega)
+  exact loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
+    (VG.Impl.Rsa.Arm.CrtValues.load aDv), rfl⟩ rfl (by decide) (by exact hqc) hql (by omega) (by omega)
 
 theorem pDivide_vp {x q : Nat} (hpos : 0 < q)
     (hlq : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384) :
@@ -224,7 +215,7 @@ theorem pArith_vp {xb qb : List Byte} (certs : PArithCerts G.pLen G.qLen)
   have hxlt : Spec.Dsa.decodeBE xb < 2 ^ (8 * G.pLen) := by
     have := VG.Proof.Dsa.decodeBE_lt xb
     rwa [hxl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-  exact VP.seq (pLoads_vp certs hlq hx hxl hqc hql) (VP.seq (pDivide_vp hpos (by omega))
+  exact VP.seq (pLoads_vp hlq hx hxl hqc hql) (VP.seq (pDivide_vp hpos (by omega))
     (VP.seq pPm1_vp (pTail_vp certs.st hpos (by omega) hxlt hrest)))
 
 end

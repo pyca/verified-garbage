@@ -75,14 +75,14 @@ theorem SS.ksWP (h : SS G σ c s) {code : Prog isa} (hn : code.noCalls = true) {
   rw [hr']; exact p
 
 /-- Code in the key working space, also reading the regions `rs`. -/
-theorem SS.ksWPr (h : SS G σ c s) {rs : List Region} (hrs : Covers rs s.wr) {code : Prog isa}
+theorem SS.ksWPr (h : SS G σ c s) {rs : List Region} (hrs : Covers rs (s.rd ++ s.wr)) {code : Prog isa}
     (hn : code.noCalls = true) {P : State → Prop} (hwp : WP isa code (s.withRegions (s.rd ++ rs) [G.rK]) P)
     {Q : State → Prop}
     (k : ∀ t, P (t.withRegions (s.rd ++ rs) [G.rK]) → t.rd = s.rd → t.wr = s.wr → Frame [G.rK] s.mem t.mem →
       Q t) :
     WP isa code s Q :=
   regionModel.wp_narrow (r := s.rd ++ rs) (w := [G.rK]) hwp
-    (Covers.append_left (Covers.append (Covers.refl _) hrs) h.kcov.2.right) h.kcov.2
+    (Covers.append_left (Covers.append_left (Covers.left (Covers.refl _)) hrs) h.kcov.2.right) h.kcov.2
     (Code.noFrames_of_noCalls hn) (.inl hn) fun _ s' _ hr hw' f p => k s' p hr hw' f
 
 /-- After a step in the key working space: its arrays and header words, and
