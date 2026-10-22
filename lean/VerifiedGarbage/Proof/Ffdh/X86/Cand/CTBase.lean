@@ -25,6 +25,10 @@ open VG.Proof.Bignum.X86.PublicRt (Both relCT_both)
 /-- `τA`, with the registers `rs` public too. -/
 def τP (rs : List Reg) : VG.X86.Taint.T := { regs := .ofList ([.edi, .esp] ++ rs), flags := false, argLen := 76 }
 
+/-- The taint analysis passes `p` with the registers `rs` public. -/
+abbrev PCheck (rs : List Reg) (p : Prog isa) : Prop :=
+  (VG.Taint.check taint (τP rs) p (VG.Taint.hintOf taint (τP rs) p)).isSome = true
+
 theorem τP_wf {rs : List Reg} {s : State} (A : ArgsOk s) : VG.X86.Taint.Wf (τP rs) s :=
   VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
     fun _ h => (List.not_mem_nil h).elim, fun _ => A, fun _ h => (List.not_mem_nil h).elim⟩
@@ -50,9 +54,25 @@ theorem agreeP {rs : List Reg} {s₁ s₂ : State} (R₁ : Run Ex base bytes len
 theorem pinned_both {rs : List Reg} {P F : State → Prop} {c : Prog isa}
     (hP : ∀ x, P x → Run Ex base bytes len args sp x)
     (hv : ∀ x y, P x → P y → ∀ r ∈ rs, x.gpr r = y.gpr r)
-    (hc : (VG.Taint.check taint (τP rs) c (VG.Taint.hintOf taint (τP rs) c)).isSome = true)
+    (hc : PCheck rs c)
     (hw : ∀ x, P x → WP isa c x F) : RelCT isa (Both P) c (Both F) :=
   relCT_both (RelCT.taint (A := taint) (τP rs) (fun _ _ h => agreeP (hP _ h.1) (hP _ h.2) (hv _ _ h.1 h.2)) hc) hw
+
+/-- Code the taint analysis checks with the registers `rs` public, which the runs pin, at the end. -/
+theorem pinned_end {rs : List Reg} {P : State → Prop} {c : Prog isa}
+    (hP : ∀ x, P x → Run Ex base bytes len args sp x)
+    (hv : ∀ x y, P x → P y → ∀ r ∈ rs, x.gpr r = y.gpr r)
+    (hc : PCheck rs c) :
+    RelCT isa (Both P) c fun _ _ => True :=
+  RelCT.taint (A := taint) (τP rs) (fun _ _ h => agreeP (hP _ h.1) (hP _ h.2) (hv _ _ h.1 h.2)) hc
+
+/-- Two postconditions of the same run. -/
+theorem wp_and {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁) (h₂ : WP isa c s Q₂) :
+    WP isa c s fun t => Q₁ t ∧ Q₂ t := by
+  obtain ⟨t₁, s₁, e₁, q₁⟩ := h₁
+  obtain ⟨t₂, s₂, e₂, q₂⟩ := h₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ e₂
+  exact ⟨_, _, e₁, q₁, q₂⟩
 
 /-- A branch whose condition the runs fix: only one side runs. -/
 theorem ite_fixed {P : State → Prop} {c : Cond} {b : Bool} (hb : ∀ x, P x → isa.eval c x = some b)

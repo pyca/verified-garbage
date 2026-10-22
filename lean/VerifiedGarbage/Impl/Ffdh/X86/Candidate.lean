@@ -234,11 +234,15 @@ def passed : List Instr :=
   [.mov .eax (.mem (sc cntOff)), .alu .sub .eax (.imm 1), .store (sc cntOff) .eax, .alu .cmp .eax (.imm 1),
     .mov .eax (.imm 0), .alu .adc .eax (.imm 0), .store (sc stOff) .eax]
 
+/-- `drawLoad`'s pointers: slot 13's in `ebx`, the witness's last octet's in `esi`, its count in `ecx`. -/
+def drawSetup : List Instr :=
+  ptrTo (sl 13) .ebx .edx ++ [.mov .esi (.mem (argAt 0 2)), .alu .add .esi (.mem (sc curOff)),
+    .mov .ecx (.mem (sc octOff)), .alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]
+
 /-- The witness from its octets at the cursor into slot 13, as `load` does, and the cursor past them. -/
 def drawLoad : Prog isa :=
   .seq (zero (sl 13) n1) <|
-  .seq (.block (ptrTo (sl 13) .ebx .edx ++ [.mov .esi (.mem (argAt 0 2)), .alu .add .esi (.mem (sc curOff)),
-    .mov .ecx (.mem (sc octOff)), .alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)])) <|
+  .seq (.block drawSetup) <|
   .seq reverseBytes (.block [.mov .eax (.mem (sc octOff)), .alu .add .eax (.mem (sc curOff)), .store (sc curOff) .eax])
 
 /-- One draw: the status 3 if too few octets are left; else the witness drawn and cut, and if
