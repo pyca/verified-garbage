@@ -279,7 +279,7 @@ def move67 : List Instr :=
 def last8 (vl : Bool) : Prog isa :=
   .seq (.block setup) (.seq (roundsFor vl) (.seq (.block (finishWith xorRow8 ++ move67 ++
     ([.mov .r9 (.reg .rcx), .alu .add .rsi (.imm 384), .alu .sub .rdx (.imm 384)] : List Instr)))
-  (.seq Avx2Tail.fromBuf (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
+  (.seq (Avx2Tail.fromBuf vl) (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
 
 /-- The kernel, with `vprold` if `vl`. -/
 def xorWith (vl : Bool) : Prog isa :=

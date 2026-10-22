@@ -139,11 +139,11 @@ theorem done_of {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) (hr9 : 
 
 /-- After the keystream of `n ≤ 256` bytes is in `buf`, written by the code
 from `s` (`hb`, `hf`): the data from there. -/
-theorem fromBufT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hn : eL s₀ - p ≤ 256) {s s₃ : State}
+theorem fromBufT_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hn : eL s₀ - p ≤ 256) {s s₃ : State}
     (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) (g₃ : s₃.gpr = s.gpr) (rd₃ : s₃.rd = s.rd)
     (wr₃ : s₃.wr = s.wr) (f₃ : Frame [⟨ebp s₀, 256⟩, win s₀ p 0] s.mem s₃.mem)
     (hb : ∀ k < eL s₀ - p, s₃.mem (ebp s₀ + BitVec.ofNat 64 k) = (KS s₀).getD (p + k) 0) :
-    WP isa fromBuf s₃ (Done s₀) := by
+    WP isa (fromBuf vl) s₃ (Done s₀) := by
   have hL := eL_lt s₀
   have hpL := h.le
   have nd : ∀ k < eL s₀, ∀ r ∈ [(⟨ebp s₀, 256⟩ : Region), win s₀ p 0],
@@ -153,7 +153,7 @@ theorem fromBufT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hn : eL s₀ - p 
     rcases hr with rfl | rfl
     · exact fun hc => hp.d_b _ (in_dR hk) (Region.sub_prefix (by omega) _ hc)
     · simp only [Region.Contains]; omega
-  refine fromBufY_ok hp (p := p) (n := eL s₀ - p) (by have := h.le; omega) hn (by rw [g₃]; exact h.rsi)
+  refine fromBufY_ok vl hp (p := p) (n := eL s₀ - p) (by have := h.le; omega) hn (by rw [g₃]; exact h.rsi)
     (by rw [g₃]; exact hr9) (by rw [g₃]; exact h.rdx) (rd₃.trans h.rd) (wr₃.trans h.wr)
     (fun r hr => by rw [g₃]; exact h.keep r hr) (fun k hk => ?_) (fun k hk => ?_) hb ?_
   · rw [f₃ _ (nd k (by omega)), h.data k (by omega), ite_eq_left hk]
@@ -184,7 +184,7 @@ theorem lastT_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL
   rw [ws, m₂] at f₃
   have hS : S0 s₂ = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, g₂, m₂, h.rdi]; exact h.cnt
   have hS' : S0 s = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, h.rdi]; exact h.cnt
-  refine fromBufT_ok hp hle h hr9 (g₃.trans g₂) (rd₃.trans (sm₂.rd.trans rd₁))
+  refine fromBufT_ok vl hp hle h hr9 (g₃.trans g₂) (rd₃.trans (sm₂.rd.trans rd₁))
     (wr₃.trans (sm₂.wr.trans wr₁)) f₃ fun k hk => ?_
   rw [show ebp s₀ + BitVec.ofNat 64 k = s₂.gpr .r9 + BitVec.ofNat 64 k by rw [g₂, hr9], b₃ k (by omega),
     hS, ks_at h.dvd (by omega) (by omega), Nat.add_sub_cancel_left, ← hS']
@@ -209,7 +209,7 @@ theorem last1T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : e
   rw [ws, m₂] at f₃
   have hS : S0 s₂ = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, g₂, m₂, h.rdi]; exact h.cnt
   have hS' : S0 s = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, h.rdi]; exact h.cnt
-  refine fromBufT_ok hp (by omega) h hr9 (g₃.trans g₂) (rd₃.trans (sm₂.rd.trans rd₁))
+  refine fromBufT_ok vl hp (by omega) h hr9 (g₃.trans g₂) (rd₃.trans (sm₂.rd.trans rd₁))
     (wr₃.trans (sm₂.wr.trans wr₁)) f₃ fun k hk => ?_
   rw [show ebp s₀ + BitVec.ofNat 64 k = s₂.gpr .r9 + BitVec.ofNat 64 k by rw [g₂, hr9], b₃ k (by omega),
     hS, ks_at h.dvd (by omega) (by omega), Nat.add_sub_cancel_left, ← hS']
@@ -242,7 +242,7 @@ theorem adv3_ok {s₀ : State} {p : Nat} (hge : 256 ≤ eL s₀ - p) {s : State}
 theorem last3_eq (vl : Bool) : last3 vl = .seq (.block setup3) (.seq (roundsS vl 3 10) (.seq (.block
     ((addIn3 ++ xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
       storeSetT .xmm8 .xmm9 .xmm10 .xmm11 0) ++
-      ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf)) := rfl
+      ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) (fromBuf vl))) := rfl
 
 theorem last3T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 257 ≤ eL s₀ - p) (hle : eL s₀ - p ≤ 384)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
@@ -282,7 +282,7 @@ theorem last3T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 2
     · have x := d₃ k hk
       rw [g₂, h.rsi, m₂, hS] at x
       rw [x, ks_at h.dvd (by omega) (by omega), Nat.add_sub_cancel_left, ← hS']
-  refine fromBufY_ok hp (p := p + 256) (n := eL s₀ - (p + 256)) (by omega) (by omega) e₁
+  refine fromBufY_ok vl hp (p := p + 256) (n := eL s₀ - (p + 256)) (by omega) (by omega) e₁
     (by rw [gk _ (by decide) (by decide)]; exact hr9) e₂ (by rw [rd₄, rd₃, rd₂, h.rd])
     (by rw [wr₄, wr₃, wr₂, h.wr]) (fun r hr => ?_) (fun k hk => ?_) (fun k hk => ?_) (fun k hk => ?_) ?_
   · obtain ⟨_, b, c⟩ := calleeSaved_ne hr
