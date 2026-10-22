@@ -30,9 +30,10 @@ and only the rest with those calls:
   256 bytes of the rest encrypted with it (`Tail.rest`, below);
 * the rest of the data is encrypted (`vg_chacha20_xor`, from where the
   chunks, or `Tail.rest`, stopped) and absorbed (from `x22`), in the order the
-  direction needs; when decrypting more than `Pad.threshold` bytes, the
-  stream encrypts eight blocks of zeros at `ctx[768, 1280)` instead, which
-  the rest is XORed with (`openRest`).
+  direction needs; when decrypting more than `Pad.threshold` bytes, or
+  between 64 and 256 that are not whole blocks, the stream encrypts eight or
+  four blocks of zeros at `ctx[768, 1280)` instead, which the rest is XORed
+  with (`openRest`).
 
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
 prologue saved them, and `restore` restores them.
@@ -171,17 +172,36 @@ def cryptRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128])
     (.call c.name c.code)
 
-/-- The rest when decrypting (`x22`, `x23` bytes, fewer than 512): above
-`Pad.threshold`, the keystream of the eight blocks from the stream's counter
-at `ctx[768, 1280)` (as `Pad.cryptPad`, but from the counter the chunks left),
-the data XORed with it, and `ctx[768, 1280)` zeroed again; otherwise
-`cryptRest`. -/
+/-- The keystream of `n` bytes (256: four blocks; 512: eight) from the
+stream's counter at `ctx[768, 768 + n)`, the data XORed with it, and
+`ctx[768, 1280)` zeroed before and after (as `Pad.cryptPad`, but from the
+counter the chunks left). -/
+def padRest (c : XorCallee) (n : Nat) : Prog isa :=
+  .seq (.block (Pad.zero ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768, .movz .x .x2 (BitVec.ofNat 16 n) 0,
+      .addImm .x .x3 .x21 128]))
+    (.seq (.call c.name c.code) (.seq (Short.xorKsFrom 768) (.block Pad.zero)))
+
+/-- `x9 = 0` iff `1 ≤ x23 ≤ 2^k`: `(x23 - 1) >> k`. -/
+def atMost (k : Nat) : List Instr := [.subImm .x .x9 .x23 1, .lsr .x .x9 .x9 k]
+
+/-- The rest when decrypting (`x22`, `x23` bytes, fewer than 512). Above
+`Pad.threshold`, through the keystream of eight blocks (`padRest c 512`).
+Otherwise with `cryptRest`, unless the rest is between 64 and 256 bytes and
+not whole blocks: there the stream (`Small.lean`) would compute two blocks,
+or a partial last block after its vector kernel, with the scalar block
+function, and the keystream of four blocks (`padRest c 256`) is faster.
+With a single scalar block (at most 64 bytes, or 257 to 320) the stream is
+the faster. -/
 def openRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x9 .x23 (511 - Pad.threshold c.sve), .lsr .x .x9 .x9 9])
-    (.ite (.zero .x .x9) (cryptRest c)
-      (.seq (.block (Pad.zero ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768,
-          .movz .x .x2 512 0, .addImm .x .x3 .x21 128]))
-        (.seq (.call c.name c.code) (.seq (Short.xorKsFrom 768) (.block Pad.zero)))))
+    (.ite (.zero .x .x9)
+      (.seq (.block [.lsl .x .x9 .x23 58])
+        (.ite (.zero .x .x9) (cryptRest c)
+          (.seq (.block (atMost 6))
+            (.ite (.zero .x .x9) (cryptRest c)
+              (.seq (.block (atMost 8))
+                (.ite (.zero .x .x9) (padRest c 256) (cryptRest c)))))))
+      (padRest c 512))
 
 /-- `sealStitched` but for the tag. -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
