@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptCT
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptCT
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
@@ -12,10 +12,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
@@ -33,6 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Impl.Sm4Gcm.X86_64
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_stream_encrypt` and `_decrypt` are constant time

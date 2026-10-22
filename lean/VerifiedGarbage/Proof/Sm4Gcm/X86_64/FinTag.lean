@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Tag
-import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_seal`

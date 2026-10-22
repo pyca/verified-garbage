@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Tag
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Tag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 
@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
 
 /-!
 # SM4-GCM on x86-64: `tag` and `finTag` in two runs

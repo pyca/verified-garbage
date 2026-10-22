@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Init
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Impl.Sm4Gcm.X86_64
 meta import VerifiedGarbage.TCB.X86_64.Isa
 meta import VerifiedGarbage.TCB.X86_64.State
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_init` is constant time

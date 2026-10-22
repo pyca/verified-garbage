@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
-public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Init
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
@@ -14,6 +14,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Sm4Gcm.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Spec.Sm4.Gcm
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_init`

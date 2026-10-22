@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
@@ -22,6 +22,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # SM4-GCM on x86-64: `crypt` in two runs

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

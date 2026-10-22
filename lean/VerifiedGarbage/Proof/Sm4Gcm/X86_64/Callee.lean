@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Verified
-public import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Sm4Gcm.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
@@ -13,6 +13,13 @@ import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86_64.Lit
+public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # SM4-GCM on x86-64: the SM4 functions called

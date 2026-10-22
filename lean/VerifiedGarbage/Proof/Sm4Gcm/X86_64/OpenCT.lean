@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.OneCT
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Open
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -27,6 +25,10 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Impl.Sm4Gcm.X86_64
 meta import VerifiedGarbage.TCB.X86_64.Isa
 meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_open` is constant time

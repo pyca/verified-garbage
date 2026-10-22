@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Sm4Gcm.X86_64.StreamVerify
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.FinTag
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.TagCT
@@ -25,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Impl.Sm4Gcm.X86_64
 meta import VerifiedGarbage.TCB.X86_64.Isa
 meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
+meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
 
 /-!
 # SM4-GCM on x86-64: `stream_finish` and `stream_verify` are constant time

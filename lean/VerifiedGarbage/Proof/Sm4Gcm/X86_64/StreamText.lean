@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
-public import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.Gcm.Compose
 
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # SM4-GCM on x86-64: the text of `stream_encrypt` and `stream_decrypt`
