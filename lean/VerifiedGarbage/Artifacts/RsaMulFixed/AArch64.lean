@@ -102,8 +102,8 @@ public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-! # Fixed-index RSA Montgomery products on AArch64
 
-The products DSA repeats (`MulFixedCall.shared`), each shared by one
-helper that runs the eight-limb product. -/
+The products DSA and RSA's CRT repeat (`MulFixedCall.shared`), each shared
+by one helper that runs the eight-limb product. -/
 
 @[expose] public section
 
@@ -128,6 +128,10 @@ def artifacts : List Artifact := [
   helper ⟨6, 6, 5⟩ (MulFixedHelper.verified Mont.productEight ⟨6, 6, 5⟩),
   helper ⟨6, 6, 7⟩ (MulFixedHelper.verified Mont.productEight ⟨6, 6, 7⟩),
   helper ⟨1, 1, 4⟩ (MulFixedHelper.verified Mont.productEight ⟨1, 1, 4⟩),
-  helper ⟨6, 5, 1⟩ (MulFixedHelper.verified Mont.productEight ⟨6, 5, 1⟩)]
+  helper ⟨6, 5, 1⟩ (MulFixedHelper.verified Mont.productEight ⟨6, 5, 1⟩),
+  helper ⟨5, 1, 7⟩ (MulFixedHelper.verified Mont.productEight ⟨5, 1, 7⟩),
+  helper ⟨1, 1, 6⟩ (MulFixedHelper.verified Mont.productEight ⟨1, 1, 6⟩),
+  helper ⟨4, 4, 7⟩ (MulFixedHelper.verified Mont.productEight ⟨4, 4, 7⟩),
+  helper ⟨6, 4, 6⟩ (MulFixedHelper.verified Mont.productEight ⟨6, 4, 6⟩)]
 
 end VG.Artifacts.RsaMulFixed.AArch64
