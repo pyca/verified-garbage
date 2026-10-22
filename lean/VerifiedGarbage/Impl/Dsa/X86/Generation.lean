@@ -270,9 +270,10 @@ def pHash (j : Nat) : Prog isa := seqs [
   addBE g.qLen,
   hash g.H g.iv g.qLen (sX + g.pLen - (j + 1) * g.qLen)]
 
-/-- `X`: the hashes, the top bit set. -/
+/-- `X`: the hashes, the top bit set, and the low bit, which the reduction
+modulo `2 q` discards, as q's shaping does. -/
 def pX : Prog isa :=
-  seqs ((List.range (g.count + 1)).map g.pHash ++ [.block (orByte sX 0x80)])
+  seqs ((List.range (g.count + 1)).map g.pHash ++ [.block (orByte sX 0x80 ++ orByte (sX + g.pLen - 1) 1)])
 
 /-- A counter's candidate: `fP` := 0 if the witnesses ran out, 1 if it is a
 probable prime, else as it was. -/

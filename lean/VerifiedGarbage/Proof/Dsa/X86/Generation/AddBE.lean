@@ -81,9 +81,6 @@ structure AddInv (s : State) (base : Addr) (size o n c : Nat) (m : Nat) (t : Sta
   keeps : Keeps [.eax, .ecx, .edx, .esi] s t
   syms : t.syms = s.syms
 
-theorem encodeBE_length' (n x : Nat) : (Spec.Dsa.encodeBE n x).length = n := by
-  simp [Spec.Dsa.encodeBE]
-
 /-- One byte: the byte with the carry, and the carry on. -/
 theorem addStep_ok {s : State} {base : Addr} {size o n c m : Nat} (hs : Scr s base size)
     (ho : o + n ≤ size) {t : State} (I : AddInv s base size o n c m t) :
@@ -103,7 +100,7 @@ theorem addStep_ok {s : State} {base : Addr} {size o n c m : Nat} (hs : Scr s ba
   have hBl := VG.Proof.Bignum.bytesAt_length s.mem (off base o) n
   generalize hB : Spec.Rsa.bytesAt s.mem (off base o) n = B at htake hhigh hBm hBl ⊢
   generalize hR : Spec.Dsa.encodeBE n (Spec.Dsa.decodeBE B + c) = R at htake hhigh ⊢
-  have hRl : R.length = n := by rw [← hR, encodeBE_length']
+  have hRl : R.length = n := by rw [← hR, encodeBE_length]
   generalize s.mem (off base (o + m)) = b at hbt hBm
   have hbn := b.isLt
   have hsum : b.toNat + c' < 2 ^ 32 := by omega
@@ -115,11 +112,11 @@ theorem addStep_ok {s : State} {base : Addr} {size o n c m : Nat} (hs : Scr s ba
     rw [htake, hBm, h]
   have hRm : R.take m = Spec.Dsa.encodeBE m (Spec.Dsa.decodeBE (B.take m) + (b.toNat + c') / 256) := by
     rw [show R.take m = (R.take (m + 1)).take m by rw [List.take_take, Nat.min_eq_left (by omega)], hR1,
-      List.take_left' (encodeBE_length' _ _)]
+      List.take_left' (encodeBE_length _ _)]
   have hRg : R.getD m 0 = BitVec.ofNat 8 (b.toNat + c') := by
     rw [show R.getD m 0 = (R.take (m + 1)).getD m 0 by
       simp only [List.getD_eq_getElem?_getD, List.getElem?_take, show m < m + 1 by omega, ↓reduceIte], hR1,
-      List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [encodeBE_length']), encodeBE_length',
+      List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [encodeBE_length]), encodeBE_length,
       Nat.sub_self, List.getElem?_cons_zero, Option.getD_some]
   -- The instructions.
   simp only [addStep]
@@ -221,7 +218,7 @@ theorem addBE_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     · rw [u₀.gpr, Nat.sub_add_cancel hn]
     · rw [u₀.other _ (by decide), u₀.other _ (by decide), hedx, Nat.add_sub_assoc hn]
     · rw [u₀.other _ (by decide), hecx]
-    · rw [Nat.sub_add_cancel hn, List.take_of_length_le (by rw [encodeBE_length']),
+    · rw [Nat.sub_add_cancel hn, List.take_of_length_le (by rw [encodeBE_length]),
         List.take_of_length_le (by omega)]
 
 end VG.Proof.Dsa.X86.Generation
