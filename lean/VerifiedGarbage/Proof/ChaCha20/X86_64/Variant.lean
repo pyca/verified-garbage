@@ -161,9 +161,10 @@ def avx512 : XorImpl where
 
 /-- `vg_chacha20_xor_avx512`, for CPUs with AVX-512 IFMA too: its callers
 that also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call
-`vg_poly1305_blocks_ifma`. -/
+`vg_poly1305_blocks_ifma`, and `vg_chacha20_apply` computes the block of its
+last bytes with AVX-512VL, which those CPUs have (`Callee.ifma`). -/
 def ifma : XorImpl where
-  callee := .avx512
+  callee := .ifma
   fold_le := by decide
   stack := 16
   stack_le := by decide
@@ -237,6 +238,12 @@ theorem small_callee (v : XorImpl) : v.small.callee = v.callee.small := by
   by_cases h : v.callee.vl = true
   · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_true, asAvx2]
   · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_false, Bool.false_eq_true]; rfl
+
+/-- The CPU features the instance of `vg_chacha20_apply` calling `v`
+requires: `v`'s, and with the block of the last bytes inline
+(`Callee.vb`), AVX2 and AVX-512VL, which its `ymm` code with `vprold` needs. -/
+def applyFeatures (v : XorImpl) : List String :=
+  if v.callee.vb then (v.features ++ ["avx2", "avx512f", "avx512vl"]).eraseDups else v.features
 
 end XorImpl
 

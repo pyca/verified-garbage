@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.BlockVL
 
 /-!
 # Streaming ChaCha20: x86-64 implementation
@@ -27,8 +28,9 @@ XORs the bytes left in the buffered block (the last `left % 64`, as many as
 `len` asks for), then the whole blocks that follow with `vg_chacha20_xor`
 (an implementation `x` of it: `apply` is generic over them), advancing the
 counter, and finally, if bytes remain, computes the next block into the
-buffer with `vg_chacha20_block`, advances the counter and XORs its first
-bytes. `rbx` holds the state, `rbp` the data not yet processed and `r12` its
+buffer with `vg_chacha20_block` (or, for an implementation for CPUs with
+AVX-512VL, inline with it: `BlockVL.code`), advances the counter and XORs its
+first bytes. `rbx` holds the state, `rbp` the data not yet processed and `r12` its
 length throughout, which the callees preserve.
 
 The branches are on the length and the number of bytes left only, and every
@@ -126,12 +128,18 @@ def tailXor : Prog isa :=
     .mov .rdx (.reg .r12)])
     xorBytes
 
+/-- The block function of the state at `rdi` into the buffer at `rsi`:
+inline with AVX-512VL (`BlockVL.code`) if `x` is for CPUs with it, otherwise
+by `vg_chacha20_block`. -/
+def tailBlock (x : Callee) : Prog isa :=
+  if x.vb then BlockVL.code else .call "vg_chacha20_block" block
+
 /-- The last bytes, if any: the next block into the buffer, the counter
 advanced, and `r12` bytes of the block XORed. -/
-def part3 : Prog isa :=
+def part3 (x : Callee) : Prog isa :=
   .seq (.block [.alu .test .r12 (.reg .r12)])
   (.ite .e (.block [])
-    (.seq (.block tailArgs) (.seq (.call "vg_chacha20_block" block) tailXor)))
+    (.seq (.block tailArgs) (.seq (tailBlock x) tailXor)))
 
 /-- The bytes left stored, our caller's registers restored, and 1 returned. -/
 def finish : List Instr :=
@@ -142,6 +150,6 @@ def finish : List Instr :=
 def apply (x : Callee) : Prog isa :=
   .seq (.block check)
   (.ite .b (.block [.mov32 .rax (.imm 0)])
-    (.seq part1 (.seq (part2 x) (.seq part3 (.block finish)))))
+    (.seq part1 (.seq (part2 x) (.seq (part3 x) (.block finish)))))
 
 end VG.Impl.ChaCha20.X86_64.Stream

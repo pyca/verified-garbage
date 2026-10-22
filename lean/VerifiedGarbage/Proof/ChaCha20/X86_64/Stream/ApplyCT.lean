@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Impl.ChaCha20.X86_64.BlockVL
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.BlockVL
 
 /-!
 # Streaming ChaCha20 on x86-64: `apply`, constant time
@@ -180,13 +182,14 @@ theorem TArgs.covers {s₀ s : State} (h : TArgs s₀ s) :
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨stR s₀, by simp, 64, rfl, show 64 + 256 ≤ 768 by decide⟩
 
-theorem TArgs.call {s₀ s : State} (hp : APre s₀) (h : TArgs s₀ s) :
-    WP isa (.call "vg_chacha20_block" Impl.ChaCha20.X86_64.block) s (TAfter s₀) := by
+theorem TArgs.call {s₀ s : State} (x : Impl.ChaCha20.X86_64.Callee) (hp : APre s₀) (h : TArgs s₀ s) :
+    WP isa (tailBlock x) s (TAfter s₀) := by
   have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega)
   have hb8 : below (s.gpr .rsp) 8 = below (s₀.gpr .rsp) 8 := by rw [h.rsp]
-  refine block_call h.rdi h.rsi (Offset.disjoint_base _ (by omega) (by omega))
+  refine tailBlock_call x h.rdi h.rsi (Offset.disjoint_base _ (by omega) (by omega))
     (by rw [hb8]; exact (hp.stk_st.sub_left (below8_stk s₀)).sub_right (bufR_sub s₀))
     (by rw [hb8]; exact (hp.stk_st.sub_left (below8_stk s₀)).sub_right stS) h.covers.1 h.covers.2
+    (by rw [h.wr]; simp)
     fun s' _ _ cs _ _ _ => ⟨by rw [cs .rbx (by simp [calleeSaved]), h.rbx],
       by rw [cs .rbp (by simp [calleeSaved]), h.rbp], by rw [cs .r12 (by simp [calleeSaved]), h.r12],
       by rw [cs .rsp (by simp [calleeSaved]), h.rsp]⟩
@@ -247,8 +250,9 @@ theorem part2_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
       · rw [hx.keep .rsp (by simp), hy.keep .rsp (by simp), h.hrsp]) (by taint_decide))
     fun x y ⟨⟨hx, hy⟩, _⟩ => ⟨args_ok h.pa hx, args_ok h.pb hy⟩
 
-theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3 a x ∧ Q3 b y := by
-  refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨part3_ok h.pa hx, part3_ok h.pb hy⟩
+theorem part3_rel (c : Impl.ChaCha20.X86_64.Callee) :
+    RelCT isa (fun x y => Q2 a x ∧ Q2 b y) (part3 c) fun x y => Q3 a x ∧ Q3 b y := by
+  refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨part3_ok c h.pa hx, part3_ok c h.pb hy⟩
   rw [part3_eq]
   refine RelCT.seq (R := fun (x y : State) => (Q2 a x ∧ x.zf = some (decide (T a = 0))) ∧
       (Q2 b y ∧ y.zf = some (decide (T b = 0))))
@@ -268,6 +272,17 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
       · rw [hx.rbp, hy.rbp, h.hdp, h.eqH, h.eqNB]
       · rw [hx.r12, hy.r12, h.eqT]
       · rw [hx.rsp, hy.rsp, h.hrsp]) (by taint_decide))
+  by_cases hv : c.vb = true
+  · have e : tailBlock c = Impl.ChaCha20.X86_64.BlockVL.code := by simp only [tailBlock, hv, ite_true]
+    refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨hx.call c h.pa, hy.call c h.pb⟩
+    rw [e]
+    exact taintRegs [.rdi, .rsi] (fun x y ⟨hx, hy⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [hx.rdi, hy.rdi, h.hst]
+      · rw [hx.rsi, hy.rsi, h.hst]) (by taint_decide)
+  have e : tailBlock c = .call "vg_chacha20_block" Impl.ChaCha20.X86_64.block := by
+    simp only [tailBlock, hv, Bool.false_eq_true, ite_false]
   have hP : ∀ x y : State, TArgs a x ∧ TArgs b y → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
       Proof.ChaCha20.blockX86_64.pre (x.callEntry.withRegions rd₁ wr₁) ∧
       Proof.ChaCha20.blockX86_64.pre (y.callEntry.withRegions rd₂ wr₂) ∧
@@ -281,8 +296,9 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
       callEntry_gpr' x (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' y (by decide : Reg.rdi ≠ .rsp),
       callEntry_gpr' y (by decide : Reg.rsi ≠ .rsp), hx.rdi, hx.rsi, hy.rdi, hy.rsi, h.hst]
     exact ⟨trivial, trivial⟩
-  exact RelCT.post (RelCT.callEx Proof.ChaCha20.X86_64.block_correct Proof.ChaCha20.X86_64.block_ct hP)
-    fun x y ⟨hx, hy⟩ => ⟨hx.call h.pa, hy.call h.pb⟩
+  refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨hx.call c h.pa, hy.call c h.pb⟩
+  rw [e]
+  exact RelCT.callEx Proof.ChaCha20.X86_64.block_correct Proof.ChaCha20.X86_64.block_ct hP
 
 theorem apply_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
     RelCT isa (fun x y => x = a ∧ y = b) (apply v.callee) fun _ _ => True := by
@@ -293,7 +309,7 @@ theorem apply_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
   · exact RelCT.of_false fun x y ⟨⟨hx, _⟩, he⟩ => by simp [eval, hx.cf, hlt] at he
   have hle : L a ≤ N a := by omega
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
-    (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h) ?_))
+    (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h v.callee) ?_))
   exact taintRegs [.rbx, .rsp] (fun x y ⟨hx, hy⟩ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -313,13 +329,15 @@ theorem apply_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 theorem apply_mxcsr (v : Proof.ChaCha20.X86_64.XorImpl) :
     (apply v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [apply, part2, Code.allInstrs, v.mxcsr, Bool.and_true, Bool.true_and]
-  lit_decide
+  cases hv : v.callee.vb <;>
+    simp only [apply, part2, part3, tailBlock, hv, Bool.false_eq_true, ite_true, ite_false, Code.allInstrs,
+      v.mxcsr, Bool.and_true, Bool.true_and] <;> lit_decide
 
 theorem apply_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (apply v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [apply, part2, Code.all, v.spSafe, Bool.and_true]
-  lit_decide
+  cases hv : v.callee.vb <;>
+    simp only [apply, part2, part3, tailBlock, hv, Bool.false_eq_true, ite_true, ite_false, Code.all,
+      v.spSafe, Bool.and_true] <;> lit_decide
 
 theorem apply_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : Proof.ChaCha20.applyX86_64.pre s) :
     ∃ t s', Exec isa (apply v.callee) s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.applyX86_64.post s s' := by

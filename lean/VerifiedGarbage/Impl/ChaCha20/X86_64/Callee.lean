@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 
 /-!
 # The implementations of `vg_chacha20_xor` on x86-64
@@ -39,17 +40,23 @@ structure Callee where
   (`vg_chacha20_xor_avx512vl`), for ChaCha20-Poly1305's AVX2 code to call
   for short data in its place (`Callee.small`). -/
   vl : Bool := false
+  /-- Whether the CPUs it is for have AVX-512VL, so that `vg_chacha20_apply`
+  computes the block of its last bytes inline in `ymm` registers
+  (`BlockVL.code`) rather than calling `vg_chacha20_block`. -/
+  vb : Bool := false
 
 /-- The baseline computes one block at a time: nothing to gain. -/
-def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4, false⟩
+def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4, false, false⟩
 /-- Up to 512 bytes in one call: up to 384 in one computation of at most six
 blocks (`Avx2Tail.last3`), 512 in one of eight (the loop). -/
-def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5, false⟩
+def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5, false, false⟩
 /-- Up to 1024 bytes in one computation of sixteen blocks (the loop, or
 `Avx512.last16`), as are the rest of the data's after the first call. -/
-def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6, false⟩
+def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6, false, false⟩
 /-- As `avx512`, with fewer than 513 bytes in `ymm` registers (`Avx512VL.xorBy`). -/
-def Callee.avx512vl : Callee := ⟨"vg_chacha20_xor_avx512vl", Avx512VL.xorBy, 960, 1024, 6, true⟩
+def Callee.avx512vl : Callee := ⟨"vg_chacha20_xor_avx512vl", Avx512VL.xorBy, 960, 1024, 6, true, true⟩
+/-- As `avx512`, for CPUs with AVX512_IFMA, which have AVX-512VL. -/
+def Callee.ifma : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6, false, true⟩
 
 /-- The implementation ChaCha20-Poly1305's AVX-512 instances without IFMA call
 from their AVX2 code for short data, as the AVX2 instances call theirs

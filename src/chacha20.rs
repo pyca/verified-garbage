@@ -41,8 +41,11 @@
 //! CPUs with SVE2 run `vg_chacha20_apply_sve2` instead, the same code with
 //! each XOR and rotation of the AdvSIMD blocks one SVE2 XAR
 //! (`vg_chacha20_xor_sve2`).
-//! On every target, the keystream of a partial block, which the streaming
-//! state buffers, comes from the scalar `vg_chacha20_block`.
+//! The keystream of a partial block, which the streaming state buffers,
+//! comes from the scalar `vg_chacha20_block`, but for x86-64 CPUs with
+//! AVX-512VL: `vg_chacha20_apply_avx512vl` and `vg_chacha20_apply_ifma`
+//! compute it inline, the rows of the state in `ymm` registers with each
+//! rotation one `vprold`, which takes less time.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -103,8 +106,9 @@ pub(crate) enum Backend {
 }
 
 /// AVX512_IFMA, which `vg_chacha20_apply_ifma` (the code of
-/// `vg_chacha20_apply_avx512`) does not use: it is chosen on the CPUs whose
-/// ChaCha20-Poly1305 runs its `_ifma` instances, which need it.
+/// `vg_chacha20_apply_avx512` with the block of a partial block computed with
+/// AVX-512VL) does not use: it is chosen on the CPUs whose ChaCha20-Poly1305
+/// runs its `_ifma` instances, which need it.
 #[cfg(target_arch = "x86_64")]
 const IFMA: Features = Features::of(&["avx512ifma"]);
 
@@ -509,10 +513,10 @@ mod tests {
             assert_eq!(Backend::select(avx2), Backend::Avx2);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
             assert_eq!(Backend::select(avx512vl), Backend::Avx512Vl);
-            assert_eq!(VG_CHACHA20_APPLY_IFMA_FEATURES, avx512);
+            assert_eq!(VG_CHACHA20_APPLY_IFMA_FEATURES, avx512vl);
             assert_eq!(
                 Backend::select(Features::all(&[avx512, super::IFMA])),
-                Backend::Ifma
+                Backend::Avx512
             );
             assert_eq!(
                 Backend::select(Features::all(&[avx512vl, super::IFMA])),

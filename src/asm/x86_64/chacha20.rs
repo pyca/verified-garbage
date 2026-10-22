@@ -22537,7 +22537,328 @@ je 212f
 mov rdi, rbx
 mov rsi, rbx
 add rsi, 64
-call {vg_chacha20_block}
+mov r9, rsi
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vbroadcasti128 ymm1, XMMWORD PTR [rdi+16]
+vbroadcasti128 ymm2, XMMWORD PTR [rdi+32]
+vbroadcasti128 ymm3, XMMWORD PTR [rdi+48]
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vbroadcasti128 ymm10, XMMWORD PTR [rdi]
+vpaddd ymm0, ymm0, ymm10
+vbroadcasti128 ymm10, XMMWORD PTR [rdi+16]
+vpaddd ymm1, ymm1, ymm10
+vbroadcasti128 ymm10, XMMWORD PTR [rdi+32]
+vpaddd ymm2, ymm2, ymm10
+vbroadcasti128 ymm10, XMMWORD PTR [rdi+48]
+vpaddd ymm3, ymm3, ymm10
+vperm2i128 ymm10, ymm0, ymm1, 32
+vmovdqu YMMWORD PTR [r9], ymm10
+vperm2i128 ymm10, ymm2, ymm3, 32
+vmovdqu YMMWORD PTR [r9+32], ymm10
+vperm2i128 ymm10, ymm0, ymm1, 49
+vmovdqu YMMWORD PTR [r9+64], ymm10
+vperm2i128 ymm10, ymm2, ymm3, 49
+vmovdqu YMMWORD PTR [r9+96], ymm10
+vzeroupper
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22589,12 +22910,11 @@ mov eax, 0
 ret
 .p2align 6",
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
 
 /// The CPU features `vg_chacha20_apply_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
+pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512vl"]);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
@@ -22608,7 +22928,7 @@ pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx512f` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ifma(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -22703,7 +23023,328 @@ je 212f
 mov rdi, rbx
 mov rsi, rbx
 add rsi, 64
-call {vg_chacha20_block}
+mov r9, rsi
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vbroadcasti128 ymm1, XMMWORD PTR [rdi+16]
+vbroadcasti128 ymm2, XMMWORD PTR [rdi+32]
+vbroadcasti128 ymm3, XMMWORD PTR [rdi+48]
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 57
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 147
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 16
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 12
+vpaddd ymm0, ymm0, ymm1
+vpxor ymm3, ymm3, ymm0
+vprold ymm3, ymm3, 8
+vpaddd ymm2, ymm2, ymm3
+vpxor ymm1, ymm1, ymm2
+vprold ymm1, ymm1, 7
+vpshufd ymm1, ymm1, 147
+vpshufd ymm2, ymm2, 78
+vpshufd ymm3, ymm3, 57
+vbroadcasti128 ymm10, XMMWORD PTR [rdi]
+vpaddd ymm0, ymm0, ymm10
+vbroadcasti128 ymm10, XMMWORD PTR [rdi+16]
+vpaddd ymm1, ymm1, ymm10
+vbroadcasti128 ymm10, XMMWORD PTR [rdi+32]
+vpaddd ymm2, ymm2, ymm10
+vbroadcasti128 ymm10, XMMWORD PTR [rdi+48]
+vpaddd ymm3, ymm3, ymm10
+vperm2i128 ymm10, ymm0, ymm1, 32
+vmovdqu YMMWORD PTR [r9], ymm10
+vperm2i128 ymm10, ymm2, ymm3, 32
+vmovdqu YMMWORD PTR [r9+32], ymm10
+vperm2i128 ymm10, ymm0, ymm1, 49
+vmovdqu YMMWORD PTR [r9+64], ymm10
+vperm2i128 ymm10, ymm2, ymm3, 49
+vmovdqu YMMWORD PTR [r9+96], ymm10
+vzeroupper
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22755,7 +23396,6 @@ mov eax, 0
 ret
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
 

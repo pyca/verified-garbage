@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Stream
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.One
+import VerifiedGarbage.Proof.ChaCha20.Keystream
+import VerifiedGarbage.Proof.ChaCha20.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.BlockVL
 
 /-!
 # Streaming ChaCha20 on x86-64: the calls
 
 Untrusted: everything here is checked by Lean. The calls of
 `vg_chacha20_block` and of an implementation of `vg_chacha20_xor`, from their
-proofs of correctness (with `WP.call`), as ChaCha20-Poly1305 makes them.
+proofs of correctness (with `WP.call`), as ChaCha20-Poly1305 makes them; and
+the block function inline with AVX-512VL (`BlockVL.code`), with what the call
+of `vg_chacha20_block` guarantees (`blockVL_call`).
 -/
 
 @[expose] public section
@@ -58,6 +68,115 @@ theorem block_call {s : State} {S B : Addr} (hrdi : s.gpr .rdi = S) (hrsi : s.gp
       callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), hrdi,
       hrsi, hm₂] at hpost
     rwa [stateAt_frame (callEntry_frame s) (by simpa using hsS.symm)] at hpost
+
+/-- A 16-word state in memory from its serialized bytes. -/
+theorem stateAt_of_serialize {m : Mem} {p : Addr} {X : Proof.ChaCha20.CState}
+    (h : ∀ k < 64, m (p + BitVec.ofNat 64 k) = (Spec.ChaCha20.serialize X).getD k 0) : stateAt m p = X := by
+  apply Vector.ext; intro j hj
+  simp only [stateAt, Vector.getElem_ofFn]
+  refine Proof.ChaCha20.word_ext fun i hi => ?_
+  rw [← Mem.readW_byte m _ hi, Offset.add_add, h _ (by omega), Proof.ChaCha20.serialize_getD _ (by omega)]
+  simp only [show (4 * j + i) / 4 = j by omega, show (4 * j + i) % 4 = i by omega]
+
+/-- `vzeroupper` keeps all but the vector registers' upper bits. -/
+theorem vzu_ok (s : State) : WP isa (.block [.vop .vzeroupper]) s fun t =>
+    t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+/-- The block function inline with AVX-512VL, where the 768-byte streaming
+state at `S` may be written: it guarantees what the call of
+`vg_chacha20_block` does (`block_call`), with the buffer at `S + 64`. -/
+theorem blockVL_call {s : State} {S : Addr} (hrdi : s.gpr .rdi = S) (hrsi : s.gpr .rsi = S + BitVec.ofNat 64 64)
+    (hR : (⟨S, 768⟩ : Region) ∈ s.wr)
+    {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame [⟨S + BitVec.ofNat 64 64, 256⟩, below (s.gpr .rsp) 8] s.mem s'.mem →
+      s'.gpr .rsi = S + BitVec.ofNat 64 64 →
+      stateAt s'.mem (S + BitVec.ofNat 64 64) = Spec.ChaCha20.block (stateAt s.mem S) → Q s') :
+    WP isa Impl.ChaCha20.X86_64.BlockVL.code s Q := by
+  have h₁ : WP isa (.block [.mov .r9 (.reg .rsi)]) s fun s₁ => s₁.gpr .r9 = S + BitVec.ofNat 64 64 ∧
+      (∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, Option.map_some,
+      Option.some.injEq, exists_eq_left', ↓reduceIte, hrsi]
+    exact ⟨trivial, fun r h => by simp [h], trivial, trivial, trivial⟩
+  refine WP.seq (WP.mono h₁ fun s₁ ⟨r9₁, k₁, m₁, rd₁, wr₁⟩ => ?_)
+  have rdi₁ : s₁.gpr .rdi = S := by rw [k₁ _ (by decide), hrdi]
+  have rsi₁ : s₁.gpr .rsi = S + BitVec.ofNat 64 64 := by rw [k₁ _ (by decide), hrsi]
+  have ctx : ∀ t : State, t.gpr = s₁.gpr → t.wr = s₁.wr → Avx512Tail.Ctx 0 t := by
+    intro t g w
+    refine ⟨fun b i n hb h hn => ?_, fun b b' hb hb' ne => ?_, by decide⟩
+    · rw [w, wr₁]
+      rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
+        simp only [Avx512Tail.bsize] at h
+      · simp only [Avx512Tail.regn, Avx512Tail.baseR, g, rdi₁]
+        exact ⟨_, hR, Offset.contains_base S (by omega) (by omega)⟩
+      · simp only [Avx512Tail.regn, Avx512Tail.baseR, g, r9₁, Offset.add_add]
+        exact ⟨_, hR, Offset.contains_base S (by omega) (by omega)⟩
+      · omega
+    · have e : ∀ c, c < 3 → Avx512Tail.regn 0 t c =
+          if c = 0 then ⟨S, 64⟩ else ⟨S + BitVec.ofNat 64 64, if c = 1 then 320 else 0⟩ := by
+        intro c hc
+        rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
+          simp [Avx512Tail.regn, Avx512Tail.baseR, Avx512Tail.bsize, g, rdi₁, rsi₁, r9₁]
+      have z : ∀ (r : Region) (a : Addr), Region.Disjoint r ⟨a, 0⟩ ∧ Region.Disjoint ⟨a, 0⟩ r :=
+        fun r a => ⟨fun x _ h => by simp [Region.Contains] at h, fun x h _ => by simp [Region.Contains] at h⟩
+      have d01 : Region.Disjoint ⟨S, 64⟩ ⟨S + BitVec.ofNat 64 64, 320⟩ :=
+        Offset.base_disjoint S (by decide) (by omega)
+      have d10 : Region.Disjoint ⟨S + BitVec.ofNat 64 64, 320⟩ ⟨S, 64⟩ :=
+        Offset.disjoint_base S (by decide) (by omega)
+      rw [e b hb, e b' hb']
+      rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
+        rcases (by omega : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl <;>
+        simp only [↓reduceIte, Nat.reduceEqDiff] <;>
+        first | exact absurd rfl ne | exact d01 | exact d10 | exact (z _ _).1 | exact (z _ _).2
+  have hc₁ := ctx s₁ rfl rfl
+  refine WP.seq (WP.mono (Avx2Tail.setupOne_ok hc₁) fun s₂ ⟨hz₂, m₂, g₂, rd₂, wr₂⟩ => ?_)
+  refine WP.seq (WP.mono (Avx2Tail.roundsOne_ok hz₂ 10) fun s₃ ⟨hz₃, f₃⟩ => ?_)
+  have g₃ : s₃.gpr = s₁.gpr := f₃.gpr.trans g₂
+  have m₃ : s₃.mem = s₁.mem := f₃.mem.trans m₂
+  have wr₃ : s₃.wr = s₁.wr := f₃.wr.trans wr₂
+  have rd₃ : s₃.rd = s₁.rd := f₃.rd.trans rd₂
+  refine WP.seq (WP.mono (Avx2Tail.finishOne_ok (ctx s₃ g₃ wr₃) hz₃) fun s₄ ⟨b₄, f₄, g₄, rd₄, wr₄⟩ => ?_)
+  refine WP.mono (vzu_ok s₄) fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ => ?_
+  have gs : ∀ r, r ≠ .r9 → s₅.gpr r = s.gpr r := fun r h => by rw [g₅, g₄, g₃, k₁ r h]
+  refine hQ s₅ (by rw [rd₅, rd₄, rd₃, rd₁]) (by rw [wr₅, wr₄, wr₃, wr₁])
+    (fun r hr => gs r (by rintro rfl; simp [calleeSaved] at hr)) ?_ (by rw [gs _ (by decide), hrsi]) ?_
+  · rw [m₅, ← m₁, ← m₃]
+    refine f₄.sub fun r hr => ⟨_, List.mem_cons_self .., ?_⟩
+    simp only [Avx512Tail.wregs, List.mem_cons, List.not_mem_nil, or_false, g₃, r9₁, rsi₁] at hr
+    rcases hr with rfl | rfl
+    · exact Region.sub_prefix (by decide)
+    · exact Region.sub_prefix (by decide)
+  · refine stateAt_of_serialize fun k hk => ?_
+    have := b₄ k (by omega)
+    rw [g₃, r9₁, Nat.div_eq_of_lt hk, Nat.mod_eq_of_lt hk] at this
+    rw [m₅, this]
+    simp only [Avx2Tail.plusOne, Avx512Tail.S0, g₃, m₃, rdi₁, m₁]
+    rfl
+
+/-- The block function of the last bytes, inline with AVX-512VL or by
+`vg_chacha20_block` (`Stream.tailBlock`), where the 768-byte streaming state
+at `S` may be written: what the call of `vg_chacha20_block` guarantees. -/
+theorem tailBlock_call (x : Impl.ChaCha20.X86_64.Callee) {s : State} {S : Addr} (hrdi : s.gpr .rdi = S)
+    (hrsi : s.gpr .rsi = S + BitVec.ofNat 64 64)
+    (hdj : (⟨S + BitVec.ofNat 64 64, 256⟩ : Region).Disjoint ⟨S, 64⟩)
+    (hsB : (below (s.gpr .rsp) 8).Disjoint ⟨S + BitVec.ofNat 64 64, 256⟩)
+    (hsS : (below (s.gpr .rsp) 8).Disjoint ⟨S, 64⟩)
+    (hc : Covers ([⟨S, 64⟩] ++ [⟨S + BitVec.ofNat 64 64, 256⟩]) (s.rd ++ s.wr))
+    (hw : Covers [⟨S + BitVec.ofNat 64 64, 256⟩] s.wr) (hR : (⟨S, 768⟩ : Region) ∈ s.wr)
+    {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame [⟨S + BitVec.ofNat 64 64, 256⟩, below (s.gpr .rsp) 8] s.mem s'.mem →
+      s'.gpr .rsi = S + BitVec.ofNat 64 64 →
+      stateAt s'.mem (S + BitVec.ofNat 64 64) = Spec.ChaCha20.block (stateAt s.mem S) → Q s') :
+    WP isa (Impl.ChaCha20.X86_64.Stream.tailBlock x) s Q := by
+  unfold Impl.ChaCha20.X86_64.Stream.tailBlock
+  split
+  · exact blockVL_call hrdi hrsi hR hQ
+  · exact block_call hrdi hrsi hdj hsB hsS hc hw hQ
 
 theorem below8_24 (s : State) : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) :=
   below_sub (by decide) (by decide)
