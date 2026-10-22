@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 Untrusted: everything here is checked by Lean. The loops of
 `Impl.AesGcmSiv.AArch64.Stitch` run on the data at `D`, `nb` batches of
 eight blocks, with the working space `W` in `x19` and the encryption key's
-schedule `K` in `x21`, from the memory `m₀` (`Ctx`), which holds the counter
+schedule `K` in `x15`, from the memory `m₀` (`Ctx`), which holds the counter
 block at `W + 96` and the table of keys of `H` at `W + tblO` (`KPre`).
 `aesStep` is the counter mode of a batch (the blocks of the keystream `ks`,
 RFC 8452's counter blocks), `stores_ok` the eight blocks it computes
@@ -47,7 +47,7 @@ open VG.Impl.Gcm.AArch64.Stitch (breg Y C pk pl stores)
 structure Ctx where
   /-- The working space (`x19`). -/
   W : Addr
-  /-- The encryption key's schedule (`x21`). -/
+  /-- The encryption key's schedule (`x15`). -/
   K : Addr
   /-- The data. -/
   D : Addr
@@ -177,7 +177,7 @@ theorem stores_ok {σ : Ctx} (hp : KPre σ) {c o : Nat} (hc : c < σ.nb) (ho : o
 theorem aesStep {σ : Ctx} (hp : KPre σ) {c o : Nat} {s : State} (hc : c < σ.nb) (ho' : o ≤ 128) (ho16 : o % 16 = 0)
     (hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * c + j)))
     (hx10 : s.read .w .x10 = σ.c0 + BitVec.ofNat 32 (8 * c))
-    (hx19 : s.gpr .x19 = σ.W) (hx21 : s.gpr .x21 = σ.K) (hrdwr : s.rd ++ s.wr = σ.rd ++ σ.wr)
+    (hx19 : s.gpr .x19 = σ.W) (hx15 : s.gpr .x15 = σ.K) (hrdwr : s.rd ++ s.wr = σ.rd ++ σ.wr)
     (hf : Frame [σ.dR] σ.m₀ s.mem) (hdata : DataInv σ.m₀ s.mem σ.D (8 * σ.nb) (8 * c) σ.ks) :
     WP isa (.block (aesPart σ.nr o)) s fun t =>
       (∀ j < 8, ∀ tt < 16, vbyte (t.v (breg j)) tt =
@@ -190,14 +190,14 @@ theorem aesStep {σ : Ctx} (hp : KPre σ) {c o : Nat} {s : State} (hc : c < σ.n
     rounds := hR
     o_le := ho'
     keys := fun r hr => by
-      rw [hrdwr, hx21]; exact CallLay.inRegions_sub hp.k_in (by omega) (by omega)
+      rw [hrdwr, hx15]; exact CallLay.inRegions_sub hp.k_in (by omega) (by omega)
     ctr := by rw [hrdwr, cbA, hx19]; exact hp.c_in
     data := fun j hj => by
       rw [hrdwr, hx9]
       exact inRegions_app (CallLay.inRegions_sub (off := 16 * (8 * c + j)) (l := 16) (n := 128 * σ.nb) hp.d_in (by omega) (by omega))
     x10 := by rw [hx10, hc0] }
   refine WP.mono (aesPart_ok hA ho16) fun t ⟨out, x10, fr⟩ => ⟨fun j hj tt htt => ?_, ?_, fr⟩
-  · rw [out j hj tt htt, sch, hx21, hp.k_frame hf, hx9, Offset.add_add, hdata _ (by omega),
+  · rw [out j hj tt htt, sch, hx15, hp.k_frame hf, hx9, Offset.add_add, hdata _ (by omega),
       ite_eq_right (by omega), show ∀ b : Byte, b ^^^ 0 = b from fun _ => BitVec.xor_zero]
     have hcv : cvec s (8 * c) j = σ.cv (8 * c + j) := by
       simp only [cvec, Ctx.cv]

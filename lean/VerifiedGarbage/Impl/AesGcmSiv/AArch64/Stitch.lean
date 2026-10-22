@@ -23,8 +23,8 @@ in `Impl.AesGcmSiv.AArch64`.
 * Counter mode increments the first 4 bytes of the counter block at `W + 96`
   as a little-endian number: `aesPart`'s counter blocks put `w10 + j` in its
   first lane (`ctr1`), without `rev32`, and the counter is stored back after
-  the loops. The rounds read the encryption key's schedule from `x21`, set to
-  `W + 240` (the key-generating key's, which `x21` held, is no longer needed).
+  the loops. The rounds read the encryption key's schedule from `x15`, set to
+  `W + 240`.
 * `seal` hashes the batches (`ghLoop`), then encrypts them (`ctrLoop`) once
   the tag is known; `open` decrypts batch `i + 1` while it hashes batch `i`,
   decrypted the iteration before (`openLoop`, AES-GCM's `encLoop`): POLYVAL is
@@ -39,7 +39,7 @@ namespace VG.Impl.AesGcmSiv.AArch64.Stitch
 
 open VG.AArch64
 open VG.Impl.AesGcmSiv.AArch64
-open VG.Impl.Gcm.AArch64.Stitch (K P Y C HI LO MID A₁ A₂ S₁ S₂ KP T U X₁ X₂ breg rnd lastRnd pa pk pb pl
+open VG.Impl.Gcm.AArch64.Stitch (K P Y C HI LO MID A₁ A₂ S₁ S₂ KP T U X₁ X₂ breg pa pk pb pl
   addFirst addNext reduce fuse stores byRounds)
 open VG.Impl.AesGcm.AArch64 (Callees mov ptr imm restore)
 
@@ -79,6 +79,18 @@ def tblBuild : List Instr :=
 `w10 + j` in its first 4 bytes. -/
 def ctr1 (j : Nat) : List Instr :=
   [.addImm .w .x12 .x10 j, .ldrq (breg j) .x19 cbO, .vop (.ins .s4 (breg j) 0 .x12)]
+
+/-- A full round of the eight states with round key `r`, from `x15`
+(`Impl.Gcm.AArch64.Stitch.rnd`, from `x21`). -/
+def rnd (r : Nat) : List Instr :=
+  .ldrq K .x15 (16 * r) :: (List.range 8).flatMap fun j => [.vop (.aese (breg j) K), .vop (.aesmc (breg j) (breg j))]
+
+/-- The last two rounds, with round keys `nr − 1` and `nr` from `x15`, and the
+data blocks at `x9 + o` added. -/
+def lastRnd (nr o : Nat) : List Instr :=
+  .ldrq K .x15 (16 * (nr - 1)) :: (List.range 8).flatMap (fun j => [.vop (.aese (breg j) K)]) ++
+  .ldrq K .x15 (16 * nr) ::
+    (List.range 8).flatMap fun j => [.ldrq P .x9 (o + 16 * j), .vop (.eor3 (breg j) (breg j) P K)]
 
 /-- Eight blocks of counter mode, of the data at `x9 + o`, into `v0`–`v7`. -/
 def aesPart (nr o : Nat) : List Instr :=
@@ -139,8 +151,8 @@ def ghSetup : List Instr :=
 def ghFinish : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x19 yO]
 
 /-- The counter (`w10`) from the counter block at `W + 96`, and the
-encryption key's schedule in `x21`. -/
-def ctrSetup : List Instr := [.ldr .w .x10 .x19 cbO, ptr .x21 .x19 skO]
+encryption key's schedule in `x15`. -/
+def ctrSetup : List Instr := [.ldr .w .x10 .x19 cbO, ptr .x15 .x19 skO]
 
 /-- The counter stored back to `W + 96`. -/
 def ctrFinish : List Instr := [.str .w .x10 .x19 cbO]

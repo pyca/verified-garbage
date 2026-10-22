@@ -16,7 +16,7 @@ Untrusted: everything here is checked by Lean. `aesPart_ok`: `aesPart nr o`
 at `x9 + o` XORed with the cipher of the counter blocks `cvec s k j`: the
 counter block at `x19 + 96` with its first word replaced by that word plus
 `k + j` (`w10` being that word plus `k`), as RFC 8452 §4 increments it. The
-rounds are AES-GCM's (`Proof.Gcm.AArch64.Stitch`), with the keys at `x21`;
+rounds are AES-GCM's (`Proof.Gcm.AArch64.Stitch`), with the keys at `x15`;
 only the counter blocks differ.
 -/
 
@@ -26,7 +26,7 @@ namespace VG.Proof.AesGcmSiv.AArch64.Stitch
 
 open VG VG.AArch64
 open VG.Impl.AesGcmSiv.AArch64.Stitch
-open VG.Impl.Gcm.AArch64.Stitch (K P breg rnd lastRnd)
+open VG.Impl.Gcm.AArch64.Stitch (K P breg)
 open VG.Proof.Gcm.AArch64.Stitch (breg_inj breg_ne_K breg_ne_P aesV breg_mem RI rnd8_ok aese8_ok fin8_ok fr_setV
   fr_widen)
 open VG.Proof.Aes.AArch64.Aese (st KeyIs rnds round_st last_st keyIs_readW getD_st exec_ldrq
@@ -50,13 +50,13 @@ counter block's plus `k`. -/
 structure APre (nr o k : Nat) (s : State) : Prop where
   rounds : nr = 10 ∨ nr = 12 ∨ nr = 14
   o_le : o ≤ 128
-  keys : ∀ r ≤ nr, InRegions (s.rd ++ s.wr) (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 16
+  keys : ∀ r ≤ nr, InRegions (s.rd ++ s.wr) (s.gpr .x15 + BitVec.ofNat 64 (16 * r)) 16
   ctr : InRegions (s.rd ++ s.wr) (cbA s) 16
   data : ∀ j < 8, InRegions (s.rd ++ s.wr) (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 16
   x10 : s.read .w .x10 = c0 s + BitVec.ofNat 32 k
 
-/-- The key schedule of `nr` rounds at `x21`. -/
-abbrev sch (nr : Nat) (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .x21) (16 * (nr + 1))
+/-- The key schedule of `nr` rounds at `x15`. -/
+abbrev sch (nr : Nat) (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .x15) (16 * (nr + 1))
 
 /-- The counter block `k + j`, as `ctr1` builds it. -/
 abbrev cvec (s : State) (k j : Nat) : BitVec 128 :=
@@ -117,15 +117,15 @@ theorem rnd_ok {nr o k : Nat} {s₀ : State} (hp : APre nr o k s₀) {x : Nat �
     (hr : r + 1 ≤ nr) {s : State} (hf : Fr [.x12] aesV s₀ s) (hI : RI (sch nr s₀) x r s) :
     WP isa (.block (rnd r)) s fun s' => RI (sch nr s₀) x (r + 1) s' ∧ Fr [.x12] aesV s₀ s' := by
   have hR := hp.rounds
-  have hin : InRegions (s.rd ++ s.wr) (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 16 := by
+  have hin : InRegions (s.rd ++ s.wr) (s.gpr .x15 + BitVec.ofNat 64 (16 * r)) 16 := by
     rw [hf.rd, hf.wr, hf.gpr _ (by decide)]; exact hp.keys r (by omega)
   rw [rnd, WP.block_cons_iff]
   refine ⟨_, exec_ldrq (by omega) hin, ?_⟩
-  have hk : KeyIs ((s.setV K (s.mem.readW (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 128)).v K)
+  have hk : KeyIs ((s.setV K (s.mem.readW (s.gpr .x15 + BitVec.ofNat 64 (16 * r)) 128)).v K)
       (roundKey (sch nr s₀) r) := by
     rw [setV_v_self, hf.mem, hf.gpr _ (by decide)]
     exact keyIs_readW _ _ (by omega)
-  have hI' : RI (sch nr s₀) x r (s.setV K (s.mem.readW (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 128)) :=
+  have hI' : RI (sch nr s₀) x r (s.setV K (s.mem.readW (s.gpr .x15 + BitVec.ofNat 64 (16 * r)) 128)) :=
     fun j hj => by rw [setV_v_of_ne _ _ (breg_ne_K j)]; exact hI j hj
   exact WP.mono (rnd8_ok hk hI') fun s' ⟨e, f, _⟩ =>
     ⟨e, (hf.trans (fr_setV _ _ (by decide))).trans (fr_widen f _)⟩
@@ -151,20 +151,20 @@ theorem aesPart_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 1
   have hI₁ : RI (sch nr s) x 0 s₁ := fun j hj => by rw [e₁ j hj]; rfl
   refine WP.mono (rnds_ok hp f₁ hI₁ (nr - 1) (by omega)) fun s₂ ⟨e₂, f₂⟩ => ?_
   -- The last round.
-  have g₂ : s₂.gpr .x21 = s.gpr .x21 := f₂.gpr _ (by decide)
-  have hin : ∀ r ≤ nr, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x21 + BitVec.ofNat 64 (16 * r)) 16 :=
+  have g₂ : s₂.gpr .x15 = s.gpr .x15 := f₂.gpr _ (by decide)
+  have hin : ∀ r ≤ nr, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x15 + BitVec.ofNat 64 (16 * r)) 16 :=
     fun r hr => by rw [f₂.rd, f₂.wr, g₂]; exact hp.keys r hr
   unfold lastRnd
   rw [WP.block_append_iff, WP.block_cons_iff]
   refine ⟨_, exec_ldrq (by omega) (hin (nr - 1) (by omega)), ?_⟩
-  generalize hK₁ : s₂.mem.readW (s₂.gpr .x21 + BitVec.ofNat 64 (16 * (nr - 1))) 128 = K₁
+  generalize hK₁ : s₂.mem.readW (s₂.gpr .x15 + BitVec.ofNat 64 (16 * (nr - 1))) 128 = K₁
   refine WP.mono (aese8_ok _) fun s₃ ⟨e₃, f₃, _⟩ => ?_
   rw [WP.block_cons_iff]
-  have hin₃ : InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .x21 + BitVec.ofNat 64 (16 * nr)) 16 := by
+  have hin₃ : InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .x15 + BitVec.ofNat 64 (16 * nr)) 16 := by
     rw [f₃.rd, f₃.wr, f₃.gpr _ (by decide), rd_setV, wr_setV, gpr_setV]
     exact hin nr (Nat.le_refl _)
   refine ⟨_, exec_ldrq (by omega) hin₃, ?_⟩
-  generalize hK₂ : s₃.mem.readW (s₃.gpr .x21 + BitVec.ofNat 64 (16 * nr)) 128 = K₂
+  generalize hK₂ : s₃.mem.readW (s₃.gpr .x15 + BitVec.ofNat 64 (16 * nr)) 128 = K₂
   have g₃ : ∀ r, s₃.gpr r = s₂.gpr r := fun r => by rw [f₃.gpr r (by simp)]; rfl
   have m₃ : s₃.mem = s.mem := by rw [f₃.mem, mem_setV, f₂.mem]
   have hin₄ : ∀ j < 8, InRegions ((s₃.setV K K₂).rd ++ (s₃.setV K K₂).wr)

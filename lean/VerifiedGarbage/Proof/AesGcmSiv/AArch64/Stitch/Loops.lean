@@ -195,7 +195,7 @@ theorem CInv.of_x1314 {σ : Ctx} {s₀ : State} {c p : Nat} {s s' : State} (hI :
   wr := by rw [hwr, hI.wr]
 
 theorem ctrLoop_ok {σ : Ctx} (hp : KPre σ) {s₀ : State}
-    (hx19 : s₀.gpr .x19 = σ.W) (hx21 : s₀.gpr .x21 = σ.K) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr)
+    (hx19 : s₀.gpr .x19 = σ.W) (hx15 : s₀.gpr .x15 = σ.K) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr)
     (hwr : s₀.wr = σ.wr) {s : State} (hI : CInv σ s₀ 0 0 s) :
     WP isa (ctrLoop σ.nr) s (CInv σ s₀ σ.nb σ.nb) := by
   have hn := hp.n16
@@ -209,7 +209,7 @@ theorem ctrLoop_ok {σ : Ctx} (hp : KPre σ) {s₀ : State}
     have hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (0 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * c + j)) :=
       fun j => by rw [hI.x9, Offset.add_add_eq _ (show 128 * c + (0 + 16 * j) = 16 * (8 * c + j) by omega)]
     refine WP.mono (aesStep hp hc (by decide) (by decide) hx9 hI.x10 (by rw [hI.gpr _ (by decide), hx19])
-      (by rw [hI.gpr _ (by decide), hx21]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
+      (by rw [hI.gpr _ (by decide), hx15]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
       fun t ⟨hv, x10t, frt⟩ => ?_
     have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
     rw [WP.block_append_iff]
@@ -273,9 +273,9 @@ structure OInv (σ : Ctx) (y : Block) (s₀ : State) (c h : Nat) (s : State) : P
 
 section
 variable {σ : Ctx} (hp : KPre σ) (gh : Gh8Ok) {y : Block} {s₀ : State}
-    (hx19 : s₀.gpr .x19 = σ.W) (hx21 : s₀.gpr .x21 = σ.K) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr)
+    (hx19 : s₀.gpr .x19 = σ.W) (hx15 : s₀.gpr .x15 = σ.K) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr)
     (hwr : s₀.wr = σ.wr)
-include hp gh hx19 hx21 hrdwr hwr
+include hp gh hx19 hx15 hrdwr hwr
 
 /-- One iteration of `open`'s loop: batch `h + 1` XORed while batch `h` is
 hashed, then stored. -/
@@ -289,7 +289,7 @@ theorem openBody_ok {h : Nat} (hh : h + 1 < σ.nb) {s : State} (hI : OInv σ y s
   have hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (128 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * (h + 1) + j)) :=
     fun j => by rw [hI.ci.x9, Offset.add_add_eq _ (show 128 * h + (128 + 16 * j) = 16 * (8 * (h + 1) + j) by omega)]
   refine WP.mono (aesStep hp hh (by decide) (by decide) hx9 hI.ci.x10 (by rw [hI.ci.gpr _ (by decide), hx19])
-    (by rw [hI.ci.gpr _ (by decide), hx21]) (by rw [hI.ci.rd, hI.ci.wr, hrdwr]) hI.ci.frame hI.ci.data)
+    (by rw [hI.ci.gpr _ (by decide), hx15]) (by rw [hI.ci.rd, hI.ci.wr, hrdwr]) hI.ci.frame hI.ci.data)
     fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
   refine WP.mono (ghStep hp gh (y := y) (hb := σ.blockC) (h := h) (t := t) (by rw [frt.v _ (by decide), hI.y])
@@ -334,7 +334,7 @@ theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
   have hx9₀ : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (0 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * 0 + j)) :=
     fun j => by rw [hI.x9, Offset.add_add_eq _ (show 128 * 0 + (0 + 16 * j) = 16 * (8 * 0 + j) by omega)]
   refine WP.mono (aesStep hp (c := 0) h1 (by decide) (by decide) hx9₀ hI.x10 (by rw [hI.gpr _ (by decide), hx19])
-    (by rw [hI.gpr _ (by decide), hx21]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
+    (by rw [hI.gpr _ (by decide), hx15]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
     fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
   refine WP.mono (stores_ok hp (c := 0) (by omega) (by decide) (by decide) t
@@ -373,7 +373,7 @@ theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
           (AArch64.eval (.nonzero .x .x11) s' = some false ∧ OInv σ y s₀ σ.nb (σ.nb - 1) s') ∨
           (AArch64.eval (.nonzero .x .x11) s' = some true ∧ ∃ m' < m, I m' s')) := by
         rintro m s ⟨h, rfl, hh, hI⟩
-        refine WP.mono (openBody_ok hp gh hx19 hx21 hrdwr hwr hh hI) fun s' hI' => ?_
+        refine WP.mono (openBody_ok hp gh hx19 hx15 hrdwr hwr hh hI) fun s' hI' => ?_
         rw [eval_nonzero hI'.ci.x11 (by omega)]
         by_cases hl : σ.nb - (h + 2) = 0
         · have e : h + 2 = σ.nb := by omega
