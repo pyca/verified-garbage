@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
 public import VerifiedGarbage.Impl.Modes.Arm.Counter32
+public import VerifiedGarbage.Impl.StackScratch.Arm
 
 /-!
 # SM4 counter mode with GCM's `inc₃₂`, in eight-block batches on ARMv7
@@ -34,5 +35,9 @@ def group : Prog isa :=
 def dataLoop : Prog isa := .ite .eq (.block []) (.loop group .ne)
 
 def ctr32 : Prog isa := .seq BatchCtr.prologue (.seq dataLoop BatchCtr.finish)
+
+/-- `vg_sm4_ctr32`: `ctr32` with its 1512 bytes of working space on the stack,
+zeroed on return. -/
+def ctr32Framed : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 ctr32
 
 end VG.Impl.Sm4.Arm.BatchCtr32

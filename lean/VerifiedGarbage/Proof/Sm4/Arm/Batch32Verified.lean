@@ -74,7 +74,7 @@ theorem frameSat : ∃ s, (Spec.Sm4.ctr32Contract Arm.abi 1520).pre s := by
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
 theorem framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 BatchCtr32.ctr32)
+    BatchCtr32.ctr32Framed
     (Spec.Sm4.ctr32Contract Arm.abi 1520) :=
   Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ctr32Sig) (nm := "scratch") (e := .u64) (n := 189)
     (post := Proof.Sm4.ctr32Post Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
