@@ -27,7 +27,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- A wide slot's change keeps the other wide slots. -/
-theorem wide_keep (h : RIn base bytes len args s) {a b n k : Nat} (hb : b ≤ 19) (hab : a ≠ b)
+theorem wide_keep (h : In Ex base bytes len args s) {a b n k : Nat} (hb : b ≤ 19) (hab : a ≠ b)
     (hn : n ≤ st len .wide) (hk : 4 * k ≤ st len .wide) {m m' : Mem}
     (O : VG.Proof.Mont.Outside base (lo len (.slot .wide a)) n m m') :
     val32 m' base (lo len (.slot .wide b)) k = val32 m base (lo len (.slot .wide b)) k := by
