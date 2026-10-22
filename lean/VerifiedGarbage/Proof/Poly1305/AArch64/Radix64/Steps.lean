@@ -39,6 +39,28 @@ theorem threeimm : (3#16).setWidth 64 = 3#64 := by decide
 
 theorem zero_nat : (0#64).toNat = 0 := rfl
 
+theorem notThree_bits : ∀ i : Fin 64,
+    (~~~((3#64).rotateRight 0)).getLsbD i.val = decide (2 ≤ i.val) := by decide
+
+/-- `bic` with 3 clears the two low bits. -/
+theorem bic3_toNat (x : BitVec 64) :
+    (x &&& ~~~((3#64).rotateRight 0)).toNat = x.toNat - x.toNat % 4 := by
+  have e : x &&& ~~~((3#64).rotateRight 0) = (x >>> 2) <<< 2 := by
+    ext i hi
+    have hb := notThree_bits ⟨i, hi⟩
+    rw [BitVec.getLsbD_eq_getElem hi] at hb
+    simp only [BitVec.getElem_and, BitVec.getElem_shiftLeft, BitVec.getElem_ushiftRight, hb]
+    by_cases h : i < 2
+    · simp [h]
+    · simp [h]
+      rw [show 2 + (i - 2) = i by omega, BitVec.getLsbD_eq_getElem hi]
+      simp; omega
+  rw [e, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
+    Nat.shiftRight_eq_div_pow]
+  have := x.isLt
+  rw [Nat.mod_eq_of_lt (by omega)]
+  omega
+
 theorem mul_words (a b : BitVec 64) :
     (a * b).toNat + 2 ^ 64 * (BitVec.ofNat 64 (a.toNat * b.toNat / 2 ^ 64)).toNat =
       a.toNat * b.toNat := by
@@ -155,9 +177,7 @@ theorem fold_ok (s : State) :
     Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero,
     BitVec.shiftLeft_zero, threeimm, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, and3_toNat _, fun h => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · have h3 := and3_toNat (s.gpr .x12)
-    simp only [BitVec.ofNat_eq_ofNat] at h3
-    rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, h3]
+  · rw [BitVec.toNat_add, bic3_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     omega_using [h]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
