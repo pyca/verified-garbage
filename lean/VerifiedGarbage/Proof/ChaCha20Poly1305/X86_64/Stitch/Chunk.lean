@@ -17,8 +17,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 A chunk's double rounds absorb the blocks at `rsi + 16 j` with the scalar
 Poly1305, as `vg_poly1305_blocks` does, into the accumulator in `r11`,
 `rbx`, `rbp`, under the clamped key in `r8`–`r10` (`Acc`), each in two
-pieces: `Stitch.addProd j` (`addProd_ok`, from `prods_ok`), which leaves the
-products of the sum (`Half`), and the carry (`carry1_ok`, from `carryP_ok`).
+pieces: `Stitch.addProd j` (`addProd_ok`, from `prodsS_ok`), which leaves the
+products of the sum (`Half`), and the carry (`carry1_ok`, from `carrySP_ok`).
 The pieces read memory and write only Poly1305's registers (`absorbRegs`),
 and no vector register (`WP.vecKeep`), so ChaCha20's quarter rounds, which
 they run between, keep their state; `Acc` and `Half` read only registers,
@@ -30,7 +30,7 @@ which the quarter rounds keep.
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
-open VG.Proof.Poly1305.X86_64 (hval prods_ok carryP_ok Prods Keeps absorbRegs)
+open VG.Proof.Poly1305.X86_64 (hval prodsS_ok carrySP_ok ProdsS Keeps absorbRegs)
 open VG.Spec.Poly1305 (P leNum bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
 
@@ -58,11 +58,11 @@ structure Acc (R0 R1 : BitVec 64) (X : Nat) (s : State) : Prop where
 
 theorem scal_addProd (j : Nat) : scalCode (.block (addProd j)) = true := by
   simp only [scalCode, addProd, Impl.Poly1305.X86_64.addBlockAt,
-    Impl.Poly1305.X86_64.products, Impl.Poly1305.X86_64.mulTo, Impl.Poly1305.X86_64.mulAdd,
+    Impl.Poly1305.X86_64.productsS, Impl.Poly1305.X86_64.mulTo, Impl.Poly1305.X86_64.mulAdd,
     List.cons_append, List.nil_append, List.all_cons, List.all_nil, scalarI, Bool.and_true]
 
-theorem scal_carry : scalCode (.block Impl.Poly1305.X86_64.carry) = true := by
-  simp only [scalCode, Impl.Poly1305.X86_64.carry, List.all_cons, List.all_nil, scalarI, Bool.and_true]
+theorem scal_carry : scalCode (.block Impl.Poly1305.X86_64.carryS) = true := by
+  simp only [scalCode, Impl.Poly1305.X86_64.carryS, List.all_cons, List.all_nil, scalarI, Bool.and_true]
 
 /-- A block's two words and the bit above them, as `leNum` of its bytes and `0x01`. -/
 theorem block_num (m : Mem) (p : Addr) (d : Nat) :
@@ -86,7 +86,7 @@ structure Half (R0 R1 : BitVec 64) (Y : Nat) (s : State) : Prop where
   r9 : s.gpr .r9 = R1
   r10 : (s.gpr .r10).toNat = 5 * (R1.toNat / 4)
   prods : ∃ a0 a1 a2, ((a0 + 2 ^ 64 * a1 + 2 ^ 128 * a2) * rN R0 R1) % P = Y % P ∧
-    Prods a0 a1 a2 R0.toNat (R1.toNat / 4) s
+    ProdsS a0 a1 a2 R0.toNat (R1.toNat / 4) s
 
 /-- `Acc` and `Half` read only registers. -/
 theorem Acc.of_gpr {R0 R1 : BitVec 64} {X : Nat} {s s' : State} (hg : s'.gpr = s.gpr)
@@ -113,7 +113,7 @@ theorem addProd_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {s : State} (h
   have i0 := hin 0 (by decide)
   have i8 := hin 8 (by decide)
   rw [Nat.add_zero] at i0
-  refine WP.mono (WP.vecKeep (scal_addProd _) (prods_ok s (b := .rsi) (d := 16 * j) (by decide)
+  refine WP.mono (WP.vecKeep (scal_addProd _) (prodsS_ok s (b := .rsi) (d := 16 * j) (by decide)
     (Or.inr rfl) (by rw [h.r8]; exact hk.r0) hr1 hq h.r10
     (by rw [hp, Proof.Poly1305.X86_64.ofInt_natCast]; exact i0)
     (by rw [hp, Proof.Poly1305.X86_64.ofInt_natCast]; exact i8)))
@@ -130,10 +130,10 @@ theorem addProd_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {s : State} (h
 
 /-- The second piece, the carry. -/
 theorem carry1_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {Y : Nat} {s : State} (h : Half R0 R1 Y s) :
-    WP isa (.block Impl.Poly1305.X86_64.carry) s fun s' =>
+    WP isa (.block Impl.Poly1305.X86_64.carryS) s fun s' =>
       Acc R0 R1 Y s' ∧ Keeps absorbRegs s s' ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
   obtain ⟨a0, a1, a2, ea, hP⟩ := h.prods
-  refine WP.mono (WP.vecKeep scal_carry (carryP_ok s a0 a1 a2 R0.toNat (R1.toNat / 4)))
+  refine WP.mono (WP.vecKeep scal_carry (carrySP_ok s a0 a1 a2 R0.toNat (R1.toNat / 4)))
     fun s' ⟨⟨hc, k⟩, vx, vy⟩ => ⟨?_, k, vx, vy⟩
   obtain ⟨m, hb⟩ := hc hP
   have hr : R0.toNat + 2 ^ 64 * (4 * (R1.toNat / 4)) = rN R0 R1 := by
@@ -312,7 +312,7 @@ theorem addProd_si {R0 R1 : BitVec 64} {X : Nat} (hk : Key R0 R1) (hrsi : s₁.g
 
 theorem carry_si {R0 R1 : BitVec 64} {X : Nat} (hk : Key R0 R1) {j : Nat} {p : Bool}
     {vs : Nat → CState} {s : State} (h : SI buf s₁ p vs (HalfTo q R0 R1 X s₁ j) s) :
-    WP isa (.block Impl.Poly1305.X86_64.carry) s (SI buf s₁ p vs (AccTo q R0 R1 X s₁ (j + 1))) :=
+    WP isa (.block Impl.Poly1305.X86_64.carryS) s (SI buf s₁ p vs (AccTo q R0 R1 X s₁ (j + 1))) :=
   WP.mono (carry1_ok hk h.poly) fun _ ⟨a, k, x, y⟩ => h.piece a k x y
 
 section
@@ -512,7 +512,7 @@ theorem addProdV_si (hk : Key R0 R1) (hrsi : s₁.gpr .rsi = q) {T : Nat}
 
 theorem carryV_si (hk : Key R0 R1) {j : Nat} {vs : Nat → CState} {s : State}
     (h : SIV s₁ vs (HalfTo q R0 R1 X s₁ j) s) :
-    WP isa (.block Impl.Poly1305.X86_64.carry) s (SIV s₁ vs (AccTo q R0 R1 X s₁ (j + 1))) :=
+    WP isa (.block Impl.Poly1305.X86_64.carryS) s (SIV s₁ vs (AccTo q R0 R1 X s₁ (j + 1))) :=
   WP.mono (carry1_ok hk h.poly) fun _ ⟨a, k, x, y⟩ => h.piece a k x y
 
 section

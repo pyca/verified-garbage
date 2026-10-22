@@ -93,22 +93,76 @@ theorem mulAdd_ok {lo hi a b : Reg} (s : State) (hb : b ≠ .rax) (hlo : lo ≠ 
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.2.1, BitVec.toNat_ofNat, hr.1, hr.2.2.2, hr.2.2.1, ite_false]
 
+/-- `imul`'s result: the low word of the product. -/
+theorem imul_toNat (a b : BitVec 64) :
+    (BitVec.ofInt 64 (a.toInt * b.toInt)).toNat = a.toNat * b.toNat % 2 ^ 64 := by
+  have h : BitVec.ofInt 64 (a.toInt * b.toInt) = a * b := by
+    apply BitVec.eq_of_toInt_eq
+    rw [BitVec.toInt_ofInt, BitVec.toInt_mul]
+  rw [h, BitVec.toNat_mul]
+
+theorem se0 : BitVec.signExtend 64 (0 : BitVec 32) = 0 := by decide
+
 set_option simprocs false in
+/-- `h2 s1`, which fits one word, added to `r14, r15`. -/
+theorem imulAdd_ok (s : State) :
+    WP isa (.block (imulAdd .r14 .r15 .r10)) s fun s' =>
+      ((s.gpr .rbp).toNat * (s.gpr .r10).toNat < 2 ^ 64 →
+        (s.gpr .r14).toNat + 2 ^ 64 * (s.gpr .r15).toNat + (s.gpr .rbp).toNat * (s.gpr .r10).toNat <
+          2 ^ 128 →
+        (s'.gpr .r14).toNat + 2 ^ 64 * (s'.gpr .r15).toNat =
+          (s.gpr .r14).toNat + 2 ^ 64 * (s.gpr .r15).toNat + (s.gpr .rbp).toNat * (s.gpr .r10).toNat) ∧
+      Keeps [.rbx, .r14, .r15] s s' := by
+  apply WP.of_runBlock
+  simp (config := {decide := true}) only [imulAdd, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc, execImul, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left', ite_true, ite_false, se0]
+  refine ⟨fun hm hlt => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have e := imul_toNat (s.gpr .rbp) (s.gpr .r10)
+    rw [Nat.mod_eq_of_lt hm] at e
+    have hz : (0 : BitVec 64).toNat = 0 := rfl
+    rw [add_adc_toNat _ _ _ _ (by rw [e, hz]; omega_using [hlt]), e, hz]
+    omega_using []
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.2.2, hr.2.1, hr.1, ite_false]
+
+/-- `h2 r0`, which fits one word, added to the top word `r15`, and `x1 + y0`
+(`r13 + r14`) with its carry into it, the sum in `rbx`. -/
+theorem fold_ok (s : State) :
+    WP isa (.block [.mov .rbx (.reg .r13), .imul .rbp .r8, .alu .add .rbx (.reg .r14),
+      .alu .adc .r15 (.reg .rbp)]) s fun s' =>
+      ((s.gpr .rbp).toNat * (s.gpr .r8).toNat < 2 ^ 64 →
+        (s.gpr .r13).toNat + (s.gpr .r14).toNat +
+            2 ^ 64 * ((s.gpr .r15).toNat + (s.gpr .rbp).toNat * (s.gpr .r8).toNat) < 2 ^ 128 →
+        (s'.gpr .rbx).toNat + 2 ^ 64 * (s'.gpr .r15).toNat =
+          (s.gpr .r13).toNat + (s.gpr .r14).toNat +
+            2 ^ 64 * ((s.gpr .r15).toNat + (s.gpr .rbp).toNat * (s.gpr .r8).toNat)) ∧
+      Keeps [.rbx, .rbp, .r15] s s' := by
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, eq_self, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc, execImul, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨fun hm hlt => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have e := imul_toNat (s.gpr .rbp) (s.gpr .r8)
+    rw [Nat.mod_eq_of_lt hm] at e
+    rw [add_adc_toNat _ _ _ _ (by rw [e]; omega_using [hlt]), e]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.2.2, hr.2.1, hr.1, ite_false]
+
 /-- `h2 * r0`, which fits one word. -/
 theorem mulSmall_ok (s : State) :
     WP isa (.block [.mov .rax (.reg .rbp), .mul .r8]) s fun s' =>
       ((s.gpr .rbp).toNat * (s.gpr .r8).toNat < 2 ^ 64 →
         (s'.gpr .rax).toNat = (s.gpr .rbp).toNat * (s.gpr .r8).toNat) ∧ Keeps [.rax, .rdx] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, eq_self, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc, execMul, State.setReg, State.setFlags, Option.map_some, Option.some.injEq,
-    exists_eq_left', ite_true, ite_false]
+    exists_eq_left']
   refine ⟨fun h => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.2, hr.1, ite_false]
 
-set_option simprocs false in
 theorem addPair_ok (s : State) :
     WP isa (.block [.alu .add .r14 (.reg .r13), .alu .adc .r15 (.reg .rax)]) s fun s' =>
       ((s.gpr .r14).toNat + (s.gpr .r13).toNat + 2 ^ 64 * ((s.gpr .r15).toNat + (s.gpr .rax).toNat) <
@@ -117,21 +171,65 @@ theorem addPair_ok (s : State) :
           (s.gpr .r14).toNat + (s.gpr .r13).toNat + 2 ^ 64 * ((s.gpr .r15).toNat + (s.gpr .rax).toNat)) ∧
       Keeps [.r14, .r15] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, eq_self, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
-    Option.some.injEq, exists_eq_left', ite_true, ite_false]
+    Option.some.injEq, exists_eq_left']
   refine ⟨add_adc_toNat _ _ _ _, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.2, hr.1, ite_false]
 
 theorem se3 : BitVec.signExtend 64 (3 : BitVec 32) = 3 := by decide
-theorem se0 : BitVec.signExtend 64 (0 : BitVec 32) = 0 := by decide
 theorem se1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
 
+theorem neg4_bits : ∀ i : Fin 64,
+    (BitVec.signExtend 64 (-4 : BitVec 32)).getLsbD i.val = decide (2 ≤ i.val) := by decide
+
+theorem andNeg4_shift (x : BitVec 64) :
+    x &&& BitVec.signExtend 64 (-4 : BitVec 32) = (x >>> 2) <<< 2 := by
+  ext i hi
+  have hb := neg4_bits ⟨i, hi⟩
+  rw [BitVec.getLsbD_eq_getElem hi] at hb
+  simp only [BitVec.getElem_and, BitVec.getElem_shiftLeft, BitVec.getElem_ushiftRight, hb]
+  by_cases h : i < 2
+  · simp [h]
+  · simp [h]
+    rw [show 2 + (i - 2) = i by omega, BitVec.getLsbD_eq_getElem hi]
+    simp; omega
+
+/-- `and` with `-4` clears the two low bits. -/
+theorem andNeg4_toNat (x : BitVec 64) :
+    (x &&& BitVec.signExtend 64 (-4 : BitVec 32)).toNat = x.toNat - x.toNat % 4 := by
+  rw [andNeg4_shift, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
+    Nat.shiftRight_eq_div_pow]
+  have := x.isLt
+  rw [Nat.mod_eq_of_lt (by omega)]
+  omega
+
 set_option simprocs false in
-/-- Splitting the top word `t` (in `r15`) into `t mod 4` (in `rbp`) and `5 ⌊t / 4⌋`
-(in `rax`), and moving the low words into `r11, rbx`. -/
+/-- Splitting the top word `t` (in `r15`) into `t mod 4` (in `rbp`) and
+`5 ⌊t / 4⌋ = (t - t mod 4) + ⌊t / 4⌋` (in `rax`). -/
 theorem split_ok (s : State) :
+    WP isa (.block [.mov .rax (.reg .r15), .alu .and .rax (.imm (-4)),
+      .mov .rbp (.reg .r15), .alu .and .rbp (.imm 3), .shift .shr .r15 2,
+      .alu .add .rax (.reg .r15)]) s fun s' =>
+      (s'.gpr .rbp).toNat = (s.gpr .r15).toNat % 4 ∧
+      ((s.gpr .r15).toNat < 2 ^ 63 → (s'.gpr .rax).toNat = 5 * ((s.gpr .r15).toNat / 4)) ∧
+      Keeps [.rbp, .rax, .r15] s s' := by
+  apply WP.of_runBlock
+  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc, execAlu, execShift, arithFlags, State.setReg, State.setFlags, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left', ite_true, ite_false, se3]
+  refine ⟨and3_toNat _, fun ht => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have h4 := andNeg4_toNat (s.gpr .r15)
+    rw [BitVec.toNat_add, h4, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    omega_using [ht]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.2.2, hr.2.1, hr.1, ite_false]
+
+set_option simprocs false in
+/-- For `carryS`: splitting the top word `t` (in `r15`) into `t mod 4` (in `rbp`) and `5 ⌊t / 4⌋`
+(in `rax`), and moving the low words into `r11, rbx`. -/
+theorem splitS_ok (s : State) :
     WP isa (.block [.mov .r11 (.reg .r12), .mov .rbx (.reg .r14), .mov .rbp (.reg .r15),
       .alu .and .rbp (.imm 3), .mov .rax (.reg .r15), .alu .sub .rax (.reg .rbp),
       .shift .shr .r15 2, .alu .add .rax (.reg .r15)]) s fun s' =>
@@ -242,6 +340,12 @@ theorem Keeps.mono {rs rs' : List Reg} {s s' : State} (h : Keeps rs s s')
 abbrev absorbRegs : List Reg := [.r11, .rbx, .rbp, .rax, .rdx, .r12, .r13, .r14, .r15]
 
 theorem carry_eq : carry =
+    ([.mov .rax (.reg .r15), .alu .and .rax (.imm (-4)),
+      .mov .rbp (.reg .r15), .alu .and .rbp (.imm 3), .shift .shr .r15 2,
+      .alu .add .rax (.reg .r15)] : List Instr) ++
+    ([.alu .add .r11 (.reg .rax), .alu .adc .rbx (.imm 0), .alu .adc .rbp (.imm 0)] : List Instr) := rfl
+
+theorem carryS_eq : carryS =
     ([.alu .add .r14 (.reg .r13), .alu .adc .r15 (.reg .rax)] : List Instr) ++
     (([.mov .r11 (.reg .r12), .mov .rbx (.reg .r14), .mov .rbp (.reg .r15),
       .alu .and .rbp (.imm 3), .mov .rax (.reg .r15), .alu .sub .rax (.reg .rbp),
@@ -258,24 +362,31 @@ theorem absorbAt_split (b : Reg) (d : Nat) (pad : BitVec 32) :
     absorbAt b d pad = (addBlockAt b d pad ++ products) ++ carry := rfl
 
 theorem products_eq : products =
-    mulTo .r12 .r13 .r11 .r8 ++ (mulAdd .r12 .r13 .rbx .r10 ++ (mulTo .r14 .r15 .r11 .r9 ++
-    (mulAdd .r14 .r15 .rbx .r8 ++ (mulAdd .r14 .r15 .rbp .r10 ++
-    ([.mov .rax (.reg .rbp), .mul .r8] : List Instr))))) := by
+    mulTo .r14 .r15 .r11 .r9 ++ (mulTo .r11 .r13 .r11 .r8 ++ (mulAdd .r14 .r15 .rbx .r8 ++
+    (mulAdd .r11 .r13 .rbx .r10 ++ (imulAdd .r14 .r15 .r10 ++
+    ([.mov .rbx (.reg .r13), .imul .rbp .r8, .alu .add .rbx (.reg .r14),
+      .alu .adc .r15 (.reg .rbp)] : List Instr))))) := by
   simp only [products, List.append_assoc]
 
 /-- After `addBlockAt` and `products`: the sum `a0 + 2⁶⁴ a1 + 2¹²⁸ a2` of the
 accumulator and the block, and its products with the clamped `r0` and
-`r1 = 4 q` (and `s1 = 5 q`) in `r12, r13` (`x`), `r14, r15` (`y`) and `rax`,
-as `carry` takes them. -/
+`r1 = 4 q` (and `s1 = 5 q`), as `carry` takes them: `x = x0 + 2⁶⁴ x1` with `x0`
+in `r11`, `y = y0 + 2⁶⁴ y1`, `x1 + y0` in `rbx` with its carry `c1`, and the top
+word `y1 + a2 r0 + c1` in `r15`. -/
 structure Prods (a0 a1 a2 r0 q : Nat) (s : State) : Prop where
   ha0 : a0 < 2 ^ 64
   ha1 : a1 < 2 ^ 64
   ha2 : a2 ≤ 6
   hr0 : r0 < 2 ^ 60
   hq : q < 2 ^ 58
-  x : (s.gpr .r12).toNat + 2 ^ 64 * (s.gpr .r13).toNat = a0 * r0 + a1 * (5 * q)
-  y : (s.gpr .r14).toNat + 2 ^ 64 * (s.gpr .r15).toNat = a0 * (4 * q) + a1 * r0 + a2 * (5 * q)
-  z : (s.gpr .rax).toNat = a2 * r0
+  w : ∃ x1 y0 y1 c1, (s.gpr .r11).toNat + 2 ^ 64 * x1 = a0 * r0 + a1 * (5 * q) ∧
+    y0 + 2 ^ 64 * y1 = a0 * (4 * q) + a1 * r0 + a2 * (5 * q) ∧ y0 < 2 ^ 64 ∧
+    (s.gpr .rbx).toNat + 2 ^ 64 * c1 = y0 + x1 ∧ (s.gpr .r15).toNat = y1 + a2 * r0 + c1
+
+/-- `Prods` reads only registers. -/
+theorem Prods.of_gpr {a0 a1 a2 r0 q : Nat} {s s' : State} (hg : s'.gpr = s.gpr)
+    (h : Prods a0 a1 a2 r0 q s) : Prods a0 a1 a2 r0 q s' :=
+  ⟨h.ha0, h.ha1, h.ha2, h.hr0, h.hq, by rw [hg]; exact h.w⟩
 
 /-- The block at `b + d` added to `h` (with `h2 ≤ 4`) and the products of the
 sum, under the clamped `r0, r1 = 4 q` in `r8, r9` and `s1 = 5 q` in `r10`. -/
@@ -291,6 +402,141 @@ theorem prods_ok (s : State) {b : Reg} (hb : b ≠ .r11) {d : Nat} {pad : BitVec
             2 ^ 128 * pad.toNat) ∧
         Prods a0 a1 a2 (s.gpr .r8).toNat q s') ∧ Keeps absorbRegs s s' := by
   rw [products_eq]
+  refine WP.block_append (WP.mono (addBlockAt_ok s hb hpad h0 h8) fun s₁ ⟨e₁, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (mulTo_ok s₁ (by decide) (by decide) (by decide))
+    fun s₂ ⟨e₂, k₂⟩ => ?_)
+  refine WP.block_append (WP.mono (mulTo_ok s₂ (by decide) (by decide) (by decide))
+    fun s₃ ⟨e₃, k₃⟩ => ?_)
+  refine WP.block_append (WP.mono (mulAdd_ok s₃ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₄ ⟨e₄, k₄⟩ => ?_)
+  refine WP.block_append (WP.mono (mulAdd_ok s₄ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₅ ⟨e₅, k₅⟩ => ?_)
+  refine WP.block_append (WP.mono (imulAdd_ok s₅) fun s₆ ⟨e₆, k₆⟩ => ?_)
+  refine WP.mono (fold_ok s₆) fun s₇ ⟨e₇, k₇⟩ => ?_
+  refine ⟨fun hh2 => ?_, (k₁.trans (((((k₂.trans k₃).trans k₄).trans k₅).trans k₆).trans
+    k₇)).mono (by decide)⟩
+  have hp1 : pad.toNat ≤ 1 := by rcases hpad with rfl | rfl <;> decide
+  have hw0 := (s.mem.readW (s.gpr b + BitVec.ofInt 64 (d : Int)) 64).isLt
+  have hw8 := (s.mem.readW (s.gpr b + BitVec.ofInt 64 ((d + 8 : Nat) : Int)) 64).isLt
+  have g0 := (s.gpr .r11).isLt; have g1 := (s.gpr .rbx).isLt
+  -- h += m
+  have e₁ := e₁ (by simp only [word]; omega_using [hh2, hp1, hw0, hw8, g0, g1])
+  have a0 := (s₁.gpr .r11).isLt; have a1 := (s₁.gpr .rbx).isLt
+  have a2 : (s₁.gpr .rbp).toNat ≤ 6 := add_arith g0 g1 hh2 hw0 hw8 hp1 e₁ a0 a1
+  have r8₁ : s₁.gpr .r8 = s.gpr .r8 := k₁.gpr'
+  have r9₁ : s₁.gpr .r9 = s.gpr .r9 := k₁.gpr'
+  have r10₁ : s₁.gpr .r10 = s.gpr .r10 := k₁.gpr'
+  obtain ⟨b1, b2, b3, b4, b5, b6⟩ := absorb_bounds a0 a1 a2 hr0 hq
+  -- y = h0 r1
+  rw [r9₁, hr1] at e₂
+  have r11₂ : s₂.gpr .r11 = s₁.gpr .r11 := k₂.gpr'
+  have r8₂ : s₂.gpr .r8 = s.gpr .r8 := k₂.gpr'.trans r8₁
+  -- x = h0 r0
+  rw [r11₂, r8₂] at e₃
+  have k₃' := k₂.trans k₃
+  have rbx₃ : s₃.gpr .rbx = s₁.gpr .rbx := k₃'.gpr'
+  have r8₃ : s₃.gpr .r8 = s.gpr .r8 := k₃'.gpr'.trans r8₁
+  have r14₃ : s₃.gpr .r14 = s₂.gpr .r14 := k₃.gpr'
+  have r15₃ : s₃.gpr .r15 = s₂.gpr .r15 := k₃.gpr'
+  -- y += h1 r0
+  rw [rbx₃, r8₃, r14₃, r15₃] at e₄
+  have e₄ := e₄ (by omega_using [e₂, b3, b4])
+  rw [e₂] at e₄
+  have k₄' := k₃'.trans k₄
+  have rbx₄ : s₄.gpr .rbx = s₁.gpr .rbx := k₄'.gpr'
+  have r10₄ : s₄.gpr .r10 = s.gpr .r10 := k₄'.gpr'.trans r10₁
+  have r11₄ : s₄.gpr .r11 = s₃.gpr .r11 := k₄.gpr'
+  have r13₄ : s₄.gpr .r13 = s₃.gpr .r13 := k₄.gpr'
+  -- x += h1 s1
+  rw [rbx₄, r10₄, hs1, r11₄, r13₄] at e₅
+  have e₅ := e₅ (by omega_using [e₃, b1, b2])
+  rw [e₃] at e₅
+  have k₅' := k₄'.trans k₅
+  have rbp₅ : s₅.gpr .rbp = s₁.gpr .rbp := k₅'.gpr'
+  have r10₅ : s₅.gpr .r10 = s.gpr .r10 := k₅'.gpr'.trans r10₁
+  have r14₅ : s₅.gpr .r14 = s₄.gpr .r14 := k₅.gpr'
+  have r15₅ : s₅.gpr .r15 = s₄.gpr .r15 := k₅.gpr'
+  -- y += h2 s1
+  rw [rbp₅, r10₅, hs1, r14₅, r15₅] at e₆
+  have e₆ := e₆ (by omega_using [b5]) (by omega_using [e₄, b3, b4, b5])
+  rw [e₄] at e₆
+  have k₆' := k₅'.trans k₆
+  have rbp₆ : s₆.gpr .rbp = s₁.gpr .rbp := k₆'.gpr'
+  have r8₆ : s₆.gpr .r8 = s.gpr .r8 := k₆'.gpr'.trans r8₁
+  have r13₆ : s₆.gpr .r13 = s₅.gpr .r13 := k₆.gpr'
+  -- the top word
+  rw [rbp₆, r8₆, r13₆] at e₇
+  have y0 := (s₆.gpr .r14).isLt
+  have x1 := (s₅.gpr .r13).isLt
+  have e₇ := e₇ (by omega_using [hr0, b6]) (by omega_using [hr0, b3, b4, b5, b6, e₆, y0, x1])
+  have r11₇ : s₇.gpr .r11 = s₅.gpr .r11 := (k₆.trans k₇).gpr'
+  have u0 := (s₇.gpr .rbx).isLt
+  refine ⟨_, _, _, e₁, ⟨a0, a1, a2, hr0, hq, (s₅.gpr .r13).toNat, (s₆.gpr .r14).toNat,
+    (s₆.gpr .r15).toNat, ((s₅.gpr .r13).toNat + (s₆.gpr .r14).toNat) / 2 ^ 64,
+    by rw [r11₇]; exact e₅, e₆, y0, by omega_using [e₇, u0], by omega_using [e₇, u0]⟩⟩
+
+/-- The carry of the products, `h` congruent to their sum's product with `r`. -/
+theorem carryP_ok (s : State) (a0 a1 a2 r0 q : Nat) :
+    WP isa (.block carry) s fun s' =>
+      (Prods a0 a1 a2 r0 q s → hval s' % P = ((a0 + 2 ^ 64 * a1 + 2 ^ 128 * a2) *
+          (r0 + 2 ^ 64 * (4 * q))) % P ∧ (s'.gpr .rbp).toNat ≤ 4) ∧
+      Keeps absorbRegs s s' := by
+  rw [carry_eq]
+  refine WP.block_append (WP.mono (split_ok s) fun s₁ ⟨f₁, f₂, k₁⟩ => ?_)
+  refine WP.mono (addLow_ok s₁) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine ⟨fun h => ?_, (k₁.trans k₂).mono (by decide)⟩
+  obtain ⟨b1, b2, b3, b4, b5, b6⟩ := absorb_bounds h.ha0 h.ha1 h.ha2 h.hr0 h.hq
+  obtain ⟨x1, y0, y1, c1, hx, hy, hy0, hu, ht⟩ := h.w
+  have hr0 := h.hr0
+  have x0 := (s.gpr .r11).isLt; have u0 := (s.gpr .rbx).isLt
+  have hx1 : x1 < 2 ^ 62 := by omega_using [hx, b1, b2]
+  have hc1 : c1 ≤ 1 := by omega_using [hu, hy0, hx1, u0]
+  have ht' : (s.gpr .r15).toNat < 2 ^ 63 := by omega_using [ht, hy, hc1, hr0, b3, b4, b5, b6]
+  have f₂ := f₂ ht'
+  have r11₁ : s₁.gpr .r11 = s.gpr .r11 := k₁.gpr'
+  have rbx₁ : s₁.gpr .rbx = s.gpr .rbx := k₁.gpr'
+  rw [r11₁, rbx₁, f₁, f₂] at e₂
+  have e₂ := e₂ (by omega_using [x0, u0, ht'])
+  rw [ht] at e₂
+  have w0 := (s₂.gpr .r11).isLt; have w1 := (s₂.gpr .rbx).isLt
+  exact absorb_arith (q := q) (x0 := (s.gpr .r11).toNat) (x1 := x1) (y0 := y0) (y1 := y1)
+    (u0 := (s.gpr .rbx).toNat) (c1 := c1)
+    h.ha0 h.ha1 h.ha2 hr0 h.hq hx x0 hy hu u0 (by omega_using [e₂]) w0 w1
+
+theorem productsS_eq : productsS =
+    mulTo .r12 .r13 .r11 .r8 ++ (mulAdd .r12 .r13 .rbx .r10 ++ (mulTo .r14 .r15 .r11 .r9 ++
+    (mulAdd .r14 .r15 .rbx .r8 ++ (mulAdd .r14 .r15 .rbp .r10 ++
+    ([.mov .rax (.reg .rbp), .mul .r8] : List Instr))))) := by
+  simp only [productsS, List.append_assoc]
+
+/-- As `Prods`, for `productsS` (ChaCha20-Poly1305's stitched pieces): after `addBlockAt` and `productsS`: the sum `a0 + 2⁶⁴ a1 + 2¹²⁸ a2` of the
+accumulator and the block, and its products with the clamped `r0` and
+`r1 = 4 q` (and `s1 = 5 q`) in `r12, r13` (`x`), `r14, r15` (`y`) and `rax`,
+as `carry` takes them. -/
+structure ProdsS (a0 a1 a2 r0 q : Nat) (s : State) : Prop where
+  ha0 : a0 < 2 ^ 64
+  ha1 : a1 < 2 ^ 64
+  ha2 : a2 ≤ 6
+  hr0 : r0 < 2 ^ 60
+  hq : q < 2 ^ 58
+  x : (s.gpr .r12).toNat + 2 ^ 64 * (s.gpr .r13).toNat = a0 * r0 + a1 * (5 * q)
+  y : (s.gpr .r14).toNat + 2 ^ 64 * (s.gpr .r15).toNat = a0 * (4 * q) + a1 * r0 + a2 * (5 * q)
+  z : (s.gpr .rax).toNat = a2 * r0
+
+/-- The block at `b + d` added to `h` (with `h2 ≤ 4`) and the products of the
+sum, under the clamped `r0, r1 = 4 q` in `r8, r9` and `s1 = 5 q` in `r10`. -/
+theorem prodsS_ok (s : State) {b : Reg} (hb : b ≠ .r11) {d : Nat} {pad : BitVec 32}
+    (hpad : pad = 0 ∨ pad = 1) {q : Nat}
+    (hr0 : (s.gpr .r8).toNat < 2 ^ 60) (hr1 : (s.gpr .r9).toNat = 4 * q) (hq : q < 2 ^ 58)
+    (hs1 : (s.gpr .r10).toNat = 5 * q)
+    (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofInt 64 (d : Int)) 8)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofInt 64 ((d + 8 : Nat) : Int)) 8) :
+    WP isa (.block (addBlockAt b d pad ++ productsS)) s fun s' =>
+      ((s.gpr .rbp).toNat ≤ 4 → ∃ a0 a1 a2, a0 + 2 ^ 64 * a1 + 2 ^ 128 * a2 =
+          hval s + (word s.mem (s.gpr b) d + 2 ^ 64 * word s.mem (s.gpr b) (d + 8) +
+            2 ^ 128 * pad.toNat) ∧
+        ProdsS a0 a1 a2 (s.gpr .r8).toNat q s') ∧ Keeps absorbRegs s s' := by
+  rw [productsS_eq]
   refine WP.block_append (WP.mono (addBlockAt_ok s hb hpad h0 h8) fun s₁ ⟨e₁, k₁⟩ => ?_)
   refine WP.block_append (WP.mono (mulTo_ok s₁ (by decide) (by decide) (by decide))
     fun s₂ ⟨e₂, k₂⟩ => ?_)
@@ -358,14 +604,14 @@ theorem prods_ok (s : State) {b : Reg} (hb : b ≠ .r11) {d : Nat} {pad : BitVec
     by rw [r14₇, r15₇]; exact e₆, e₇⟩⟩
 
 /-- The carry of the products, `h` congruent to their sum's product with `r`. -/
-theorem carryP_ok (s : State) (a0 a1 a2 r0 q : Nat) :
-    WP isa (.block carry) s fun s' =>
-      (Prods a0 a1 a2 r0 q s → hval s' % P = ((a0 + 2 ^ 64 * a1 + 2 ^ 128 * a2) *
+theorem carrySP_ok (s : State) (a0 a1 a2 r0 q : Nat) :
+    WP isa (.block carryS) s fun s' =>
+      (ProdsS a0 a1 a2 r0 q s → hval s' % P = ((a0 + 2 ^ 64 * a1 + 2 ^ 128 * a2) *
           (r0 + 2 ^ 64 * (4 * q))) % P ∧ (s'.gpr .rbp).toNat ≤ 4) ∧
       Keeps absorbRegs s s' := by
-  rw [carry_eq]
+  rw [carryS_eq]
   refine WP.block_append (WP.mono (addPair_ok s) fun s₈ ⟨e₈, k₈⟩ => ?_)
-  refine WP.block_append (WP.mono (split_ok s₈) fun s₉ ⟨f₁, f₂, f₃, f₄, k₉⟩ => ?_)
+  refine WP.block_append (WP.mono (splitS_ok s₈) fun s₉ ⟨f₁, f₂, f₃, f₄, k₉⟩ => ?_)
   refine WP.mono (addLow_ok s₉) fun s₁₀ ⟨e₁₀, k₁₀⟩ => ?_
   refine ⟨fun h => ?_, ((k₈.trans k₉).trans k₁₀).mono (by decide)⟩
   obtain ⟨b1, b2, b3, b4, b5, b6⟩ := absorb_bounds h.ha0 h.ha1 h.ha2 h.hr0 h.hq
