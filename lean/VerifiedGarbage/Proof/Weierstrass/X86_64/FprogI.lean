@@ -162,7 +162,8 @@ theorem maddJIW_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
     (hstab : ∀ i o' t t', o' ∈ rcbW S o → SI i t → OpKeep M base o' t t' → t'.xmm = t.xmm →
       t'.ymmHi = t.ymmHi → t'.syms = t.syms → SI i t')
     (hsc : ∀ op ∈ maddJ S p q o, scalCode (opProg M op) = true) {i : Nat} (hiN : i + (maddJ S p q o).length ≤ N)
-    {V : List Nat} {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V)
+    {V : List Nat} {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s)
+    (hV : ∀ x ∈ [p.x, p.y, p.z, q.x, q.y], x ∈ V)
     (hS : SI i s) :
     WP isa (fprogBI M (maddJ S p q o) side i).inline s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (maddJ S p q o) E) s' ∧
@@ -171,7 +172,11 @@ theorem maddJIW_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       SI (i + (maddJ S p q o).length) s' := by
   rw [maddJ_eq] at hsc hiN ⊢
   have hN := maddJN_ok
-  have hR : readsOk (ofN maddJN S p q o) V = true := readsOk_mono (ofN_readsOk hN S p q o) hV
+  have hR : readsOk (ofN maddJN S p q o) V = true := by
+    refine readsOk_mono (readsOk_rename (rcbσ S p q o)
+      (show readsOk maddJN [11, 12, 13, 14, 15] = true by decide)) fun x hx => hV x ?_
+    simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+    rcases hx with h | h | h | h | h <;> rw [h] <;> simp [rcbσ, rcbW, rcbR]
   refine WP.mono (fprogBIW_ok hL hm hside hstab _ i hiN (fun op hop => ofN_out hN op hop) hsc hI hS (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR)
     fun s' ⟨hk, hI', hS'⟩ => ⟨hk.mono fun w hw => ?_, hI'.sub fun x hx => ?_, ?_, hS'⟩
   · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw

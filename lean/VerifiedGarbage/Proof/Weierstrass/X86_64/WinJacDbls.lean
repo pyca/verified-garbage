@@ -116,6 +116,23 @@ theorem RSt.rbxKeeps (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s₀
     (W := []) (by rw [m]; exact Unch.refl _ _ _) (by simp), fun j h1 hj => (h.tbl j h1 hj).congr
     fun c _ => by rw [m], fun x hx => by rw [m]; exact h.lt x hx, by rw [e, e, e]; exact h.rep⟩
 
+/-- `R`'s state survives writes that miss `R` and keep the frame. -/
+theorem RSt.unchW (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s₀ s t : State}
+    (h : RSt K C base size P s₀ Q s) (F : JFrame K C base size s₀ t) {W : List (Nat × Nat)}
+    (hU : Unch base W s.mem t.mem) (hW : ∀ w ∈ W, w ∈ jwLoopW K)
+    (hR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ W, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x) :
+    RSt K C base size P s₀ Q t := by
+  have hn := h.fr.scr.nowrap
+  have e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
+    fun x hx => hU.wordsVal (hR x hx) (by
+      have hxo : x ∈ jwOther K := by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
+      have := hL.le (other_mem hxo); omega)
+  have tv : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = tmv C K.M.n base s x := fun x hx => by
+    show toM _ _ _ = toM _ _ _; rw [e x hx]
+  refine ⟨F, h.tbl.loopW hL (hU.mono hW) hn (by decide), fun x hx => by rw [e x hx]; exact h.lt x hx, ?_⟩
+  rw [tv _ (by simp), tv _ (by simp), tv _ (by simp)]; exact h.rep
+
 /-- One doubling of `R`. -/
 theorem dblR_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State}
