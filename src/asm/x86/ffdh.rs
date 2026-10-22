@@ -22640,3 +22640,247 @@ ret
         vg_rsa_mont_mul_at = sym super::rsa_mont::vg_rsa_mont_mul_at,
     )
 }
+
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with its eleven arguments in a 44-byte frame. The controller's words live in the state; timing depends on the domain, the controller's public words and the attempts' statuses.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain` or `rand` (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 164 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"mov eax, DWORD PTR [esp+52]
+mov DWORD PTR [eax+32], esi
+mov esi, eax
+mov eax, DWORD PTR [esp+4]
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [esp+12]
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [esi+76], eax
+mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [esp+28]
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [esp+32]
+mov DWORD PTR [esi+16], eax
+mov eax, DWORD PTR [esp+36]
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [esp+40]
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [esp+44]
+mov DWORD PTR [esi+64], eax
+mov eax, DWORD PTR [esp+48]
+mov DWORD PTR [esi+68], eax
+mov eax, 0
+mov DWORD PTR [esi+60], eax
+mov DWORD PTR [esi+28], eax
+20:
+mov eax, DWORD PTR [esi]
+test eax, eax
+je 21f
+mov eax, DWORD PTR [esi+8]
+test eax, eax
+je 23f
+mov eax, DWORD PTR [esi+56]
+mov ecx, DWORD PTR [esi+16]
+cmp eax, ecx
+jb 25f
+lea esp, [esp-44]
+mov eax, DWORD PTR [esi+36]
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esi+16]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esi+40]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esi+16]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esi+44]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esi+48]
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esi+16]
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esi+52]
+mov DWORD PTR [esp+28], eax
+mov eax, DWORD PTR [esi+16]
+mov DWORD PTR [esp+32], eax
+mov eax, DWORD PTR [esi+64]
+mov DWORD PTR [esp+36], eax
+mov eax, DWORD PTR [esi+68]
+mov DWORD PTR [esp+40], eax
+call {vg_ffdh_generate_key}
+lea esp, [esp+44]
+mov edx, eax
+mov ecx, DWORD PTR [esi+16]
+mov eax, DWORD PTR [esi+52]
+add eax, ecx
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [esi+56]
+sub eax, ecx
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [esi+60]
+add eax, ecx
+mov DWORD PTR [esi+60], eax
+cmp edx, 1
+je 27f
+cmp edx, 2
+je 29f
+cmp edx, 3
+je 211f
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+8], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 3
+mov DWORD PTR [esi+72], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+213:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 213b
+mov edx, DWORD PTR [esi+40]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+214:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 214b
+jmp 212f
+211:
+mov eax, DWORD PTR [esi]
+sub eax, 1
+mov DWORD PTR [esi], eax
+mov eax, 128
+mov DWORD PTR [esi+8], eax
+mov eax, 4
+mov DWORD PTR [esi+72], eax
+212:
+jmp 210f
+29:
+mov eax, DWORD PTR [esi+8]
+sub eax, 1
+mov DWORD PTR [esi+8], eax
+mov eax, 4
+mov DWORD PTR [esi+72], eax
+210:
+jmp 28f
+27:
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+8], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 1
+mov DWORD PTR [esi+72], eax
+28:
+jmp 26f
+25:
+mov eax, DWORD PTR [esi+16]
+mov DWORD PTR [esi+24], eax
+mov eax, 0
+mov DWORD PTR [esi+72], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+215:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 215b
+mov edx, DWORD PTR [esi+40]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+216:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 216b
+26:
+jmp 24f
+23:
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+8], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 3
+mov DWORD PTR [esi+72], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+217:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 217b
+mov edx, DWORD PTR [esi+40]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+218:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 218b
+24:
+jmp 22f
+21:
+mov eax, 0
+mov DWORD PTR [esi], eax
+mov DWORD PTR [esi+8], eax
+mov DWORD PTR [esi+24], eax
+mov eax, 3
+mov DWORD PTR [esi+72], eax
+mov edx, DWORD PTR [esi+36]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+219:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 219b
+mov edx, DWORD PTR [esi+40]
+mov ecx, DWORD PTR [esi+16]
+mov eax, 0
+220:
+mov BYTE PTR [edx], al
+add edx, 1
+sub ecx, 1
+jne 220b
+22:
+mov eax, DWORD PTR [esi+72]
+cmp eax, 4
+je 20b
+mov ecx, DWORD PTR [esi+76]
+mov eax, DWORD PTR [esi+60]
+mov DWORD PTR [ecx], eax
+mov eax, 0
+mov DWORD PTR [ecx+4], eax
+mov eax, DWORD PTR [esi+72]
+mov esi, DWORD PTR [esi+32]
+ret
+.p2align 6",
+        vg_ffdh_generate_key = sym super::ffdh::vg_ffdh_generate_key,
+    )
+}
