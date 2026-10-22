@@ -91,6 +91,30 @@ theorem directLen_xd : (directLen H).x86_64Depth = 0 := by
   unfold directLen
   split <;> rfl
 
+theorem lenLast_safe : (lenLast H).allInstrs safeI = true := by
+  unfold lenLast
+  split
+  · simp only [Code.allInstrs, rec_all, copyWords64_safe, List.all_append, Bool.and_true]
+    rfl
+  · rfl
+
+theorem lenLast_xd : (lenLast H).x86_64Depth = 0 := by
+  unfold lenLast
+  split <;> rfl
+
+include hH K in
+theorem fixedHash_safe : (fixedHash H).allInstrs safeI = true := by
+  have hl : H.P.len.all safeI = true := hH.taints.lenSafe
+  have ho : H.P.out.all safeI = true := hH.taints.outSafe
+  simp only [fixedHash, seqs, ctInit, lenLast_safe (H := H), compAll, Code.allInstrs,
+    comp_safe K, init_safe K, rec_all, lenField, digestAt, List.all_append, hl, ho, Bool.and_true]
+  rfl
+
+include K in
+theorem fixedHash_xd : (fixedHash H).x86_64Depth = 8 := by
+  simp only [fixedHash, seqs, ctInit, lenLast_xd (H := H), compAll, Code.x86_64Depth, K.cXD, K.iXD]
+  rfl
+
 include hH K in
 theorem mgfHash_safe : (mgfHash H).allInstrs safeI = true := by
   unfold mgfHash

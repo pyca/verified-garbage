@@ -3,6 +3,7 @@ public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHash
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -41,19 +42,33 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
   have hD := hH.hD0
   have hDN := hH.hDN
   have hN := hH.N_le
+  have hB0 := hH.B_pos
+  have hBl := hH.B_le
+  have hL := hH.dims.L
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
   have c3 : oDig = 2304 := rfl
   have c5 : oRsa = 8192 := rfl
-  unfold fixedSaltBack fixedSaltPrefix seqs seqs seqs
+  have hml : msg.length = 8 + H.D + sl := by
+    simp only [msg, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range]
+  have hnb1 := Nat.lt_div_mul_add (a := 8 + H.D + sl + H.P.L) (b := H.P.B) hB0
+  have hnb2 := Nat.div_mul_le_self (8 + H.D + sl + H.P.L) H.P.B
+  have hnb : ((8 + H.D + sl + H.P.L) / H.P.B + 1) * H.P.B ≤ 2048 := by rw [Nat.succ_mul]; omega
+  have hfitN : 8 + H.D + sl < ((8 + H.D + sl + H.P.L) / H.P.B + 1) * H.P.B := by rw [Nat.succ_mul]; omega
+  unfold fixedSaltBack fixedSaltPrefix fixedHead seqs seqs seqs seqs
   apply WP.assoc'
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 8)
-    (clearY_ok L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
-  have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   apply WP.assoc'
-  refine WP.seq (WP.mono (copyDigest_ok hH L1 R1 (p := dig) hdg hcx1
-    (fun i hi => by rw [k1.2.1, k1.2.2]; exact hdR i hi)
-    (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2]; exact hdO i hi) (by omega)))
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [hashSaltLen]) (by exact Nat.zero_le 8)
+    (hashSaltLen_ok hH L R (k := 36) (by decide) hsl (by omega))) fun u0 ⟨⟨L0, k0, R0⟩, f0⟩ => ?_)
+  have hS0 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f0
+  apply WP.assoc'
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearNb]) (by exact Nat.zero_le 8)
+    (clearNb_ok hH L0 R0 (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1) (by simp [upd]) (Nat.succ_pos _) hnb))
+    fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
+  have hS1 := chain (u := u) k0.2.2 L0.rsp hS0 f1
+  refine WP.seq (WP.mono (copyDigest_ok hH L1 R1 (p := dig) (by simp [upd, hdg]) hcx1
+    (fun i hi => by rw [k1.2.1, k0.2.1, k1.2.2, k0.2.2]; exact hdR i hi)
+    (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2, k0.2.2]; exact hdO i hi) (by omega)))
     fun u2 ⟨L2, k2, R2⟩ => ?_)
   have salt_src : ∀ i < sl, u2.mem (off S (oEm + lo + db - sl + i)) =
       V (oEm + lo + db - sl + i) := by
@@ -62,30 +77,29 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     simp only [cpV, clrV]
     rw [ifn (by omega), ifn (by omega)]
   apply WP.assoc'
-  refine WP.seq (WP.mono (copyFixedSalt_ok hH L2 R2 he hdb hsl hslFit (by omega) (by omega)
+  refine WP.seq (WP.mono (copyFixedSalt_ok hH L2 R2 (e := oEm + lo) (by simp [upd, he]) (by simp [upd, hdb])
+    (by simp [upd, hsl]) hslFit (by omega) (by omega)
     ((k2.gpr (by decide)).trans hcx1)) fun u3 ⟨L3, k3, R3⟩ => ?_)
-  refine WP.seq (WP.mono (hashSaltLen_ok hH L3 R3 (k := 36) (by decide) hsl (by omega))
-    fun u4 ⟨L4, k4, R4⟩ => ?_)
-  have hml : msg.length = 8 + H.D + sl := by
-    simp only [msg, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range]
-  have hB0 := hH.B_pos
-  have hBl := hH.B_le
-  have hL := hH.dims.L
-  have hnb1 := Nat.lt_div_mul_add (a := 8 + H.D + sl + H.P.L) (b := H.P.B) hB0
-  have hnb2 := Nat.div_mul_le_self (8 + H.D + sl + H.P.L) H.P.B
-  refine WP.seq (WP.mono (ctHash_ok hH K L4 R4 (msg := msg)
-    (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1)
-    (by simp [upd, hml]) (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega)
-    (by rw [Nat.succ_mul]; omega) (fun i hi => ?_))
-    fun u5 ⟨L5, rd5, wr5, cs5, V5, W5, R5, hout5, hW5, hdig5⟩ => ?_)
-  · have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega
-    simp only [cpV, clrV, msg, getD_app, List.length_append, RsaPss.zeros_length,
+  refine WP.seq (WP.mono (padSalt_ok L3 R3 (sl := sl) (by simp [upd, hsl]) (by omega)) fun u4 ⟨L4, k4, R4⟩ => ?_)
+  refine WP.seq (WP.mono (fixedHash_gen hH K L4 R4 (ℓ := 8 + H.D + sl)
+    (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1) (by simp [upd]) (by simp [upd]) rfl hnb)
+    fun u5 ⟨L5, rd5, wr5, cs5, V5, W5, R5, hout5, hW5, hdig⟩ => ?_)
+  have hdig5 := hdig msg hml (fun i hi => ?_)
+  rotate_left
+  · simp only [upd, cpV, clrV, msg, getD_app, List.length_append, RsaPss.zeros_length,
       List.length_map, List.length_range, getD_map_range, bytesF]
+    by_cases h0 : i = 8 + H.D + sl
+    · subst h0
+      rw [ifp rfl, ifp rfl, ifn (by omega), ifn (by omega)]
+      exact BitVec.zero_or.symm
+    rw [ifn (by omega), ifn h0]
+    have oz : ∀ x : Byte, x ||| 0 = x := fun x => BitVec.or_zero
+    rw [oz]
     by_cases h1 : i < 8
     · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega),
         ifn (show ¬(oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D) by omega),
-        ifp (show oY ≤ oY + i ∧ oY + i < oY + 2048 by omega), ifp (show i < 8 + H.D by omega), ifp h1,
-        RsaPss.zeros_getD]
+        ifp (show oY ≤ oY + i ∧ oY + i < oY + ((8 + H.D + sl + H.P.L) / H.P.B + 1) * H.P.B by omega),
+        ifp (show i < 8 + H.D by omega), ifp h1, RsaPss.zeros_getD]
     by_cases h2 : i < 8 + H.D
     · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega),
         ifp (show oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D by omega), ifp h2, ifn h1,
@@ -97,7 +111,7 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
       exact salt_src _ (by omega)
     · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega),
         ifn (show ¬(oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D) by omega),
-        ifp (show oY ≤ oY + i ∧ oY + i < oY + 2048 by omega), ifn h2,
+        ifp (show oY ≤ oY + i ∧ oY + i < oY + ((8 + H.D + sl + H.P.L) / H.P.B + 1) * H.P.B by omega), ifn h2,
         ifn (show ¬ i - (8 + H.D) < sl by omega)]
   have h23 : W5 23 = off S (oEm + lo) := by
     rw [hW5 23 (by decide) (by decide) (by decide)]; simp [upd, he]
@@ -105,11 +119,12 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     rw [hW5 24 (by decide) (by decide) (by decide)]; simp [upd, hdb]
   refine WP.mono (cmpH_ok hH L5 R5 h23 h24 (by omega)) fun u6 ⟨k6, hm6, hax6⟩ => ?_
   have L6 : Lay u6 F S := L5.congr (k6.gpr (by decide)) k6.2.2 (by rw [hm6])
-  refine ⟨L6, k6.2.1.trans (rd5.trans (k4.2.1.trans (k3.2.1.trans (k2.2.1.trans k1.2.1)))),
-    k6.2.2.trans (wr5.trans (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans k1.2.2)))),
+  refine ⟨L6, k6.2.1.trans (rd5.trans (k4.2.1.trans (k3.2.1.trans (k2.2.1.trans (k1.2.1.trans k0.2.1))))),
+    k6.2.2.trans (wr5.trans (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans (k1.2.2.trans k0.2.2))))),
     fun r hr => ?_, ⟨V5, W5, hm6 ▸ R5, fun j hj a b c d => ?_⟩, ?_⟩
   · rw [keep_cs k6 (by decide) r hr, cs5 r hr, keep_cs k4 (by decide) r hr,
-      keep_cs k3 (by decide) r hr, keep_cs k2 (by decide) r hr, keep_cs k1 (by decide) r hr]
+      keep_cs k3 (by decide) r hr, keep_cs k2 (by decide) r hr, keep_cs k1 (by decide) r hr,
+      keep_cs k0 (by decide) r hr]
   · rw [hW5 j hj c d]; simp [upd, a, b]
   · rw [hax6]
     have h33 : W5 33 = W 33 := by
@@ -118,8 +133,8 @@ theorem fixedSaltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
       rw [map_range_getD hdig5 hi, ← lk.hash]
     have hE : ∀ i < H.D, V5 (oEm + lo + db + i) = V (oEm + lo + db + i) := fun i hi => by
       rw [hout5 _ (by omega) ⟨by unfold oLen; omega, by omega⟩]
-      simp only [cpV, clrV]
-      rw [ifn (by omega), ifn (by omega), ifn (by omega)]
+      simp only [upd, cpV, clrV]
+      rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
     rw [h33]
     congr 1
     apply propext
