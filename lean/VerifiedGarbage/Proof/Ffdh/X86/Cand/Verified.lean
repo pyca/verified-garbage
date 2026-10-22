@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTTop
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTTop
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABITable
+public import Mathlib.Tactic.ToAdditive
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Top
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # `vg_ffdh_parameter_candidate_sieved` on i686, verified -/
 

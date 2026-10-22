@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTDraw
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 
 /-!
 # The FFDH candidate on i686: a phase's timing

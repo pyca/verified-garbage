@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
+import VerifiedGarbage.Proof.Ffdh.X86.Stages
 
 /-!
 # The FFDH candidate on i686: RSA's small-prime sieve

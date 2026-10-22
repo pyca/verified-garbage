@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTSieve
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTTests
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTDraw
@@ -9,11 +9,17 @@ meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTSmall
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTSieve
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
+meta import VerifiedGarbage.Proof.Ffdh.X86.Stages
+meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 
 /-!
 # The FFDH candidate on i686: the timing of p's checks

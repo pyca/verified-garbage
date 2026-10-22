@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialDivisor
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Spec.Dsa
 
 /-!
 # The FFDH candidate on i686: divisibility by a small prime

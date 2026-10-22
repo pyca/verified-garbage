@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Result
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 
 /-!
 # The FFDH candidate on i686: the screened tests

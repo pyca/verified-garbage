@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86.Stages
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 
 /-!
 # The FFDH candidate on i686: the sieve's timing

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Body
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Body
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
@@ -17,6 +17,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Result
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
+public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 
 /-! # `vg_ffdh_parameter_candidate_sieved` on i686 against its contract -/
 

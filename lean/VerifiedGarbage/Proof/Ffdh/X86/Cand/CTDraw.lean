@@ -2,12 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTRound
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTRound
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Round
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+meta import VerifiedGarbage.Proof.Ffdh.X86.Stages
+meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 
 /-!
 # The FFDH candidate on i686: a draw's timing

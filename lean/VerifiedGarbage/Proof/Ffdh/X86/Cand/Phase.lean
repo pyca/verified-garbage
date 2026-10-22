@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Round
 
 /-!
 # The FFDH candidate on i686: a phase of Miller–Rabin

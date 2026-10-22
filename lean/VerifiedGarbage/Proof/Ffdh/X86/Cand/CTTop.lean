@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Top
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTMain
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTMain
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
@@ -10,6 +10,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Body
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 
 /-!
 # `vg_ffdh_parameter_candidate_sieved` on i686 in constant time

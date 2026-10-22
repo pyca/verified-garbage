@@ -12,6 +12,9 @@ meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ffdh.X86.Stages
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 
 /-!
 # The FFDH candidate on i686: the timing of a division by a small prime

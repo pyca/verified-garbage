@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
-public import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ffdh.X86.Domain
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 
 /-!
 # The FFDH candidate on i686: what its timing is checked from

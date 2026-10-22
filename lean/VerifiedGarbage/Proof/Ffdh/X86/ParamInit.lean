@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamInit
-public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
+import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
@@ -22,6 +21,12 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
+public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Ffdh.KeyGeneration
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # `vg_ffdh_parameter_generation_init` on i686 -/
 

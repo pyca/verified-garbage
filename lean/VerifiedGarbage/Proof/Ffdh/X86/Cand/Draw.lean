@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Round
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Round
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
@@ -9,8 +9,10 @@ import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WitnessStreamStep
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WitnessStreamStep
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Prep
 
 /-!
 # The FFDH candidate on i686: a witness's draw

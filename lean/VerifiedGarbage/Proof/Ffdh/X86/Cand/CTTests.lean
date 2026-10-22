@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTPhase
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTPhase
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
+import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+meta import VerifiedGarbage.Proof.Ffdh.X86.Stages
+meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
+public import VerifiedGarbage.Proof.Ffdh.X86.KeyGen
 
 /-!
 # The FFDH candidate on i686: the tests' timing

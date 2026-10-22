@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Spec
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Spec
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Halve
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
+public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 
 /-!
 # The FFDH candidate on i686: p's checks and tests

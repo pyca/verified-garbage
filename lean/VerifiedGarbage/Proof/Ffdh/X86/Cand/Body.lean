@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Spec
 
 /-!
 # The FFDH candidate on i686: its body
