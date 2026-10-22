@@ -70,6 +70,20 @@ def GcmVariant.stitchToR16 (v : GcmVariant) : Option (StitchToCode CtxMode.prepa
     | .vaes => p.pieceR.map fun q => ⟨p.name.encR, p.name.fullR, p.name.okR16 h, q.enc⟩
     | _ => none
 
+/-- What the `_prepared16` instances of a variant need besides its 256-bit
+loops: no short path, whose table of powers is copied from all 48, and no
+one-pass loop that reads more than 16 (`StitchZHTo.encN`). -/
+structure R16 (v : GcmVariant) : Prop where
+  short : v.impl.short = false
+  onePass : ∀ n, v.impl.onePass = some n → n ≠ .z
+
+/-- Whether a variant's prepared instances read only the first 16 powers:
+its loops are the 256-bit ones (`stitchR16`), and `R16` holds. -/
+def GcmVariant.r16 (v : GcmVariant) : Option (PLift (R16 v)) :=
+  if h : v.stitchR16.isSome = true ∧ v.impl.short = false ∧ v.impl.onePass ≠ some .z then
+    some ⟨⟨h.2.1, fun _ hn hz => h.2.2 (hz ▸ hn)⟩⟩
+  else none
+
 /-- Whole-block implementations for a key context of `vg_aes_gcm_prepare16`. -/
 def blkR16 (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
   v.impl.blkM v.stitchR16 (Spec.Gcm.encryptBlocksPrepared16Api.name ++ v.impl.suffix)

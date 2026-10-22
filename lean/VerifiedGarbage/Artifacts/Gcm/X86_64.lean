@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on x86-64 -/
@@ -47,6 +48,14 @@ def artifacts : List Artifact := [
         independent multiplications at a time, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
     code := Impl.Gcm.X86_64.Prepare.prepare
     verified := Proof.Gcm.X86_64.Prepare.prepare_verified
+    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
+  Spec.Gcm.prepare16Api.artifact X86_64.target {
+    suffix := "_vpclmul"
+    notes := ["Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute \
+        them, two in each register, already prepared, stored as the first 8 pairs: the first pass \
+        of `vg_aes_gcm_prepare_vpclmul`. No calls and no stack."]
+    code := Impl.Gcm.X86_64.Prepare16.prepare16
+    verified := Proof.Gcm.X86_64.Prepare16.prepare16_verified
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_pclmul_avx"
