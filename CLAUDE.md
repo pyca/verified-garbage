@@ -760,9 +760,9 @@ Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`, or
 `<Iface₁>.….<Ifaceₙ>.<Target>`, e.g. `Blake2b.Argon2Compress.X86_64`) to
 emit its generic callers for each variant (or combination of variants). It
 refuses a file that is new or that other registration files also emit into
-(but for a target's `consts.rs`, where it replaces only the tables it
-generated); the full emitter handles those, and the checks below still run
-everything before pushing.
+(each table of constants has a file of its own, `consts/<name>.rs`, which it
+writes like any other); the full emitter handles those, and the checks below
+still run everything before pushing.
 
 ## Measuring a change's speed
 

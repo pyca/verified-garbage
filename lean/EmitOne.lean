@@ -25,10 +25,10 @@ It runs the same trusted printer (`VG.Emit.run`) and the same audits
 `.lake/emit/one`, and then copies (or compares) each file it generated but the
 `mod.rs` files. It refuses a file that does not exist yet (a new module also
 changes `mod.rs`) or that has functions it did not generate (another
-registration file emits into it): `Emit.lean` handles those. A target's
-`consts.rs`, which holds the tables of constants of every registration file,
-gets the tables it generated in place of theirs and keeps the others
-(`mergeTables`), as `Emit.lean` writes them. It is a
+registration file emits into it): `Emit.lean` handles those. Each table of
+constants has a file of its own (`src/asm/<target>/consts/<name>.rs`, which
+depends only on the table), so it writes those of its artifacts' tables and
+leaves the others; a new table is a new file. It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI
 runs, checks every artifact and every file.
 -/
@@ -71,37 +71,6 @@ def runProc (cmd : String) (args : Array String) : IO UInt32 := do
 def groupName (is : List String) : String :=
   let target := ((is.headD "").splitOn ".").getLastD ""
   ".".intercalate (is.map fun i => (i.splitOn ".").headD "") ++ "." ++ target
-
-/-- The text of a file of tables of constants (`VG.Rust.tablesFile`) up to
-its first table, and each table's text, by name. -/
-def tableBlocks (text : String) : String × List (String × String) :=
-  let marker := "\n/// The table of constants `"
-  match text.splitOn marker with
-  | [] => (text, [])
-  | h :: bs => (h, bs.map fun b => ((b.splitOn "`").headD "", marker ++ b))
-
-/-- The file of tables `current` with the tables of `generated` in place of
-its own and added to them, in order of their names, as `VG.Rust.tables`
-orders them: the tables the other registration files emit into it are kept.
-A table that none of them emits any more stays until `Emit.lean` runs. -/
-def mergeTables (current generated : String) : String :=
-  let (_, cur) := tableBlocks current
-  let (h, gen) := tableBlocks generated
-  let names := gen.map (·.1) ++ (cur.map (·.1)).filter fun n => !(gen.map (·.1)).contains n
-  h ++ String.join ((names.mergeSort (· ≤ ·)).filterMap fun n => (gen.lookup n).orElse fun _ => cur.lookup n)
-
-private def tableOf (n : String) (b : String) : String :=
-  s!"\n/// The table of constants `{n}` (`Artifact.consts`).\npub(crate) static {n}: Table<8> = Table(*b\"{b}\");\n"
-
--- The tables of one registration file replace theirs in a target's file of
--- all of them, which keeps the others, in order of their names.
-#guard mergeTables ("H" ++ tableOf "A" "1" ++ tableOf "C" "3") ("H" ++ tableOf "B" "2") ==
-  "H" ++ tableOf "A" "1" ++ tableOf "B" "2" ++ tableOf "C" "3"
-#guard mergeTables ("H" ++ tableOf "A" "1" ++ tableOf "B" "2" ++ tableOf "C" "3") ("H" ++ tableOf "B" "9") ==
-  "H" ++ tableOf "A" "1" ++ tableOf "B" "9" ++ tableOf "C" "3"
--- A file that has them all already is unchanged.
-#guard mergeTables ("H" ++ tableOf "A" "1" ++ tableOf "B" "2") ("H" ++ tableOf "A" "1") ==
-  "H" ++ tableOf "A" "1" ++ tableOf "B" "2"
 
 def main (args : List String) : IO UInt32 := do
   let (check, names) := match args with
@@ -149,7 +118,6 @@ def main (args : List String) : IO UInt32 := do
       ok := false
       continue
     let current ← IO.FS.readFile target
-    let text := if path.fileName == some "consts.rs" then mergeTables current text else text
     if unreadFns current || unreadFns text then
       IO.eprintln s!"{target}: cannot read the names of its functions: run Emit.lean"
       ok := false
