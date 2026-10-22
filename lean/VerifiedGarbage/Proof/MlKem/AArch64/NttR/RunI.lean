@@ -13,11 +13,9 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # ML-KEM on AArch64: the runs of the 16-bit inverse NTTs
 
-The regions of `invW` (`rsIW`: the polynomial stored with 16 bits at `x0`, the working space at
-`x1`, the table of zetas), the terms it and the end of `nttInv` start from (`initIW`, `initIU`:
-the input's coefficients, the table's halfwords as constants), and the checks, by the kernel,
-that the runs leave the reduced coefficients of `NTT⁻¹` in the polynomial (`checkIW_ok`, and
-`checkIN_ok` for the end of `nttInv`, with the table in the working space).
+The terms the end of `nttInv` starts from (`initIU`: the input's coefficients, the table's
+halfwords as constants), and the check, by the kernel, that its run leaves the reduced
+coefficients of `NTT⁻¹` in the polynomial (`checkIN_ok`, with the table in the working space).
 -/
 
 @[expose] public section
@@ -26,17 +24,9 @@ namespace VG.Proof.MlKem.AArch64.NttR
 
 open VG VG.AArch64
 
-def rsIW : List Rg := rsWs "VG_MLKEM_INTT16_ZETAS"
-
 def initIU : St := initUs itabT
 
-def initIW : St := initWs itabT
-
 theorem checkIN_ok : (initIU.runP invRules rsN 16 nttInvTail).elim false outU = true := by
-  lit_decide
-
-theorem checkIW_ok :
-    (initIW.runP invRules rsIW 16 Impl.MlKem.AArch64.Ntt16.Readonly.invW).elim false outW = true := by
   lit_decide
 
 /-- Lane `e` of chunk `j` of the table. -/

@@ -61,6 +61,6 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (by rw [ku.gpr .x28 (by decide)]; exact hf)
     (by rw [ku.gpr .x28 (by decide)]; exact hg)
     (by rw [ku.gpr .x28 (by decide)]; exact hw)
-    (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [NttR.fastRegion, us] using hfar)
+    (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [NttR.fastRegion, NttR.sRegion, us] using hfar)
 
 end VG.Proof.MlKem.AArch64.Noise

@@ -12,19 +12,19 @@ def tableSyms (name : String) : Addr :=
  if name="VG_MLKEM_REJ_SHUFFLE" then 0x200000 else
  if name="VG_MLKEM_GAMMA" then 0x210000 else
  if name="VG_MLKEM_NTT16_ZETAS" then 0x220000 else
- if name="VG_MLKEM_INTT16_ZETAS" then 0x230000 else 0x240000
+ if name="VG_MLKEM16_INTT_ZETAS" then 0x230000 else 0x240000
 
 def tableMem : Mem := fun a =>
  if a.toNat<0x210000 then constMem 0x200000 Impl.MlKem.AArch64.Rej8.tableWords a else
  if a.toNat<0x220000 then constMem 0x210000 (words 32 gammaTable) a else
  if a.toNat<0x230000 then constMem 0x220000 (words 16 tableHalves) a else
- if a.toNat<0x240000 then constMem 0x230000 (words 16 invTableHalves) a else
+ if a.toNat<0x240000 then constMem 0x230000 FastInv.tabWords a else
  constMem 0x240000 Fast.tabWords a
 
 theorem tableMem_word {n i : Nat} (hn : n<5) (hi : i<512) :
  tableMem.readW (BitVec.ofNat 64 (0x200000+65536*n)+BitVec.ofNat 64 (8*i)) 64 =
  (constMem (BitVec.ofNat 64 (0x200000+65536*n))
-  ([Impl.MlKem.AArch64.Rej8.tableWords,words 32 gammaTable,words 16 tableHalves,words 16 invTableHalves,
+  ([Impl.MlKem.AArch64.Rej8.tableWords,words 32 gammaTable,words 16 tableHalves,FastInv.tabWords,
     Fast.tabWords].getD n [])).readW
    (BitVec.ofNat 64 (0x200000+65536*n)+BitVec.ofNat 64 (8*i)) 64 := by
  apply Mem.readW_congr
@@ -80,12 +80,12 @@ theorem tableMem_held : Abi.constsHeld tableMem tableSyms constants := by
    have hx := tableMem_word (n:=2) (i:=i) (by decide) (by omega)
    simp only [Nat.reduceMul,Nat.reduceAdd,List.getD_cons_zero,List.getD_cons_succ] at hx
    exact hx.trans (constMem_held _ _ (by rw [Ntt16.Readonly.forward_length]; decide) i (by rw [Ntt16.Readonly.forward_length]; exact hi))
- · change i<(words 16 invTableHalves).length at hi
-   rw [Ntt16.Readonly.inverse_length] at hi
-   rw [show tableSyms "VG_MLKEM_INTT16_ZETAS"=0x230000 by rfl]
+ · change i<FastInv.tabWords.length at hi
+   rw [NttR.tabWordsI_length] at hi
+   rw [show tableSyms "VG_MLKEM16_INTT_ZETAS"=0x230000 by rfl]
    have hx := tableMem_word (n:=3) (i:=i) (by decide) (by omega)
    simp only [Nat.reduceMul,Nat.reduceAdd,List.getD_cons_zero,List.getD_cons_succ] at hx
-   exact hx.trans (constMem_held _ _ (by rw [Ntt16.Readonly.inverse_length]; decide) i (by rw [Ntt16.Readonly.inverse_length]; exact hi))
+   exact hx.trans (constMem_held _ _ (by rw [NttR.tabWordsI_length]; decide) i (by rw [NttR.tabWordsI_length]; exact hi))
  · change i<Fast.tabWords.length at hi
    rw [NttR.tabWords_length] at hi
    rw [show tableSyms "VG_MLKEM16_NTT_ZETAS"=0x240000 by rfl]

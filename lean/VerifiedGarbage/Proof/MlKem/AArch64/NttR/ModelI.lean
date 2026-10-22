@@ -51,7 +51,7 @@ theorem Li_succ (W : Nat → BitVec 16) (st p : Nat) : Li W (st + 1) p =
 
 theorem modelI (W : Nat → BitVec 16) : Model (Li W) (Oi W) invRules := by
   refine ⟨by decide, fun h => absurd h (by decide), fun _ st p p' hg => ?_, fun _ st p p' z t hg hz => ?_,
-    fun _ st p hr => ?_, fun _ p => ?_, fun p _ => rfl⟩
+    fun _ st p hr => ?_, fun _ p => ?_, fun p _ => rfl, nofun, nofun, nofun, nofun, nofun⟩
   · unfold gsPair at hg
     simp only [Bool.and_eq_true, Nat.blt_eq, Nat.beq_eq] at hg
     obtain ⟨⟨⟨hpos, rfl⟩, hm⟩, -⟩ := hg

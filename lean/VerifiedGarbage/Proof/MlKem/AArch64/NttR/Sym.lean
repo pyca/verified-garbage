@@ -82,11 +82,15 @@ inductive K
   | qdD
   /-- `sqrdmulh(dif st p p₀, t) · q`. -/
   | mulQD
+  /-- A sum `lv st p + lv st (p + fLen st)` of the scheduled `NTT⁻¹` to be
+  reduced (`t = 0`), its `sqrdmulh` by 10 (`t = 1`), or that times `q` (`t = 2`). -/
+  | sumR
   deriving DecidableEq, Inhabited
 
 def K.code : K → Nat
   | .junk => 0 | .lv => 1 | .out => 2 | .c => 3 | .mulC => 4 | .qdC => 5 | .mulQ => 6 | .mm => 7
   | .n1 => 8 | .sraN => 9 | .andN => 10 | .dif => 11 | .mulD => 12 | .qdD => 13 | .mulQD => 14
+  | .sumR => 15
 
 def T.kind (a : T) : Nat := Nat.mod a 16
 def T.st (a : T) : Nat := Nat.mod (Nat.div a 16) 16
@@ -115,11 +119,15 @@ abbrev twN (z : Nat) : Nat := Impl.MlKem.AArch64.Ntt16.tw z
 /-- The layers of a transform: its number of levels, its zetas by index, and
 whether it is `NTT⁻¹`. `NTT` has seven Cooley–Tukey layers (layer `st` at
 distance `128 >>> st`); `NTT⁻¹`'s levels are its Gentleman–Sande layers, the
-reductions between them (`invRed`) and the multiplication by 3303. -/
+reductions between them (`invRed`) and the multiplication by 3303. `fast` is
+`NTT⁻¹` as mlkem-native schedules it (`fastInvRules`): the multiplication by
+3303 first (level 0), then the layer at distance `fLen st` at each level `st`,
+some of its sums reduced (`fRed`). -/
 structure Rules where
   layers : Nat
   zeta : Nat → Nat
   inv : Bool := false
+  fast : Bool := false
 
 /-- `ζ_k`, as the code takes it. -/
 def zetaN (k : Nat) : Nat := Impl.MlKem.AArch64.Ntt16.zeta k
@@ -160,22 +168,72 @@ def bflyOk (R : Rules) (st p p' z t : Nat) : Bool :=
   Nat.blt st R.layers && Nat.beq p' (p + len) && Nat.blt (p % (2 * len)) len && Nat.blt p' 256 &&
     Nat.beq z (R.zeta (128 / len + p / (2 * len))) && Nat.beq t (twN z)
 
+/-! ## `NTT⁻¹` as mlkem-native schedules it -/
+
+/-- The distance of the scheduled `NTT⁻¹`'s layer at level `st`, `1 ≤ st ≤ 7`. -/
+def fLen (st : Nat) : Nat := 1 <<< st
+
+/-- The pair `p`, `p'` of the scheduled `NTT⁻¹`'s level `st`. -/
+def fPair (st p p' : Nat) : Bool :=
+  Nat.ble 1 st && Nat.ble st 7 && Nat.beq p' (p + fLen st) && Nat.blt (p % (2 * fLen st)) (fLen st) &&
+    Nat.blt p' 256
+
+/-- The sums of the scheduled `NTT⁻¹` it reduces to less than `q` in absolute
+value: all of level 3's, and level 4's with `8 ≤ p mod 32 < 16`. -/
+def fRed (st p : Nat) : Bool :=
+  (Nat.beq st 3 && Nat.blt (p % 16) 8) || (Nat.beq st 4 && Nat.ble 8 (p % 32) && Nat.blt (p % 32) 16)
+
+/-- The zeta `z = q - ζ` (and its `tw` `t`) the scheduled `NTT⁻¹` multiplies
+the difference `lv st (p' - len) - lv st p'` of level `st`'s pair by. -/
+def fZeta (st p' z t : Nat) : Bool :=
+  let len := fLen st
+  Nat.beq z (qN - zetaN (256 / len - 1 - p' / (2 * len))) && Nat.beq t (twN z)
+
+/-- The scheduled `NTT⁻¹`: the multiplication by 3303, seven layers. -/
+def fastInvRules : Rules := { layers := 8, zeta := zetaN, fast := true }
+
 /-- The product of halfwords. -/
 def mulT (a b : T) : T :=
   bif Nat.beq a.kind 1 && Nat.beq b.kind 3 && Nat.blt b.t 4096 then mk .mulC a.st a.p b.t 0
   else bif Nat.beq a.kind 5 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .mulQ a.st a.p 0 a.t
   else bif Nat.beq a.kind 11 && Nat.beq b.kind 3 then mk .mulD a.st a.p a.z b.t
   else bif Nat.beq a.kind 13 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .mulQD a.st a.p a.z a.t
+  else bif Nat.beq a.kind 15 && Nat.beq a.t 1 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .sumR a.st a.p 0 2
   else junkT
 
 /-- `SQRDMULH`. -/
 def qdT (a b : T) : T :=
   bif Nat.beq a.kind 1 && Nat.beq b.kind 3 then mk .qdC a.st a.p 0 b.t
   else bif Nat.beq a.kind 11 && Nat.beq b.kind 3 then mk .qdD a.st a.p a.z b.t
+  else bif Nat.beq a.kind 15 && Nat.beq a.t 0 && Nat.beq b.kind 3 && Nat.beq b.t 10 then mk .sumR a.st a.p 0 1
   else junkT
 
-/-- `a + b`: a butterfly's sum, or the end of a reduction. -/
-def addT (R : Rules) (a b : T) : T :=
+/-- `a + b` in the scheduled `NTT⁻¹`: a sum of a layer, or the end of the
+final reduction. -/
+def faddT (R : Rules) (a b : T) : T :=
+  bif Nat.beq a.kind 1 && Nat.beq b.kind 1 && Nat.beq b.st a.st && fPair a.st a.p b.p then
+    bif fRed a.st a.p then mk .sumR a.st a.p 0 0 else lvT (a.st + 1) a.p
+  else bif Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.z 0 && Nat.beq b.st a.st &&
+      Nat.beq b.p a.p && Nat.beq a.st R.layers && Nat.blt a.p 256 then outT a.p
+  else junkT
+
+/-- `a - b` in the scheduled `NTT⁻¹`: the end of the multiplication by 3303, a
+reduction, a layer's difference or its product, or the end of a sum's reduction. -/
+def fsubT (a b : T) : T :=
+  bif Nat.beq a.kind 4 && Nat.beq b.kind 6 && Nat.beq a.st 0 && Nat.beq b.st 0 && Nat.beq b.p a.p &&
+      Nat.beq a.z 3303 && Nat.beq b.t (twN 3303) then lvT 1 a.p
+  else bif Nat.beq a.kind 1 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p && Nat.beq b.t 10 then
+    mk .n1 a.st a.p 0 0
+  else bif Nat.beq a.kind 1 && Nat.beq b.kind 1 && Nat.beq b.st a.st && fPair a.st a.p b.p then
+    mk .dif a.st a.p b.p 0
+  else bif Nat.beq a.kind 12 && Nat.beq b.kind 14 && Nat.beq b.st a.st && Nat.beq b.p a.p &&
+      Nat.beq b.z a.z && fPair a.st a.p a.z && fZeta a.st a.z a.t b.t then lvT (a.st + 1) a.z
+  else bif Nat.beq a.kind 15 && Nat.beq b.kind 15 && Nat.beq a.t 0 && Nat.beq b.t 2 && Nat.beq b.st a.st &&
+      Nat.beq b.p a.p && fRed a.st a.p && fPair a.st a.p (a.p + fLen a.st) then lvT (a.st + 1) a.p
+  else junkT
+
+/-- `addT` of `NTT` and the levelled `NTT⁻¹`: a butterfly's sum, or the end of a reduction. -/
+def addT₀ (R : Rules) (a b : T) : T :=
   bif !R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st && bflyOk R a.st a.p b.p b.z b.t then
     lvT (a.st + 1) a.p
   else bif !R.inv && Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.z 0 && Nat.beq b.st a.st &&
@@ -186,8 +244,9 @@ def addT (R : Rules) (a b : T) : T :=
       Nat.beq b.p a.p && Nat.beq a.st R.layers && Nat.blt a.p 256 then outT a.p
   else junkT
 
-/-- `a - b`: a butterfly's difference, a product modulo `q`, or a reduction. -/
-def subT (R : Rules) (a b : T) : T :=
+/-- `subT` of `NTT` and the levelled `NTT⁻¹`: a butterfly's difference, a
+product modulo `q`, or a reduction. -/
+def subT₀ (R : Rules) (a b : T) : T :=
   bif !R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st && bflyOk R a.st a.p b.p b.z b.t then
     lvT (a.st + 1) b.p
   else bif Nat.beq a.kind 4 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p then
@@ -201,6 +260,14 @@ def subT (R : Rules) (a b : T) : T :=
       Nat.beq b.z a.z && gsPair a.st a.z a.p && gsZeta a.st a.p a.t b.t then
     lvT (a.st + 1) a.p
   else junkT
+
+/-- `a + b`: a butterfly's sum, or the end of a reduction. -/
+def addT (R : Rules) (a b : T) : T :=
+  bif R.fast then faddT R a b else addT₀ R a b
+
+/-- `a - b`: a butterfly's difference, a product modulo `q`, or a reduction. -/
+def subT (R : Rules) (a b : T) : T :=
+  bif R.fast then fsubT a b else subT₀ R a b
 
 /-- The arithmetic shift right by 15: of a reduction (`z = 0`), or of a
 coefficient (`z = 1`). -/
@@ -376,6 +443,7 @@ def symRegion (rs : List Rg) (name : String) : G :=
 
 def St.vop (R : Rules) (σ : St) : VOp → Option St
   | .movi0 d => some (σ.setV d (Y.dup (cT 0)))
+  | .mov d n => some (σ.setV d (σ.vreg n))
   | .dup .h8 d n =>
     match σ.greg n with
     | .num v => some (σ.setV d (Y.dup (cT (v % 65536))))

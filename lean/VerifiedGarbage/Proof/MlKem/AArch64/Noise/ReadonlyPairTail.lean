@@ -78,7 +78,7 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     (Proof.MlKem.bytesAt_frame kv.frame hs.next (by decide)).trans r1
   have tab1v := tab1.frame vuSym kv.rd kv.wr kv.frame (by
     intro r hr
-    rw [NttR.fastRegion, su]
+    simp only [NttR.sRegion, su]
     exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
   refine WP.seq (WP.mono (readonly_out_okW tr1 h1 hns (by decide)
     (by rw [kv.cs .x19 (by decide) (by decide),ku.gpr .x19 (by decide),hp]; rfl)

@@ -11,7 +11,7 @@ theorem transform_enc_far {s₀ s : State} (hp : Pre P L s₀) {kE eo kC co : Na
     (A : EncArgs P L kE eo kC co) (hk : KB P L s₀ s) (ht : TransformTables s) :
     ∀r∈encW P L s₀ kC co,
       (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r ∧
-      (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint r ∧ (NttR.fastRegion s).Disjoint r := by
+      (NttR.fastInvRegion s).Disjoint r ∧ (NttR.fastRegion s).Disjoint r := by
   have hw := hp.wf
   have cover {o n : Nat} (h : o+n≤SV P+48) : Covers [R (kA s₀) L.sc o n] s.wr :=
     cov_w hp hk ⟨hp.scw,hp.scb⟩ (hp.fs h)
