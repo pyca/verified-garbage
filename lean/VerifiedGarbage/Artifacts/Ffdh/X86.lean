@@ -7,10 +7,12 @@ public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Verified
+public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! FFDH's domain and key checks, exchange and key generation on baseline i686. -/
+/-! FFDH's domain and key checks, exchange, key generation and parameter candidates on baseline i686. -/
 
 @[expose] public section
 
@@ -75,6 +77,20 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.KeySearch.code
     verified := Proof.Ffdh.X86.KeySearch.verified
     spSafe := Proof.Ffdh.X86.Shape.keySearch_spSafe
-    stack := 164 }]
+    stack := 164 },
+  Spec.Ffdh.parameterInitApi.artifact X86.target {
+    code := Impl.Ffdh.X86.ParamInit.code
+    verified := Proof.Ffdh.X86.ParamInit.verified },
+  Spec.Ffdh.sievedParameterCandidateApi.artifact X86.target {
+    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
+      Candidate shaping, the generator congruences, RSA's small-prime sieve (512 primes through 1024 \
+      bits, 1024 above) of p and q, the witnesses' rejection sampling and every Miller–Rabin round run \
+      inline; each round is a four-bit-window power and its squarings. Timing depends on the tape. \
+      Callee-saved registers reside in scratch."]
+    code := Impl.Ffdh.X86.Candidate.code
+    verified := Proof.Ffdh.X86.Cand.verified
+    spSafe := Proof.Ffdh.X86.Shape.candidate_spSafe
+    consts := VG.Impl.RsaKeyGen.TrialTable32.consts
+    stack := 116 }]
 
 end VG.Artifacts.Ffdh.X86
