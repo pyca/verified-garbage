@@ -182,15 +182,15 @@ theorem splitMidR_rel (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = 
       16 * (if 1 ≤ sl / 256 ∧ sl / 256 < n / 256 then 16 * (n / 256) else sl / 16) ≤ n :=
     fun n sl h => by split <;> omega
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
-  · exact @Fast.sel_rel false v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
+  · exact @Fast.sel_rel _ _ false v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
       (prefixNRel (OnePassName.ok hF _ (hz _ ‹_›)) (OnePassName.check _) T) nq hF _ Short.finKs_ksOk Short.finKs_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
-  · exact @Fast.sel_rel false v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKs_ksOk Short.finKs_rel _
+  · exact @Fast.sel_rel _ _ false v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKs_ksOk Short.finKs_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
-  · exact @Fast.sel_rel true v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
+  · exact @Fast.sel_rel _ _ true v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
       (prefixNRel (OnePassName.ok hF _ (hz _ ‹_›)) (OnePassName.check _) T) nq hF _ Short.finKsA_ksOk Short.finKsA_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
-  · exact @Fast.sel_rel true v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKsA_ksOk Short.finKsA_rel _
+  · exact @Fast.sel_rel _ _ true v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKsA_ksOk Short.finKsA_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
 
 theorem sealSplitR_mx :
