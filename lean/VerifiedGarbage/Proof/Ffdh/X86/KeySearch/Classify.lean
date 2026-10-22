@@ -43,11 +43,15 @@ theorem Done.congr {p : KPub} {o s : State} {r₁ r₂ : KeySearchResult} (h : D
 def Rej (p : KPub) (o : State) (used keys scalars : Nat) (s : State) : Prop :=
   Live p o used keys scalars s ∧ s.mem.readW (addr p.S statusOff) 32 = 4
 
-/-- After an iteration: the search finished as `R`, or a loop state with a smaller measure from which
-it ends as `R` does. -/
-def Next (p : KPub) (o : State) (R : KeySearchResult) (n : Nat) (s : State) : Prop :=
-  Done p o R s ∨ ∃ used keys scalars, 129 * keys + scalars < n ∧ Rej p o used keys scalars s ∧
-    Same (p.tail (randOf o) used keys scalars) R
+/-- After an iteration from a loop state: the search from there finished, or a rejection counted
+(status 2 or 3) and the loop state after it. -/
+def Next (p : KPub) (o : State) (used keys scalars : Nat) (s : State) : Prop :=
+  (Done p o (p.tail (randOf o) used keys scalars) s ∧
+    ¬ (keys ≠ 0 ∧ scalars ≠ 0 ∧ used + p.len ≤ p.randLen ∧
+      (attemptStatus p.a p.len ((randOf o).drop used) = 2 ∨ attemptStatus p.a p.len ((randOf o).drop used) = 3))) ∨
+    (keys ≠ 0 ∧ scalars ≠ 0 ∧ used + p.len ≤ p.randLen ∧
+      ((attemptStatus p.a p.len ((randOf o).drop used) = 2 ∧ Rej p o (used + p.len) keys (scalars - 1) s) ∨
+        (attemptStatus p.a p.len ((randOf o).drop used) = 3 ∧ Rej p o (used + p.len) (keys - 1) 128 s)))
 
 /-- A run's state with a loop state's words. -/
 theorem St.live {o s : State} {used keys scalars : Nat}
@@ -195,7 +199,7 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     (S : St o liveDs (liveF p (o.gpr .esi) used keys scalars) u)
     (he : u.gpr .eax = BitVec.ofNat 32 (attemptStatus p.a p.len ((randOf o).drop used)))
     (ho : AttemptOut o used u.mem) (hk : keys ≠ 0) (hs : scalars ≠ 0) (hr : used + p.len ≤ p.randLen) :
-    WP isa classify u (Next p o (p.tail (randOf o) used keys scalars) (129 * keys + scalars)) := by
+    WP isa classify u (Next p o used keys scalars) := by
   obtain ⟨A, rfl⟩ := h.input
   have hA := liveDs_aligned
   have hkl := h.keys_le
@@ -216,7 +220,8 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
   rcases hst with h1 | h2 | h3
   · -- Accepted.
     refine WP.ite true (by rw [cmp_status hle (j := 1) (by decide) hedT z, h1]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (S''.terminal hA 1) fun v ⟨Sv, Fv⟩ => Or.inl ?_
+    refine WP.mono (S''.terminal hA 1) fun v ⟨Sv, Fv⟩ => Or.inl ⟨?_, fun ⟨_, _, _, h⟩ => by
+      rw [h1] at h; omega⟩
     show Done _ _ (keyTail _ _ _ _ _ _) v
     rw [keyTail_accepted hk hs hr' h1]
     refine Sv.done (by decide) ?_ ?_ ⟨Nat.zero_le _, Nat.zero_le _, by simp only [ofState] at hr ⊢; omega⟩
@@ -238,16 +243,14 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     have hed₂ : t₂.gpr .edx = _ := (congrFun F₂.gpr .edx).trans hed'
     refine WP.ite true (by rw [cmp_status hle (j := 2) (by decide) hed' z₂, h2]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.mono (S₂.rejectedScalar hA (by decide) (c := scalars) (by simp [liveF, scalarsOff]) (by omega))
-      fun v Sv => Or.inr ⟨used + (ofState o).len, keys, scalars - 1, by omega, ⟨Sv.sub (fun d hd => by
+      fun v Sv => Or.inr ⟨hk, hs, hr, Or.inl ⟨h2, Sv.sub (fun d hd => by
         exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd)) |>.congr ?_ |>.live (by omega) hkl (by omega),
-        ?_⟩, ?_⟩
+        ?_⟩⟩
     · simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff]
     · show v.mem.readW (addr (arg o 12) statusOff) 32 = 4
       rw [Sv.words.get (List.mem_cons_self ..)]; simp [upd, statusOff]
-    · show Same (keyTail _ _ _ _ _ _) (keyTail _ _ _ _ _ _)
-      rw [keyTail_scalar hk hs hr' h2]; exact Same.refl _
   · -- A degenerate public value.
     refine WP.ite false (by rw [cmp_status hle (j := 1) (by decide) hedT z, h3]; rfl) (fun h => absurd h (by decide)) (fun _ => ?_)
     refine WP.seq (wp_cmpi fun t₂ F₂ _ z₂ => WP.block_nil ?_)
@@ -260,15 +263,13 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     have hed₃ : t₃.gpr .edx = _ := (congrFun F₃.gpr .edx).trans hed₂
     refine WP.ite true (by rw [cmp_status hle (j := 3) (by decide) hed₂ z₃, h3]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.mono (S₃.rejectedPublic hA (by decide) (k := keys) (by simp [liveF, keysOff]) (by omega))
-      fun v Sv => Or.inr ⟨used + (ofState o).len, keys - 1, 128, by omega, ⟨Sv.sub (fun d hd => by
+      fun v Sv => Or.inr ⟨hk, hs, hr, Or.inr ⟨h3, Sv.sub (fun d hd => by
         exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd))) |>.congr ?_
-        |>.live (by omega) (by omega) (by decide), ?_⟩, ?_⟩
+        |>.live (by omega) (by omega) (by decide), ?_⟩⟩
     · simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff, keysOff]
     · show v.mem.readW (addr (arg o 12) statusOff) 32 = 4
       rw [Sv.words.get (List.mem_cons_self ..)]; simp [upd, statusOff]
-    · show Same (keyTail _ _ _ _ _ _) (keyTail _ _ _ _ _ _)
-      rw [keyTail_public hk hs hr' h3]; exact Same.refl _
 
 end VG.Proof.Ffdh.X86.KeySearch

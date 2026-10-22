@@ -38,7 +38,7 @@ theorem test_zero {s t : State} {k : Nat} (hk : k < 2 ^ 32) (he : s.gpr .eax = B
   rw [z, he, BitVec.and_self, ofNat_beq_zero hk]
 
 theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o used keys scalars s) :
-    WP isa branch s (Next p o (p.tail (randOf o) used keys scalars) (129 * keys + scalars)) := by
+    WP isa branch s (Next p o used keys scalars) := by
   have S := h.st
   have hkl := h.keys_le
   have hcl := h.scalars_le
@@ -55,7 +55,7 @@ theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
   have e₂ := test_zero (k := keys) (by omega) g₁ z₂
   by_cases hk : keys = 0
   · refine WP.ite true (by rw [e₂]; simp [hk]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (exhausted_ok L₂) fun v hv => Or.inl ?_
+    refine WP.mono (exhausted_ok L₂) fun v hv => Or.inl ⟨?_, fun h => h.1 hk⟩
     show Done _ _ (keyTail _ _ _ _ _ _) v
     rw [keyTail_exhausted (Or.inl hk)]; exact hv
   refine WP.ite false (by rw [e₂]; simp [hk]) (fun h => absurd h (by decide)) (fun _ => ?_)
@@ -65,7 +65,7 @@ theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
   have e₄ := test_zero (k := scalars) (by omega) g₃ z₄
   by_cases hs : scalars = 0
   · refine WP.ite true (by rw [e₄]; simp [hs]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (exhausted_ok L₄) fun v hv => Or.inl ?_
+    refine WP.mono (exhausted_ok L₄) fun v hv => Or.inl ⟨?_, fun h => h.2.1 hs⟩
     show Done _ _ (keyTail _ _ _ _ _ _) v
     rw [keyTail_exhausted (Or.inr hs)]; exact hv
   refine WP.ite false (by rw [e₄]; simp [hs]) (fun h => absurd h (by decide)) (fun _ => ?_)
@@ -81,7 +81,7 @@ theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
     rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt hL]
   by_cases hr : (ofState o).randLen - used < (ofState o).len
   · refine WP.ite true (by rw [hb]; simp [hr]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (request_ok L₇) fun v hv => Or.inl ?_
+    refine WP.mono (request_ok L₇) fun v hv => Or.inl ⟨?_, fun h => by omega⟩
     show Done _ _ (keyTail _ _ _ _ _ _) v
     rw [keyTail_short hk hs (by rw [hlen]; exact hr)]; exact hv
   refine WP.ite false (by rw [hb]; simp [hr]) (fun h => absurd h (by decide)) (fun _ => ?_)
@@ -113,6 +113,39 @@ def IterPost (p : KPub) (o : State) (R : KeySearchResult) (n : Nat) (s : State) 
     (isa.eval .e s = some true ∧ ∃ m < n, ∃ used keys scalars, m = 129 * keys + scalars ∧
       Live p o used keys scalars s ∧ Same (p.tail (randOf o) used keys scalars) R)
 
+/-- The loop's condition, `mov eax, [esi + 72]; cmp eax, 4`. -/
+abbrev guard : List Instr := [.mov .eax (.mem (st statusOff)), .alu .cmp .eax (.imm 4)]
+
+theorem guard_done {p : KPub} {o v : State} {r : KeySearchResult} (D : Done p o r v) :
+    WP isa (.block guard) v fun t => isa.eval .e t = some false ∧ Done p o r t := by
+  have A := D.input.1
+  have hp := D.input.2
+  have dS : v.gpr .esi = arg o 12 := by rw [D.esi, ← hp]; rfl
+  refine wp_ldm dS (by rw [D.rd, D.wr]; exact ⟨_, List.mem_append_right _ (sR_mem A), st_in A (by decide)⟩)
+    fun t₁ U₁ => wp_cmpi fun t₂ F₂ _ z₂ => WP.block_nil ⟨?_, (D.reg U₁ (Or.inl rfl)).fupd F₂⟩
+  subst hp
+  have w : v.mem.readW (addr (arg o 12) statusOff) 32 = doneF (ofState o) (o.gpr .esi) r statusOff :=
+    D.words.get (by decide)
+  have := status_le r
+  show t₂.zf = _
+  rw [z₂, U₁.gpr, w]
+  simp only [doneF, statusOff, ↓reduceIte, Nat.reduceEqDiff]
+  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega) (by decide)]
+  simp only [Option.some.injEq, decide_eq_false_iff_not]
+  omega
+
+theorem guard_rej {p : KPub} {o v : State} {used keys scalars : Nat} (R : Rej p o used keys scalars v) :
+    WP isa (.block guard) v fun t => isa.eval .e t = some true ∧ Live p o used keys scalars t := by
+  obtain ⟨L, hst⟩ := R
+  have A := L.input.1
+  have hp := L.input.2
+  have lS : v.gpr .esi = arg o 12 := by rw [L.esi, ← hp]; rfl
+  refine wp_ldm lS (by rw [L.rd, L.wr]; exact ⟨_, List.mem_append_right _ (sR_mem A), st_in A (by decide)⟩)
+    fun t₁ U₁ => wp_cmpi fun t₂ F₂ _ z₂ => WP.block_nil ⟨?_, (L.reg U₁ (Or.inl rfl)).fupd F₂⟩
+  show t₂.zf = _
+  rw [z₂, U₁.gpr, show v.mem.readW (addr (arg o 12) statusOff) 32 = 4 by rw [← hp] at hst; exact hst]
+  rfl
+
 theorem iteration_ok {p : KPub} {o s : State} {used keys scalars : Nat} {R : KeySearchResult}
     (h : Live p o used keys scalars s) (hR : Same (p.tail (randOf o) used keys scalars) R) :
     WP isa iteration s (IterPost p o R (129 * keys + scalars)) := by
@@ -120,29 +153,24 @@ theorem iteration_ok {p : KPub} {o s : State} {used keys scalars : Nat} {R : Key
   have hp := h.input.2
   unfold iteration
   refine WP.seq (WP.mono (branch_ok h) fun v hv => ?_)
-  rcases hv with D | ⟨u', k', c', hm, ⟨L, hst⟩, hs⟩
-  · have dS : v.gpr .esi = arg o 12 := by rw [D.esi, ← hp]; rfl
-    refine wp_ldm dS (by rw [D.rd, D.wr]; exact ⟨_, List.mem_append_right _ (sR_mem A), st_in A (by decide)⟩)
-      fun t₁ U₁ => wp_cmpi fun t₂ F₂ _ z₂ => WP.block_nil (Or.inl ⟨?_, ((D.reg U₁ (Or.inl rfl)).fupd F₂).congr hR⟩)
-    subst hp
-    have w : v.mem.readW (addr (arg o 12) statusOff) 32 =
-        doneF (ofState o) (o.gpr .esi) ((ofState o).tail (randOf o) used keys scalars) statusOff :=
-      D.words.get (by decide)
-    show t₂.zf = _
-    rw [z₂, U₁.gpr, w]
-    simp only [doneF, statusOff, ↓reduceIte, Nat.reduceEqDiff]
-    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by have := status_le ((ofState o).tail (randOf o) used keys scalars); omega)
-      (by decide)]
-    have := status_le ((ofState o).tail (randOf o) used keys scalars)
-    simp only [Option.some.injEq, decide_eq_false_iff_not]
-    omega
-  · have lS : v.gpr .esi = arg o 12 := by rw [L.esi, ← hp]; rfl
-    refine wp_ldm lS (by rw [L.rd, L.wr]; exact ⟨_, List.mem_append_right _ (sR_mem A), st_in A (by decide)⟩)
-      fun t₁ U₁ => wp_cmpi fun t₂ F₂ _ z₂ => WP.block_nil (Or.inr ⟨?_, _, hm, u', k', c', rfl,
-        (L.reg U₁ (Or.inl rfl)).fupd F₂, hs.trans hR⟩)
-    show t₂.zf = _
-    rw [z₂, U₁.gpr, show v.mem.readW (addr (arg o 12) statusOff) 32 = 4 by rw [← hp] at hst; exact hst]
-    rfl
+  have hlen : (randOf o).length = p.randLen := by
+    rw [← hp]; simp only [randOf, Spec.Rsa.bytesAt, List.length_map, List.length_range]; rfl
+  have hk' := h.keys_le
+  have hc' := h.scalars_le
+  have hv' : (Done p o (p.tail (randOf o) used keys scalars) v) ∨
+      ∃ u' k' c', 129 * k' + c' < 129 * keys + scalars ∧ Rej p o u' k' c' v ∧
+        Same (p.tail (randOf o) u' k' c') (p.tail (randOf o) used keys scalars) := by
+    rcases hv with ⟨D, _⟩ | ⟨hk, hs, hr, ⟨h2, Rj⟩ | ⟨h3, Rj⟩⟩
+    · exact Or.inl D
+    · refine Or.inr ⟨_, _, _, by omega, Rj, ?_⟩
+      show Same (keyTail _ _ _ _ _ _) (keyTail _ _ _ _ _ _)
+      rw [keyTail_scalar hk hs (by rw [hlen]; omega) h2]; exact Same.refl _
+    · refine Or.inr ⟨_, _, _, by omega, Rj, ?_⟩
+      show Same (keyTail _ _ _ _ _ _) (keyTail _ _ _ _ _ _)
+      rw [keyTail_public hk hs (by rw [hlen]; omega) h3]; exact Same.refl _
+  rcases hv' with D | ⟨u', k', c', hm, ⟨L, hst⟩, hs⟩
+  · exact WP.mono (guard_done D) fun t ⟨he, Dt⟩ => Or.inl ⟨he, Dt.congr hR⟩
+  · exact WP.mono (guard_rej ⟨L, hst⟩) fun t ⟨he, Lt⟩ => Or.inr ⟨he, _, hm, u', k', c', rfl, Lt, hs.trans hR⟩
 
 theorem loop_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o used keys scalars s) :
     WP isa (.loop iteration .e) s (Done p o (p.tail (randOf o) used keys scalars)) := by
