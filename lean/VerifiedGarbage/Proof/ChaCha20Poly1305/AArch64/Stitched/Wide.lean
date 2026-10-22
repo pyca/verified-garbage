@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 import VerifiedGarbage.Proof.Framework.Offset
