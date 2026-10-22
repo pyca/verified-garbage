@@ -84,10 +84,11 @@
 //! prepared context once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
 //! it, so that one used for a few messages never pays for it. Once it has,
-//! shorter messages use it too, which never count towards it: on the
-//! `_vaes_vpclmul_avx512` backend, whose short path copies its powers from
-//! it, and on the others, whose path for TLS records (a 12-byte nonce and at
-//! most 16 bytes of additional data) is faster at every length.
+//! every message uses it, shorter ones too, which never count towards it:
+//! each `_prepared` instance chooses its path for every length itself (the
+//! `_vaes_vpclmul_avx512` short path copies its powers from the context; the
+//! others have a path for TLS records, a 12-byte nonce and at most 16 bytes
+//! of additional data, or loops that take two blocks or more).
 //!
 //! On AArch64, the `_aes` instances of `seal` and `open` have
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
@@ -687,11 +688,7 @@ const POWERS_AFTER: u32 = 32;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 2;
 
-/// `Powers::calls` once the powers are published on x86-64, whose `_prepared`
-/// instances are faster than the plain ones for shorter messages too: with
-/// a short path that copies its powers from the key context
-/// (`_vaes_vpclmul_avx512`), or a path for TLS records taken at every
-/// length (the others).
+/// `Powers::calls` once the powers are published.
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
@@ -707,14 +704,6 @@ const SHORT_READY: u32 = u32::MAX;
 /// messages gain from their path for TLS records.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const PLAIN_MAX: usize = 16;
-
-/// The shortest message, in bytes, that x86-64's 256-bit backend seals with
-/// the `_prepared` instance of `seal` before `POWERS_MIN_LEN`: from 4
-/// blocks on, the prepared loops take the blocks at once (`StitchR.encR`),
-/// 17–34% faster from 64 to 255 bytes on Emerald Rapids; below that, the
-/// path of `vg_aes_gcm_seal` for short messages costs 4–20% less.
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-const SHORT_SEAL_VAES_MIN: usize = 64;
 
 /// What `Powers::get` gives a call on AArch64 with the `_with_powers`
 /// instances: the powers, or that the call computes them.
@@ -1070,11 +1059,27 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
-            feature = "alloc"
-        ))]
-        if (data.len() >= POWERS_MIN_LEN || self.short_seal(data.len()))
+        // A message long enough to gain from the powers takes them through
+        // `seal_prepared` (and counts towards computing them); once they are
+        // ready, a shorter one takes them too (`short_ready`), called inline
+        // on x86-64, where each `_prepared` instance chooses its path for
+        // every length itself: through `seal_prepared`, the call cost the
+        // 256-bit backend 6 ns at 15 bytes on Zen 3.
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if data.len() >= POWERS_MIN_LEN {
+            if let Some(tag) = self.seal_prepared(nonce, aad, data) {
+                return Ok(tag);
+            }
+        } else if self.powers.short_ready()
+            && let Some((ctx, fns)) = self.powers.ready()
+        {
+            return Ok(self.seal_with(ctx, fns, nonce, aad, data));
+        }
+        // On AArch64, through `seal_prepared` (inline, the call made a fresh
+        // key's seal 1–4% slower on Neoverse N2), for more than `PLAIN_MAX`
+        // bytes.
+        #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+        if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
             return Ok(tag);
@@ -1156,16 +1161,19 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Short messages take the prepared instances too once their short path
-        // reads the powers (`short_ready`), as in `encrypt_in_place`. On
-        // AVX-512 that makes 16- to 255-byte opens 6–33% faster (Emerald
-        // Rapids), for one more register move on the long path (within 0.5%
-        // on Zen 3, #2775).
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
-            feature = "alloc"
-        ))]
-        if (data.len() >= POWERS_MIN_LEN || self.short_open(data.len()))
+        // Short messages take the prepared instances too once the powers are
+        // ready (`short_ready`), as in `encrypt_in_place`, through
+        // `open_prepared`: on Emerald Rapids, an inline call as there made
+        // every open about 5 ns slower. On AVX-512 the prepared instances
+        // make 16- to 255-byte opens 6–33% faster (#2775).
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if (data.len() >= POWERS_MIN_LEN || self.powers.short_ready())
+            && let Some(r) = self.open_prepared(nonce, aad, data, tag)
+        {
+            return r;
+        }
+        #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+        if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
@@ -1231,7 +1239,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-        if (out.len() >= POWERS_MIN_LEN || self.short_seal(out.len()))
+        if (out.len() >= POWERS_MIN_LEN || self.short(out.len()))
             && let Some(tag) = self.seal_pieces_prepared(nonce, aad, plaintext, out)
         {
             return Ok(tag);
@@ -1339,39 +1347,14 @@ impl AesGcm {
     feature = "alloc"
 ))]
 impl AesGcm {
-    /// Whether `encrypt_in_place` and `encrypt` take the `_prepared`
-    /// instance of `seal` for a message of `len` bytes, shorter than
-    /// `POWERS_MIN_LEN`: once the powers are ready (`Powers::short_ready`),
-    /// but on x86-64's 256-bit backend from `SHORT_SEAL_VAES_MIN` bytes on,
-    /// and on AArch64 for more than `PLAIN_MAX` bytes.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    /// Whether `encrypt_in_place`, `encrypt` and `open` take the
+    /// `_with_powers` instances on AArch64 for a message of `len` bytes,
+    /// shorter than `POWERS_MIN_LEN`: once the powers are ready
+    /// (`Powers::short_ready`), for more than `PLAIN_MAX` bytes.
+    #[cfg(target_arch = "aarch64")]
     #[inline(always)]
-    fn short_seal(&self, len: usize) -> bool {
-        #[cfg(target_arch = "x86_64")]
-        if self.backend == Backend::VaesVpclmul && len < SHORT_SEAL_VAES_MIN {
-            return false;
-        }
-        #[cfg(target_arch = "aarch64")]
-        if len <= PLAIN_MAX {
-            return false;
-        }
-        self.powers.short_ready()
-    }
-
-    /// Whether `open` takes the `_prepared` instance of `open` for a message
-    /// of `len` bytes, shorter than `POWERS_MIN_LEN`: once the powers are
-    /// ready (`Powers::short_ready`), but on AArch64 for at most `PLAIN_MAX`
-    /// bytes.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    #[inline(always)]
-    fn short_open(&self, len: usize) -> bool {
-        #[cfg(target_arch = "aarch64")]
-        if len <= PLAIN_MAX {
-            return false;
-        }
-        #[cfg(target_arch = "x86_64")]
-        let _ = len;
-        self.powers.short_ready()
+    fn short(&self, len: usize) -> bool {
+        len > PLAIN_MAX && self.powers.short_ready()
     }
 
     /// `encrypt_in_place` with the key context with the powers, if
