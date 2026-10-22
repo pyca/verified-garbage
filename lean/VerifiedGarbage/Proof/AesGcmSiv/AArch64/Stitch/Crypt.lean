@@ -276,6 +276,41 @@ theorem ctrBatch_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List 
   refine WP.mono (ctrFinish_ok L C I E₂) fun t₃ ⟨E₃, rd₃, wr₃, _, C₃, d₃, f₃, _⟩ =>
     ⟨E₃, by rw [rd₃, I.rd, rd₁], by rw [wr₃, I.wr, wr₁], C₃, d₃, f₃⟩
 
+
+/-- The batches, if the data has one. -/
+theorem ctrBatches_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List Byte}
+    (C : CtrSt p.W icb 0 t.mem) :
+    WP isa (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish)))) t
+      (BatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
+  have hn := L.n_lt
+  unfold ifBatch
+  refine WP.seq (WP.mono (batchHead_ok L E) fun t₂ ⟨x9₂, E₂, m₂, rd₂, wr₂⟩ => ?_)
+  refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₂ (by omega)) (fun h => ?_) (fun h => ?_)
+  · have h0 : p.n / 128 = 0 := by simpa using h
+    refine WP.block_nil ⟨E₂, rd₂, wr₂, ?_, ?_, by rw [m₂]; exact Frame.refl _ _⟩
+    · rw [h0, m₂]; exact C
+    · rw [h0, m₂, Nat.mul_zero, GcmSiv.ctrPart_zero]
+  · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
+    rw [← m₂] at C
+    refine WP.mono (ctrBatch_ok L E₂ C h1) fun t₃ B => ?_
+    rw [m₂] at B
+    exact ⟨B.env, by rw [B.rd, rd₂], by rw [B.wr, wr₂], B.ctr, B.data, by rw [← m₂]; exact B.frame⟩
+
+open VG.Proof.AesGcmSiv.AArch64 (headMem) in
+/-- The counter block `cryptHead` writes. -/
+theorem headMem_ctr {p : Prm} (m : Mem) :
+    CtrSt p.W (Spec.GcmSiv.initialCounter (bytesAt m p.W 16)) 0 (headMem m p.W) := by
+  have hicb : bytesAt (headMem m p.W) (p.W + BitVec.ofNat 64 96) 16 =
+      Spec.GcmSiv.initialCounter (bytesAt m p.W 16) := by
+    rw [headMem, show p.W + BitVec.ofNat 64 104 = p.W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by
+        rw [Proof.AesGcm.AArch64.add_ofNat_assoc], Proof.Cmac.bytesAt_store2, ← GcmSiv.initialCounter_words,
+      Proof.Cmac.le8_readW, Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
+  have h4 := Proof.Cmac.bytesAt_add (headMem m p.W) (p.W + BitVec.ofNat 64 96) 4 12
+  rw [show 4 + 12 = 16 from rfl, hicb, Proof.AesGcm.AArch64.add_ofNat_assoc] at h4
+  refine ⟨?_, ?_⟩
+  · rw [GcmSiv.readW32_leNat, Nat.add_zero, h4, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
+  · rw [h4, List.drop_left' (Proof.Cmac.bytesAt_length _ _ _)]
+
 /-! ## The rest -/
 
 open VG.Proof.AesGcmSiv.AArch64 (BlocksPost TailPost cryptTail_ok ciph_cryR cryR) in
@@ -355,17 +390,8 @@ theorem crypt_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : S
       simp only [List.mem_singleton] at hq; subst hq
       exact (L.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rounds_le))
       (by have := L.rounds_le; omega)]
-  have hicb : bytesAt t₁.mem (p.W + BitVec.ofNat 64 96) 16 =
-      Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16) := by
-    rw [hm₁, headMem, show p.W + BitVec.ofNat 64 104 = p.W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by
-        rw [Proof.AesGcm.AArch64.add_ofNat_assoc], Proof.Cmac.bytesAt_store2, ← GcmSiv.initialCounter_words,
-      Proof.Cmac.le8_readW, Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
-  have h4 := Proof.Cmac.bytesAt_add t₁.mem (p.W + BitVec.ofNat 64 96) 4 12
-  rw [show 4 + 12 = 16 from rfl, hicb, Proof.AesGcm.AArch64.add_ofNat_assoc] at h4
   have C₀ : CtrSt p.W (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) 0 t₁.mem := by
-    refine ⟨?_, ?_⟩
-    · rw [GcmSiv.readW32_leNat, Nat.add_zero, h4, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
-    · rw [h4, List.drop_left' (Proof.Cmac.bytesAt_length _ _ _)]
+    rw [hm₁]; exact headMem_ctr _
   have E₁ : Env p t₁ := E.keep (fun r hr => ho₁ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
@@ -375,21 +401,8 @@ theorem crypt_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : S
       exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- The batches.
-  have hb : WP isa (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish)))) t₁
-      (BatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
-        (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n) t₁) := by
-    unfold ifBatch
-    refine WP.seq (WP.mono (batchHead_ok L E₁) fun t₂ ⟨x9₂, E₂, m₂, rd₂, wr₂⟩ => ?_)
-    refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₂ (by omega)) (fun h => ?_) (fun h => ?_)
-    · have h0 : p.n / 128 = 0 := by simpa using h
-      refine WP.block_nil ⟨E₂, rd₂, wr₂, ?_, ?_, by rw [m₂]; exact Frame.refl _ _⟩
-      · rw [h0, m₂]; exact C₀
-      · rw [h0, m₂, Nat.mul_zero, GcmSiv.ctrPart_zero, hx₁]
-    · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
-      rw [← m₂] at C₀
-      refine WP.mono (ctrBatch_ok L E₂ C₀ h1) fun t₃ B => ?_
-      rw [m₂, hc₁, hx₁] at B
-      exact ⟨B.env, by rw [B.rd, rd₂], by rw [B.wr, wr₂], B.ctr, B.data, by rw [← m₂]; exact B.frame⟩
+  have hb := WP.mono (ctrBatches_ok L E₁ C₀) fun t₂ (B : BatchPost p _ _ _ t₁ t₂) => by
+    rw [hc₁, hx₁] at B; exact B
   refine WP.seq (WP.mono hb fun t₂ B => ?_)
   have hc₂ : Spec.GcmSiv.ctxCiph t₂.mem (p.W + BitVec.ofNat 64 240) p.R =
       Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R := by

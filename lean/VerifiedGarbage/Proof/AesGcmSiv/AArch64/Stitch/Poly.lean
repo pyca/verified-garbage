@@ -281,22 +281,27 @@ theorem rest_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     · simp [gpr_write, E.x26, hl, Proof.AesGcm.AArch64.ofNat_sub (show 128 * (p.n / 128) ≤ p.n by omega) L.n_lt]
     · exact ((((E.write (by decide) _).write (by decide) _).write (by decide) _).write (by decide) _)
 
+/-- The batches, if the data has one. -/
+theorem polyBatches_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (ifBatch (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq ghLoop (.block ghFinish)))) t
+      (Absorbed p (absR p.W) (elemsAt t.mem p.D (8 * (p.n / 128))) t) := by
+  have hn := L.n_lt
+  unfold ifBatch
+  refine WP.seq (WP.mono (batchHead_ok L E) fun t₁ ⟨x9₁, E₁, m₁, rd₁, wr₁⟩ => ?_)
+  refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₁ (by omega)) (fun h => ?_) (fun h => ?_)
+  · have h0 : p.n / 128 = 0 := by simpa using h
+    refine WP.block_nil ⟨E₁, rd₁, wr₁, by rw [m₁]; exact Frame.refl _ _, ?_⟩
+    rw [h0, m₁]; simp [elemsAt, ghashFrom]
+  · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
+    exact WP.mono (polyBatch_ok hP gh L E₁ h1) fun t₂ A => by rw [m₁] at A; exact A.of_eq m₁ rd₁ wr₁
+
 /-- `polyData`: the data padded absorbed. -/
 theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (polyData v.callees) t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem p.D p.n))) t) := by
   have hn := L.n_lt
   unfold polyData ifBatch
   -- The batches.
-  have hb : WP isa (.seq (.block [.lsr .x .x9 .x26 7]) (.ite (.zero .x .x9) (.block [])
-      (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq ghLoop (.block ghFinish))))) t
-      (Absorbed p (absR p.W) (elemsAt t.mem p.D (8 * (p.n / 128))) t) := by
-    refine WP.seq (WP.mono (batchHead_ok L E) fun t₁ ⟨x9₁, E₁, m₁, rd₁, wr₁⟩ => ?_)
-    refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₁ (by omega)) (fun h => ?_) (fun h => ?_)
-    · have h0 : p.n / 128 = 0 := by simpa using h
-      refine WP.block_nil ⟨E₁, rd₁, wr₁, by rw [m₁]; exact Frame.refl _ _, ?_⟩
-      rw [h0, m₁]; simp [elemsAt, ghashFrom]
-    · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
-      exact WP.mono (polyBatch_ok hP gh L E₁ h1) fun t₂ A => by rw [m₁] at A; exact A.of_eq m₁ rd₁ wr₁
+  have hb := polyBatches_ok hP gh L E
   refine WP.seq (WP.mono hb fun t₂ A => ?_)
   -- The rest.
   refine WP.seq (WP.mono (rest_ok L A.env) fun t₃ ⟨x27₃, x28₃, E₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
