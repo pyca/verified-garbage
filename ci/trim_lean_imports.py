@@ -420,6 +420,10 @@ def show_report(result: dict, path: pathlib.Path | None) -> int:
         change = lambda kind: totals[kind]["added_pairs"] - totals[kind]["removed_pairs"]
         print(f"Modelled dependency exposure: {change('ordinary_reads'):+d} ordinary, {change('meta_reads'):+d} meta; "
               f"{change('ordinary_reexports'):+d} public ordinary re-exports (not a timing estimate)")
+    rebuild = result.get("rebuild_impact", {})
+    if rebuild.get("evaluated"):
+        print(f"Modelled Lake source dependencies: +{rebuild['added_pairs']} / -{rebuild['removed_pairs']} reader pairs "
+              "(includes meta IR; excludes native libraries and wall time)")
     for item in cost["ranked"][:10]:
         print(f"  {item['affected_modules']:6} affected: {item['module']}")
     for message in result["blocked"]:

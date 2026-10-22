@@ -78,6 +78,59 @@ Report modeled changes separately from measured queue, setup, proof and
 assembly wall times. Historical runner contention and missing observations
 cannot establish the wall time of an unexecuted alternative plan.
 
+## Planner estimates and timing updates
+
+Unseen modules use the upper quartile of historical timings from at least
+8 peers in the same power-of-two source-size bucket, preferring the nearest
+namespace. Sparse groups and old snapshots without sizes retain the global
+median/default fallback. The snapshot adds `source_bytes` and the actual
+`fallback_estimates` for unseen stale modules, so this choice is replayable.
+Measured module timings are never replaced by a peer estimate.
+
+CI writes `lean_shards.py times --observations` files with separate `lean`,
+`c.o` and `dynlib` components. Manifest updates take the median of duplicate
+shard observations for each component, then retain up to three build samples
+per component in `timing_history`. The estimate is the sum of component
+medians, not whichever artifact happens to be read last. A final assembly
+log containing only native work cannot replace the module's full time.
+Source, library-membership, or toolchain/options changes start fresh histories; unmeasured
+changed modules are not attributed their old source's measurement. Legacy
+flat timing files and manifests remain readable. Native-only observations
+preserve an unsplittable legacy total until a Lean measurement is available.
+
+Meta imports are recorded separately in snapshot `import_modes`. Lake's
+meta trace includes interpreter IR through private transitive imports, even
+when the imported module's public `.olean` stays unchanged. Public meta
+imports pass those dependencies to ordinary downstream imports; a private
+meta import does not become public merely because the same module also has
+a public ordinary import. The planner keeps these modes separate and follows
+nested `import all` traces too. Old snapshots without import modes remain
+readable, but cannot recover this distinction from visibility alone.
+
+The planner also accounts for native shared-library hashes in Lake's traces.
+A native module can rebuild when an otherwise unrelated member of a library
+it loads changes. Ordinary proof/test libraries use `platformIndependent =
+true` and must keep their existing narrower invalidation behavior. Snapshots
+retain `precompiled_libraries` and `native_trace_modules` for replay. The
+scheduler includes whole-library imports, as selective cache restore already
+did, so extra native members participate in work/duplication scores.
+
+Scoped `+Module` targets already resolve correctly. Live tests found no
+benefit from prepending native library targets, so the target command remains
+unchanged. `test_check_lean_native_invalidation.py` builds a small two-library
+fixture with both trace settings and checks the predicted stale set against
+actual compilations. The real-cache check used Lean 4.35.0 and the published
+cache at revision `85044619e`: an unrelated TCB native-library change rebuilt
+`Spec.Cast5`, while an unrelated native-tactics change left an ordinary proof
+cached. These are dependency checks, not measured CI speedups.
+
+Metrics add `lean.rebuild_check`. It is `available` only with a verified
+same-attempt snapshot containing the stale set. Its `jobs` list records
+observed module compilations outside that set, grouped by step, alongside
+cache alignment. Missing logs stay unknown, and native facets are excluded.
+The check reports discrepancies, not their causes; use subsequent CI runs
+to verify the corrected predictions and investigate any remaining unplanned work.
+
 ## Version 3: Rust timing observations
 
 The existing `ci-metrics` artifact also retains Rust timing observations.
@@ -132,3 +185,9 @@ The existing CPU timing cache and scheduling inputs are unchanged.
 Feature runs overlap, and timed tests may run concurrently. Neither sum is
 an elapsed job duration. This snapshot cannot report the collector's own
 final duration, final workflow conclusion, or every cancelled attempt.
+
+Import-narrowing reports keep declaration visibility separate from Lake source
+dependencies. The latter uses the sharder trace rules, including private IR
+behind meta imports, and counts added/removed dependency-reader pairs within
+the verification scope. It excludes native-library dependencies and does not
+estimate wall time or the rebuilds caused by applying the import edit itself.

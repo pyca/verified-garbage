@@ -287,6 +287,25 @@ class CollectThisRun(unittest.TestCase):
                           ci_metrics.summary(m))
 
 
+class RebuildCheck(unittest.TestCase):
+    def test_reports_only_observed_unplanned_compilations(self):
+        planning = {"status": "available", "plan": {"diagnostics": {"stale_modules": ["A"]}}}
+        jobs = [{"job_id": 7, "name": "Lean: shard (1)", "restored_planned": True,
+                 "built": {"Check the shard's proofs": {"A": 10, "B": 20},
+                           "Restore cache": {"C": 30}}}]
+        check = ci_metrics.rebuild_check(jobs, planning)
+        self.assertEqual(check, {"status": "available", "jobs": [
+            {"job_id": 7, "name": "Lean: shard (1)", "restored_planned": True,
+             "unexpected": {"Check the shard's proofs": {"B": 20}}}]})
+
+    def test_missing_or_unverified_snapshots_are_unknown(self):
+        for planning in (None, {"status": "unavailable"},
+                         {"status": "available", "plan": {}},
+                         {"status": "different_attempt", "plan": {
+                             "diagnostics": {"stale_modules": []}}}):
+            self.assertEqual(ci_metrics.rebuild_check([], planning), {"status": "unavailable"})
+
+
 class RetainedPlan(unittest.TestCase):
     def fetch(self, plan, attempt="1"):
         data = io.BytesIO()

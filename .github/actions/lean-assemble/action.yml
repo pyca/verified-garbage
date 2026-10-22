@@ -57,7 +57,7 @@ runs:
       env:
         ID: ${{ inputs.id }}
       run: |
-        python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times-final-$ID.json"
+        python3 ../ci/lean_shards.py times --observations < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times-final-$ID.json"
         cd .lake/build
         find . -type f -newer "$RUNNER_TEMP/before-assembly" -printf '%P\n' \
           | tar --zstd -cf "$RUNNER_TEMP/lean-build-final-$ID.tar.zst" -T -
@@ -92,7 +92,7 @@ runs:
       env:
         KEY: ${{ inputs.cache-key }}
       run: |
-        python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times.json"
+        python3 ../ci/lean_shards.py times --observations < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times.json"
         python3 ../ci/lean_shards.py manifest ../.lean-manifest/manifest.json \
           "$RUNNER_TEMP"/lean-build/lean-times-*.json "$RUNNER_TEMP/lean-times.json" > "$RUNNER_TEMP/manifest.json"
         mkdir -p ../.lean-manifest

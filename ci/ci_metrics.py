@@ -227,6 +227,30 @@ def rust_metrics(j, log):
     return {"job_id": j["id"], "name": j["name"], "tests": tests, "feature_runs": runs}
 
 
+def rebuild_check(lean_jobs, planning):
+    """Compare observed compilations with a verified same-attempt stale set.
+
+    Missing logs remain unknown; native facets are not module rebuilds.
+    This records discrepancies without guessing why Lake rebuilt a module.
+    """
+    diagnostics = (planning or {}).get("plan", {}).get("diagnostics", {})
+    if (planning or {}).get("status") != "available" or "stale_modules" not in diagnostics:
+        return {"status": "unavailable"}
+    stale = set(diagnostics["stale_modules"])
+    rows = []
+    for j in lean_jobs:
+        unexpected = {
+            step: {m: t for m, t in built.items() if m not in stale}
+            for step, built in j["built"].items()
+            if step.startswith(SHARD_BUILD) or step == "Run ./.github/actions/lean-assemble"
+        }
+        unexpected = {step: built for step, built in unexpected.items() if built}
+        if unexpected:
+            rows.append({"job_id": j["job_id"], "name": j["name"],
+                         "restored_planned": j["restored_planned"], "unexpected": unexpected})
+    return {"status": "available", "jobs": rows}
+
+
 def collect(run, jobs, logs, planning=None):
     """The metrics of a run: its jobs (the API's), and the logs of its Lean
     and Rust jobs by name."""
@@ -277,6 +301,7 @@ def collect(run, jobs, logs, planning=None):
         "rust": {"jobs": [rust_metrics(j, logs[j["name"]]) for j in jobs
                           if j["name"].startswith("Rust (") and j["name"] in logs]},
         "lean": {
+            "rebuild_check": rebuild_check(lean_jobs, planning),
             "plan": plan,
             "planning": planning or {"status": "not_collected"},
             "jobs": lean_jobs,
@@ -315,6 +340,13 @@ def summary(m):
         out.append("Full planning inputs unavailable; log-derived estimates only.")
     if lean.get("missing_logs"):
         out.append("Missing job logs: " + ", ".join(lean["missing_logs"]) + ".")
+    check = lean.get("rebuild_check", {})
+    if check.get("status") == "available":
+        unexpected = [built for j in check["jobs"] for built in j["unexpected"].values()]
+        count = sum(len(built) for built in unexpected)
+        work = sum(sum(built.values()) for built in unexpected)
+        out.append(f"Observed rebuilds outside the planned stale set: {count} module observations, "
+                   f"{work:.0f} s of summed module duration (not elapsed time).")
     steps = {j["name"]: {s["name"]: s for s in j["steps"]} for j in m["jobs"]}
     rows = []
     order = lambda lj: (int(SHARD.fullmatch(lj["name"]).group(1)) if SHARD.fullmatch(lj["name"]) else 0, lj["name"])
