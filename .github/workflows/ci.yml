@@ -49,6 +49,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Lean reads lean/ and vectors/ alone; lean-assemble adds src/ for
+          # the emitter's check.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/src/
+            !/tests/
+            !/bench/
+            !/docs/
       - uses: ./.github/actions/runner-info
       # The keys of the caches of the build and of its manifest.
       - uses: ./.github/actions/lean-keys
@@ -178,6 +187,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Lean reads lean/ and vectors/ alone; lean-assemble adds src/ for
+          # the emitter's check.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/src/
+            !/tests/
+            !/bench/
+            !/docs/
       - uses: ./.github/actions/runner-info
       - uses: ./.github/actions/download-artifact
         with:
@@ -344,6 +362,8 @@ jobs:
           persist-credentials: false
           # A pull request's merge commit, and its first parent, the base.
           fetch-depth: 2
+          # Only ci/rust_arches.py and its matrix: the diff reads trees, not files.
+          sparse-checkout: ci
       - id: arches
         env:
           EVENT: ${{ github.event_name }}
@@ -381,12 +401,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (or formats: rustfmt skips a missing
+          # module file that a `cfg` leaves out).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch }}/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
           path: wycheproof
           persist-credentials: false
+          # tests/wycheproof/harness.rs reads testvectors_v1/ alone.
+          sparse-checkout: testvectors_v1
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy,rustfmt,llvm-tools
@@ -518,12 +550,25 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (or formats: rustfmt skips a missing
+          # module file that a `cfg` leaves out).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/bench/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch }}/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
           path: wycheproof
           persist-credentials: false
+          # tests/wycheproof/harness.rs reads testvectors_v1/ alone.
+          sparse-checkout: testvectors_v1
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
@@ -621,11 +666,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Not the proofs, nor other architectures' verified functions, which
+          # this target never compiles (or formats: rustfmt skips a missing
+          # module file that a `cfg` leaves out).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/bench/
+            !/src/asm/*/
+            /src/asm/${{ matrix.arch || 'x86_64' }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
           path: wycheproof
           persist-credentials: false
+          # tests/wycheproof/harness.rs reads testvectors_v1/ alone.
+          sparse-checkout: testvectors_v1
       - name: This runner's CPU
         run: |
           if [ "$(uname -m)" = aarch64 ]; then
@@ -805,6 +863,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          sparse-checkout: |
+            .github
+            ci
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cpu-features-times
@@ -864,6 +925,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # merge_rust_coverage.py reads the sources for their exclusions.
+          sparse-checkout: |
+            .github
+            ci
+            src
+            tests
       - run: |
           python3 -m venv .venv
           .venv/bin/pip install -r ci/requirements-coverage.txt
@@ -963,6 +1030,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Lean reads lean/ and vectors/ alone; lean-assemble adds src/ for
+          # the emitter's check.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/src/
+            !/tests/
+            !/bench/
+            !/docs/
       - uses: ./.github/actions/lean-prepare
         id: prepare
         if: ${{ steps.check.outputs.assemble == 'true' }}

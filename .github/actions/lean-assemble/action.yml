@@ -28,6 +28,14 @@ inputs:
 runs:
   using: composite
   steps:
+    # The Lean jobs check out without src/ (ci.yml): the emitter's check
+    # compares src/asm/ with what it generates.
+    - name: Check out src/
+      shell: bash
+      run: |
+        if [ "$(git config --bool core.sparseCheckout)" = true ]; then
+          git sparse-checkout add /src/
+        fi
     - name: Add the shards' outputs to the build
       shell: bash
       working-directory: lean
