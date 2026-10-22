@@ -236,19 +236,21 @@ theorem cmpMin_ok (small4 : Bool) {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9)
   simp
 
 omit hp in
-/-- `cmp r9, 8`. -/
-theorem cmp8_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
-    WP isa (.block [.alu .cmp .r9 (imm 8)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
-      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.zf = some (decide (n s = 8)) := by
-  have e8 : BitVec.signExtend 64 (BitVec.ofNat 32 8) = 8 := by decide
+/-- `test r9, 3`. -/
+theorem test3_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
+    WP isa (.block [.alu .test .r9 (imm 3)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.zf = some (decide (n s % 4 = 0)) := by
+  have e3 : BitVec.signExtend 64 (BitVec.ofNat 32 3) = 3 := by decide
   apply WP.of_runBlock
-  simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
-    isa, e8, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
+  simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
+    State.setFlags, isa, e3, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
   simp only [true_and]
   refine Bool.eq_iff_iff.2 ?_
   simp only [beq_iff_eq, decide_eq_true_eq]
-  show s.gpr .r9 - 8 = 0 ↔ (s.gpr .r9).toNat = 8
-  bv_omega
+  show s.gpr .r9 &&& 3 = 0 ↔ (s.gpr .r9).toNat % 4 = 0
+  rw [← BitVec.toNat_inj, BitVec.toNat_and, show (3 : BitVec 64).toNat = 2 ^ 2 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod]
+  rfl
 
 /-- The interleaved part and `rest`, from the state after the entry, given
 what the loops leave (`post`) as `Mid` for the blocks hashed `ys q`. -/

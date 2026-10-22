@@ -49,8 +49,8 @@ theorem scratch_ok (s₁ : State) :
         rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
 /-- With `full`: at least 16 blocks all by `piece` (or, if `small`, at least
-`smallMin small4` by `pieceS.getD piece`, but for exactly 8 with
-`skip8 small4 dec`), which leaves `Done` (`hpost`), or fewer by `rest` and
+`smallMin small4` by `pieceS.getD piece`, but for a multiple of 4
+with `skip4 small4 dec`), which leaves `Done` (`hpost`), or fewer by `rest` and
 the calls (`hsmall`). -/
 theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {pieceS : Option (Prog isa)}
     {Post : State → State → Prop} {Done : State → Prop}
@@ -109,11 +109,11 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
       refine WP.ite (decide (n s < smallMin small4)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
       · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
       · have hS := pc _ _ (fun s₃ h3 hn => hpieceS s₃ h3 (hn ▸ hlt)) (by simp at h0 ⊢; omega)
-        cases hsk : skip8 small4 dec <;> simp only [smallPart, hsk, Bool.false_eq_true, ↓reduceIte]
+        cases hsk : skip4 small4 dec <;> simp only [smallPart, hsk, Bool.false_eq_true, ↓reduceIte]
         · exact hS s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
-        · refine WP.seq (WP.mono (cmp8_ok (s := s) (by rw [g₃, g₂]; exact hg _ (by decide)))
+        · refine WP.seq (WP.mono (test3_ok (s := s) (by rw [g₃, g₂]; exact hg _ (by decide)))
             fun s₄ ⟨g₄, m₄, rd₄, wr₄, zf₄⟩ => ?_)
-          refine WP.ite (decide (n s = 8)) (by simp only [eval, zf₄]) (fun _ => ?_) (fun _ => ?_)
+          refine WP.ite (decide (n s % 4 = 0)) (by simp only [eval, zf₄]) (fun _ => ?_) (fun _ => ?_)
           · exact cl hlt s₄ (g₄.trans (g₃.trans g₂)) (m₄.trans (m₃.trans m₂)) (rd₄.trans (rd₃.trans rd₂))
               (wr₄.trans (wr₃.trans wr₂))
           · exact hS s₄ (g₄.trans (g₃.trans g₂)) (m₄.trans (m₃.trans m₂)) (rd₄.trans (rd₃.trans rd₂))

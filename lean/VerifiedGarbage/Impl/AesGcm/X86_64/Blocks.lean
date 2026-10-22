@@ -102,20 +102,21 @@ with `small4` (fewer go to `first` and `second`, which cost less for
 them). -/
 def smallMin (small4 : Bool) : Nat := if small4 then 5 else 2
 
-/-- Whether exactly 8 blocks go to `first` and `second` too: with `small4`,
-to encrypt (not `dec`), where they are one batch of the counter mode's
-eight-block loop and hashed together, as fast as `pieceS`. -/
-def skip8 (small4 dec : Bool) : Bool := small4 && !dec
+/-- Whether a multiple of 4 blocks (8 or 12) goes to `first` and `second`
+too: with `small4`, to encrypt (not `dec`), where the counter mode encrypts
+them in batches of eight and four, with no single blocks, and they are
+hashed together, as fast as `pieceS` or faster. -/
+def skip4 (small4 dec : Bool) : Bool := small4 && !dec
 
-/-- From `smallMin` blocks on, fewer than 16: `pieceS`, or, with `skip8`,
-`calls` on exactly 8 blocks. -/
+/-- From `smallMin` blocks on, fewer than 16: `pieceS`, or, with `skip4`,
+`calls` on a multiple of 4 blocks. -/
 def smallPart (pieceS calls : Prog isa) (aligned skip : Bool) : Prog isa :=
-  if skip then .seq (.block [.alu .cmp .r9 (imm 8)]) (.ite .e calls (stitchPart pieceS aligned true))
+  if skip then .seq (.block [.alu .test .r9 (imm 3)]) (.ite .e calls (stitchPart pieceS aligned true))
   else stitchPart pieceS aligned true
 
 /-- With a `piece` that takes all the blocks: all of them by it if at least
 16, or, if `small`, by `pieceS` (by default `piece`) if at least
-`smallMin small4` (but 8 with `skip8 small4 dec`), else all of them with
+`smallMin small4` (but a multiple of 4 with `skip4 small4 dec`), else all of them with
 `first` and `second`. `pieceS`
 runs only on fewer than 16 blocks, and its code comes after `piece`'s, which
 keeps its addresses whatever `pieceS` is. -/
@@ -126,7 +127,7 @@ def fullBody (piece first second : Prog isa) (aligned : Bool := false) (small : 
       (if small then
         .seq (.block [.alu .cmp .r9 (imm (smallMin small4))])
           (.ite .b (.seq (.block rest) (tail first second))
-            (smallPart (pieceS.getD piece) (.seq (.block rest) (tail first second)) aligned (skip8 small4 dec)))
+            (smallPart (pieceS.getD piece) (.seq (.block rest) (tail first second)) aligned (skip4 small4 dec)))
       else .seq (.block rest) (tail first second))
       (stitchPart piece aligned true))
 

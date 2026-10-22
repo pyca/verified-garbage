@@ -165,11 +165,11 @@ theorem encryptBlocks_nosp : NoSp (Blocks.encrypt v.callees.ctr v.callees.gh (st
   refine StitchImpl.blocks_cases st (·.enc) (·.encS) (·.full) (·.small) (·.small4) aligned _ _
     (fun c => c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, hc, hg, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
   all_goals cases aligned <;> cases b <;> cases c <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, i.encP.nosp, i.encPS.nosp, Option.getD_some, hc, hg, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
@@ -181,11 +181,11 @@ theorem decryptBlocks_nosp : NoSp (Blocks.decrypt v.callees.ctr v.callees.gh (st
   refine StitchImpl.blocks_cases st (·.dec) (·.decS) (·.fullD) (·.smallD) (·.small4) aligned _ _
     (fun c => c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) ?_ (fun i b c _ => ?_) (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, hc, hg, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
   all_goals cases aligned <;> cases b <;> cases c <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs, GcmImpl.callees, i.decP.nosp, i.decPS.nosp, Option.getD_some, hc, hg, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
@@ -194,11 +194,11 @@ theorem encryptBlocks_depth : (Blocks.encrypt v.callees.ctr v.callees.gh (st.map
   refine StitchImpl.blocks_cases st (·.enc) (·.encS) (·.full) (·.small) (·.small4) aligned _ _ (fun c => c.depth = 1) ?_ (fun i b c _ => ?_)
     (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.depth, GcmImpl.callees, v.ctr.depth, v.gh.depth,
       Bool.false_eq_true, ↓reduceIte] <;> decide
   all_goals cases aligned <;> cases b <;> cases c <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.depth, GcmImpl.callees, i.encP.depth, i.encPS.depth, Option.getD_some, v.ctr.depth, v.gh.depth,
       Bool.false_eq_true, ↓reduceIte] <;> decide
 
@@ -207,11 +207,11 @@ theorem decryptBlocks_depth : (Blocks.decrypt v.callees.ctr v.callees.gh (st.map
   refine StitchImpl.blocks_cases st (·.dec) (·.decS) (·.fullD) (·.smallD) (·.small4) aligned _ _ (fun c => c.depth = 1) ?_ (fun i b c _ => ?_)
     (fun i b c _ => ?_)
   · cases aligned <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.depth, GcmImpl.callees, v.ctr.depth, v.gh.depth,
       Bool.false_eq_true, ↓reduceIte] <;> decide
   all_goals cases aligned <;> cases b <;> cases c <;>
-    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip8, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
+    simp only [Blocks.blocks, Blocks.body, Blocks.head, Blocks.fullBody, Blocks.smallMin, Blocks.skip4, Blocks.smallPart, Bool.not_false, Bool.not_true, Bool.and_false, Bool.false_and, Bool.and_self, Blocks.stitchPart, Blocks.scratchSetup,
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.depth, GcmImpl.callees, i.decP.depth, i.decPS.depth, Option.getD_some, v.ctr.depth, v.gh.depth,
       Bool.false_eq_true, ↓reduceIte] <;> decide
 

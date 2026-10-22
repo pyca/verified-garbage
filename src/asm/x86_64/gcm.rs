@@ -28474,7 +28474,7 @@ jmp 21f
 20:
 cmp r9, 5
 jb 224f
-cmp r9, 8
+test r9, 3
 je 226f
 add r11, 127
 and r11, -64

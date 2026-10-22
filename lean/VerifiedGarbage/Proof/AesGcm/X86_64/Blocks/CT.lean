@@ -197,7 +197,7 @@ theorem cmp5_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block
     fun τ' => (RegSet.ofList (.r11 :: args)).subset τ'.regs && (!false || τ'.flags)) = some true :=
   ⟨_, by taint_decide⟩
 
-theorem cmp8_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block [.alu .cmp .r9 (imm 8)]) hc).map
+theorem test3_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block [.alu .test .r9 (imm 3)]) hc).map
     fun τ' => (RegSet.ofList (.r11 :: args)).subset τ'.regs && (!false || τ'.flags)) = some true :=
   ⟨_, by taint_decide⟩
 
@@ -372,8 +372,8 @@ theorem fullBody_rel (aligned small small4 dec : Bool) (p first second : Prog is
     fun {s} _ {s₁} h => WP.mono (cmpMin_ok (s := s) small4 (h.2.1 _ (by decide)))
       fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ⟨keep h g₂ m₂ rd₂ wr₂, cf₂⟩
   have post8 : ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
-      WP isa (.block [.alu .cmp .r9 (imm 8)]) s₁ fun s₂ => EntryPost s s₂ ∧ s₂.zf = some (decide (n s = 8)) :=
-    fun {s} _ {s₁} h => WP.mono (cmp8_ok (s := s) (h.2.1 _ (by decide)))
+      WP isa (.block [.alu .test .r9 (imm 3)]) s₁ fun s₂ => EntryPost s s₂ ∧ s₂.zf = some (decide (n s % 4 = 0)) :=
+    fun {s} _ {s₁} h => WP.mono (test3_ok (s := s) (h.2.1 _ (by decide)))
       fun s₂ ⟨g₂, m₂, rd₂, wr₂, zf₂⟩ => ⟨keep h g₂ m₂ rd₂ wr₂, zf₂⟩
   have a := rel_wp (P := fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧
       EntryPost s₀' s₂) (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) cmp_check) (fun _ _ h => h.2)
@@ -401,17 +401,17 @@ theorem fullBody_rel (aligned small small4 dec : Bool) (p first second : Prog is
   have pcS : RelCT isa (fun s₁ s₂ => ∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) (stitchPart (pS.getD p) aligned true)
       fun _ _ => True := (rel_regs (.r11 :: args) [.rsp] false (fun _ _ h => h) hcS).mono (fun _ _ h => h)
     fun _ _ _ => trivial
-  -- From `smallMin small4` blocks on: `pieceS`, or, with `skip8`, the calls on exactly 8.
+  -- From `smallMin small4` blocks on: `pieceS`, or, with `skip4`, the calls on a multiple of 4.
   have sp : RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ n s₀ < 16 ∧ EntryPost s₀ s₁ ∧
-      EntryPost s₀' s₂) (smallPart (pS.getD p) (.seq (.block rest) (tail first second)) aligned (skip8 small4 dec))
+      EntryPost s₀' s₂) (smallPart (pS.getD p) (.seq (.block rest) (tail first second)) aligned (skip4 small4 dec))
       fun _ _ => True := by
-    cases hsk : skip8 small4 dec <;> simp only [smallPart, hsk, Bool.false_eq_true, ↓reduceIte]
+    cases hsk : skip4 small4 dec <;> simp only [smallPart, hsk, Bool.false_eq_true, ↓reduceIte]
     · exact pcS.mono (fun _ _ h => h.1) fun _ _ h => h
     · have d := rel_wp (P := fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ n s₀ < 16 ∧
           EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
-        (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) cmp8_check)
+        (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) test3_check)
         (F₁ := fun t => n s₀ < 16 ∧ EntryPost s₀ t) (F₂ := EntryPost s₀')
-        (G₁ := fun t => n s₀ < 16 ∧ EntryPost s₀ t ∧ t.zf = some (decide (n s₀ = 8)))
+        (G₁ := fun t => n s₀ < 16 ∧ EntryPost s₀ t ∧ t.zf = some (decide (n s₀ % 4 = 0)))
         (fun _ _ h => ⟨⟨h.2.1, h.2.2.1⟩, h.2.2.2⟩)
         (fun _ h => WP.mono (post8 hp h.2) fun _ h' => ⟨h.1, h'⟩) (fun _ h => post8 hp' h)
       exact RelCT.seq d (RelCT.ite (fun s₁ s₂ h => by simp only [isa, eval, h.2.1.2.2, h.2.2.2, pb.en])
