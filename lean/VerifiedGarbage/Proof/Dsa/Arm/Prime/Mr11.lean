@@ -21,7 +21,8 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidat
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.Rsa (b2n)
-open VG.Proof.RsaKeyGen (MrAt mrS wit goS shapeOf itersOf passS)
+open VG.Proof.RsaKeyGen (goS shapeOf itersOf)
+open VG.Proof.Dsa.Generation (DMrAt dmrS dwit dres)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 section
@@ -51,25 +52,25 @@ theorem cmp4_vp {n : Nat} : VP (GQ P E n) (.block [.ldr .r1 .r8 sStat, .cmp .r1 
 
 /-- An iteration of Miller–Rabin, `n + 1` of them left. -/
 theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n : Nat) :
-    VP (MRI P E (n + 1)) (mrBody v.name v.code)
+    VP (MRI P E (n + 1)) (Impl.Dsa.Arm.ProbablePrime.mrBody v.name v.code)
       (fun σ s => isa.eval .eq s = some (decide (0 < n)) ∧ (n = 0 → QS P E σ s) ∧ (0 < n → MRI P E n σ s)) := by
   refine VP.ofImp (p := n ≤ Nt P) (fun σ s h => by have := h.2.1; omega) fun hn => ?_
   have hk : Nt P + 1 - (n + 1) = Nt P - n := by omega
-  simp only [mrBody, seqs]
-  refine (VP.seq (avFlag_vp (E := fun σ => E σ ∧ MrAt (cv P σ) (chP P) (taP P σ) (tmP P σ) P.L (rB P σ) (Nt P - n) n)
+  simp only [Impl.Dsa.Arm.ProbablePrime.mrBody, seqs]
+  refine (VP.seq (avFlag_vp (E := fun σ => E σ ∧ DMrAt (cv P σ) (chP P) (taP P σ) (tmP P σ) P.D (rB P σ) (Nt P - n) n)
     (k := Nt P - n) (fun σ e => by have := e.2.used; rwa [rB_length] at this))
     (VP.seq (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [isa_eq, isa_eq, h₁.2, h₂.2]) ?_ ?_) cmp4_vp)).mono
     (fun σ s ⟨_, _, mr, st, m⟩ => by
       rw [hk, Nat.add_sub_cancel] at mr
       rw [hk] at st
       exact ⟨⟨⟨st.1, mr⟩, st.2.1, st.2.2⟩, m⟩) (fun _ _ h => h)
-  · refine VP.ofImp (p := ¬ P.L * (Nt P - n + 1) + P.L ≤ P.rl) (fun σ s h => by
+  · refine VP.ofImp (p := ¬ P.D * (Nt P - n) + P.D ≤ P.rl) (fun σ s h => by
       have := h.2; rw [isa_eq, h.1.2] at this; simpa using this) fun hna => ?_
     refine (St.psetSM stat0_taint (by decide) (by decide) (by decide)).mono (fun σ s h => h.1.1)
       fun σ s ⟨⟨⟨e, mr⟩, h, hw⟩, m⟩ => ?_
     obtain ⟨pre, hm⟩ := hE σ e
-    obtain ⟨-, hwb, -, -⟩ := mr_facts pre hm
-    obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_short mr hwb (by have := pre.k1; omega)
+    obtain ⟨-, hwb, -⟩ := mr_facts pre hm
+    obtain ⟨hn0, hres⟩ := VG.Proof.Dsa.Generation.dmrAt_short mr hwb (by have := pre.sizes; omega)
       (by rw [rB_length]; exact hna)
     have hres' : resP P σ = none := hres
     refine .inl ⟨hn0, e, h.mono (fun j hj => ⟨hj, rfl⟩) fun d hd => ⟨by revert hd; revert d; decide, ?_⟩, hw⟩
@@ -79,18 +80,18 @@ theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n :
       unfold statQ; rw [hres']
     · simp (config := {decide := true}) only [upd, ↓reduceIte, VI]
       unfold usedQ; rw [hres', hn0, Nat.sub_zero]
-  · refine VP.ofImp (p := P.L * (Nt P - n + 1) + P.L ≤ P.rl) (fun σ s h => by
+  · refine VP.ofImp (p := P.D * (Nt P - n) + P.D ≤ P.rl) (fun σ s h => by
       have := h.2; rw [isa_eq, h.1.2] at this; simpa using this) fun hav => ?_
     rw [List.append_assoc, List.append_assoc]
     exact (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)
       (witnessLoad_vp (E := EK P E (Nt P - n) n) (k := Nt P - n) fun σ e => ⟨(hE σ e.1).1, e.2.2⟩)
-      (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) witnessFix_vp
+      (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) (witnessFix_vp fun σ e => e.2.2)
         (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) (mrCall_vp v) (tail_vp hE hn)))).mono
       (fun σ s ⟨⟨⟨⟨⟨e, mr⟩, h, hw⟩, m⟩, _⟩, _⟩ => ⟨⟨⟨e, mr, hav⟩, h, hw⟩, m⟩) (fun _ _ h => h)
 
 /-- Miller–Rabin on the candidate, from its Montgomery forms of 1 and −1. -/
 theorem millerRabin_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
-    VP (SM P E) (millerRabin v.name v.code) (QS P E) :=
+    VP (SM P E) (Impl.Dsa.Arm.ProbablePrime.millerRabin v.name v.code) (QS P E) :=
   (mrInit_vp hE).seq (VP.loop (I := MRI P E) (body_vp v hE) (Nt P))
 
 end

@@ -25,7 +25,8 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.Rsa (b2n)
-open VG.Proof.RsaKeyGen (MrAt mrS wit goS shapeOf itersOf)
+open VG.Proof.RsaKeyGen (goS shapeOf itersOf)
+open VG.Proof.Dsa.Generation (DMrAt dmrS dwit dres)
 open VG.Impl.RsaKeyGen.Arm.Key (isOne)
 
 /-- The status after Miller–Rabin. -/
@@ -39,7 +40,7 @@ def statQ (P : CP) (σ : State) : Nat :=
 def usedQ (P : CP) (σ : State) : Nat :=
   match resP P σ with
   | some (_, rest) => P.rl - rest.length
-  | none => P.L * (Nt P + 1)
+  | none => P.D * Nt P
 
 /-- After Miller–Rabin. -/
 abbrev QS (P : CP) (E : State → Prop) : State → State → Prop :=
@@ -49,19 +50,19 @@ abbrev QS (P : CP) (E : State → Prop) : State → State → Prop :=
 abbrev SI (P : CP) (E : State → Prop) (k : Nat) (σ s : State) : Prop :=
   St P E (AB2 P) LB2 (VI P k) LSI σ s ∧ MS P σ s
 
-theorem avFlag_eq : avFlag = ([(Reg.r1, aoRl)].map fun p => Instr.ldrSp p.1 p.2) ++
+theorem avFlag_eq : Impl.Dsa.Arm.ProbablePrime.avFlag = ([(Reg.r1, aoRl)].map fun p => Instr.ldrSp p.1 p.2) ++
     (([.ldr .r2 .r8 sUsed, .dp .sub .r1 .r1 (.reg .r2)] : List Instr) ++
-      (([(Reg.r2, foL)].map fun p => Instr.ldrSp p.1 p.2) ++ carryTail)) := rfl
+      (([(Reg.r2, aoPl)].map fun p => Instr.ldrSp p.1 p.2) ++ carryTail)) := rfl
 
-theorem mrS_fst (c L : Nat) (r : Spec.RsaKeyGen.Rand) : ∀ k, (mrS c L r k).1 = k + 1
+theorem mrS_fst (c D : Nat) (r : Spec.RsaKeyGen.Rand) : ∀ k, (dmrS c D r k).1 = k + 1
   | 0 => rfl
-  | k + 1 => by simp only [mrS, mrS_fst c L r k]
+  | k + 1 => by simp only [dmrS, mrS_fst c D r k]
 
-theorem mrS_snd_le (c L : Nat) (r : Spec.RsaKeyGen.Rand) : ∀ k, (mrS c L r k).2 ≤ k
+theorem mrS_snd_le (c D : Nat) (r : Spec.RsaKeyGen.Rand) : ∀ k, (dmrS c D r k).2 ≤ k
   | 0 => Nat.le_refl _
   | k + 1 => by
-    simp only [mrS]
-    have := mrS_snd_le c L r k
+    simp only [dmrS]
+    have := mrS_snd_le c D r k
     split <;> omega
 
 section
@@ -95,15 +96,16 @@ theorem St.pisOneM {d : Nat} (cert : Cert (.block (isOne d))) (hd : d ∈ LS) (b
     rcases (by omega : V σ d = 0 ∨ V σ d = 1) with h0 | h0 <;> rw [h0] <;> decide
 
 /-- `avFlag`: Z iff `rand` is too short for the witness of iteration `k`. -/
-theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.L * (k + 1) ≤ P.rl) :
-    VP (SI P E k) (.block avFlag) (fun σ s => SI P E k σ s ∧ s.z = decide (¬ P.L * (k + 1) + P.L ≤ P.rl)) := by
-  have vU : ∀ σ, VI P k σ sUsed = P.L * (k + 1) := fun σ => by
+theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.D * k ≤ P.rl) :
+    VP (SI P E k) (.block Impl.Dsa.Arm.ProbablePrime.avFlag)
+      (fun σ s => SI P E k σ s ∧ s.z = decide (¬ P.D * k + P.D ≤ P.rl)) := by
+  have vU : ∀ σ, VI P k σ sUsed = P.D * k := fun σ => by
     simp (config := {decide := true}) only [VI, upd, ↓reduceIte]
   rw [avFlag_eq]
   refine VP.block_append (G := fun σ s => SI P E k σ s ∧ s.gpr .r1 = BitVec.ofNat 32 P.rl) ?_
-    (VP.block_append (G := fun σ s => SI P E k σ s ∧ s.gpr .r1 = BitVec.ofNat 32 (P.rl - P.L * (k + 1))) ?_
-    (VP.block_append (G := fun σ s => SI P E k σ s ∧ s.gpr .r1 = BitVec.ofNat 32 (P.rl - P.L * (k + 1)) ∧
-      s.gpr .r2 = BitVec.ofNat 32 P.L) ?_ ?_))
+    (VP.block_append (G := fun σ s => SI P E k σ s ∧ s.gpr .r1 = BitVec.ofNat 32 (P.rl - P.D * k)) ?_
+    (VP.block_append (G := fun σ s => SI P E k σ s ∧ s.gpr .r1 = BitVec.ofNat 32 (P.rl - P.D * k) ∧
+      s.gpr .r2 = BitVec.ofNat 32 P.D) ?_ ?_))
   · refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
       rw [h₁.1.2.1.sp, h₁.1.2.1.pre.sp, h₂.1.2.1.sp, h₂.1.2.1.pre.sp]) fun σ s ⟨⟨e, h, hw⟩, m⟩ => ?_
     refine h.ldrSp (o := aoRl) (by decide) fun s1 u1 => WP.block_nil ?_
@@ -124,10 +126,10 @@ theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.L * (k + 1) ≤ P.rl) :
   · refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
       rw [h₁.1.1.2.1.sp, h₁.1.1.2.1.pre.sp, h₂.1.1.2.1.sp, h₂.1.1.2.1.pre.sp])
       fun σ s ⟨⟨⟨e, h, hw⟩, m⟩, p1⟩ => ?_
-    refine h.ldrSp (o := foL) (by decide) fun s1 u1 => WP.block_nil ?_
+    refine h.ldrSp (o := aoPl) (by decide) fun s1 u1 => WP.block_nil ?_
     have r1 := u1.rest (ws := [.r2]) (by simp)
     exact ⟨⟨⟨e, h.of_rest r1 u1.mem, hw.rest r1⟩, m.of_upd u1⟩, by rw [u1.other _ (by decide), p1],
-      by rw [u1.gpr, h.pre.wL]⟩
+      by rw [u1.gpr, h.pre.aPl]⟩
   · refine VP.taint [.r1, .r2] carryTail_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨⟨⟨e, h, hw⟩, m⟩, p1, p2⟩ => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
@@ -135,15 +137,15 @@ theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.L * (k + 1) ≤ P.rl) :
       · rw [h₁.2.2, h₂.2.2]
     have pre := h.pre
     have hr : P.rl < 2 ^ 32 := pre.rlt
-    have hl : P.L < 2 ^ 32 := by have := pre.k2; omega
+    have hl : P.D < 2 ^ 32 := by have := pre.k2; have := pre.sizes; omega
     have hk' := hk σ e
     refine carry_ok fun s1 r1' m1 v1 => wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil
       ⟨⟨⟨e, (h.of_rest r1' m1).of_rest (f.rest []) f.mem,
         (hw.rest r1').of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩,
         (m.of_rest r1' m1).of_rest (f.rest []) f.mem⟩, ?_⟩
-    rw [z, v1, p1, p2, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show P.rl - P.L * (k + 1) < 2 ^ 32 by omega),
+    rw [z, v1, p1, p2, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show P.rl - P.D * k < 2 ^ 32 by omega),
       Nat.mod_eq_of_lt hl]
-    by_cases hc : P.L ≤ P.rl - P.L * (k + 1)
+    by_cases hc : P.D ≤ P.rl - P.D * k
     · simp [hc]; omega
     · simp [hc]; omega
 

@@ -31,7 +31,7 @@ variable {P : CP} {σ : State}
 
 /-- The sizes of the five widths: `bits` fits the arithmetic, and is at least 160. -/
 theorem In.sizes (pre : In P σ) : 160 ≤ P.bits ∧ P.bits ≤ 8 * P.L ∧ P.bits = 8 * P.len ∧
-    P.len ≤ P.L ∧ P.len ≤ P.D ∧ P.D ≤ P.L ∧ 4 ≤ P.len ∧ P.len % 4 = 0 := by
+    P.len ≤ P.L ∧ P.len ≤ P.D ∧ P.D ≤ P.L ∧ 4 ≤ P.len ∧ P.len % 4 = 0 ∧ 24 ≤ P.D := by
   have hL := pre.L
   simp only [CP.len, CP.D, Impl.Dsa.Arm.ProbablePrime.len, Impl.Dsa.Arm.ProbablePrime.draw,
     Impl.Dsa.Arm.ProbablePrime.words] at *

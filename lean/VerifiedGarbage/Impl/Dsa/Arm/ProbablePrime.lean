@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 
 /-!
 # DSA's probable-prime test on ARMv7
@@ -16,7 +17,7 @@ The function allocates 32 bytes and pushes the RSA candidate's frame of 56
 bytes (`r0`–`r12` and `lr`) below them, so that the frame words that code
 reads are this function's: before the push, the allocation holds `rand` and
 `rand_len` (`aoR`, `aoRl`), the key working space and its length in 64-bit
-words (`aoS`, `aoSl`), `ws` (`aoP`), and the candidate's bytes, the octets
+words, RSA's for the arithmetic's width (`aoS`, `aoSl`), `ws` (`aoP`), and the candidate's bytes, the octets
 of a witness and the uniform witnesses needed (`aoEl`, `aoPl`, `aoChk`), so
 that the body depends on `bits` only through these words; `r1` is `L = 8 w`
 (`foL`, `w` the 64-bit words of the arithmetic, at least 4) and `r2` is
@@ -60,6 +61,18 @@ def checks (bits : Nat) : Nat := if bits ≤ 2048 then 64 else 128
 /-- The key working space's byte offset in `ws`, above every candidate. -/
 def keyOff : Nat := 384
 
+/-- The key working space's 64-bit words: RSA's for a modulus of `8 w` octets,
+a multiple of 32. -/
+def keyWords (bits : Nat) : Nat := Spec.Rsa.scratchWords (8 * words bits)
+
+/-- The candidate at byte 0 of `ws`, and the key working space the only bytes
+the test changes. -/
+def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
+  bits := bits
+  candidate := 0
+  scratch := [(keyOff, 8 * keyWords bits)]
+  size := keyOff + 8 * keyWords bits
+
 /-! ## Entry -/
 
 /-- The frame word of the uniform witnesses needed, the allocation's last. -/
@@ -71,7 +84,8 @@ into `r2` and `L` into `r1`; only caller-saved registers change. -/
 def pre (bits : Nat) : List Instr :=
   [.addSp .r12 0, .str .r2 .r12 (aoR - 56), .str .r3 .r12 (aoRl - 56), .str .r0 .r12 (aoP - 56),
     .dp .add .r3 .r0 (.imm (BitVec.ofNat 32 keyOff)), .str .r3 .r12 (aoS - 56),
-    .dp .sub .r3 .r1 (.imm (BitVec.ofNat 32 (keyOff / 8))), .str .r3 .r12 (aoSl - 56),
+    .mov .r3 (.imm (BitVec.ofNat 32 (keyWords bits / 32))), .mov .r3 (.shifted .r3 .lsl 5),
+    .str .r3 .r12 (aoSl - 56),
     .mov .r3 (.imm (BitVec.ofNat 32 (len bits))), .str .r3 .r12 (aoEl - 56),
     .mov .r3 (.imm (BitVec.ofNat 32 (draw bits))), .str .r3 .r12 (aoPl - 56),
     .mov .r3 (.imm (BitVec.ofNat 32 (checks bits))), .str .r3 .r12 (aoChk - 56),

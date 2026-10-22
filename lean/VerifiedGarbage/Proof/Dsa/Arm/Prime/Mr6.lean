@@ -49,22 +49,19 @@ section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
   {LS : List Nat}
 
-theorem wit_facts {σ : State} (pre : In P σ) (k : Nat) :
-    Spec.RsaKeyGen.bitLength (cv P σ - 1) = 64 * P.w ∧ xw P σ k < 2 ^ (64 * P.w) := by
-  have lE := pre.L_eq; have w4 := pre.w4
-  have sh : VG.Proof.RsaKeyGen.PrimeShape (64 * P.w) (cv P σ) := by
-    have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega] at this
-  refine ⟨(VG.Proof.RsaKeyGen.cand_bits (by omega) sh).2.1, ?_⟩
-  have := xw_lt P σ k; rwa [show 8 * P.L = 64 * P.w by omega] at this
-
-theorem wf_lt {σ : State} (pre : In P σ) (k : Nat) : (wf P σ k).1 < 2 ^ (64 * P.w) := by
-  obtain ⟨hb, hx⟩ := wit_facts pre k
-  have w4 := pre.w4
-  rw [show wf P σ k = Spec.RsaKeyGen.witness (cv P σ - 1) (xw P σ k) from rfl, witness_arm hb hx]
+/-- A witness is below `2^(bitLength (c − 1))`. -/
+theorem witness_lt (w1 x : Nat) : (Spec.RsaKeyGen.witness w1 x).1 < 2 ^ Spec.RsaKeyGen.bitLength w1 := by
+  unfold Spec.RsaKeyGen.witness
   dsimp only
   split
-  · exact hx
+  · exact Nat.mod_lt _ (Nat.two_pow_pos _)
   · exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.pow_le_pow_right (by decide) (by omega))
+
+theorem wf_lt {σ : State} (pre : In P σ) (k : Nat) : (wf P σ k).1 < 2 ^ (64 * P.w) := by
+  have sz := pre.sizes; have lE := pre.L_eq
+  have := witness_lt (cv P σ - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg (rB P σ) (P.D * k) P.D))
+  rw [pre.cm1_bits] at this
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
 
 /-- The working space's context, keeping `X`. -/
 theorem VP.ctx {X : State → State → Prop}
