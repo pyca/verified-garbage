@@ -82,7 +82,7 @@ theorem fast_pair_trace {workspace p : BitVec 32} {size w c d exponent : Nat} :
     RelCT isa (TimingPair workspace p size w c d exponent) (fast w) (fun _ _ => True) := by
   intro s t tr ur u z H E G
   exact fast_trace_bounded (g := fastGeometry workspace p w)
-    (by change 0 < w; have := H.1.input.width; omega) H.1.input.widthBound H.1.fastFit rfl
+    (by change 0 < w; have := H.1.input.width; omega) (by change w ≤ 128; have := H.1.input.widthBound; omega) H.1.fastFit rfl
     _ _ _ _ _ _ ⟨H.1.fastEntry, H.2.fastEntry⟩ E G
 
 theorem general_pair_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (positive : 0 < exponent) :

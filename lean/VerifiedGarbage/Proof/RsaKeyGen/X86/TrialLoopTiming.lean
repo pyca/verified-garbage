@@ -14,7 +14,7 @@ open VG.Impl.RsaKeyGen.X86.Trial
 theorem wordStep_trace : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (wordStep 4))
     (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
 
-theorem wordLoop_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+theorem wordLoop_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 128)
     (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) :
     RelCT isa (fun s t => ReadControl g 0 s ∧ ReadControl g 0 t)
       (words 4) (VG.X86.Taint.Agree (τr [.esp, .edi])) := by
@@ -56,7 +56,7 @@ theorem divisor_trace {g : Geometry} (v : g.Valid) :
       (divisor 4) (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
   RelCT.seq (wordLoop_trace v) finish_trace
 
-theorem divisor_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 64)
+theorem divisor_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound : g.w ≤ 128)
     (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) :
     RelCT isa (fun s t => ReadControl g 0 s ∧ ReadControl g 0 t)
       (divisor 4) (VG.X86.Taint.Agree (τr [.esp, .edi])) :=

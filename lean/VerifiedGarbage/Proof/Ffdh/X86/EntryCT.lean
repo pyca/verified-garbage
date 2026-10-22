@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Bignum.X86.CrtEntryTiming
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
@@ -60,15 +61,19 @@ theorem freed_of_pop {bytes : Nat} {s₁ s₂ s₃ : State} (h : isa.pop (.free 
   split at h <;> [cases h; cases h]
   rfl
 
-/-- Two runs of `wrap a body` leak the same trace when the runs of `body` do. -/
-theorem wrap_trace {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (B : WrapABI a n t)
+/-- Two runs of `wrap a body` leak the same trace when the runs of `body` do, from states that name
+the statics where the entry's do. -/
+theorem wrap_trace_syms {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (B : WrapABI a n t)
     (args : ∀ i < n, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp) {body : Prog isa}
     {Ex₁ Ex₂ : List Region → List Region → Prop} (hx₁ : Ex₁ s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
     (hx₂ : Ex₂ t.rd (⟨frameAt t, argsFrame⟩ :: t.wr))
     (hfill : (VG.Taint.check taint (τr [.esp]) (.block (fill a)) (.block [])).isSome = true)
-    (hw₁ : ∀ f, BodyAt Ex₁ a s f → WP isa body f fun u => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f u)
-    (hw₂ : ∀ f, BodyAt Ex₂ a t f → WP isa body f fun u => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f u)
-    (hb : RelCT isa (fun f g => BodyAt Ex₁ a s f ∧ BodyAt Ex₂ a t g) body fun _ _ => True)
+    (hw₁ : ∀ f, BodyAt Ex₁ a s f → f.syms = s.syms →
+      WP isa body f fun u => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f u)
+    (hw₂ : ∀ f, BodyAt Ex₂ a t f → f.syms = t.syms →
+      WP isa body f fun u => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f u)
+    (hb : RelCT isa (fun f g => (BodyAt Ex₁ a s f ∧ f.syms = s.syms) ∧ (BodyAt Ex₂ a t g ∧ g.syms = t.syms)) body
+      fun _ _ => True)
     {tr ur : List Leak} {sf tf : State} (E : Exec isa (wrap a body) s tr sf)
     (F : Exec isa (wrap a body) t ur tf) : tr = ur := by
   have ws := args a.ws (by have := A.below.ws; omega)
@@ -117,9 +122,13 @@ theorem wrap_trace {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (B : W
                   rw [List.append_nil] at body₁ body₂
                   obtain ⟨Bf₁, E₁⟩ := wp_result body₁ B1
                   obtain ⟨Bf₂, E₂⟩ := wp_result body₂ C1
-                  have T3 := (hb _ _ _ _ _ _ ⟨Bf₁, Bf₂⟩ B2 C2).1
-                  have K₁ := wp_result (hw₁ f₁ Bf₁) B2
-                  have K₂ := wp_result (hw₂ f₂ Bf₂) C2
+                  have sy₁ : f₁.syms = s.syms :=
+                    ((Exec.syms B1).trans (show (allocFrame argsFrame u).syms = u.syms from rfl)).trans (Exec.syms E1)
+                  have sy₂ : f₂.syms = t.syms :=
+                    ((Exec.syms C1).trans (show (allocFrame argsFrame v).syms = v.syms from rfl)).trans (Exec.syms F1)
+                  have T3 := (hb _ _ _ _ _ _ ⟨⟨Bf₁, sy₁⟩, ⟨Bf₂, sy₂⟩⟩ B2 C2).1
+                  have K₁ := wp_result (hw₁ f₁ Bf₁ sy₁) B2
+                  have K₂ := wp_result (hw₂ f₂ Bf₂ sy₂) C2
                   have Edi : w.gpr .edi = z.gpr .edi := by
                     rw [fw, fz, freed_gpr _ _ (by decide), freed_gpr _ _ (by decide), K₁.1 .edi (by decide),
                       K₂.1 .edi (by decide), E₁, E₂]
@@ -133,6 +142,19 @@ theorem wrap_trace {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (B : W
                       obtain rfl := List.mem_singleton.mp hr; exact Edi) E3 F3).1
                   rw [T1, T2, T3, T4]
                   rfl
+
+/-- Two runs of `wrap a body` leak the same trace when the runs of `body` do. -/
+theorem wrap_trace {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (B : WrapABI a n t)
+    (args : ∀ i < n, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp) {body : Prog isa}
+    {Ex₁ Ex₂ : List Region → List Region → Prop} (hx₁ : Ex₁ s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
+    (hx₂ : Ex₂ t.rd (⟨frameAt t, argsFrame⟩ :: t.wr))
+    (hfill : (VG.Taint.check taint (τr [.esp]) (.block (fill a)) (.block [])).isSome = true)
+    (hw₁ : ∀ f, BodyAt Ex₁ a s f → WP isa body f fun u => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f u)
+    (hw₂ : ∀ f, BodyAt Ex₂ a t f → WP isa body f fun u => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f u)
+    (hb : RelCT isa (fun f g => BodyAt Ex₁ a s f ∧ BodyAt Ex₂ a t g) body fun _ _ => True)
+    {tr ur : List Leak} {sf tf : State} (E : Exec isa (wrap a body) s tr sf)
+    (F : Exec isa (wrap a body) t ur tf) : tr = ur :=
+  wrap_trace_syms A B args SP hx₁ hx₂ hfill (fun f B _ => hw₁ f B) (fun f B _ => hw₂ f B) (hb.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) E F
 
 /-- The synthetic arguments of runs with the same arguments. -/
 theorem synth_congr {a : Args} {n : Nat} (B : Below a n) {f g : Nat → BitVec 32} (h : ∀ i < n, f i = g i) :

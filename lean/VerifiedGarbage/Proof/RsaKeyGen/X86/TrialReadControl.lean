@@ -31,7 +31,7 @@ theorem StateAt.readControl {g : Geometry} {c i q : Nat} {s : State}
   refine ⟨S.context.stack, S.context.candidateRead, S.ending, ?_⟩
   simpa only [Nat.mul_zero, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.add_zero] using pointer
 
-theorem ReadControl.step_bounded {g : Geometry} (widthBound : g.w ≤ 64)
+theorem ReadControl.step_bounded {g : Geometry} (widthBound : g.w ≤ 128)
     (candidateFit : g.candidate.toNat + 8 * g.w ≤ 2 ^ 32) {j : Nat} {s : State}
     (S : ReadControl g j s) (index : j < 2 * g.w) :
     WP isa (.block (VG.Impl.RsaKeyGen.X86.Trial.wordStep 4)) s fun t =>

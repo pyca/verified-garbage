@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
 public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
@@ -36,6 +37,10 @@ theorem generateKey_spSafe :
 
 theorem keySearch_spSafe :
     (Impl.Ffdh.X86.KeySearch.code).all (fun i => !isa.writesSp i) = true :=
+  VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
+
+theorem candidate_spSafe :
+    (Impl.Ffdh.X86.Candidate.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
 
 end VG.Proof.Ffdh.X86.Shape
