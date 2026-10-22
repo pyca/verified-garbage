@@ -521,6 +521,7 @@ fn tls_records(c: &mut Criterion) {
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
+    key_setup_rows(c);
 }
 
 /// Where a record's buffers start, in bytes past a 4 KiB boundary: the
@@ -900,6 +901,58 @@ fn tls_connection_rows(c: &mut Criterion) {
                 })
             });
         }
+        g.finish();
+    }
+}
+
+/// A key's setup and drop alone (`aes-*-gcm-new`, by the key's length in
+/// bytes): what every benchmark that sets up a key for each message pays
+/// besides the message, measured here rather than by subtracting a reused
+/// key's time (on x86-64, `AesGcm::new` computes the powers of the hash
+/// subkey). OpenSSL sets up a context with the key, aws-lc-rs a
+/// `LessSafeKey`.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+fn key_setup_rows(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use aws_lc_rs::aead::{AES_128_GCM, AES_256_GCM, LessSafeKey, UnboundKey};
+    use criterion::BenchmarkId;
+    use openssl::cipher::Cipher as OsslCipher;
+    use openssl::cipher_ctx::CipherCtx;
+    use verified_garbage::aes_gcm::AesGcm;
+
+    use crate::{AWS_LC, OPENSSL, VG};
+
+    for (bits, key) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
+        let (alg, ossl_alg) = if bits == 128 {
+            (&AES_128_GCM, OsslCipher::aes_128_gcm())
+        } else {
+            (&AES_256_GCM, OsslCipher::aes_256_gcm())
+        };
+        let mut g = c.benchmark_group(format!("aes-{bits}-gcm-new"));
+        g.bench_function(BenchmarkId::new(VG, key.len()), |b| {
+            b.iter(|| black_box(AesGcm::new(black_box(key)).unwrap()))
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, key.len()), |b| {
+            b.iter(|| {
+                let mut ossl = CipherCtx::new().unwrap();
+                ossl.encrypt_init(Some(ossl_alg), Some(black_box(key)), None)
+                    .unwrap();
+                black_box(ossl)
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, key.len()), |b| {
+            b.iter(|| {
+                black_box(LessSafeKey::new(
+                    UnboundKey::new(alg, black_box(key)).unwrap(),
+                ))
+            })
+        });
         g.finish();
     }
 }
