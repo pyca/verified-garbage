@@ -5,13 +5,13 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 import VerifiedGarbage.Proof.Rsa.Arm.RvViews
-import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.MontSelected
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a Montgomery product on a stage
 
-`mmul o a b`: frame word 0 into `r0`, `montOp o a b`, the context of the key
+`mmul o a b`: frame word 0 into `r0`, the selected Montgomery operation, the context of the key
 working space again and the top words of the result's array cleared. From a
 stage whose arrays `mBase + a` and `mBase + b` hold numbers below `n`, the
 result's array holds the number `T < n` with `T R ≡ [a] [b] (mod n)`, given
@@ -74,7 +74,7 @@ theorem montOp_after {P : RP} {σ s : State} {o a b T : Nat} {A : Nat → Nat} {
     (hT : T < P.n) (hTv : T * 2 ^ (64 * P.w6) % P.n = A (mBase + a) * A (mBase + b) % P.n)
     (hl2 : mBase + 2 ∉ live) (hl3 : mBase + 3 ∉ live)
     (hlW : ∀ j ∈ liveW, j ≠ (mBase + 2) / 2 ∧ j ≠ (mBase + o) / 2) :
-    WP isa (VG.Impl.Bignum.Arm.montOp o a b) s (AfterM P σ o T A live AW liveW V ls) := by
+    WP isa (VG.Impl.Bignum.Arm.selectedMontOp o a b) s (AfterM P σ o T A live AW liveW V ls) := by
   have pre := h.bs.pre
   have sz := pre.sizes
   have hf := pre.fS
@@ -90,7 +90,7 @@ theorem montOp_after {P : RP} {σ s : State} {o a b T : Nat} {A : Nat → Nat} {
   have eB : numAt s.mem (State.addr P.M0) P.w6 b = A (mBase + b) := by
     rw [numAt_eq sz hf (by rw [h.arrs _ hb]; omega), h.arrs _ hb]
   have ho0 : o ≠ 0 := by have := hi.1; omega
-  refine WP.mono (montOp_ok s (hm.mr.ready ptr) opd.1 opd.2.1 opd.2.2 ho0 (by rw [eB, hm.n0]; exact hbv))
+  refine WP.mono (selectedMontOp_ok s (hm.mr.ready ptr) opd.1 opd.2.1 opd.2.2 ho0 (by rw [eB, hm.n0]; exact hbv))
     fun t ⟨ar, m0, lt, v, keeps, frame, rest⟩ => ?_
   have k := keep_of_mont sz hf keeps frame
   have fS : Frame [P.rS] s.mem t.mem := frame.sub fun r hr => by

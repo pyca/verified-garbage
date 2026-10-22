@@ -101,7 +101,8 @@ def artifacts : List Artifact := [
         branch on the key, which the contract lets leak), `g^r` by Montgomery multiplication \
         (`vg_rsa_public_checked`'s, at the width of `n`) over the same fixed number of bits, \
         the multiplicand chosen under a mask, then as many squarings, each kept under masks \
-        until a square root of 1 other than ±1 is found. `p = gcd(y - 1, n)` by a binary \
+        until a square root of 1 other than ±1 is found. Equal operand indices use the existing \
+        specialized Montgomery square. `p = gcd(y - 1, n)` by a binary \
         extended Euclidean algorithm of a fixed number of steps and `q = n / p` by a \
         fixed-iteration long division; the larger is written first, under the mask of \
         whether a candidate gave them, and zeros otherwise."]
