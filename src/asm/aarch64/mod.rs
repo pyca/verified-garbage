@@ -563,6 +563,9 @@ pub(crate) mod sm4_cfb;
 pub(crate) mod sm4_ctr;
 
 #[rustfmt::skip]
+pub(crate) mod sm4_gcm;
+
+#[rustfmt::skip]
 pub(crate) mod sm4_ofb;
 
 #[rustfmt::skip]
