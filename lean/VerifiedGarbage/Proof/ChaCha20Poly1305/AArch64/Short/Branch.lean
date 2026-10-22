@@ -65,7 +65,7 @@ postcondition mentions (`Agree`).
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Short
 
 open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64 VG.Impl.ChaCha20Poly1305.AArch64.Short
-open VG.Proof.ChaCha20.AArch64.Xor (Upd wp_subImm wp_lsr wp_movz eval_zero eval_nonzero ofNat_beq_zero
+open VG.Proof.ChaCha20.AArch64.Xor (Upd wp_subImm wp_lsr wp_movz eval_zero ofNat_beq_zero
   sub_ofNat)
 open VG.Proof.ChaCha20Poly1305.AArch64 (wp_orr wp_lsl)
 open VG.Proof.ChaCha20.AArch64 (toNat_ofNat_lt)
@@ -253,11 +253,11 @@ theorem routeVal_eq (sve enc : Bool) {L : Nat} (h : L < 2 ^ 64) :
   cases sve <;> cases enc <;> simp only [wideLo, wideSh, Bool.false_eq_true, Bool.or_false,
     Bool.or_true, ite_true, ite_false] <;> omega
 
-/-- The branch: to the code without the pass of five blocks iff the length
-does not take the wide code. -/
+/-- The branch: to the code with the pass of five blocks iff the length takes
+it. -/
 theorem route_eval {sve enc : Bool} {s₀ s₁ : State} (h : s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5)) :
-    isa.eval (.nonzero .x .x9) s₁ = some (decide (¬ inRoute sve enc (L s₀))) := by
-  have e : isa.eval (.nonzero .x .x9) s₁ = some (!(s₁.gpr .x9 == 0)) := eval_nonzero s₁ .x9
-  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, routeVal_eq sve enc (s₀.gpr .x5).isLt, decide_not]
+    isa.eval (.zero .x .x9) s₁ = some (decide (inRoute sve enc (L s₀))) := by
+  have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) := eval_zero s₁ .x9
+  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, routeVal_eq sve enc (s₀.gpr .x5).isLt]
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Short

@@ -376,8 +376,9 @@ modulo 512: `(r - wideLo) >> wideSh`, which wraps around below. From 768
 bytes `r ≥ 256` holds; below, `Short.check` leaves this code only lengths
 under 64 or from 512 to 767, whose `r` is below 256. The eleven `x10`
 writes keep the block 64 bytes long with its branch, so that the code after
-it (`sealStitchedMain` and `openStitchedMain`, for the other lengths) keeps
-the alignment it had before this check (`Short.check`'s comment). -/
+it (`sealStitchedMain` and `openStitchedMain`, for the other lengths, laid
+out after the branch) keeps the alignment it had before this check
+(`Short.check`'s comment). -/
 def route (sve enc : Bool) : List Instr :=
   [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
     .lsr .x .x9 .x9 (wideSh sve enc)] ++ List.replicate 11 (.movz .x .x10 0 0)
@@ -392,14 +393,14 @@ def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (Pad.sealRoute c)
       (if stitched then .seq (.block (route c.sve true))
-        (.ite (.nonzero .x .x9) (sealStitchedMain c) (sealWideMain c))
+        (.ite (.zero .x .x9) (sealWideMain c) (sealStitchedMain c))
       else sealMain c))
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (openRoute c)
       (if stitched then .seq (.block (route c.sve false))
-        (.ite (.nonzero .x .x9) (openStitchedMain c) (openWideMain c))
+        (.ite (.zero .x .x9) (openWideMain c) (openStitchedMain c))
       else openMain c))
 
 /-- The code for a stream backend. -/

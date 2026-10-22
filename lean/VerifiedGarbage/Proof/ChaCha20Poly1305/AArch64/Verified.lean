@@ -107,15 +107,16 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · split
     · refine WP.seq (WP.mono (Short.route_ok v.callee.sve true s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
       have hp₂ := Short.APre.agree ag₂ hp₁
-      refine WP.ite (decide (¬ Short.inRoute v.callee.sve true (L s₁))) (Short.route_eval x9₂)
-        (fun _ => ?_) (fun h => ?_)
+      refine WP.ite (decide (Short.inRoute v.callee.sve true (L s₁))) (Short.route_eval x9₂)
+        (fun h => ?_) (fun _ => ?_)
+      rotate_left
       · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
-      · have hr := of_decide_eq_false h
+      · have hr := of_decide_eq_true h
         have hL : 512 ≤ L s₂ := by
           have hlo : 256 ≤ wideLo v.callee.sve true := by cases v.callee.sve <;> decide
           have hs : Short.lo v.callee.sve ≤ 64 := by cases v.callee.sve <;> decide
           have hn' := of_decide_eq_false hn
-          simp only [Short.inRoute, Decidable.not_not] at hr
+          simp only [Short.inRoute] at hr
           have e1 := ag.gpr .x5 (by decide) (by decide)
           have e2 := ag₂.gpr .x5 (by decide) (by decide)
           simp only [L, e1, e2] at hr hn' ⊢
@@ -140,15 +141,16 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · split
     · refine WP.seq (WP.mono (Short.route_ok v.callee.sve false s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
       have hp₂ := Short.APre.agree ag₂ hp₁
-      refine WP.ite (decide (¬ Short.inRoute v.callee.sve false (L s₁))) (Short.route_eval x9₂)
-        (fun _ => ?_) (fun h => ?_)
+      refine WP.ite (decide (Short.inRoute v.callee.sve false (L s₁))) (Short.route_eval x9₂)
+        (fun h => ?_) (fun _ => ?_)
+      rotate_left
       · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
-      · have hr := of_decide_eq_false h
+      · have hr := of_decide_eq_true h
         have hL : 512 ≤ L s₂ := by
           have hlo : 256 ≤ wideLo v.callee.sve false := by cases v.callee.sve <;> decide
           have hs : Short.lo v.callee.sve ≤ 64 := by cases v.callee.sve <;> decide
           have hn' := of_decide_eq_false hn
-          simp only [Short.inRoute, Decidable.not_not] at hr
+          simp only [Short.inRoute] at hr
           have e1 := ag.gpr .x5 (by decide) (by decide)
           have e2 := ag₂.gpr .x5 (by decide) (by decide)
           simp only [L, e1, e2] at hr hn' ⊢
