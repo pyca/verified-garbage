@@ -53,6 +53,8 @@ theorem splitPrepared16_implies : (Proof.AesGcm.sealSplitX86_64M (CtxMode.prepar
               | (refine preparedPowers16Repr_of_zero fun i hi => ?_
                  split
                  · next h => exfalso; bv_omega
+                 · rfl)
+              | exact Region.disjoint_of_sep (by decide)⟩ }
 
 theorem splitFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.sealSplitPrepared16Contract X86_64.abi 2672).pre s := by
   refine ⟨splitFrameSatP, ?_⟩
