@@ -6497,6 +6497,8 @@ ret
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
 ///
+/// From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -16146,6 +16148,8 @@ ret
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
 /// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+///
+/// From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions.
 ///
 /// # Safety
 ///
@@ -26662,6 +26666,8 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: crate::cpu::Features =
 /// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
+///
+/// From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions.
 ///
 /// # Safety
 ///
