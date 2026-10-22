@@ -222,14 +222,17 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
   simp
 
 omit hp in
-/-- `cmp r9, 2`. -/
-theorem cmp2_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
-    WP isa (.block [.alu .cmp .r9 (imm 2)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
-      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < 2)) := by
+/-- `cmp r9, smallMin small4`. -/
+theorem cmpMin_ok (small4 : Bool) {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
+    WP isa (.block [.alu .cmp .r9 (imm (smallMin small4))]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < smallMin small4)) := by
   have e2 : BitVec.signExtend 64 (BitVec.ofNat 32 2) = 2 := by decide
+  have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 4) = 4 := by decide
   apply WP.of_runBlock
-  simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
-    isa, e2, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
+  cases small4 <;>
+  simp only [smallMin, Bool.false_eq_true, ↓reduceIte, imm, runBlock_cons, runStep_some, runBlock_nil, exec,
+    execAlu, readSrc, arithFlags, State.setFlags, isa, e2, e4, h9, Option.bind_some, Option.some.injEq,
+    exists_eq_left'] <;>
   simp
 
 /-- The interleaved part and `rest`, from the state after the entry, given

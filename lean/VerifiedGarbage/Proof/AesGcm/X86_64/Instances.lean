@@ -117,7 +117,8 @@ theorem StitchName.okR : (n : StitchName) →
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   v.stitch.bind fun p => p.pieceR.map fun q =>
-    ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.smallR, p.name.smallR, p.name.okR, q.enc, q.dec⟩
+    ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.smallR, p.name.smallR, p.name.small4R, p.name.okR,
+      q.enc, q.dec⟩
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
