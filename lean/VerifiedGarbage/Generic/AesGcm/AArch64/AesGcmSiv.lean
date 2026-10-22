@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -88,23 +91,35 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and computes POLYVAL with `" ++ v.gh.fn.name ++ "`."
 
+/-- How the functions take the whole chunks of 128 bytes of the data, with the
+interleaved loops. -/
+def stitchNote (v : GcmImpl) (isSeal : Bool) : List String :=
+  if v.stitch then ["With the interleaved loops, it " ++
+    (if isSeal then "computes POLYVAL of the first 128 ⌊n / 128⌋ bytes of the data eight blocks at a time, \
+      from a table of the powers of the key, with PMULL and the reduction with `eor3` (which needs `FEAT_SHA3`), \
+      and then encrypts them eight blocks at a time with the AES instructions"
+    else "decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight \
+      blocks at a time, in one loop that interleaves the AES rounds with the PMULL products and their reduction \
+      (with `eor3`, which needs `FEAT_SHA3`), from a table of the powers of the key") ++
+    "; the rest of the data goes as without them."] else []
+
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.GcmSiv.sealApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Impl.AesGcmSiv.AArch64.«seal» v.callees)
+    notes := [note v] ++ stitchNote v true
+    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.sealCode v)
     stack := 3824
-    verified := seal_framed v
-    features := v.features },
+    verified := Stitch.sealCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v
+    features := v.stitchFeatures },
   Spec.GcmSiv.openApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Impl.AesGcmSiv.AArch64.«open» v.callees)
+    notes := [note v] ++ stitchNote v false ++
+      ["It compares the tags and overwrites the data with zeros without a branch on the result."]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.openCode v)
     stack := 3824
-    verified := open_framed v
-    features := v.features }]
+    verified := Stitch.openCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v
+    features := v.stitchFeatures }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
