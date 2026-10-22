@@ -48,8 +48,9 @@ constants are sums of shifts.
     last two are loaded from six bytes before them (masks `ymm10`, `ymm11`),
     so that the code reads only the 160 bytes of `b`.
 
-The constants are built in registers, through `rax`, `ymm0` and `ymm1`
-(`yconst4`, `yconst`). Both clear the upper halves of the vector registers
+Each constant of four quadwords is loaded from a static of them, whose
+address goes to `rax` (`yconst4`); each constant of a repeated doubleword is
+built in registers, through `rax` (`yconst`). Both clear the upper halves of the vector registers
 before returning (`vzeroupper`). Every address and branch depends only on
 the pointers and `d`.
 -/

@@ -34,11 +34,19 @@ namespace VG.Impl.MlKem.X86_64
 
 open VG.X86_64
 
-/-- `ymm r` set to the quadwords `q₀, q₁, q₂, q₃` (from the lowest), through `rax`, `ymm0` and `ymm1`. -/
+/-- A quadword in 16 hexadecimal digits, upper case. -/
+def hex16 (q : BitVec 64) : String :=
+  String.ofList ((List.range 16).reverse.map fun i => (Nat.toDigits 16 ((q.toNat >>> (4 * i)) % 16)).head!.toUpper)
+
+/-- The name of the static of the quadwords `q₀, q₁, q₂, q₃`, from them, so
+that every use of the same constant names the same static. -/
+def yname (q₀ q₁ q₂ q₃ : BitVec 64) : String :=
+  "VG_MLKEM_Y_" ++ hex16 q₀ ++ hex16 q₁ ++ hex16 q₂ ++ hex16 q₃
+
+/-- `ymm r` set to the quadwords `q₀, q₁, q₂, q₃` (from the lowest), from a
+static of them (`yname`) whose address goes to `rax`. -/
 def yconst4 (r : XReg) (q₀ q₁ q₂ q₃ : BitVec 64) : List Instr :=
-  [.movImm64 .rax q₀, .vop (.vmovq r .rax), .movImm64 .rax q₁, .vop (.vmovq .xmm0 .rax),
-    .vop (.vbin .vpunpcklqdq .l128 r r .xmm0), .movImm64 .rax q₂, .vop (.vmovq .xmm0 .rax), .movImm64 .rax q₃,
-    .vop (.vmovq .xmm1 .rax), .vop (.vbin .vpunpcklqdq .l128 .xmm0 .xmm0 .xmm1), .vop (.vinserti128 r r .xmm0 1)]
+  [.leaSym .rax (yname q₀ q₁ q₂ q₃), .vmovdquTbl r (at_ .rax 0) (yname q₀ q₁ q₂ q₃) [q₀, q₁, q₂, q₃]]
 
 /-- The constants: the masks of `vpshufb` (`ymm8`, and `ymm12` for the last
 group), the shifts (`ymm9`), `0xfff` (`ymm10`) and `q` (`ymm11`). -/

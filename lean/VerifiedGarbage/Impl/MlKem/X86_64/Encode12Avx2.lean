@@ -19,8 +19,8 @@ of `ymm2` (`ymm10`); `vpblendd` puts the 8 bytes after the 24, and the 48
 bytes are stored as 32 and 16, so that the code writes only the 384 bytes of
 `*out`.
 
-The loop runs eight times, with `rcx` counting down. The constants are built
-in registers, through `rax`, `ymm0` and `ymm1`. There are no
+The loop runs eight times, with `rcx` counting down. The constants are
+loaded from statics of them, through `rax` (`yconst4`). There are no
 multiplications. It clears the upper halves of the vector registers before
 returning (`vzeroupper`). Every address and branch depends only on the
 pointers.

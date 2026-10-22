@@ -144,7 +144,7 @@ theorem qword_zero_app (x : BitVec 64) : qword ((0 : BitVec 64) ++ x) 0 = x := b
   simp [hi]
 
 /-- `yconst4 r q₀ q₁ q₂ q₃`: the lanes of `ymm r` are `q₁ ++ q₀` and `q₃ ++ q₂`. -/
-theorem yconst4_ok {r : XReg} (hr0 : r ≠ .xmm0) (hr1 : r ≠ .xmm1) (q₀ q₁ q₂ q₃ : BitVec 64) {is : List Instr}
+theorem yconst4_ok {r : XReg} (_hr0 : r ≠ .xmm0) (_hr1 : r ≠ .xmm1) (q₀ q₁ q₂ q₃ : BitVec 64) {is : List Instr}
     {s : State} {Q : State → Prop}
     (k : ∀ s', s'.lane r 0 = (q₁ ++ q₀ : BitVec 128) → s'.lane r 1 = (q₃ ++ q₂ : BitVec 128) →
       (∀ x, x ≠ r → x ≠ .xmm0 → x ≠ .xmm1 → ∀ l < 2, s'.lane x l = s.lane x l) →
@@ -152,25 +152,20 @@ theorem yconst4_ok {r : XReg} (hr0 : r ≠ .xmm0) (hr1 : r ≠ .xmm1) (q₀ q₁
       WP isa (.block is) s' Q) :
     WP isa (.block (yconst4 r q₀ q₁ q₂ q₃ ++ is)) s Q := by
   simp only [yconst4, List.cons_append, List.nil_append]
-  refine wp_movImm fun s1 u1 => wp_vmovq fun s2 u2 => wp_movImm fun s3 u3 => wp_vmovq fun s4 u4 =>
-    wp_vbin128 fun s5 u5 => wp_movImm fun s6 u6 => wp_vmovq fun s7 u7 => wp_movImm fun s8 u8 =>
-    wp_vmovq fun s9 u9 => wp_vbin128 fun s10 u10 => wp_vinsert1 fun s11 u11 => k s11 ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  · rw [u11.val 0 (by decide), itT rfl, u10.other r hr0 0 (by decide), u9.other r hr1 0 (by decide), u8.lane,
-      u7.other r hr0 0 (by decide), u6.lane, u5.val 0 (by decide), itT rfl, u4.val 0 (by decide), itT rfl,
-      u4.other r hr0 0 (by decide), u3.lane, u2.val 0 (by decide), itT rfl, u3.gpr, u1.gpr]
-    simp only [XBinOp.eval, VBinOp.sse, qword_zero_app]
-  · rw [u11.val 1 (by decide), itF (by decide), u10.val 0 (by decide), itT rfl, u9.val 0 (by decide), itT rfl,
-      u9.other _ (by decide) 0 (by decide), u8.lane, u7.val 0 (by decide), itT rfl, u8.gpr, u6.gpr]
-    simp only [XBinOp.eval, VBinOp.sse, qword_zero_app]
-  · intro x h1 h2 h3 l hl
-    rw [u11.other x h1 l hl, u10.other x h2 l hl, u9.other x h3 l hl, u8.lane, u7.other x h2 l hl, u6.lane,
-      u5.other x h1 l hl, u4.other x h2 l hl, u3.lane, u2.other x h1 l hl, u1.lane]
+  have u1 := GUpd.setReg s .rax (s.syms (yname q₀ q₁ q₂ q₃))
+  refine WP.cons (s' := s.setReg .rax (s.syms (yname q₀ q₁ q₂ q₃))) rfl ?_
+  generalize s.setReg .rax (s.syms (yname q₀ q₁ q₂ q₃)) = s1 at u1
+  have hb : s1.gpr .rax = s1.syms (yname q₀ q₁ q₂ q₃) := by rw [u1.gpr, u1.syms]
+  refine S4.wp_vtbl (o := 0) hb (by simp only [State.ea, at_, hb]; simp) (by simp) fun s2 u2 => k s2 ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · rw [u2.val 0 (by decide)]; rfl
+  · rw [u2.val 1 (by decide)]; rfl
+  · intro x h1 _ _ l hl
+    rw [u2.other x h1 l hl, u1.lane]
   · intro g hg
-    rw [u11.gpr, u10.gpr, u9.gpr, u8.other g hg, u7.gpr, u6.other g hg, u5.gpr, u4.gpr, u3.other g hg, u2.gpr,
-      u1.other g hg]
-  · rw [u11.mem, u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  · rw [u11.rd, u10.rd, u9.rd, u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd]
-  · rw [u11.wr, u10.wr, u9.wr, u8.wr, u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]
+    rw [u2.gpr, u1.other g hg]
+  · rw [u2.mem, u1.mem]
+  · rw [u2.rd, u1.rd]
+  · rw [u2.wr, u1.wr]
 
 /-- The constants in `ymm8` to `ymm12`. -/
 structure DC (s : State) : Prop where
