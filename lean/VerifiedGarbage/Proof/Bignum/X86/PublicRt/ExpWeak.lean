@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Seed
 import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -27,7 +28,7 @@ theorem exists_mont {R M : Nat} (hR : Nat.Coprime R M) (hM : 1 < M) (X : Nat) :
   rw [Nat.mul_assoc, Nat.mul_mod, Nat.mul_comm m R, hm, Nat.mul_one, Nat.mod_mod]
 
 theorem exponentiate_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat}
-    (E : Env base bytes len args M s) (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
+    (E : Env base bytes len args M s) (_hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
     (hM1 : 1 < M) (hT : val32 s.mem base (numAt len 4) (nw len) < M)
     (hO : val32 s.mem base (numAt len 3) (nw len) = 1) :
     WP isa exponentiate s fun t =>
@@ -47,26 +48,21 @@ theorem exponentiate_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : 
   have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
   have hR := E.coprime (32 * nw len)
   unfold exponentiate
-  refine WP.seq (WP.mono (mulRaw_ok E hbytes (o := 2) (a := 4) (b := 3) (by decide) (by decide) (by decide)
-    (by decide) (by rw [hO]; exact hM1)) fun u₁ ⟨E₁, C₁, cs₁, F₁, L₁, _⟩ => ?_)
-  have pv : ∀ {d}, (d + 4 * nw len ≤ numAt len 2 ∨ numAt len 2 + wb len ≤ d) → d + 4 * nw len ≤ numAt len 5 →
-      val32 u₁.mem base d (nw len) = val32 s.mem base d (nw len) := fun hd h5 =>
-    mulFrame_val32 E.room nw' F₁ hd h5 (by omega) f2 f5
-  have T₁ := pv (d := numAt len 4) (.inr (by omega)) (by omega)
-  have O₁ := pv (d := numAt len 3) (.inr (by omega)) (by omega)
-  refine WP.seq (WP.mono (mulRaw_ok E₁ hbytes (o := 1) (a := 1) (b := 4) (by decide) (by decide) (by decide)
-    (by decide) (by rw [T₁]; exact hT)) fun u₂ ⟨E₂, C₂, cs₂, F₂, L₂, _⟩ => ?_)
-  have pv₂ : ∀ {d}, (d + 4 * nw len ≤ numAt len 1 ∨ numAt len 1 + wb len ≤ d) → d + 4 * nw len ≤ numAt len 5 →
-      val32 u₂.mem base d (nw len) = val32 u₁.mem base d (nw len) := fun hd h5 =>
-    mulFrame_val32 E₁.room nw' F₂ hd h5 (by omega) f1 f5
-  have Y₂ := pv₂ (d := numAt len 2) (.inr (by omega)) (by omega)
-  have O₂ := pv₂ (d := numAt len 3) (.inr (by omega)) (by omega)
+  refine WP.seq (WP.mono (mulRaw_ok E hbytes (o := 1) (a := 1) (b := 4) (by decide) (by decide) (by decide)
+    (by decide) hT) fun u₁ ⟨E₁, C₁, cs₁, F₁, L₁, _⟩ => ?_)
+  have O₁ : val32 u₁.mem base (numAt len 3) (nw len) = val32 s.mem base (numAt len 3) (nw len) :=
+    mulFrame_val32 E.room nw' F₁ (.inr (by omega)) (by omega) (by omega) f1 f5
+  refine WP.seq (WP.mono (seed_ok E₁ hbytes L₁ (by rw [O₁, hO]; exact hM1))
+    fun u₂ ⟨E₂, C₂, cs₂, L₂, pv₂, _, _⟩ => ?_)
+  have Y₂ : val32 u₂.mem base (numAt len 2) (nw len) < M := L₂
+  have X₂ : val32 u₂.mem base (numAt len 1) (nw len) < M := by rw [pv₂ 1 (by decide) (by decide)]; exact L₁
+  have O₂ := pv₂ 3 (by decide) (by decide)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := cs₁.1 _ (by decide)
   have sp₂ : u₂.gpr .esp = s.gpr .esp := (cs₂.1 _ (by decide)).trans sp₁
   obtain ⟨y, hy⟩ := exists_mont hR hM1 (val32 u₂.mem base (numAt len 2) (nw len))
   obtain ⟨b, hb⟩ := exists_mont hR hM1 (val32 u₂.mem base (numAt len 1) (nw len))
-  rw [Nat.mod_eq_of_lt (by rw [Y₂]; exact L₁)] at hy
-  rw [Nat.mod_eq_of_lt L₂] at hb
+  rw [Nat.mod_eq_of_lt Y₂] at hy
+  rw [Nat.mod_eq_of_lt X₂] at hb
   have I₀ : LoopInv base bytes len args M ((y * b ^ val32 u₂.mem base 128 2) % M) u₂ u₂ :=
     ⟨E₂, Frame.refl _ _, ⟨y, b, hy, hb, rfl⟩, Keeps.refl _ _, rfl⟩
   refine WP.seq (WP.mono (sparseLoop_ok hbytes I₀) fun u₄ ⟨I, _⟩ => ?_)
@@ -84,7 +80,7 @@ theorem exponentiate_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : 
 
 /-- `exponentiate_ok`'s value when number 4 is `R² mod M`, from any number 4 below `M`. -/
 theorem exponentiate_cond_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat}
-    (E : Env base bytes len args M s) (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
+    (E : Env base bytes len args M s) (_hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
     (hM1 : 1 < M) (hT : val32 s.mem base (numAt len 4) (nw len) < M)
     (hO : val32 s.mem base (numAt len 3) (nw len) = 1) :
     WP isa exponentiate s fun t =>
@@ -94,8 +90,8 @@ theorem exponentiate_cond_ok {s : State} {base : Addr} {bytes len : Nat} {args :
         val32 t.mem base (numAt len 2) (nw len) =
           val32 s.mem base (numAt len 1) (nw len) ^ val32 s.mem base 128 2 % M) := by
   by_cases hx : val32 s.mem base (numAt len 4) (nw len) = 2 ^ (32 * nw len) * 2 ^ (32 * nw len) % M
-  · exact WP.mono (exponentiate_ok E hbase hbytes hM1 hx hO) fun _ ⟨a, b, c, d⟩ => ⟨a, b, d, fun _ => c⟩
-  · exact WP.mono (exponentiate_any_ok E hbase hbytes hM1 hT hO) fun _ ⟨a, b, d⟩ =>
+  · exact WP.mono (exponentiate_ok E _hbase hbytes hM1 hx hO) fun _ ⟨a, b, c, d⟩ => ⟨a, b, d, fun _ => c⟩
+  · exact WP.mono (exponentiate_any_ok E _hbase hbytes hM1 hT hO) fun _ ⟨a, b, d⟩ =>
       ⟨a, b, d, fun h => absurd h hx⟩
 
 end VG.Proof.Bignum.X86.PublicRt

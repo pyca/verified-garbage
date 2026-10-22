@@ -143,12 +143,27 @@ def sparseRound : Prog isa :=
   .seq (.block (VG.Impl.Mont.X86.Dynamic.shiftExponent 2 PublicContext.exponentOffset ++ PublicContext.exponentLeft)) <|
   .ite .e (.block []) (.seq (mul 1 1 1) (.block PublicContext.exponentLeft))
 
-/-- The result `X^e mod M`: `R mod M`, the base `X R mod M`, a round per bit
-of the public exponent up to its top one, and the result out of Montgomery
-form. -/
+/-- Copy the converted input into the accumulator, word by word. -/
+def seedCopy : Prog isa :=
+  .seq (.block (slotPtr .esi 1 .ecx ++ slotPtr .ebp 2 .ecx))
+    (.loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax,
+      .alu .add .esi (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 4)]) .ne)
+
+/-- Consume an odd exponent's low bit, without borrowing into its high word. -/
+def seedConsume : List Instr :=
+  [.mov .eax (.mem (sc 128)), .alu .sub .eax (.imm 1), .store (sc 128) .eax]
+
+/-- An odd public exponent starts at the converted input and consumes its
+low bit. The even case retains Montgomery one. -/
+def seed : Prog isa :=
+  .seq (.block PublicContext.bitTest)
+    (.ite .e (mul 2 4 3) (.seq seedCopy (.block seedConsume)))
+
+/-- The result `X^e mod M`: convert the input, seed the accumulator, process
+the remaining exponent bits, and leave Montgomery form. -/
 def exponentiate : Prog isa :=
-  .seq (mul 2 4 3) <|
   .seq (mul 1 1 4) <|
+  .seq seed <|
   .seq (.loop sparseRound .ne) (mul 2 2 3)
 
 /-- The result cleared where the input was not accepted (the mask at 144). -/
