@@ -73,7 +73,14 @@ depends only on public data: an accumulator `acc` ORs together every
 byte or value that is nonzero exactly when a check fails (the leading
 zero byte, `0xbc`, the top bits of `maskedDB`); MGF1 unmasks `DB`; the first
 nonzero byte of `DB` is found by masks over all of it (`posScan`), and must
-be `0x01`, with the salt after it of the expected length if one is; `Y =
+be `0x01`, with the salt after it of the expected length if one is. When that
+length `sLen` is given and less than `dbLen`, the padding must instead end at
+the public `pos = dbLen - sLen - 1`, so `prefixCheck` ORs into `acc` `DB`'s
+first `pos` bytes, eight at a time, and `DB[pos] ⊕ 0x01` (`scanCheck`); and
+since the length of `M' = 0⁸ ‖ mHash ‖ salt` is then public, `M'`, its `0x80`
+and zeros fill only the `nbm` blocks it is hashed in, its length field is
+copied to the last one, and every block is compressed with no masks
+(`fixedSaltBack`, `fixedHash`). Otherwise `Y =
 0⁸ ‖ mHash ‖ DB` is shifted left by `pos + 1` bytes after its first
 `8 + hLen` (`shift`: ten passes, pass `j` moving every byte `2^j` bytes
 under the mask of bit `j` of `pos + 1`), leaving `0⁸ ‖ mHash ‖ salt` and
@@ -549,6 +556,38 @@ def posCheck : Prog isa :=
         (.block []))
       (.block [.store (sp sAcc) .rax, .alu .add .rcx (.imm (BitVec.ofNat 32 (8 + H.D))), .store (sp sL) .rcx]))
 
+/-- `rax |=` the words of `DB` (at `rdi`) from `r8` up to `rcx`. -/
+def prefixWords : Prog isa :=
+  .loop (.block [.alu .or .rax (.mem (ix .rdi .r8)), .alu .add .r8 (.imm 8), .alu .cmp .r8 (.reg .rcx)]) .ne
+
+/-- `rax |=` its bytes from `r8` up to `rsi`. -/
+def prefixBytes : Prog isa :=
+  .loop (.block [.movzx8 .rdx (ix .rdi .r8), .alu .or .rax (.reg .rdx), .alu .add .r8 (.imm 1),
+    .alu .cmp .r8 (.reg .rsi)]) .ne
+
+/-- `posScan` and `posCheck` for a given salt length less than `dbLen`
+(`saltBack`'s fixed case), where the padding ends at the public
+`pos = dbLen - sLen - 1`: `acc` is ORed with `DB`'s first `pos` bytes, a word
+at a time and then a byte at a time, and with `DB[pos] ⊕ 0x01`, and `pos` and
+`ℓ = 8 + hLen + sLen` go to their slots, as `posCheck` leaves them. -/
+def prefixCheck : Prog isa :=
+  seqs [.block [.mov .rdi (.mem (sp sEb)), .mov .rsi (.mem (sp sDb)), .mov .rdx (.mem (sp sSlen)), .alu .sub .rsi (.reg .rdx),
+      .alu .sub .rsi (.imm 1), .mov .rcx (.reg .rsi), .shift .shr .rcx 3, .shift .shl .rcx 3, .mov .rax (.mem (sp sAcc)),
+      .mov32 .r8 (.imm 0), .alu .test .rcx (.reg .rcx)],
+    .ite .e (.block []) prefixWords,
+    .block [.alu .cmp .r8 (.reg .rsi)],
+    .ite .e (.block []) prefixBytes,
+    .block [.movzx8 .rdx (ix .rdi .rsi), .alu .xor .rdx (.imm 1), .alu .or .rax (.reg .rdx),
+      .store (sp sPos) .rsi, .store (sp sAcc) .rax, .mov .rax (.mem (sp sSlen)),
+      .alu .add .rax (.imm (BitVec.ofNat 32 (8 + H.D))), .store (sp sL) .rax]]
+
+/-- The checks of `DB`'s padding: by `prefixCheck` for a given salt length less
+than `dbLen`, by `posScan` and `posCheck` otherwise. -/
+def scanCheck : Prog isa :=
+  .seq (.block [.mov .rax (.mem (sp sAny)), .alu .test .rax (.reg .rax)])
+    (.ite .e (.seq (.block [.mov .rax (.mem (sp sSlen)), .alu .cmp .rax (.mem (sp sDb))])
+      (.ite .b (prefixCheck H) (.seq posScan (posCheck H)))) (.seq posScan (posCheck H)))
+
 /-- `DB` after `mHash` in `Y` (in `rcx`). -/
 def copyDb : Prog isa :=
   .seq (.block [.mov .rsi (.mem (sp sEb)), .mov .r10 (.mem (sp sDb)), .mov32 .r8 (.imm 0)])
@@ -600,12 +639,50 @@ def copyFixedSalt : Prog isa :=
     (.ite .e (.block []) (byteLoop [.movzx8 .rax (ix .rsi .r8),
       .store8 (ix .rcx .r8 (8 + H.D)) .rax] (.reg .r10)))
 
-/-- Build only the requested salt's hash input, avoiding the masked shift. -/
-def fixedSaltPrefix : Prog isa := seqs [clearY, copyDigest H, copyFixedSalt H,
-  .block (hashSaltLen H 36)]
+/-- `Y`'s first `nbm` blocks (`sNb`) cleared, a word at a time, and `rcx` =
+`Y`. -/
+def clearNb : Prog isa :=
+  .seq (.block (scr .rcx oY ++ ([.mov .r10 (.mem (sp sNb)), .shift .ror .r10 (64 - lgB H), .mov32 .rax (.imm 0),
+      .mov32 .r8 (.imm 0)] : List Instr)))
+    (.loop (.block [.store (ix .rcx .r8) .rax, .alu .add .r8 (.imm 8), .alu .cmp .r8 (.reg .r10)]) .ne)
+
+/-- `0x80` to byte `ℓ = 8 + hLen + sLen` of `Y`, after the salt. -/
+def padSalt : List Instr :=
+  scr .rcx oY ++ ([.mov .rdx (.mem (sp sSlen)), .mov32 .rax (.imm 0x80), .store8 (ix .rcx .rdx (8 + H.D)) .rax] :
+    List Instr)
+
+/-- `ℓ` and `nbm` for the given salt length, `nbm` blocks of `Y` cleared,
+and `mHash` after their first 8 bytes. -/
+def fixedHead : Prog isa := seqs [.block (hashSaltLen H 36), clearNb H, copyDigest H]
+
+/-- Build only the requested salt's hash input, avoiding the masked shift:
+`0⁸ ‖ mHash ‖ salt ‖ 0x80` and zeros, in the `nbm` blocks it is hashed in. -/
+def fixedSaltPrefix : Prog isa := seqs [fixedHead H, copyFixedSalt H, .block (padSalt H)]
+
+/-- The length field (at `scratch + oLen`) copied to the last `L` bytes of the
+last block, `nbm - 1`. -/
+def lenLast : Prog isa :=
+  .seq (.block (scr .rsi oLen ++ ([.mov .rcx (.mem (sp sScr)), .mov .rax (.mem (sp sNb)),
+      .shift .ror .rax (64 - lgB H), .alu .add .rcx (.reg .rax),
+      .alu .add .rcx (.imm (BitVec.ofNat 32 (oY - H.P.L)))] : List Instr)))
+    (if H.P.L % 8 = 0 then .block (copyWords64 .rsi .rcx 0 0 (H.P.L / 8))
+    else .seq (.block [.mov32 .r8 (.imm 0)])
+      (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax]
+        (.imm (BitVec.ofNat 32 H.P.L))))
+
+/-- Every block compressed; the last one's hash value is the digest's. -/
+def compAll : Prog isa :=
+  .seq (.block [.mov32 .rax (.imm 0), .store (sp sB) .rax])
+    (.loop (seqs [.block (compArgs H), .call H.compN H.compC, .block nextBlock]) .ne)
+
+/-- The digest of `Y`'s first `ℓ` bytes, padded in `nbm` blocks, for a public
+`ℓ` whose `0x80` is already in place: the length field written to the last
+block, every block compressed, and no masks. -/
+def fixedHash : Prog isa :=
+  seqs [ctInit H, .block (lenField H), lenLast H, compAll H, .block (digestAt H oSt)]
 
 /-- Hash and compare the fixed-length verification input. -/
-def fixedSaltBack : Prog isa := .seq (fixedSaltPrefix H) (.seq (ctHash H) (cmpH H))
+def fixedSaltBack : Prog isa := .seq (fixedSaltPrefix H) (.seq (fixedHash H) (cmpH H))
 
 /-- Verification with an inferred salt length keeps the masked shift. -/
 def genericSaltBack : Prog isa := seqs [clearY, copyDigest H, copyDb H,
@@ -621,7 +698,7 @@ def saltBack : Prog isa :=
 /-- After the public checks. -/
 def verifyMain : Prog isa :=
   seqs [.block dbSlots, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop,
-    posScan, posCheck H, saltBack H]
+    scanCheck H, saltBack H]
 
 def verifyBody : Prog isa :=
   seqs [.block (verifyPrologue ++ n0),
