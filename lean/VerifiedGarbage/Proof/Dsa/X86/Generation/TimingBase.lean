@@ -100,6 +100,18 @@ theorem tcheckE (rs : List Reg) (c c₀ : Prog isa) (e : Code.erase c = Code.era
     RelCT isa (VG.X86.Taint.Agree (τr rs)) c fun _ _ => True :=
   (erased_relCT c c₀ _ e rfl hh h).mono (fun _ _ h => h) fun _ _ _ => trivial
 
+/-- A list of programs in sequence, each keeping `P`, then the last. -/
+theorem seqs_last {P Q : State → State → Prop} {xs : List (Prog isa)} {b : Prog isa}
+    (hxs : ∀ p ∈ xs, RelCT isa P p P) (hb : RelCT isa P b Q) :
+    RelCT isa P (VG.Impl.Dsa.X86.Generation.seqs (xs ++ [b])) Q := by
+  induction xs with
+  | nil => exact hb
+  | cons x xs ih =>
+    cases xs with
+    | nil => exact RelCT.seq (hxs x List.mem_cons_self) hb
+    | cons y ys =>
+      exact RelCT.seq (hxs x List.mem_cons_self) (ih fun p hp => hxs p (List.mem_cons_of_mem _ hp))
+
 theorem Base.edi {E : Env} {s : State} (B : Base E s) : s.gpr .edi = E.base.setWidth 32 := by
   rw [← B.scr.edi, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
 
