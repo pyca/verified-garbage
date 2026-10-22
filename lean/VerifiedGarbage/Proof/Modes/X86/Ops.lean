@@ -106,7 +106,7 @@ theorem setWidth8_32 (u : Byte) : (u.setWidth 32).setWidth 8 = u := by
   ext j hj
   simp
 
-theorem width_pos (o : Op) : 0 < o.width := by unfold Op.width; split <;> (try split) <;> decide
+theorem width_pos (o : Op) : 0 < o.width := by unfold Op.width; split <;> (try split) <;> (try split) <;> decide
 
 theorem loc_ne (c : Core) (l : Loc) : (c.loc l).1 ≠ .eax ∧ (c.loc l).1 ≠ .ecx := by
   cases l <;> simp [Core.loc, sb]
@@ -126,85 +126,101 @@ theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List L
   have eaD := h.ea o.dst o.dOff (by omega)
   have eaS := h.ea o.src o.sOff (by omega)
   cases hinc : o.inc
-  ·
-    simp only [Core.opCode, hinc, Bool.false_eq_true, ite_false, Core.opAt]
-    cases hwd : o.wide
-    · -- A byte.
-      have hW : o.width = 1 := by simp [Op.width, hinc, hwd]
-      rw [hW] at hd hs hx
-      simp only [Bool.false_eq_true, ite_false]
-      cases hxr : o.xr with
-      | none =>
-        simp only [List.nil_append, List.cons_append]
-        refine wp_movzx rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
-        refine wp_st8 (keep (fun r h1 _ => u₁.other r h1) o.dst)
-          (by rw [u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₂ u₂ => ?_
-        refine k s₂ ?_ (fun r h1 _ => by rw [u₂.gpr, u₁.other r h1]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
-        funext x
-        rw [u₂.mem, u₁.mem, show Reg8.al.reg = Reg.eax from rfl, u₁.gpr, setWidth8_32, eaD, eaS, write1_apply]
-        simp only [opMem, hW, Op.val, hinc, Bool.false_eq_true, ite_false, hxr, cont, byte_xor_zero]
-        split
-        · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega, Nat.add_zero]
-        · rfl
-      | some p =>
-        obtain ⟨l, off⟩ := p
-        have hx' := hx l off hxr
-        have eaX := h.ea l off (by omega)
-        simp only [List.cons_append]
-        refine wp_movzx rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
-        refine wp_movzx (keep (fun r h1 _ => u₁.other r h1) l)
-          (by rw [u₁.rd, u₁.wr, eaX]; exact h.rd _ _ _ hx') fun s₂ u₂ => ?_
-        refine wp_xor fun s₃ u₃ => ?_
-        refine wp_st8 (keep (fun r h1 h2 => by rw [u₃.other r h1, u₂.other r h2, u₁.other r h1]) o.dst)
-          (by rw [u₃.wr, u₂.wr, u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₄ u₄ => ?_
-        refine k s₄ ?_ (fun r h1 h2 => by rw [u₄.gpr, u₃.other r h1, u₂.other r h2, u₁.other r h1])
-          (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr])
-        funext x
-        rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-        show (s.mem.writeW _ ((s₃.gpr Reg8.al.reg).setWidth 8)) x = _
-        rw [show Reg8.al.reg = .eax from rfl, u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, setWidth_xor8,
-          eaD, eaS, eaX, write1_apply]
-        simp only [opMem, hW, Op.val, hinc, Bool.false_eq_true, ite_false, hxr, cont]
-        split
-        · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega, Nat.add_zero,
-            Nat.add_zero]
-        · rfl
-    · -- A word.
-      have hW : o.width = 4 := by simp [Op.width, hinc, hwd]
-      rw [hW] at hd hs hx
-      simp only [ite_true]
-      cases hxr : o.xr with
-      | none =>
-        simp only [List.nil_append, List.cons_append]
-        refine wp_ldm rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
-        refine wp_stm (keep (fun r h1 _ => u₁.other r h1) o.dst)
-          (by rw [u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₂ u₂ => ?_
-        refine k s₂ ?_ (fun r h1 _ => by rw [u₂.gpr, u₁.other r h1]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
-        funext x
-        rw [u₂.mem, u₁.mem, u₁.gpr, eaD, eaS, write4_apply]
-        simp only [opMem, hW, Op.val, hinc, Bool.false_eq_true, ite_false, hxr, cont, byte_xor_zero]
-        split
-        · rename_i hlt; rw [← Mem.readW_byte s.mem _ hlt, VG.Offset.add_add]
-        · rfl
-      | some p =>
-        obtain ⟨l, off⟩ := p
-        have hx' := hx l off hxr
-        have eaX := h.ea l off (by omega)
-        simp only [List.cons_append]
-        refine wp_ldm rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
-        refine wp_xorm (keep (fun r h1 _ => u₁.other r h1) l)
-          (by rw [u₁.rd, u₁.wr, eaX]; exact h.rd _ _ _ hx') fun s₂ u₂ => ?_
-        refine wp_stm (keep (fun r h1 _ => by rw [u₂.other r h1, u₁.other r h1]) o.dst)
-          (by rw [u₂.wr, u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₃ u₃ => ?_
-        refine k s₃ ?_ (fun r h1 _ => by rw [u₃.gpr, u₂.other r h1, u₁.other r h1])
-          (by rw [u₃.rd, u₂.rd, u₁.rd]) (by rw [u₃.wr, u₂.wr, u₁.wr])
-        funext x
-        rw [u₃.mem, u₂.mem, u₂.gpr, u₁.mem, u₁.gpr, eaD, eaS, eaX, write4_apply]
-        simp only [opMem, hW, Op.val, hinc, Bool.false_eq_true, ite_false, hxr, cont]
-        split
-        · rename_i hlt; rw [byte_xor, ← Mem.readW_byte s.mem _ hlt, ← Mem.readW_byte s.mem _ hlt, VG.Offset.add_add,
-            VG.Offset.add_add]
-        · rfl
+  · cases hi32 : o.inc32
+    · simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false, Core.opAt]
+      cases hwd : o.wide
+      · -- A byte.
+        have hW : o.width = 1 := by simp [Op.width, hinc, hi32, hwd]
+        rw [hW] at hd hs hx
+        simp only [Bool.false_eq_true, ite_false]
+        cases hxr : o.xr with
+        | none =>
+          simp only [List.nil_append, List.cons_append]
+          refine wp_movzx rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
+          refine wp_st8 (keep (fun r h1 _ => u₁.other r h1) o.dst)
+            (by rw [u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₂ u₂ => ?_
+          refine k s₂ ?_ (fun r h1 _ => by rw [u₂.gpr, u₁.other r h1]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
+          funext x
+          rw [u₂.mem, u₁.mem, show Reg8.al.reg = Reg.eax from rfl, u₁.gpr, setWidth8_32, eaD, eaS, write1_apply]
+          simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, hxr, cont, byte_xor_zero]
+          split
+          · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega, Nat.add_zero]
+          · rfl
+        | some p =>
+          obtain ⟨l, off⟩ := p
+          have hx' := hx l off hxr
+          have eaX := h.ea l off (by omega)
+          simp only [List.cons_append]
+          refine wp_movzx rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
+          refine wp_movzx (keep (fun r h1 _ => u₁.other r h1) l)
+            (by rw [u₁.rd, u₁.wr, eaX]; exact h.rd _ _ _ hx') fun s₂ u₂ => ?_
+          refine wp_xor fun s₃ u₃ => ?_
+          refine wp_st8 (keep (fun r h1 h2 => by rw [u₃.other r h1, u₂.other r h2, u₁.other r h1]) o.dst)
+            (by rw [u₃.wr, u₂.wr, u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₄ u₄ => ?_
+          refine k s₄ ?_ (fun r h1 h2 => by rw [u₄.gpr, u₃.other r h1, u₂.other r h2, u₁.other r h1])
+            (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr])
+          funext x
+          rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+          show (s.mem.writeW _ ((s₃.gpr Reg8.al.reg).setWidth 8)) x = _
+          rw [show Reg8.al.reg = .eax from rfl, u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, setWidth_xor8,
+            eaD, eaS, eaX, write1_apply]
+          simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, hxr, cont]
+          split
+          · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega, Nat.add_zero,
+              Nat.add_zero]
+          · rfl
+      · -- A word.
+        have hW : o.width = 4 := by simp [Op.width, hinc, hi32, hwd]
+        rw [hW] at hd hs hx
+        simp only [ite_true]
+        cases hxr : o.xr with
+        | none =>
+          simp only [List.nil_append, List.cons_append]
+          refine wp_ldm rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
+          refine wp_stm (keep (fun r h1 _ => u₁.other r h1) o.dst)
+            (by rw [u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₂ u₂ => ?_
+          refine k s₂ ?_ (fun r h1 _ => by rw [u₂.gpr, u₁.other r h1]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
+          funext x
+          rw [u₂.mem, u₁.mem, u₁.gpr, eaD, eaS, write4_apply]
+          simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, hxr, cont, byte_xor_zero]
+          split
+          · rename_i hlt; rw [← Mem.readW_byte s.mem _ hlt, VG.Offset.add_add]
+          · rfl
+        | some p =>
+          obtain ⟨l, off⟩ := p
+          have hx' := hx l off hxr
+          have eaX := h.ea l off (by omega)
+          simp only [List.cons_append]
+          refine wp_ldm rfl (by rw [eaS]; exact h.rd _ _ _ hs) fun s₁ u₁ => ?_
+          refine wp_xorm (keep (fun r h1 _ => u₁.other r h1) l)
+            (by rw [u₁.rd, u₁.wr, eaX]; exact h.rd _ _ _ hx') fun s₂ u₂ => ?_
+          refine wp_stm (keep (fun r h1 _ => by rw [u₂.other r h1, u₁.other r h1]) o.dst)
+            (by rw [u₂.wr, u₁.wr, eaD]; exact h.wr _ hdst _ _ hd) fun s₃ u₃ => ?_
+          refine k s₃ ?_ (fun r h1 _ => by rw [u₃.gpr, u₂.other r h1, u₁.other r h1])
+            (by rw [u₃.rd, u₂.rd, u₁.rd]) (by rw [u₃.wr, u₂.wr, u₁.wr])
+          funext x
+          rw [u₃.mem, u₂.mem, u₂.gpr, u₁.mem, u₁.gpr, eaD, eaS, eaX, write4_apply]
+          simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, hxr, cont]
+          split
+          · rename_i hlt; rw [byte_xor, ← Mem.readW_byte s.mem _ hlt, ← Mem.readW_byte s.mem _ hlt, VG.Offset.add_add,
+              VG.Offset.add_add]
+          · rfl
+    · -- GCM's increment of a word.
+      have hW : o.width = 4 := by simp [Op.width, hinc, hi32]
+      rw [hW] at hd
+      let P := A o.dst + BitVec.ofNat 64 o.dOff
+      obtain ⟨s', he, hg, hm, hrd, hwr⟩ := Counter.inc32_ok s (loc_ne c o.dst).1 (Q := P) eaD
+        (h.rd _ _ _ hd) (h.wr _ hdst _ _ hd)
+      simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false, ite_true]
+      rw [WP.block_append_iff]
+      refine WP.of_runBlock ⟨s', he, k s' ?_ (fun r h1 _ => hg r h1) hrd hwr⟩
+      rw [hm]
+      funext x
+      rw [Counter.inc32Mem_apply]
+      have hb : Spec.Aes.bytesAt s.mem P 4 =
+          (List.range 4).map (fun i => cont A s.mem o.dst (o.dOff + i)) := by
+        simp only [Spec.Aes.bytesAt, P, cont, Offset.add_add]
+      simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, ite_true, hb, P]
   ·
     have hW : o.width = 16 := by simp [Op.width, hinc]
     rw [hW] at hd
@@ -242,7 +258,7 @@ theorem contains_area {p : Addr} {n i : Nat} (hi : i < n) (hn : n < 2 ^ 64) :
 theorem in_dst {len : Loc → Nat} {A : Loc → Addr} {o : Op} (ho : o.InBounds len) (hfit : len o.dst < 2 ^ 32)
     {x : Addr} (hx : (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat < o.width) :
     (⟨A o.dst, len o.dst⟩ : Region).Contains x 1 := by
-  have hw : o.width ≤ 16 := by unfold Op.width; split <;> (try split) <;> decide
+  have hw : o.width ≤ 16 := by unfold Op.width; split <;> (try split) <;> (try split) <;> decide
   have := (VG.Offset.lt_iff x (A o.dst) (d := o.dOff) (n := o.width) (by have := ho.1; omega)).mp hx
   simp only [Region.Contains]; have := ho.1; omega
 
