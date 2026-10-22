@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64
 public import VerifiedGarbage.Impl.Bignum.AArch64.R2Div
+public import VerifiedGarbage.Impl.Bignum.AArch64.WordIO
 
 /-!
 # The RSA public-key operations on AArch64
@@ -45,12 +46,19 @@ def invalid : List Instr :=
     .subs .x .x12 .x11 .x12, .csel .x .x11 .x8 .x7, .logic .and .x .x9 .x10 .x6,
     .logic .and .x .x9 .x9 .x11]
 
-/-- The modulus' bytes (pointer in slot `sN`) into array `aN`, and `-m⁻¹`
-into its slot. -/
-def pcLoad : List (Prog isa) := [
+/-- The modulus' bytes (pointer in slot `sN`) into array `aN` by `load`,
+and `-m⁻¹` into its slot. -/
+def pcLoadWith (load : Prog isa) : List (Prog isa) := [
   .block (head ++ [ldh .x1 sN, ldh .x8 (sArr aN), ldh .x2 sK]),
-  loadBE,
+  load,
   .block ([ld .x3 .x8] ++ minv ++ [sth .x15 sMinv])]
+
+/-- `pcLoadWith` a byte at a time. -/
+def pcLoad : List (Prog isa) := pcLoadWith loadBE
+
+/-- `pcLoadWith` a word at a time when the modulus' length is a multiple of
+eight (`loadW`). -/
+def pcLoadW : List (Prog isa) := pcLoadWith loadW
 
 /-- Array `aR2` squared six times, counted in slot `sCnt`. -/
 def sqs (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
@@ -106,7 +114,7 @@ def pcOut : List (Prog isa) := [
   .block [movi .x0 1]]
 
 /-- The computation, once `m` is known valid. -/
-def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (pcLoad ++ (r2StepsPub mul ++ pcOut))
+def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (pcLoadW ++ (r2StepsPub mul ++ pcOut))
 
 /-- `vg_rsa_public_precompute`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
@@ -200,10 +208,11 @@ def finish : Prog isa :=
 /-- The computation, once `m` and `R² mod m` are in their arrays: the input
 into array `aX`, the mask of `input < m` into `sMask`, `-m⁻¹` and the number
 1, the exponentiation, and the result stored masked, with the mask's low
-bit returned. -/
+bit returned. The input and the result go a word at a time when `k` is a
+multiple of eight (`loadW`, `storeW`). -/
 def rest : Prog isa := seqs [
   .block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)],
-  loadBE,
+  loadW,
   -- The mask of `input < m`: all ones on a borrow.
   .block [ldh .x12 sW, ldh .x16 (sArr aX), ldh .x17 (sArr aN), movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7],
   cmpLoop,
@@ -214,7 +223,7 @@ def rest : Prog isa := seqs [
   -- `X = input R mod m`, the exponentiation, and the result.
   mul aXm aX aR2, expLoop mul, finish mul,
   .block [ldh .x8 (sArr aY), ldh .x1 sOut, ldh .x9 sK, .add .x .x1 .x1 .x9, ldh .x15 sMask],
-  storeBE,
+  storeW,
   .block [ldh .x0 sMask, movi .x3 1, .logic .and .x .x0 .x0 .x3]]
 
 /-- `vg_rsa_public_precomputed`'s code, without the check of `e`. -/

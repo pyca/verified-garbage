@@ -87,7 +87,8 @@ structure MidCtx (p : CPubP) (t : State) : Prop where
   L1 : 1 ≤ p.len
   L2 : p.len ≤ p.k
   xb : ∃ xb, Src t p.B p.Z p.ip xb ∧ xb.length = p.k
-  out : ∀ j < p.k, InRegions t.wr (p.op + BitVec.ofNat 64 j) 1
+  xspan : InRegions (t.rd ++ t.wr) p.ip p.k
+  out : InRegions t.wr p.op p.k
   outSep : ∀ j < p.k, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 j)
   hO : word t.mem p.B (8 * sOut) = p.op
   hK : word t.mem p.B (8 * sK) = BitVec.ofNat 64 p.k
@@ -105,7 +106,8 @@ theorem Mid.ctx {p : CPubP} {t : State} (h : Mid p t) : MidCtx p t := by
   subst hB hZ hk hop hnp hep hip hlen hnb heb
   exact ⟨c.hs.congr hwr, by dsimp only; unfold slot hdrBytes; omega, c.hk1, c.hk2, c.hnb.congr hi hrd hwr,
     bytesAt_length _ _ _, c.heb.congr hi hrd hwr, bytesAt_length _ _ _, c.hL1, c.hL2,
-    ⟨_, c.hxb.congr hi hrd hwr, bytesAt_length _ _ _⟩, fun j hj => by rw [hwr]; exact c.hout j hj, c.houts,
+    ⟨_, c.hxb.congr hi hrd hwr, bytesAt_length _ _ _⟩, by rw [hrd, hwr]; exact c.hxspan,
+    by rw [hwr]; exact c.houtSpan, c.houts,
     hO, hK, hN, hE, hL, hIn⟩
 
 /-- `Mid` after code that changes only memory in the working space outside
@@ -207,7 +209,7 @@ theorem pa_r2 {q : CPubP × BitVec 64} {t : State}
       hE := c.hE, hL := c.hL, hIn := c.hIn, hW := hg'.hdr.hw, hb := hg'.hdr.harr,
       n := by rw [f.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact hn,
       r := by rw [← Nat.mod_eq_of_lt hlt', hr2, ← Nat.pow_add]; congr 2; omega, odd := hodd,
-      n1 := by omega, rlt := Nat.mod_lt _ (by omega), x := hx, e := c.eb, xl := hxl, el := c.el, L1 := c.L1, L2 := c.L2,
+      n1 := by omega, rlt := Nat.mod_lt _ (by omega), x := hx, xspan := c.xspan, e := c.eb, xl := hxl, el := c.el, L1 := c.L1, L2 := c.L2,
       out := c.out, outSep := c.outSep }
 
 /-- `Public.code` leaks the same in runs that agree on the public data. -/
@@ -259,7 +261,7 @@ theorem pubCode_ct : RelCT isa (Two CRp) Public.code fun _ _ => True := by
         hl sK (by decide), c.hO, c.hK]) (by decide) (by decide) (by decide +kernel))
       fun t' ⟨h, _⟩ => h
   · -- `main`: the load of `m` and `-m⁻¹`.
-    refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2Steps]) (RelCT.seq (R := Two PA)
+    refine RelCT.seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [r2Steps]) (RelCT.seq (R := Two PA)
       (two_post (pcLoad_ct.mono (fun _ _ h => two_bind (fun p s₁ s₂ h₁ h₂ => ⟨p.pc, ce2_pcL h₁.1 h₁.2,
         ce2_pcL h₂.1 h₂.2⟩) h) fun _ _ _ => trivial) fun p t h => ce2_pa h.1 h.2) ?_)
     -- `R² mod m`, for the same `-m⁻¹`.
