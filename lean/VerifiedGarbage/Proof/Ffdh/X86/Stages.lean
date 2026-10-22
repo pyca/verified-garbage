@@ -133,13 +133,13 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
     exact (F₁.trans F₂).trans F₃
   · intro pos
     have lt := val32_lt u.mem base (lo len (.slot .wide 15)) (cwc len .wide)
-      have lt9 : argNum s.mem args 2 len < 2 ^ (32 * cwc len .wide) := by
-        rw [← e9]; exact val32_lt _ _ _ _
-      change sv u.mem base len .wide 15 < _ at lt
-      rw [show val32 u₂.mem base (lo len (.slot .wide 14)) (cwc len .wide) = 1 from e14,
-        show val32 u₂.mem base (lo len (.slot .wide 9)) (cwc len .wide) = argNum s.mem args 2 len from e9] at V₃
-      change sv u.mem base len .wide 15 + 1 = _ at V₃
-      cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V₃ <;> omega
+    have lt9 : argNum s.mem args 2 len < 2 ^ (32 * cwc len .wide) := by
+      rw [← e9]; exact val32_lt _ _ _ _
+    change sv u.mem base len .wide 15 < _ at lt
+    rw [show val32 u₂.mem base (lo len (.slot .wide 14)) (cwc len .wide) = 1 from e14,
+      show val32 u₂.mem base (lo len (.slot .wide 9)) (cwc len .wide) = argNum s.mem args 2 len from e9] at V₃
+    change sv u.mem base len .wide 15 + 1 = _ at V₃
+    cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V₃ <;> omega
 
 /-- Where the wide slots lie. -/
 theorem lo_wide (len j : Nat) : lo len (.slot .wide j) = numBase + j * st len .wide := rfl

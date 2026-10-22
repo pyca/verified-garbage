@@ -34,7 +34,7 @@ theorem subgroup_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.m
     (odd : p % 2 = 1) :
     WP isa subgroup s (Res base len s (if g ^ q % p = 1 then 1 else 0)) := by
   unfold subgroup
-  refine WP.seq (WP.mono (powP_ok h (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (powP_ok h (P := p) (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide)
     (by rw [h9, safeM_of gt odd])) fun u ⟨C, V6, V3, F, _, K⟩ => ?_)
   refine WP.mono (eqStatus_res C.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
   rw [V6, V3, h10, h11] at R

@@ -106,7 +106,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   rw [argNum_comp, hP] at V9 V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   refine WP.seq (WP.mono (loadY_ok I₁ (Y.keep ⟨rfl, rfl⟩ K₁)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [bytes_keep h Y.apart (by omega) hy40 F₁, hY] at V₂
+  rw [show yv u₁.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega) hy40 F₁]; exact hY] at V₂
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   have k₂ := kept_slot I₁ (a := 12) O₂
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 12) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
@@ -160,7 +160,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have k₆ := kept_slot S₅.inp (a := 11) O₆
   have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, m₄, k₃.slot_eq, k₂.slot_eq, V9]
   have y₆ : sv u₆.mem base len .wide 12 = y := by rw [k₆.slot_eq, m₅, m₄, k₃.slot_eq, V₂]
-  refine WP.seq (WP.mono (powP_ok S₆.inp (b := 12) (e := 11) (by decide) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (powP_ok S₆.inp (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide) (by decide)
     (by rw [nine₆])) fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
   rw [y₆, V₆] at Y₇
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.ops S₆.inp F₇ K₇
