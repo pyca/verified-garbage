@@ -21,7 +21,7 @@ short path (`hs`), whose table of powers is copied from all 48: `SealFin` and
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open Gcm.X86_64.Stitch (CtxMode)
-variable (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8))
+variable (v : GcmImpl) (B : BlkFn CtxMode.prepared16)
 
 theorem sealSelPrepared16_framed (hF : Short.ShortFacts) (hs : v.short = false) :
     Verified X86_64.target

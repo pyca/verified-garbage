@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 `sealSplitPrepared16_framed`: `Fast/Verified.lean`'s `sealSplitPrepared_framed`
 for `Spec.Gcm.sealSplitPrepared16Contract`, the loops proven for the first
-eight pairs (`CtxMode.preparedN 8`), with a one-pass loop that reads no
+eight pairs (`CtxMode.prepared16`), with a one-pass loop that reads no
 other (`hz`: not `StitchZHTo.encN`, which reads all 48 powers). -/
 
 @[expose] public section
@@ -25,23 +25,23 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Proof.AesGcm.X86_64.Short (ShortFacts)
 
-theorem splitPrepared16_implies : (Proof.AesGcm.sealSplitX86_64M (CtxMode.preparedN 8)).Implies
+theorem splitPrepared16_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.prepared16).Implies
     (Proof.AesGcm.sealSplitPrepared16ScratchContract X86_64.abi 56) := by
   exact { pre := by sig_implies_pre [Proof.AesGcm.sealSplitPrepared16ScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrepared16Pre,
-      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+      Spec.Gcm.sealSplitPost, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           post := by sig_implies_post [Proof.AesGcm.sealSplitPrepared16ScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrepared16Pre,
-      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+      Spec.Gcm.sealSplitPost, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           pub := by sig_implies_pub [Proof.AesGcm.sealSplitPrepared16ScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrepared16Pre,
-      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+      Spec.Gcm.sealSplitPost, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      VG.X86_64.below, X86_64.argRegs, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           sat := ⟨splitSatP, by
             sig_pre [Proof.AesGcm.sealSplitPrepared16ScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig,
               Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrepared16Pre, X86_64.abi,
@@ -73,12 +73,12 @@ theorem splitFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.sealSplitPrepared16Contra
 
 
 section
-variable (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8)) (T : BlkToFn (CtxMode.preparedN 8))
+variable (v : GcmImpl) (B : BlkFn CtxMode.prepared16) (T : BlkToFn CtxMode.prepared16)
 
 theorem sealSplitPrepared16_core (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n ≠ .z) :
     Verified X86_64.target (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn))
       (Proof.AesGcm.sealSplitPrepared16ScratchContract X86_64.abi 56) :=
-  Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M (CtxMode.preparedN 8)) (sealSplitR_correct v B T hF (fun n h hzn => absurd hzn (hz n h)))
+  Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M CtxMode.prepared16) (sealSplitR_correct v B T hF (fun n h hzn => absurd hzn (hz n h)))
     (sealSplitM_ct (splitMidR_ok v B T hF (fun n h hzn => absurd hzn (hz n h))) (splitMidR_rel v B T hF (fun n h hzn => absurd hzn (hz n h))))
     splitPrepared16_implies
 

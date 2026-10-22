@@ -26,7 +26,7 @@ open VG.Impl.AesGcm.X86_64.SealGather
 
 theorem gatherPrePrepared16_of {s : State}
     (h : (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888).pre s) :
-    Proof.AesGcm.sealGatherPreM (CtxMode.preparedN 8) s := by
+    Proof.AesGcm.sealGatherPreM CtxMode.prepared16 s := by
   sig_pre [Proof.AesGcm.sealGatherPrepared16ScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
     Spec.Gcm.sealGatherPrepared16Pre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
@@ -40,7 +40,7 @@ theorem gatherPrePrepared16_of {s : State}
     rk, rn, ra, rdd, rt, rw, ⟨rds, ⟨rl, -⟩, bk, bn, ba, bd, bt, bw, bds, bl, -⟩, ok, on, oa, od, ot, ow, ⟨ods, ol⟩,
     hr, hg, hpw⟩ := h
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, Proof.AesGcm.stkG,
-    Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.preparedN]
+    Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.prepared16, CtxMode.preparedN]
   simp only [show (2 * (64 / 8) : Nat) = 16 from rfl] at *
   exact ⟨rd, wr, kd, kt, kw, nd, nt, nw, ad, at_, aw, dds.symm, tds.symm, wds.symm,
     fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, wa, rdd, rt, rw,
@@ -73,18 +73,18 @@ theorem gatherSatPrepared16_pre : ∃ s, (Proof.AesGcm.sealGatherPrepared16Scrat
     | exact Region.disjoint_of_sep (by decide)
     | exact preparedPowers16Repr_of_zero fun _ hi => by simp only [ctx_low hi, ite_false]
 
-theorem gatherPrepared16_implies : (Proof.AesGcm.sealGatherX86_64M (CtxMode.preparedN 8)).Implies
+theorem gatherPrepared16_implies : (Proof.AesGcm.sealGatherX86_64M CtxMode.prepared16).Implies
     (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888) :=
   ⟨fun _ h => gatherPrePrepared16_of h, fun _ _ _ h => gatherPostPrepared16_of h, fun _ _ _ _ h => gatherPubPrepared16_of h, gatherSatPrepared16_pre⟩
 
 /-- `vg_aes_gcm_seal_gather_prepared`'s code: a TLS record's text sealed by
 `Sp` from the entry (`withFront long`), and the others by `sealGather`. -/
-theorem sealGatherPrepared16_core (Sh : ShortFn (CtxMode.preparedN 8)) (I : InitFn) (A : AadFn)
-    (T : ToFn (CtxMode.preparedN 8)) (F : FinFn) (Sp : SplitFn (CtxMode.preparedN 8)) (long : Bool) :
+theorem sealGatherPrepared16_core (Sh : ShortFn CtxMode.prepared16) (I : InitFn) (A : AadFn)
+    (T : ToFn CtxMode.prepared16) (F : FinFn) (Sp : SplitFn CtxMode.prepared16) (long : Bool) :
     Verified X86_64.target
       (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M (CtxMode.preparedN 8))
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared16)
     (withFront_correct Sh I A T F Sp long) (withFront_ct Sh I A T F Sp long) gatherPrepared16_implies
 
 theorem gatherFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.sealGatherPrepared16Contract X86_64.abi 5128).pre s := by
@@ -99,8 +99,8 @@ theorem gatherFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.sealGatherPrepared16Cont
     | exact Region.disjoint_of_sep (by decide)
     | exact preparedPowers16Repr_of_zero fun _ hi => by simp only [ctx_low hi, ite_false]
 
-theorem sealGatherPrepared16_framed (Sh : ShortFn (CtxMode.preparedN 8)) (I : InitFn)
-    (A : AadFn) (T : ToFn (CtxMode.preparedN 8)) (F : FinFn) (Sp : SplitFn (CtxMode.preparedN 8)) (long : Bool) :
+theorem sealGatherPrepared16_framed (Sh : ShortFn CtxMode.prepared16) (I : InitFn)
+    (A : AadFn) (T : ToFn CtxMode.prepared16) (F : FinFn) (Sp : SplitFn CtxMode.prepared16) (long : Bool) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)))

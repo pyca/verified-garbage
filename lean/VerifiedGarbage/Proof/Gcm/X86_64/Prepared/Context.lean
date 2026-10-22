@@ -44,6 +44,10 @@ def CtxMode.preparedN (n : Nat) (hn : 8 ≤ n ∧ n ≤ 24 := by decide) : CtxMo
 `Spec.Gcm.PreparedPowersRepr`. -/
 abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
 
+/-- The key context of `vg_aes_gcm_prepare16`: its first 8 pairs, which the
+256-bit loops read. -/
+abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
+
 /-- The interleaved-loop precondition, with prepared powers. -/
 structure SPrePrepared (s₀ : State) (lo : Nat := 16) (n : Nat := 24) : Prop where
   base : SPre s₀ lo

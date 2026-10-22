@@ -28,7 +28,7 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args rounds)
 open VG.Impl.AesGcm.X86_64.StreamTo
 
-theorem streamToPrepared16_implies : (Proof.AesGcm.streamEncryptToX86_64M (CtxMode.preparedN 8)).Implies
+theorem streamToPrepared16_implies : (Proof.AesGcm.streamEncryptToX86_64M CtxMode.prepared16).Implies
     (Proof.AesGcm.streamEncryptToPrepared16ScratchContract X86_64.abi 2624) := by
   exact { pre := by sig_implies_pre [Proof.AesGcm.streamEncryptToPrepared16ScratchContract,
       Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrepared16Pre,
@@ -36,21 +36,21 @@ theorem streamToPrepared16_implies : (Proof.AesGcm.streamEncryptToX86_64M (CtxMo
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      X86_64.argRegs, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           post := by sig_implies_post [Proof.AesGcm.streamEncryptToPrepared16ScratchContract,
       Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrepared16Pre,
       Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      X86_64.argRegs, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           pub := by sig_implies_pub [Proof.AesGcm.streamEncryptToPrepared16ScratchContract,
       Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrepared16Pre,
       Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      X86_64.argRegs, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           sat := ⟨streamToSatP, by
             sig_pre [Proof.AesGcm.streamEncryptToPrepared16ScratchContract,
               Proof.AesGcm.streamEncryptToPreparedScratchSig, Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrepared16Pre,
@@ -62,10 +62,10 @@ theorem streamToPrepared16_implies : (Proof.AesGcm.streamEncryptToX86_64M (CtxMo
               | exact preparedPowers16Repr_of_zero fun _ _ => rfl
               | exact Region.disjoint_of_sep (by decide)⟩ }
 
-theorem streamEncryptToPrepared16_core (T : BlkToFn (CtxMode.preparedN 8)) (E : EncFn (CtxMode.preparedN 8)) :
+theorem streamEncryptToPrepared16_core (T : BlkToFn CtxMode.prepared16) (E : EncFn CtxMode.prepared16) :
     Verified X86_64.target (encrypt T.fn E.fn)
       (Proof.AesGcm.streamEncryptToPrepared16ScratchContract X86_64.abi 2624) :=
-  Verified.of_correct (k := Proof.AesGcm.streamEncryptToX86_64M (CtxMode.preparedN 8)) (encrypt_correct T E)
+  Verified.of_correct (k := Proof.AesGcm.streamEncryptToX86_64M CtxMode.prepared16) (encrypt_correct T E)
     (encrypt_ct T E) streamToPrepared16_implies
 
 theorem streamToFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.streamEncryptToPrepared16Contract X86_64.abi 4856).pre s := by
@@ -80,7 +80,7 @@ theorem streamToFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.streamEncryptToPrepare
     | exact Region.disjoint_of_sep (by decide)
     | exact preparedPowers16Repr_of_zero fun _ _ => rfl
 
-theorem streamEncryptToPrepared16_framed (T : BlkToFn (CtxMode.preparedN 8)) (E : EncFn (CtxMode.preparedN 8)) :
+theorem streamEncryptToPrepared16_framed (T : BlkToFn CtxMode.prepared16) (E : EncFn CtxMode.prepared16) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Spec.Gcm.streamEncryptToPrepared16Contract X86_64.abi 4856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamEncryptToPreparedSig) (nm := "scratch")

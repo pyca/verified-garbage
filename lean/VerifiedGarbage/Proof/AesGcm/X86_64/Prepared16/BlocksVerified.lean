@@ -25,14 +25,14 @@ theorem preparedPowers16Repr_zero (p : Addr) : Spec.Gcm.PreparedPowers16Repr (fu
   simp only [Spec.Gcm.ctxH, z, hpow_zero_succ, w]
   constructor <;> decide
 
-theorem encryptBlocksPrepared16_verified (v : GcmImpl) (st : Option (StitchCode (CtxMode.preparedN 8) true)) :
+theorem encryptBlocksPrepared16_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.prepared16 true)) :
     Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) true (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS)))
       (Spec.Gcm.encryptBlocksPrepared16Contract X86_64.abi 8) :=
   Verified.of_correct (encryptBlocksM_correct v st) (Blocks.encrypt_ct v st)
     { pre := by
         sig_implies_pre [Spec.Gcm.encryptBlocksPrepared16Contract, Spec.Gcm.cryptBlocksPreparedSig, Spec.Gcm.cryptBlocksPrecomputedSig,
           Spec.Gcm.cryptBlocksPrepared16Pre, Proof.AesGcm.encryptBlocksX86_64M, Proof.AesGcm.blocksPreM,
-          CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
+          CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
           Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
           List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       post := by
@@ -54,14 +54,14 @@ theorem encryptBlocksPrepared16_verified (v : GcmImpl) (st : Option (StitchCode 
           | exact preparedPowers16Repr_zero _
           | exact Region.disjoint_of_sep (by decide)⟩ }
 
-theorem decryptBlocksPrepared16_verified (v : GcmImpl) (st : Option (StitchCode (CtxMode.preparedN 8) true)) :
+theorem decryptBlocksPrepared16_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.prepared16 true)) :
     Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) true (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS)))
       (Spec.Gcm.decryptBlocksPrepared16Contract X86_64.abi 8) :=
   Verified.of_correct (decryptBlocksM_correct v st) (Blocks.decrypt_ct v st)
     { pre := by
         sig_implies_pre [Spec.Gcm.decryptBlocksPrepared16Contract, Spec.Gcm.cryptBlocksPreparedSig, Spec.Gcm.cryptBlocksPrecomputedSig,
           Spec.Gcm.cryptBlocksPrepared16Pre, Proof.AesGcm.decryptBlocksX86_64M, Proof.AesGcm.blocksPreM,
-          CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
+          CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
           Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
           List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       post := by

@@ -23,32 +23,32 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args rounds)
 
 theorem blocksToPrepared16_pre : ∀ s, (Spec.Gcm.encryptBlocksToPrepared16Contract X86_64.abi 24).pre s →
-    (Proof.AesGcm.encryptBlocksToX86_64M (Gcm.X86_64.Stitch.CtxMode.preparedN 8)).pre s := by
+    (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.CtxMode.prepared16).pre s := by
   intro s h
   sig_pre [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] at h
+      Gcm.X86_64.Stitch.CtxMode.prepared16, Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] at h
   sig_split h
   sig_reduce [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      Gcm.X86_64.Stitch.CtxMode.prepared16, Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
   sig_simp [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] []
+      Gcm.X86_64.Stitch.CtxMode.prepared16, Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] []
   sig_and_intros
   sig_close
   all_goals with_reducible assumption
 
-theorem blocksToPrepared16_implies : (Proof.AesGcm.encryptBlocksToX86_64M (Gcm.X86_64.Stitch.CtxMode.preparedN 8)).Implies
+theorem blocksToPrepared16_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.CtxMode.prepared16).Implies
     (Spec.Gcm.encryptBlocksToPrepared16Contract X86_64.abi 24) := by
   exact { pre := blocksToPrepared16_pre
           post := by sig_implies_post [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,
@@ -56,13 +56,13 @@ theorem blocksToPrepared16_implies : (Proof.AesGcm.encryptBlocksToX86_64M (Gcm.X
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      Gcm.X86_64.Stitch.CtxMode.prepared16, Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           pub := by sig_implies_pub [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
-      Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
+      Gcm.X86_64.Stitch.CtxMode.prepared16, Gcm.X86_64.Stitch.CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr]
           sat := ⟨blocksToSatP, by
             sig_pre [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig,
               Spec.Gcm.encryptBlocksToPrepared16Pre, X86_64.abi, X86_64.argRegs, blocksToSatP, blocksToSat]
@@ -73,10 +73,10 @@ theorem blocksToPrepared16_implies : (Proof.AesGcm.encryptBlocksToX86_64M (Gcm.X
               | exact preparedPowers16Repr_zero _
               | exact Region.disjoint_of_sep (by decide)⟩ }
 
-theorem encryptBlocksToPrepared16_verified (B : BlkFn (CtxMode.preparedN 8)) (st : Option (StitchToCode (CtxMode.preparedN 8) true)) :
+theorem encryptBlocksToPrepared16_verified (B : BlkFn CtxMode.prepared16) (st : Option (StitchToCode CtxMode.prepared16 true)) :
     Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) true (encFullTo st))
       (Spec.Gcm.encryptBlocksToPrepared16Contract X86_64.abi 24) :=
-  Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M (CtxMode.preparedN 8)) (encryptToM_correct st B)
+  Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M CtxMode.prepared16) (encryptToM_correct st B)
     (BlocksTo.encrypt_ct B st) blocksToPrepared16_implies
 
 end VG.Proof.AesGcm.X86_64
