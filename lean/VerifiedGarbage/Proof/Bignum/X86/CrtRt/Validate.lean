@@ -15,6 +15,8 @@ input is below `n` and `qInv` below `p`, for the numbers in the wide slots 9
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
@@ -43,7 +45,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- `ecx` and-ed into the mask at `accOff`. -/
-theorem accept_ok (h : In base bytes len args s) {a c : Bool} (ha : w32 s.mem base accOff = (cmask a).toNat)
+theorem accept_ok (h : In Ex base bytes len args s) {a c : Bool} (ha : w32 s.mem base accOff = (cmask a).toNat)
     (hc : s.gpr .ecx = cmask c) :
     WP isa (.block accept) s fun u => Outside base accOff 4 s.mem u.mem ∧
       w32 u.mem base accOff = (cmask (a && c)).toNat ∧ Keeps [.eax] s u := by
@@ -52,11 +54,11 @@ theorem accept_ok (h : In base bytes len args s) {a c : Bool} (ha : w32 s.mem ba
   have nbs : numBase = 3336 := rfl
   unfold CrtRt.need at nb
   unfold accept
-  refine wp_movS (readSrc_sc h.crt.scratch (d := accOff) (by omega)) fun u₁ a₁ _ => ?_
+  refine wp_movS (readSrc_sc h.scratch (d := accOff) (by omega)) fun u₁ a₁ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun u₂ a₂ => ?_
   have K₂ : Keeps [.eax] s u₂ := a₁.keeps.trans a₂.keeps
   have h₂ := h.regs K₂ (by rw [a₂.mem, a₁.mem])
-  refine wp_storeS (h₂.crt.scratch.ea (d := accOff) (by omega)) (h₂.crt.scratch.write (d := accOff) (n := 4)
+  refine wp_storeS (h₂.scratch.ea (d := accOff) (by omega)) (h₂.scratch.write (d := accOff) (n := 4)
     (by omega)) fun u₃ m₃ => WP.block_nil ⟨?_, ?_, K₂.trans (m₃.keeps _)⟩
   · rw [m₃.mem, a₂.mem, a₁.mem]; exact writeW32_outside _ _ _ (by omega)
   · have e : s.mem.readW (off base accOff) 32 = cmask a := BitVec.eq_of_toNat_eq ha
@@ -64,21 +66,21 @@ theorem accept_ok (h : In base bytes len args s) {a c : Bool} (ha : w32 s.mem ba
     simp only [ite_true]
     rw [a₁.gpr, a₁.other .ecx (by decide), hc, e, cmask_and]
 
-theorem valR_fit (h : In base bytes len args s) : ∀ p ∈ valR len, p.1 + p.2 ≤ bytes := by
+theorem valR_fit (h : In Ex base bytes len args s) : ∀ p ∈ valR len, p.1 + p.2 ≤ bytes := by
   have pf := h.prod_fit
   intro p hp; simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl <;> simp only [accOff, multOff, prodOff, mulAOff, numBase] at * <;> omega
 
 /-- The acceptance keeps everything from the slots up. -/
-theorem valR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+theorem valR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (valR len)) m m') (R : CallRoom sp base bytes) {d k : Nat} (hd : numBase ≤ d)
     (hk : d + 4 * k ≤ bytes) : val32 m' base d k = val32 m base d k := by
   have pf := h.prod_fit
-  refine frameR_val32 F R h.crt.scratch.nowrap hk ?_ (valR_fit h)
+  refine frameR_val32 F R h.scratch.nowrap hk ?_ (valR_fit h)
   intro p hp; simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl <;> simp only [accOff, multOff, prodOff, mulAOff, numBase] at * <;> omega
 
-theorem validate_ok (h : In base bytes len args s) {n p q x qi : Nat}
+theorem validate_ok (h : In Ex base bytes len args s) {n p q x qi : Nat}
     (hn : val32 s.mem base (lo len (.slot .wide 9)) (2 * cwc len .wide) = n) (hnb : n < 2 ^ (32 * cwc len .wide))
     (hp : val32 s.mem base (lo len (.slot .wide 10)) (cwc len .wide) = p)
     (hq : val32 s.mem base (lo len (.slot .wide 11)) (cwc len .wide) = q)
@@ -91,7 +93,7 @@ theorem validate_ok (h : In base bytes len args s) {n p q x qi : Nat}
   have pf := h.prod_fit
   have bw := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .wide
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f17 := h.slot_fit .wide (j := 17) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
@@ -131,7 +133,7 @@ theorem validate_ok (h : In base bytes len args s) {n p q x qi : Nat}
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
   have k₂ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₂.mem base d k = val32 s.mem base d k :=
-    fun hd hk => (prodR_keep h₁ F₂ (sp₁ ▸ h₁.crt.room) (by omega) hk).trans (k₁ hd hk)
+    fun hd hk => (prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega) hk).trans (k₁ hd hk)
   -- `p q = n`.
   have pq : val32 u₂.mem base prodOff (2 * cn) = p * q := by
     have sp := val32_succ u₂.mem base prodOff (2 * cn)
@@ -157,8 +159,8 @@ theorem validate_ok (h : In base bytes len args s) {n p q x qi : Nat}
     show 2 * cwc len .wide = 2 * cn from rfl, pq] at C₃
   have h₃ := h₂.regs K₃ M₃
   -- The mask stored.
-  refine WP.seq (wp_storeS (h₃.crt.scratch.ea (d := accOff) (by omega))
-    (h₃.crt.scratch.write (d := accOff) (n := 4) (by omega)) fun u₄ m₄ => WP.block_nil ?_)
+  refine WP.seq (wp_storeS (h₃.scratch.ea (d := accOff) (by omega))
+    (h₃.scratch.write (d := accOff) (n := 4) (by omega)) fun u₄ m₄ => WP.block_nil ?_)
   have O₄ : Outside base accOff 4 u₃.mem u₄.mem := by rw [m₄.mem]; exact writeW32_outside _ _ _ (by omega)
   have A₄ : w32 u₄.mem base accOff = (cmask (decide (p * q = n))).toNat := by
     rw [m₄.mem, w32_write_self, C₃]

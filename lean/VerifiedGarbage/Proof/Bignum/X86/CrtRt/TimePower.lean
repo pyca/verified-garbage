@@ -17,6 +17,8 @@ both runs share) and `coefficient_relCT`, from the runs' `Run` to their
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (Both)
@@ -25,18 +27,18 @@ open VG.Impl.Bignum.X86.PublicRt (argAt)
 section
 variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {sp : BitVec 32}
 
-theorem WSt.run {c : Ctx} {ks : List Nat} {E : Nat} (W : WSt base bytes len args sp c ks E s) :
-    Run base bytes len args sp s :=
+theorem WSt.run {c : Ctx} {ks : List Nat} {E : Nat} (W : WSt Ex base bytes len args sp c ks E s) :
+    Run Ex base bytes len args sp s :=
   let ⟨_, C, _, _, A, e⟩ := W
   ⟨C.inp, A, e⟩
 
-theorem Run.keep (R : Run base bytes len args sp s) {regs : List Reg} (K : Keeps regs s t)
+theorem Run.keep (R : Run Ex base bytes len args sp s) {regs : List Reg} (K : Keeps regs s t)
     (O : Outside base 0 bytes s.mem t.mem) (di : .edi ∉ regs := by decide) (spn : .esp ∉ regs := by decide) :
-    Run base bytes len args sp t :=
+    Run Ex base bytes len args sp t :=
   ⟨R.1.keep K di spn O, R.2.1.keep K spn, (K.1 _ spn).trans R.2.2⟩
 
-theorem prepare_wst (R : Run base bytes len args sp s) (c : Ctx) :
-    WP isa (prepare c) s (WSt base bytes len args sp c [3, 4] 0) := by
+theorem prepare_wst (R : Run Ex base bytes len args sp s) (c : Ctx) :
+    WP isa (prepare c) s (WSt Ex base bytes len args sp c [3, 4] 0) := by
   refine WP.mono (prepCtx_ok R.1 c) fun u ⟨C, one, R2, _, K⟩ => ⟨_, C, fun j hj => ?_,
     fun j hj => absurd hj (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
   have hM := safeM_gt (sv s.mem base len c 0)
@@ -45,15 +47,15 @@ theorem prepare_wst (R : Run base bytes len args sp s) (c : Ctx) :
   · rw [one]; exact hM
   · rw [R2]; exact Nat.mod_lt _ (by omega)
 
-theorem copyDown_run {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd : d ≤ 8) (R : Run base bytes len args sp s) :
-    WP isa (copy (.slot .wide j) (.slot .wide d) (one .wide)) s (Run base bytes len args sp) := by
+theorem copyDown_run {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd : d ≤ 8) (R : Run Ex base bytes len args sp s) :
+    WP isa (copy (.slot .wide j) (.slot .wide d) (one .wide)) s (Run Ex base bytes len args sp) := by
   have f := R.1.slot_fit .wide (j := d) (by omega)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   exact WP.mono (copyDown_ok R.1 hj9 hj hd) fun u ⟨O, _, K⟩ => R.keep K (O.mono (Nat.zero_le _) (by omega))
 
 theorem copyDown_wst {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd1 : 1 ≤ d) (hd : d ≤ 8) {ks : List Nat} {E : Nat}
-    (hks : ∀ i ∈ ks, i ≠ d ∧ i ≤ 8) (hE : E ≤ 16) (W : WSt base bytes len args sp .wide ks E s) :
-    WP isa (copy (.slot .wide j) (.slot .wide d) (one .wide)) s (WSt base bytes len args sp .wide ks E) := by
+    (hks : ∀ i ∈ ks, i ≠ d ∧ i ≤ 8) (hE : E ≤ 16) (W : WSt Ex base bytes len args sp .wide ks E s) :
+    WP isa (copy (.slot .wide j) (.slot .wide d) (one .wide)) s (WSt Ex base bytes len args sp .wide ks E) := by
   obtain ⟨M, C, Hk, He, A, sp₀⟩ := W
   have h := C.inp
   have bl := h.bytes_lt
@@ -91,8 +93,8 @@ theorem copyDown_wst {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd1 : 1 ≤ d)
     rw [Outside.val32 O (.inr (by omega)) (by omega)]; exact He i hi
 
 theorem saveResult_run {c : Ctx} {o : Nat} (ho9 : 9 ≤ o) (ho : o ≤ 19) {ks : List Nat} {E : Nat}
-    (W : WSt base bytes len args sp c ks E s) :
-    WP isa (saveResult c o) s (Run base bytes len args sp) := by
+    (W : WSt Ex base bytes len args sp c ks E s) :
+    WP isa (saveResult c o) s (Run Ex base bytes len args sp) := by
   have R := W.run
   have f := R.1.wide_fit ho
   exact WP.mono (saveResult_ok R.1 c ho9 ho) fun u ⟨O, _, K⟩ =>
@@ -138,23 +140,23 @@ structure PowChecks (f e o l : Nat) : Prop where
   m554 : MulCheck .wide 5 5 4
   m553 : MulCheck .wide 5 5 3
 
-theorem reduceHead_wst {f : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (R : Run base bytes len args sp s) :
-    WP isa (Prog.chain (reduceHead f) (.block [])) s (WSt base bytes len args sp .wide [3, 4] 0) :=
+theorem reduceHead_wst {f : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (R : Run Ex base bytes len args sp s) :
+    WP isa (Prog.chain (reduceHead f) (.block [])) s (WSt Ex base bytes len args sp .wide [3, 4] 0) :=
   WP.seq (WP.mono (copyDown_run hf9 (by omega) (by decide) R) fun _ R₁ =>
     WP.seq (WP.mono (copyDown_run (by decide) (by decide) (by decide) R₁) fun _ R₂ =>
       WP.seq (WP.mono (prepare_wst R₂ .wide) fun _ W => WP.block_nil W)))
 
 theorem wideHead_wst {f e : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e) (he : e ≤ 15)
-    (R : Run base bytes len args sp s) :
-    WP isa (Prog.chain (wideHead f e) (.block [])) s (WSt base bytes len args sp .wide [3, 4] 0) :=
+    (R : Run Ex base bytes len args sp s) :
+    WP isa (Prog.chain (wideHead f e) (.block [])) s (WSt Ex base bytes len args sp .wide [3, 4] 0) :=
   WP.seq (WP.mono (copyDown_run hf9 (by omega) (by decide) R) fun _ R₁ =>
     WP.seq (WP.mono (copyDown_run (by decide) (by decide) (by decide) R₁) fun _ R₂ =>
       WP.seq (WP.mono (copyDown_run he9 (by omega) (by decide) R₂) fun _ R₃ =>
         WP.seq (WP.mono (prepare_wst R₃ .wide) fun _ W => WP.block_nil W))))
 
 theorem narrowMid_wst {f e o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e) (he : e ≤ 15) (ho16 : 16 ≤ o)
-    (ho : o ≤ 17) {ks : List Nat} {E : Nat} (W : WSt base bytes len args sp .wide ks E s) :
-    WP isa (Prog.chain (narrowMid f e o) (.block [])) s (WSt base bytes len args sp .half [3, 4] 0) := by
+    (ho : o ≤ 17) {ks : List Nat} {E : Nat} (W : WSt Ex base bytes len args sp .wide ks E s) :
+    WP isa (Prog.chain (narrowMid f e o) (.block [])) s (WSt Ex base bytes len args sp .half [3, 4] 0) := by
   have R := W.run
   have h := R.1
   obtain ⟨est, l0, l5, l8, l9, l15, l16, l18, f1, f2, o1, o2, fit, nb⟩ := WideLay.mk' h hf9 hf ho16 ho
@@ -169,11 +171,11 @@ theorem narrowMid_wst {f e o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤
   rw [cb1] at O₁
   have R₁ := R.keep K₁ (O₁.mono (Nat.zero_le _) (by omega))
   refine narrowCopies_ok R₁.1 hf9 hf he9 he ho16 ho rfl rfl rfl fun u₄ h₄ _ _ _ _ K₄ => ?_
-  have R₄ : Run base bytes len args sp u₄ := ⟨h₄, R₁.2.1.keep K₄, (K₄.1 _ (by decide)).trans R₁.2.2⟩
+  have R₄ : Run Ex base bytes len args sp u₄ := ⟨h₄, R₁.2.1.keep K₄, (K₄.1 _ (by decide)).trans R₁.2.2⟩
   exact WP.seq (WP.mono (prepare_wst R₄ .half) fun _ W => WP.block_nil W)
 
-theorem powerTest_run {l : Nat} (hl : l < 18) (R : Run base bytes len args sp s) :
-    WP isa (.block (powerTest l)) s fun u => Run base bytes len args sp u ∧
+theorem powerTest_run {l : Nat} (hl : l < 18) (R : Run Ex base bytes len args sp s) :
+    WP isa (.block (powerTest l)) s fun u => Run Ex base bytes len args sp u ∧
       isa.eval .b u = some (decide ((args l).toNat < bc len .half + 1)) := by
   have h := R.1
   have hb := bc_le h.upper' .half
@@ -195,7 +197,7 @@ theorem powerTest_run {l : Nat} (hl : l < 18) (R : Run base bytes len args sp s)
 
 theorem narrowPower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
     (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) :
-    RelCT isa (Both (Run base bytes len args sp)) (narrowPower f e o) (Both (Run base bytes len args sp)) := by
+    RelCT isa (Both (Run Ex base bytes len args sp)) (narrowPower f e o) (Both (Run Ex base bytes len args sp)) := by
   rw [narrowPower_eq]
   refine VG.RelCT.chain (VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ hc.head
     fun _ R => reduceHead_wst hf9 hf R) ?_)
@@ -210,7 +212,7 @@ theorem narrowPower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ 
 
 theorem widePower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
     (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) :
-    RelCT isa (Both (Run base bytes len args sp)) (widePower f e o) (Both (Run base bytes len args sp)) := by
+    RelCT isa (Both (Run Ex base bytes len args sp)) (widePower f e o) (Both (Run Ex base bytes len args sp)) := by
   rw [widePower_eq]
   refine VG.RelCT.chain (VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ hc.wide
     fun _ R => wideHead_wst hf9 hf he9 he R) ?_)
@@ -219,7 +221,7 @@ theorem widePower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f)
 
 theorem power_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
     (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) (hl : l < 18) :
-    RelCT isa (Both (Run base bytes len args sp)) (power f e o l) (Both (Run base bytes len args sp)) := by
+    RelCT isa (Both (Run Ex base bytes len args sp)) (power f e o l) (Both (Run Ex base bytes len args sp)) := by
   unfold power
   refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ hc.test fun _ R => powerTest_run hl R) ?_
   refine VG.RelCT.ite (fun _ _ h => h.1.2.trans h.2.2.symm)
@@ -246,8 +248,8 @@ structure CoChecks : Prop where
   m884 : MulCheck .wide 8 8 4
   m778 : MulCheck .wide 7 7 8
 
-theorem coHead_wst (R : Run base bytes len args sp s) :
-    WP isa (Prog.chain coHead (.block [])) s (WSt base bytes len args sp .wide [3, 4] 0) :=
+theorem coHead_wst (R : Run Ex base bytes len args sp s) :
+    WP isa (Prog.chain coHead (.block [])) s (WSt Ex base bytes len args sp .wide [3, 4] 0) :=
   WP.seq (WP.mono (copyDown_run (by decide) (by decide) (by decide) R) fun _ R₁ =>
     WP.seq (WP.mono (prepare_wst R₁ .wide) fun _ W₂ =>
       WP.seq (WP.mono (copyDown_wst (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) W₂)
@@ -257,16 +259,16 @@ theorem coHead_wst (R : Run base bytes len args sp s) :
       WP.seq (WP.mono (copyDown_wst (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) W₄)
         fun _ W₅ => WP.block_nil W₅)))))
 
-theorem subMod_wst (W : WSt base bytes len args sp .wide [3, 4, 5] 0 s) :
-    WP isa (subMod .wide 7 6 5) s (WSt base bytes len args sp .wide [4] 0) := by
+theorem subMod_wst (W : WSt Ex base bytes len args sp .wide [3, 4, 5] 0 s) :
+    WP isa (subMod .wide 7 6 5) s (WSt Ex base bytes len args sp .wide [4] 0) := by
   obtain ⟨M, C, Hk, -, A, sp₀⟩ := W
   refine WP.mono (subMod_raw C) fun u ⟨Cu, F, _, K⟩ => ⟨M, Cu, fun j hj => ?_,
     fun j hj => absurd hj (Nat.not_lt_zero _), A.keep K, (K.1 _ (by decide)).trans sp₀⟩
-  rw [List.mem_singleton.mp hj, subR_sv C.inp .wide F C.inp.crt.room (by decide) (by decide) (by decide)]
+  rw [List.mem_singleton.mp hj, subR_sv C.inp .wide F C.inp.room (by decide) (by decide) (by decide)]
   exact Hk 4 (by decide)
 
 theorem coefficient_relCT (hc : CoChecks) :
-    RelCT isa (Both (Run base bytes len args sp)) coefficient (Both (Run base bytes len args sp)) := by
+    RelCT isa (Both (Run Ex base bytes len args sp)) coefficient (Both (Run Ex base bytes len args sp)) := by
   rw [coefficient_eq]
   refine VG.RelCT.chain (VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ hc.head
     fun _ R => coHead_wst R) ?_)

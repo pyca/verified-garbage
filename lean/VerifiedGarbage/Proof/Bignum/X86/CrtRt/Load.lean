@@ -18,13 +18,15 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (byteAddr_ptr)
 open VG.Impl.Bignum.X86.PublicRt (argAt)
 
 theorem load_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : In base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n) (hx : lo len x + cb len n ≤ bytes)
+    (h : In Ex base bytes len args s) {x : Loc} {n : Cnt} (N : CntOk n) (hx : lo len x + cb len n ≤ bytes)
     {p l L : Nat} (hp : p < 18) (hl : l < 18)
     (hlen : args l = BitVec.ofNat 32 L) (hL : 0 < L) (hLc : L ≤ cb len n) (fit : (args p).toNat + L ≤ 2 ^ 32)
     (rd : InRegions (s.rd ++ s.wr) (byteAddr (args p)) L)
@@ -32,7 +34,7 @@ theorem load_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     WP isa (load x n p l) s fun t =>
       val32 t.mem base (lo len x) (cw len n) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args p)) L) ∧
       Outside base (lo len x) (cb len n) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  have nw' := h.crt.scratch.nowrap
+  have nw' := h.scratch.nowrap
   have bl := h.bytes_lt
   have ce := cb_eq (len := len) N
   have srcLen : L < 2 ^ 32 := by omega
@@ -67,7 +69,7 @@ theorem load_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     (K.mono (by decide)).trans ((Kv.mono (by decide)).trans (K₄.mono (by decide)))
   have vr : InRegions (v₄.rd ++ v₄.wr) (byteAddr (args p)) L := by rw [keep.2.1, keep.2.2]; exact rd
   have vw : InRegions v₄.wr (byteAddr dst) L := by
-    rw [keep.2.2, dstAddr]; exact h.crt.scratch.write (by omega)
+    rw [keep.2.2, dstAddr]; exact h.scratch.write (by omega)
   have hsub : Region.Sub ⟨off base (lo len x), L⟩ ⟨base, bytes⟩ := by
     have := Offset.sub base (d := lo len x) (n := L) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this

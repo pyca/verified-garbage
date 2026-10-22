@@ -25,6 +25,8 @@ each run keeps (`Side`): constant time but for the modulus
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.Crt (componentValue Pair)
@@ -48,7 +50,7 @@ variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 /-- What each run keeps from the entry on: its inputs, `esp`, and the arguments apart from the output and
 the working space. -/
 def Side (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s : State) : Prop :=
-  In base bytes len args s ∧ s.gpr .esp = sp ∧
+  RIn base bytes len args s ∧ s.gpr .esp = sp ∧
     Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 76⟩ ⟨byteAddr (args 0), len⟩ ∧
     Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 76⟩ ⟨base, bytes⟩
 
@@ -143,11 +145,11 @@ theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
       have espu : u.gpr .esp = s.gpr .esp := Ks.1 _ (by decide)
       have espv : v.gpr .esp = s.gpr .esp := (Kt.1 _ (by decide)).trans SP.symm
       have Su : Side (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) u := by
-        refine ⟨⟨Is, need, hb, rfl⟩, espu, ?_, ?_⟩
+        refine ⟨In.ofInputs Is need hb rfl, espu, ?_, ?_⟩
         · rw [espu, ← A.abi.outLength]; exact args_apart A A.abi.retOut A.outArgs.symm
         · rw [espu]; exact args_apart A A.abi.retScratch A.abi.scratchArgs.symm
       have Sv : Side (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) v := by
-        refine ⟨⟨Iv, need, hb, rfl⟩, espv, ?_, ?_⟩
+        refine ⟨In.ofInputs Iv need hb rfl, espv, ?_, ?_⟩
         · rw [espv]
           have D := args_apart B B.abi.retOut B.outArgs.symm
           simp only [argumentPointer, ← A0, ← A1, ← SP] at D

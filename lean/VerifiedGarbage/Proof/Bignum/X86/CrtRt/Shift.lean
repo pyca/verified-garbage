@@ -15,6 +15,8 @@ exponent past them (`nextWindow_ok`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Mont.X86.Dynamic (times16_toNat shr28_toNat shift_top val32_top_bits)
@@ -83,13 +85,13 @@ theorem shiftLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x N
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem nextWindow_ok (h : In base bytes len args s) (c : Ctx) :
+theorem nextWindow_ok (h : In Ex base bytes len args s) (c : Ctx) :
     WP isa (nextWindow c) s fun u =>
       Frame (frameR base (s.gpr .esp) [(winOff, 4), (lo len (.slot c 8), bc len c)]) s.mem u.mem ∧
       w32 u.mem base winOff = sv s.mem base len c 8 * 16 / 2 ^ (32 * cwc len c) ∧
       sv u.mem base len c 8 = sv s.mem base len c 8 * 16 % 2 ^ (32 * cwc len c) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
-  have nw' := h.crt.scratch.nowrap
+  have nw' := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have g := bc_ge h.lower' c
   have hb := bc_le h.upper' c
@@ -122,8 +124,8 @@ theorem nextWindow_ok (h : In base bytes len args s) (c : Ctx) :
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun u₆ a₆ => ?_
   have K₆ : Keeps [.eax, .edx] s u₆ := (K₄.trans (a₅.keeps.mono (by decide))).trans (a₆.keeps.mono (by decide))
   have h₆ := h.regs K₆ (by rw [a₆.mem, a₅.mem, a₄.mem, a₃.mem, m₂, m₁])
-  refine wp_storeS (h₆.crt.scratch.ea (d := winOff) (by simp only [winOff]; omega))
-    (h₆.crt.scratch.write (d := winOff) (by simp only [winOff]; omega)) fun u₇ m₇ => WP.block_nil ?_
+  refine wp_storeS (h₆.scratch.ea (d := winOff) (by simp only [winOff]; omega))
+    (h₆.scratch.write (d := winOff) (by simp only [winOff]; omega)) fun u₇ m₇ => WP.block_nil ?_
   have mem₆ : u₆.mem = s.mem := by rw [a₆.mem, a₅.mem, a₄.mem, a₃.mem, m₂, m₁]
   have W₇ : Outside base winOff 4 s.mem u₇.mem := by
     rw [m₇.mem, ← mem₆]; exact writeW32_outside _ _ _ (by simp only [winOff]; omega)

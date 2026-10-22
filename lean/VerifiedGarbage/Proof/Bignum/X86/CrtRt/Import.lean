@@ -17,6 +17,8 @@ argument's bytes.
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.Crt (componentValue componentArguments)
@@ -25,7 +27,7 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- A wide slot's change keeps the other wide slots. -/
-theorem wide_keep (h : In base bytes len args s) {a b n k : Nat} (hb : b ≤ 19) (hab : a ≠ b)
+theorem wide_keep (h : RIn base bytes len args s) {a b n k : Nat} (hb : b ≤ 19) (hab : a ≠ b)
     (hn : n ≤ st len .wide) (hk : 4 * k ≤ st len .wide) {m m' : Mem}
     (O : VG.Proof.Mont.Outside base (lo len (.slot .wide a)) n m m') :
     val32 m' base (lo len (.slot .wide b)) k = val32 m base (lo len (.slot .wide b)) k := by
@@ -43,7 +45,7 @@ theorem wide_keep (h : In base bytes len args s) {a b n k : Nat} (hb : b ≤ 19)
     rw [Nat.succ_mul] at this; exact .inl (by omega)
 
 /-- A component's bytes into the wide slot `j`. -/
-theorem loadComp_ok (h : In base bytes len args s) {j : Nat} (hj : j ≤ 19) {n : Cnt} (N : CntOk n)
+theorem loadComp_ok (h : RIn base bytes len args s) {j : Nat} (hj : j ≤ 19) {n : Cnt} (N : CntOk n)
     (hn : cb len n ≤ st len .wide) (hlen : len ≤ cb len n) {i : Nat} (hi : i ∈ componentArguments) :
     WP isa (load (.slot .wide j) n i (i + 1)) s fun t =>
       val32 t.mem base (lo len (.slot .wide j)) (cw len n) = componentValue s.mem args i ∧
@@ -62,7 +64,7 @@ theorem loadComp_ok (h : In base bytes len args s) {j : Nat} (hj : j ≤ 19) {n 
 abbrev imR (len : Nat) : List (Nat × Nat) := [(lo len (.slot .wide 9), 7 * st len .wide)]
 
 /-- The key's components read into the wide slots 9 to 15. -/
-theorem importComponents_ok (h : In base bytes len args s) :
+theorem importComponents_ok (h : RIn base bytes len args s) :
     WP isa importComponents s fun u =>
       VG.Proof.Mont.Outside base (lo len (.slot .wide 9)) (7 * st len .wide) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide 9)) (2 * cwc len .wide) = componentValue s.mem args 2 ∧

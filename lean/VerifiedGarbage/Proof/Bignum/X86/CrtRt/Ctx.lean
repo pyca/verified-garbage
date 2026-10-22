@@ -15,12 +15,14 @@ context `c`, and `-M⁻¹ mod 2³²` in the header. A multiplication keeps it
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
-structure CtxOk (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (c : Ctx) (M : Nat) (s : State) :
+structure CtxOk (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (c : Ctx) (M : Nat) (s : State) :
     Prop where
-  inp : In base bytes len args s
+  inp : In Ex base bytes len args s
   mod : sv s.mem base len c 0 = M
   gt : 1 < M
   odd : M % 2 = 1
@@ -30,15 +32,15 @@ section
 variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {M : Nat}
 
 /-- `R = 2^(8 Bc)` is prime to `M`. -/
-theorem CtxOk.coprime (C : CtxOk base bytes len args c M s) : Nat.Coprime (2 ^ (8 * bc len c)) M :=
+theorem CtxOk.coprime (C : CtxOk Ex base bytes len args c M s) : Nat.Coprime (2 ^ (8 * bc len c)) M :=
   VG.Proof.Bignum.coprime_pow2 C.odd _
 
-theorem CtxOk.keepF (C : CtxOk base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
+theorem CtxOk.keepF (C : CtxOk Ex base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
     (di : .edi ∉ regs) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
     (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
-    (h0 : ∀ p ∈ ws, numBase + bc len c ≤ p.1) : CtxOk base bytes len args c M t := by
+    (h0 : ∀ p ∈ ws, numBase + bc len c ≤ p.1) : CtxOk Ex base bytes len args c M t := by
   have h := C.inp
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f0 := h.slot_fit c (j := 0) (by decide)
   have bw := bc_eq_cwc len c
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
@@ -46,20 +48,20 @@ theorem CtxOk.keepF (C : CtxOk base bytes len args c M s) {regs : List Reg} (K :
   refine ⟨h.keepF K di sp F hfit, ?_, C.gt, C.odd, ?_⟩
   · have hm := C.mod
     simp only [sv, z0] at hm ⊢
-    rw [frameR_val32 F h.crt.room nw (by omega) (fun p hp => .inl (by have := h0 p hp; omega)) hfit]
+    rw [frameR_val32 F h.room nw (by omega) (fun p hp => .inl (by have := h0 p hp; omega)) hfit]
     exact hm
-  · rw [← w32_val32_one, frameR_val32 F h.crt.room nw (by simp only [invOff, numBase] at *; omega)
+  · rw [← w32_val32_one, frameR_val32 F h.room nw (by simp only [invOff, numBase] at *; omega)
       (fun p hp => .inl (by have := h0 p hp; simp only [invOff, numBase] at *; omega)) hfit, w32_val32_one]
     exact C.inv
 
 /-- The same for ranges that may also lie in the header past its first word. -/
-theorem CtxOk.keepF2 (C : CtxOk base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
+theorem CtxOk.keepF2 (C : CtxOk Ex base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
     (di : .edi ∉ regs) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
     (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
     (h0 : ∀ p ∈ ws, numBase + bc len c ≤ p.1 ∨ (4 ≤ p.1 ∧ p.1 + p.2 ≤ numBase)) :
-    CtxOk base bytes len args c M t := by
+    CtxOk Ex base bytes len args c M t := by
   have h := C.inp
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f0 := h.slot_fit c (j := 0) (by decide)
   have bw := bc_eq_cwc len c
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
@@ -69,12 +71,12 @@ theorem CtxOk.keepF2 (C : CtxOk base bytes len args c M s) {regs : List Reg} (K 
   refine ⟨h.keepF K di sp F hfit, ?_, C.gt, C.odd, ?_⟩
   · have hm := C.mod
     simp only [sv, z0] at hm ⊢
-    rw [frameR_val32 F h.crt.room nw (by omega) (fun p hp => by
+    rw [frameR_val32 F h.room nw (by omega) (fun p hp => by
       rcases h0 p hp with e | e
       · exact .inl (by omega)
       · exact .inr (by omega)) hfit]
     exact hm
-  · rw [← w32_val32_one, frameR_val32 F h.crt.room nw (by omega)
+  · rw [← w32_val32_one, frameR_val32 F h.room nw (by omega)
       (fun p hp => .inl (by rcases h0 p hp with e | e <;> omega)) hfit, w32_val32_one]
     exact C.inv
 
@@ -82,10 +84,10 @@ theorem CtxOk.keepF2 (C : CtxOk base bytes len args c M s) {regs : List Reg} (K 
 abbrev mulR (len : Nat) (c : Ctx) (o : Nat) : List (Nat × Nat) :=
   [(lo len (.slot c o), bc len c), (lo len (.slot c 1), 3 * bc len c + 56)]
 
-theorem cmul_ok (C : CtxOk base bytes len args c M s) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a)
+theorem cmul_ok (C : CtxOk Ex base bytes len args c M s) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a)
     (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8) (hB : sv s.mem base len c b < M) :
     WP isa (mul c o a b) s fun t =>
-      CtxOk base bytes len args c M t ∧ Keeps [.eax, .ecx, .edx] s t ∧
+      CtxOk Ex base bytes len args c M t ∧ Keeps [.eax, .ecx, .edx] s t ∧
       Frame (frameR base (s.gpr .esp) (mulR len c o)) s.mem t.mem ∧
       sv t.mem base len c o < M ∧
       sv t.mem base len c o * 2 ^ (8 * bc len c) % M = sv s.mem base len c a * sv s.mem base len c b % M := by
@@ -117,9 +119,9 @@ theorem cmul_ok (C : CtxOk base bytes len args c M s) {o a b : Nat} (ho3 : 3 ≤
       rcases hp with rfl | rfl <;> dsimp only <;> omega), Ks, F', L, V⟩
 
 /-- The context holds after register changes but `edi` and `esp`. -/
-theorem CtxOk.regs (C : CtxOk base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
+theorem CtxOk.regs (C : CtxOk Ex base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
     (m : t.mem = s.mem) (di : .edi ∉ regs := by decide) (sp : .esp ∉ regs := by decide) :
-    CtxOk base bytes len args c M t :=
+    CtxOk Ex base bytes len args c M t :=
   ⟨C.inp.regs K m di sp, by rw [sv, m]; exact C.mod, C.gt, C.odd, by rw [m]; exact C.inv⟩
 
 end

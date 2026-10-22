@@ -19,6 +19,8 @@ below its modulus) from the same `esp` (`mul_relCT`).
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.RtCall
 open VG.Proof.Bignum.X86.PublicRt (Both relCT_both argByte_alloc calleeOf calleeOf_eq rtPub_of rtPre_of argAt_alloc)
@@ -51,7 +53,7 @@ theorem τA_wf {s : State} (A : ArgsOk s) : VG.X86.Taint.Wf τA s :=
 section
 variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-theorem agreeA {s₁ s₂ : State} (h₁ : In base bytes len args s₁) (h₂ : In base bytes len args s₂)
+theorem agreeA {s₁ s₂ : State} (h₁ : In Ex base bytes len args s₁) (h₂ : In Ex base bytes len args s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) : VG.X86.Taint.Agree τA s₁ s₂ := by
   have f₁ := A₁.1
   have f₂ := A₂.1
@@ -66,9 +68,9 @@ theorem agreeA {s₁ s₂ : State} (h₁ : In base bytes len args s₁) (h₂ : 
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (show arg s₁ _ = arg s₂ _ from
-      (h₁.crt.stack _ (by omega)).value.trans (h₂.crt.stack _ (by omega)).value.symm)
+      (h₁.stack _ (by omega)).value.trans (h₂.stack _ (by omega)).value.symm)
 
-theorem agreeAs {s₁ s₂ : State} (h₁ : In base bytes len args s₁) (h₂ : In base bytes len args s₂)
+theorem agreeAs {s₁ s₂ : State} (h₁ : In Ex base bytes len args s₁) (h₂ : In Ex base bytes len args s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) (si : s₁.gpr .esi = s₂.gpr .esi) :
     VG.X86.Taint.Agree τAs s₁ s₂ := by
   have G := agreeA h₁ h₂ A₁ A₂ sp
@@ -99,7 +101,7 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
     subst hp
     simp only [allocFrame_wr, allocFrame_esp, List.getElem?_cons_zero, addr, BitVec.add_zero]
 
-theorem agreeF {s₁ s₂ : State} (h₁ : In base bytes len args s₁) (h₂ : In base bytes len args s₂)
+theorem agreeF {s₁ s₂ : State} (h₁ : In Ex base bytes len args s₁) (h₂ : In Ex base bytes len args s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) (low : 36 ≤ (s₁.gpr .esp).toNat) :
     VG.X86.Taint.Agree τF (allocFrame 36 s₁) (allocFrame 36 s₂) := by
   have G := agreeA h₁ h₂ A₁ A₂ sp
@@ -118,11 +120,11 @@ theorem agreeF {s₁ s₂ : State} (h₁ : In base bytes len args s₁) (h₂ : 
     rwa [show VG.X86.Taint.depth τA.stk = 0 from rfl, Nat.zero_add] at this
 
 /-- What a run of `sized` keeps: the inputs, the arguments apart and `esp`. -/
-def Run (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s : State) : Prop :=
-  In base bytes len args s ∧ ArgsOk s ∧ s.gpr .esp = sp
+def Run (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s : State) : Prop :=
+  In Ex base bytes len args s ∧ ArgsOk s ∧ s.gpr .esp = sp
 
-theorem Run.agree {sp : BitVec 32} {s t : State} (R₁ : Run base bytes len args sp s)
-    (R₂ : Run base bytes len args sp t) : VG.X86.Taint.Agree τA s t :=
+theorem Run.agree {sp : BitVec 32} {s t : State} (R₁ : Run Ex base bytes len args sp s)
+    (R₂ : Run Ex base bytes len args sp t) : VG.X86.Taint.Agree τA s t :=
   agreeA R₁.1 R₂.1 R₁.2.1 R₂.2.1 (R₁.2.2.trans R₂.2.2.symm)
 
 theorem taint_both {τ : VG.X86.Taint.T} {P F : State → Prop} {c : Prog isa}
@@ -132,9 +134,9 @@ theorem taint_both {τ : VG.X86.Taint.T} {P F : State → Prop} {c : Prog isa}
   relCT_both (RelCT.taint (A := taint) τ (fun s t h => hag s t h.1 h.2) hT) hw
 
 /-- What a multiplication by slot `b` of the context `c` needs of a run. -/
-def MulIn (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (b : Nat)
+def MulIn (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (b : Nat)
     (s : State) : Prop :=
-  (∃ M, CtxOk base bytes len args c M s ∧ sv s.mem base len c b < M) ∧ ArgsOk s ∧ s.gpr .esp = sp
+  (∃ M, CtxOk Ex base bytes len args c M s ∧ sv s.mem base len c b < M) ∧ ArgsOk s ∧ s.gpr .esp = sp
 
 /-- The state of the call: the callee's precondition, its arguments and the regions it is given. -/
 def CallOk (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (o a b : Nat)
@@ -146,15 +148,15 @@ def CallOk (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitV
     (⟨(g.gpr .esp).setWidth 64, 36⟩ : Region) ∈ g.wr ∧ (⟨base, bytes⟩ : Region) ∈ g.wr
 
 theorem mulArgs_call {sp : BitVec 32} {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a)
-    (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8) {s : State} (I : MulIn base bytes len args sp c b s) :
+    (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8) {s : State} (I : MulIn Ex base bytes len args sp c b s) :
     WP isa (.block (mulArgs c o a b)) (allocFrame 36 s) (CallOk base bytes len args sp c o a b) := by
   obtain ⟨⟨M, C, hB⟩, -, hsp⟩ := I
   have h := C.inp
-  have R := h.crt.room
+  have R := h.room
   have low := R.low
   have hsp' := (s.gpr .esp).isLt
-  have nwr := h.crt.scratch.nowrap
-  have top := h.crt.top
+  have nwr := h.scratch.nowrap
+  have top := h.top
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
   have hm := C.mod
@@ -175,24 +177,24 @@ theorem mulArgs_call {sp : BitVec 32} {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (h
   have edi : s.gpr .edi = BitVec.ofNat 32 base.toNat := by
     rw [← h.edi_eq]; apply BitVec.eq_of_toNat_eq
     rw [h.hbase, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [← h.hbase]; exact (args 16).isLt)]
-  refine ⟨callee_abi h.crt.scratch h.hbytes R (h.offs c ho3 ho ha3 ha hb3 hb) gEsp hFg hread
+  refine ⟨callee_abi h.scratch h.hbytes R (h.offs c ho3 ho ha3 ha hb3 hb) gEsp hFg hread
     (by rw [cw, hm]; exact C.inv) (by rw [cw, hm]; exact hB), by rw [gEsp, hsp], fun i hi => ?_, ?_, ?_⟩
   · rw [callee_arg (base := base) (bytes := bytes) low gEsp hread hi, edi]
   · rw [Kg.2.2, allocFrame_wr, gEsp]; exact List.mem_cons_self ..
-  · rw [Kg.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.crt.scratch.wr
+  · rw [Kg.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.scratch.wr
 
 theorem mul_relCT (sp : BitVec 32) {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a)
     (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8)
     (hT : (VG.Taint.check taint τF (.block (mulArgs c o a b)) (.block [])).isSome = true) :
-    RelCT isa (Both (MulIn base bytes len args sp c b)) (CrtRt.mul c o a b) (fun _ _ => True) := by
+    RelCT isa (Both (MulIn Ex base bytes len args sp c b)) (CrtRt.mul c o a b) (fun _ _ => True) := by
   unfold CrtRt.mul
   refine RelCT.frameAlloc (R := fun _ _ => True) ?_
-  have blk := (RelCT.taint (A := taint) (P := fun f₁ f₂ => ∃ s₁ s₂, Both (MulIn base bytes len args sp c b) s₁ s₂ ∧
+  have blk := (RelCT.taint (A := taint) (P := fun f₁ f₂ => ∃ s₁ s₂, Both (MulIn Ex base bytes len args sp c b) s₁ s₂ ∧
       f₁ = allocFrame 36 s₁ ∧ f₂ = allocFrame 36 s₂) τF (fun _ _ ⟨s₁, s₂, ⟨I₁, I₂⟩, q₁, q₂⟩ => by
         obtain ⟨⟨M₁, C₁, -⟩, A₁, e₁⟩ := I₁
         obtain ⟨⟨M₂, C₂, -⟩, A₂, e₂⟩ := I₂
         subst q₁ q₂
-        exact agreeF C₁.inp C₂.inp A₁ A₂ (e₁.trans e₂.symm) (by have := C₁.inp.crt.room.low; omega)) hT).wp
+        exact agreeF C₁.inp C₂.inp A₁ A₂ (e₁.trans e₂.symm) (by have := C₁.inp.room.low; omega)) hT).wp
     (F₁ := CallOk base bytes len args sp c o a b) (F₂ := CallOk base bytes len args sp c o a b)
     (fun _ _ ⟨s₁, s₂, ⟨I₁, I₂⟩, q₁, q₂⟩ => by
       subst q₁ q₂
@@ -223,7 +225,7 @@ theorem mul_relCT (sp : BitVec 32) {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (ho :
 theorem mul_both (sp : BitVec 32) {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a)
     (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8)
     (hT : (VG.Taint.check taint τF (.block (mulArgs c o a b)) (.block [])).isSome = true)
-    {P F : State → Prop} (hP : ∀ s, P s → MulIn base bytes len args sp c b s)
+    {P F : State → Prop} (hP : ∀ s, P s → MulIn Ex base bytes len args sp c b s)
     (hw : ∀ s, P s → WP isa (CrtRt.mul c o a b) s F) : RelCT isa (Both P) (CrtRt.mul c o a b) (Both F) :=
   relCT_both ((mul_relCT sp ho3 ho ha3 ha hb3 hb hT).mono (fun _ _ h => ⟨hP _ h.1, hP _ h.2⟩) fun _ _ h => h) hw
 

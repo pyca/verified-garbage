@@ -18,45 +18,47 @@ the taint analysis, each step's product related by `mul_relCT`.
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (Both)
 
 /-- A run of a power: the context's modulus `M`, the slots `ks` and the table's first `E` entries below
 it, the arguments apart and `esp`. -/
-def WSt (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
+def WSt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
     (E : Nat) (s : State) : Prop :=
-  ∃ M, CtxOk base bytes len args c M s ∧ (∀ j ∈ ks, sv s.mem base len c j < M) ∧
+  ∃ M, CtxOk Ex base bytes len args c M s ∧ (∀ j ∈ ks, sv s.mem base len c j < M) ∧
     (∀ j < E, val32 s.mem base (te len c j) (cwc len c) < M) ∧ ArgsOk s ∧ s.gpr .esp = sp
 
 section
 variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {sp : BitVec 32}
 
-theorem WSt.agree {ks ks' : List Nat} {E E' : Nat} (W₁ : WSt base bytes len args sp c ks E s)
-    (W₂ : WSt base bytes len args sp c ks' E' t) : VG.X86.Taint.Agree τA s t := by
+theorem WSt.agree {ks ks' : List Nat} {E E' : Nat} (W₁ : WSt Ex base bytes len args sp c ks E s)
+    (W₂ : WSt Ex base bytes len args sp c ks' E' t) : VG.X86.Taint.Agree τA s t := by
   obtain ⟨_, C₁, -, -, A₁, e₁⟩ := W₁
   obtain ⟨_, C₂, -, -, A₂, e₂⟩ := W₂
   exact agreeA C₁.inp C₂.inp A₁ A₂ (e₁.trans e₂.symm)
 
-theorem WSt.agreeS {ks ks' : List Nat} {E E' : Nat} (W₁ : WSt base bytes len args sp c ks E s)
-    (W₂ : WSt base bytes len args sp c ks' E' t) {x : Nat} (p₁ : PtrAt s base .esi x) (p₂ : PtrAt t base .esi x) :
+theorem WSt.agreeS {ks ks' : List Nat} {E E' : Nat} (W₁ : WSt Ex base bytes len args sp c ks E s)
+    (W₂ : WSt Ex base bytes len args sp c ks' E' t) {x : Nat} (p₁ : PtrAt s base .esi x) (p₂ : PtrAt t base .esi x) :
     VG.X86.Taint.Agree τAs s t := by
   obtain ⟨_, C₁, -, -, A₁, e₁⟩ := W₁
   obtain ⟨_, C₂, -, -, A₂, e₂⟩ := W₂
   exact agreeAs C₁.inp C₂.inp A₁ A₂ (e₁.trans e₂.symm) (BitVec.eq_of_toNat_eq (p₁.trans p₂.symm))
 
-theorem WSt.mulIn {ks : List Nat} {E : Nat} (W : WSt base bytes len args sp c ks E s) {b : Nat} (hb : b ∈ ks) :
-    MulIn base bytes len args sp c b s :=
+theorem WSt.mulIn {ks : List Nat} {E : Nat} (W : WSt Ex base bytes len args sp c ks E s) {b : Nat} (hb : b ∈ ks) :
+    MulIn Ex base bytes len args sp c b s :=
   let ⟨M, C, Hk, _, A, e⟩ := W
   ⟨⟨M, C, Hk b hb⟩, A, e⟩
 
-theorem WSt.mono {ks ks' : List Nat} {E E' : Nat} (W : WSt base bytes len args sp c ks E s)
-    (hks : ∀ j ∈ ks', j ∈ ks := by decide) (hE : E' ≤ E := by decide) : WSt base bytes len args sp c ks' E' s :=
+theorem WSt.mono {ks ks' : List Nat} {E E' : Nat} (W : WSt Ex base bytes len args sp c ks E s)
+    (hks : ∀ j ∈ ks', j ∈ ks := by decide) (hE : E' ≤ E := by decide) : WSt Ex base bytes len args sp c ks' E' s :=
   let ⟨M, C, Hk, He, A, e⟩ := W
   ⟨M, C, fun j hj => Hk j (hks j hj), fun j hj => He j (by omega), A, e⟩
 
 /-- A multiplication into slot `o` of the context keeps the table. -/
-theorem mulR_te (h : In base bytes len args s) {m m' : Mem} {o : Nat}
+theorem mulR_te (h : In Ex base bytes len args s) {m m' : Mem} {o : Nat}
     (F : Frame (frameR base sp (mulR len c o)) m m') (R : CallRoom sp base bytes) (ho : o ≤ 8) {j : Nat}
     (hj : j < 16) : val32 m' base (te len c j) (cwc len c) = val32 m base (te len c j) (cwc len c) := by
   have T := h.table_fit c
@@ -78,14 +80,14 @@ theorem mulR_te (h : In base bytes len args s) {m m' : Mem} {o : Nat}
     have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
     have estw : st len .wide = 2 * bc len .wide + 32 := rfl
     omega
-  refine frameR_val32 F R h.crt.scratch.nowrap (by omega) ?_ ?_ <;>
+  refine frameR_val32 F R h.scratch.nowrap (by omega) ?_ ?_ <;>
     intro p hp <;> simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp <;>
     rcases hp with rfl | rfl <;> dsimp only <;> omega
 
 theorem mul_wst {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8)
     {ks ks' : List Nat} {E : Nat} (hbk : b ∈ ks) (hE : E ≤ 16)
-    (hks : ∀ j ∈ ks', j = o ∨ (j ∈ ks ∧ 3 ≤ j ∧ j ≤ 8)) (W : WSt base bytes len args sp c ks E s) :
-    WP isa (CrtRt.mul c o a b) s fun u => WSt base bytes len args sp c ks' E u ∧ Keeps [.eax, .ecx, .edx] s u := by
+    (hks : ∀ j ∈ ks', j = o ∨ (j ∈ ks ∧ 3 ≤ j ∧ j ≤ 8)) (W : WSt Ex base bytes len args sp c ks E s) :
+    WP isa (CrtRt.mul c o a b) s fun u => WSt Ex base bytes len args sp c ks' E u ∧ Keeps [.eax, .ecx, .edx] s u := by
   obtain ⟨M, C, Hk, He, A, sp₀⟩ := W
   refine WP.mono (cmul_ok C ho3 ho ha3 ha hb3 hb (Hk b hbk)) fun u ⟨Cu, K, F, L, _⟩ =>
     ⟨⟨M, Cu, fun j hj => ?_, fun j hj => ?_, A.keep K, (K.1 _ (by decide)).trans sp₀⟩, K⟩
@@ -93,8 +95,8 @@ theorem mul_wst {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha
     · subst e; exact L
     · rcases hks j hj with e' | ⟨hj', j3, j8⟩
       · exact absurd e' e
-      · rw [mulR_sv C.inp F C.inp.crt.room ho3 ho j3 j8 e]; exact Hk j hj'
-  · rw [mulR_te C.inp F C.inp.crt.room ho (by omega)]; exact He j hj
+      · rw [mulR_sv C.inp F C.inp.room ho3 ho j3 j8 e]; exact Hk j hj'
+  · rw [mulR_te C.inp F C.inp.room ho (by omega)]; exact He j hj
 
 /-- A multiplication's relation, from the runs' `WSt`. -/
 theorem mul_wst_relCT {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8) (hb3 : 3 ≤ b)
@@ -102,8 +104,8 @@ theorem mul_wst_relCT {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ 
     {ks ks' : List Nat} {E : Nat} (hbk : b ∈ ks) (hE : E ≤ 16)
     (hks : ∀ j ∈ ks', j = o ∨ (j ∈ ks ∧ 3 ≤ j ∧ j ≤ 8)) {X X' : State → Prop}
     (hX : ∀ s u, X s → Keeps [.eax, .ecx, .edx] s u → X' u) :
-    RelCT isa (Both fun s => WSt base bytes len args sp c ks E s ∧ X s) (CrtRt.mul c o a b)
-      (Both fun u => WSt base bytes len args sp c ks' E u ∧ X' u) :=
+    RelCT isa (Both fun s => WSt Ex base bytes len args sp c ks E s ∧ X s) (CrtRt.mul c o a b)
+      (Both fun u => WSt Ex base bytes len args sp c ks' E u ∧ X' u) :=
   mul_both sp ho3 ho ha3 ha hb3 hb hT (fun _ h => h.1.mulIn hbk)
     fun _ h => WP.mono (mul_wst ho3 ho ha3 ha hb3 hb hbk hE hks h.1) fun _ ⟨W, K⟩ => ⟨W, hX _ _ h.2 K⟩
 
@@ -111,8 +113,8 @@ theorem mul_wst_relCT0 {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤
     (hb : b ≤ 8) (hT : (VG.Taint.check taint τF (.block (mulArgs c o a b)) (.block [])).isSome = true)
     {ks ks' : List Nat} {E : Nat} (hbk : b ∈ ks) (hE : E ≤ 16)
     (hks : ∀ j ∈ ks', j = o ∨ (j ∈ ks ∧ 3 ≤ j ∧ j ≤ 8)) :
-    RelCT isa (Both (WSt base bytes len args sp c ks E)) (CrtRt.mul c o a b)
-      (Both (WSt base bytes len args sp c ks' E)) :=
+    RelCT isa (Both (WSt Ex base bytes len args sp c ks E)) (CrtRt.mul c o a b)
+      (Both (WSt Ex base bytes len args sp c ks' E)) :=
   mul_both sp ho3 ho ha3 ha hb3 hb hT (fun _ h => h.mulIn hbk)
     fun _ h => WP.mono (mul_wst ho3 ho ha3 ha hb3 hb hbk hE hks h) fun _ hu => hu.1
 
@@ -127,14 +129,14 @@ def tableTail (c : Ctx) : Prog isa :=
 
 theorem tableStep_eq (c : Ctx) : tableStep c = .seq (CrtRt.mul c 7 7 5) (tableTail c) := rfl
 
-theorem tableTail_ok (h : In base bytes len args s) {i : Nat} (hi2 : 2 ≤ i) (hi : i < 16)
+theorem tableTail_ok (h : In Ex base bytes len args s) {i : Nat} (hi2 : 2 ≤ i) (hi : i < 16)
     (p : PtrAt s base .esi (te len c i)) :
     WP isa (tableTail c) s fun u =>
       Outside base (te len c i) (bc len c) s.mem u.mem ∧
       val32 u.mem base (te len c i) (cwc len c) = sv s.mem base len c 7 ∧
       PtrAt u base .esi (te len c (i + 1)) ∧ u.zf = some (decide (i + 1 = 16)) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have nw' := h.crt.scratch.nowrap
+  have nw' := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
   have bw := bc_eq_cwc len c
@@ -202,12 +204,12 @@ theorem tableTail_ok (h : In base bytes len args s) {i : Nat} (hi2 : 2 ≤ i) (h
   · intro e; rw [e]
 
 /-- A table step's run: entries up to `i` and slots 3, 5 and 6 below the modulus, `esi` at entry `i`. -/
-abbrev TSt (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
+abbrev TSt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
     (i : Nat) (s : State) : Prop :=
-  WSt base bytes len args sp c ks i s ∧ PtrAt s base .esi (te len c i)
+  WSt Ex base bytes len args sp c ks i s ∧ PtrAt s base .esi (te len c i)
 
-theorem tableTail_wst {i : Nat} (hi2 : 2 ≤ i) (hi : i < 16) (W : TSt base bytes len args sp c [3, 5, 6, 7] i s) :
-    WP isa (tableTail c) s fun u => TSt base bytes len args sp c [3, 5, 6] (i + 1) u ∧
+theorem tableTail_wst {i : Nat} (hi2 : 2 ≤ i) (hi : i < 16) (W : TSt Ex base bytes len args sp c [3, 5, 6, 7] i s) :
+    WP isa (tableTail c) s fun u => TSt Ex base bytes len args sp c [3, 5, 6] (i + 1) u ∧
       u.zf = some (decide (i + 1 = 16)) := by
   obtain ⟨⟨M, C, Hk, He, A, sp₀⟩, p⟩ := W
   have h := C.inp
@@ -254,8 +256,8 @@ theorem tableTail_wst {i : Nat} (hi2 : 2 ≤ i) (hi : i < 16) (W : TSt base byte
 theorem tableStep_relCT (hT : (VG.Taint.check taint τF (.block (mulArgs c 7 7 5)) (.block [])).isSome = true)
     (hT' : (VG.Taint.check taint τAs (tableTail c) (VG.Taint.hintOf taint τAs (tableTail c))).isSome = true)
     {i : Nat} (hi2 : 2 ≤ i) (hi : i < 16) :
-    RelCT isa (Both (TSt base bytes len args sp c [3, 5, 6] i)) (tableStep c)
-      (Both fun u => TSt base bytes len args sp c [3, 5, 6] (i + 1) u ∧ u.zf = some (decide (i + 1 = 16))) := by
+    RelCT isa (Both (TSt Ex base bytes len args sp c [3, 5, 6] i)) (tableStep c)
+      (Both fun u => TSt Ex base bytes len args sp c [3, 5, 6] (i + 1) u ∧ u.zf = some (decide (i + 1 = 16))) := by
   rw [tableStep_eq]
   refine VG.RelCT.seq (mul_wst_relCT (X := fun s => PtrAt s base .esi (te len c i))
     (X' := fun s => PtrAt s base .esi (te len c i)) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -273,11 +275,11 @@ def tableSetup (c : Ctx) : List (Prog isa) :=
 
 theorem buildTable_eq (c : Ctx) : buildTable c = Prog.chain (tableSetup c) (.loop (tableStep c) .ne) := rfl
 
-theorem tableSetup_wst (W : WSt base bytes len args sp c [3, 5, 6] 0 s) :
-    WP isa (Prog.chain (tableSetup c) (.block [])) s (TSt base bytes len args sp c [3, 5, 6] 2) := by
+theorem tableSetup_wst (W : WSt Ex base bytes len args sp c [3, 5, 6] 0 s) :
+    WP isa (Prog.chain (tableSetup c) (.block [])) s (TSt Ex base bytes len args sp c [3, 5, 6] 2) := by
   obtain ⟨M, C, Hk, -, A, sp₀⟩ := W
   have h := C.inp
-  have nw := h.crt.scratch.nowrap
+  have nw := h.scratch.nowrap
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
   have bw := bc_eq_cwc len c
@@ -318,7 +320,7 @@ theorem tableSetup_wst (W : WSt base bytes len args sp c [3, 5, 6] 0 s) :
   · have j3 : 3 ≤ j := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; omega
     have j8 : j ≤ 8 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; omega
     have j7 : j ≠ 7 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; omega
-    rw [tabR_sv h F h.crt.room j3 j8 j7]; exact Hk j hj
+    rw [tabR_sv h F h.room j3 j8 j7]; exact Hk j hj
   · rw [m₄]
     rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
     · rw [O₃.val32 (.inr (by omega)) (by omega), O₂.val32 (.inl (by omega)) (by omega), V₁]; exact Hk 6 (by decide)
@@ -329,12 +331,12 @@ theorem buildTable_relCT (hT : (VG.Taint.check taint τF (.block (mulArgs c 7 7 
     (hT' : (VG.Taint.check taint τAs (tableTail c) (VG.Taint.hintOf taint τAs (tableTail c))).isSome = true)
     (hS : (VG.Taint.check taint τA (Prog.chain (tableSetup c) (.block []))
       (VG.Taint.hintOf taint τA (Prog.chain (tableSetup c) (.block [])))).isSome = true) :
-    RelCT isa (Both (WSt base bytes len args sp c [3, 5, 6] 0)) (buildTable c)
-      (Both (TSt base bytes len args sp c [3, 5, 6] 16)) := by
+    RelCT isa (Both (WSt Ex base bytes len args sp c [3, 5, 6] 0)) (buildTable c)
+      (Both (TSt Ex base bytes len args sp c [3, 5, 6] 16)) := by
   rw [buildTable_eq]
   refine VG.RelCT.chain (VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hS fun _ W => tableSetup_wst W)
     ?_)
-  exact relCT_countLoop (I := fun j => TSt base bytes len args sp c [3, 5, 6] (j + 2)) (N := 14) (by decide)
+  exact relCT_countLoop (I := fun j => TSt Ex base bytes len args sp c [3, 5, 6] (j + 2)) (N := 14) (by decide)
     fun j hj => tableStep_relCT hT hT' (by omega) (by omega)
 
 end

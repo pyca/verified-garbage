@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 namespace VG.Proof.Bignum.X86.CrtRt
 
+variable {Ex : List Region → List Region → Prop}
+
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.RtCall
 open VG.Proof.Bignum.X86.PublicRt (argAt_alloc)
@@ -40,7 +42,7 @@ theorem mulBody_noSp (c : Ctx) (o a b : Nat) :
 
 /-- The callee's offsets for slots `o`, `a` and `b` (3 to 8) of a context. -/
 theorem In.offs {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : In base bytes len args s) (c : Ctx) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8)
+    (h : In Ex base bytes len args s) (c : Ctx) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8)
     (hb3 : 3 ≤ b) (hb : b ≤ 8) :
     Offs bytes (bc len c / 8) numBase invOff (lo len (.slot c 1)) (lo len (.slot c o)) (lo len (.slot c a))
       (lo len (.slot c b)) := by
@@ -63,7 +65,7 @@ theorem In.offs {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     simp only [lo, scratchBytes, VG.Spec.Rsa.MontMul.Apart, invOff, hb8] <;> omega
 
 theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : In base bytes len args s) (c : Ctx) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8)
+    (h : In Ex base bytes len args s) (c : Ctx) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8)
     (hb3 : 3 ≤ b) (hb : b ≤ 8)
     (hinv : (val32 s.mem base numBase (cwc len c) * w32 s.mem base invOff + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base (lo len (.slot c b)) (cwc len c) < val32 s.mem base numBase (cwc len c)) :
@@ -75,8 +77,8 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
       val32 t.mem base (lo len (.slot c o)) (cwc len c) * 2 ^ (8 * bc len c) % val32 s.mem base numBase (cwc len c) =
         val32 s.mem base (lo len (.slot c a)) (cwc len c) * val32 s.mem base (lo len (.slot c b)) (cwc len c) %
           val32 s.mem base numBase (cwc len c) := by
-  have low := h.crt.room.low
-  have top := h.crt.top
+  have low := h.room.low
+  have top := h.top
   have e8 := bc_dvd len c
   have hb8 : 8 * (bc len c / 8) = bc len c := by omega
   have sb : scratchBytes (bc len c / 8) = 3 * bc len c + 56 := by simp only [scratchBytes]; omega
@@ -84,7 +86,7 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have fEspN : ((allocFrame 36 s).gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by
     rw [fEsp, VG.X86.sub_toNat (by omega)]
-  have C := call_ok (is := mulArgs c o a b) h.crt.scratch h.hbytes h.crt.room (h.offs c ho3 ho ha3 ha hb3 hb)
+  have C := call_ok (is := mulArgs c o a b) h.scratch h.hbytes h.room (h.offs c ho3 ho ha3 ha hb3 hb)
     (by rw [cwc_eq]; exact hinv) (by rw [cwc_eq]; exact hB) (mulBody_noSp c o a b)
     (by
       have := mulArgs_ok (f := allocFrame 36 s) (len := len) (c := c) (o := o) (a := a) (b := b)
