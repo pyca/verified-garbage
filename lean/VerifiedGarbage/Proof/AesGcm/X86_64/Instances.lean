@@ -75,7 +75,7 @@ theorem StitchName.okP : (n : StitchName) →
 with their proof, if they read the powers of the hash subkey from it. -/
 def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
   p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, false, false, false, p.name.encP, p.name.decP,
-    p.name.okP, p.name.okP, q.enc, q.dec, q.enc, q.dec⟩
+    p.name.okP, Proof.Gcm.X86_64.Stitch.StitchOkSmall.of16 _ _ _, q.enc, q.dec, q.enc, q.dec⟩
 
 /-- The out-of-place loops named `n` interleave counter mode and GHASH
 correctly. -/
@@ -119,11 +119,10 @@ theorem StitchName.okR : (n : StitchName) →
 /-- The loops `fullBody` runs on fewer than 16 blocks (from 1 on if
 `smallR`). -/
 theorem StitchName.okRS : (n : StitchName) →
-    Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encRS n.decRS
-      (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16) (if n.smallR then 1 else 16)
-      (if n.smallR then 1 else 16)
-  | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok
-  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
+    Proof.Gcm.X86_64.Stitch.StitchOkSmall Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encRS n.decRS
+      (if n.smallR then 1 else 16) (if n.smallR then 1 else 16)
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok.small
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok.small
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchRS_ok
 
 /-- The static and constant-time facts of `encRS` and `decRS`: `encR`'s and

@@ -38,7 +38,7 @@ open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok constImm_ok ldrev_ok hInvImm_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (preg setupG lows highs setupC setup ordE ordD enc dec)
-open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
+open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk StitchOkSmall kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
   in_sub in_sub_int in_rdwr ghash16)
 open VG.Proof.Aes.X86_64.AesNi (one blockAt_frame)
 open VG.Proof.Gcm.X86_64 (revMask)
@@ -666,30 +666,28 @@ theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
 theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 1 :=
   ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
 
-/-- Encryption with a prepared key context, of any number of blocks from 1 on. -/
-theorem encRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) :
+/-- Encryption with a prepared key context, of 1 to 15 blocks. -/
+theorem encRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) (h16 : nb s₀ < 16) :
     WP isa encRS s₀ (EPost s₀) := by
   refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
-    have hw := orSmall_ok (hR.rax ht) (fun hlt s' hR' => smallE_ok hp (smallLaw hp hP) hR' h1 hlt)
-      (fun h16 s' hR' => encRest_ok (hp.base.ofLe h16) hR' hP)
+    have hw := smallE_ok hp (smallLaw hp hP) (hR.rax ht) h1 h16
     rw [hn] at hw
     exact hw
 
-/-- Decryption with a prepared key context, of any number of blocks from 1 on. -/
-theorem decRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) :
+/-- Decryption with a prepared key context, of 1 to 15 blocks. -/
+theorem decRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) (h16 : nb s₀ < 16) :
     WP isa decRS s₀ (DPost s₀) := by
   refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
-    have hw := orSmall_ok (hR.rax ht) (fun hlt s' hR' => smallD_ok hp (smallLaw hp hP) hR' h1 hlt)
-      (fun h16 s' hR' => decRest_ok (hp.base.ofLe h16) (rem := true) (fun h => Bool.noConfusion h) hR' hP)
+    have hw := smallD_ok hp (smallLaw hp hP) (hR.rax ht) h1 h16
     rw [hn] at hw
     exact hw
 
-theorem stitchRS_ok : StitchOkM CtxMode.prepared encRS decRS 1 1 1 1 :=
-  ⟨fun _ hp _ => encRS_ok hp.toPrepared hp.base.nb16, fun _ hp _ => decRS_ok hp.toPrepared hp.base.nb16⟩
+theorem stitchRS_ok : StitchOkSmall CtxMode.prepared encRS decRS 1 1 :=
+  ⟨fun _ hp h16 => encRS_ok hp.toPrepared hp.base.nb16 h16, fun _ hp h16 => decRS_ok hp.toPrepared hp.base.nb16 h16⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

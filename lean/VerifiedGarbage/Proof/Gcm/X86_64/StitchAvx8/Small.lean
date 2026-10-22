@@ -36,7 +36,7 @@ proves).
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.X86_64.RegUpd
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (ksTail highs smallSetup small orSmall prepCounter prepOff tailEnd finish)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (ksTail highs smallSetup small prepCounter prepOff tailEnd finish)
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Spec.Gcm (Block inc32 blockAt ghashFrom)
 open VG.Proof.Gcm.X86_64 (revMask blockAt_eq)
@@ -609,30 +609,5 @@ theorem smallD_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrep
     rw [hy]
     rfl
   · simpa only [Post, ↓reduceIte] using ht.1
-
-/-! ## The branch -/
-
-/-- `cmp r9, 16`. -/
-theorem cmpSixteen_ok (s : State) :
-    WP isa (.block [.alu .cmp .r9 (.imm 16)]) s fun s' =>
-      s'.cf = some (decide ((s.gpr .r9).toNat < 16)) ∧ RaxStep s s' := by
-  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 := by decide
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags, isa,
-    e16, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨rfl, fun _ _ => rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩
-
-/-- After the setup, `orSmall`: fewer than 16 blocks by `small`, the others
-by `rest`. -/
-theorem orSmall_ok {s₀ s : State} {P : Nat → Block} {Q : State → Prop} {nr' : Nat} {dec : Bool}
-    {rest : Prog isa} (hR : Ready s₀ P s)
-    (hsmall : nb s₀ < 16 → ∀ s', Ready s₀ P s' → WP isa (small nr' dec) s' Q)
-    (hbig : 16 ≤ nb s₀ → ∀ s', Ready s₀ P s' → WP isa rest s' Q) :
-    WP isa (orSmall nr' dec rest) s Q := by
-  refine WP.seq (WP.mono (cmpSixteen_ok s) fun s' ⟨cf, hst⟩ => ?_)
-  rw [hR.remaining] at cf
-  refine WP.ite (decide (nb s₀ < 16)) (by simp only [eval, cf]) (fun h => ?_) (fun h => ?_)
-  · exact hsmall (by simpa using h) s' (hR.rax hst)
-  · exact hbig (by simp at h; omega) s' (hR.rax hst)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8

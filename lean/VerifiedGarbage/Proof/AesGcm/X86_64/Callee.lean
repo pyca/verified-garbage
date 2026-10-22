@@ -429,8 +429,7 @@ structure StitchCode (M : CtxMode) (aligned : Bool := false) where
   encS : Prog isa
   decS : Prog isa
   ok : StitchOkM M enc dec (if full then 1 else 16) (if fullD then 1 else 16)
-  okS : StitchOkM M encS decS (if full then 1 else 16) (if fullD then 1 else 16) (if small then 1 else 16)
-    (if smallD then 1 else 16)
+  okS : Gcm.X86_64.Stitch.StitchOkSmall M encS decS (if small then 1 else 16) (if smallD then 1 else 16)
   encP : Piece enc aligned full
   decP : Piece dec aligned fullD
   encPS : Piece encS aligned full
@@ -478,8 +477,8 @@ open Gcm.X86_64.Stitch (CtxMode) in
 /-- The loops `st`, for a key context of kind `M` (they read only its first
 256 bytes). -/
 def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
-  ⟨st.enc, st.dec, st.full, false, false, false, false, st.enc, st.dec, st.okM M, st.okM M, st.encP, st.decP,
-    st.encP, st.decP⟩
+  ⟨st.enc, st.dec, st.full, false, false, false, false, st.enc, st.dec, st.okM M,
+    Gcm.X86_64.Stitch.StitchOkSmall.of16 M st.enc st.dec, st.encP, st.decP, st.encP, st.decP⟩
 
 namespace StitchImpl
 

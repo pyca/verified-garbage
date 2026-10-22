@@ -54,7 +54,7 @@ or fewer by `rest` and the calls (`hsmall`). -/
 theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {pieceS : Option (Prog isa)}
     {Post : State → State → Prop} {Done : State → Prop}
     (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
-    (hpieceS : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ (if small then 1 else 16) →
+    (hpieceS : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ (if small then 1 else 16) → Gcm.X86_64.Stitch.nb s₃ < 16 →
       WP isa (pieceS.getD piece) s₃ (Post s₃))
     (hpost : ∀ s₃ s₄, s₃.gpr .r9 = BitVec.ofNat 64 (n s) → (∀ r ∈ argRegs, s₃.gpr r = s.gpr r) →
       (∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r) →
@@ -66,7 +66,8 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
     WP isa (fullBody piece first second aligned small small4 pieceS dec) s₁ Done := by
   have hmin : 1 ≤ smallMin small4 dec := by cases small4 <;> cases dec <;> decide
   -- The piece, from a state with `s₁`'s registers and memory.
-  have pc : ∀ (p : Prog isa) (lo : Nat), (∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ lo → WP isa p s₃ (Post s₃)) →
+  have pc : ∀ (p : Prog isa) (lo : Nat),
+      (∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ lo → Gcm.X86_64.Stitch.nb s₃ = n s → WP isa p s₃ (Post s₃)) →
       lo ≤ n s → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem →
       s₂.rd = s₁.rd → s₂.wr = s₁.wr → WP isa (stitchPart p aligned true) s₂ Done := by
     intro p lo hpiece hlo s₂ g₂ m₂ rd₂ wr₂
@@ -86,7 +87,10 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
     have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₂, hwr]
     have hk₄ : Kept s 0 s₄.mem := by rw [m₄, m₂]; exact hk
     have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄, m₂]; exact hf
-    exact WP.mono (hpiece s₄ (spreM_of hp hlo (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄)) fun s₅ hP =>
+    have hn9 : Gcm.X86_64.Stitch.nb s₄ = n s := by
+      show (s₄.gpr .r9).toNat = _
+      rw [h9]; exact toNat_ofNat_of_lt (s.gpr .r9).isLt
+    exact WP.mono (hpiece s₄ (spreM_of hp hlo (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄) hn9) fun s₅ hP =>
       hpost s₄ s₅ h9 ga gc g11 rd₄' wr₄' hk₄ hf₄ hP
   -- The calls, from a state with `s₁`'s registers and memory.
   have cl : n s < 16 → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
@@ -103,8 +107,9 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
         fun s₃ ⟨g₃, m₃, rd₃, wr₃, cf₃⟩ => ?_)
       refine WP.ite (decide (n s < smallMin small4 dec)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
       · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
-      · exact pc _ _ hpieceS (by simp at h0 ⊢; omega) s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
-  · exact pc _ _ hpiece (by simp at h; omega) s₂ g₂ m₂ rd₂ wr₂
+      · exact pc _ _ (fun s₃ h3 hn => hpieceS s₃ h3 (hn ▸ hlt)) (by simp at h0 ⊢; omega) s₃ (g₃.trans g₂)
+          (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
+  · exact pc _ _ (fun s₃ h3 _ => hpiece s₃ h3) (by simp at h; omega) s₂ g₂ m₂ rd₂ wr₂
 
 /-- After a loop that encrypts all the blocks: the blocks hashed are those
 written. -/

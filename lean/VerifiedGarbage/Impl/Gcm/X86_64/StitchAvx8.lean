@@ -340,10 +340,6 @@ def small (nr : Nat) (dec : Bool) : Prog isa :=
               StitchZH.remNext)) .ne)
             (.block (tailEnd nr (.alu .add .r11 (.imm 384)) ++ finish))))))
 
-/-- `small` below 16 blocks, `rest` from 16 on. -/
-def orSmall (nr : Nat) (dec : Bool) (rest : Prog isa) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .b (small nr dec) rest)
-
 /-- The setup `su`, which does not depend on the key size, then the complete
 loop for the key size, chosen once from the public AES round count `nr`: the
 setup leaves the end of the key schedule, `rdi + 16 nr`, in `r10`. -/
@@ -354,19 +350,16 @@ def dispatch (su : List Instr) (a b c : Prog isa) : Prog isa :=
 def enc : Prog isa := dispatch setup (encRest 10) (encRest 12) (encRest 14)
 /-- Encryption with a prepared key context: the powers loaded from it. -/
 def encR : Prog isa := dispatch setupR (encRest 10) (encRest 12) (encRest 14)
-/-- Encryption with a prepared key context, of any number of blocks from 1
-on: `encR`, and `small` below 16 blocks. `Blocks.fullBody` runs it for
-fewer than 16 blocks only, after `encR`'s code, which keeps the addresses of
-`encR`'s loops wherever it runs from 16 blocks on. -/
-def encRS : Prog isa :=
-  dispatch setupR (orSmall 10 false (encRest 10)) (orSmall 12 false (encRest 12)) (orSmall 14 false (encRest 14))
+/-- Encryption with a prepared key context of 1 to 15 blocks, `small`, which
+`Blocks.fullBody` runs on fewer than 16 blocks only, after `encR`'s code,
+which keeps the addresses of `encR`'s loops wherever it runs from 16 blocks
+on. -/
+def encRS : Prog isa := dispatch setupR (small 10 false) (small 12 false) (small 14 false)
 def dec : Prog isa := dispatch setup (decRest 10 false) (decRest 12 false) (decRest 14 false)
 /-- Decryption with a prepared key context: the powers loaded from it. -/
 def decR : Prog isa := dispatch setupR (decRest 10 true) (decRest 12 true) (decRest 14 true)
-/-- Decryption with a prepared key context, of any number of blocks from 1
-on: `decR`, and `small` below 16 blocks (see `encRS`). -/
-def decRS : Prog isa := dispatch setupR (orSmall 10 true (decRest 10 true)) (orSmall 12 true (decRest 12 true))
-  (orSmall 14 true (decRest 14 true))
+/-- Decryption with a prepared key context of 1 to 15 blocks (see `encRS`). -/
+def decRS : Prog isa := dispatch setupR (small 10 true) (small 12 true) (small 14 true)
 
 /-! ## Out of place
 

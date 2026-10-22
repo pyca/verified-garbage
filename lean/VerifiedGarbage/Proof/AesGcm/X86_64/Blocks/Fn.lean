@@ -65,7 +65,7 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
         WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
     | true =>
       exact fullBody_ok hp (aligned := aligned) (small := small) (small4 := small4) (pieceS := some encS) (fun _ h => ok.1 _ h (Nat.mod_one _))
-        (fun _ h => okS.1 _ h (Nat.mod_one _))
+        (fun _ h hl => okS.1 _ h hl)
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           encDone_of hp (stitchEFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
         (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega) M) fun st' M' => tl _ st' M'))
@@ -88,7 +88,7 @@ theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
         WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
     | true =>
       exact fullBody_ok hp (aligned := aligned) (small := smallD) (small4 := small4) (pieceS := some decS) (dec := true) (fun _ h => ok.2 _ h (Nat.mod_one _))
-        (fun _ h => okS.2 _ h (Nat.mod_one _))
+        (fun _ h hl => okS.2 _ h hl)
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           decDone_of hp (stitchDFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
         (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega) M) fun st' M' => tl _ st' M'))
