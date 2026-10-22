@@ -82,7 +82,7 @@ theorem shared_ok {o a b : Nat} (h : (o, a, b) ∈ shared) :
     Operand o ∧ Operand a ∧ Operand b ∧ MmUse o a b := by
   simp only [shared, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
   rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-    ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
+    ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
   · unfold Operand MmUse; decide
 
 theorem fn_implies (ix : Indices) (h : (ix.o, ix.a, ix.b) ∈ shared) :
@@ -100,7 +100,7 @@ theorem fn_implies (ix : Indices) (h : (ix.o, ix.a, ix.b) ∈ shared) :
     obtain ⟨o, a, b⟩ := ix
     simp only [shared, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
+      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
     sig_implies_sat [Spec.Rsa.MontMulFixed.mulContract, Spec.Rsa.MontMulFixed.sig, fnContract, abi, argRegs,
       Operand] [satState] using satState
 
