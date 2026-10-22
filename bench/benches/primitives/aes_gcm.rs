@@ -509,11 +509,14 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests), shorter than the
     /// messages the library computes its keys' powers for; records of 112 to
     /// 240 bytes with their content type, fewer than 16 blocks, which AES-NI
-    /// and AVX encrypt outside the 8-block loop; and a 2048-byte record,
-    /// where VAES's `seal` changes paths.
-    const TLS_SIZES: [usize; 25] = [
-        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 1023, 1024, 1025, 2047, 4095, 4096,
-        4097, 9999, 10000, 10001, 16383, 16384, 16385,
+    /// and AVX encrypt outside the 8-block loop; a 2048-byte record, where
+    /// VAES's `seal` changes paths; and records of 288, 416, 432 and 448
+    /// bytes of text, whose short `open` copies its text into the blocks it
+    /// hashes at an offset of 1 to 3 blocks into a group of four (all but
+    /// 432, which starts a group).
+    const TLS_SIZES: [usize; 29] = [
+        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
+        1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
     ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
