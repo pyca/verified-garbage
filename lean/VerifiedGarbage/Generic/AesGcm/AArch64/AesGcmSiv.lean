@@ -94,13 +94,14 @@ def note (v : GcmImpl) : String :=
 /-- How the functions take the whole chunks of 128 bytes of the data, with the
 interleaved loops. -/
 def stitchNote (v : GcmImpl) (isSeal : Bool) : List String :=
-  if v.stitch then ["With the interleaved loops, it " ++
+  let e3 := if v.stitch then "with `eor3` (which needs `FEAT_SHA3`)" else "with `eor`"
+  if v.gh.pmull then ["With the interleaved loops, it " ++
     (if isSeal then "computes POLYVAL of the first 128 ⌊n / 128⌋ bytes of the data eight blocks at a time, \
-      from a table of the powers of the key, with PMULL and the reduction with `eor3` (which needs `FEAT_SHA3`), \
-      and then encrypts them eight blocks at a time with the AES instructions"
+      from a table of the powers of the key, with PMULL and the sums and the reduction " ++ e3 ++ ", and then \
+      encrypts them eight blocks at a time with the AES instructions"
     else "decrypts the first 128 ⌊n / 128⌋ bytes of the data and computes POLYVAL of what it decrypted eight \
-      blocks at a time, in one loop that interleaves the AES rounds with the PMULL products and their reduction \
-      (with `eor3`, which needs `FEAT_SHA3`), from a table of the powers of the key") ++
+      blocks at a time, in one loop that interleaves the AES rounds with the PMULL products, their sums and \
+      their reduction, " ++ e3 ++ ", from a table of the powers of the key") ++
     "; the rest of the data goes as without them."] else []
 
 /-- The artifacts calling the implementations `v`. -/

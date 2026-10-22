@@ -45,8 +45,8 @@ theorem forall_app {l₁ l₂ : List Region} {P : Region → Prop} (h₁ : ∀ r
 
 /-! ## `seal` -/
 
-theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre s) :
-    WP isa (Impl.AesGcmSiv.AArch64.Stitch.«seal» v.callees) s fun s' =>
+theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre s) :
+    WP isa (Impl.AesGcmSiv.AArch64.Stitch.«seal» e3 v.callees) s fun s' =>
       GprAbi s s' ∧ Proof.AesGcmSiv.AArch64.sealAArch64.post s s' := by
   obtain ⟨L, P, hTw, hA⟩ := args_of_seal h
   have hRb := L.rounds_le
@@ -55,11 +55,11 @@ theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) (hti : TagInputEq) {s 
   -- The keys.
   refine WP.seq (WP.mono (Proof.AesGcmSiv.AArch64.WP.rdwr (keys_ok v L E₁)) fun s₂ ⟨Ky, _, kw⟩ => ?_)
   -- POLYVAL and the tag input.
-  refine WP.seq (WP.mono (polyval_ok hP gh v L Ky.env Ky.hkey Ky.acc) fun s₃ Po => ?_)
+  refine WP.seq (WP.mono (polyval_ok hP gh e3 v L Ky.env Ky.hkey Ky.acc) fun s₃ Po => ?_)
   -- The tag.
   refine WP.seq (WP.mono (tag_ok v L Po.env (o := 0) (by decide)) fun s₄ Tg => ?_)
   -- Counter mode.
-  refine WP.seq (WP.mono (crypt_ok v L Tg.env) fun s₅ Cr => ?_)
+  refine WP.seq (WP.mono (crypt_ok e3 v L Tg.env) fun s₅ Cr => ?_)
   -- The copy of the tag, and `restore`.
   have sl₅ : TagSlot (prmOf s) s₅.mem :=
     (((sl₁.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame (by disj_tac L)).frame
@@ -132,13 +132,13 @@ structure OpenMid (p : Prm) (t t' : State) : Prop where
     tagInputG (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16) (bytesAt t.mem p.N 12) (bytesAt t'.mem p.D p.n)
       (bytesAt t.mem p.A p.al)
 
-theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
     (hG : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 64) =
       hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 80) = 0) {k : Prog isa} {Q : State → Prop}
     (hk : ∀ t', OpenMid p t t' → WP isa k t' Q) :
     WP isa (.seq (.block [Impl.AesGcm.AArch64.mov .x27 .x23, Impl.AesGcm.AArch64.mov .x28 .x24])
-      (.seq (Impl.AesGcmSiv.AArch64.absorb v.callees) (.seq (Impl.AesGcmSiv.AArch64.Stitch.openData v.callees)
+      (.seq (Impl.AesGcmSiv.AArch64.absorb v.callees) (.seq (Impl.AesGcmSiv.AArch64.Stitch.openData e3 v.callees)
       (.seq (Impl.AesGcmSiv.AArch64.lens v.callees) (.seq (.block Impl.AesGcmSiv.AArch64.tagIn) k))))) t Q := by
   have hn := L.n_lt
   -- The additional data.
@@ -149,7 +149,7 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay 
   simp only [mem_write] at P₂
   have P₂' := P₂.of_eq (t := t) rfl rfl rfl
   -- The data.
-  refine WP.seq (WP.mono (openData_ok hP gh v L P₂.env) fun t₄ O => ?_)
+  refine WP.seq (WP.mono (openData_ok hP gh e3 v L P₂.env) fun t₄ O => ?_)
   have hH : ∀ r ∈ cryR p.W p.D p.n ++ absorbR p.W, (⟨p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r :=
     forall_app (by disj_tac L) (absorbR_H L)
   have sA : ∀ r ∈ absorbR p.W, ∃ r' ∈ cryR p.W p.D p.n ++ absorbR p.W, Region.Sub r r' :=
@@ -195,8 +195,8 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay 
         (by simp [Spec.GcmSiv.le64])]
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre s) :
-    WP isa (Impl.AesGcmSiv.AArch64.Stitch.«open» v.callees) s fun s' =>
+theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre s) :
+    WP isa (Impl.AesGcmSiv.AArch64.Stitch.«open» e3 v.callees) s fun s' =>
       GprAbi s s' ∧ Proof.AesGcmSiv.AArch64.openAArch64.post s s' := by
   obtain ⟨L, P, hA⟩ := args_of_open h
   have hRb := L.rounds_le
@@ -221,7 +221,7 @@ theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) (hti : TagInputEq) {s 
   -- The keys.
   refine WP.seq (WP.mono (keys_ok v L E₁) fun s₂ Ky => ?_)
   -- The additional data, then the data decrypted and absorbed, the lengths and the tag input.
-  refine openMid_ok hP gh v L Ky.env Ky.hkey Ky.acc fun s₄ Md => ?_
+  refine openMid_ok hP gh e3 v L Ky.env Ky.hkey Ky.acc fun s₄ Md => ?_
   have dMd : ∀ {R' : Region}, (∀ r ∈ cryR (prmOf s).W (prmOf s).D (prmOf s).n, R'.Disjoint r) →
       (∀ r ∈ polyR (prmOf s).W, R'.Disjoint r) → ∀ r ∈ cryR (prmOf s).W (prmOf s).D (prmOf s).n ++ polyR (prmOf s).W,
         R'.Disjoint r := fun h₁ h₂ => forall_app h₁ h₂

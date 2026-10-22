@@ -133,11 +133,11 @@ theorem cryptHeadC_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     by rw [hm₁]; exact headMem_ctr _⟩
 
 /-- `crypt`, in two runs with the same public arguments. -/
-theorem crypt_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) (crypt v.callees) TT := by
+theorem crypt_rel (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
+    RelCT isa (Eq2 σ₁ σ₂) (crypt e3 v.callees) TT := by
   refine rel_seq (rel_env E₁ E₂ [] (by simp) cryptHead_check) (cryptHeadC_ok L E₁) (cryptHeadC_ok L E₂)
     fun u₁ u₂ ⟨F₁, C₁⟩ ⟨F₂, C₂⟩ => ?_
-  refine rel_seq (rel_env F₁ F₂ [] (by simp) ctrB_check) (ctrBatches_ok L F₁ C₁) (ctrBatches_ok L F₂ C₂)
+  refine rel_seq (rel_env F₁ F₂ [] (by simp) (ctrB_check e3)) (ctrBatches_ok e3 L F₁ C₁) (ctrBatches_ok e3 L F₂ C₂)
     fun w₁ w₂ B₁ B₂ => ?_
   exact cryptRest_rel v L B₁.env B₂.env
 
@@ -161,9 +161,10 @@ theorem restAbs_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E
     dW (hc G₁) (hc G₂) x27₁ x27₂ x28₁ x28₂
 
 /-- `polyData`, in two runs with the same public arguments. -/
-theorem polyData_rel (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
-    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (polyData v.callees) TT :=
-  rel_seq (rel_env E₁ E₂ [] (by simp) polyB_check) (polyBatches_ok hP gh L E₁) (polyBatches_ok hP gh L E₂)
+theorem polyData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
+    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (polyData e3 v.callees) TT :=
+  rel_seq (rel_env E₁ E₂ [] (by simp) (polyB_check e3)) (polyBatches_ok hP gh e3 L E₁)
+    (polyBatches_ok hP gh e3 L E₂)
     fun _ _ A₁ A₂ => restAbs_rel v L A₁.env A₂.env
 
 /-- The lengths, in two runs with the same public arguments. -/
@@ -184,8 +185,8 @@ theorem lens_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁
     fun f₁ f₂ ⟨K₁, x27₁, x28₁⟩ ⟨K₂, x27₂, x28₂⟩ => chunkB_rel v L K₁ K₂ x27₁ x27₂ x28₁ x28₂
 
 /-- `polyval`, in two runs with the same public arguments. -/
-theorem polyval_rel (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
-    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (polyval v.callees) TT := by
+theorem polyval_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
+    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (polyval e3 v.callees) TT := by
   refine rel_seq (rel_env E₁ E₂ [] (by simp) polyA_check) (mov2_ok E₁ (a := .x23) (b := .x24) (by decide) (by decide))
     (mov2_ok E₂ (a := .x23) (b := .x24) (by decide) (by decide)) fun a₁ a₂ ⟨G₁, a27₁, a28₁, _, rd₁, wr₁⟩
       ⟨G₂, a27₂, a28₂, _, rd₂, wr₂⟩ => ?_
@@ -195,8 +196,8 @@ theorem polyval_rel (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay
   refine rel_seq (absorb_rel v L G₁ G₂ L.al_lt L.aw L.a_w hc₁ hc₂ a27₁ a27₂ a28₁ a28₂)
     (absorb_ok v L G₁ hc₁ L.al_lt L.aw L.a_w a27₁ a28₁) (absorb_ok v L G₂ hc₂ L.al_lt L.aw L.a_w a27₂ a28₂)
     fun b₁ b₂ B₁ B₂ => ?_
-  refine rel_seq (polyData_rel hP gh v L B₁.env B₂.env) (polyData_ok hP gh v L B₁.env)
-    (polyData_ok hP gh v L B₂.env) fun d₁ d₂ D₁ D₂ => ?_
+  refine rel_seq (polyData_rel hP gh e3 v L B₁.env B₂.env) (polyData_ok hP gh e3 v L B₁.env)
+    (polyData_ok hP gh e3 v L B₂.env) fun d₁ d₂ D₁ D₂ => ?_
   exact rel_seq (lens_rel v L D₁.env D₂.env) (lens_ok v L D₁.env) (lens_ok v L D₂.env) fun e₁ e₂ F₁ F₂ =>
     rel_env F₁.env F₂.env [] (by simp) tagIn_check
 
@@ -218,34 +219,34 @@ theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.W p.D
     · exact L.w_w (.inl (by omega)) (by omega) (by decide)
 
 /-- `openData`, in two runs with the same public arguments. -/
-theorem openData_rel (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
-    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (openData v.callees) TT := by
+theorem openData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
+    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (openData e3 v.callees) TT := by
   have wR : ∀ {u w : State} {icb : List Byte}, OBatchPost p (Spec.GcmSiv.ctxCiph u.mem (p.W + BitVec.ofNat 64 240) p.R)
       icb (bytesAt u.mem p.D p.n) u w → WP isa (cryptRest v.callees) w (Env p) := fun B =>
     WP.mono (cryptRest_ok v L B.env (Proof.Cmac.bytesAt_length _ _ _) B.ctr B.data (ciph_cryAbs L B.frame))
       fun _ T => T.env
   refine rel_seq (rel_env E₁ E₂ [] (by simp) cryptHead_check) (cryptHeadC_ok L E₁) (cryptHeadC_ok L E₂)
     fun u₁ u₂ ⟨F₁, C₁⟩ ⟨F₂, C₂⟩ => ?_
-  refine rel_seq (rel_env F₁ F₂ [] (by simp) openB_check) (openBatches_ok hP gh L F₁ C₁)
-    (openBatches_ok hP gh L F₂ C₂) fun w₁ w₂ B₁ B₂ => ?_
+  refine rel_seq (rel_env F₁ F₂ [] (by simp) (openB_check e3)) (openBatches_ok hP gh e3 L F₁ C₁)
+    (openBatches_ok hP gh e3 L F₂ C₂) fun w₁ w₂ B₁ B₂ => ?_
   exact rel_seq (cryptRest_rel v L B₁.env B₂.env) (wR B₁) (wR B₂) fun _ _ G₁ G₂ => restAbs_rel v L G₁ G₂
 
 /-! ## The functions -/
 
-theorem seal_ct (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
+theorem seal_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     ConstantTime isa Proof.AesGcmSiv.AArch64.sealAArch64.pre Proof.AesGcmSiv.AArch64.sealAArch64.pub
-      («seal» v.callees) := by
+      («seal» e3 v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
   obtain ⟨L, P₁, -, hA₁⟩ := args_of_seal h₁
   obtain ⟨-, P₂, -, hA₂⟩ := args_of_seal h₂
   refine rel_seq (entry_rel hp hA₁ hA₂) (entry_ok P₁ hA₁) (entry_pub hp P₂ hA₂)
     fun τ₁ τ₂ ⟨E₁, _, _, S₁, _⟩ ⟨E₂, S₂⟩ => ?_
   refine rel_seq (keys_rel v L E₁ E₂) (keys_ok v L E₁) (keys_ok v L E₂) fun a₁ a₂ K₁ K₂ => ?_
-  refine rel_seq (polyval_rel hP gh v L K₁.env K₂.env) (polyval_ok hP gh v L K₁.env K₁.hkey K₁.acc)
-    (polyval_ok hP gh v L K₂.env K₂.hkey K₂.acc) fun b₁ b₂ P₁ P₂ => ?_
+  refine rel_seq (polyval_rel hP gh e3 v L K₁.env K₂.env) (polyval_ok hP gh e3 v L K₁.env K₁.hkey K₁.acc)
+    (polyval_ok hP gh e3 v L K₂.env K₂.hkey K₂.acc) fun b₁ b₂ P₁ P₂ => ?_
   refine rel_seq (tag_rel v L P₁.env P₂.env (o := 0) (by decide)) (tag_ok v L P₁.env (o := 0) (by decide))
     (tag_ok v L P₂.env (o := 0) (by decide)) fun c₁ c₂ T₁ T₂ => ?_
-  refine rel_seq (crypt_rel v L T₁.env T₂.env) (crypt_ok v L T₁.env) (crypt_ok v L T₂.env)
+  refine rel_seq (crypt_rel e3 v L T₁.env T₂.env) (crypt_ok e3 v L T₁.env) (crypt_ok e3 v L T₂.env)
     fun d₁ d₂ C₁ C₂ => ?_
   have sl : ∀ {τ a b c d : State}, TagSlot (prmOf σ₁) τ.mem → KeysPost (prmOf σ₁) τ a → PolyPost (prmOf σ₁) a b →
       TagPost (prmOf σ₁) 0 b c → CryptPost (prmOf σ₁) c d → TagSlot (prmOf σ₁) d.mem := fun S K P T C =>
@@ -254,9 +255,9 @@ theorem seal_ct (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
   exact rel_ldrT (l := Impl.AesGcmSiv.AArch64.tagOut.tail ++ Impl.AesGcm.AArch64.restore) C₁.env C₂.env
     (sl S₁ K₁ P₁ T₁ C₁) (sl S₂ K₂ P₂ T₂ C₂) sealEnd_check
 
-theorem open_ct (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
+theorem open_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     ConstantTime isa Proof.AesGcmSiv.AArch64.openAArch64.pre Proof.AesGcmSiv.AArch64.openAArch64.pub
-      («open» v.callees) := by
+      («open» e3 v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
   obtain ⟨L, P₁, hA₁⟩ := args_of_open h₁
   obtain ⟨-, P₂, hA₂⟩ := args_of_open h₂
@@ -284,8 +285,8 @@ theorem open_ct (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
     (absorb_ok v L G₁ hc₁ L.al_lt L.aw L.a_w b27₁ b28₁) (absorb_ok v L G₂ hc₂ L.al_lt L.aw L.a_w b27₂ b28₂)
     fun c₁ c₂ B₁ B₂ => ?_
   -- The data, decrypted and absorbed.
-  refine rel_seq (openData_rel hP gh v L B₁.env B₂.env) (openData_ok hP gh v L B₁.env)
-    (openData_ok hP gh v L B₂.env) fun d₁ d₂ O₁ O₂ => ?_
+  refine rel_seq (openData_rel hP gh e3 v L B₁.env B₂.env) (openData_ok hP gh e3 v L B₁.env)
+    (openData_ok hP gh e3 v L B₂.env) fun d₁ d₂ O₁ O₂ => ?_
   -- The lengths and the tag input.
   refine rel_seq (lens_rel v L O₁.env O₂.env) (lens_ok v L O₁.env) (lens_ok v L O₂.env) fun e₁ e₂ D₁ D₂ => ?_
   have wT : ∀ {d : State}, Env (prmOf σ₁) d →

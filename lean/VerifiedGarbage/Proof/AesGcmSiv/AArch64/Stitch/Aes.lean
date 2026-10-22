@@ -138,10 +138,53 @@ theorem rnds_ok {nr o k : Nat} {s₀ : State} (hp : APre nr o k s₀) {x : Nat �
   refine wp_range_flatMap (M := isa) (fun r s' => RI (sch nr s₀) x r s' ∧ Fr [.x12] aesV s₀ s')
     (fun r s₁ hr ⟨e₁, f₁⟩ => rnd_ok hp (by omega) f₁ e₁) n (Nat.le_refl _) s ⟨hI, hf⟩
 
+/-! ## The last round's sums -/
+
+theorem eor2_run (j o : Nat) (s : State)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 16)
+    (ho : o + 16 * j < 65536) (ho' : (o + 16 * j) % 16 = 0) :
+    runBlock isa (.ldrq P .x9 (o + 16 * j) :: xor3 false (breg j) (breg j) P K) s =
+      some ((s.setV P (s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 128)).setV (breg j)
+        (s.v (breg j) ^^^ s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 128 ^^^ s.v K)) := by
+  rw [runBlock_cons, exec_ldrq ⟨ho', ho⟩ hin, runStep_some]
+  simp only [xor3, Bool.false_eq_true, ite_false, runBlock_cons, runStep_some, runBlock_nil, isa, exec,
+    VOp.eval, Option.map_some]
+  rw [setV_v_self, setV_v_of_ne _ _ (breg_ne_P j), setV_v_of_ne _ _ (breg_ne_K j).symm,
+    setV_v_of_ne _ _ (by decide : K ≠ P), setV_v_self, setV_setV]
+
+/-- `Proof.Gcm.AArch64.Stitch.fin8_ok`, with the sums by `xor3 e3`. -/
+theorem fin8x_ok (e3 : Bool) {o : Nat} (ho : o ≤ 128) (s : State)
+    (hin : ∀ j < 8, InRegions (s.rd ++ s.wr) (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 16)
+    (ho16 : o % 16 = 0) :
+    WP isa (.block ((List.range 8).flatMap fun j => .ldrq P .x9 (o + 16 * j) :: xor3 e3 (breg j) (breg j) P K))
+      s fun s' =>
+      (∀ j < 8, s'.v (breg j) = s.v (breg j) ^^^ s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 128 ^^^ s.v K) ∧
+      Fr [] aesV s s' := by
+  cases e3
+  case true => exact fin8_ok ho s hin ho16
+  refine WP.mono (wp_range_flatMap (M := isa) (fun i s' =>
+      (∀ j < i, s'.v (breg j) = s.v (breg j) ^^^ s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 128 ^^^ s.v K) ∧
+      (∀ j, i ≤ j → j < 8 → s'.v (breg j) = s.v (breg j)) ∧ Fr [] aesV s s' ∧ s'.v K = s.v K)
+    (fun i s₁ hi ⟨e₁, u₁, f₁, k₁⟩ => ?_) 8 (Nat.le_refl _) s
+    ⟨fun _ h => absurd h (by omega), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
+    fun s' ⟨e, _, f, _⟩ => ⟨e, f⟩
+  have hin₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x9 + BitVec.ofNat 64 (o + 16 * i)) 16 := by
+    rw [f₁.rd, f₁.wr, f₁.gpr _ (by decide)]; exact hin i hi
+  refine WP.of_runBlock ⟨_, eor2_run i o s₁ hin₁ (by omega) (by omega), ?_⟩
+  have hne : ∀ j, j < 8 → j ≠ i → breg j ≠ breg i := fun j hj hji h => hji (breg_inj j hj i hi h)
+  refine ⟨fun j hj => ?_, fun j hj hj8 => ?_, ?_, ?_⟩
+  · by_cases hji : j = i
+    · subst hji; rw [setV_v_self, u₁ j (Nat.le_refl _) hi, k₁, f₁.mem, f₁.gpr _ (by decide)]
+    · rw [setV_v_of_ne _ _ (hne j (by omega) hji), setV_v_of_ne _ _ (breg_ne_P j)]; exact e₁ j (by omega)
+  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega)), setV_v_of_ne _ _ (breg_ne_P j), u₁ j (by omega) hj8]
+  · refine f₁.trans ⟨fun _ _ => rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+    rw [setV_v_of_ne _ _ fun h => hr (by rw [h]; exact breg_mem i), setV_v_of_ne _ _ fun h => hr (by rw [h]; decide)]
+  · rw [setV_v_of_ne _ _ (breg_ne_K i).symm, setV_v_of_ne _ _ (by decide : K ≠ P), k₁]
+
 /-! ## The part -/
 
-theorem aesPart_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 16 = 0) :
-    WP isa (.block (aesPart nr o)) s (APost nr o k s) := by
+theorem aesPart_ok (e3 : Bool) {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 16 = 0) :
+    WP isa (.block (aesPart e3 nr o)) s (APost nr o k s) := by
   have hR := hp.rounds
   unfold aesPart
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -172,7 +215,7 @@ theorem aesPart_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 1
     rw [rd_setV, wr_setV, gpr_setV, f₃.rd, f₃.wr, g₃, rd_setV, wr_setV, f₂.rd,
       f₂.wr, f₂.gpr _ (by decide)]
     exact hp.data j hj
-  refine WP.mono (fin8_ok hp.o_le _ hin₄ ho16) fun s₄ ⟨e₄, f₄⟩ => ?_
+  refine WP.mono (fin8x_ok e3 hp.o_le _ hin₄ ho16) fun s₄ ⟨e₄, f₄⟩ => ?_
   rw [WP.block_cons_iff]
   refine ⟨_, exec_addImm_w (imm := 8) (by decide), WP.block_nil ?_⟩
   -- The keys, and the last round of each block.
