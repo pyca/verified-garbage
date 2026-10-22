@@ -222,16 +222,17 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
   simp
 
 omit hp in
-/-- `cmp r9, smallMin small4`. -/
-theorem cmpMin_ok (small4 : Bool) {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
-    WP isa (.block [.alu .cmp .r9 (imm (smallMin small4))]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
-      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < smallMin small4)) := by
+/-- `cmp r9, smallMin small4 dec`. -/
+theorem cmpMin_ok (small4 dec : Bool) {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
+    WP isa (.block [.alu .cmp .r9 (imm (smallMin small4 dec))]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < smallMin small4 dec)) := by
   have e2 : BitVec.signExtend 64 (BitVec.ofNat 32 2) = 2 := by decide
   have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 4) = 4 := by decide
+  have e5 : BitVec.signExtend 64 (BitVec.ofNat 32 5) = 5 := by decide
   apply WP.of_runBlock
-  cases small4 <;>
+  cases small4 <;> cases dec <;>
   simp only [smallMin, Bool.false_eq_true, ↓reduceIte, imm, runBlock_cons, runStep_some, runBlock_nil, exec,
-    execAlu, readSrc, arithFlags, State.setFlags, isa, e2, e4, h9, Option.bind_some, Option.some.injEq,
+    execAlu, readSrc, arithFlags, State.setFlags, isa, e2, e4, e5, h9, Option.bind_some, Option.some.injEq,
     exists_eq_left'] <;>
   simp
 

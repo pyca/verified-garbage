@@ -49,9 +49,9 @@ theorem scratch_ok (s₁ : State) :
         rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
 /-- With `full`: at least 16 blocks all by `piece` (or, if `small`, at least
-`smallMin small4` by `pieceS.getD piece`), which leaves `Done` (`hpost`),
+`smallMin small4 dec` by `pieceS.getD piece`), which leaves `Done` (`hpost`),
 or fewer by `rest` and the calls (`hsmall`). -/
-theorem fullBody_ok {small small4 : Bool} {piece first second : Prog isa} {pieceS : Option (Prog isa)}
+theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {pieceS : Option (Prog isa)}
     {Post : State → State → Prop} {Done : State → Prop}
     (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
     (hpieceS : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ (if small then 1 else 16) →
@@ -63,8 +63,8 @@ theorem fullBody_ok {small small4 : Bool} {piece first second : Prog isa} {piece
     (hsmall : n s < 16 → ∀ st, Mid s 0 0 [] st → WP isa (.seq (.block rest) (tail first second)) st Done)
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) (hk : Kept s 0 s₁.mem)
     (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (fullBody piece first second aligned small small4 pieceS) s₁ Done := by
-  have hmin : 1 ≤ smallMin small4 := by cases small4 <;> decide
+    WP isa (fullBody piece first second aligned small small4 pieceS dec) s₁ Done := by
+  have hmin : 1 ≤ smallMin small4 dec := by cases small4 <;> cases dec <;> decide
   -- The piece, from a state with `s₁`'s registers and memory.
   have pc : ∀ (p : Prog isa) (lo : Nat), (∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ lo → WP isa p s₃ (Post s₃)) →
       lo ≤ n s → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem →
@@ -99,9 +99,9 @@ theorem fullBody_ok {small small4 : Bool} {piece first second : Prog isa} {piece
     cases small with
     | false => exact cl hlt s₂ g₂ m₂ rd₂ wr₂
     | true =>
-      refine WP.seq (WP.mono (cmpMin_ok (s := s) small4 (by rw [g₂]; exact hg _ (by decide)))
+      refine WP.seq (WP.mono (cmpMin_ok (s := s) small4 dec (by rw [g₂]; exact hg _ (by decide)))
         fun s₃ ⟨g₃, m₃, rd₃, wr₃, cf₃⟩ => ?_)
-      refine WP.ite (decide (n s < smallMin small4)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
+      refine WP.ite (decide (n s < smallMin small4 dec)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
       · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
       · exact pc _ _ hpieceS (by simp at h0 ⊢; omega) s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
   · exact pc _ _ hpiece (by simp at h; omega) s₂ g₂ m₂ rd₂ wr₂

@@ -424,7 +424,7 @@ structure StitchCode (M : CtxMode) (aligned : Bool := false) where
   small : Bool := false
   smallD : Bool := false
   /-- With `small` (`smallD`), whether the loops take fewer than 16 blocks
-  only from 4 on, not from 2 (`Blocks.smallMin`). -/
+  only from 5 on to encrypt and 4 to decrypt, not from 2 (`Blocks.smallMin`). -/
   small4 : Bool := false
   encS : Prog isa
   decS : Prog isa
@@ -506,12 +506,12 @@ theorem decSmall4_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) 
 /-- A property of `Blocks.blocks` for the loops of `st`, from its three
 shapes: no loops, loops taking the first `16 ⌊n / 16⌋` blocks, and loops
 taking all of them (from 2 on, if `h`). -/
-theorem blocks_cases {α : Type} (st : Option α) (f fs : α → Prog isa) (g h k : α → Bool) (aligned : Bool)
+theorem blocks_cases {α : Type} {dec : Bool} (st : Option α) (f fs : α → Prog isa) (g h k : α → Bool) (aligned : Bool)
     (first second : Prog isa) (P : Prog isa → Prop)
-    (hnone : P (Blocks.blocks none first second aligned))
-    (hpart : ∀ i b c, g i = false → P (Blocks.blocks (some (f i)) first second aligned false b c (some (fs i))))
-    (hfull : ∀ i b c, g i = true → P (Blocks.blocks (some (f i)) first second aligned true b c (some (fs i)))) :
-    P (Blocks.blocks (st.map f) first second aligned (st.any g) (st.any h) (st.any k) (st.map fs)) := by
+    (hnone : P (Blocks.blocks none first second aligned (dec := dec)))
+    (hpart : ∀ i b c, g i = false → P (Blocks.blocks (some (f i)) first second aligned false b c (some (fs i)) dec))
+    (hfull : ∀ i b c, g i = true → P (Blocks.blocks (some (f i)) first second aligned true b c (some (fs i)) dec)) :
+    P (Blocks.blocks (st.map f) first second aligned (st.any g) (st.any h) (st.any k) (st.map fs) dec) := by
   rcases st with _ | i
   · exact hnone
   · cases e : g i

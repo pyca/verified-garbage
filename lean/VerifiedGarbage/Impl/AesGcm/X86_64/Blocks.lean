@@ -97,37 +97,38 @@ def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
   | some piece => .seq (stitchPart piece aligned) (.block rest)
   | none => .block []
 
-/-- The fewest blocks a `piece` that also takes fewer than 16 takes: 2, or 4
-with `small4` (fewer go to `first` and `second`, which cost less for them). -/
-def smallMin (small4 : Bool) : Nat := if small4 then 4 else 2
+/-- The fewest blocks a `piece` that also takes fewer than 16 takes: 2, or,
+with `small4`, 4 to decrypt (`dec`) and 5 to encrypt (fewer go to `first`
+and `second`, which cost less for them). -/
+def smallMin (small4 : Bool) (dec : Bool := false) : Nat := if small4 then (if dec then 4 else 5) else 2
 
 /-- With a `piece` that takes all the blocks: all of them by it if at least
 16, or, if `small`, by `pieceS` (by default `piece`) if at least
-`smallMin small4`, else all of them with `first` and `second`. `pieceS`
+`smallMin small4 dec`, else all of them with `first` and `second`. `pieceS`
 runs only on fewer than 16 blocks, and its code comes after `piece`'s, which
 keeps its addresses whatever `pieceS` is. -/
 def fullBody (piece first second : Prog isa) (aligned : Bool := false) (small : Bool := false)
-    (small4 : Bool := false) (pieceS : Option (Prog isa) := none) : Prog isa :=
+    (small4 : Bool := false) (pieceS : Option (Prog isa) := none) (dec : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (imm 16)])
     (.ite .b
       (if small then
-        .seq (.block [.alu .cmp .r9 (imm (smallMin small4))])
+        .seq (.block [.alu .cmp .r9 (imm (smallMin small4 dec))])
           (.ite .b (.seq (.block rest) (tail first second)) (stitchPart (pieceS.getD piece) aligned true))
       else .seq (.block rest) (tail first second))
       (stitchPart piece aligned true))
 
 /-- After the entry: the blocks by `piece` (all of them if `full`, and by
-`pieceS` from `smallMin small4` on if also `small`), and the rest with
+`pieceS` from `smallMin small4 dec` on if also `small`), and the rest with
 `first` and `second`. -/
 def body (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false)
-    (small : Bool := false) (small4 : Bool := false) (pieceS : Option (Prog isa) := none) : Prog isa :=
+    (small : Bool := false) (small4 : Bool := false) (pieceS : Option (Prog isa) := none) (dec : Bool := false) : Prog isa :=
   match piece, full with
-  | some piece, true => fullBody piece first second aligned small small4 pieceS
+  | some piece, true => fullBody piece first second aligned small small4 pieceS dec
   | piece, _ => .seq (head piece aligned) (tail first second)
 
 def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false)
-    (small : Bool := false) (small4 : Bool := false) (pieceS : Option (Prog isa) := none) : Prog isa :=
-  .seq (.block entry) (body piece first second aligned full small small4 pieceS)
+    (small : Bool := false) (small4 : Bool := false) (pieceS : Option (Prog isa) := none) (dec : Bool := false) : Prog isa :=
+  .seq (.block entry) (body piece first second aligned full small small4 pieceS dec)
 
 /-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any (taking
 all the blocks if `full`, from 1 on if also `small`; see `body`). -/
@@ -139,6 +140,6 @@ def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool :
 all the blocks if `full`, from 1 on if also `small`; see `body`). -/
 def decrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) (small : Bool := false)
     (small4 : Bool := false) (pieceS : Option (Prog isa) := none) : Prog isa :=
-  blocks piece (ghCall gh) (ctrCall ctr) aligned full small small4 pieceS
+  blocks piece (ghCall gh) (ctrCall ctr) aligned full small small4 pieceS true
 
 end VG.Impl.AesGcm.X86_64.Blocks

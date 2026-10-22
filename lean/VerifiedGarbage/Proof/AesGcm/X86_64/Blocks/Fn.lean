@@ -87,7 +87,7 @@ theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
     | false => exact WP.seq (WP.seq (WP.mono (stitchD_ok hp ok h11 hg hk hf hrd hwr) fun st M =>
         WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
     | true =>
-      exact fullBody_ok hp (aligned := aligned) (small := smallD) (small4 := small4) (pieceS := some decS) (fun _ h => ok.2 _ h (Nat.mod_one _))
+      exact fullBody_ok hp (aligned := aligned) (small := smallD) (small4 := small4) (pieceS := some decS) (dec := true) (fun _ h => ok.2 _ h (Nat.mod_one _))
         (fun _ h => okS.2 _ h (Nat.mod_one _))
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           decDone_of hp (stitchDFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
