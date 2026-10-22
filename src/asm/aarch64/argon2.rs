@@ -4637,519 +4637,135 @@ add x7, x0, #0
 lsr x0, x0, #32
 add x15, x0, #0
 movz x4, #0, lsl #0
-movz x5, #0, lsl #0
-lsr x3, x0, #31
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #30
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #29
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #28
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #27
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #26
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #25
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #24
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #23
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #22
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #21
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #20
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #19
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #18
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #17
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #16
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #15
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #14
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #13
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #12
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #11
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #10
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #9
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #8
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #7
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #6
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #5
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #4
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #3
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #2
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #1
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
-lsr x3, x0, #0
-movz x9, #1, lsl #0
-and x3, x3, x9
-add x4, x4, x4
-add x4, x4, x3
-add x6, x4, #0
-sub x4, x4, x1
-lsr x8, x4, #63
-movz x9, #0, lsl #0
-sub x8, x9, x8
-eor x6, x6, x4
-and x6, x6, x8
-eor x4, x4, x6
-add x8, x8, #1
-add x5, x5, x5
-add x5, x5, x8
+lsl x0, x0, #32
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
+extr x4, x4, x0, #63
+lsl x0, x0, #1
+subs x9, x4, x1
+csel x4, x9, x4, hs
 ldr x5, [x19, #0]
 add x8, x5, #0
 orr x8, x8, x22
