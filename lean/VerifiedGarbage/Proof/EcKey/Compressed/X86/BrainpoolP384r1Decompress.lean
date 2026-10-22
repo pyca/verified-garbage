@@ -5,8 +5,15 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
@@ -27,11 +34,15 @@ materialize_shared baseline := code
 
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
+taint_summary mulCodecSum : taint (codecMulT (2 * Spec.BrainpoolP384r1.curve.len + 1))
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp384r1p.k Spec.Weierstrass.Mont.brainpoolp384r1p.m)
+
 theorem ct : ConstantTime isa (decompressContract Spec.BrainpoolP384r1.curve Impl.EcKey.Compressed.rootThreeModFour).pre
     (decompressContract Spec.BrainpoolP384r1.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by
-  apply VG.Taint.constantTime (A := taint) (codecT (2 * Spec.BrainpoolP384r1.curve.len + 1))
-  · exact fun _ _ hs ht hp => codec_agree hs ht hp
-  · taint_decide
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (codecT (2 * Spec.BrainpoolP384r1.curve.len + 1)) code h).isSome = true := by
+    native_taint_decide_sum [mulCodecSum]
+  exact VG.Taint.constantTime (A := taint) (codecT (2 * Spec.BrainpoolP384r1.curve.len + 1))
+    (fun _ _ hs ht hp => codec_agree hs ht hp) hc
 
 theorem sat : ∃ s, (Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyContract abi 28).pre s := by
   have a0 : arg (satState 49 97) 0 = 0x1000 := by decide
