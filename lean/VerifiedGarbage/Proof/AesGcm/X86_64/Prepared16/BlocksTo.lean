@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared16public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
@@ -22,7 +23,7 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args rounds)
 
 theorem blocksToPrepared16_pre : ∀ s, (Spec.Gcm.encryptBlocksToPrepared16Contract X86_64.abi 24).pre s →
-    (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.(CtxMode.preparedN 8)).pre s := by
+    (Proof.AesGcm.encryptBlocksToX86_64M (Gcm.X86_64.Stitch.CtxMode.preparedN 8)).pre s := by
   intro s h
   sig_pre [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,
       Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
@@ -47,7 +48,7 @@ theorem blocksToPrepared16_pre : ∀ s, (Spec.Gcm.encryptBlocksToPrepared16Contr
   sig_close
   all_goals with_reducible assumption
 
-theorem blocksToPrepared16_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.(CtxMode.preparedN 8)).Implies
+theorem blocksToPrepared16_implies : (Proof.AesGcm.encryptBlocksToX86_64M (Gcm.X86_64.Stitch.CtxMode.preparedN 8)).Implies
     (Spec.Gcm.encryptBlocksToPrepared16Contract X86_64.abi 24) := by
   exact { pre := blocksToPrepared16_pre
           post := by sig_implies_post [Spec.Gcm.encryptBlocksToPrepared16Contract, Spec.Gcm.encryptBlocksToPreparedSig, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrepared16Pre,

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Gcm.Prepared16
+
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
@@ -28,7 +29,7 @@ theorem preparedPowers16Repr_of_zero {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, 
     Spec.Gcm.PreparedPowers16Repr m p :=
   Proof.AesGcm.preparedPowers16Repr_congr (m₁ := fun _ => 0) h (preparedPowers16Repr_zero p)
 
-theorem sealPreparedCode_verified {c : Prog isa}
+theorem sealPrepared16Code_verified {c : Prog isa}
     (hc : ∀ s, (Proof.AesGcm.sealX86_64M (CtxMode.preparedN 8)).pre s →
       ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s')
     (hct : ConstantTime isa (Proof.AesGcm.sealX86_64M (CtxMode.preparedN 8)).pre Proof.AesGcm.sealX86_64.pub c) :
@@ -70,9 +71,9 @@ theorem sealPreparedCode_verified {c : Prog isa}
 
 theorem sealPrepared16_verified (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8)) :
     Verified X86_64.target («seal» (v.withBlk B)) (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24) :=
-  sealPreparedCode_verified (sealM_correct v B) (sealM_ct v B)
+  sealPrepared16Code_verified (sealM_correct v B) (sealM_ct v B)
 
-theorem openPreparedCode_verified {c : Prog isa}
+theorem openPrepared16Code_verified {c : Prog isa}
     (hc : ∀ s, (Proof.AesGcm.openX86_64M (CtxMode.preparedN 8)).pre s →
       ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
     (hct : ConstantTime isa (Proof.AesGcm.openX86_64M (CtxMode.preparedN 8)).pre Proof.AesGcm.openX86_64.pub c) :
@@ -126,7 +127,7 @@ theorem openPreparedCode_verified {c : Prog isa}
 
 theorem openPrepared16_verified (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8)) :
     Verified X86_64.target («open» (v.withBlk B)) (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24) :=
-  openPreparedCode_verified (openM_correct v B) (openM_ct v B)
+  openPrepared16Code_verified (openM_correct v B) (openM_ct v B)
 
 theorem streamEncryptPrepared16_verified (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8)) :
     Verified X86_64.target (streamEncrypt (v.withBlk B))
@@ -208,7 +209,7 @@ theorem sealFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.sealPrepared16Contract X86
        · next h => exfalso; bv_omega
        · rfl)
 
-theorem sealPreparedCode_framed {c : Prog isa}
+theorem sealPrepared16Code_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
@@ -224,7 +225,7 @@ theorem sealPrepared16_framed (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8)) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» (v.withBlk B)))
       (Spec.Gcm.sealPrepared16Contract X86_64.abi 2624) :=
-  sealPreparedCode_framed (sealPrepared16_verified v B) (sealM_spSafe v B) (sealM_xdepth v B)
+  sealPrepared16Code_framed (sealPrepared16_verified v B) (sealM_spSafe v B) (sealM_xdepth v B)
 
 theorem openFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.openPrepared16Contract X86_64.abi 2632).pre s := by
   refine ⟨openFrameSatP, ?_⟩
@@ -237,7 +238,7 @@ theorem openFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.openPrepared16Contract X86
     | exact Region.disjoint_of_sep (by decide)
     | exact preparedPowers16Repr_of_zero fun _ _ => rfl
 
-theorem openPreparedCode_framed {c : Prog isa}
+theorem openPrepared16Code_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
@@ -254,7 +255,7 @@ theorem openPrepared16_framed (v : GcmImpl) (B : BlkFn (CtxMode.preparedN 8)) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk B)))
       (Spec.Gcm.openPrepared16Contract X86_64.abi 2632) :=
-  openPreparedCode_framed (openPrepared16_verified v B) (openM_spSafe v B) (openM_xdepth v B)
+  openPrepared16Code_framed (openPrepared16_verified v B) (openM_spSafe v B) (openM_xdepth v B)
 
 theorem streamEncryptFrameSatPrepared16_pre : ∃ s, (Spec.Gcm.streamEncryptPrepared16Contract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩

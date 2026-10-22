@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Gcm.Prepared16
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
@@ -39,7 +40,7 @@ theorem gatherPrePrepared16_of {s : State}
     rk, rn, ra, rdd, rt, rw, ⟨rds, ⟨rl, -⟩, bk, bn, ba, bd, bt, bw, bds, bl, -⟩, ok, on, oa, od, ot, ow, ⟨ods, ol⟩,
     hr, hg, hpw⟩ := h
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, Proof.AesGcm.stkG,
-    Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, (CtxMode.preparedN 8)]
+    Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.preparedN]
   simp only [show (2 * (64 / 8) : Nat) = 16 from rfl] at *
   exact ⟨rd, wr, kd, kt, kw, nd, nt, nw, ad, at_, aw, dds.symm, tds.symm, wds.symm,
     fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, wa, rdd, rt, rw,
