@@ -19,7 +19,7 @@ again, the only register it writes.
 
 With AVX2 the entries are selected 32 bytes at a time (`selEntryY`); without,
 16 bytes at a time with SSE2 (`selEntryX`): the mask of an entry from the
-counter `xmm14` and the broadcast magnitude `xmm13` (`pcmpeqd`), as with
+counter `xmm11` and the broadcast magnitude `xmm13` (`pcmpeqd`), as with
 AVX2, so that no part of the selection needs a general-purpose register but
 `rdx`. Digit `J - 2`'s entry is selected before the loop (`firstOP`), and the
 last addition, digit `0`'s, selects none (`lastO`).
@@ -32,15 +32,16 @@ namespace VG.Impl.Weierstrass.X86_64
 open VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 
 /-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
-apart, with SSE2: the mask of `xmm14 = xmm13` (both broadcasts of a
-doubleword: `m` and the magnitude) in `xmm15`, `xmm14` incremented by
+apart, with SSE2: the mask of `xmm11 = xmm13` (both broadcasts of a
+doubleword: `m` and the magnitude) in `xmm15`, `xmm11` incremented by
 `xmm12` (one in every doubleword), and the entry's `np` 16-byte pieces kept
-in the accumulators under the mask, through `xmm11`. -/
+in the accumulators under the mask, through `xmm14`, as `selEntryAt` keeps
+them. -/
 def selEntryX (st np : Nat) (m : Nat) : List Instr :=
-  [.xop (.bin .movdqa .xmm15 .xmm14), .xop (.bin .pcmpeqd .xmm15 .xmm13), .xop (.bin .paddd .xmm14 .xmm12)] ++
+  [.xop (.bin .movdqa .xmm15 .xmm11), .xop (.bin .pcmpeqd .xmm15 .xmm13), .xop (.bin .paddd .xmm11 .xmm12)] ++
   (List.range np).flatMap fun c =>
-    [.movdquLoad .xmm11 (tblAt (st * (m - 1) + 16 * c)), .xop (.bin .pand .xmm11 .xmm15),
-      .xop (.bin .por (selAcc c) .xmm11)]
+    [.movdquLoad .xmm14 (tblAt (st * (m - 1) + 16 * c)), .xop (.bin .pand .xmm14 .xmm15),
+      .xop (.bin .por (selAcc c) .xmm14)]
 
 namespace JacWinCfg
 
@@ -66,8 +67,8 @@ def selChunkO (i : Nat) : List Instr :=
   (List.range (K.chunkO (i + 1) - K.chunkO i)).flatMap fun e => K.selEntryP (K.chunkO i + e + 1)
 
 /-- The magnitude in `r8` broadcast to `xmm13` (`ymm13` with AVX2), one to
-`xmm12` and the counter `xmm14`, through `rcx`, and the accumulators
-cleared. -/
+`xmm12` and the counter (`ymm14` with AVX2, else `xmm11`), through `rcx`,
+and the accumulators cleared. -/
 def selSetP : List Instr :=
   if K.avx2 then
     [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
@@ -75,7 +76,7 @@ def selSetP : List Instr :=
     (List.range K.np32).map fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))
   else
     [.xop (.movq .xmm13 .r8), .xop (.pshufd .xmm13 .xmm13 0), .mov32 .rcx (.imm 1),
-      .xop (.movq .xmm12 .rcx), .xop (.pshufd .xmm12 .xmm12 0), .xop (.bin .movdqa .xmm14 .xmm12)] ++
+      .xop (.movq .xmm12 .rcx), .xop (.pshufd .xmm12 .xmm12 0), .xop (.bin .movdqa .xmm11 .xmm12)] ++
     (List.range K.np16).map fun c => .xop (.bin .pxor (selAcc c) (selAcc c))
 
 /-- The accumulators stored to `T` (and the upper halves of the `ymm`
