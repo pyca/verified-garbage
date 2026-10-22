@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.X86.Chain
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 
@@ -108,7 +109,7 @@ theorem chainSub_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o <
   simp only [S] at fa fb fo
   unfold VG.Impl.Rsa.X86.KeyRt.chain
   refine WP.seq (WP.mono (chainSetup_ok h ho ha hb extra) fun u ⟨K, m, pa, pb, po, e, c⟩ => ?_)
-  refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.reduceLoop_ok (h.rt.of_keeps K) (N := kk len extra)
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Chain.subLoop_ok (h.rt.of_keeps K) (n := kk len extra)
     (by have := h.kw_pos; simp only [kk]; omega) (by omega) (by omega) (by omega) (arr_order _ _ _ hK)
     (arr_order _ _ _ hK) pa pb po e c) fun t ⟨O, _, V, Kt⟩ => ?_)
   rw [m] at O V
@@ -137,7 +138,7 @@ theorem chainAdd_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o <
   simp only [S] at fa fb fo
   unfold VG.Impl.Rsa.X86.KeyRt.chain
   refine WP.seq (WP.mono (chainSetup_ok h ho ha hb extra) fun u ⟨K, m, pa, pb, po, e, c⟩ => ?_)
-  refine WP.seq (WP.mono (VG.Proof.Bignum.X86.CrtRt.addLoop_ok (h.rt.of_keeps K) (N := kk len extra)
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Chain.addLoop_ok (h.rt.of_keeps K) (n := kk len extra)
     (by have := h.kw_pos; simp only [kk]; omega) (by omega) (by omega) (by omega) (arr_order _ _ _ hK)
     (arr_order _ _ _ hK) pa pb po e c) fun t ⟨O, _, _, V, Kt⟩ => ?_)
   rw [m] at O V
