@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Generation
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Mont.Words
 
 /-! # The search's state words in `scratch`
 

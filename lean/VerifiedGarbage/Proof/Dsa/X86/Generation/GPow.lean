@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.OutsFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.LoadStore
 
 /-! # `g = h^((p − 1)/q) mod p` and its check `g > 1` (A.2.1 steps 4–5) -/
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Hash
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # SHA-1 and SHA-256, with any backend, hash a seed -/
 

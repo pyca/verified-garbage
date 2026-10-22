@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # Two runs at a branch on a state word -/
 

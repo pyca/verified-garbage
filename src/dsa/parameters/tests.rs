@@ -271,7 +271,12 @@ fn backend_combinations() {
     // the hash instructions share feature requirements. Check the complete
     // dispatch table, including those pairs, against emitted feature sets.
     let cases: &[(H1, H256, Generate, Features)] = &[
-        (H1::Scalar, H256::Scalar, vg_dsa_generate_parameters, Features(0)),
+        (
+            H1::Scalar,
+            H256::Scalar,
+            vg_dsa_generate_parameters,
+            Features(0),
+        ),
         (
             H1::Scalar,
             H256::ShaNi,

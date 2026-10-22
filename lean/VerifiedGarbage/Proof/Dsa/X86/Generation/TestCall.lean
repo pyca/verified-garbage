@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # A probable-prime test: its status, and the witnesses it read -/
 

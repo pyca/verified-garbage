@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # Big-endian bytes of `scratch` into arrays of 32-bit words, and back -/
 

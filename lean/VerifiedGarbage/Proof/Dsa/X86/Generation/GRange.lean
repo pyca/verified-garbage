@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.PPart
+import VerifiedGarbage.Proof.Dsa.X86.Generation.PPart
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Spec.Ffdh
 
 /-! # The generator's candidate `h` and its range check (A.2.1 steps 1–3) -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
 import VerifiedGarbage.Proof.Dsa.X86.PowCallTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # Two runs of the generator from the same `p` and `q` leak the same -/
 

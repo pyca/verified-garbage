@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Finish
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Frame
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Finish
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Frame
 public import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Spec.Ffdh
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # The generation contract's precondition at the call -/
 

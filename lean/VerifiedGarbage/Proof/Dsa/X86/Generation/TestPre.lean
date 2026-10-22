@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestArgs
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 
 /-! # A probable-prime test's call meets the test's contract -/
 
