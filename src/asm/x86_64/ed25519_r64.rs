@@ -147,13 +147,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -288,13 +284,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -429,13 +421,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -623,13 +611,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -892,13 +876,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -1065,13 +1045,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -1238,13 +1214,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -1411,13 +1383,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -1634,13 +1602,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -1828,13 +1792,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -2001,13 +1961,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -2174,13 +2130,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -2419,13 +2371,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -2592,13 +2540,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -2765,13 +2709,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -2938,13 +2878,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -3161,13 +3097,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -3355,13 +3287,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -3528,13 +3456,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -3701,13 +3625,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -3946,13 +3866,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4119,13 +4035,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4292,13 +4204,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4400,12 +4308,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4474,12 +4379,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4797,12 +4699,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4881,12 +4780,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -4965,12 +4861,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5049,12 +4942,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5187,12 +5077,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5292,12 +5179,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5376,12 +5260,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5460,12 +5341,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5616,12 +5494,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5700,12 +5575,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5784,12 +5656,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -5868,12 +5737,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6006,12 +5872,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6111,12 +5974,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6195,12 +6055,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6279,12 +6136,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6435,12 +6289,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6519,12 +6370,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6603,12 +6451,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -6867,13 +6712,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -7040,13 +6881,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -7213,13 +7050,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -7458,13 +7291,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -7631,13 +7460,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -7804,13 +7629,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -7977,13 +7798,9 @@ adc rdx, 0
 add r11, rax
 adc rdx, 0
 mov rbp, rdx
-mov rax, rbp
-mul rcx
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld rbp, r11, 1
+btr r11, 63
+imul rax, rbp, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8158,12 +7975,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8242,12 +8056,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8326,12 +8137,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8482,12 +8290,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8566,12 +8371,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8650,12 +8452,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
@@ -8734,12 +8533,9 @@ mulx r12, rax, r15
 adox r11, rax
 adcx r12, rbp
 adox r12, rbp
-mulx rcx, rax, r12
-shl r11, 1
-sbb rbp, rbp
-shr r11, 1
-and rbp, 19
-add rax, rbp
+shld r12, r11, 1
+btr r11, 63
+imul rax, r12, 19
 add r8, rax
 adc r9, 0
 adc r10, 0
