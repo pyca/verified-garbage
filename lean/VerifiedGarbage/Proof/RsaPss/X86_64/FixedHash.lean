@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
-import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
