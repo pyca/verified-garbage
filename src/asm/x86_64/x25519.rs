@@ -7009,32 +7009,32 @@ vpermq ymm10, ymm4, 78
 vpxor ymm10, ymm10, ymm4
 vpand ymm10, ymm10, ymm15
 vpxor ymm4, ymm4, ymm10
-vpunpcklqdq ymm10, ymm0, ymm0
-vpunpckhqdq ymm11, ymm0, ymm0
+vpermq ymm10, ymm0, 160
+vpermq ymm11, ymm0, 245
 vmovdqu ymm12, YMMWORD PTR [rdi+1728]
 vpsubq ymm12, ymm12, ymm11
 vpblendd ymm11, ymm11, ymm12, 204
 vpaddq ymm0, ymm10, ymm11
-vpunpcklqdq ymm10, ymm1, ymm1
-vpunpckhqdq ymm11, ymm1, ymm1
+vpermq ymm10, ymm1, 160
+vpermq ymm11, ymm1, 245
 vmovdqu ymm12, YMMWORD PTR [rdi+1760]
 vpsubq ymm12, ymm12, ymm11
 vpblendd ymm11, ymm11, ymm12, 204
 vpaddq ymm1, ymm10, ymm11
-vpunpcklqdq ymm10, ymm2, ymm2
-vpunpckhqdq ymm11, ymm2, ymm2
+vpermq ymm10, ymm2, 160
+vpermq ymm11, ymm2, 245
 vmovdqu ymm12, YMMWORD PTR [rdi+1760]
 vpsubq ymm12, ymm12, ymm11
 vpblendd ymm11, ymm11, ymm12, 204
 vpaddq ymm2, ymm10, ymm11
-vpunpcklqdq ymm10, ymm3, ymm3
-vpunpckhqdq ymm11, ymm3, ymm3
+vpermq ymm10, ymm3, 160
+vpermq ymm11, ymm3, 245
 vmovdqu ymm12, YMMWORD PTR [rdi+1760]
 vpsubq ymm12, ymm12, ymm11
 vpblendd ymm11, ymm11, ymm12, 204
 vpaddq ymm3, ymm10, ymm11
-vpunpcklqdq ymm10, ymm4, ymm4
-vpunpckhqdq ymm11, ymm4, ymm4
+vpermq ymm10, ymm4, 160
+vpermq ymm11, ymm4, 245
 vmovdqu ymm12, YMMWORD PTR [rdi+1760]
 vpsubq ymm12, ymm12, ymm11
 vpblendd ymm11, ymm11, ymm12, 204
