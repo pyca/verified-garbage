@@ -11,12 +11,18 @@ import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 
 `sealWith` and `openWith` (`../AArch64.lean`) encrypt the data with one
 call and absorb it with another. With the eight-block kernel, `sealStitched`
-and `openStitched` instead process the data's whole chunks of 512 bytes with
-`Stitch.bulk`, which absorbs the ciphertext while it computes the keystream,
-and only the rest with those calls:
+and `openStitched` (from 512 bytes: `wide`) instead process the data's whole
+chunks of 512 bytes with `Stitch.bulk`, which absorbs the ciphertext while it
+computes the keystream, and only the rest with those calls:
 
-* the counter is set to 1 and the stream's arguments to the data
-  (`cryptSetup`); with fewer than 512 bytes, nothing more happens here;
+* the one-time key is computed with the keystream of the first 256 bytes, in
+  one pass of `Short.lean`'s kernel of five blocks rather than with the
+  scalar block function before the chunks, and the state copied with counter
+  5 (`ShortRest.stash`); after the additional data, those bytes are XORed
+  with it (`ShortRest.first`) and absorbed (`absorbFirst`), in the order the
+  direction needs, and `x22`, `x23` set to the data after them (`skipFirst`);
+* the stream's arguments are set to that data (`cryptSetup`); with fewer than
+  512 bytes of it, nothing more happens here;
 * otherwise `x27` and `x28` are saved in the context (`[32, 48)`), the
   clamped key is stored where `Stitch.chunk` reads it (bytes 160–175 of the
   stream's working space) and the accumulator loaded into `x21`–`x23`

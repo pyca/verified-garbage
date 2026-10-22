@@ -60,11 +60,13 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `seal`
 
-The chunks encrypt the data's whole chunks and absorb all but the last of
-them (and with SVE2, if a rest remains, also the last while the next 256
-bytes' keystream is computed, of which up to the rest's length is used:
-`Tail.rest`); whatever is left is encrypted by `vg_chacha20_xor`, and absorbed
-with what was not.
+From 512 bytes: `Short.lean`'s prologue computes the one-time key and the
+first 256 bytes' keystream, which encrypts them before they are absorbed
+(`Wide.lean`); from there (`Entry`), the chunks encrypt the data's whole
+chunks and absorb all but the last of them (and, if a rest remains, also the
+last while the next 256 bytes' keystream is computed, of which up to the
+rest's length is used: `Tail.rest`); whatever is left is encrypted by
+`vg_chacha20_xor`, and absorbed with what was not.
 -/
 
 @[expose] public section

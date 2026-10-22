@@ -14,8 +14,11 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `open`
 
-The chunks decrypt the data's whole chunks and absorb them as they were;
-the rest is absorbed, then decrypted by `vg_chacha20_xor`.
+From 512 bytes: `Short.lean`'s prologue computes the one-time key and the
+first 256 bytes' keystream, which decrypts them after they are absorbed
+(`Wide.lean`); from there (`Entry`), the chunks decrypt the data's whole
+chunks and absorb them as they were; the rest is absorbed, then decrypted
+(`openRest`).
 -/
 
 @[expose] public section

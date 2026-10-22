@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,7 +14,7 @@ From 512 bytes, `Short.lean`'s pass of five blocks computes the one-time key
 with the keystream of the first 256 bytes, which `ShortRest.first` XORs in
 (`ShortRest.lean`'s proofs); `absorbFirst` absorbs them (`absorbFirst_ok`), and
 `skipFirst` points `x22` and `x23` at the data after them (`skipFirst_ok`),
-from where `cryptStitched` continues (`Entry`).
+from where `cryptStitched` continues (`Crypted.lean`'s `Entry`).
 -/
 
 @[expose] public section

@@ -25,11 +25,13 @@ import VerifiedGarbage.Proof.ChaCha20.Stream
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `cryptStitched`
 
-From the state after the lengths, with the ChaCha20 state for counter 0 and
-the Poly1305 state for the additional data: after `T` chunks (none for fewer
-than 512 bytes), the data's first `512 T` bytes encrypted from counter 1, the
-counter advanced past them, the stream's arguments set to the rest, and the
-bytes absorbed (`pre`) and the rest's pointer and length in `x22`, `x23`.
+From the state after the data's first `o` bytes (a multiple of 64) were
+encrypted from counter 1 and absorbed, with the counter past them and `x22`,
+`x23` pointing after them (`Entry`): after `T` chunks (none for fewer than
+512 bytes after them), the data's first `o + 512 T` bytes encrypted from
+counter 1, the counter advanced past them, the stream's arguments set to the
+rest, and the bytes absorbed (`pre`) and the rest's pointer and length in
+`x22`, `x23`.
 -/
 
 @[expose] public section
