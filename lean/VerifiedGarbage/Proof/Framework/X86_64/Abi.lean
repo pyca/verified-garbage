@@ -71,11 +71,13 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | mov | mov32 | movzx8 | movzx16 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst | vpbroadcastdZ | zbcstd
   | vpmadd52Load | kLoad | kLoad8 =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
-  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | andn32 | andn | vpmovmskb | movqR
-  | shiftCl | shiftx =>
+  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | imul3 | andn32 | andn | vpmovmskb
+  | movqR | shiftCl | shiftx =>
     simp only [exec, Option.some.injEq] at h; subst h; rfl
   | rorx32 => simp only [exec, execRorx32] at h; split at h <;> cases h; rfl
   | rorx => simp only [exec, execRorx] at h; split at h <;> cases h; rfl
+  | shld => simp only [exec, execShld] at h; split at h <;> cases h; rfl
+  | btr => simp only [exec, execBtr] at h; split at h <;> cases h; rfl
   | mulx =>
     simp only [exec, execMulx] at h; split at h
     · cases h

@@ -325,6 +325,9 @@ def Instr.asm : Instr → List String
   | .lfence => ["lfence"]
   | .mul r => [s!"mul {r.name}"]
   | .imul d r => [s!"imul {d.name}, {r.name}"]
+  | .imul3 d r v => [s!"imul {d.name}, {r.name}, {v.toInt}"]
+  | .shld d r n => [s!"shld {d.name}, {r.name}, {n}"]
+  | .btr d n => [s!"btr {d.name}, {n}"]
   | .mulx hi lo s => [s!"mulx {hi.name}, {lo.name}, {s.str}"]
   | .adcx d s => [s!"adcx {d.name}, {s.str}"]
   | .adox d s => [s!"adox {d.name}, {s.str}"]
@@ -366,7 +369,7 @@ def Instr.memOps : Instr → List MemOp
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
   | .vpmovmskb .. | .zop _ | .eop _
-  | .lfence | .mul _ | .imul ..
+  | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
 def printer : Printer isa where

@@ -9,7 +9,8 @@ public import VerifiedGarbage.TCB.X86_64.State
 the x86-64 model in `TCB/X86_64/Isa.lean`: source operands, the ALU
 operations and their flags, shifts (by an immediate, by CL, and BMI2's
 `shlx` and `shrx`), rotates (including BMI2's `rorx`), BMI1's
-`andn`, byte swaps, `mul`, `imul`, BMI2's `mulx` and ADX's `adcx` and `adox`.
+`andn`, byte swaps, `mul`, `imul` (two- and three-operand), `shld`,
+`btr`, BMI2's `mulx` and ADX's `adcx` and `adox`.
 (`cmovcc`, which reads the flags through a branch condition, is in
 `Isa.lean`, with the conditions.)
 -/
@@ -340,6 +341,58 @@ def execImul (dst src : Reg) (s : State) : State :=
   let r : BitVec 64 := BitVec.ofInt 64 t
   let o := r.toInt != t
   (s.setFlags (some o) (some o) none none).setReg dst r
+
+/-- SDM Vol. 2, "IMUL—Signed Multiply", the three-operand form `IMUL r64,
+r/m64, imm32` (`REX.W + 69 /r id`) with a register source: "the first source
+operand … is multiplied by the second source operand (an immediate value)",
+which "is sign-extended to the length of the destination operand format";
+`TMP_XP := SRC1 ∗ SRC2; DEST := TruncateToOperandSize(TMP_XP); IF
+SignExtend(DEST) ≠ TMP_XP THEN CF := 1; OF := 1; ELSE CF := 0; OF := 0; FI;`
+(signed operands). "The SF, ZF, AF, and PF flags are undefined." (AF and PF
+are not modelled.) The low 64 bits of the product are those of the unsigned
+product as well. -/
+def execImul3 (dst src : Reg) (imm : BitVec 32) (s : State) : State :=
+  let t := (s.gpr src).toInt * (imm.signExtend 64).toInt
+  let r : BitVec 64 := BitVec.ofInt 64 t
+  let o := r.toInt != t
+  (s.setFlags (some o) (some o) none none).setReg dst r
+
+/-- SDM Vol. 2, "SHLD—Double Precision Shift Left", the form `SHLD r/m64,
+r64, imm8` (`REX.W + 0F A4 /r ib`) with a register destination, for a count
+`n` with `1 ≤ n ≤ 63` (`COUNT := COUNT MOD 64` in 64-bit mode with REX.W, so
+other counts are 0, "No operation", or are not modelled: they fault):
+`CF := BIT[DEST, SIZE – COUNT]; FOR i := SIZE – 1 DOWN TO COUNT DO Bit(DEST,
+i) := Bit(DEST, i – COUNT); OD; FOR i := COUNT – 1 DOWN TO 0 DO BIT[DEST, i]
+:= BIT[SRC, i – COUNT + SIZE]; OD;`: the destination shifted left by `n`,
+with the top `n` bits of the source shifted in. "If the count is 1 or
+greater, the CF flag is filled with the last bit shifted out of the
+destination operand and the SF, ZF, and PF flags are set according to the
+value of the result. For a 1-bit shift, the OF flag is set if a sign change
+occurred; otherwise, it is cleared. For shifts greater than 1 bit, the OF
+flag is undefined. If a shift occurs, the AF flag is undefined." (AF and PF
+are not modelled.) -/
+def execShld (dst src : Reg) (n : Nat) (s : State) : Option State :=
+  if 1 ≤ n ∧ n ≤ 63 then
+    let a := s.gpr dst
+    let r := (a <<< n) ||| (s.gpr src >>> (64 - n))
+    some ((s.setFlags (some (a.getLsbD (64 - n))) (if n = 1 then some (r.msb != a.msb) else none)
+      (some (r == 0)) (some r.msb)).setReg dst r)
+  else none
+
+/-- SDM Vol. 2, "BTR—Bit Test and Reset", the form `BTR r/m64, imm8`
+(`REX.W + 0F BA /6 ib`) with a register operand, for a bit offset `n < 64`
+("If the bit base operand specifies a register, the instruction takes the
+modulo … 64 of the bit offset operand"; larger offsets are not modelled:
+they fault): `CF := Bit(BitBase, BitOffset); Bit(BitBase, BitOffset) := 0;`.
+"The CF flag contains the value of the selected bit before it is cleared.
+The ZF flag is unaffected. The OF, SF, AF, and PF flags are undefined." (AF
+and PF are not modelled.) -/
+def execBtr (dst : Reg) (n : Nat) (s : State) : Option State :=
+  if n < 64 then
+    let a := s.gpr dst
+    some ((s.setFlags (some (a.getLsbD n)) none s.zf none).setReg dst
+      (a &&& ~~~((1 : BitVec 64) <<< n)))
+  else none
 
 /-- SDM Vol. 2, "MULX—Unsigned Multiply Without Affecting Flags", for 64-bit
 operands (`VEX.LZ.F2.0F38.W1 F6 /r`, `MULX r64a, r64b, r/m64`): `SRC1 :=

@@ -178,6 +178,9 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | shiftCl _ d => cases hs; exact k d
   | shiftx _ d _ _ => cases hs; exact k d
   | imul d _ => cases hs; exact k d
+  | imul3 d _ _ => cases hs; exact k d
+  | shld d _ _ => cases hs; exact k d
+  | btr d _ => cases hs; exact k d
   | movImm64 d _ => cases hs; exact k d
   | leaSym d _ => cases hs; exact k d
   | movzx8 d m => obtain ⟨-, rfl⟩ := some_cond hs; exact k d

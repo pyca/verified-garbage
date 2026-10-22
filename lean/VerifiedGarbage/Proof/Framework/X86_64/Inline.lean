@@ -374,6 +374,19 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
   | lfence => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | mul r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | imul d r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
+  | imul3 d r v => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
+  | shld d r n =>
+    simp only [exec, execShld] at h ⊢
+    split at h <;> [skip; cases h]
+    rename_i hn
+    simp only [hn, and_self, ite_true]
+    simp only [Option.some.injEq] at h; subst h; rfl
+  | btr d n =>
+    simp only [exec, execBtr] at h ⊢
+    split at h <;> [skip; cases h]
+    rename_i hn
+    simp only [hn, ite_true]
+    simp only [Option.some.injEq] at h; subst h; rfl
   | mulx hi lo src =>
     simp only [exec, execMulx] at h ⊢
     split at h
@@ -461,6 +474,9 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
   | lfence => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
   | mul r => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
   | imul d r => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
+  | imul3 d r v => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
+  | shld d r n => simp only [exec, execShld] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+  | btr d n => simp only [exec, execBtr] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | mulx hi lo src =>
     simp only [exec, execMulx] at h; split at h
     · cases h
@@ -532,6 +548,9 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
   | lfence => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
   | mul r => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
   | imul d r => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
+  | imul3 d r v => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
+  | shld d r n => simp only [exec, execShld] at h; split at h <;> cases h; exact Frame.refl _ _
+  | btr d n => simp only [exec, execBtr] at h; split at h <;> cases h; exact Frame.refl _ _
   | mulx hi lo src =>
     simp only [exec, execMulx] at h; split at h
     · cases h

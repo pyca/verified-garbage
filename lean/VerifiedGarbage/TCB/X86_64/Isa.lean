@@ -38,7 +38,10 @@ Modelling choices:
   (`SHL`), the shifts by CL `shl`, `shr` and `sar` (`SHL`, `SHR` and `SAR`,
   each with opcode `0xd3`), BMI2's `shlx` and `shrx` (`SHLX` and `SHRX`; it
   does not list `SARX`, which the model leaves out), `cmovcc` (`CMOVcc`),
-  and SSE2's `pcmpeqd` and its VEX forms `vpcmpeqd` (`PCMPEQD`,
+  `imul` (`IMUL`, whose opcodes it lists include `0xaf`, the two-operand
+  form, and `0x69`, the three-operand form with a 32-bit immediate), `shld`
+  (`SHLD`, opcode `0xa4`, by an immediate), `btr` (`BTR`, opcode `0xba`, by
+  an immediate), and SSE2's `pcmpeqd` and its VEX forms `vpcmpeqd` (`PCMPEQD`,
   `VPCMPEQD`). `cmovcc` is not a branch: whether the condition holds
   changes the destination, not which instructions run or for how long, so
   the model's leakage of it is only its memory source's address (`addrs`),
@@ -385,6 +388,17 @@ inductive Instr
   /-- `imul r64, r64` (`REX.W 0F AF /r`): the low 64 bits of the product
   `dst := dst * src`, the same for signed and unsigned operands. -/
   | imul (dst src : Reg)
+  /-- `imul r64, r64, imm32` (`REX.W 69 /r id`) with a register source: the
+  low 64 bits of the product `dst := src * imm`, the immediate sign-extended
+  to 64 bits, the same for signed and unsigned operands. -/
+  | imul3 (dst src : Reg) (imm : BitVec 32)
+  /-- `shld r64, r64, imm8` (`REX.W 0F A4 /r ib`) with a register
+  destination: `dst` shifted left by `n`, the top `n` bits of `src` shifted
+  in. -/
+  | shld (dst src : Reg) (n : Nat)
+  /-- `btr r64, imm8` (`REX.W 0F BA /6 ib`) with a register operand: CF :=
+  bit `n` of `dst`, which is then cleared. -/
+  | btr (dst : Reg) (n : Nat)
   /-- `mulx hi, lo, src` (`VEX.LZ.F2.0F38.W1 F6 /r`, BMI2): the unsigned
   product `hi:lo := RDX * src`, without affecting the flags. `src` is a
   register or memory. -/
@@ -780,6 +794,9 @@ def exec : Instr → State → Option State
   | .lfence, s => some s
   | .mul r, s => some (execMul r s)
   | .imul d r, s => some (execImul d r s)
+  | .imul3 d r v, s => some (execImul3 d r v s)
+  | .shld d r n, s => execShld d r n s
+  | .btr d n, s => execBtr d n s
   | .mulx hi lo src, s => execMulx hi lo src s
   | .adcx d src, s => execAdcx d src s
   | .adox d src, s => execAdox d src s
@@ -847,7 +864,7 @@ def addrs : Instr → State → List Addr
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
   | .mul _, _ => []
-  | .imul .., _ => []
+  | .imul .., _ | .imul3 .., _ | .shld .., _ | .btr .., _ => []
   | .mulx _ _ src, s => srcAddrs s src
   | .adcx _ src, s => srcAddrs s src
   | .adox _ src, s => srcAddrs s src
@@ -950,7 +967,8 @@ def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
-  | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
+  | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
+  | .imul3 d .. | .shld d .. | .btr d _ => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
