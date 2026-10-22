@@ -172,8 +172,8 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
       (Lay.wSub (by decide)))), hH]
   rw [hH₁] at p0
   unfold Impl.AesGcm.X86_64.Short.finishP
-  refine WP.seq (WP.mono (finPowP_ok hF s₁ he₁.r13 (in_off cov₁ (show 272 + 16 ≤ 1024 by decide) (by decide))
-    (in_off cov₁ (show 256 + 16 ≤ 1024 by decide) (by decide)) p0.2 p0.1) fun s₂ ⟨x0, x1, h1, h2, o₂⟩ => ?_)
+  refine WP.seq (WP.mono (finPowP_ok hF s₁ he₁.r13 (in_off cov₁ (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
+    (in_off cov₁ (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₂ ⟨x0, x1, h1, h2, o₂⟩ => ?_)
   have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => o₂.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₂.rd o₂.wr

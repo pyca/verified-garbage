@@ -478,7 +478,7 @@ theorem nE_ok (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t₃ s₄ : State} (
   have hy₂ : blockAt (nMemC D S sl s) (yA W) = blockAt s.mem (yA W) :=
     blockAt_frame fr₂ (dD₂ _ (h.data.ok.w.sub_right yW).symm)
   have hH₂ : blockAt (nMemC D S sl s) (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
-    rw [ctxH_eq]; exact blockAt_frame fr₂ (dD₂ _ (kD.sub_left (Offset.sub_base Ctx (by decide))))
+    rw [ctxH_eq]; exact blockAt_frame fr₂ (dD₂ _ (kD.sub_left (Offset.sub_base Ctx (by exact (by decide : (240 + 16 : Nat) ≤ 1024)))))
   -- The data from `256 G` on, kept by all three.
   have tl : bytesAt s₅.mem (D + BitVec.ofNat 64 (256 * G)) (n - 256 * G) =
       bytesAt s.mem (D + BitVec.ofNat 64 (256 * G)) (n - 256 * G) := by
