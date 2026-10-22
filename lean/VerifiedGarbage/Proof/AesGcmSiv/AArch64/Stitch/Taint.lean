@@ -21,18 +21,18 @@ open VG VG.AArch64 VG.Impl.AesGcmSiv.AArch64.Stitch
 open VG.Proof.AesGcmSiv.AArch64 (pubRegs)
 open VG.Impl.Gcm.AArch64.Stitch (byRounds)
 
-theorem polyB_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
-    (ifBatch (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq ghLoop (.block ghFinish)))) h).isSome = true :=
-  ⟨_, by taint_decide⟩
+theorem polyB_check (e3 : Bool) : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
+    (ifBatch (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq (ghLoop e3) (.block ghFinish)))) h).isSome = true := by
+  cases e3 <;> exact ⟨_, by taint_decide⟩
 
-theorem ctrB_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
-    (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish)))) h).isSome = true :=
-  ⟨_, by taint_decide⟩
+theorem ctrB_check (e3 : Bool) : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
+    (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds (ctrLoop e3)) (.block ctrFinish)))) h).isSome = true := by
+  cases e3 <;> exact ⟨_, by taint_decide⟩
 
-theorem openB_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
+theorem openB_check (e3 : Bool) : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
     (ifBatch (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
-      (.seq (byRounds openLoop) (.block (ctrFinish ++ ghFinish))))) h).isSome = true :=
-  ⟨_, by taint_decide⟩
+      (.seq (byRounds (openLoop e3)) (.block (ctrFinish ++ ghFinish))))) h).isSome = true := by
+  cases e3 <;> exact ⟨_, by taint_decide⟩
 
 theorem rest_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block rest) h).isSome = true :=
   ⟨_, by taint_decide⟩

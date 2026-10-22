@@ -128,18 +128,18 @@ structure GInv (σ : Ctx) (y : Block) (s₀ : State) (h : Nat) (s : State) : Pro
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem ghLoop_ok {σ : Ctx} (hp : KPre σ) (gh : Gh8Ok) {y : Block} {s₀ : State}
+theorem ghLoop_ok (e3 : Bool) {σ : Ctx} (hp : KPre σ) (gh : Gh8Ok) {y : Block} {s₀ : State}
     (hx19 : s₀.gpr .x19 = σ.W) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr) (hI : GInv σ y s₀ 0 s₀) :
-    WP isa ghLoop s₀ (GInv σ y s₀ σ.nb) := by
+    WP isa (ghLoop e3) s₀ (GInv σ y s₀ σ.nb) := by
   have hn := hp.n16
   have h1 := hp.nb1
   let I : Nat → State → Prop := fun m s => ∃ h, m = σ.nb - h ∧ h < σ.nb ∧ GInv σ y s₀ h s
-  have hstep : ∀ m s, I m s → WP isa (.block (ghPart ++ adv)) s (fun s' =>
+  have hstep : ∀ m s, I m s → WP isa (.block (ghPart e3 ++ adv)) s (fun s' =>
       (AArch64.eval (.nonzero .x .x11) s' = some false ∧ GInv σ y s₀ σ.nb s') ∨
       (AArch64.eval (.nonzero .x .x11) s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨h, rfl, hh, hI⟩
     rw [WP.block_append_iff]
-    refine WP.mono (ghStep hp gh (y := y) (hb := σ.blockO) (h := h) hI.y hI.cr hI.x9 hh
+    refine WP.mono (ghStep e3 hp gh (y := y) (hb := σ.blockO) (h := h) hI.y hI.cr hI.x9 hh
       (by rw [hI.gpr _ (by decide) (by decide), hx19]) (by rw [hI.rd, hI.wr, hrdwr])
       (by rw [hI.mem]; exact Frame.refl _ _) (fun j hj => by rw [hI.mem])) fun u ⟨hy, ou⟩ => ?_
     refine WP.mono (adv_ok (D := σ.D) (h := h) hh (by rw [ou.gpr, hI.x9]) (by rw [ou.gpr, hI.x11]))
@@ -194,21 +194,21 @@ theorem CInv.of_x1314 {σ : Ctx} {s₀ : State} {c p : Nat} {s s' : State} (hI :
   rd := by rw [hrd, hI.rd]
   wr := by rw [hwr, hI.wr]
 
-theorem ctrLoop_ok {σ : Ctx} (hp : KPreC σ) {s₀ : State}
+theorem ctrLoop_ok (e3 : Bool) {σ : Ctx} (hp : KPreC σ) {s₀ : State}
     (hx19 : s₀.gpr .x19 = σ.W) (hx15 : s₀.gpr .x15 = σ.K) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr)
     (hwr : s₀.wr = σ.wr) {s : State} (hI : CInv σ s₀ 0 0 s) :
-    WP isa (ctrLoop σ.nr) s (CInv σ s₀ σ.nb σ.nb) := by
+    WP isa (ctrLoop e3 σ.nr) s (CInv σ s₀ σ.nb σ.nb) := by
   have hn := hp.n16
   have h1 := hp.nb1
   let I : Nat → State → Prop := fun m s => ∃ c, m = σ.nb - c ∧ c < σ.nb ∧ CInv σ s₀ c c s
-  have hstep : ∀ m s, I m s → WP isa (.block (aesPart σ.nr 0 ++ stores 0 ++ adv)) s (fun s' =>
+  have hstep : ∀ m s, I m s → WP isa (.block (aesPart e3 σ.nr 0 ++ stores 0 ++ adv)) s (fun s' =>
       (AArch64.eval (.nonzero .x .x11) s' = some false ∧ CInv σ s₀ σ.nb σ.nb s') ∨
       (AArch64.eval (.nonzero .x .x11) s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨c, rfl, hc, hI⟩
     rw [List.append_assoc, WP.block_append_iff]
     have hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (0 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * c + j)) :=
       fun j => by rw [hI.x9, Offset.add_add_eq _ (show 128 * c + (0 + 16 * j) = 16 * (8 * c + j) by omega)]
-    refine WP.mono (aesStep hp hc (by decide) (by decide) hx9 hI.x10 (by rw [hI.gpr _ (by decide), hx19])
+    refine WP.mono (aesStep e3 hp hc (by decide) (by decide) hx9 hI.x10 (by rw [hI.gpr _ (by decide), hx19])
       (by rw [hI.gpr _ (by decide), hx15]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
       fun t ⟨hv, x10t, frt⟩ => ?_
     have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
@@ -251,18 +251,18 @@ theorem ctrLoop_ok {σ : Ctx} (hp : KPreC σ) {s₀ : State}
 does not matter. -/
 abbrev fps : VG.Interleave.Footprints isa := VG.AArch64.Interleave.footprints .x0
 
-theorem parts_check : ∀ nr ∈ [10, 12, 14],
-    ((fps.blockFp (aesPart nr 128)).bind fun A => (fps.blockFp ghPart).map fun B => fps.indep A B) = some true := by
+theorem parts_check : ∀ e3 : Bool, ∀ nr ∈ [10, 12, 14],
+    ((fps.blockFp (aesPart e3 nr 128)).bind fun A => (fps.blockFp (ghPart e3)).map fun B => fps.indep A B) = some true := by
   decide +kernel
 
 /-- The parts, woven, run as `aesPart` and then `ghPart`. -/
-theorem parts_ok {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14) {s : State}
-    {Q : State → Prop} (h : WP isa (.block (aesPart nr 128)) s fun t => WP isa (.block ghPart) t Q) :
-    WP isa (.block (parts nr 128)) s Q := by
+theorem parts_ok (e3 : Bool) {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14) {s : State}
+    {Q : State → Prop} (h : WP isa (.block (aesPart e3 nr 128)) s fun t => WP isa (.block (ghPart e3)) t Q) :
+    WP isa (.block (parts e3 nr 128)) s Q := by
   unfold parts
   refine VG.Interleave.WP.weaveG (P := fps.Inv) ?_ trivial ?_
   · rw [fuse_flatten, flatten_singles]
-    exact fps.indeps_of_check (parts_check nr (by rcases hnr with rfl | rfl | rfl <;> decide))
+    exact fps.indeps_of_check (parts_check e3 nr (by rcases hnr with rfl | rfl | rfl <;> decide))
   · rw [fuse_flatten, flatten_singles]; exact h
 
 /-- After `c` batches XORed and `h` hashed, from `s₀`: `x9` at batch `h`. -/
@@ -279,20 +279,20 @@ include hp gh hx19 hx15 hrdwr hwr
 
 /-- One iteration of `open`'s loop: batch `h + 1` XORed while batch `h` is
 hashed, then stored. -/
-theorem openBody_ok {h : Nat} (hh : h + 1 < σ.nb) {s : State} (hI : OInv σ y s₀ (h + 1) h s) :
-    WP isa (.block (parts σ.nr 128 ++ stores 128 ++ adv)) s (OInv σ y s₀ (h + 2) (h + 1)) := by
+theorem openBody_ok (e3 : Bool) {h : Nat} (hh : h + 1 < σ.nb) {s : State} (hI : OInv σ y s₀ (h + 1) h s) :
+    WP isa (.block (parts e3 σ.nr 128 ++ stores 128 ++ adv)) s (OInv σ y s₀ (h + 2) (h + 1)) := by
   have hn := hp.n16
   have hct : ∀ j < 8, s.mem.readW (σ.D + BitVec.ofNat 64 (16 * (8 * h + j))) 128 = σ.blockC (8 * h + j) :=
     fun j hj => readW_of_dataInv hn hI.ci.data (by omega) (by have := hI.ci.le; omega)
   rw [List.append_assoc, WP.block_append_iff]
-  refine parts_ok hp.rounds ?_
+  refine parts_ok e3 hp.rounds ?_
   have hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (128 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * (h + 1) + j)) :=
     fun j => by rw [hI.ci.x9, Offset.add_add_eq _ (show 128 * h + (128 + 16 * j) = 16 * (8 * (h + 1) + j) by omega)]
-  refine WP.mono (aesStep hp.toKPreC hh (by decide) (by decide) hx9 hI.ci.x10 (by rw [hI.ci.gpr _ (by decide), hx19])
+  refine WP.mono (aesStep e3 hp.toKPreC hh (by decide) (by decide) hx9 hI.ci.x10 (by rw [hI.ci.gpr _ (by decide), hx19])
     (by rw [hI.ci.gpr _ (by decide), hx15]) (by rw [hI.ci.rd, hI.ci.wr, hrdwr]) hI.ci.frame hI.ci.data)
     fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
-  refine WP.mono (ghStep hp gh (y := y) (hb := σ.blockC) (h := h) (t := t) (by rw [frt.v _ (by decide), hI.y])
+  refine WP.mono (ghStep e3 hp gh (y := y) (hb := σ.blockC) (h := h) (t := t) (by rw [frt.v _ (by decide), hI.y])
     (by rw [frt.v _ (by decide), hI.cr]) (by rw [gt _ (by decide) (by decide), hI.ci.x9]) (by omega)
     (by rw [gt _ (by decide) (by decide), hI.ci.gpr _ (by decide), hx19])
     (by rw [frt.rd, frt.wr, hI.ci.rd, hI.ci.wr, hrdwr]) (by rw [frt.mem]; exact hI.ci.frame)
@@ -322,9 +322,9 @@ theorem openBody_ok {h : Nat} (hh : h + 1 < σ.nb) {s : State} (hI : OInv σ y s
   · rw [v', v₁, hy]
   · rw [v', v₁, ou.v C (by decide), frt.v C (by decide), hI.cr]
 
-theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
+theorem openLoop_ok (e3 : Bool) {s : State} (hI : CInv σ s₀ 0 0 s)
     (hy : s.v Y = ext8 y y) (hc : s.v C = ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly) :
-    WP isa (openLoop σ.nr) s (OInv σ y s₀ σ.nb σ.nb) := by
+    WP isa (openLoop e3 σ.nr) s (OInv σ y s₀ σ.nb σ.nb) := by
   have hn := hp.n16
   have h1 := hp.nb1
   unfold openLoop
@@ -333,7 +333,7 @@ theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
   rw [WP.block_append_iff, WP.block_append_iff]
   have hx9₀ : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (0 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * 0 + j)) :=
     fun j => by rw [hI.x9, Offset.add_add_eq _ (show 128 * 0 + (0 + 16 * j) = 16 * (8 * 0 + j) by omega)]
-  refine WP.mono (aesStep hp.toKPreC (c := 0) h1 (by decide) (by decide) hx9₀ hI.x10 (by rw [hI.gpr _ (by decide), hx19])
+  refine WP.mono (aesStep e3 hp.toKPreC (c := 0) h1 (by decide) (by decide) hx9₀ hI.x10 (by rw [hI.gpr _ (by decide), hx19])
     (by rw [hI.gpr _ (by decide), hx15]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
     fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
@@ -369,11 +369,11 @@ theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
     · have : σ.nb = 1 := by simp at h; omega
       exact WP.block_nil (by rw [this]; exact hI₁)
     · let I : Nat → State → Prop := fun m s => ∃ h, m = σ.nb - (h + 1) ∧ h + 1 < σ.nb ∧ OInv σ y s₀ (h + 1) h s
-      have hstep : ∀ m s, I m s → WP isa (.block (parts σ.nr 128 ++ stores 128 ++ adv)) s (fun s' =>
+      have hstep : ∀ m s, I m s → WP isa (.block (parts e3 σ.nr 128 ++ stores 128 ++ adv)) s (fun s' =>
           (AArch64.eval (.nonzero .x .x11) s' = some false ∧ OInv σ y s₀ σ.nb (σ.nb - 1) s') ∨
           (AArch64.eval (.nonzero .x .x11) s' = some true ∧ ∃ m' < m, I m' s')) := by
         rintro m s ⟨h, rfl, hh, hI⟩
-        refine WP.mono (openBody_ok hp gh hx19 hx15 hrdwr hwr hh hI) fun s' hI' => ?_
+        refine WP.mono (openBody_ok hp gh hx19 hx15 hrdwr hwr e3 hh hI) fun s' hI' => ?_
         rw [eval_nonzero hI'.ci.x11 (by omega)]
         by_cases hl : σ.nb - (h + 2) = 0
         · have e : h + 2 = σ.nb := by omega
@@ -384,7 +384,7 @@ theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
     have hct : ∀ j < 8, s₂.mem.readW (σ.D + BitVec.ofNat 64 (16 * (8 * (σ.nb - 1) + j))) 128 =
         σ.blockC (8 * (σ.nb - 1) + j) :=
       fun j hj => readW_of_dataInv hn hI₂.ci.data (by omega) (by omega)
-    refine WP.mono (ghStep hp gh (y := y) (hb := σ.blockC) (h := σ.nb - 1) hI₂.y hI₂.cr hI₂.ci.x9 (by omega)
+    refine WP.mono (ghStep e3 hp gh (y := y) (hb := σ.blockC) (h := σ.nb - 1) hI₂.y hI₂.cr hI₂.ci.x9 (by omega)
       (by rw [hI₂.ci.gpr _ (by decide), hx19]) (by rw [hI₂.ci.rd, hI₂.ci.wr, hrdwr]) hI₂.ci.frame hct)
       fun u ⟨hy, ou⟩ => ?_
     rw [WP.block_cons_iff]

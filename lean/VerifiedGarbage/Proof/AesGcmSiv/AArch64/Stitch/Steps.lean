@@ -183,12 +183,12 @@ theorem stores_ok {σ : Ctx} (hp : KPreC σ) {c o : Nat} (hc : c < σ.nb) (ho : 
 /-! ## Counter mode -/
 
 /-- Counter mode of batch `c`, from the data at `x9 + o`. -/
-theorem aesStep {σ : Ctx} (hp : KPreC σ) {c o : Nat} {s : State} (hc : c < σ.nb) (ho' : o ≤ 128) (ho16 : o % 16 = 0)
+theorem aesStep (e3 : Bool) {σ : Ctx} (hp : KPreC σ) {c o : Nat} {s : State} (hc : c < σ.nb) (ho' : o ≤ 128) (ho16 : o % 16 = 0)
     (hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * c + j)))
     (hx10 : s.read .w .x10 = σ.c0 + BitVec.ofNat 32 (8 * c))
     (hx19 : s.gpr .x19 = σ.W) (hx15 : s.gpr .x15 = σ.K) (hrdwr : s.rd ++ s.wr = σ.rd ++ σ.wr)
     (hf : Frame [σ.dR] σ.m₀ s.mem) (hdata : DataInv σ.m₀ s.mem σ.D (8 * σ.nb) (8 * c) σ.ks) :
-    WP isa (.block (aesPart σ.nr o)) s fun t =>
+    WP isa (.block (aesPart e3 σ.nr o)) s fun t =>
       (∀ j < 8, ∀ tt < 16, vbyte (t.v (breg j)) tt =
         σ.ks (16 * (8 * c + j) + tt) ^^^ σ.m₀ (σ.D + BitVec.ofNat 64 (16 * (8 * c + j) + tt))) ∧
       t.read .w .x10 = σ.c0 + BitVec.ofNat 32 (8 * (c + 1)) ∧ Fr [.x10, .x12] aesV s t := by
@@ -205,7 +205,7 @@ theorem aesStep {σ : Ctx} (hp : KPreC σ) {c o : Nat} {s : State} (hc : c < σ.
       rw [hrdwr, hx9]
       exact inRegions_app (CallLay.inRegions_sub (off := 16 * (8 * c + j)) (l := 16) (n := 128 * σ.nb) hp.d_in (by omega) (by omega))
     x10 := by rw [hx10, hc0] }
-  refine WP.mono (aesPart_ok hA ho16) fun t ⟨out, x10, fr⟩ => ⟨fun j hj tt htt => ?_, ?_, fr⟩
+  refine WP.mono (aesPart_ok e3 hA ho16) fun t ⟨out, x10, fr⟩ => ⟨fun j hj tt htt => ?_, ?_, fr⟩
   · rw [out j hj tt htt, sch, hx15, hp.k_frame hf, hx9, Offset.add_add, hdata _ (by omega),
       ite_eq_right (by omega), show ∀ b : Byte, b ^^^ 0 = b from fun _ => BitVec.xor_zero]
     have hcv : cvec s (8 * c) j = σ.cv (8 * c + j) := by
@@ -220,14 +220,14 @@ theorem aesStep {σ : Ctx} (hp : KPreC σ) {c o : Nat} {s : State} (hc : c < σ.
 abbrev yh (H y : Block) (hb : Nat → Block) (n : Nat) : Block := ghashFrom H y ((List.range n).map hb)
 
 /-- GHASH of the eight blocks at `x9`, the blocks `hb (8 h + j)` as numbers. -/
-theorem ghStep {σ : Ctx} (hp : KPre σ) (gh : Gh8Ok) {y : Block} {hb : Nat → Block} {h : Nat} {t : State}
+theorem ghStep (e3 : Bool) {σ : Ctx} (hp : KPre σ) (gh : Gh8Ok) {y : Block} {hb : Nat → Block} {h : Nat} {t : State}
     (hy : t.v Y = ext8 (yh σ.H y hb (8 * h)) (yh σ.H y hb (8 * h)))
     (hc : t.v C = ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly)
     (hx9 : t.gpr .x9 = σ.D + BitVec.ofNat 64 (128 * h)) (hh : h < σ.nb)
     (hx19 : t.gpr .x19 = σ.W) (hrdwr : t.rd ++ t.wr = σ.rd ++ σ.wr)
     (hf : Frame [σ.dR] σ.m₀ t.mem)
     (hb' : ∀ j < 8, t.mem.readW (σ.D + BitVec.ofNat 64 (16 * (8 * h + j))) 128 = hb (8 * h + j)) :
-    WP isa (.block ghPart) t fun u =>
+    WP isa (.block (ghPart e3)) t fun u =>
       u.v Y = ext8 (yh σ.H y hb (8 * (h + 1))) (yh σ.H y hb (8 * (h + 1))) ∧ VOnly Proof.Gcm.AArch64.Stitch.ghV t u := by
   have hn := hp.n16
   have ha : ∀ j, t.gpr .x9 + BitVec.ofNat 64 (16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * h + j)) :=
@@ -244,7 +244,7 @@ theorem ghStep {σ : Ctx} (hp : KPre σ) (gh : Gh8Ok) {y : Block} {hb : Nat → 
     key := fun p hp' => by
       rw [hrdwr, show kOff p = tblO + (128 + 16 * p) by unfold kOff; omega, ht _ (by omega)]
       exact CallLay.inRegions_sub hp.t_in (by omega) (by omega) }
-  refine WP.mono (ghPart_ok t hin hc) fun u ⟨e, o⟩ => ⟨?_, o⟩
+  refine WP.mono (ghPart_ok e3 t hin hc) fun u ⟨e, o⟩ => ⟨?_, o⟩
   rw [e, hy, gh8V_congr rfl (b' := fun j => ext8 (hb (8 * h + j)) (hb (8 * h + j)))
     (S' := fun k => ext8 (pp σ.H k) (pp σ.H k))
     (KP' := fun p => kpack σ.H (pk p) (pl p))

@@ -8,10 +8,11 @@ public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
 # AES-GCM-SIV on AArch64: counter mode and POLYVAL eight blocks at a time
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` (`Impl.AesGcmSiv.AArch64`)
-for CPUs with FEAT_AES, FEAT_PMULL and FEAT_SHA3, with the loops of AES-GCM
+for CPUs with FEAT_AES and FEAT_PMULL, with the loops of AES-GCM
 (`Impl.Gcm.AArch64.Stitch`) on the whole batches of eight blocks of the data,
 `128 ⌊len / 128⌋` bytes; the additional data and the rest of the data go as
-in `Impl.AesGcmSiv.AArch64`.
+in `Impl.AesGcmSiv.AArch64`. Each sum of three registers is one `eor3` with
+FEAT_SHA3 (`e3`) and two `eor`s without it (`xor3`).
 
 * POLYVAL is GHASH on the blocks with their bytes reversed
   (`Proof.GcmSiv.Polyval`), and a block with its bytes reversed, as AES-GCM's
@@ -40,7 +41,7 @@ namespace VG.Impl.AesGcmSiv.AArch64.Stitch
 open VG.AArch64
 open VG.Impl.AesGcmSiv.AArch64
 open VG.Impl.Gcm.AArch64.Stitch (K P Y C HI LO MID A₁ A₂ S₁ S₂ KP T U X₁ X₂ breg pa pk pb pl
-  addFirst addNext reduce fuse stores byRounds)
+  addFirst fuse stores byRounds)
 open VG.Impl.AesGcm.AArch64 (Callees mov ptr imm restore)
 
 /-- Where the table of keys is in `W`: in the space for the reversed blocks
@@ -73,6 +74,13 @@ def tblBuild : List Instr :=
      .vop (.logic .eor .v3 (sReg (pl p)) (tReg (pl p))),
      .vop (.ext .v4 .v2 .v3 8), .strq .v4 .x19 (kOff p)]
 
+/-- `d` set to `a ⊕ b ⊕ c`: by `eor3` with FEAT_SHA3 (`e3`), and by two
+`eor`s without it (`c` is not `d`). -/
+def xor3 (e3 : Bool) (d a b c : VReg) : List Instr :=
+  if e3 then [.vop (.eor3 d a b c)] else [.vop (.logic .eor d a b), .vop (.logic .eor d d c)]
+
+variable (e3 : Bool)
+
 /-! ## Counter mode -/
 
 /-- Counter block `j` into its register: the counter block at `W + 96` with
@@ -90,11 +98,11 @@ data blocks at `x9 + o` added. -/
 def lastRnd (nr o : Nat) : List Instr :=
   .ldrq K .x15 (16 * (nr - 1)) :: (List.range 8).flatMap (fun j => [.vop (.aese (breg j) K)]) ++
   .ldrq K .x15 (16 * nr) ::
-    (List.range 8).flatMap fun j => [.ldrq P .x9 (o + 16 * j), .vop (.eor3 (breg j) (breg j) P K)]
+    (List.range 8).flatMap fun j => .ldrq P .x9 (o + 16 * j) :: xor3 e3 (breg j) (breg j) P K
 
 /-- Eight blocks of counter mode, of the data at `x9 + o`, into `v0`–`v7`. -/
 def aesPart (nr o : Nat) : List Instr :=
-  (List.range 8).flatMap ctr1 ++ (List.range (nr - 1)).flatMap rnd ++ lastRnd nr o ++
+  (List.range 8).flatMap ctr1 ++ (List.range (nr - 1)).flatMap rnd ++ lastRnd e3 nr o ++
     ([.addImm .w .x10 .x10 8] : List Instr)
 
 /-! ## POLYVAL -/
@@ -111,34 +119,42 @@ def pair (p : Nat) (a k b l : Nat) (y : Bool) : List Instr :=
    .vop (.pmull false X₂ A₂ S₂), .vop (.pmull true A₂ A₂ S₂),
    .vop (.pmull false U T KP), .vop (.pmull true T T KP)]
 
+/-- A pair's products added (`Impl.Gcm.AArch64.Stitch.addNext`). -/
+def addNext3 : List Instr := xor3 e3 HI HI X₁ X₂ ++ xor3 e3 LO LO A₁ A₂ ++ xor3 e3 MID MID U T
+
+/-- The product reduced into `Y` (`Impl.Gcm.AArch64.Stitch.reduce`). -/
+def reduce3 : List Instr :=
+  [.vop (.pmull false T LO C), .vop (.ext U LO LO 8)] ++ xor3 e3 U U LO HI ++ xor3 e3 MID MID U T ++
+    [.vop (.pmull false T MID C), .vop (.ext HI HI HI 8), .vop (.ext T T T 8)] ++ xor3 e3 Y HI MID T
+
 /-- POLYVAL of the eight blocks at `x9`, into `Y`. -/
 def ghPart : List Instr :=
-  pair 0 1 7 2 6 false ++ addFirst ++ pair 1 3 5 4 4 false ++ addNext ++ pair 2 5 3 6 2 false ++ addNext ++
-    pair 3 7 1 0 8 true ++ addNext ++ reduce
+  pair 0 1 7 2 6 false ++ addFirst ++ pair 1 3 5 4 4 false ++ addNext3 e3 ++ pair 2 5 3 6 2 false ++
+    addNext3 e3 ++ pair 3 7 1 0 8 true ++ addNext3 e3 ++ reduce3 e3
 
 /-! ## The loops -/
 
 /-- `aesPart nr o` woven with `ghPart`, each `aese` next to its `aesmc`. -/
 def parts (nr o : Nat) : List Instr :=
-  VG.Impl.Weave.weaveG (fuse (aesPart nr o)) (ghPart.map fun x => [x])
+  VG.Impl.Weave.weaveG (fuse (aesPart e3 nr o)) ((ghPart e3).map fun x => [x])
 
 /-- Past a batch: the pointer and the count. -/
 def adv : List Instr := [.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1]
 
 /-- POLYVAL of the `x11 ≥ 1` batches at `x9`. -/
-def ghLoop : Prog isa := .loop (.block (ghPart ++ adv)) (.nonzero .x .x11)
+def ghLoop : Prog isa := .loop (.block (ghPart e3 ++ adv)) (.nonzero .x .x11)
 
 /-- Counter mode of the `x11 ≥ 1` batches at `x9`. -/
-def ctrLoop (nr : Nat) : Prog isa := .loop (.block (aesPart nr 0 ++ stores 0 ++ adv)) (.nonzero .x .x11)
+def ctrLoop (nr : Nat) : Prog isa := .loop (.block (aesPart e3 nr 0 ++ stores 0 ++ adv)) (.nonzero .x .x11)
 
 /-- `open`'s loop over the `x11 ≥ 1` batches at `x9`: the first decrypted,
 then each next one decrypted while the one before is hashed, then the last
 hashed. -/
 def openLoop (nr : Nat) : Prog isa :=
-  .seq (.block (aesPart nr 0 ++ stores 0 ++ ([.subImm .x .x11 .x11 1] : List Instr)))
+  .seq (.block (aesPart e3 nr 0 ++ stores 0 ++ ([.subImm .x .x11 .x11 1] : List Instr)))
     (.seq (.ite (.zero .x .x11) (.block [])
-        (.loop (.block (parts nr 128 ++ stores 128 ++ adv)) (.nonzero .x .x11)))
-      (.block (ghPart ++ ([.addImm .x .x9 .x9 128] : List Instr))))
+        (.loop (.block (parts e3 nr 128 ++ stores 128 ++ adv)) (.nonzero .x .x11)))
+      (.block (ghPart e3 ++ ([.addImm .x .x9 .x9 128] : List Instr))))
 
 /-- The batches at `x25`: `x9` the pointer, `x11` their number. -/
 def batches : List Instr := [mov .x9 .x25, .lsr .x .x11 .x26 7]
@@ -168,7 +184,7 @@ variable (c : Callees)
 
 /-- POLYVAL of the data: its batches by `ghLoop`, the rest by `absorb`. -/
 def polyData : Prog isa :=
-  .seq (ifBatch (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq ghLoop (.block ghFinish))))
+  .seq (ifBatch (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq (ghLoop e3) (.block ghFinish))))
   (.seq (.block rest) (absorb c))
 
 /-- POLYVAL of the additional data, the data and the lengths, and the tag
@@ -176,7 +192,7 @@ input (`Impl.AesGcmSiv.AArch64.polyval`, with `polyData`). -/
 def polyval : Prog isa :=
   .seq (.block [mov .x27 .x23, mov .x28 .x24])
   (.seq (absorb c)
-  (.seq (polyData c)
+  (.seq (polyData e3 c)
   (.seq (lens c) (.block tagIn))))
 
 /-- The rest of the data, past its batches, from the counter block, by
@@ -190,7 +206,7 @@ def cryptRest : Prog isa :=
 `crypt`'s blocks. -/
 def crypt : Prog isa :=
   .seq (.block cryptHead)
-  (.seq (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish))))
+  (.seq (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds (ctrLoop e3)) (.block ctrFinish))))
     (cryptRest c))
 
 /-- The data decrypted in place and its POLYVAL: the batches by `openLoop`,
@@ -198,12 +214,12 @@ the rest decrypted by `crypt`'s blocks and absorbed. -/
 def openData : Prog isa :=
   .seq (.block cryptHead)
   (.seq (ifBatch (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
-      (.seq (byRounds openLoop) (.block (ctrFinish ++ ghFinish)))))
+      (.seq (byRounds (openLoop e3)) (.block (ctrFinish ++ ghFinish)))))
   (.seq (cryptRest c) (.seq (.block rest) (absorb c))))
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c)
+  .seq (.block entry) (.seq (keys c) (.seq (polyval e3 c) (.seq (tag c tagO) (.seq (crypt e3 c)
     (.block (tagOut ++ restore))))))
 
 /-- `vg_aes_gcm_siv_open`: the additional data absorbed before the data is
@@ -211,7 +227,7 @@ decrypted and absorbed. -/
 def «open» : Prog isa :=
   .seq (.block entry) (.seq (.block recv) (.seq (keys c)
   (.seq (.block [mov .x27 .x23, mov .x28 .x24]) (.seq (absorb c)
-  (.seq (openData c)
+  (.seq (openData e3 c)
   (.seq (lens c) (.seq (.block tagIn) (.seq (tag c bO)
     (.seq (.block cmp) (.seq mask (.block ([mov .x0 .x27] ++ restore))))))))))))
 

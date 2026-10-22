@@ -220,9 +220,9 @@ theorem ctrFinish_ok {p : Prm} (L : Lay p) {H : Spec.Gcm.Block} {m₀ : Mem} {rd
     exact ⟨⟨p.D, p.n⟩, by simp, Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega)⟩
   · simp only [mem_write]; rw [hmem]; exact fw _
 
-theorem ctrBatch_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List Byte}
+theorem ctrBatch_ok (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List Byte}
     (C : CtrSt p.W icb 0 t.mem) (hnb : 1 ≤ p.n / 128) :
-    WP isa (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish))) t
+    WP isa (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds (ctrLoop e3)) (.block ctrFinish))) t
       (BatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
   have hn := L.n_lt
   have hww := L.ww
@@ -269,7 +269,7 @@ theorem ctrBatch_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List 
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, WP.seq ?_⟩)
   refine WP.mono (byRounds_ok (P := CInv σ t₁ 0 0) L.rounds3 E₁.x22
     (fun s' hg _ hm hsp hrd hwr => hI.of_x1314 hg hm hsp hrd hwr)
-    (fun s hs => ctrLoop_ok hp (by rw [E₁.x19]) x15₁ (by rw [rd₁, wr₁]) wr₁ hs)) fun t₂ I => ?_
+    (fun s hs => ctrLoop_ok e3 hp (by rw [E₁.x19]) x15₁ (by rw [rd₁, wr₁]) wr₁ hs)) fun t₂ I => ?_
   have E₂ : Env p t₂ := E₁.keep (fun r hr => I.gpr r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) (by rw [I.sp]) I.rd I.wr
@@ -278,9 +278,9 @@ theorem ctrBatch_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List 
 
 
 /-- The batches, if the data has one. -/
-theorem ctrBatches_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List Byte}
+theorem ctrBatches_ok (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List Byte}
     (C : CtrSt p.W icb 0 t.mem) :
-    WP isa (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish)))) t
+    WP isa (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds (ctrLoop e3)) (.block ctrFinish)))) t
       (BatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
   have hn := L.n_lt
   unfold ifBatch
@@ -292,7 +292,7 @@ theorem ctrBatches_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : Lis
     · rw [h0, m₂, Nat.mul_zero, GcmSiv.ctrPart_zero]
   · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
     rw [← m₂] at C
-    refine WP.mono (ctrBatch_ok L E₂ C h1) fun t₃ B => ?_
+    refine WP.mono (ctrBatch_ok e3 L E₂ C h1) fun t₃ B => ?_
     rw [m₂] at B
     exact ⟨B.env, by rw [B.rd, rd₂], by rw [B.wr, wr₂], B.ctr, B.data, by rw [← m₂]; exact B.frame⟩
 
@@ -367,8 +367,8 @@ theorem cryptRest_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t
 /-! ## Counter mode -/
 
 open VG.Proof.AesGcmSiv.AArch64 (CryptPost cryptHead_ok headMem cryR) in
-theorem crypt_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    WP isa (crypt v.callees) t (CryptPost p t) := by
+theorem crypt_ok (e3 : Bool) (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (crypt e3 v.callees) t (CryptPost p t) := by
   have hw := L.ww
   have hn := L.n_lt
   obtain ⟨t₁, run₁, hm₁, _, _, _, ho₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
@@ -401,7 +401,7 @@ theorem crypt_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : S
       exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- The batches.
-  have hb := WP.mono (ctrBatches_ok L E₁ C₀) fun t₂ (B : BatchPost p _ _ _ t₁ t₂) => by
+  have hb := WP.mono (ctrBatches_ok e3 L E₁ C₀) fun t₂ (B : BatchPost p _ _ _ t₁ t₂) => by
     rw [hc₁, hx₁] at B; exact B
   refine WP.seq (WP.mono hb fun t₂ B => ?_)
   have hc₂ : Spec.GcmSiv.ctxCiph t₂.mem (p.W + BitVec.ofNat 64 240) p.R =

@@ -74,10 +74,10 @@ structure OBatchPost (p : Prm) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) (
     ghashFrom (blockAt t.mem (p.W + BitVec.ofNat 64 64)) (blockAt t.mem (p.W + BitVec.ofNat 64 80))
       (elemsAt t'.mem p.D (8 * (p.n / 128)))
 
-theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
     {icb : List Byte} (C : CtrSt p.W icb 0 t.mem) (hnb : 1 ≤ p.n / 128) :
     WP isa (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
-      (.seq (byRounds openLoop) (.block (ctrFinish ++ ghFinish)))) t
+      (.seq (byRounds (openLoop e3)) (.block (ctrFinish ++ ghFinish)))) t
       (OBatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
   have hn := L.n_lt
   have hww := L.ww
@@ -168,7 +168,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : Stat
   refine WP.seq (WP.mono (byRounds_ok (P := fun s' => CInv σ s₃ 0 0 s' ∧ s'.v = s₃.v) L.rounds3 E₃.x22
     (fun s' hg hv hm hsp hrd hwr => ⟨hI.of_x1314 hg hm hsp hrd hwr, hv⟩)
     (fun s ⟨hs, hv⟩ => openLoop_ok hp gh (y := blockAt t.mem (p.W + BitVec.ofNat 64 80)) x19₃ x15₃
-      (by rw [rd₃, wr₃, rd₂, wr₂, rd₁, wr₁]) (by rw [wr₃, wr₂, wr₁]) hs (by rw [hv, y₃, hY]) (by rw [hv]; exact c₃)))
+      (by rw [rd₃, wr₃, rd₂, wr₂, rd₁, wr₁]) (by rw [wr₃, wr₂, wr₁]) e3 hs (by rw [hv, y₃, hY]) (by rw [hv]; exact c₃)))
     fun s₄ O => ?_)
   -- The counter's word and `Y` stored back.
   have E₄ : Env p s₄ := E₃.keep (fun r hr => O.ci.gpr r (by
@@ -213,10 +213,10 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : Stat
 
 
 /-- The batches, if the data has one. -/
-theorem openBatches_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+theorem openBatches_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
     {icb : List Byte} (C : CtrSt p.W icb 0 t.mem) :
     WP isa (ifBatch (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
-      (.seq (byRounds openLoop) (.block (ctrFinish ++ ghFinish))))) t
+      (.seq (byRounds (openLoop e3)) (.block (ctrFinish ++ ghFinish))))) t
       (OBatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
   have hn := L.n_lt
   unfold ifBatch
@@ -229,7 +229,7 @@ theorem openBatches_ok (hP : PrepPow) (gh : Gh8Ok) {p : Prm} (L : Lay p) {t : St
     · rw [h0, m₂]; simp [elemsAt, ghashFrom]
   · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
     rw [← m₂] at C
-    refine WP.mono (openBatch_ok hP gh L E₂ C h1) fun t₃ B => ?_
+    refine WP.mono (openBatch_ok hP gh e3 L E₂ C h1) fun t₃ B => ?_
     rw [m₂] at B
     exact ⟨B.env, by rw [B.rd, rd₂], by rw [B.wr, wr₂], B.ctr, B.data, by rw [← m₂]; exact B.frame,
       by rw [B.out, m₂]⟩
@@ -260,8 +260,8 @@ structure OpenPost (p : Prm) (t t' : State) : Prop where
       (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t'.mem p.D p.n)))
 
 open VG.Proof.AesGcmSiv.AArch64 (cryptHead_ok headMem TailPost key_cryR) in
-theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    WP isa (openData v.callees) t (OpenPost p t) := by
+theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (openData e3 v.callees) t (OpenPost p t) := by
   have hw := L.ww
   have hn := L.n_lt
   obtain ⟨t₁, run₁, hm₁, _, _, _, ho₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
@@ -321,7 +321,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) {p : Prm} (L : Lay
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- The batches.
-  have hb := WP.mono (openBatches_ok hP gh L E₁ C₀) fun t₂ (B : OBatchPost p _ _ _ t₁ t₂) => by
+  have hb := WP.mono (openBatches_ok hP gh e3 L E₁ C₀) fun t₂ (B : OBatchPost p _ _ _ t₁ t₂) => by
     rw [hc₁, hx₁] at B; exact B
   refine WP.seq (WP.mono hb fun t₂ B => ?_)
   have hc₂ : Spec.GcmSiv.ctxCiph t₂.mem (p.W + BitVec.ofNat 64 240) p.R =

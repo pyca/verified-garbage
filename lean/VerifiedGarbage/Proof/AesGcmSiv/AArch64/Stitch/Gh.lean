@@ -24,9 +24,9 @@ open VG VG.AArch64
 open VG.Proof.Gcm.AArch64.Pmull (Prod ext8 VOnly v_setV gpr_setV mem_setV rd_setV wr_setV sp_setV
   exec_pmull0 exec_pmull1 exec_eor exec_ext8 vdword_append_0 vdword_append_1)
 open VG.Proof.Gcm.AArch64.Stitch (prodS kpair fix gh8V ghV pairV exec_trn trn_sum vdword_ofVDwords0
-  vdword_ofVDwords1 addY_ok addFirst_ok addNext_ok reduce_ok)
+  vdword_ofVDwords1 addY_ok addFirst_ok addNext_ok reduce_ok exec_eor3)
 open VG.Impl.AesGcmSiv.AArch64.Stitch
-open VG.Impl.Gcm.AArch64.Stitch (Y C HI LO MID A₁ A₂ S₁ S₂ KP T U X₁ X₂ pa pk pb pl addFirst addNext)
+open VG.Impl.Gcm.AArch64.Stitch (Y C HI LO MID A₁ A₂ S₁ S₂ KP T U X₁ X₂ pa pk pb pl addFirst)
 
 /-- Block `j` of the eight at `x9`, its halves swapped. -/
 def blkV (s : State) (j : Nat) : BitVec 128 :=
@@ -137,6 +137,49 @@ theorem pair_ok (p a k b l : Nat) (y : Bool) (s : State) (hin : GhIn s) (hp : p 
   simp only [ht] at h1 h2 h3 h4 h5 h6
   exact ⟨h1, h2, h3, h4, h5, h6, (o₁₃.trans o).weaken⟩
 
+/-! ## The sums -/
+
+/-- A pair's products added, as `Proof.Gcm.AArch64.Stitch.addNext_ok`. -/
+theorem addNext3_ok (e3 : Bool) (s : State) :
+    WP isa (.block (addNext3 e3)) s fun s' =>
+      prodS s' = ⟨s.v LO ^^^ s.v A₁ ^^^ s.v A₂, s.v MID ^^^ s.v U ^^^ s.v T, s.v HI ^^^ s.v X₁ ^^^ s.v X₂⟩ ∧
+        VOnly [HI, LO, MID] s s' := by
+  cases e3
+  · apply WP.of_runBlock
+    simp only [addNext3, xor3, Bool.false_eq_true, ite_false, List.cons_append, List.nil_append, runBlock_cons,
+      runStep_some, runBlock_nil, exec_eor, Option.some.injEq, exists_eq_left']
+    refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV], by simp only [rd_setV],
+      by simp only [wr_setV], by simp only [sp_setV]⟩⟩
+    · simp only [prodS, v_setV, ite_true, ite_false, reduceCtorEq]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [v_setV, hr.1, hr.2.1, hr.2.2, ite_false]
+  · exact addNext_ok s
+
+/-- The reduction, as `Proof.Gcm.AArch64.Stitch.reduce_ok`. -/
+theorem reduce3_ok (e3 : Bool) (s : State)
+    (hc : s.v C = ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly) :
+    WP isa (.block (reduce3 e3)) s fun s' =>
+      s'.v Y = Proof.Gcm.AArch64.Pmull.reduce (fix (prodS s)) ∧ VOnly [T, U, MID, HI, Y] s s' := by
+  cases e3
+  · have hc0 : vdword (ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly) 0 =
+      Impl.Gcm.AArch64.Pmull.poly := vdword_append_0 _ _
+    apply WP.of_runBlock
+    simp only [reduce3, xor3, Bool.false_eq_true, ite_false, List.cons_append, List.nil_append, runBlock_cons,
+      runStep_some, runBlock_nil, exec_pmull0, exec_ext8, exec_eor, Option.some.injEq, exists_eq_left', v_setV,
+      ite_true, ite_false, reduceCtorEq, hc]
+    refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV], by simp only [rd_setV],
+      by simp only [wr_setV], by simp only [sp_setV]⟩⟩
+    · simp only [hc0, Proof.Gcm.AArch64.Pmull.reduce, fix, prodS]
+      have e : s.v MID ^^^ (ext8 (s.v LO) (s.v LO) ^^^ s.v LO ^^^ s.v HI) ^^^
+          polyMul (vdword (s.v LO) 0) Impl.Gcm.AArch64.Pmull.poly =
+          s.v MID ^^^ s.v HI ^^^ s.v LO ^^^ ext8 (s.v LO) (s.v LO) ^^^
+            polyMul (vdword (s.v LO) 0) Impl.Gcm.AArch64.Pmull.poly := by
+        ac_rfl
+      rw [e]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [v_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+  · exact reduce_ok s hc
+
 /-! ## The part -/
 
 /-- The products of pair `p`, added to `pv`. -/
@@ -144,10 +187,10 @@ def pairP (s : State) (pv : Prod) (p : Nat) : Prod :=
   kpair pv (blkV s (pa p)) (tblV s (sOff (pk p))) (blkV s (pb p) ^^^ (if p = 3 then s.v Y else 0))
     (tblV s (sOff (pl p))) (tblV s (kOff p))
 
-theorem pairAdd_ok (p : Nat) (hp : p < 4) (first : Bool) (s₀ s : State) (hin : GhIn s₀)
+theorem pairAdd_ok (e3 : Bool) (p : Nat) (hp : p < 4) (first : Bool) (s₀ s : State) (hin : GhIn s₀)
     (hg : s.gpr = s₀.gpr) (hm : s.mem = s₀.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hy : s.v Y = s₀.v Y) :
-    WP isa (.block (pair p (pa p) (pk p) (pb p) (pl p) (decide (p = 3)) ++ (if first then addFirst else addNext)))
+    WP isa (.block (pair p (pa p) (pk p) (pb p) (pl p) (decide (p = 3)) ++ (if first then addFirst else addNext3 e3)))
       s fun s' => prodS s' = pairP s₀ (if first then ⟨0, 0, 0⟩ else prodS s) p ∧ VOnly pairV s s' := by
   have hin' := hin.of hg hrd hwr
   rw [WP.block_append_iff]
@@ -160,7 +203,7 @@ theorem pairAdd_ok (p : Nat) (hp : p < 4) (first : Bool) (s₀ s : State) (hin :
   have eb : ∀ j, blkV s j = blkV s₀ j := fun j => by simp only [blkV, hm, hg]
   have et : ∀ o, tblV s o = tblV s₀ o := fun o => by simp only [tblV, hm, hg]
   cases first
-  · refine WP.mono (addNext_ok s₁) fun s' ⟨e, o⟩ => ⟨?_, (o₁.trans o).weaken⟩
+  · refine WP.mono (addNext3_ok e3 s₁) fun s' ⟨e, o⟩ => ⟨?_, (o₁.trans o).weaken⟩
     rw [e, h1, h2, h3, h4, h5, h6, o₁.v LO (by decide), o₁.v MID (by decide), o₁.v HI (by decide)]
     simp only [pairP, kpair, Proof.Gcm.AArch64.Stitch.kadd, prodS, decide_eq_true_eq, hy, eb, et,
       Bool.false_eq_true, ite_false]
@@ -169,34 +212,34 @@ theorem pairAdd_ok (p : Nat) (hp : p < 4) (first : Bool) (s₀ s : State) (hin :
     simp only [pairP, kpair, Proof.Gcm.AArch64.Stitch.kadd, BitVec.ofNat_eq_ofNat, BitVec.zero_xor, ite_true,
       decide_eq_true_eq, hy, eb, et]
 
-theorem ghPart_eq : ghPart =
-    (pair 0 (pa 0) (pk 0) (pb 0) (pl 0) (decide (0 = 3)) ++ (if true then addFirst else addNext)) ++
-    ((pair 1 (pa 1) (pk 1) (pb 1) (pl 1) (decide (1 = 3)) ++ (if false then addFirst else addNext)) ++
-    ((pair 2 (pa 2) (pk 2) (pb 2) (pl 2) (decide (2 = 3)) ++ (if false then addFirst else addNext)) ++
-    ((pair 3 (pa 3) (pk 3) (pb 3) (pl 3) (decide (3 = 3)) ++ (if false then addFirst else addNext)) ++
-    Impl.Gcm.AArch64.Stitch.reduce))) := by
+theorem ghPart_eq (e3 : Bool) : ghPart e3 =
+    (pair 0 (pa 0) (pk 0) (pb 0) (pl 0) (decide (0 = 3)) ++ (if true then addFirst else addNext3 e3)) ++
+    ((pair 1 (pa 1) (pk 1) (pb 1) (pl 1) (decide (1 = 3)) ++ (if false then addFirst else addNext3 e3)) ++
+    ((pair 2 (pa 2) (pk 2) (pb 2) (pl 2) (decide (2 = 3)) ++ (if false then addFirst else addNext3 e3)) ++
+    ((pair 3 (pa 3) (pk 3) (pb 3) (pl 3) (decide (3 = 3)) ++ (if false then addFirst else addNext3 e3)) ++
+    reduce3 e3))) := by
   simp only [ghPart, List.append_assoc]; rfl
 
-theorem ghPart_ok (s : State) (hin : GhIn s)
+theorem ghPart_ok (e3 : Bool) (s : State) (hin : GhIn s)
     (hc : s.v C = ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly) :
-    WP isa (.block ghPart) s fun s' =>
+    WP isa (.block (ghPart e3)) s fun s' =>
       s'.v Y = gh8V (s.v Y) (blkV s) (fun k => tblV s (sOff k)) (fun p => tblV s (kOff p)) ∧
         VOnly ghV s s' := by
-  rw [ghPart_eq, WP.block_append_iff]
-  refine WP.mono (pairAdd_ok 0 (by decide) true s s hin rfl rfl rfl rfl rfl) fun s₁ ⟨p₁, o₁⟩ => ?_
+  rw [ghPart_eq e3, WP.block_append_iff]
+  refine WP.mono (pairAdd_ok e3 0 (by decide) true s s hin rfl rfl rfl rfl rfl) fun s₁ ⟨p₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (pairAdd_ok 1 (by decide) false s s₁ hin o₁.gpr o₁.mem o₁.rd o₁.wr (o₁.v Y (by decide)))
+  refine WP.mono (pairAdd_ok e3 1 (by decide) false s s₁ hin o₁.gpr o₁.mem o₁.rd o₁.wr (o₁.v Y (by decide)))
     fun s₂ ⟨p₂, o₂⟩ => ?_
   have O₂ := (o₁.trans o₂).weaken (rs' := pairV)
   rw [WP.block_append_iff]
-  refine WP.mono (pairAdd_ok 2 (by decide) false s s₂ hin O₂.gpr O₂.mem O₂.rd O₂.wr (O₂.v Y (by decide)))
+  refine WP.mono (pairAdd_ok e3 2 (by decide) false s s₂ hin O₂.gpr O₂.mem O₂.rd O₂.wr (O₂.v Y (by decide)))
     fun s₃ ⟨p₃, o₃⟩ => ?_
   have O₃ := (O₂.trans o₃).weaken (rs' := pairV)
   rw [WP.block_append_iff]
-  refine WP.mono (pairAdd_ok 3 (by decide) false s s₃ hin O₃.gpr O₃.mem O₃.rd O₃.wr (O₃.v Y (by decide)))
+  refine WP.mono (pairAdd_ok e3 3 (by decide) false s s₃ hin O₃.gpr O₃.mem O₃.rd O₃.wr (O₃.v Y (by decide)))
     fun s₄ ⟨p₄, o₄⟩ => ?_
   have O₄ := (O₃.trans o₄).weaken (rs' := pairV)
-  refine WP.mono (reduce_ok s₄ (by rw [O₄.v C (by decide), hc])) fun s' ⟨e, o⟩ => ⟨?_, (O₄.trans o).weaken⟩
+  refine WP.mono (reduce3_ok e3 s₄ (by rw [O₄.v C (by decide), hc])) fun s' ⟨e, o⟩ => ⟨?_, (O₄.trans o).weaken⟩
   rw [e, p₄, p₃, p₂, p₁]
   simp only [ite_true, Bool.false_eq_true, ite_false, gh8V, pairP]
 
