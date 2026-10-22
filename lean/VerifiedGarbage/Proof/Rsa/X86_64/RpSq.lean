@@ -191,27 +191,20 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   obtain ⟨y, done, ok⟩ := st
   dsimp only at hy hylt hc2 hc3
   have hYlt : wv u.mem B (slot w aY) w < N := by rw [hy]; exact Nat.mod_lt _ (by omega)
-  rw [show sqBody M.mm = seqs ([copyA aX aY, M.mm aX aX aY] ++ (eqA aX aO ++ ([.block (eqStore sMask)] ++
+  rw [show sqBody M.mm = seqs ([M.mm aX aY aY] ++ (eqA aX aO ++ ([.block (eqStore sMask)] ++
     (eqA aX aNg ++ [.block sqLogic, wordLoop 0 selBody, .block sqNext])))) by
       simp only [sqBody, List.append_assoc]]
   refine wp_seqs_append (by simp) (by simp) ?_
   simp only [seqs]
   -- `x = y²`.
-  refine WP.seq (WP.mono (copyA_ok hcu.ws (o := aX) (a := aY) (by decide) (by decide) (by decide))
-    fun u₁ ⟨hx₁, o₁, k₁⟩ => ?_)
-  have hf₁ : Frm B (rg w [aX] []) u.mem u₁.mem := Frm.rg_of_out o₁ (by omega) _ _ (by decide)
-  have hc₁ := hcu.congr hf₁ (by decide) (by simp) k₁ (by decide)
-  have hY₁ : wv u₁.mem B (slot w aY) w = wv u.mem B (slot w aY) w :=
-    hf₁.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)
-  have hg₁ := hc₁.good
-  refine WP.mono (M.mm_ok hg₁.1 hg₁.2 hw1 (by omega) (o := aX) (a := aX) (b := aY) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc₁.hinv
-    (by rw [hY₁, hc₁.hn]; exact hYlt)) fun u₂ ⟨_, hlt₂, hm₂, ha₂, k₂⟩ => ?_
-  rw [hc₁.hn] at hlt₂ hm₂
-  rw [hx₁, hY₁] at hm₂
+  have hg := hcu.good
+  refine WP.mono (M.mm_ok hg.1 hg.2 hw1 (by omega) (o := aX) (a := aY) (b := aY) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hcu.hinv
+    (by rw [hcu.hn]; exact hYlt)) fun u₂ ⟨_, hlt₂, hm₂, ha₂, k₂⟩ => ?_
+  rw [hcu.hn] at hlt₂ hm₂
   have hX₂ : wv u₂.mem B (slot w aX) w = y * y % N * 2 ^ (64 * w) % N := sq_mont hR hy hlt₂ hm₂
-  have hf₂ : Frm B (rg w [aAcc, aTmp, aX] []) u₁.mem u₂.mem := Frm.rg_of_arrays ha₂ _ _ (by decide)
-  have hc₂ := hc₁.congr hf₂ (by decide) (by simp) k₂ (by decide)
+  have hf₂ : Frm B (rg w [aAcc, aTmp, aX] []) u.mem u₂.mem := Frm.rg_of_arrays ha₂ _ _ (by decide)
+  have hc₂ := hcu.congr hf₂ (by decide) (by simp) k₂ (by decide)
   have hxN : y * y % N < N := Nat.mod_lt _ (by omega)
   -- `x = 1`.
   refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₂.ws (a := aX) (b := aO) (by decide)
@@ -236,7 +229,7 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have hem : decide (u₅.gpr .rbp = 0) = decide (y * y % N = N - 1) := decide_eq_decide.mpr hz₅
   -- The masks.
   have hw5 : ∀ i, i < 32 → i ≠ sMask → word u₅.mem B (8 * i) = word u.mem B (8 * i) := fun i hi hne => by
-    rw [m₅, hf₄.rg_word hi (by simpa using hne), m₃, hf₂.rg_word hi (by simp), hf₁.rg_word hi (by simp)]
+    rw [m₅, hf₄.rg_word hi (by simpa using hne), m₃, hf₂.rg_word hi (by simp)]
   have hm₅ : word u₅.mem B (8 * sMask) = mask (decide (y * y % N = 1)) := by rw [m₅, m₄, word_writeW_self]
   simp only [seqs]
   rw [sqLogic_eq]
@@ -266,8 +259,8 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have hf₉ : Frm B (rg w [] [sC1]) u₈.mem u'.mem := by
     rw [m₉]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC1, sCnt, sFn]; omega)) _ _
       (List.mem_singleton_self _)
-  have hfu₅ : Frm B (rg w [aX, aAcc, aTmp, aX] [sMask]) u.mem u₅.mem := by
-    have := ((hf₁.rg_trans hf₂).rg_trans (js' := []) (hs' := [])
+  have hfu₅ : Frm B (rg w [aAcc, aTmp, aX] [sMask]) u.mem u₅.mem := by
+    have := (hf₂.rg_trans (js' := []) (hs' := [])
       (by rw [m₃]; exact Frm.refl _ _ _ : Frm B (rg w [] []) u₂.mem u₃.mem)).rg_trans hf₄
     rw [← m₅] at this
     exact this.rg_mono (by decide) (by decide)
@@ -277,12 +270,12 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
     rw [hy₈, m₇, hf₆.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
       hf₆.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), m₅, hX₄,
       hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), m₃,
-      hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hY₁, hy, hX₂]
+      hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hy, hX₂]
     split <;> rfl
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (((((hI.frm.rg_trans hfu₅).rg_trans hf₆).rg_trans (by rw [m₇]; exact Frm.refl _ _ _ :
       Frm B (rg w [] []) u₆.mem u₇.mem)).rg_trans hf₈).rg_trans hf₉).rg_mono (by decide) (by decide)
-  · exact ((((((((((hI.keep.trans k₁).trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans k₈).trans
+  · exact (((((((((hI.keep.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans k₈).trans
       k₉).mono (by decide))
   · rw [hst, hf₉.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hY₈]
     simp only [sqStep]

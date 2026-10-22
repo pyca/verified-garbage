@@ -253,10 +253,11 @@ def sqNext : List Instr :=
   ([.mov .rax (.mem (hdr sC1)), .alu .add .rax (.imm 1), .store (hdr sC1) .rax, .mov .rdx (.reg .rax)] : List Instr) ++ bw ++
     List.replicate 6 (.alu .add .rax (.reg .rax)) ++ ([.alu .cmp .rdx (.reg .rax)] : List Instr)
 
-/-- A squaring: `x := y²`, the masks of `x = ±1`, and `y := x` if the
+/-- A squaring: `x := y²`, with identical operand indices so Montgomery
+multiplication uses its square implementation, without copying `y`; the masks of `x = ±1`, and `y := x` if the
 squarings continue. -/
 def sqBody : Prog isa :=
-  seqs ([copyA aX aY, mul aX aX aY] ++ eqA aX aO ++ [.block (eqStore sMask)] ++ eqA aX aNg ++
+  seqs ([mul aX aY aY] ++ eqA aX aO ++ [.block (eqStore sMask)] ++ eqA aX aNg ++
     [.block sqLogic, wordLoop 0 selBody, .block sqNext])
 
 /-- The candidates tried `+= 1`, and `ZF` set to stop if `ok` or 100 are
