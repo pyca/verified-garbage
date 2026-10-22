@@ -40957,7 +40957,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2"]);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -40976,7 +40976,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -72045,7 +72045,7 @@ jmp 2232b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2"]);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -72062,7 +72062,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -82683,7 +82683,7 @@ jmp 2152b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2"]);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -82703,7 +82703,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::F
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -82972,7 +82972,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_split_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2"]);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
@@ -82993,7 +82993,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Fe
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -127252,7 +127252,7 @@ jmp 2186b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2", "avx512ifma"]);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -127269,7 +127269,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features =
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -127772,7 +127772,7 @@ jmp 257b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma", "avx512vl"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2", "avx512ifma"]);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -127791,7 +127791,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features =
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -137128,7 +137128,7 @@ jmp 2152b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2", "avx512ifma"]);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -137148,7 +137148,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Fea
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -137435,7 +137435,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_split_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl", "avx2", "avx512ifma"]);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
@@ -137456,7 +137456,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Feat
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
