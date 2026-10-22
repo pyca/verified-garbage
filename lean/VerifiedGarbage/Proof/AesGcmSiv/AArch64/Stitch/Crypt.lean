@@ -156,6 +156,70 @@ theorem ctrSetup_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   · simp [gpr_write, E.x25]
   · simp [gpr_write, E.x26, lsr_ofNat _ _ L.n_lt]
 
+/-- `ctrFinish`: the counter's word stored back, after the batches. -/
+theorem ctrFinish_ok {p : Prm} (L : Lay p) {H : Spec.Gcm.Block} {m₀ : Mem} {rd wr : List Region} {icb : List Byte}
+    (C : CtrSt p.W icb 0 m₀) {s₀ t₂ : State}
+    (I : CInv ⟨p.W, p.W + BitVec.ofNat 64 240, p.D, p.R, p.n / 128, H, m₀, rd, wr⟩ s₀ (p.n / 128) (p.n / 128) t₂)
+    (E₂ : Env p t₂) :
+    WP isa (.block ctrFinish) t₂ fun t₃ => Env p t₃ ∧ t₃.rd = t₂.rd ∧ t₃.wr = t₂.wr ∧ t₃.v = t₂.v ∧
+      CtrSt p.W icb (8 * (p.n / 128)) t₃.mem ∧
+      bytesAt t₃.mem p.D p.n = GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph m₀ (p.W + BitVec.ofNat 64 240) p.R) icb
+        (bytesAt m₀ p.D p.n) (128 * (p.n / 128)) ∧
+      Frame (VG.Proof.AesGcmSiv.AArch64.cryR p.W p.D p.n) m₀ t₃.mem ∧
+      Frame [⟨p.W + BitVec.ofNat 64 96, 4⟩] t₂.mem t₃.mem := by
+  have hn := L.n_lt
+  have hww := L.ww
+  let σ : Ctx := ⟨p.W, p.W + BitVec.ofNat 64 240, p.D, p.R, p.n / 128, H, m₀, rd, wr⟩
+  have c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
+  have hf₂ : Frame [σ.dR] m₀ t₂.mem := I.frame
+  have dDR : ∀ {d k : Nat}, d + k ≤ 3808 → ∀ q ∈ [σ.dR], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
+    fun h q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact ((L.d_w' h).sub_left (Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega))).symm
+  have r₂ : bytesAt t₂.mem (p.W + BitVec.ofNat 64 100) 12 = bytesAt m₀ (p.W + BitVec.ofNat 64 100) 12 :=
+    Proof.AesGcm.AArch64.bytesAt_frame hf₂ (dDR (by decide)) (by decide)
+  have fw : ∀ v : BitVec 32, Frame [⟨p.W + BitVec.ofNat 64 96, 4⟩] t₂.mem
+      (t₂.mem.writeW (p.W + BitVec.ofNat 64 96) v) :=
+    fun v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hmem : ∀ v : BitVec 32, t₂.mem.write (p.W + BitVec.ofNat 64 96) 4 v =
+      t₂.mem.writeW (p.W + BitVec.ofNat 64 96) v := fun v => by
+    simp only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq]
+  have hd₂ : bytesAt t₂.mem p.D p.n =
+      GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph m₀ (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt m₀ p.D p.n)
+        (128 * (p.n / 128)) :=
+    ctrPart_of_dataInv (σ := σ) C rfl I.data fun q hq hq' =>
+      frame_outside (a := 0) (n := 128 * (p.n / 128)) hf₂ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact .inl (by show (⟨p.D, 128 * (p.n / 128)⟩ : Region) = ⟨p.D + BitVec.ofNat 64 0, _⟩; simp))
+        hn (by omega) q hq (.inr (by rw [Nat.zero_add]; exact hq'))
+  refine WP.run ⟨_, by simp only [ctrFinish]; grun [E₂.x19, c₁], rfl⟩ fun t₃ ht₃ => ?_
+  subst ht₃
+  refine ⟨E₂.keep (fun r hr => by
+      simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp) rfl rfl rfl,
+    by simp only [rd_write], by simp only [wr_write], rfl, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_write]
+    refine ⟨?_, ?_⟩
+    · rw [hmem, Mem.readW_writeW_self32]
+      have h := I.x10
+      simp only [State.read, Size.bits] at h
+      rw [h]
+      show m₀.readW (p.W + BitVec.ofNat 64 96) 32 + _ = _
+      rw [C.word, Nat.add_zero, ← BitVec.ofNat_add]
+    · rw [hmem, Proof.AesGcm.AArch64.bytesAt_frame (fw _) (fun q hq => by
+          simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
+          (by decide), r₂, C.rest]
+  · simp only [mem_write]
+    rw [hmem, Proof.AesGcm.AArch64.bytesAt_frame (fw _) (fun q hq => by
+        simp only [List.mem_singleton] at hq; subst hq; exact L.d_w' (by decide)) (Nat.le_of_lt hn), hd₂]
+  · simp only [mem_write]
+    rw [hmem]
+    refine (hf₂.sub fun q hq => ?_).writeW (List.mem_cons_self ..) _
+      (Offset.contains p.W (Nat.le_refl _) (by decide) (by decide))
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨⟨p.D, p.n⟩, by simp, Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega)⟩
+  · simp only [mem_write]; rw [hmem]; exact fw _
+
 theorem ctrBatch_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List Byte}
     (C : CtrSt p.W icb 0 t.mem) (hnb : 1 ≤ p.n / 128) :
     WP isa (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds ctrLoop) (.block ctrFinish))) t
@@ -206,58 +270,11 @@ theorem ctrBatch_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {icb : List 
   refine WP.mono (byRounds_ok (P := CInv σ t₁ 0 0) L.rounds3 E₁.x22
     (fun s' hg _ hm hsp hrd hwr => hI.of_x1314 hg hm hsp hrd hwr)
     (fun s hs => ctrLoop_ok hp (by rw [E₁.x19]) x15₁ (by rw [rd₁, wr₁]) wr₁ hs)) fun t₂ I => ?_
-  -- The counter's word stored back.
   have E₂ : Env p t₂ := E₁.keep (fun r hr => I.gpr r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) (by rw [I.sp]) I.rd I.wr
-  have c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
-  have hf₂ : Frame [σ.dR] t.mem t₂.mem := I.frame
-  have dDR : ∀ {d k : Nat}, d + k ≤ 3808 → ∀ q ∈ [σ.dR], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
-    fun h q hq => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact ((L.d_w' h).sub_left (Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega))).symm
-  have r₂ : bytesAt t₂.mem (p.W + BitVec.ofNat 64 100) 12 = bytesAt t.mem (p.W + BitVec.ofNat 64 100) 12 :=
-    Proof.AesGcm.AArch64.bytesAt_frame hf₂ (dDR (by decide)) (by decide)
-  have fw : ∀ v : BitVec 32, Frame [⟨p.W + BitVec.ofNat 64 96, 4⟩] t₂.mem
-      (t₂.mem.writeW (p.W + BitVec.ofNat 64 96) v) :=
-    fun v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hmem : ∀ v : BitVec 32, t₂.mem.write (p.W + BitVec.ofNat 64 96) 4 v =
-      t₂.mem.writeW (p.W + BitVec.ofNat 64 96) v := fun v => by
-    simp only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq]
-  have hd₂ : bytesAt t₂.mem p.D p.n =
-      GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n)
-        (128 * (p.n / 128)) :=
-    ctrPart_of_dataInv (σ := σ) C rfl I.data fun q hq hq' =>
-      frame_outside (a := 0) (n := 128 * (p.n / 128)) hf₂ (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr
-          exact .inl (by show (⟨p.D, 128 * (p.n / 128)⟩ : Region) = ⟨p.D + BitVec.ofNat 64 0, _⟩; simp))
-        hn (by omega) q hq (.inr (by rw [Nat.zero_add]; exact hq'))
-  refine WP.run ⟨_, by simp only [ctrFinish]; grun [E₂.x19, c₁], rfl⟩ fun t₃ ht₃ => ?_
-  subst ht₃
-  refine ⟨E₂.keep (fun r hr => by
-      simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp) rfl rfl rfl,
-    by simp only [rd_write]; rw [I.rd, rd₁], by simp only [wr_write]; rw [I.wr, wr₁], ?_, ?_, ?_⟩
-  · simp only [mem_write]
-    refine ⟨?_, ?_⟩
-    · rw [hmem, Mem.readW_writeW_self32]
-      have h := I.x10
-      simp only [State.read, Size.bits] at h
-      rw [h]
-      show t.mem.readW (p.W + BitVec.ofNat 64 96) 32 + _ = _
-      rw [C.word, Nat.add_zero, ← BitVec.ofNat_add]
-    · rw [hmem, Proof.AesGcm.AArch64.bytesAt_frame (fw _) (fun q hq => by
-          simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
-          (by decide), r₂, C.rest]
-  · simp only [mem_write]
-    rw [hmem, Proof.AesGcm.AArch64.bytesAt_frame (fw _) (fun q hq => by
-        simp only [List.mem_singleton] at hq; subst hq; exact L.d_w' (by decide)) (Nat.le_of_lt hn), hd₂]
-  · simp only [mem_write]
-    rw [hmem]
-    refine (hf₂.sub fun q hq => ?_).writeW (List.mem_cons_self ..) _
-      (Offset.contains p.W (Nat.le_refl _) (by decide) (by decide))
-    simp only [List.mem_singleton] at hq; subst hq
-    exact ⟨⟨p.D, p.n⟩, by simp, Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega)⟩
+  refine WP.mono (ctrFinish_ok L C I E₂) fun t₃ ⟨E₃, rd₃, wr₃, _, C₃, d₃, f₃, _⟩ =>
+    ⟨E₃, by rw [rd₃, I.rd, rd₁], by rw [wr₃, I.wr, wr₁], C₃, d₃, f₃⟩
 
 /-! ## The rest -/
 
