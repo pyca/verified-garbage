@@ -96,4 +96,31 @@ theorem ctrPart_of_dataInv {σ : Ctx} {icb : List Byte} (C : CtrSt σ.W icb 0 σ
   · rw [ite_eq_left h, hd q (by omega), ite_eq_left (by omega), ks_eq C]
   · rw [ite_eq_right h, hf q hq (by omega)]
 
+/-! ## The blocks after the batches -/
+
+open VG.Proof.AesGcmSiv.AArch64 (BlocksPost cryptBlock_ok ciph_cryR) in
+/-- `Proof.AesGcmSiv.AArch64.blocks_ok` from block `b₀`. -/
+theorem blocksFrom_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+    {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = p.n) {b₀ : Nat} (hb : b₀ < p.n / 16)
+    (h27 : t.gpr .x27 = p.D + BitVec.ofNat 64 (16 * b₀)) (h28 : t.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * b₀))
+    (C : CtrSt p.W icb b₀ t.mem) (hx : bytesAt t.mem p.D p.n = GcmSiv.ctrPart ciph icb x (16 * b₀))
+    (hc : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = ciph) :
+    WP isa (.loop (Impl.AesGcmSiv.AArch64.cryptBlock v.callees) (.nonzero .x .x9)) t
+      (BlocksPost p ciph icb x (p.n / 16) t) := by
+  refine WP.loop (M := isa) (body := Impl.AesGcmSiv.AArch64.cryptBlock v.callees) (c := .nonzero .x .x9)
+    (fun (k : Nat) (t' : State) => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BlocksPost p ciph icb x j t t') ?_
+    (p.n / 16 - b₀) t ⟨b₀, rfl, hb, ⟨E, rfl, rfl, h27, h28, C, hx, Frame.refl _ _⟩⟩
+  rintro k t' ⟨j, rfl, hj, P⟩
+  have hc' : Spec.GcmSiv.ctxCiph t'.mem (p.W + BitVec.ofNat 64 240) p.R = ciph := by
+    rw [ciph_cryR L P.frame, hc]
+  refine WP.mono (cryptBlock_ok v L P.env hxl (j := j) (by omega) P.x27 P.x28 P.ctr P.data hc') fun t'' Q => ?_
+  have P' : BlocksPost p ciph icb x (j + 1) t t'' :=
+    ⟨Q.env, Q.rd.trans P.rd, Q.wr.trans P.wr, Q.x27, Q.x28, Q.ctr, Q.data, P.frame.trans Q.frame⟩
+  have ev := Proof.AesGcm.AArch64.eval_nonzero Q.x9 (by have := L.n_lt; omega)
+  by_cases he : j + 1 = p.n / 16
+  · left
+    exact ⟨ev.trans (by simp; omega), he ▸ P'⟩
+  · right
+    exact ⟨ev.trans (by simp; omega), p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, P'⟩
+
 end VG.Proof.AesGcmSiv.AArch64.Stitch

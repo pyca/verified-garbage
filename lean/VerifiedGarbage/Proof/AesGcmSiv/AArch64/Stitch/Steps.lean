@@ -87,25 +87,28 @@ structure TblOk (m : Mem) (W : Addr) (H : Block) : Prop where
   sw : ∀ k, 1 ≤ k → k ≤ 8 → m.readW (W + BitVec.ofNat 64 (sOff k)) 128 = ext8 (pp H k) (pp H k)
   key : ∀ p < 4, m.readW (W + BitVec.ofNat 64 (kOff p)) 128 = kpack H (pk p) (pl p)
 
-/-- What the loops need of the context. -/
-structure KPre (σ : Ctx) : Prop where
+/-- What the counter mode of the loops needs of the context. -/
+structure KPreC (σ : Ctx) : Prop where
   rounds : σ.nr = 10 ∨ σ.nr = 12 ∨ σ.nr = 14
   nb1 : 1 ≤ σ.nb
   n16 : 128 * σ.nb < 2 ^ 64
   k_in : InRegions (σ.rd ++ σ.wr) σ.K (16 * (σ.nr + 1))
   c_in : InRegions (σ.rd ++ σ.wr) (σ.W + BitVec.ofNat 64 Impl.AesGcmSiv.AArch64.cbO) 16
   d_in : InRegions σ.wr σ.D (128 * σ.nb)
-  t_in : InRegions (σ.rd ++ σ.wr) (σ.W + BitVec.ofNat 64 tblO) 192
   d_k : σ.dR.Disjoint σ.kR
   d_c : σ.dR.Disjoint σ.cR
-  d_t : σ.dR.Disjoint σ.tR
-  wrap_t : σ.W.toNat + tblO + 192 ≤ 2 ^ 64
   wrap_c : σ.W.toNat + Impl.AesGcmSiv.AArch64.cbO + 16 ≤ 2 ^ 64
   wrap_k : σ.K.toNat + 16 * (σ.nr + 1) ≤ 2 ^ 64
+
+/-- What the loops need of the context, with the table of keys. -/
+structure KPre (σ : Ctx) : Prop extends KPreC σ where
+  t_in : InRegions (σ.rd ++ σ.wr) (σ.W + BitVec.ofNat 64 tblO) 192
+  d_t : σ.dR.Disjoint σ.tR
+  wrap_t : σ.W.toNat + tblO + 192 ≤ 2 ^ 64
   tbl : TblOk σ.m₀ σ.W σ.H
 
-namespace KPre
-variable {σ : Ctx} (hp : KPre σ)
+namespace KPreC
+variable {σ : Ctx} (hp : KPreC σ)
 include hp
 
 theorem k_frame {m : Mem} (hf : Frame [σ.dR] σ.m₀ m) : Spec.Aes.bytesAt m σ.K (16 * (σ.nr + 1)) = σ.sch :=
@@ -120,6 +123,12 @@ theorem c_frame {m : Mem} (hf : Frame [σ.dR] σ.m₀ m) {w : Nat} (hw : w = 32 
       (by simp only [List.mem_singleton, forall_eq]; exact hp.d_c.symm) (by decide)
   · exact hf.readW (r := σ.cR) (by simp [Region.Contains])
       (by simp only [List.mem_singleton, forall_eq]; exact hp.d_c.symm) (by decide)
+
+end KPreC
+
+namespace KPre
+variable {σ : Ctx} (hp : KPre σ)
+include hp
 
 theorem t_frame {m : Mem} (hf : Frame [σ.dR] σ.m₀ m) {o : Nat} (ho : o + 16 ≤ 192) :
     m.readW (σ.W + BitVec.ofNat 64 tblO + BitVec.ofNat 64 o) 128 =
@@ -141,7 +150,7 @@ theorem Ctx.ks_eq (σ : Ctx) (q : Nat) {t : Nat} (ht : t < 16) :
 /-! ## Storing a batch -/
 
 /-- The eight blocks of batch `c` stored at `x9 + o`. -/
-theorem stores_ok {σ : Ctx} (hp : KPre σ) {c o : Nat} (hc : c < σ.nb) (ho : o ≤ 128) (ho16 : o % 16 = 0)
+theorem stores_ok {σ : Ctx} (hp : KPreC σ) {c o : Nat} (hc : c < σ.nb) (ho : o ≤ 128) (ho16 : o % 16 = 0)
     (u : State) (hx9 : u.gpr .x9 + BitVec.ofNat 64 o = σ.D + BitVec.ofNat 64 (128 * c))
     (hdata : DataInv σ.m₀ u.mem σ.D (8 * σ.nb) (8 * c) σ.ks) (hwr : u.wr = σ.wr)
     (hv : ∀ j < 8, ∀ t < 16, vbyte (u.v (breg j)) t =
@@ -174,7 +183,7 @@ theorem stores_ok {σ : Ctx} (hp : KPre σ) {c o : Nat} (hc : c < σ.nb) (ho : o
 /-! ## Counter mode -/
 
 /-- Counter mode of batch `c`, from the data at `x9 + o`. -/
-theorem aesStep {σ : Ctx} (hp : KPre σ) {c o : Nat} {s : State} (hc : c < σ.nb) (ho' : o ≤ 128) (ho16 : o % 16 = 0)
+theorem aesStep {σ : Ctx} (hp : KPreC σ) {c o : Nat} {s : State} (hc : c < σ.nb) (ho' : o ≤ 128) (ho16 : o % 16 = 0)
     (hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * c + j)))
     (hx10 : s.read .w .x10 = σ.c0 + BitVec.ofNat 32 (8 * c))
     (hx19 : s.gpr .x19 = σ.W) (hx15 : s.gpr .x15 = σ.K) (hrdwr : s.rd ++ s.wr = σ.rd ++ σ.wr)

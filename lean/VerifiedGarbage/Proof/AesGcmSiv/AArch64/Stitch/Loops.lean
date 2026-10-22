@@ -194,7 +194,7 @@ theorem CInv.of_x1314 {σ : Ctx} {s₀ : State} {c p : Nat} {s s' : State} (hI :
   rd := by rw [hrd, hI.rd]
   wr := by rw [hwr, hI.wr]
 
-theorem ctrLoop_ok {σ : Ctx} (hp : KPre σ) {s₀ : State}
+theorem ctrLoop_ok {σ : Ctx} (hp : KPreC σ) {s₀ : State}
     (hx19 : s₀.gpr .x19 = σ.W) (hx15 : s₀.gpr .x15 = σ.K) (hrdwr : s₀.rd ++ s₀.wr = σ.rd ++ σ.wr)
     (hwr : s₀.wr = σ.wr) {s : State} (hI : CInv σ s₀ 0 0 s) :
     WP isa (ctrLoop σ.nr) s (CInv σ s₀ σ.nb σ.nb) := by
@@ -288,7 +288,7 @@ theorem openBody_ok {h : Nat} (hh : h + 1 < σ.nb) {s : State} (hI : OInv σ y s
   refine parts_ok hp.rounds ?_
   have hx9 : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (128 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * (h + 1) + j)) :=
     fun j => by rw [hI.ci.x9, Offset.add_add_eq _ (show 128 * h + (128 + 16 * j) = 16 * (8 * (h + 1) + j) by omega)]
-  refine WP.mono (aesStep hp hh (by decide) (by decide) hx9 hI.ci.x10 (by rw [hI.ci.gpr _ (by decide), hx19])
+  refine WP.mono (aesStep hp.toKPreC hh (by decide) (by decide) hx9 hI.ci.x10 (by rw [hI.ci.gpr _ (by decide), hx19])
     (by rw [hI.ci.gpr _ (by decide), hx15]) (by rw [hI.ci.rd, hI.ci.wr, hrdwr]) hI.ci.frame hI.ci.data)
     fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
@@ -299,7 +299,7 @@ theorem openBody_ok {h : Nat} (hh : h + 1 < σ.nb) {s : State} (hI : OInv σ y s
     (fun j hj => by rw [frt.mem]; exact hct j hj)) fun u ⟨hy, ou⟩ => ?_
   rw [WP.block_append_iff]
   have gu : ∀ r, r ≠ .x10 → r ≠ .x12 → u.gpr r = s.gpr r := fun r h1 h2 => by rw [ou.gpr, gt r h1 h2]
-  refine WP.mono (stores_ok hp hh (by decide) (by decide) u (by rw [gu _ (by decide) (by decide), hI.ci.x9,
+  refine WP.mono (stores_ok hp.toKPreC hh (by decide) (by decide) u (by rw [gu _ (by decide) (by decide), hI.ci.x9,
       Offset.add_add_eq _ (show 128 * h + 128 = 128 * (h + 1) by omega)]) (by rw [ou.mem, frt.mem]; exact hI.ci.data)
     (by rw [ou.wr, frt.wr, hI.ci.wr, hwr])
     (fun j hj tt htt => by rw [ou.v _ (by unfold breg; split <;> decide)]; exact hv j hj tt htt))
@@ -333,11 +333,11 @@ theorem openLoop_ok {s : State} (hI : CInv σ s₀ 0 0 s)
   rw [WP.block_append_iff, WP.block_append_iff]
   have hx9₀ : ∀ j, s.gpr .x9 + BitVec.ofNat 64 (0 + 16 * j) = σ.D + BitVec.ofNat 64 (16 * (8 * 0 + j)) :=
     fun j => by rw [hI.x9, Offset.add_add_eq _ (show 128 * 0 + (0 + 16 * j) = 16 * (8 * 0 + j) by omega)]
-  refine WP.mono (aesStep hp (c := 0) h1 (by decide) (by decide) hx9₀ hI.x10 (by rw [hI.gpr _ (by decide), hx19])
+  refine WP.mono (aesStep hp.toKPreC (c := 0) h1 (by decide) (by decide) hx9₀ hI.x10 (by rw [hI.gpr _ (by decide), hx19])
     (by rw [hI.gpr _ (by decide), hx15]) (by rw [hI.rd, hI.wr, hrdwr]) hI.frame hI.data)
     fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
-  refine WP.mono (stores_ok hp (c := 0) (by omega) (by decide) (by decide) t
+  refine WP.mono (stores_ok hp.toKPreC (c := 0) (by omega) (by decide) (by decide) t
     (by rw [gt _ (by decide) (by decide), hI.x9]; exact BitVec.add_zero _) (by rw [frt.mem]; exact hI.data)
     (by rw [frt.wr, hI.wr, hwr]) hv) fun u ⟨d₁, f₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_
   rw [WP.block_cons_iff]
