@@ -152,19 +152,20 @@ def divides (x : Loc) (prime inv : Nat) : Prog isa :=
       (RsaKeyGen.X86.Trial.divisor 4)) (.free 20))
     (.block restoreEdi)
 
+/-- The sieve's frame: the number's address and end, the count, the table's cursor and the hit. -/
+def sieveSetup : Prog isa :=
+  .seq (.block [.store (RsaKeyGen.X86.Sieve.slot 0) .eax, .store (RsaKeyGen.X86.Sieve.slot 4) .ecx,
+      .store (RsaKeyGen.X86.Sieve.slot 12) .edx]) <|
+  .seq RsaKeyGen.X86.Sieve.tableAddress
+    (.block [.store (RsaKeyGen.X86.Sieve.slot 8) .eax, .mov .eax (.imm 0), .store (RsaKeyGen.X86.Sieve.slot 16) .eax])
+
 /-- `eax` one if a prime of RSA's table (512 primes to 1024 bits, 1024 above) divides the
 number, else zero: its sieve, in a frame of its five words (the number, its end, the table's
 cursor, the primes left and the hit). -/
 def sieve (x : Loc) : Prog isa :=
   .seq (.block (bounds x ++ [.mov .edx (.mem (sc bitsOff)), .alu .cmp .edx (.imm 1025), .alu .sbb .edx (.reg .edx),
     .alu .and .edx (.imm 0xFFFFFE00), .alu .add .edx (.imm 1024)])) <|
-  .seq (.frame (.alloc 20)
-    (.seq (.block [.store (RsaKeyGen.X86.Sieve.slot 0) .eax, .store (RsaKeyGen.X86.Sieve.slot 4) .ecx,
-      .store (RsaKeyGen.X86.Sieve.slot 12) .edx])
-    (.seq RsaKeyGen.X86.Sieve.tableAddress
-      (.seq (.block [.store (RsaKeyGen.X86.Sieve.slot 8) .eax, .mov .eax (.imm 0),
-        .store (RsaKeyGen.X86.Sieve.slot 16) .eax])
-        (RsaKeyGen.X86.Sieve.loop RsaKeyGen.X86.Sieve.stackSlots)))) (.free 20))
+  .seq (.frame (.alloc 20) (.seq sieveSetup (RsaKeyGen.X86.Sieve.loop RsaKeyGen.X86.Sieve.stackSlots)) (.free 20))
     (.block restoreEdi)
 
 /-- `−3⁻¹` and `−5⁻¹` modulo `2³²`. -/

@@ -39,16 +39,6 @@ theorem readSt_check : ACheck (.block [.mov .eax (.mem (sc stOff))]) := by dsimp
 variable {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
   {sp : BitVec 32}
 
-/-- A relation that holds for some value of a parameter. -/
-theorem relCT_exists {α : Sort _} {P : α → State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
-    (h : ∀ a, RelCT isa (P a) c Q) : RelCT isa (fun x y => ∃ a, P a x y) c Q :=
-  fun _ _ _ _ _ _ ⟨a, hp⟩ e₁ e₂ => h a _ _ _ _ _ _ hp e₁ e₂
-
-/-- A fact every pair of related runs gives. -/
-theorem relCT_of_imp {A : Prop} {P Q : State → State → Prop} {c : Prog isa} (h : A → RelCT isa P c Q)
-    (hA : ∀ x y, P x y → A) : RelCT isa P c Q :=
-  fun _ _ _ _ _ _ hp e₁ e₂ => h (hA _ _ hp) _ _ _ _ _ _ hp e₁ e₂
-
 /-- `k` halvings done, from a run's start. -/
 abbrev HalvRun (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (sp : BitVec 32) (w k : Nat) (x : State) : Prop :=

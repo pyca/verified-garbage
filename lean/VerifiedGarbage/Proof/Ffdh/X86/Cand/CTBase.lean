@@ -87,4 +87,14 @@ theorem ite_fixed {P : State → Prop} {c : Cond} {b : Bool} (hb : ∀ x, P x �
     · exact (he rfl).mono (fun _ _ h => h.1) fun _ _ h => h
     · exact VG.RelCT.of_false fun x y h => by rw [hb _ h.1.1] at h; cases h.2
 
+/-- A relation that holds for some value of a parameter. -/
+theorem relCT_exists {α : Sort _} {P : α → State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
+    (h : ∀ a, RelCT isa (P a) c Q) : RelCT isa (fun x y => ∃ a, P a x y) c Q :=
+  fun _ _ _ _ _ _ ⟨a, hp⟩ e₁ e₂ => h a _ _ _ _ _ _ hp e₁ e₂
+
+/-- A fact every pair of related runs gives. -/
+theorem relCT_of_imp {A : Prop} {P Q : State → State → Prop} {c : Prog isa} (h : A → RelCT isa P c Q)
+    (hA : ∀ x y, P x y → A) : RelCT isa P c Q :=
+  fun _ _ _ _ _ _ hp e₁ e₂ => h (hA _ _ hp) _ _ _ _ _ _ hp e₁ e₂
+
 end VG.Proof.Ffdh.X86.Cand
