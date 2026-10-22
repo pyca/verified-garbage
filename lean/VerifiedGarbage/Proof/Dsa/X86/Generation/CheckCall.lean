@@ -53,9 +53,9 @@ structure ChkArgs (E : Env) (g : Geo) (s t : State) : Prop where
 
 theorem chkArgs_ok {E : Env} {g : Geo} {s : State} {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t, ChkArgs E g s t → WP isa rest t Q) :
-    WP isa (.seq (.block (scr .eax sPk ++ [.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen))),
-      .mov .edx (.imm (BitVec.ofNat 32 g.pLen)), .mov .ebx (.imm (BitVec.ofNat 32 g.qLen))] ++ scr .esi sChk ++
-      [.mov .ebp (.imm (BitVec.ofNat 32 (16 * g.pLen)))])) rest) s Q := by
+    WP isa (.seq (.block (scr .eax sPk ++ ([.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen))),
+      .mov .edx (.imm (BitVec.ofNat 32 g.pLen)), .mov .ebx (.imm (BitVec.ofNat 32 g.qLen))] : List Instr) ++ scr .esi sChk ++
+      ([.mov .ebp (.imm (BitVec.ofNat 32 (16 * g.pLen)))] : List Instr))) rest) s Q := by
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine WP.seq (scr_ok fun s₁ e₁ g₁ m₁ rd₁ wr₁ sy₁ => wp_movi fun s₂ u₂ => wp_movi fun s₃ u₃ => wp_movi fun s₄ u₄ =>
     scr_ok fun s₅ e₅ g₅ m₅ rd₅ wr₅ sy₅ => wp_movi fun s₆ u₆ => WP.block_nil (k s₆ ?_))
@@ -202,9 +202,9 @@ theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
     {s : State} (B : Base E s) {P : Prog isa} {Q : State → Prop}
     (k : ∀ x, ChkMid E g (Spec.Dsa.checkParametersBytes g.pLen g.qLen
       (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen))) s x → WP isa P x Q) :
-    WP isa (Prog.chain [.block (scr .eax sPk ++ [.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen))),
-      .mov .edx (.imm (BitVec.ofNat 32 g.pLen)), .mov .ebx (.imm (BitVec.ofNat 32 g.qLen))] ++ scr .esi sChk ++
-      [.mov .ebp (.imm (BitVec.ofNat 32 (16 * g.pLen)))]),
+    WP isa (Prog.chain [.block (scr .eax sPk ++ ([.mov .ecx (.imm (BitVec.ofNat 32 (2 * g.pLen + g.qLen))),
+      .mov .edx (.imm (BitVec.ofNat 32 g.pLen)), .mov .ebx (.imm (BitVec.ofNat 32 g.qLen))] : List Instr) ++ scr .esi sChk ++
+      ([.mov .ebp (.imm (BitVec.ofNat 32 (16 * g.pLen)))] : List Instr)),
       .frame (.push [.ebp, .esi, .ebx, .edx, .ecx, .eax]) (.call g.checkName g.checkCode) (.pop .ecx 6),
       .block [.alu .cmp .eax (.imm 1)]] P) s Q := by
   have sz := v.size_ge

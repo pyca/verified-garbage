@@ -32,7 +32,7 @@ def HashMid (E : Env) (g : Geo) (t : State) : Prop :=
 theorem hashPrep_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B : Base E s) :
     WP isa (.block (scr .ebx sState ++ ivStore g.iv ++
       Impl.Pbkdf2.Md.X86.storeW .ebx (g.H.N + g.qLen) (padBytes g.qLen) ((64 - g.qLen) / 4) ++
-      [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 g.H.N))] ++ scr .ebp sHScr)) s
+      ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 g.H.N))] : List Instr) ++ scr .ebp sHScr)) s
       (HashMid E g) := by
   have sz := v.size_ge
   have nl := G.hash.N_le

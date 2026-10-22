@@ -88,13 +88,13 @@ abbrev geo256 (pLen : Nat) (v256 : Proof.Sha256.X86.Variants.Backend) (v : Round
 theorem sha1_prepCt : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
     (.block (scr .ebx sState ++ ivStore Spec.Sha1.H0.toList ++
       Impl.Pbkdf2.Md.X86.storeW .ebx (20 + 20) (padBytes 20) ((64 - 20) / 4) ++
-      [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 20))] ++ scr .ebp sHScr)) fun _ _ => True :=
+      ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 20))] : List Instr) ++ scr .ebp sHScr)) fun _ _ => True :=
   (erased_relCT _ _ (.block []) rfl rfl rfl (σ := τr []) (by decide +kernel)).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem sha256_prepCt : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
     (.block (scr .ebx sState ++ ivStore Spec.Sha256.H0.toList ++
       Impl.Pbkdf2.Md.X86.storeW .ebx (32 + 32) (padBytes 32) ((64 - 32) / 4) ++
-      [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 32))] ++ scr .ebp sHScr)) fun _ _ => True :=
+      ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 32))] : List Instr) ++ scr .ebp sHScr)) fun _ _ => True :=
   (erased_relCT _ _ (.block []) rfl rfl rfl (σ := τr []) (by decide +kernel)).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem sha1_outCt (dst : Nat) : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))

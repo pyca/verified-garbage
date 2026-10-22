@@ -83,7 +83,7 @@ theorem testMid_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     {W : BitVec 32} {witLen used : Nat} (hW : s.mem.readW (off base fWit) 32 = W) {t : State}
     (H : TestHead base W witLen used s t) :
     WP isa (.seq (.ite .e (.block [.mov .edx (.mem (sc fWit))]) (.block []))
-      (.block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut))) t
+      (.block (scr .eax sPP ++ ([.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] : List Instr) ++ scr .ebp fUsedOut))) t
       (TestArgs base W witLen used s) := by
   have szs : fWit + 4 ≤ size := by simp only [fWit, hdr, sPP] at hsz ⊢; omega
   have edi₅ : t.gpr .edi = s.gpr .edi := H.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -93,7 +93,7 @@ theorem testMid_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       x.gpr .ebx = BitVec.ofNat 32 (witLen - used) →
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .ebp → x.gpr r = s.gpr r) →
       x.mem = s.mem → x.rd = s.rd → x.wr = s.wr → x.syms = s.syms →
-      WP isa (.block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut)) x
+      WP isa (.block (scr .eax sPP ++ ([.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] : List Instr) ++ scr .ebp fUsedOut)) x
         (TestArgs base W witLen used s) := by
     intro x xd xdx xbx xo xm xrd xwr xsy
     simp only [List.append_assoc]
@@ -134,7 +134,7 @@ theorem testArgs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     WP isa (.seq (.block [.mov .ecx (.mem (sc fUsed)), .mov .edx (.mem (sc fWit)), .alu .add .edx (.reg .ecx),
         .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.reg .ecx)])
       (.seq (.ite .e (.block [.mov .edx (.mem (sc fWit))]) (.block []))
-        (.seq (.block (scr .eax sPP ++ [.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] ++ scr .ebp fUsedOut)) rest))) s
+        (.seq (.block (scr .eax sPP ++ ([.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] : List Instr) ++ scr .ebp fUsedOut)) rest))) s
       Q :=
   WP.seq (WP.mono (testHead_ok hs hsz hW hWL hU hu hwl) fun _ H =>
     WP.assoc (WP.seq (WP.mono (testMid_ok hs hsz hW H) k)))

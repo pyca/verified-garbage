@@ -96,7 +96,7 @@ theorem prep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
         (off base sState + BitVec.ofNat 64 (H.N + H.N)) (padBytes H.N) → Q t) :
     WP isa (.block (scr .ebx sState ++ ivStore iv ++
       Impl.Pbkdf2.Md.X86.storeW .ebx (H.N + H.N) (padBytes H.N) ((64 - H.N) / 4) ++
-      [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] ++ scr .ebp sHScr)) s Q := by
+      ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] : List Instr) ++ scr .ebp sHScr)) s Q := by
   have nl := F.N_le; have n4 := F.N4; have ivl := F.ivLen
   have nw := hs.nowrap
   have hsn : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega
