@@ -43,7 +43,7 @@ theorem splitSpecR_pre {s : State} (h : splitPreK CtxMode.prepared s) :
     VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared,
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
     BitVec.setWidth_eq] at *
   all_goals first
     | with_reducible assumption
