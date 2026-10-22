@@ -182,13 +182,14 @@ theorem synth_congr {a : Args} {n : Nat} (B : Below a n) {f g : Nat → BitVec 3
 
 /-! ## The body's narrowed runs -/
 
-/-- A state with everything readable and only the working space writable. -/
-abbrev narrowed (base : Addr) (bytes : Nat) (f : State) : State := f.withRegions (f.rd ++ f.wr) [⟨base, bytes⟩]
+/-- A state with everything readable and only the working space (and the regions `Out`) writable. -/
+abbrev narrowed (base : Addr) (bytes : Nat) (f : State) (Out : List Region := []) : State :=
+  f.withRegions (f.rd ++ f.wr) (⟨base, bytes⟩ :: Out)
 
 theorem In.narrow {Ex Ex' : List Region → List Region → Prop} {base : Addr} {bytes len : Nat}
-    {args : Nat → BitVec 32} {f : State} (h : In Ex base bytes len args f)
-    (hx : Ex' (f.rd ++ f.wr) [⟨base, bytes⟩]) : In Ex' base bytes len args (narrowed base bytes f) := by
-  refine ⟨⟨h.scratch.edi, List.mem_singleton_self _, h.scratch.nowrap, h.scratch.stk⟩, h.lower, h.upper,
+    {args : Nat → BitVec 32} {f : State} {Out : List Region} (h : In Ex base bytes len args f)
+    (hx : Ex' (f.rd ++ f.wr) (⟨base, bytes⟩ :: Out)) : In Ex' base bytes len args (narrowed base bytes f Out) := by
+  refine ⟨⟨h.scratch.edi, List.mem_cons_self .., h.scratch.nowrap, h.scratch.stk⟩, h.lower, h.upper,
     fun i hi => ⟨⟨?_, (h.stack i hi).stack.apart⟩, (h.stack i hi).value⟩, h.outLen, h.room, h.top, h.need,
     h.hbase, h.hbytes, hx⟩
   obtain ⟨r, hr, hc⟩ := (h.stack i hi).stack.read
@@ -206,38 +207,44 @@ theorem WrapABI.frameWs (A : WrapABI a n s) :
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   exact A.belowScratch.sub_left (by rw [FA]; exact Offset.sub_below _ (by decide) (by decide))
 
-theorem BodyAt.argsOk (A : WrapABI a n s) (B : BodyAt Ex a s f) :
-    CrtRt.ArgsOk (narrowed (wsBase a s) (wsSize a s) f) := by
+theorem BodyAt.argsOk (A : WrapABI a n s) (B : BodyAt Ex a s f) {Out : List Region}
+    (hOut : ∀ r ∈ Out, Region.Disjoint ⟨frameAt s, argsFrame⟩ r := by simp) :
+    CrtRt.ArgsOk (narrowed (wsBase a s) (wsSize a s) f Out) := by
   have low := A.stackLow
   have st' : stack = 116 := rfl
   refine ⟨B.1.top, fun r hr => ?_⟩
-  rw [List.mem_singleton.mp hr]
   show Region.Disjoint ⟨(f.gpr .esp).setWidth 64, 76⟩ _
   rw [B.2.1]
-  exact A.frameWs
+  rcases List.mem_cons.mp hr with rfl | hr
+  · exact A.frameWs
+  · exact hOut r hr
 
-theorem BodyAt.covers (B : BodyAt Ex a s f) :
-    Covers ((f.rd ++ f.wr) ++ [⟨wsBase a s, wsSize a s⟩]) (f.rd ++ f.wr) ∧
-      Covers [⟨wsBase a s, wsSize a s⟩] f.wr := by
-  have c : Covers [⟨wsBase a s, wsSize a s⟩] f.wr := Covers.of_mem fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact B.1.scratch.wr
+theorem BodyAt.covers (B : BodyAt Ex a s f) {Out : List Region} (hOut : ∀ r ∈ Out, r ∈ f.wr) :
+    Covers ((f.rd ++ f.wr) ++ (⟨wsBase a s, wsSize a s⟩ :: Out)) (f.rd ++ f.wr) ∧
+      Covers (⟨wsBase a s, wsSize a s⟩ :: Out) f.wr := by
+  have c : Covers (⟨wsBase a s, wsSize a s⟩ :: Out) f.wr := Covers.of_mem fun r hr => by
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact B.1.scratch.wr
+    · exact hOut r hr
   exact ⟨Covers.append_left (Covers.refl _) (Covers.right c), c⟩
 
 end
 
 /-- The body's runs, related from the narrowed states. -/
 theorem narrow_body {a : Args} {s t : State} {Ex₁ Ex₂ : List Region → List Region → Prop} {body : Prog isa}
-    {Pn : State → State → Prop} (hws : wsBase a s = wsBase a t) (hwz : wsSize a s = wsSize a t)
-    (hw₁ : ∀ f, BodyAt Ex₁ a s f → ∃ F, WP isa body (narrowed (wsBase a s) (wsSize a s) f) F)
-    (hw₂ : ∀ g, BodyAt Ex₂ a t g → ∃ F, WP isa body (narrowed (wsBase a t) (wsSize a t) g) F)
+    {Pn : State → State → Prop} {Out : List Region} (hws : wsBase a s = wsBase a t) (hwz : wsSize a s = wsSize a t)
+    (hw₁ : ∀ f, BodyAt Ex₁ a s f → ∃ F, WP isa body (narrowed (wsBase a s) (wsSize a s) f Out) F)
+    (hw₂ : ∀ g, BodyAt Ex₂ a t g → ∃ F, WP isa body (narrowed (wsBase a t) (wsSize a t) g Out) F)
     (hpn : ∀ f g, BodyAt Ex₁ a s f → BodyAt Ex₂ a t g →
-      Pn (narrowed (wsBase a s) (wsSize a s) f) (narrowed (wsBase a t) (wsSize a t) g))
-    (h : RelCT isa Pn body fun _ _ => True) :
+      Pn (narrowed (wsBase a s) (wsSize a s) f Out) (narrowed (wsBase a t) (wsSize a t) g Out))
+    (h : RelCT isa Pn body fun _ _ => True)
+    (ho₁ : ∀ f, BodyAt Ex₁ a s f → ∀ r ∈ Out, r ∈ f.wr := by simp)
+    (ho₂ : ∀ g, BodyAt Ex₂ a t g → ∀ r ∈ Out, r ∈ g.wr := by simp) :
     RelCT isa (fun f g => BodyAt Ex₁ a s f ∧ BodyAt Ex₂ a t g) body fun _ _ => True := by
   refine VG.Proof.Bignum.X86.PublicRt.relCT_narrow (fun f => f.rd ++ f.wr)
-    (fun _ => [⟨wsBase a s, wsSize a s⟩]) (fun f g ⟨B₁, B₂⟩ => ?_) h
-  have c₁ := B₁.covers
-  have c₂ := B₂.covers
+    (fun _ => ⟨wsBase a s, wsSize a s⟩ :: Out) (fun f g ⟨B₁, B₂⟩ => ?_) h
+  have c₁ := B₁.covers (ho₁ f B₁)
+  have c₂ := B₂.covers (ho₂ g B₂)
   have w₂ := hw₂ g B₂
   have p := hpn f g B₁ B₂
   rw [← hws, ← hwz] at c₂ w₂ p
