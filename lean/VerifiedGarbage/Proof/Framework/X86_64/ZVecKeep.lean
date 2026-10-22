@@ -31,6 +31,8 @@ theorem exec_zvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i 
        obtain ⟨b, -, h⟩ := h
        split at h <;> (try simp only [Option.map_eq_some_iff] at h) <;> obtain ⟨v, -, rfl⟩ := h <;>
          exact ⟨rfl, rfl, rfl⟩)
+    | (unfold execShld at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
+    | (unfold execBtr at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
     | (unfold execShift at h
        split at h
        · split at h <;> (cases h; exact ⟨rfl, rfl, rfl⟩)
