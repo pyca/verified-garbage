@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -167,5 +168,23 @@ theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : Lis
   have len : i < 1024 := by simpa [VG.Impl.RsaKeyGen.TrialTable32.packed] using hi
   refine Frame.readW F (r := E.tableRegion) (Offset.contains_base E.table (by omega) (by omega)) ?_ (by decide)
   exact Env.far_all v.tableFar.1 v.tableFar.2.2 hos
+
+/-- A state with the same memory, permissions and registers that `Base`
+reads. -/
+theorem Base.regs {E : Env} {s t : State} (B : Base E s) (hm : t.mem = s.mem) (edi : t.gpr .edi = s.gpr .edi)
+    (sp : t.gpr .esp = s.gpr .esp) (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sy : t.syms = s.syms) : Base E t := by
+  have := B.scr.nowrap
+  refine ⟨Scr.of_eq B.scr edi sp wr, by rw [sp, B.sp], by rw [rd]; exact B.tapes, by rw [rd]; exact B.table,
+    by rw [wr]; exact B.out, by rw [sy]; exact B.syms, by rw [hm, sy]; exact B.held, by rw [hm]; exact B.seeds,
+    by rw [hm]; exact B.hs, by rw [hm]; exact B.wit, by rw [hm]; exact B.outW, by rw [hm]; exact B.hsW,
+    by rw [hm]; exact B.hsLenW, by rw [hm]; exact B.witW, by rw [hm]; exact B.witLenW⟩
+
+/-- The words of `scratch` apart from every range of a change. -/
+theorem Env.Chg.val32 {E : Env} (v : E.Valid) {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m')
+    {d k : Nat} (hd : d + 4 * k ≤ E.size)
+    (hos : ∀ o ∈ os, o.1 + o.2 ≤ E.size ∧ (o.1 + o.2 ≤ d ∨ d + 4 * k ≤ o.1)) :
+    VG.Proof.Mont.val32 m' E.base d k = VG.Proof.Mont.val32 m E.base d k :=
+  VG.Proof.Mont.val32_congr fun j hj => congrArg BitVec.toNat (Env.Chg.word v h (by omega) fun o ho =>
+    ⟨(hos o ho).1, by rcases (hos o ho).2 with h | h <;> omega⟩)
 
 end VG.Proof.Dsa.X86.Generation
