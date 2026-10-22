@@ -706,7 +706,7 @@ pub(crate) const VG_GHASH_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate
 /// * `scratch` must be valid for reads and writes of 256 bytes.
 /// * `pw` must be valid for reads of 128 bytes.
 /// * The contents of `scratch` on return are unspecified.
-/// * `*pw` must be what a `*_store_powers` function wrote for the hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and that subkey).
+/// * `*pw` must be what a `*_store_powers` function wrote for the hash subkey at `h`, or bytes 256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at `dst`, whose hash subkey is at `dst + 240` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and that subkey).
 /// * `y` and `scratch` must not overlap each other, `h`, `data` or `pw` (distinct Rust objects never do).
 /// * None of `h`, `y`, `data`, `scratch` and `pw` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -5736,7 +5736,7 @@ pub(crate) const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: crate::cpu::Features 
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `pw` must be valid for reads of 128 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context, or bytes 256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at `dst`, for the key context `dst` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -6912,7 +6912,7 @@ pub(crate) const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: crate::cpu::Features 
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `pw` must be valid for reads of 128 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context, or bytes 256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at `dst`, for the key context `dst` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -14972,7 +14972,7 @@ pub(crate) const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: crate::cpu::Feat
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `pw` must be valid for reads of 128 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context, or bytes 256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at `dst`, for the key context `dst` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
@@ -20413,7 +20413,7 @@ pub(crate) const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: crate::cpu::Feat
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `pw` must be valid for reads of 128 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context, or bytes 256 to 383 of what `vg_aes_gcm_derive_prepared8` wrote at `dst`, for the key context `dst` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
