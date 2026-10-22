@@ -216,7 +216,7 @@ structure FinishPost (s₀ start : State) (n : Nat) (y : Block) (s : State) : Pr
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem finish_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (hE : Env s₀ P s)
+theorem finish_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo) (hE : Env s₀ P s)
     (n : Nat) (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (n + 8)) :
     WP isa (.block finish) s (FinishPost s₀ s n (s.lane .xmm2 0)) := by
   have hcode : finish = finishHead ++

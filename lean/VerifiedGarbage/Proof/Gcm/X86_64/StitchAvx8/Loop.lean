@@ -27,7 +27,7 @@ open VG.Spec.Gcm (Block blocksAt)
 
 def Post (s₀ : State) (dec : Bool) (s : State) : Prop := if dec then DPost s₀ s else EPost s₀ s
 
-theorem finish_complete {s₀ s : State} {ix : Bool} {P : Nat → Block} (hp : SPre s₀) (dec : Bool)
+theorem finish_complete {s₀ s : State} {ix : Bool} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo) (dec : Bool)
     (hE : Env s₀ P s) (hD : DataInv s₀ ix (nb s₀) s.mem)
     (hc : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (nb s₀ + 8))
     (hy : s.lane .xmm2 0 = hashPrefix s₀ dec (nb s₀)) :

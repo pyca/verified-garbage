@@ -55,7 +55,7 @@ theorem AInv.yframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h 
     by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
 
 /-- The key schedule is not in the data or the working space. -/
-theorem sch_frame {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s₀, pR s₀] s₀.mem m) :
+theorem sch_frame {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {m : Mem} (hf : Frame [dR s₀, pR s₀] s₀.mem m) :
     Spec.Aes.bytesAt m (kp s₀) (16 * (nr s₀ + 1)) = sch s₀ := by
   have hn : 16 * (nr s₀ + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> omega
   simp only [sch, Spec.Aes.bytesAt]
