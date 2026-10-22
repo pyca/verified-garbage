@@ -195,6 +195,16 @@ theorem other_loopW {x : Nat} (h : x ∈ jwOther K) : (x, 8 * K.M.n) ∈ jwLoopW
 
 theorem tmp_loopW : (K.M.tmp, 8 * K.M.n) ∈ jwLoopW K := List.mem_append_right _ (List.mem_singleton_self _)
 
+/-- What the loop's doublings write: the other slots and the temporary area,
+not the grid. -/
+def jwOthW (K : JacWinCfg) : List (Nat × Nat) := (jwOther K).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)]
+
+theorem jwOthW_loopW (K : JacWinCfg) : ∀ w ∈ jwOthW K, w ∈ jwLoopW K := by
+  intro w hw
+  rcases List.mem_append.mp hw with hw | hw
+  · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw; exact other_loopW hx
+  · rw [List.mem_singleton.mp hw]; exact tmp_loopW
+
 /-- What a field program writing slots the loop may write changes. -/
 theorem ProgKeep.loopW {base : Addr} {W : List Nat} {s t : State} (h : ProgKeep K.M base W s t)
     (hW : ∀ x ∈ W, (x, 8 * K.M.n) ∈ jwLoopW K) : Unch base (jwLoopW K) s.mem t.mem :=

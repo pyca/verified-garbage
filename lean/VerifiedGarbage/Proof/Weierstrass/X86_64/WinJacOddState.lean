@@ -87,16 +87,6 @@ theorem RStO.rbxKeeps (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s�
     (W := []) (by rw [m]; exact Unch.refl _ _ _) (by simp), fun j h1 hj => (h.tbl j h1 hj).congr
     fun c _ => by rw [m], fun x hx => by rw [m]; exact h.lt x hx, by rw [e, e, e]; exact h.rep⟩
 
-/-- What the loop's doublings write: the other slots and the temporary area,
-not the grid. -/
-def jwOthW (K : JacWinCfg) : List (Nat × Nat) := (jwOther K).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)]
-
-theorem jwOthW_loopW (K : JacWinCfg) : ∀ w ∈ jwOthW K, w ∈ jwLoopW K := by
-  intro w hw
-  rcases List.mem_append.mp hw with hw | hw
-  · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw; exact other_loopW hx
-  · rw [List.mem_singleton.mp hw]; exact tmp_loopW
-
 /-- One doubling of `R`. -/
 theorem dblRO_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State}
