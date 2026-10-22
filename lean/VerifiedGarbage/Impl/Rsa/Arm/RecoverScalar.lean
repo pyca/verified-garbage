@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.Recover
 
 /-! Small public recovery candidates need modular additions, not another
 Montgomery product. Reuse the existing workspace addition and scratch layout.
-These pieces are not registered yet. -/
+These internal helpers are used by the verified fused recovery pass. -/
 
 @[expose] public section
 namespace VG.Impl.Rsa.Arm.RecoverScalar

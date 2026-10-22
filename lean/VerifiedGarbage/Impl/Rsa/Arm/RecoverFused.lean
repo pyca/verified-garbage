@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.RecoverScalar
 /-! One pass over the full exponent, most significant byte first. A set
 bit resets root detection; only the final trailing-zero chain survives.
 The byte addresses and the choice of multiplication by a candidate depend
-on public lengths and the permitted candidate count. Not registered yet. -/
+on public lengths and the permitted candidate count. -/
 
 @[expose] public section
 namespace VG.Impl.Rsa.Arm.RecoverFused

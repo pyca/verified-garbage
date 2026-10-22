@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
 /-! Arithmetic, memory safety and constant time for candidates 2 and 3 of
 fused recovery. General candidates retain the existing Montgomery product.
-No specification or ISA change; these pieces are not registered yet. -/
+The verified fused recovery pass reuses these helpers without a separate API. -/
 
 @[expose] public section
 namespace VG.Proof.Rsa.Arm.RecoverScalar
