@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PAttempt
 public import VerifiedGarbage.Proof.Dsa.Generation.Search
-import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 

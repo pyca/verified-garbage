@@ -5,11 +5,9 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Gen.GCopy
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.GCmp
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Tape
-import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on ARMv7: one `h` of the generator search

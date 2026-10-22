@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on ARMv7: the exponentiation

@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

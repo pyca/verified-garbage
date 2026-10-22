@@ -6,9 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 
 /-! # DSA parameter generation on ARMv7: calling the probable-prime test

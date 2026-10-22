@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on ARMv7: one candidate p

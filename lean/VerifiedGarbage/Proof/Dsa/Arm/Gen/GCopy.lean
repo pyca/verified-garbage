@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on ARMv7: copies between the arrays and `scratch`

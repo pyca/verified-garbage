@@ -3,15 +3,12 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Steps
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.SpCT
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on ARMv7: the entry

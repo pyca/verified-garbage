@@ -6,11 +6,9 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Entry
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Intro
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.SpCT
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on ARMv7: the body
