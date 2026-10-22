@@ -17,8 +17,9 @@ and the number of blocks left at block `p` (`p = c` but between a group and
 its advance), the tweak of block `c` in `x14` and `x15` (`twW`), the round
 keys as `B` needs them, and the first `c` data blocks replaced with their
 XTS (`outB`), the others as they were. `group_ok`: a group of blocks
-(`regs8` or `[v0]`) through `B` takes it from `c` to `c + N`, by `pre_ok`,
-`B.ok` and `post_ok`; `xts_word` gives each block.
+(`[v0]`, after the eight-block groups of `Group8.lean`) through `B` takes it
+from `c` to `c + N`, by `pre_ok`, `B.ok` and `post_ok`; `xts_word` gives
+each block.
 -/
 
 @[expose] public section
@@ -31,7 +32,7 @@ open VG.Proof.AesXts (b16)
 open VG.Proof.AesCbc (ciphOf)
 open VG.Proof.AesCbc.AArch64 (W R Iv Dp N S schR ivR dataR scrR UPre blk wK iv0)
 open VG.Proof.Aes.AArch64.Aese (BlockFn BlockRegs VFrame st)
-open VG.Impl.AesXts.AArch64Aes (group pre post blk8 blk1)
+open VG.Impl.AesXts.AArch64Aes (pre post blk1)
 open VG.Proof.Aes.AArch64.Aese (ushr3 eval_zero eval_nonzero)
 open VG.Impl.Aes.AArch64.Aese (regs8)
 
@@ -73,7 +74,7 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
     (rs : List VReg) (hrs : rs = regs8 ∨ rs = [.v0]) (adv : List Instr) {Q : State → Prop} {c : Nat}
     (hc : c + rs.length ≤ N s₀) {s : State} (hI : XInv B enc s₀ c c s)
     (hQ : ∀ s', XInv B enc s₀ (c + rs.length) c s' → WP isa (.block adv) s' Q) :
-    WP isa (group B.f rs adv) s Q := by
+    WP isa (.seq (.block (pre rs 0)) (.seq (B.f rs) (.block (post .x5 rs 0 ++ adv)))) s Q := by
   obtain ⟨hbr, h31, hlen, hbr31⟩ := bregs rs hrs
   have hdw := hp.data_wrap
   have hpos : 0 < rs.length := by rcases hrs with rfl | rfl <;> decide
@@ -104,7 +105,7 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
   have g₂ : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [f₂.gpr, g₁ r h1 h2 h3 h4]
   have hW₂ : s₂.wr = [Iv s₀ |> fun a => (⟨a, 16⟩ : Region), dataR s₀, scrR s₀] := by rw [f₂.wr, wr₁, hW]
-  refine WP.mono (post_ok (blk s₀ c) (S s₀) (by omega) rs 0 s₂ hbr.1 h31 (by omega)
+  refine WP.mono (post_ok .x5 (blk s₀ c) (S s₀) (by omega) rs 0 s₂ hbr.1 h31 (by omega)
     (by rw [hp.blk_toNat (k := c) (by omega)]; omega)
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), hI.x2])
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), hI.x5])
@@ -177,25 +178,6 @@ theorem XInv.adv {B : BlockFn} {enc : Bool} {s₀ : State} {c p : Nat} {s s' : S
     by rw [tweakOf, g _ (by decide) (by decide) (by decide), g _ (by decide) (by decide) (by decide)]; exact h.tw,
     by rw [hrd, h.rd], by rw [hwr, h.wr], by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.data k hk⟩
 
-theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (hp : UPre s₀) {c : Nat}
-    (hc : c + 8 ≤ N s₀) {s : State} (hI : XInv B enc s₀ c c s) :
-    WP isa (blk8 B.f) s fun s' =>
-      XInv B enc s₀ (c + 8) (c + 8) s' ∧ s'.gpr .x13 = BitVec.ofNat 64 ((N s₀ - (c + 8)) / 8) := by
-  have hn := hp.data_wrap
-  refine group_ok B enc hF hp regs8 (.inl rfl) _ hc hI fun s₁ h₁ => ?_
-  rw [WP.block_cons_iff]; refine ⟨_, exec_addImm_x (imm := 128) (by decide), ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 8) (by decide), ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, exec_lsr_x (sh := 3) (by decide), WP.block_nil ?_⟩
-  have h4 : BitVec.ofNat 64 (N s₀ - c) - BitVec.ofNat 64 8 = BitVec.ofNat 64 (N s₀ - (c + 8)) := by
-    rw [Offset.ofNat_sub_ofNat (by omega), show N s₀ - c - 8 = N s₀ - (c + 8) by omega]
-  refine ⟨h₁.adv (c + 8) ?_ ?_ (fun r h2 h3 h13 => by simp [State.write, h2, h3, h13]) rfl rfl rfl rfl, ?_⟩
-  · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, h₁.x2]
-    exact Offset.add_add_eq _ (by omega)
-  · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, h₁.x3]
-    exact h4
-  · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, h₁.x3]
-    rw [h4, ushr3 (by omega)]
-
 theorem blk1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (hp : UPre s₀) {c : Nat}
     (hc : c + 1 ≤ N s₀) {s : State} (hI : XInv B enc s₀ c c s) :
     WP isa (blk1 B.f) s (XInv B enc s₀ (c + 1) (c + 1)) := by
@@ -208,26 +190,6 @@ theorem blk1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
     exact Offset.add_add_eq _ (by omega)
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, h₁.x3]
     rw [Offset.ofNat_sub_ofNat (by omega), show N s₀ - c - 1 = N s₀ - (c + 1) by omega]
-
-/-- The eight-block loop, from the state after the setup. -/
-theorem loop8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (hp : UPre s₀) {s₁ : State}
-    (hI₁ : XInv B enc s₀ 0 0 s₁) (h13 : s₁.gpr .x13 = BitVec.ofNat 64 (N s₀ / 8)) :
-    WP isa (.ite (.zero .x .x13) (.block []) (.loop (blk8 B.f) (.nonzero .x .x13))) s₁
-      fun s => ∃ c, N s₀ - c < 8 ∧ XInv B enc s₀ c c s := by
-  have hn : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  refine WP.ite (decide (N s₀ / 8 = 0)) (eval_zero h13 (by omega)) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil ⟨0, by simp at h; omega, hI₁⟩
-  · let I8 : Nat → State → Prop := fun m s => ∃ c, m = N s₀ - c ∧ c + 8 ≤ N s₀ ∧ XInv B enc s₀ c c s
-    have hstep : ∀ m s, I8 m s → WP isa (blk8 B.f) s (fun s' =>
-        (AArch64.eval (.nonzero .x .x13) s' = some false ∧ ∃ c, N s₀ - c < 8 ∧ XInv B enc s₀ c c s') ∨
-        (AArch64.eval (.nonzero .x .x13) s' = some true ∧ ∃ m' < m, I8 m' s')) := by
-      rintro m s ⟨c, rfl, hc, hI⟩
-      refine WP.mono (blk8_ok B enc hF hp hc hI) fun s' ⟨hI', h13'⟩ => ?_
-      rw [eval_nonzero h13' (by omega)]
-      by_cases hlt : N s₀ - (c + 8) < 8
-      · exact .inl ⟨by simp; omega, c + 8, hlt, hI'⟩
-      · exact .inr ⟨by simp; omega, N s₀ - (c + 8), by omega, c + 8, rfl, by omega, hI'⟩
-    exact WP.loop (M := isa) I8 hstep (N s₀) s₁ ⟨0, rfl, by simp at h; omega, hI₁⟩
 
 /-- The one-block loop, for the fewer than eight blocks left. -/
 theorem loop1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (hp : UPre s₀) {c : Nat}

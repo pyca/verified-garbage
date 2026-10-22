@@ -26,12 +26,19 @@ the high word's top bit was set, chosen by `csel` on the carry. These run on
 the integer units, beside the AES instructions.
 
 Blocks go eight at a time (`v0`–`v7`), each round applied to all eight so
-the AES pipeline stays full, then one at a time (`v0`). Before the rounds,
-each block register is loaded from the data and XORed with its tweak, which
-is moved into `v31` (`dup`, `ins`) and saved at `scratch + 16 j` for the
-block's place `j` in the group, and the tweak is multiplied by `α`
-(`pre`). After the rounds each block register is XORed with its saved tweak
-again and stored (`post`). The tweak after the last block is written back.
+the AES pipeline stays full, then one at a time (`v0`). The tweaks of the
+eight-block groups are computed a group ahead, so that no group's rounds
+wait on the chain of multiplications by `α`: two banks of eight tweaks,
+`scratch` and `scratch + 128`, hold those of the current group (at `x12`)
+and of the next (at `x8`). Before the first group, its tweaks are stored at
+`x12` (`gen`). Each group loads each block and XORs in its tweak from `x12`
+(`preL`), stores the next group's tweaks at `x8` while its rounds run, then
+XORs each block register with its tweak from `x12` again and stores it
+(`post`), and swaps the banks. After the last group the tweak of the next
+block is loaded back from `x12`. Each block after the groups is loaded and
+XORed with its tweak, which is moved into `v31` (`dup`, `ins`) and saved at
+`scratch` for the XOR after the rounds, and the tweak is multiplied by `α`
+(`pre`). The tweak after the last block is written back.
 
 Every branch and every address depends only on the pointers, `rounds` and
 `n`. No callee-saved register is written.
@@ -66,27 +73,51 @@ def pre : List VReg → Nat → List Instr
   | [], _ => []
   | b :: bs, j => pre1 b j ++ pre bs (j + 1)
 
-/-- XOR the tweak saved at `scratch + 16 j` into block register `b` again,
-and store it to the data block `x2 + 16 j`. -/
-def post1 (b : VReg) (j : Nat) : List Instr :=
-  [.ldrq .v31 .x5 (16 * j), .vop (.logic .eor b b .v31), .strq b .x2 (16 * j)]
+/-- XOR the tweak saved at `t + 16 j` into block register `b` again, and
+store it to the data block `x2 + 16 j`. -/
+def post1 (t : Reg) (b : VReg) (j : Nat) : List Instr :=
+  [.ldrq .v31 t (16 * j), .vop (.logic .eor b b .v31), .strq b .x2 (16 * j)]
 
 /-- `post1` for the registers, from place `j` on. -/
-def post : List VReg → Nat → List Instr
+def post (t : Reg) : List VReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => post1 b j ++ post bs (j + 1)
+  | b :: bs, j => post1 t b j ++ post t bs (j + 1)
 
-/-- The blocks in `rs` through `f`, then `adv`. -/
-def group (f : List VReg → Prog isa) (rs : List VReg) (adv : List Instr) : Prog isa :=
-  .seq (.block (pre rs 0)) (.seq (f rs) (.block (post rs 0 ++ adv)))
+/-- Load block register `b` from the data block `x2 + 16 j`, and XOR in its
+tweak from `x12 + 16 j`. -/
+def preL1 (b : VReg) (j : Nat) : List Instr :=
+  [.ldrq b .x2 (16 * j), .ldrq .v31 .x12 (16 * j), .vop (.logic .eor b b .v31)]
 
-/-- Eight blocks; `x13 = n / 8` for the blocks left. -/
+/-- `preL1` for the registers, from place `j` on. -/
+def preL : List VReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => preL1 b j ++ preL bs (j + 1)
+
+/-- The tweak stored at `r + 16 j`, and multiplied by `α`. -/
+def genStep (r : Reg) (j : Nat) : List Instr :=
+  ([.str .x .x14 r (16 * j), .str .x .x15 r (16 * j + 8)] : List Instr) ++ mulA
+
+/-- The next eight tweaks, stored at `r`. -/
+def gen (r : Reg) : List Instr := (List.range 8).flatMap (genStep r)
+
+/-- Eight blocks, their tweaks at `x12`, storing the next group's at `x8`;
+then the banks swapped, and `x13 = n / 8` for the blocks left. -/
 def blk8 (f : List VReg → Prog isa) : Prog isa :=
-  group f regs8 [.addImm .x .x2 .x2 128, .subImm .x .x3 .x3 8, .lsr .x .x13 .x3 3]
+  .seq (.block (preL regs8 0 ++ gen .x8))
+    (.seq (f regs8)
+      (.block (post .x12 regs8 0 ++ ([.addImm .x .x2 .x2 128, .subImm .x .x3 .x3 8, .lsr .x .x13 .x3 3,
+        .addImm .x .x10 .x12 0, .addImm .x .x12 .x8 0, .addImm .x .x8 .x10 0] : List Instr))))
 
 /-- One block. -/
 def blk1 (f : List VReg → Prog isa) : Prog isa :=
-  group f [.v0] [.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1]
+  .seq (.block (pre [.v0] 0))
+    (.seq (f [.v0]) (.block (post .x5 [.v0] 0 ++ ([.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1] : List Instr))))
+
+/-- The banks set up, and the first group's tweaks stored at `x12`. -/
+def start8 : List Instr := [.addImm .x .x12 .x5 0, .addImm .x .x8 .x5 128] ++ gen .x12
+
+/-- The tweak of the next block, loaded back. -/
+def end8 : List Instr := [.ldr .x .x14 .x12 0, .ldr .x .x15 .x12 8]
 
 /-- The tweak after the last block, written back. -/
 def finish : List Instr := [.str .x .x14 .x11 0, .str .x .x15 .x11 8]
@@ -94,7 +125,8 @@ def finish : List Instr := [.str .x .x14 .x11 0, .str .x .x15 .x11 8]
 /-- All the blocks, eight and then one at a time, after `setup`. -/
 def crypt (setup : List Instr) (f : List VReg → Prog isa) : Prog isa :=
   .seq (.block (enter ++ setup))
-    (.seq (.ite (.zero .x .x13) (.block []) (.loop (blk8 f) (.nonzero .x .x13)))
+    (.seq (.ite (.zero .x .x13) (.block [])
+        (.seq (.block start8) (.seq (.loop (blk8 f) (.nonzero .x .x13)) (.block end8))))
       (.seq (.ite (.zero .x .x3) (.block []) (.loop (blk1 f) (.nonzero .x .x3)))
         (.block finish)))
 

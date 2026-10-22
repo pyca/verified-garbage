@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Aes.Setup
+import VerifiedGarbage.Proof.AesXts.AArch64.Aes.Group8
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.AesCbc.AArch64.Body
@@ -17,9 +18,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `vg_aes_xts_decrypt`) as `modeAArch64 (xtsMode enc)` states it, but for the
 registers it preserves, when `setup` loads the round keys `B` needs
 (`KPre`, `KPost`) and `B` computes the cipher (or its inverse) of the
-direction: `enter` and `setup` reach `XInv … 0 0` (`setup_ok`), the loops
-reach `XInv … N N` (`loops_ok`), and `finish` writes the tweak after the
-last block back (`finish_ok`).
+direction: `enter` and `setup` reach `XInv … 0 0` (`setup_ok`), the
+eight-block groups leave fewer than eight blocks (`loop8_ok`,
+`Group8.lean`), the one-block loop the rest (`loop1_ok`), reaching
+`XInv … N N`, and `finish` writes the tweak after the last block back
+(`finish_ok`).
 -/
 
 @[expose] public section
