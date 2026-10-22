@@ -28,10 +28,13 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.WordStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aRecip
 public import VerifiedGarbage.Proof.Bignum.Recip
 meta import VerifiedGarbage.Proof.Bignum.Recip
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # `R² mod m` by word steps with ADX: constant time but for `m`
