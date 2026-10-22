@@ -524,6 +524,44 @@ def sealStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
   (.seq finalizeTag
     (.block restore)))))))
 
+/-- `cryptS`'s branch for at most `fold` bytes. -/
+def smallArmS (w : Nat) : Prog isa :=
+  .seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
+    (.seq (xorBufX w .r14) (.block (ptr .rsi .r15 128 ++ whole)))
+
+/-- `cryptS`'s branch for more. -/
+def bigArmS (x : ChaCha20.X86_64.Callee) : Prog isa :=
+  .seq (.block mLoad) (.seq (.block [.alu .test .rdx (.reg .rdx)])
+    (.seq (.ite .e (bigS x.vl) (preS x))
+      (.seq (.block [.alu .test .rdx (.reg .rdx)])
+        (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code)))))
+
+/-- The keystream wiped, as at the end of `cryptS` (`extra` 512) and `cryptO` (192). -/
+def wipeArm (fold extra w : Nat) : Prog isa :=
+  .seq (.block (anchor .rsi 128)) (.seq (wipeL fold extra) (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs w)))
+
+/-- `sealStitched` after `cryptS`'s branch. -/
+def sealPostArm (fold w : Nat) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (wipeArm fold 512 w) (.seq (macPadLengths b .rbx .rbp) (.seq finalizeTag (.block restore)))
+
+/-- From the call of `vg_chacha20_xor` in the prologue to the branch on the
+length. -/
+def midArm (fold : Nat) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq prologueB (.seq (macPad b .rbx .rbp) (.seq (.block lengths)
+    (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])))
+
+/-- `sealStitched` with the code after the branch on the length in both of
+its arms, and the arm for at most `fold` bytes where the branch falls
+through, the arm for more after the function's return (`Code.iteCold`, on
+`ae`, the negation of `cryptS`'s `b`): it runs as `sealStitched`, but the
+path for short data goes from the prologue to the return without a jump
+across the code for more, some 150 KB. -/
+def sealStitchedC (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code)
+  (.seq (midArm x.fold b)
+    (Code.iteCold .ae (.seq (bigArmS x) (sealPostArm x.fold x.wide b))
+      (.seq (smallArmS x.wide) (sealPostArm x.fold x.wide b))))))
+
 /-- The AVX-512 instances (without IFMA) seal fewer bytes of data than this
 with the AVX2 code (`sealSmall`), with AVX-512VL's rounds (`vl`) or without:
 on Cascade Lake, with them it is the faster up to 767 bytes (by up to 6.4%
@@ -567,13 +605,13 @@ def sealSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
     (.ite .b (sealStitched { small with pass := 512 } .avx2) big)
 
 /-- The `seal` an instance uses: with the AVX2 implementation of
-`vg_poly1305_blocks` (whose ChaCha20 is the AVX2 kernel), `sealStitched`,
-whose prologue computes the keystream of the first 448 bytes too when the
+`vg_poly1305_blocks` (whose ChaCha20 is the AVX2 kernel), `sealStitched`
+laid out for short data (`sealStitchedC`), whose prologue computes the keystream of the first 448 bytes too when the
 rest is whole chunks and 1 to 64 bytes, or the data is shorter than 1409
 bytes (`pass` 512, `splitM`); with the
 AVX-512 one (without IFMA), `sealSmall` of `seal`; otherwise `seal`. -/
 def sealFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
-  | .avx2 => sealStitched { x with pass := 512 } .avx2
+  | .avx2 => sealStitchedC { x with pass := 512 } .avx2
   | .avx512 => sealSmall x.small («seal» x .avx512)
   | b => «seal» x b
 
@@ -837,6 +875,35 @@ def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
   (.seq (finalizeTo 48)
     (.block (compare ++ restore)))))))
 
+/-- `cryptO`'s branch for at most `fold` bytes. -/
+def smallArmO (w : Nat) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (macPadLengths b .r14 .r13)
+    (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
+      (.seq (xorBufX w .r14) (.block (ptr .rsi .r15 128))))
+
+/-- `cryptO`'s branch for more. -/
+def bigArmO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
+    (.seq (.ite .b (wholeO x.vl) (bulkO x.vl))
+    (.seq (.block (padIns .rax 18))
+    (.seq (macPadLengths b .rbx .rbp) (decRest x))))
+
+/-- `openStitched` after `cryptO`'s branch. -/
+def openPostArm (fold w : Nat) : Prog isa :=
+  .seq (wipeArm fold 192 w) (.seq (finalizeTo 48) (.block (compare ++ restore)))
+
+/-- `prologueX` between `prologueA` and `prologueB`. -/
+def xselArm (x : ChaCha20.X86_64.Callee) : Prog isa :=
+  .seq (.block xTest) (.ite .b (.seq (.block [.alu .cmp .rax (.imm 64)]) (.ite .b (twoKs x.vl) (fourKs x.vl)))
+    (.call x.name x.code))
+
+/-- `openStitched` laid out as `sealStitchedC`. -/
+def openStitchedC (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (xselArm x)
+  (.seq (midArm x.fold b)
+    (Code.iteCold .ae (.seq (bigArmO x b) (openPostArm x.fold x.wide))
+      (.seq (smallArmO x.wide b) (openPostArm x.fold x.wide))))))
+
 /-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
 `open`'s AVX2 code with AVX-512VL's rounds (`vl`) is the faster below 768
 bytes, from 3.8% to 8.5% from 640 on, and from 768 the AVX-512 code is;
@@ -878,11 +945,12 @@ def openWin (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
   .seq (.block ifmaTest) (.ite .b (openStitched small .avx2) big)
 
 /-- The `open` an instance uses, as `sealFor`: with the AVX2 implementation of
-`vg_poly1305_blocks`, `openStitched`; with the AVX-512 one (without IFMA),
+`vg_poly1305_blocks`, `openStitched` laid out for short data
+(`openStitchedC`); with the AVX-512 one (without IFMA),
 `openSmall` of `open`; with the IFMA one, `openWin` of `open`, with
 `vg_chacha20_xor_avx512vl`'s rounds; otherwise `open`. -/
 def openFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
-  | .avx2 => openStitched x .avx2
+  | .avx2 => openStitchedC x .avx2
   | .avx512 => openSmall x.small («open» x .avx512)
   | .ifma => openWin ChaCha20.X86_64.Callee.avx512vl.small («open» x .ifma)
   | b => «open» x b

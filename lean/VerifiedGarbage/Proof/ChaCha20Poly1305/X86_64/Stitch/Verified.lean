@@ -35,6 +35,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.IteSwap
+import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
@@ -1600,9 +1602,15 @@ theorem xsel_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APr
       exact (call1_rel hp hp' hq v).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩)
         fun _ _ h => ⟨⟨h.1, TailKs.of_xlen hx⟩, ⟨h.2, TailKs.of_xlen hx'⟩⟩
 
-theorem sealS_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealStitched { v.callee with pass := 512 } v.poly)
-      fun _ _ => True := by
+/-- As `sealS_rel`, for any code `X` after the comparison that is constant
+time where `sealStitched`'s branch and the code after it are (`sealSC_rel`). -/
+theorem sealS_relK {X : Prog isa}
+    (hX : ∀ {P : State → State → Prop}, RelCT isa P (.seq (iteS { v.callee with pass := 512 })
+      (postS v.callee.fold v.callee.wide v.poly)) (fun _ _ => True) → RelCT isa P X fun _ _ => True)
+    (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (.block entry)
+      (.seq (prologueA v.callee.fold 512 v.callee.wide) (.seq (.call v.callee.name v.callee.code)
+        (.seq (sealMid v.callee.fold v.poly) X)))) fun _ _ => True := by
   have hp := APre.of _ h₀
   have hp' := APre.of _ h₀'
   have hfl := v.fold_le
@@ -1660,8 +1668,19 @@ theorem sealS_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (h
   have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AfterS v.callee.fold s₀ s₁ ∧
     AfterS v.callee.fold s₀' s₂) ∧ MSlot v.callee.fold s₀ s₁ ∧ MSlot v.callee.fold s₀' s₂) (τ₁S true)
     (fun _ _ h => agree₁S hp hp' hq h.1.1 h.1.2 h.2.1 h.2.2) hpost
-  have := (entry_rel hp hp' hq).seq (pA.seq ((call1_rel hp hp' hq v).seq (mid.seq (ite.seq post))))
-  exact RelCT.of_exec sealS_exec this
+  exact (entry_rel hp hp' hq).seq (pA.seq ((call1_rel hp hp' hq v).seq (mid.seq (hX (ite.seq post)))))
+
+theorem sealS_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealStitched { v.callee with pass := 512 } v.poly)
+      fun _ _ => True :=
+  RelCT.of_exec sealS_exec (sealS_relK v hv id h₀ h₀' hq)
+
+/-- `sealStitchedC` runs `sealStitched`'s branch and the code after it as an
+`ite` on the negated condition with the code in both arms. -/
+theorem sealSC_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealStitchedC { v.callee with pass := 512 } v.poly)
+      fun _ _ => True :=
+  sealS_relK v hv (fun h => RelCT.iteCold (RelCT.ite_seq_swap (c := .b) (fun _ => rfl) h)) h₀ h₀' hq
 
 end
 
@@ -1755,6 +1774,73 @@ theorem sealS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (n := 212) (post := Spec.ChaCha20Poly1305.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 1720) (k := 42) (sealS_verified v hv) (by decide) (by decide) (by decide)
     (sealS_spSafe v hv) (sealS_xdepth v) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
+    sealFrameSat_pre
+
+/-! ## `sealStitchedC`: `sealStitched` laid out for short data -/
+
+/-- A run of `sealStitched` gives one of `sealStitchedC` to the same state. -/
+theorem sealSC_of {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
+    {t : List Leak} (h : Exec isa (sealStitched x b) s t s') : ∃ t', Exec isa (sealStitchedC x b) s t' s' :=
+  Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of fun e =>
+    (Exec.ite_seq_swap_of (c := .b) (c' := .ae) (fun _ => rfl) e).imp fun _ e => Exec.iteCold_iff.mpr e)))
+    (sealS_exec h)
+
+theorem sealSC_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    (sealStitchedC { v.callee with pass := 512 } v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
+  obtain ⟨hf, -, hw⟩ := avx2_of v hv
+  have hc := v.spSafe
+  have hb := blocks_spSafe v.poly
+  have h₁ := bigS_spSafe v.callee.vl
+  have h₂ := bulkP_spSafe v.callee.vl
+  have h₃ := tailP_spSafe v.callee.vl
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb h₁ h₂ h₃ ⊢
+  rw [hv] at hb ⊢
+  simp only [dataCopy, sealStitchedC, midArm, bigArmS, smallArmS, sealPostArm, wipeArm, preS, Code.all, hc, hb,
+    h₁, h₂, h₃, hf, hw, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_false, padCopy, padTail,
+    absorbLengths, Bool.and_true, Bool.true_and]
+  subst hP; lit_decide
+
+theorem sealSC_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State) (hs : sealX86_64.pre s) :
+    ∃ t s', Exec isa (sealStitchedC { v.callee with pass := 512 } v.poly) s t s' ∧ abiPreserved s s' ∧
+      sealX86_64.post s s' := by
+  obtain ⟨t, s', e, h⟩ := sealS_ok v hv s hs
+  obtain ⟨t', e'⟩ := sealSC_of e
+  exact ⟨t', s', e', h⟩
+
+theorem sealSC_ct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    ConstantTime isa sealX86_64.pre sealX86_64.pub (sealStitchedC { v.callee with pass := 512 } v.poly) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (sealSC_rel v hv h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+theorem sealSC_verified (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    Verified X86_64.target (sealStitchedC { v.callee with pass := 512 } v.poly)
+      (sealScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (sealSC_ok v hv) (sealSC_ct v hv) (by
+    sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
+      Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealX86_64,
+      Proof.ChaCha20Poly1305.preX86_64, Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg,
+      X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+      [sealSat] using sealSat)
+
+theorem sealSC_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (sealStitchedC { v.callee with pass := 512 } v.poly).x86_64Depth ≤ 24 := by
+  have hx := v.xdepth
+  have hb := blocks_xdepth v.poly
+  have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
+  simp only [sealStitchedC, midArm, bigArmS, smallArmS, sealPostArm, wipeArm, prologueA, prologueB, zeroKs, macPad,
+    macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, wipeL_xdepth, preS, cryptPre, absorbLengths,
+    finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth,
+    bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ha ⊢
+  omega
+
+theorem sealSC_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42 (sealStitchedC { v.callee with pass := 512 } v.poly))
+      (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744) :=
+  X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+    (n := 212) (post := Spec.ChaCha20Poly1305.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (bytes := 1720) (k := 42) (sealSC_verified v hv) (by decide) (by decide) (by decide)
+    (sealSC_spSafe v hv) (sealSC_xdepth v) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
     sealFrameSat_pre
 
 /-! ## Short data with the AVX2 code
@@ -1908,7 +1994,7 @@ theorem sealFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (sealFor v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   have h₁ := seal_spSafe v
   cases hb : v.poly with
-  | avx2 => have h₂ := sealS_spSafe v hb; rw [hb] at h₂; exact h₂
+  | avx2 => have h₂ := sealSC_spSafe v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
     rw [hb] at h₁
     have := sealSmall_spSafe v.small v.small_poly h₁
@@ -1917,7 +2003,7 @@ theorem sealFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 theorem sealFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealFor v.callee v.poly).x86_64Depth ≤ 24 := by
   have h₁ := seal_xdepth v
-  have h₂ := sealS_xdepth v
+  have h₂ := sealSC_xdepth v
   cases hb : v.poly with
   | avx2 => rw [hb] at h₂; exact h₂
   | avx512 =>
@@ -1932,7 +2018,7 @@ theorem sealFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
       (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744) := by
   have h₁ := seal_framed v
   cases hb : v.poly with
-  | avx2 => have h₂ := sealS_framed v hb; rw [hb] at h₂; exact h₂
+  | avx2 => have h₂ := sealSC_framed v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
     have ho := seal_ok v
     have hc := seal_ct v
@@ -4766,12 +4852,19 @@ section
 variable (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s₀ s₀' : State}
 include hv
 
-theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openStitched v.callee v.poly) fun _ _ => True := by
+/-- As `openS_rel`, for any code `X` after the comparison that is constant
+time where `openStitched`'s branch and the code after it are (`openSC_rel`). -/
+theorem openS_relK {X : Prog isa}
+    (hX : ∀ {P : State → State → Prop}, RelCT isa P (.seq (iteO v.callee v.poly)
+      (openPostS v.callee.fold v.callee.wide)) (fun _ _ => True) → RelCT isa P X fun _ _ => True)
+    (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (.block entry)
+      (.seq (prologueA v.callee.fold v.callee.pass v.callee.wide) (.seq (xsel v.callee)
+        (.seq (sealMid v.callee.fold v.poly) X)))) fun _ _ => True := by
   have hp := APre.of _ h₀
   have hp' := APre.of _ h₀'
   have hfl := v.fold_le
-  have hX : XPass v.callee.pass := (avx2_of v hv).2.1
+  have hXP : XPass v.callee.pass := (avx2_of v hv).2.1
   obtain ⟨_, hA⟩ := prologueA_taint false v.fold_poly
   obtain ⟨_, hmid⟩ := midO_taint v.fold_poly
   obtain ⟨_, hS⟩ := smallO_taint v.fold_poly
@@ -4803,8 +4896,16 @@ theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') 
   have ite := RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) (bigO_rel v hp hp' hq (avx2_of v hv).1)
   have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ false)
     (fun _ _ h => agree₁ hp hp' hq h.1 h.2) hpost
-  have := (entry_rel hp hp' hq).seq (pA.seq ((xsel_rel v hv hX hp hp' hq).seq (mid.seq (ite.seq post))))
-  exact RelCT.of_exec openS_exec this
+  exact (entry_rel hp hp' hq).seq (pA.seq ((xsel_rel v hv hXP hp hp' hq).seq (mid.seq (hX (ite.seq post)))))
+
+theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openStitched v.callee v.poly) fun _ _ => True :=
+  RelCT.of_exec openS_exec (openS_relK v hv id h₀ h₀' hq)
+
+/-- As `sealSC_rel`. -/
+theorem openSC_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openStitchedC v.callee v.poly) fun _ _ => True :=
+  openS_relK v hv (fun h => RelCT.iteCold (RelCT.ite_seq_swap (c := .b) (fun _ => rfl) h)) h₀ h₀' hq
 
 end
 
@@ -4927,6 +5028,66 @@ theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 1720) (k := 42) (openS_verified v hv) (by decide) (by decide) (by decide)
     (openS_spSafe v hv) (openS_xdepth v) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+    openFrameSat_pre
+
+/-! ## `openStitchedC`: `openStitched` laid out for short data -/
+
+theorem openSC_of {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
+    {t : List Leak} (h : Exec isa (openStitched x b) s t s') : ∃ t', Exec isa (openStitchedC x b) s t' s' :=
+  Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of (Exec.seq_right_of fun e =>
+    (Exec.ite_seq_swap_of (c := .b) (c' := .ae) (fun _ => rfl) e).imp fun _ e => Exec.iteCold_iff.mpr e)))
+    (openS_exec h)
+
+theorem openSC_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    (openStitchedC v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
+  obtain ⟨hf, hpass, hw⟩ := avx2_of v hv
+  have hc := v.spSafe
+  have hb := blocks_spSafe v.poly
+  have ho := bulkO_spSafe v.callee.vl
+  have hk := twoKs_spSafe v.callee.vl
+  have hk4 := fourKs_spSafe v.callee.vl
+  have hwo := wholeO_spSafe v.callee.vl
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ho hk hk4 hwo ⊢
+  rw [hv] at hb ⊢
+  simp only [dataCopy, openStitchedC, xselArm, midArm, bigArmO, smallArmO, openPostArm, wipeArm, decRest, xorTail,
+    Code.all, hc, hb, ho, hk, hk4, hwo, hf, hpass, hw, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest,
+    Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+  subst hP; lit_decide
+
+theorem openSC_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State) (hs : openX86_64.pre s) :
+    ∃ t s', Exec isa (openStitchedC v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
+  obtain ⟨t, s', e, h⟩ := openS_ok v hv s hs
+  obtain ⟨t', e'⟩ := openSC_of e
+  exact ⟨t', s', e', h⟩
+
+theorem openSC_ct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    ConstantTime isa openX86_64.pre openX86_64.pub (openStitchedC v.callee v.poly) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (openSC_rel v hv h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+theorem openSC_verified (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    Verified X86_64.target (openStitchedC v.callee v.poly) (openScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (openSC_ok v hv) (openSC_ct v hv) openS_implies
+
+theorem openSC_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (openStitchedC v.callee v.poly).x86_64Depth ≤ 24 := by
+  have hx := v.xdepth
+  have hb := blocks_xdepth v.poly
+  have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
+  simp only [openStitchedC, xselArm, midArm, bigArmO, smallArmO, openPostArm, wipeArm, prologueA, prologueB, zeroKs,
+    macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, decRest, xorTail, absorbLengths,
+    finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth, xorTail_xdepth, foldM_xdepth, wipeL_xdepth, init_xdepth,
+    finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth, Nat.max_le] at hc ha ⊢
+  omega
+
+theorem openSC_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42 (openStitchedC v.callee v.poly))
+      (Spec.ChaCha20Poly1305.openContract X86_64.abi 1744) :=
+  X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+    (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (bytes := 1720) (k := 42) (openSC_verified v hv) (by decide) (by decide) (by decide)
+    (openSC_spSafe v hv) (openSC_xdepth v) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
     openFrameSat_pre
 
 /-! ## Short data with the AVX2 code
@@ -5120,7 +5281,7 @@ theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (openFor v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   have h₁ := open_spSafe v
   cases hb : v.poly with
-  | avx2 => have h₂ := openS_spSafe v hb; rw [hb] at h₂; exact h₂
+  | avx2 => have h₂ := openSC_spSafe v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
     rw [hb] at h₁
     have := openSmall_spSafe v.small v.small_poly h₁
@@ -5138,7 +5299,7 @@ theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
       (Spec.ChaCha20Poly1305.openContract X86_64.abi 1744) := by
   have h₁ := open_framed v
   cases hb : v.poly with
-  | avx2 => have h₂ := openS_framed v hb; rw [hb] at h₂; exact h₂
+  | avx2 => have h₂ := openSC_framed v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
     have ho := open_ok v
     have hc := open_ct v

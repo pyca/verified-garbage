@@ -56,7 +56,7 @@ theorem sealSplitBody_ct (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.
 theorem sealFor_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
     ConstantTime isa sealX86_64.pre sealX86_64.pub (Stitch.sealFor v.callee v.poly) := by
   cases hb : v.poly with
-  | avx2 => have h₂ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealS_ct v hb; rw [hb] at h₂; exact h₂
+  | avx2 => have h₂ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealSC_ct v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
     have h₁ := seal_ct v; rw [hb] at h₁
     have := Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ct v.small v.small_poly h₁
