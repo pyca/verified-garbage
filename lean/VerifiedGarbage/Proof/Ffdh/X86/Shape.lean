@@ -18,4 +18,7 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
 theorem checkDomain_spSafe : (Impl.Ffdh.X86.CheckDomain.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
 
+theorem checkPublic_spSafe : (Impl.Ffdh.X86.CheckPublic.code).all (fun i => !isa.writesSp i) = true :=
+  VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
+
 end VG.Proof.Ffdh.X86.Shape

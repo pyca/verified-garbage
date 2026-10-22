@@ -84,6 +84,9 @@ theorem Kept.word_eq {js ds : List Nat} {m m' : Mem} (k : Kept base len js ds m 
     (hd : 8 ≤ d ∧ d + 4 ≤ numBase ∧ d % 4 = 0 ∧ d ∉ ds := by decide) : w32 m' base d = w32 m base d :=
   k.words d hd.1 hd.2.1 hd.2.2.1 hd.2.2.2
 
+/-- What `pSetup` leaves in slot 15: `p − 1`, or all ones for a p of zero. -/
+def pm1 (len p : Nat) : Nat := if 0 < p then p - 1 else 2 ^ (32 * cwc len .wide) - 1
+
 /-- p into wide slot 9, one into 14 and `p − 1` into 15. -/
 theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32 len)
     (fit : (args 2).toNat + len ≤ 2 ^ 32) (rd : InRegions (s.rd ++ s.wr) (byteAddr (args 2)) len)
@@ -92,7 +95,7 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
       In Ex base bytes len args u ∧ Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Kept base len [9, 14, 15] [] s.mem u.mem ∧
       sv u.mem base len .wide 9 = argNum s.mem args 2 len ∧ sv u.mem base len .wide 14 = 1 ∧
-      (0 < argNum s.mem args 2 len → sv u.mem base len .wide 15 = argNum s.mem args 2 len - 1) ∧
+      sv u.mem base len .wide 15 = pm1 len (argNum s.mem args 2 len) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have bl := h.bytes_lt
   have f9 := slot_fit1 h (j := 9) (by decide)
@@ -131,15 +134,19 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
     have F₂ := fR_of_outside h (sp := s.gpr .esp) O₂ (slot_inF (by decide) bst)
     have F₃ := fR_of_outside h (sp := s.gpr .esp) O₃ (slot_inF (by decide) bst)
     exact (F₁.trans F₂).trans F₃
-  · intro pos
-    have lt := val32_lt u.mem base (lo len (.slot .wide 15)) (cwc len .wide)
+  · have lt := val32_lt u.mem base (lo len (.slot .wide 15)) (cwc len .wide)
     have lt9 : argNum s.mem args 2 len < 2 ^ (32 * cwc len .wide) := by
       rw [← e9]; exact val32_lt _ _ _ _
     change sv u.mem base len .wide 15 < _ at lt
     rw [show val32 u₂.mem base (lo len (.slot .wide 14)) (cwc len .wide) = 1 from e14,
       show val32 u₂.mem base (lo len (.slot .wide 9)) (cwc len .wide) = argNum s.mem args 2 len from e9] at V₃
     change sv u.mem base len .wide 15 + 1 = _ at V₃
-    cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V₃ <;> omega
+    have := Nat.two_pow_pos (32 * cwc len .wide)
+    unfold pm1
+    split <;> (cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero]
+      at V₃ <;> omega)
+
+theorem pm1_of {len p : Nat} (h : 0 < p) : pm1 len p = p - 1 := by simp [pm1, h]
 
 /-- Where the wide slots lie. -/
 theorem lo_wide (len j : Nat) : lo len (.slot .wide j) = numBase + j * st len .wide := rfl

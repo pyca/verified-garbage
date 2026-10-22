@@ -38,4 +38,36 @@ theorem checkDomainABI_of {s : State} (h : (Spec.Ffdh.checkDomainContract abi st
   sig_split h
   constructor <;> with_reducible assumption
 
+structure CheckPublicABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 4 + 28 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 3, (arg s 4).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 5, (arg s 6).toNat * 8⟩, ⟨argAddr s 0, 28⟩]
+  domScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  domArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  yScratch : (⟨argumentPointer s 3, (arg s 4).toNat⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  yArgs : (⟨argumentPointer s 3, (arg s 4).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  scratchArgs : (⟨argumentPointer s 5, (arg s 6).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  retDom : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  retY : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  retArgs : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+    ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  yBound : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 5).toNat + (arg s 6).toNat * 8 ≤ 2 ^ 32
+  pLen : Spec.Ffdh.pLenValid (arg s 2).toNat
+  dLen : Spec.Ffdh.domainLenValid (arg s 2).toNat (arg s 1).toNat
+  yLen : (arg s 4).toNat = (arg s 2).toNat
+  scratchLength : Spec.Rsa.scratchWords (arg s 2).toNat ≤ (arg s 6).toNat
+
+theorem checkPublicABI_of {s : State} (h : (Spec.Ffdh.checkPublicContract abi stack).pre s) : CheckPublicABI s := by
+  sig_pre [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
 end VG.Proof.Ffdh.X86

@@ -71,33 +71,31 @@ theorem loadY_ok (h : In Ex base bytes len args s) (Y : YGeo args base bytes len
 abbrev expected (len dlen : Nat) (m : Mem) (args : Nat → BitVec 32) : Nat :=
   if Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf len (domBytes m args dlen), yv m args len⟩ then 1 else 0
 
-/-- `vg_ffdh_check_public`'s body: a status, `expected` for a valid domain. -/
-theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
+/-- The body up to its first branch. -/
+abbrev pubFront : List (Prog isa) :=
+  [Impl.Ffdh.X86.pSetup, load (.slot .wide 12) (one .wide) 8 9, Impl.Ffdh.X86.rangeMask 12,
+    Impl.Ffdh.X86.testMask]
+
+/-- The body with q: `y^q mod p = 1`. -/
+abbrev pubQ : Prog isa :=
+  .seq (load (.slot .wide 11) (one .wide) 6 7) (.seq (Impl.Ffdh.X86.powP 12 11) (Impl.Ffdh.X86.eqStatus 6 3))
+
+theorem body_eq : Impl.Ffdh.X86.CheckPublic.body = Prog.chain pubFront (.ite .e (Impl.Ffdh.X86.ret 0)
+    (.seq (.block Impl.Ffdh.X86.qTest) (.ite .e (Impl.Ffdh.X86.ret 1) pubQ))) := rfl
+
+/-- p, one, `p − 1` and y into slots 9, 14, 15 and 12, and ZF telling whether y is out of range. -/
+theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
     (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40)) :
-    WP isa Impl.Ffdh.X86.CheckPublic.body s fun t => ∃ r, Res base len s r t ∧
-      (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen s.mem args) := by
+    WP isa (Prog.chain pubFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
+      Gate u (¬ (yv s.mem args len < pm1 len (comp s.mem args len 0) ∧ 1 < yv s.mem args len)) ∧
+      sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 12 = yv s.mem args len := by
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
   have yf := Y.fit
-  have h2 : 2 * len ≤ dlen := by omega
-  have hp := comp_p s.mem args h2
-  have iffP := VG.Proof.Ffdh.publicValid_eq (Spec.Ffdh.domainOf len (domBytes s.mem args dlen)) (yv s.mem args len)
-  rw [← hp] at iffP
-  generalize hP : comp s.mem args len 0 = p at iffP hp
-  generalize hY : yv s.mem args len = y at iffP
-  /- A valid domain's p is an odd number above one. -/
-  have pv : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → 1 < p ∧ p % 2 = 1 := by
-    intro v
-    have mv := VG.Proof.Ffdh.domainValid_mod v
-    rw [← comp_p s.mem args h2, hP] at mv
-    unfold Spec.Rsa.modulusValid at mv
-    simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
-    exact ⟨by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega, mv.1.1.1⟩
-  unfold Impl.Ffdh.X86.CheckPublic.body
-  -- p, one and `p − 1`; y.
+  generalize hP : comp s.mem args len 0 = p
+  generalize hY : yv s.mem args len = y
   refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
     (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
         rwa [BitVec.add_zero] at this)
@@ -110,34 +108,62 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   have k₂ := kept_slot I₁ (a := 12) O₂
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 12) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
-  rw [V₂, k₂.slot_eq, k₂.slot_eq, V14] at e₃
+  rw [V₂, k₂.slot_eq, k₂.slot_eq, V14, V15] at e₃
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.word S₂.inp (by decide) O₃ K₃
   have k₃ := kept_word S₂.inp (d := maskOff) (by decide) (by decide) O₃
-  refine WP.seq (WP.mono (testMask_ok e₃) fun u₄ ⟨z₄, m₄, K₄⟩ => ?_)
+  refine WP.seq (WP.mono (testMask_ok e₃) fun u₄ ⟨z₄, m₄, K₄⟩ => WP.block_nil ?_)
   have S₄ : Step Ex base bytes len args u₃ u₄ := Step.regs S₃.inp m₄ K₄
-  have S := ((S₁.trans S₂).trans S₃).trans S₄
-  refine WP.ite _ z₄ (fun hb => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨0, S.res R, ?_⟩)
-    (fun hb => ?_)
+  refine ⟨((S₁.trans S₂).trans S₃).trans S₄, Gate.of_eval z₄ ?_, by rw [m₄, k₃.slot_eq, k₂.slot_eq, V9],
+    by rw [m₄, k₃.slot_eq, V₂]⟩
+  by_cases a : y < pm1 len p <;> by_cases b : 1 < y <;> simp [a, b]
+
+/-- `vg_ffdh_check_public`'s body: a status, `expected` for a valid domain. -/
+theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
+    (Y : YGeo args base bytes len s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40)) :
+    WP isa Impl.Ffdh.X86.CheckPublic.body s fun t => ∃ r, Res base len s r t ∧
+      (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen s.mem args) := by
+  have dl := G.dl
+  have fit := G.fit
+  have lw := G.lower
+  have h2 : 2 * len ≤ dlen := by omega
+  have hp := comp_p s.mem args h2
+  have iffP := VG.Proof.Ffdh.publicValid_eq (Spec.Ffdh.domainOf len (domBytes s.mem args dlen)) (yv s.mem args len)
+  rw [← hp] at iffP
+  rw [body_eq]
+  refine WP.chain_split (front_ok h G Y hy40) fun u₄ ⟨S, Gt, V9, V12⟩ => ?_
+  generalize hP : comp s.mem args len 0 = p at iffP hp Gt V9
+  generalize hY : yv s.mem args len = y at iffP Gt V12
+  /- A valid domain's p is an odd number above one. -/
+  have pv : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → 1 < p ∧ p % 2 = 1 := by
+    intro v
+    have mv := VG.Proof.Ffdh.domainValid_mod v
+    rw [← comp_p s.mem args h2, hP] at mv
+    unfold Spec.Rsa.modulusValid at mv
+    simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
+    exact ⟨by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega, mv.1.1.1⟩
+  refine WP.gate Gt (fun bad => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨0, S.res R, ?_⟩)
+    (fun good => ?_)
   · intro v
     obtain ⟨gt, odd⟩ := pv v
-    rw [V15 (by omega)] at hb
-    have : ¬ (1 < y ∧ y < p - 1) := by
-      intro ⟨a, b⟩; simp [a, b] at hb
+    rw [pm1_of (by omega)] at bad
+    have : ¬ (1 < y ∧ y < p - 1) := fun ⟨a, b⟩ => bad ⟨b, a⟩
     have nv : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf len (domBytes s.mem args dlen), y⟩ = false := by
       cases e : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf len (domBytes s.mem args dlen), y⟩
       · rfl
       · exact absurd (iffP.mp e).1 this
     simp only [expected, hY, nv, Bool.false_eq_true, ↓reduceIte]
-  -- With y in range: is there a q?
-  refine WP.seq (WP.mono (qTest_ok S₄.inp G.e3 G.e12 dl) fun u₅ ⟨z₅, m₅, K₅⟩ => ?_)
-  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp m₅ K₅
-  have S' := S.trans S₅
+  have good := Classical.not_not.mp good
   have range : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → 1 < y ∧ y < p - 1 := by
     intro v
     obtain ⟨gt, odd⟩ := pv v
-    rw [V15 (by omega)] at hb
-    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, Bool.and_eq_true, decide_eq_true_eq] at hb
-    exact ⟨hb.2, hb.1⟩
+    rw [pm1_of (by omega)] at good
+    exact ⟨good.2, good.1⟩
+  -- With y in range: is there a q?
+  refine WP.seq (WP.mono (qTest_ok S.inp G.e3 G.e12 dl) fun u₅ ⟨z₅, m₅, K₅⟩ => ?_)
+  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S.inp m₅ K₅
+  have S' := S.trans S₅
   refine WP.ite _ z₅ (fun hb₅ => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨1, S'.res R, ?_⟩)
     (fun hb₅ => ?_)
   · intro v
@@ -158,10 +184,10 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   rw [comp_keep h G hb40 S'.frame (by omega)] at V₆
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₅.inp (by decide) O₆ K₆
   have k₆ := kept_slot S₅.inp (a := 11) O₆
-  have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, m₄, k₃.slot_eq, k₂.slot_eq, V9]
-  have y₆ : sv u₆.mem base len .wide 12 = y := by rw [k₆.slot_eq, m₅, m₄, k₃.slot_eq, V₂]
-  refine WP.seq (WP.mono (powP_ok S₆.inp (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide) (by decide)
-    (by rw [nine₆])) fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
+  have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, V9]
+  have y₆ : sv u₆.mem base len .wide 12 = y := by rw [k₆.slot_eq, m₅, V12]
+  refine WP.seq (WP.mono (powP_ok S₆.inp (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide)
+    (by decide) (by rw [nine₆])) fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
   rw [y₆, V₆] at Y₇
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.ops S₆.inp F₇ K₇
   refine WP.mono (eqStatus_res C₇.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_

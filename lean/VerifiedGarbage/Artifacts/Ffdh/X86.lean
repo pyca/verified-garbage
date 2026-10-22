@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -20,6 +21,14 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.CheckDomain.code
     verified := Proof.Ffdh.X86.CheckDomain.verified
     spSafe := Proof.Ffdh.X86.Shape.checkDomain_spSafe
+    stack := 116 },
+  Spec.Ffdh.checkPublicApi.artifact X86.target {
+    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
+      The subgroup check is a fixed four-bit-window power. The domain's and y's bytes choose the \
+      branches. Callee-saved registers reside in scratch."]
+    code := Impl.Ffdh.X86.CheckPublic.code
+    verified := Proof.Ffdh.X86.CheckPublic.verified
+    spSafe := Proof.Ffdh.X86.Shape.checkPublic_spSafe
     stack := 116 }]
 
 end VG.Artifacts.Ffdh.X86

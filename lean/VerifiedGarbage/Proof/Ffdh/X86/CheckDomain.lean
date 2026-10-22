@@ -238,7 +238,7 @@ theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base 
     (G.apart.sub_left (Region.sub_prefix (by omega))))
     fun u₁ ⟨I₁, F₁, k₁, V9, V14, V15, K₁⟩ => ?_)
   rw [argNum_comp, hP] at V9 V15
-  have V15 := V15 (by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega)
+  rw [pm1_of (by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega)] at V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   -- g, and its range.
   refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega)
