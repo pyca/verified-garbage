@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 
 /-!
@@ -20,8 +21,8 @@ of `stream_encrypt` and `stream_decrypt`, with copies of their four words of
 stack arguments (`text_len`, `data` and `len`), of `stream_finish` (three:
 `text_len` and `tag`), of `stream_verify` and `seal` (four) and of `open`
 (five). The copies are read only where the postconditions read the buffers
-(`Proof/Sm4Gcm/Scratch.lean`). Each frame sits on the 1520 bytes of stack the
-code needs below it.
+(`Proof/Sm4Gcm/Scratch.lean`, `Arm/Scratch.lean`). Each frame sits on the
+1520 bytes of stack the code needs below it.
 -/
 
 @[expose] public section

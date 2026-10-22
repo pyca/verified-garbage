@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCryptFn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTOpen
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Sm4Gcm.Scratch
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Scratch
 public import VerifiedGarbage.Impl.Sm4Gcm.Arm
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamCrypt
 Untrusted: everything here is checked by Lean. Correctness and constant
 time, a state satisfying each precondition, and the shared contracts of
 `Spec/Sm4/Gcm/Contract.lean` with the working space as a last argument
-(`Proof/Sm4Gcm/Scratch.lean`), with 1520 bytes of stack: those of
+(`Proof/Sm4Gcm/Arm/Scratch.lean`), with 1520 bytes of stack: those of
 `vg_sm4_ctr32`'s frame, the most any call uses (`vg_sm4_expand_key` uses
 1456, and each call of `vg_ghash` pushes two words).
 -/
@@ -51,9 +51,9 @@ def initSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0)
     [⟨0x1000, 16⟩] [⟨0x2000, 256⟩, ⟨0x3000, 768⟩]
 
-theorem init_verified : Verified Arm.target init (Proof.Sm4Gcm.initScratchContract Arm.abi 1520) :=
+theorem init_verified : Verified Arm.target init (Proof.Sm4Gcm.Arm.initScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => init_wp hs) init_ct (by
-    sig_implies [Proof.Sm4Gcm.initScratchContract, Proof.Sm4Gcm.initScratchSig, Spec.Sm4.Gcm.initSig,
+    sig_implies [Proof.Sm4Gcm.Arm.initScratchContract, Proof.Sm4Gcm.Arm.initScratchSig, Spec.Sm4.Gcm.initSig,
       Spec.Sm4.Gcm.initPost, initArm, bel, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr] [initSat, mkSat] using initSat)
 
@@ -63,9 +63,9 @@ def siSat : State :=
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x8000, 4⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 theorem streamInit_verified :
-    Verified Arm.target streamInit (Proof.Sm4Gcm.streamInitScratchContract Arm.abi 1520) :=
+    Verified Arm.target streamInit (Proof.Sm4Gcm.Arm.streamInitScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamInit_wp hs) streamInit_ct (by
-    sig_implies [Proof.Sm4Gcm.streamInitScratchContract, Proof.Sm4Gcm.streamInitScratchSig,
+    sig_implies [Proof.Sm4Gcm.Arm.streamInitScratchContract, Proof.Sm4Gcm.Arm.streamInitScratchSig,
       Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost, streamInitArm, bel, arg, args, arg64,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [siSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using siSat)
@@ -76,9 +76,9 @@ def saSat : State :=
     [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 theorem streamAad_verified :
-    Verified Arm.target streamAad (Proof.Sm4Gcm.streamAadScratchContract Arm.abi 1520) :=
+    Verified Arm.target streamAad (Proof.Sm4Gcm.Arm.streamAadScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamAad_wp hs) streamAad_ct (by
-    sig_implies [Proof.Sm4Gcm.streamAadScratchContract, Proof.Sm4Gcm.streamAadScratchSig,
+    sig_implies [Proof.Sm4Gcm.Arm.streamAadScratchContract, Proof.Sm4Gcm.Arm.streamAadScratchSig,
       Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost, streamAadArm, bel, arg, args, arg64,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [saSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using saSat)
@@ -90,18 +90,18 @@ def scSat : State :=
     [⟨0x1000, 256⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩, ⟨0, 768⟩]
 
 theorem streamEncrypt_verified :
-    Verified Arm.target streamEncrypt (Proof.Sm4Gcm.streamEncryptScratchContract Arm.abi 1520) :=
+    Verified Arm.target streamEncrypt (Proof.Sm4Gcm.Arm.streamEncryptScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamEncrypt_wp hs) streamEncrypt_ct (by
-    sig_implies [Proof.Sm4Gcm.streamEncryptScratchContract, Proof.Sm4Gcm.streamCryptScratchSig,
+    sig_implies [Proof.Sm4Gcm.Arm.streamEncryptScratchContract, Proof.Sm4Gcm.Arm.streamCryptScratchSig,
       Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, streamEncryptArm, streamCryptPre,
       streamCryptPub, bel, arg, args, arg64, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)
 
 theorem streamDecrypt_verified :
-    Verified Arm.target streamDecrypt (Proof.Sm4Gcm.streamDecryptScratchContract Arm.abi 1520) :=
+    Verified Arm.target streamDecrypt (Proof.Sm4Gcm.Arm.streamDecryptScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamDecrypt_wp hs) streamDecrypt_ct (by
-    sig_implies [Proof.Sm4Gcm.streamDecryptScratchContract, Proof.Sm4Gcm.streamCryptScratchSig,
+    sig_implies [Proof.Sm4Gcm.Arm.streamDecryptScratchContract, Proof.Sm4Gcm.Arm.streamCryptScratchSig,
       Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, streamDecryptArm, streamCryptPre,
       streamCryptPub, bel, arg, args, arg64, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
@@ -122,9 +122,9 @@ def fSat : State :=
     [⟨0x1000, 256⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
 
 theorem streamFinish_verified :
-    Verified Arm.target streamFinish (Proof.Sm4Gcm.streamFinishScratchContract Arm.abi 1520) :=
+    Verified Arm.target streamFinish (Proof.Sm4Gcm.Arm.streamFinishScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamFinish_wp hs) streamFinish_ct (by
-    sig_implies [Proof.Sm4Gcm.streamFinishScratchContract, Proof.Sm4Gcm.streamFinishScratchSig,
+    sig_implies [Proof.Sm4Gcm.Arm.streamFinishScratchContract, Proof.Sm4Gcm.Arm.streamFinishScratchSig,
       Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, streamFinishArm, streamFinishPreArm,
       finPub, bel, arg, args, arg64, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [fSat, mkSat2, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using fSat)
@@ -136,15 +136,15 @@ def vSat : State :=
 
 /-- The postconditions match; the result is the low word of `r1:r0`. -/
 theorem streamVerify_verified :
-    Verified Arm.target streamVerify (Proof.Sm4Gcm.streamVerifyScratchContract Arm.abi 1520) :=
+    Verified Arm.target streamVerify (Proof.Sm4Gcm.Arm.streamVerifyScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamVerify_wp hs) streamVerify_ct
     { pre := by
-        sig_implies_pre [Proof.Sm4Gcm.streamVerifyScratchContract, Proof.Sm4Gcm.streamVerifyScratchSig,
+        sig_implies_pre [Proof.Sm4Gcm.Arm.streamVerifyScratchContract, Proof.Sm4Gcm.Arm.streamVerifyScratchSig,
           Spec.Sm4.Gcm.streamVerifySig, streamVerifyArm, streamVerifyPreArm, finPub, bel, arg, args,
           arg64, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Proof.Sm4Gcm.streamVerifyScratchContract, Proof.Sm4Gcm.streamVerifyScratchSig,
+        sig_eval [Proof.Sm4Gcm.Arm.streamVerifyScratchContract, Proof.Sm4Gcm.Arm.streamVerifyScratchSig,
           Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [streamVerifyArm, Arm.State.addr] at h
@@ -153,11 +153,11 @@ theorem streamVerify_verified :
         rw [e]
         exact h iv a c hs ha hc
       pub := by
-        sig_implies_pub [Proof.Sm4Gcm.streamVerifyScratchContract, Proof.Sm4Gcm.streamVerifyScratchSig,
+        sig_implies_pub [Proof.Sm4Gcm.Arm.streamVerifyScratchContract, Proof.Sm4Gcm.Arm.streamVerifyScratchSig,
           Spec.Sm4.Gcm.streamVerifySig, streamVerifyArm, streamVerifyPreArm, finPub, bel, arg, args,
           arg64, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := by
-        sig_implies_sat [Proof.Sm4Gcm.streamVerifyScratchContract, Proof.Sm4Gcm.streamVerifyScratchSig,
+        sig_implies_sat [Proof.Sm4Gcm.Arm.streamVerifyScratchContract, Proof.Sm4Gcm.Arm.streamVerifyScratchSig,
           Spec.Sm4.Gcm.streamVerifySig, streamVerifyArm, streamVerifyPreArm, finPub, bel, arg, args,
           arg64, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [vSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using vSat }
@@ -168,9 +168,9 @@ def oSat : State :=
   mkSat3 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
 
-theorem seal_verified : Verified Arm.target «seal» (Proof.Sm4Gcm.sealScratchContract Arm.abi 1520) :=
+theorem seal_verified : Verified Arm.target «seal» (Proof.Sm4Gcm.Arm.sealScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
-    sig_implies [Proof.Sm4Gcm.sealScratchContract, Proof.Sm4Gcm.sealScratchSig, Spec.Sm4.Gcm.sealSig,
+    sig_implies [Proof.Sm4Gcm.Arm.sealScratchContract, Proof.Sm4Gcm.Arm.sealScratchSig, Spec.Sm4.Gcm.sealSig,
       Spec.Sm4.Gcm.sealPost, sealArm, sealPreArm, onePub, bel, arg, args, arg64, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [oSat, mkSat3, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using oSat)
@@ -187,15 +187,15 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 
 /-- The postconditions match on `openResult`; the result is the low word of
 `r1:r0`; and `open`'s public data include its leak, whether it succeeds. -/
-theorem open_verified : Verified Arm.target «open» (Proof.Sm4Gcm.openScratchContract Arm.abi 1520) :=
+theorem open_verified : Verified Arm.target «open» (Proof.Sm4Gcm.Arm.openScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => open_wp hs) open_ct
     { pre := by
-        sig_implies_pre [Proof.Sm4Gcm.openScratchContract, Proof.Sm4Gcm.openScratchSig,
+        sig_implies_pre [Proof.Sm4Gcm.Arm.openScratchContract, Proof.Sm4Gcm.Arm.openScratchSig,
           Spec.Sm4.Gcm.openSig, openArm, openPreArm, onePub, bel, arg, args, arg64, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Proof.Sm4Gcm.openScratchContract, Proof.Sm4Gcm.openScratchSig, Spec.Sm4.Gcm.openSig,
+        sig_eval [Proof.Sm4Gcm.Arm.openScratchContract, Proof.Sm4Gcm.Arm.openScratchSig, Spec.Sm4.Gcm.openSig,
           Spec.Sm4.Gcm.openPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [openArm, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
@@ -203,7 +203,7 @@ theorem open_verified : Verified Arm.target «open» (Proof.Sm4Gcm.openScratchCo
         exact h
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Proof.Sm4Gcm.openScratchContract, Proof.Sm4Gcm.openScratchSig, Spec.Sm4.Gcm.openSig,
+        sig_pub [Proof.Sm4Gcm.Arm.openScratchContract, Proof.Sm4Gcm.Arm.openScratchSig, Spec.Sm4.Gcm.openSig,
           Spec.Sm4.Gcm.openLeak, openArm, openPreArm, onePub, bel, arg, args, arg64, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
         obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5⟩ := h
@@ -217,7 +217,7 @@ theorem open_verified : Verified Arm.target «open» (Proof.Sm4Gcm.openScratchCo
         · exact a4
         · exact a5
       sat := by
-        sig_implies_sat [Proof.Sm4Gcm.openScratchContract, Proof.Sm4Gcm.openScratchSig,
+        sig_implies_sat [Proof.Sm4Gcm.Arm.openScratchContract, Proof.Sm4Gcm.Arm.openScratchSig,
           Spec.Sm4.Gcm.openSig, openArm, openPreArm, onePub, bel, arg, args, arg64, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [opSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using opSat }
