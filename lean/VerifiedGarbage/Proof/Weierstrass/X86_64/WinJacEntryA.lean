@@ -141,39 +141,32 @@ structure JEntA (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Poin
   ent : 1 ≤ magH 16 (Window5.nib k' j) → InvJ C (tmv C K.M.n base t (TS K 0)) (tmv C K.M.n base t (TS K 1))
     (tmv C K.M.n base t (TS K 2)) (Window5.winPt C P k' j)
 
-/-- Digit `j`'s affine entry into `T`, negated for a negative digit. -/
-theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
-    (hF : JacWinFixed K C base s₀ P k) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
-    {s : State} {j : Nat} (hj : j < K.J)
-    (hf : JFrame K C base size s₀ s) (hT : JTblOk K C base P 16 s) (hO : JTblOne K base s)
-    (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
-    WP isa (.block (K.tc.digit ++ K.selectA)) s fun s₂ =>
-      WP isa (.block K.tc.negY) s₂ (JEntA K C base size P s₀ (k + JacWinCfg.offset K.J) j s) := by
-  have hs := hf.scr
-  have hn := hs.nowrap
+/-- `T` holding entry `a`'s `X` and `Y` (zero for `a = 0`), of digit `j`'s
+window, and `Z = 1`, its `Y` negated for a negative digit: `T` then holds
+digit `j`'s point, as `JEntA` says. -/
+theorem jnegA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
+    (hF : JacWinFixed K C base s₀ P k) (hone_lt : K.one < C.p) {s s₂ : State} {j : Nat} (hj : j < K.J)
+    (hT : JTblOk K C base P 16 s) (hO : JTblOne K base s)
+    (F₂ : JFrame K C base size s₀ s₂) (hb : s₂.gpr .rbx = BitVec.ofNat 64 j) {a : Nat}
+    (ha : magH 16 (Window5.nib (k + JacWinCfg.offset K.J) j) = a) (ha16 : a ≤ 16)
+    (e₂ : ∀ c < 2, wordsVal s₂.mem base (jg K (80 + c)) K.M.n =
+      if 1 ≤ a then wordsVal s.mem base (jg K (5 * (a - 1) + c)) K.M.n else 0)
+    (o₂ : wordsVal s₂.mem base (jg K 82) K.M.n = K.one) :
+    WP isa (.block K.tc.negY) s₂ fun s₅ => JFrame K C base size s₀ s₅ ∧
+      Unch base [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)] s₂.mem s₅.mem ∧
+      KeepRegs (clob K.M.n) s₂ s₅ ∧ (∀ c < 3, wordsVal s₅.mem base (TS K c) K.M.n < C.p) ∧
+      wordsVal s₅.mem base (TS K 2) K.M.n = K.one ∧
+      (1 ≤ magH 16 (Window5.nib (k + JacWinCfg.offset K.J) j) →
+        InvJ C (tmv C K.M.n base s₅ (TS K 0)) (tmv C K.M.n base s₅ (TS K 1))
+          (tmv C K.M.n base s₅ (TS K 2)) (Window5.winPt C P (k + JacWinCfg.offset K.J) j)) := by
+  have hs₂ := F₂.scr
+  have hn := hs₂.nowrap
   have hbl := hL.bits
   have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
-  have hbits := hf.bits hL hF
-  generalize hk' : k + JacWinCfg.offset K.J = k' at hbits
+  have hbits := F₂.bits hL hF
+  generalize hk' : k + JacWinCfg.offset K.J = k' at hbits ha ⊢
   have hwj : 5 * j + 5 ≤ 5 * K.J := by omega_using [hj]
-  rw [WP.block_append_iff]
-  refine WP.mono (digit_ok K.tc hs (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
-    (by show 5 < 9; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_using [hbl]) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
   have hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
-  have hH : K.tc.H = 16 := rfl
-  rw [hwin, hH] at r₁
-  generalize ha : magH 16 (Window5.nib k' j) = a at r₁
-  have ha16 : a ≤ 16 := by rw [← ha]; exact magH_le (by have := Window5.nib_lt k' j; omega_using [this])
-  refine WP.mono (jselectA_ok hL hs₁ r₁ ha16 (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨e₂, o₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have m₁ : s₁.mem = s.mem := k₁.2.1
-  rw [m₁] at e₂
-  have U₂ : Unch base (jwLoopW K) s.mem s₂.mem := by
-    rw [← m₁]; exact (outside_grid5 (b := 80) O₂).mono fun w hw => by
-      obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw; exact T_loopW K (List.mem_range.mp hc)
-  have F₂ := hf.next hL hs₂ (((Keeps.regs k₁).mono (sub_powClob (by decide))).trans
-    (k₂.mono (sub_powClob (by decide)))) U₂ (jwLoopW_sub K)
   -- The negation.
   obtain ⟨tx, ty, tz, -, -⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, -, -⟩ := hL.T_mem
@@ -201,11 +194,10 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
         · exact mem_jwW_ws (other_ws (by jw_mem))
         · exact mem_jwW_tmp
       have := hL.bits_w w hw'; omega_using [ht, this]) (by omega_using [hn, hbl, ht])]
-    have := F₂.bits hL hF t ht; rw [hk'] at this; exact this
+    exact hbits t ht
   rw [WP.block_append_iff]
   refine WP.mono (signMask_ok K.tc hs₃ (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
-    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_using [hbl]) (by rw [k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (by decide),
-      k₁.1 _ (by decide), hb]) hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
+    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_using [hbl]) (by rw [k₃.gpr _ (rbx_not_clob _), hb]) hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   rw [hwin] at x₄
   refine WP.mono (sel_ok (decide (Window5.nib k' j < 2 ^ (K.tc.w - 1))) K.M.n hs₄ x₄ (o := K.E.y)
@@ -235,16 +227,13 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
     rw [ty, e₅, m₄, e₃, hz₂, y₃]
   have tv : ∀ {x y : Nat}, wordsVal s₅.mem base x K.M.n = wordsVal s₂.mem base y K.M.n →
       tmv C K.M.n base s₅ x = tmv C K.M.n base s₂ y := fun h => by show toM _ _ _ = toM _ _ _; rw [h]
-  have hU : Unch base ((List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
-      [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)]) s.mem s₅.mem := by
-    rw [← m₁]
-    refine (((outside_grid5 (b := 80) O₂).trans k₃.unch).trans (m₄ ▸ O₅.unch)).mono fun w hw => ?_
+  have hU : Unch base [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)] s₂.mem s₅.mem := by
+    refine (k₃.unch.trans (m₄ ▸ O₅.unch)).mono fun w hw => ?_
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-    rcases hw with (h | h | h) | h
+    rcases hw with (h | h) | h
     · exact Or.inl h
     · exact Or.inr (Or.inl h)
-    · exact Or.inr (Or.inr h)
-    · rw [h, hL.Ty]; exact Or.inl (List.mem_map.mpr ⟨1, by decide, rfl⟩)
+    · rw [h, hL.Ty]; exact Or.inr (Or.inr rfl)
   have hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -252,17 +241,20 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
     · simp [clob]
     · simp [clob]
     · exact r8_mem_clob _
-  have kk : KeepRegs (clob K.M.n) s s₅ :=
-    ((((Keeps.regs k₁).mono hcl).trans (k₂.mono fun r hr => hcl r (by
+  have kk : KeepRegs (clob K.M.n) s₂ s₅ :=
+    ((⟨k₃.gpr, k₃.rd, k₃.wr⟩ : KeepRegs (clob K.M.n) s₂ s₃).trans ((Keeps.regs k₄).mono fun r hr => hcl r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]))).trans
-      ((⟨k₃.gpr, k₃.rd, k₃.wr⟩ : KeepRegs (clob K.M.n) s₂ s₃).trans ((Keeps.regs k₄).mono fun r hr => hcl r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h])))).trans
       (k₅.mono fun r hr => hcl r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]))
   have h16 : (2 : Nat) ^ (K.tc.w - 1) = 16 := rfl
   rw [h16] at keepY
   have z₅ : wordsVal s₅.mem base (TS K 2) K.M.n = K.one := by rw [keepT 2 (by decide) (by decide)]; exact o₂
-  refine ⟨hf.next hL hs₅ (kk.mono clob_powClob) hU (fun w hw => jwLoopW_sub K w (jent_loopW K w hw)), hU,
+  refine ⟨F₂.next hL hs₅ (kk.mono clob_powClob) hU (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact mem_jwW_ws (other_ws (by jw_mem))
+      · exact mem_jwW_tmp
+      · exact mem_jwW_ws (jg_ws (by decide))), hU,
     kk, fun c hc => ?_, z₅, fun h => ?_⟩
   · by_cases h1 : c = 1
     · subst h1; rw [keepY]; split
@@ -298,5 +290,61 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
       have hy : tmv C K.M.n base s₅ (TS K 1) = tmv C K.M.n base s (entS K a 1) := by
         show toM _ _ _ = toM _ _ _; rw [keepY, ey]
       rw [hy]; exact J₂
+
+
+/-- Digit `j`'s affine entry into `T`, negated for a negative digit. -/
+theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
+    (hF : JacWinFixed K C base s₀ P k) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
+    {s : State} {j : Nat} (hj : j < K.J)
+    (hf : JFrame K C base size s₀ s) (hT : JTblOk K C base P 16 s) (hO : JTblOne K base s)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
+    WP isa (.block (K.tc.digit ++ K.selectA)) s fun s₂ =>
+      WP isa (.block K.tc.negY) s₂ (JEntA K C base size P s₀ (k + JacWinCfg.offset K.J) j s) := by
+  have hs := hf.scr
+  have hn := hs.nowrap
+  have hbl := hL.bits
+  have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
+  have hbits := hf.bits hL hF
+  generalize hk' : k + JacWinCfg.offset K.J = k' at hbits
+  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega_using [hj]
+  rw [WP.block_append_iff]
+  refine WP.mono (digit_ok K.tc hs (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
+    (by show 5 < 9; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_using [hbl]) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
+  have hH : K.tc.H = 16 := rfl
+  rw [hwin, hH] at r₁
+  generalize ha : magH 16 (Window5.nib k' j) = a at r₁
+  have ha16 : a ≤ 16 := by rw [← ha]; exact magH_le (by have := Window5.nib_lt k' j; omega_using [this])
+  refine WP.mono (jselectA_ok hL hs₁ r₁ ha16 (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨e₂, o₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  have m₁ : s₁.mem = s.mem := k₁.2.1
+  rw [m₁] at e₂
+  have U₂ : Unch base (jwLoopW K) s.mem s₂.mem := by
+    rw [← m₁]; exact (outside_grid5 (b := 80) O₂).mono fun w hw => by
+      obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw; exact T_loopW K (List.mem_range.mp hc)
+  have F₂ := hf.next hL hs₂ (((Keeps.regs k₁).mono (sub_powClob (by decide))).trans
+    (k₂.mono (sub_powClob (by decide)))) U₂ (jwLoopW_sub K)
+  have hU₂ : Unch base ((List.range 5).map fun c => (jg K (80 + c), 8 * K.M.n)) s.mem s₂.mem := by
+    rw [← m₁]; exact outside_grid5 (b := 80) O₂
+  rw [← hk'] at ha
+  refine WP.mono (jnegA_ok hL hF hone_lt hj hT hO F₂ (by rw [k₂.gpr _ (by decide), k₁.1 _ (by decide), hb]) ha ha16
+    e₂ o₂) fun s₅ ⟨F₅, U₅, kk₅, lt₅, one₅, ent₅⟩ => ⟨F₅, ?_, ?_, lt₅, one₅, by rw [← hk']; exact ent₅⟩
+  · refine (hU₂.trans U₅).mono fun w hw => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    rcases hw with h | h | h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr h)
+    · rw [h]; exact Or.inl (List.mem_map.mpr ⟨1, by decide, rfl⟩)
+  · have hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
+      intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · simp [clob]
+      · simp [clob]
+      · simp [clob]
+      · exact r8_mem_clob _
+    exact (((Keeps.regs k₁).mono hcl).trans (k₂.mono fun r hr => hcl r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]))).trans kk₅
 
 end VG.Proof.Weierstrass.X86_64
