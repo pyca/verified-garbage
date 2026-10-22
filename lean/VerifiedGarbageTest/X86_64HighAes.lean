@@ -5,7 +5,8 @@ import VerifiedGarbage.TCB.X86_64.Print
 
 Expected results were computed on an AMD EPYC 9V74 with AVX512F and VAES,
 using GCC's `_mm512_aesenc_epi128`, `_mm512_aesenclast_epi128`,
-`_mm512_xor_si512` and `_mm512_broadcast_i32x4` intrinsics. Input byte `i`
+`_mm512_xor_si512` and `_mm512_broadcast_i32x4` intrinsics (`addEncB`, with
+`_mm512_add_epi32`, on an Intel Xeon of family 6, model 207). Input byte `i`
 is `i` in A and `255-i` in B. Distinct lanes catch lane duplication and
 ordering mistakes. These are ISA-model tests, not algorithm test vectors.
 -/
@@ -17,6 +18,8 @@ def A : BitVec 512 := 0x3f3e3d3c3b3a393837363534333231302f2e2d2c2b2a292827262524
 def B : BitVec 512 := 0xc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff#512
 def enc : BitVec 512 := 0xfbda51bbe6167019dde2f8bc3cdb1393b0a0b12b404b2b935a42c854eebb361bdf9b07b59e6ea868a1a4486cc97aabe9acd06ed495a82f47a9ca97d7b9a19495#512
 def last : BitVec 512 := 0x22c405285ee6e1c00b7bd8d3b94d58cb21262fa218460ee3fee87fedc938e1684fa6607f142c424a959b3e112c4fb725db9e8e0d318221c78352fb098a9a959c#512
+-- `_mm512_add_epi32(enc, B)`: carries within doublewords, unlike `A + B`.
+def addEncB : BitVec 512 := 0xbc9c147eaadc36e0a6acc38709a8e262817283fe1521026a331ca32fcb9914fac07cea9883548f4f8a8e3357b6689ad89dc261c78a9e263ea2c492d2b69f9394#512
 def broadcast : BitVec 512 := 0xf0f1f2f3f4f5f6f7f8f9fafbfcfdfefff0f1f2f3f4f5f6f7f8f9fafbfcfdfefff0f1f2f3f4f5f6f7f8f9fafbfcfdfefff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff#512
 
 def hs : List HReg := [.xmm16, .xmm17, .xmm18, .xmm19, .xmm20, .xmm21,
@@ -52,7 +55,8 @@ def selected (h : HReg) : State :=
 #guard hs.all fun h => [XReg.xmm0, .xmm15].all fun d =>
   ((ZOp.zbinH .vaesenc d .xmm0 h).exec (selected h)).zmm d == enc &&
   ((ZOp.zbinH .vaesenclast d .xmm0 h).exec (selected h)).zmm d == last &&
-  ((ZOp.zbinH .vpxord d .xmm0 h).exec (selected h)).zmm d == -1
+  ((ZOp.zbinH .vpxord d .xmm0 h).exec (selected h)).zmm d == -1 &&
+  ((ZOp.zbinH .vpaddd d d h).exec ((ZOp.zbinH .vaesenc d .xmm0 h).exec (selected h))).zmm d == addEncB
 
 -- Sources, unrelated registers, flags and memory are preserved.
 #guard hs.all fun h =>
@@ -89,6 +93,7 @@ def selected (h : HReg) : State :=
 #guard hs.all fun h =>
   (Instr.vbroadcasti32x4H h {base := .rdi}).requires == ["avx512f"] &&
   (Instr.zop (.zbinH .vpxord .xmm0 .xmm0 h)).requires == ["avx512f"] &&
+  (Instr.zop (.zbinH .vpaddd .xmm0 .xmm0 h)).requires == ["avx512f"] &&
   (Instr.zop (.zbinH .vaesenc .xmm0 .xmm0 h)).requires == ["vaes", "avx512f"] &&
   (Instr.zop (.zbinH .vaesenclast .xmm0 .xmm0 h)).requires == ["vaes", "avx512f"]
 #guard (Instr.vbroadcasti32x4H .xmm31 {base := .rdi}).asm ==
@@ -99,5 +104,7 @@ def selected (h : HReg) : State :=
   ["vaesenclast zmm0, zmm0, zmm31"]
 #guard (Instr.zop (.zbinH .vpxord .xmm0 .xmm0 .xmm16)).asm ==
   ["vpxord zmm0, zmm0, zmm16"]
+#guard (Instr.zop (.zbinH .vpaddd .xmm4 .xmm3 .xmm30)).asm ==
+  ["vpaddd zmm4, zmm3, zmm30"]
 
 end VG.Test.HighAes
