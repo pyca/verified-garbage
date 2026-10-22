@@ -1538,6 +1538,22 @@ yours to keep:
 
 <tr>
 
+<td>SEC 1 EC point compression</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>ECDH brainpoolP256r1</td>
 
 <td>✅</td>

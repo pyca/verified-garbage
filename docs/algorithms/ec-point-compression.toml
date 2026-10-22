@@ -1,0 +1,5 @@
+name = "SEC 1 EC point compression"
+family = "Key agreement"
+specs = ["EcKey/Compressed", "EcKey/Compressed/Contract"]
+modules = ["src/ec/compressed.rs"]
+asm = []

@@ -18,8 +18,9 @@ public import VerifiedGarbage.Spec.Weierstrass
   check of §5.6.2.3.3, `nQ = O`, holds for every point on the curve when
   the cofactor is 1, as it is for every curve specified here.
 
-The compressed form (`02`/`03 ‖ x`), which needs a square root in `GF(p)`,
-is not specified yet: `decodePublicKey` rejects it.
+The compressed form (`02`/`03 ‖ x`) is specified separately in
+`EcKey/Compressed.lean`. This module's `decodePublicKey` continues to
+accept only the uncompressed form.
 -/
 
 @[expose] public section
