@@ -21,8 +21,10 @@
 //! AES-NI, PCLMULQDQ and AVX run `vg_aes_xts_encrypt_unit_aesni_pclmul` and
 //! `vg_aes_xts_decrypt_unit_aesni_pclmul`, also in one pass, and those with
 //! AES-NI alone the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere,
-//! and on other CPUs, the constant-time bitsliced implementation runs.
+//! AArch64, CPUs with the AES instructions run the `_aes` ones, whose
+//! whole-block functions also read each block once and call nothing.
+//! Elsewhere, and on other CPUs, the constant-time bitsliced implementation
+//! runs.
 
 #![cfg(any(
     target_arch = "x86_64",
