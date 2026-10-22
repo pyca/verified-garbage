@@ -18,7 +18,8 @@ Algorithm D), as x86-64's `R2Words` and `R2Adx` do:
   division by the reciprocal `v = ⌊(2^128 - 1) / d⌋ - 2^64` (Möller and
   Granlund, "Improved division by invariant integers", IEEE Trans. Computers
   60(2), 2011, Algorithm 4), its two corrections by `csel` (`quot`); `v` is
-  computed once, by restoring division, a bit at a time (`recip`);
+  computed once, by restoring division, a bit at a time (`recip`), or, for a
+  public `m`, by Newton steps (`recipN`);
 * `q̂ m` into the accumulator (`w + 2` words) by `zeroAcc` and `mulAddRow`,
   Montgomery multiplication's row;
 * `t = x 2^64 - q̂ m` over the accumulator's `w + 1` words, in two's
@@ -140,7 +141,43 @@ def fast : Prog isa := seqs [
 
 `m` and every value computed from it are public in `vg_rsa_public_precompute`,
 whose contract allows its timing to depend on `n`: there, `addBack` runs only
-when `t` is negative (rarely), by a branch on its sign. -/
+when `t` is negative (rarely), by a branch on its sign, and `v` is found by
+six Newton steps from a guess, then corrected one at a time down and up until
+it is exact (`recipN`), rather than by `recip`'s 64 steps of division. -/
+
+/-- A Newton step towards `v = ⌊(2^128 - 1) / d⌋ - 2^64` for `d` (`x5`) from
+`v` (`x10`), as `x = 2^64 + v` approximates `2^128 / d` from below: the high
+word `e = 2^64 - 1 - (d + ⌊v d / 2^64⌋)` of the error `2^128 - x d` (`x4` all
+ones), and `v := v + e + ⌊v e / 2^64⌋`, which is `x + ⌊x e / 2^64⌋`. Only the
+speed of `recipN` depends on how close it comes. -/
+def recipStep : List Instr :=
+  [.umulh .x2 .x10 .x5, .add .x .x2 .x2 .x5, .logic .eor .x .x2 .x2 .x4, .umulh .x3 .x2 .x10, .add .x .x2 .x2 .x3,
+    .add .x .x10 .x10 .x2]
+
+/-- `d = m[w - 1]` into `x5` (`m` at `x9`, `w` in `x12`), the first guess
+`v = 2^64 - 1 - d` into `x10` (`x = 2^65 - 1 - d`, within a quarter of
+`2^128 / d`), and six Newton steps. -/
+def recipGuess : List Instr :=
+  [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13, ld .x5 .x13, .subImm .x .x4 .x7 1,
+    .logic .eor .x .x10 .x5 .x4] ++ (List.replicate 6 recipStep).flatten
+
+/-- `v := v - 1` if `(2^64 + v) d ≥ 2^128` (the carry of `d + ⌊v d / 2^64⌋`),
+which is `x16`. -/
+def recipDown : List Instr := [.umulh .x2 .x10 .x5, .adds .x .x2 .x2 .x5, .adc .x .x16 .x7 .x7, .sub .x .x10 .x10 .x16]
+
+/-- `v := v + 1` if `v + 1 < 2^64` and `(2^64 + v + 1) d < 2^128`, which is
+`x16` (`x15` is 1). -/
+def recipUp : List Instr :=
+  [.adds .x .x3 .x10 .x15, .adc .x .x13 .x7 .x7, .umulh .x2 .x3 .x5, .adds .x .x2 .x2 .x5, .adc .x .x16 .x7 .x7,
+    .logic .orr .x .x16 .x16 .x13, .sub .x .x16 .x15 .x16, .add .x .x10 .x10 .x16]
+
+/-- `v = ⌊(2^128 - 1) / d⌋ - 2^64` for `d = m[w - 1] ≥ 2^63` into the first
+word of the temporary (at `x6`), as `recip` but by `recipGuess`, then
+`recipDown` and `recipUp` while they change it: whatever `recipGuess` gives,
+`v` is then the largest with `(2^64 + v) d < 2^128`. The loops branch on
+values of the modulus: for a public `m`. -/
+def recipN : Prog isa := seqs [.block recipGuess, .loop (.block recipDown) (.nonzero .x .x16), .block [movi .x15 1],
+  .loop (.block recipUp) (.nonzero .x .x16), .block [st .x10 .x6]]
 
 /-- `x3 :=` the sign of `t`, the top bit of the accumulator's word `w`. -/
 def signTest : List Instr := [.lsl .x .x13 .x12 3, .add .x .x13 .x8 .x13, ld .x3 .x13, .lsr .x .x3 .x3 63]
@@ -157,11 +194,11 @@ def stepsPub : Prog isa :=
   .seq (.block [sth .x13 sCnt])
     (.loop (.seq stepPub (.block [ldh .x13 sCnt, .subImm .x .x13 .x13 1, sth .x13 sCnt])) (.nonzero .x .x13))
 
-/-- `fast` by `stepsPub`: for a public `m`. -/
+/-- `fast` by `recipN` and `stepsPub`: for a public `m`. -/
 def fastPub : Prog isa := seqs [
   .block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp), ldh .x12 sW, movi .x7 0],
   neg,
-  recip,
+  recipN,
   .block [ldh .x13 sW],
   stepsPub]
 

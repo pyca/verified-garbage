@@ -252,7 +252,7 @@ theorem pins_R2dF1 : Pins R2dF1 [.x9, .x6, .x12, .x7] := by
 
 theorem fastLoads_ok {L : Ws} {s : State} (h : R2dFPre L s) :
     WP isa (.block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp), ldh .x12 sW, movi .x7 0]) s
-      (R2dF0 L) := by
+      fun t => R2dF0 L t ∧ t.mem = s.mem := by
   obtain ⟨_, hg, -⟩ := h.1
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off L.B (8 * i)) 8 := fun i hi =>
     hg.1.scr.ld (by have := hdr_lt_slot L.w 8 hi; have := hg.2; omega)
@@ -263,10 +263,11 @@ theorem fastLoads_ok {L : Ws} {s : State} (h : R2dFPre L s) :
         hdr_enc (show sArr aTmp < 32 by decide), hdr_enc (show sW < 32 by decide), hl (sArr aN) (by decide),
         hl (sArr aR2) (by decide), hl (sArr aTmp) (by decide), hl sW (by decide), hg.1.hdr.harr aN (by decide),
         hg.1.hdr.harr aR2 (by decide), hg.1.hdr.harr aTmp (by decide), hg.1.hdr.hw])
-    (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨r, hm⟩, k⟩ => ⟨?_, r⟩
+    (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨r, hm⟩, k⟩ => ⟨⟨?_, r⟩, hm⟩
   exact h.arr k (by decide) (j := aR2) (by decide) (by decide) (by rw [hm]; exact fun _ _ => rfl)
 
-theorem fastNeg_ok {L : Ws} {s : State} (h : R2dF0 L s) : WP isa neg s (R2dF1 L) := by
+theorem fastNeg_ok {L : Ws} {s : State} (h : R2dF0 L s) :
+    WP isa neg s fun t => R2dF1 L t ∧ wv t.mem L.B (slot L.w aN) L.w = wv s.mem L.B (slot L.w aN) L.w := by
   obtain ⟨hf, h11, h9, h6, h12, h7⟩ := h
   obtain ⟨_, hg, hw, hw'⟩ := hf.1
   have hn := hg.1.scr.nowrap
@@ -281,14 +282,16 @@ theorem fastNeg_ok {L : Ws} {s : State} (h : R2dF0 L s) : WP isa neg s (R2dF1 L)
     Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega)
   have hf' := hf.arr k (by decide) (j := aR2) (by decide) (by decide) ha
   have hN : wv t.mem L.B (slot L.w aN) L.w = wv s.mem L.B (slot L.w aN) L.w := o.wv (by omega) (by omega)
-  refine ⟨hf', (k.gpr .x9 (by decide)).trans h9, (k.gpr .x6 (by decide)).trans h6,
-    (k.gpr .x12 (by decide)).trans h12, (k.gpr .x7 (by decide)).trans h7, ?_⟩
+  refine ⟨⟨hf', (k.gpr .x9 (by decide)).trans h9, (k.gpr .x6 (by decide)).trans h6,
+    (k.gpr .x12 (by decide)).trans h12, (k.gpr .x7 (by decide)).trans h7, ?_⟩, hN⟩
   rw [hN]
   cases b
   · simp only [Bool.toNat_false, Nat.mul_zero] at hv; omega
   · simp only [Bool.toNat_true, Nat.mul_one] at hv; omega
 
-theorem fastRecip_ok {L : Ws} {s : State} (h : R2dF1 L s) : WP isa recip s (R2dF2 L) := by
+/-- A reciprocal that does what `recip` does (`RecipSpec`), after `neg`. -/
+theorem fastRecipWith_ok {rc : Prog isa} (hrc : RecipSpec rc) {L : Ws} {s : State} (h : R2dF1 L s) :
+    WP isa rc s (R2dF2 L) := by
   obtain ⟨hf, h9, h6, h12, h7, hx⟩ := h
   obtain ⟨_, hg, hw, hw'⟩ := hf.1
   have hn := hg.1.scr.nowrap
@@ -298,7 +301,7 @@ theorem fastRecip_ok {L : Ws} {s : State} (h : R2dF1 L s) : WP isa recip s (R2dF
   have lX := sl aR2 (by decide)
   have sTN := slot_sep (w := L.w) (show aTmp ≠ aN by decide)
   have sTX := slot_sep (w := L.w) (show aTmp ≠ aR2 by decide)
-  refine WP.mono (r2dRecip_ok hg.1.scr h9 h12 h6 h7 (by omega) hw' (by omega) (by omega)
+  refine WP.mono (hrc hg.1.scr h9 h12 h6 h7 (by omega) hw' (by omega) (by omega)
     hf.2.2) fun t ⟨hv, o, k⟩ => ?_
   have ha : Arrays L.B L.w [aTmp] s.mem t.mem :=
     Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega)
@@ -308,6 +311,8 @@ theorem fastRecip_ok {L : Ws} {s : State} (h : R2dF1 L s) : WP isa recip s (R2dF
   have hD : word t.mem L.B (slot L.w aN + 8 * (L.w - 1)) = word s.mem L.B (slot L.w aN + 8 * (L.w - 1)) :=
     o.word (by omega) (by omega)
   exact ⟨hf', by rw [hN, hX, hx], by rw [hD]; exact hv⟩
+
+theorem fastRecip_ok {L : Ws} {s : State} (h : R2dF1 L s) : WP isa recip s (R2dF2 L) := fastRecipWith_ok recip_spec h
 
 theorem fastCount_ok {L : Ws} {s : State} (h : R2dF2 L s) : WP isa (.block [ldh .x13 sW]) s (R2dSPre L) := by
   obtain ⟨hf, hx, hv⟩ := h
@@ -328,8 +333,9 @@ theorem r2dFast_eq : fast = .seq (.block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN)
 theorem r2dFast_ct : RelCT isa (Two R2dFPre) fast fun _ _ => True := by
   rw [r2dFast_eq]
   refine RelCT.seq (two_piece (Ψ := R2dF0) [.x0] (pins_r2dGood id fun _ _ h => h.1)
-    (by taint_decide) fun _ _ h => fastLoads_ok h) ?_
-  refine RelCT.seq (two_piece (Ψ := R2dF1) _ pins_R2dF0 (by taint_decide) fun _ _ h => fastNeg_ok h) ?_
+    (by taint_decide) fun _ _ h => (fastLoads_ok h).mono fun _ h => h.1) ?_
+  refine RelCT.seq (two_piece (Ψ := R2dF1) _ pins_R2dF0 (by taint_decide) fun _ _ h => (fastNeg_ok h).mono
+    fun _ h => h.1) ?_
   refine RelCT.seq (two_piece (Ψ := R2dF2) _ pins_R2dF1 (by taint_decide) fun _ _ h => fastRecip_ok h) ?_
   refine RelCT.seq (two_piece (Ψ := R2dSPre) [.x0] (pins_r2dGood id fun _ _ h => h.1.1)
     (by taint_decide) fun _ _ h => fastCount_ok h) steps_ct

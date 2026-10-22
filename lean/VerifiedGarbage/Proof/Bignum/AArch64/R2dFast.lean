@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
 import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecipN
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -17,10 +18,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 `steps` runs `step` `c` times, counted in slot `sCnt` (`r2dSteps_ok`): `x 2^(64 c) mod m`.
 `fast` sets `x := R - m`, `v`, and runs `w` steps (`r2dFast_ok`): `R² mod m`, for
 `m` odd with its top bit set. `choice old` takes `fast` for those and `old`
-otherwise (`r2dChoice_ok`). Each is proved for any step, steps or `fast` that
-does what `step`, `steps` or `fast` does (`r2dStepsWith_ok`, `r2dFastWith_ok`,
-`r2dChoiceWith_ok`), so that `stepsPub`, `fastPub` and `choicePub` follow
-too (`r2dStepsPub_ok`, `r2dFastPub_ok`, `r2dChoicePub_ok`).
+otherwise (`r2dChoice_ok`). Each is proved for any reciprocal, step, steps or
+`fast` that does what `recip`, `step`, `steps` or `fast` does (`RecipSpec`,
+`r2dStepsWith_ok`, `r2dFastWith_ok`, `r2dChoiceWith_ok`), so that `recipN`,
+`stepsPub`, `fastPub` and `choicePub` follow too (`r2dStepsPub_ok`,
+`r2dFastPub_ok`, `r2dChoicePub_ok`).
 -/
 
 @[expose] public section
@@ -208,23 +210,39 @@ theorem neg_mul_mod {R M : Nat} (h : M ≤ R) : (R - M) * R % M = R * R % M := b
   have e : R * R = (R - M) * R + M * R := by rw [← Nat.add_mul, Nat.sub_add_cancel h]
   rw [e, Nat.add_mul_mod_self_left]
 
-/-- `fast` with the steps `sts`. -/
-def fastOf (sts : Prog isa) : Prog isa := seqs [
+/-- `fast` with the reciprocal `rc` and the steps `sts`. -/
+def fastOf (rc sts : Prog isa) : Prog isa := seqs [
   .block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp), ldh .x12 sW, movi .x7 0],
   neg,
-  recip,
+  rc,
   .block [ldh .x13 sW],
   sts]
 
-theorem fast_eq_of : fast = fastOf steps := rfl
-theorem fastPub_eq_of : fastPub = fastOf stepsPub := rfl
+theorem fast_eq_of : fast = fastOf recip steps := rfl
+theorem fastPub_eq_of : fastPub = fastOf recipN stepsPub := rfl
 
-/-- `fast`'s pieces before its steps: `x := R - m`, `v`, and the count `w`. -/
-theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M : Nat} (hg : Good s B Z w minv)
+/-- What `recip` does (`r2dRecip_ok`): `v` for `d = m[w - 1] ≥ 2^63` into the
+word at `x6`, for `m` at `x9` of `w` words, writing only the registers that
+`recip` writes. -/
+def RecipSpec (rc : Prog isa) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w eM eV : Nat}, Scr s B Z → s.gpr .x9 = off B eM →
+    s.gpr .x12 = BitVec.ofNat 64 w → s.gpr .x6 = off B eV → s.gpr .x7 = 0 → 1 ≤ w → w < 2 ^ 31 →
+    eM + 8 * w ≤ Z → eV + 8 ≤ Z → 2 ^ 63 ≤ (word s.mem B (eM + 8 * (w - 1))).toNat →
+    WP isa rc s fun t =>
+      (word t.mem B eV).toNat = (2 ^ 128 - 1) / (word s.mem B (eM + 8 * (w - 1))).toNat - 2 ^ 64 ∧
+      Outside B eV 8 s.mem t.mem ∧ Keep [.x2, .x3, .x4, .x5, .x10, .x13, .x15, .x16] s t
+
+theorem recip_spec : RecipSpec recip := r2dRecip_ok
+theorem recipN_spec : RecipSpec recipN := r2dRecipN_ok
+
+/-- `fast`'s pieces before its steps, with the reciprocal `rc`: `x := R - m`,
+`v`, and the count `w`. -/
+theorem r2dFastHead_ok {rc : Prog isa} (hrc : RecipSpec rc) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    {M : Nat} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv s.mem B (slot w aN) w = M) (hodd : M % 2 = 1)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot w aN + 8 * (w - 1))).toNat) :
     WP isa (seqs [.block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp), ldh .x12 sW, movi .x7 0],
-        neg, recip, .block [ldh .x13 sW]]) s fun t => Good t B Z w minv ∧ t.gpr .x13 = BitVec.ofNat 64 w ∧
+        neg, rc, .block [ldh .x13 sW]]) s fun t => Good t B Z w minv ∧ t.gpr .x13 = BitVec.ofNat 64 w ∧
       wv t.mem B (slot w aN) w = M ∧
       word t.mem B (slot w aN + 8 * (w - 1)) = word s.mem B (slot w aN + 8 * (w - 1)) ∧
       (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / (word s.mem B (slot w aN + 8 * (w - 1))).toNat - 2 ^ 64 ∧
@@ -281,7 +299,7 @@ theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M 
   have D₂ : word t₂.mem B (slot w aN + 8 * (w - 1)) = word s.mem B (slot w aN + 8 * (w - 1)) := by
     rw [o₂.word (by omega) (by omega), hm₁]
   -- `v`.
-  refine WP.seq (WP.mono (r2dRecip_ok hs₂ ((k₂.gpr .x9 (by decide)).trans h9) ((k₂.gpr .x12 (by decide)).trans h12)
+  refine WP.seq (WP.mono (hrc hs₂ ((k₂.gpr .x9 (by decide)).trans h9) ((k₂.gpr .x12 (by decide)).trans h12)
     ((k₂.gpr .x6 (by decide)).trans h6) ((k₂.gpr .x7 (by decide)).trans h7) (by omega) hw' (by omega) (by omega)
     (by rw [D₂]; exact hd)) fun t₃ ⟨hv₃, o₃, k₃⟩ => ?_)
   rw [D₂] at hv₃
@@ -313,17 +331,17 @@ theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M 
 
 /-- `fast` with steps that do what `steps` does: `R² mod m` into array `aR2`,
 for the odd `m` of `w ≥ 2` words whose top bit is set. -/
-theorem r2dFastWith_ok {sts : Prog isa} (hsts : StepsSpec sts) {s : State} {B : Addr} {Z w : Nat}
+theorem r2dFastWith_ok {rc sts : Prog isa} (hrc : RecipSpec rc) (hsts : StepsSpec sts) {s : State} {B : Addr} {Z w : Nat}
     {minv : BitVec 64} {M : Nat} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv s.mem B (slot w aN) w = M) (hodd : M % 2 = 1)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot w aN + 8 * (w - 1))).toNat) :
-    WP isa (fastOf sts) s fun t => Good t B Z w minv ∧
+    WP isa (fastOf rc sts) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aR2) w < M ∧ wv t.mem B (slot w aR2) w % M = 2 ^ (64 * w) * 2 ^ (64 * w) % M ∧
       Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hg.scr.nowrap
   have hMB : M < 2 ^ (64 * w) := hM ▸ wv_lt _ _ _ _
   refine wp_seqs_append (b := [sts]) (by simp) (by simp)
-    (WP.mono (r2dFastHead_ok hg hZ hw hw' hM hodd hd) fun t₄ ⟨g₄, h13, hN, hT, hv, hX, hlt, a₄, k₄⟩ => ?_)
+    (WP.mono (r2dFastHead_ok hrc hg hZ hw hw' hM hodd hd) fun t₄ ⟨g₄, h13, hN, hT, hv, hX, hlt, a₄, k₄⟩ => ?_)
   refine WP.mono (hsts g₄ hZ hw hw' hd (by omega) hw' h13 hN (by rw [hT]) hv
     (by rw [hX]; exact hlt)) fun t hI => ?_
   rw [hX] at hI
@@ -339,7 +357,7 @@ theorem r2dFast_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M : Na
     WP isa fast s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aR2) w < M ∧ wv t.mem B (slot w aR2) w % M = 2 ^ (64 * w) * 2 ^ (64 * w) % M ∧
       Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t :=
-  r2dFastWith_ok (fun {_ _ _ _ _ _ _ _} => r2dSteps_ok) hg hZ hw hw' hM hodd hd
+  r2dFastWith_ok recip_spec (fun {_ _ _ _ _ _ _ _} => r2dSteps_ok) hg hZ hw hw' hM hodd hd
 
 /-- `fastPub`: `R² mod m` into array `aR2`, as `fast`. -/
 theorem r2dFastPub_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M : Nat} (hg : Good s B Z w minv)
@@ -348,7 +366,7 @@ theorem r2dFastPub_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M :
     WP isa fastPub s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aR2) w < M ∧ wv t.mem B (slot w aR2) w % M = 2 ^ (64 * w) * 2 ^ (64 * w) % M ∧
       Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t :=
-  r2dFastWith_ok stepsPub_spec hg hZ hw hw' hM hodd hd
+  r2dFastWith_ok recipN_spec stepsPub_spec hg hZ hw hw' hM hodd hd
 
 /-- `.seq (.block fastTest) (.ite (.zero .x .x3) old f)`: `f` if the top bit of
 `m` is set, `old` otherwise; both start from `s`'s memory. -/

@@ -41,11 +41,13 @@ def windowHelper : Artifact :=
 
 def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelper,
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: R² mod n, for n of `w` words whose top bit is set (every modulus of a \
-        whole number of words), by `w` word steps of long division from `R - n`, each step's quotient \
-        estimated from the top words with a reciprocal of n's top word, and n added back only while the \
-        remainder is negative, by a branch on values of n alone; for other n, from `2^(b - 1)`, for n \
-        of `b` bits, by doublings to `2^w R mod n`, then six Montgomery squarings."]
+    notes := ["Baseline AArch64: n is read a word at a time when its length is a multiple of eight. R² mod \
+        n, for n of `w` words whose top bit is set (every modulus of a whole number of words), by `w` \
+        word steps of long division from `R - n`, each step's quotient estimated from the top words \
+        with a reciprocal of n's top word (six Newton steps from a guess, then corrected one at a time \
+        until exact, by branches on values of n alone), and n added back only while the remainder is \
+        negative, by a branch on values of n alone; for other n, from `2^(b - 1)`, for n of `b` bits, \
+        by doublings to `2^w R mod n`, then six Montgomery squarings."]
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact AArch64.target {
@@ -55,7 +57,8 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
         converts out of Montgomery form; other exponents are scanned left to right from their first \
         set bit, which starts the result as the input, a square per later bit and a multiplication \
         per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) \
-        before any arithmetic, so that values of no modulus are safe."]
+        before any arithmetic, so that values of no modulus are safe. The input and the result are \
+        read and written a word at a time when their length is a multiple of eight."]
     code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _ },
   Spec.Rsa.privateCrtApi.artifact AArch64.target {

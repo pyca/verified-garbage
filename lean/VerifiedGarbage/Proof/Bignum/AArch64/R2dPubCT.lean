@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecipNCT
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecipNCT
 meta import VerifiedGarbage.Proof.Bignum.Words
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -27,6 +29,8 @@ for a borrow `b`, and `t < 2^(64 (w + 1))`, so the same `t` in both runs
 (`r2pStepPre_ct`); `addBackPub` branches on its sign and leaves
 `(t + m) mod 2^(64 (w + 1))` or `t` (`r2pAddBack_ct`). The steps fix `m` and the
 first `x`, `R - m` (`r2pSteps_ct`), and `r2Pub_ct` is `r2_ct` with them.
+`fastPub`'s reciprocal, `recipN`, branches on `m`'s top word
+(`recipN_ct`).
 -/
 
 @[expose] public section
@@ -285,7 +289,7 @@ theorem r2pSteps_ct : RelCT isa (Two R2pSsPre) stepsPub fun _ _ => True := by
 def R2pFPre (q : Ws × Nat) (s : State) : Prop := R2dFPre q.1 s ∧ wv s.mem q.1.B (slot q.1.w aN) q.1.w = q.2
 
 theorem r2pFast_eq : fastPub = seqs (([.block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp),
-    ldh .x12 sW, movi .x7 0], neg, recip, .block [ldh .x13 sW]] : List (Prog isa)) ++ ([stepsPub] : List (Prog isa))) :=
+    ldh .x12 sW, movi .x7 0], neg, recipN, .block [ldh .x13 sW]] : List (Prog isa)) ++ ([stepsPub] : List (Prog isa))) :=
   rfl
 
 /-- `fastPub` leaks the same in runs with the same `m`. -/
@@ -294,16 +298,18 @@ theorem r2pFast_ct : RelCT isa (Two R2pFPre) fastPub fun _ _ => True := by
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (Q := fun _ _ => True)
     (R := Two fun (q : Ws × Nat) => R2pSsPre ⟨q.1, q.2, 2 ^ (64 * q.1.w) - q.2⟩) ?_
     (two_map (fun (q : Ws × Nat) => (⟨q.1, q.2, 2 ^ (64 * q.1.w) - q.2⟩ : R2pSs)) (fun _ _ h => h) r2pSteps_ct))
-  have hct : RelCT isa (Two R2dFPre) (seqs [.block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp),
-      ldh .x12 sW, movi .x7 0], neg, recip, .block [ldh .x13 sW]]) fun _ _ => True := by
-    refine RelCT.seq (two_piece (Ψ := R2dF0) [.x0] (pins_r2dGood id fun _ _ h => h.1)
-      (by taint_decide) fun _ _ h => fastLoads_ok h) ?_
-    refine RelCT.seq (two_piece (Ψ := R2dF1) _ pins_R2dF0 (by taint_decide) fun _ _ h => fastNeg_ok h) ?_
-    refine RelCT.seq (two_piece (Ψ := R2dF2) _ pins_R2dF1 (by taint_decide) fun _ _ h => fastRecip_ok h) ?_
-    exact two_taint [.x0] (pins_r2dGood id fun _ _ h => h.1.1) (by taint_decide)
-  refine two_post (two_map Prod.fst (fun _ _ h => h.1) hct) ?_
+  have hct : RelCT isa (Two R2pFPre) (seqs [.block [ldh .x11 (sArr aR2), ldh .x9 (sArr aN), ldh .x6 (sArr aTmp),
+      ldh .x12 sW, movi .x7 0], neg, recipN, .block [ldh .x13 sW]]) fun _ _ => True := by
+    refine RelCT.seq (two_piece (Ψ := fun (q : Ws × Nat) s => R2dF0 q.1 s ∧ wv s.mem q.1.B (slot q.1.w aN) q.1.w = q.2)
+      [.x0] (pins_r2dGood Prod.fst fun _ _ h => h.1.1) (by taint_decide) fun _ _ h =>
+        (fastLoads_ok h.1).mono fun _ h' => ⟨h'.1, by rw [h'.2]; exact h.2⟩) ?_
+    refine RelCT.seq (two_piece (Ψ := R2pF1) _ (fun q s₁ s₂ h₁ h₂ => pins_R2dF0 q.1 s₁ s₂ h₁.1 h₂.1)
+      (by taint_decide) fun _ _ h => (fastNeg_ok h.1).mono fun _ h' => ⟨h'.1, by rw [h'.2]; exact h.2⟩) ?_
+    refine RelCT.seq recipN_ct ?_
+    exact two_taint [.x0] (pins_r2dGood Prod.fst fun _ _ h => h.1.1) (by taint_decide)
+  refine two_post hct ?_
   rintro ⟨L, M⟩ s ⟨⟨⟨mi, hg, hw, hw'⟩, hodd, hd⟩, hN⟩
-  refine WP.mono (r2dFastHead_ok hg.1 hg.2 hw hw' hN (by rw [← hN]; exact hodd) hd)
+  refine WP.mono (r2dFastHead_ok recipN_spec hg.1 hg.2 hw hw' hN (by rw [← hN]; exact hodd) hd)
     fun t ⟨g, h13, hN', hT, hv, hX, hlt, _, _⟩ => ⟨⟨⟨mi, ⟨g, hg.2⟩, hw, hw'⟩, h13, by rw [hT]; exact hd,
       by rw [hT]; exact hv, by rw [hX, hN']; exact hlt⟩, hN', hX⟩
 
