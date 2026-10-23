@@ -420,6 +420,339 @@ pub(crate) fn select(f: Features) -> Backend {
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
 
+/// The type of an emitted function with arguments `$a` (and result `$r`),
+/// in the ABI the target's functions are emitted in.
+#[cfg(target_arch = "x86_64")]
+macro_rules! asm_fn {
+    ($($a:ty),* $(=> $r:ty)?) => { unsafe extern "sysv64" fn($($a),*) $(-> $r)? };
+}
+#[cfg(not(target_arch = "x86_64"))]
+macro_rules! asm_fn {
+    ($($a:ty),* $(=> $r:ty)?) => { unsafe extern "C" fn($($a),*) $(-> $r)? };
+}
+
+/// `vg_aes_gcm_init`.
+type InitFn = asm_fn!(*const u8, usize, *mut [u64; 32]);
+/// `vg_aes_gcm_seal`, on the key's context (`KeyCtx`).
+type SealFn = asm_fn!(
+    *const KeyCtx,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *mut [u8; 16]
+);
+/// `vg_aes_gcm_open`, on the key's context.
+type OpenFn = asm_fn!(*const KeyCtx, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8,
+    usize => u32);
+/// `vg_aes_gcm_seal_gather`, on the key's context.
+type SealGatherFn = asm_fn!(
+    *const KeyCtx,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const [usize; 2],
+    usize,
+    *mut u8,
+    usize,
+    *mut [u8; 16]
+);
+/// `vg_aes_gcm_stream_init`.
+type StreamInitFn = asm_fn!(*const [u64; 32], *const u8, usize, *mut [u64; 10]);
+/// `vg_aes_gcm_stream_aad`.
+type StreamAadFn = asm_fn!(*const [u64; 32], *mut [u64; 10], u64, *const u8, usize);
+/// `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`, on the key's
+/// context.
+type StreamCryptFn = asm_fn!(
+    *const KeyCtx,
+    usize,
+    *mut [u64; 10],
+    u64,
+    u64,
+    *mut u8,
+    usize
+);
+/// `vg_aes_gcm_stream_finish`.
+type StreamFinishFn = asm_fn!(
+    *const [u64; 32],
+    usize,
+    *mut [u64; 10],
+    u64,
+    u64,
+    *mut [u8; 16]
+);
+/// `vg_aes_gcm_stream_verify`.
+type StreamVerifyFn =
+    asm_fn!(*const [u64; 32], usize, *mut [u64; 10], u64, u64, *const u8, usize => u32);
+
+/// An instance that reads the key context of `vg_aes_gcm_init`, as a
+/// function on the key's context (`KeyCtx`), which begins with it: on x86-64
+/// with prepared contexts, its pointer type converted. Raw pointers to sized
+/// types are ABI-compatible, so calling the function through the converted
+/// pointer is calling it (Rust reference, "Function pointer ABI
+/// compatibility"), and it reads only the first 256 bytes of the context.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+macro_rules! on_key_ctx {
+    ($f:expr, $($a:ty),* $(=> $r:ty)?; $t:ty) => {
+        // SAFETY: as above; the two types differ only in the pointee type of
+        // the first argument.
+        unsafe { core::mem::transmute::<asm_fn!(*const [u64; 32] $(, $a)* $(=> $r)?), $t>($f) }
+    };
+}
+#[cfg(not(all(target_arch = "x86_64", feature = "alloc")))]
+macro_rules! on_key_ctx {
+    ($f:expr, $($a:ty),* $(=> $r:ty)?; $t:ty) => {
+        $f
+    };
+}
+
+/// The functions a key calls: one backend's instances, chosen once, in
+/// `AesGcm::new` (`Backend::fns`). On x86-64, for a backend whose
+/// `_prepared` instances the CPU runs (`Backend::prepared`), those in place
+/// of `seal`, `open` and `seal_gather`, and for long streaming updates, with
+/// the key setup `new` calls (`prepare`).
+struct Fns {
+    /// The backend whose instances these are.
+    #[cfg(test)]
+    backend: Backend,
+    init: InitFn,
+    seal: SealFn,
+    open: OpenFn,
+    seal_gather: SealGatherFn,
+    stream_init: StreamInitFn,
+    stream_aad: StreamAadFn,
+    stream_encrypt: StreamCryptFn,
+    stream_decrypt: StreamCryptFn,
+    /// The streaming functions for updates of at least `POWERS_MIN_LEN`
+    /// bytes, which gain from the powers in a prepared context.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    stream_encrypt_long: StreamCryptFn,
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    stream_decrypt_long: StreamCryptFn,
+    stream_finish: StreamFinishFn,
+    stream_verify: StreamVerifyFn,
+    /// `vg_aes_gcm_prepare`, which makes the prepared context from the key
+    /// context of `vg_aes_gcm_init`, for the `_prepared` instances.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    prepare: Option<Prepare>,
+}
+
+impl Backend {
+    /// Its plain instances.
+    const fn plain_fns(self) -> Fns {
+        let stream_encrypt = on_key_ctx!(instance!(self, vg_aes_gcm_stream_encrypt,
+            x86_64: [vg_aes_gcm_stream_encrypt_aesni, vg_aes_gcm_stream_encrypt_pclmul,
+                vg_aes_gcm_stream_encrypt_aesni_pclmul],
+            vaes: [vg_aes_gcm_stream_encrypt_vaes, vg_aes_gcm_stream_encrypt_vpclmul,
+                vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_aesni_vpclmul,
+                vg_aes_gcm_stream_encrypt_vaes_vpclmul, vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
+            aarch64: [vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_encrypt_aes_sha3]),
+            usize, *mut [u64; 10], u64, u64, *mut u8, usize; StreamCryptFn);
+        let stream_decrypt = on_key_ctx!(instance!(self, vg_aes_gcm_stream_decrypt,
+            x86_64: [vg_aes_gcm_stream_decrypt_aesni, vg_aes_gcm_stream_decrypt_pclmul,
+                vg_aes_gcm_stream_decrypt_aesni_pclmul],
+            vaes: [vg_aes_gcm_stream_decrypt_vaes, vg_aes_gcm_stream_decrypt_vpclmul,
+                vg_aes_gcm_stream_decrypt_vaes_pclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
+                vg_aes_gcm_stream_decrypt_vaes_vpclmul, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_stream_decrypt_aesni_pclmul_avx],
+            aarch64: [vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_decrypt_aes_sha3]),
+            usize, *mut [u64; 10], u64, u64, *mut u8, usize; StreamCryptFn);
+        Fns {
+            #[cfg(test)]
+            backend: self,
+            init: instance!(self, vg_aes_gcm_init,
+                x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
+                vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init_vpclmul, vg_aes_gcm_init_vaes_pclmul,
+                    vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
+                    vg_aes_gcm_init_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_init_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_init_aes, vg_aes_gcm_init_aes_sha3]),
+            seal: on_key_ctx!(instance!(self, vg_aes_gcm_seal,
+                x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
+                vaes: [vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vpclmul, vg_aes_gcm_seal_vaes_pclmul,
+                    vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul,
+                    vg_aes_gcm_seal_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_seal_aes, vg_aes_gcm_seal_aes_sha3]),
+                usize, *const u8, usize, *const u8, usize, *mut u8, usize, *mut [u8; 16]; SealFn),
+            open: on_key_ctx!(instance!(self, vg_aes_gcm_open,
+                x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
+                vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
+                    vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
+                    vg_aes_gcm_open_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_open_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes_sha3]),
+                usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize => u32;
+                OpenFn),
+            seal_gather: on_key_ctx!(instance!(self, vg_aes_gcm_seal_gather,
+                x86_64: [vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_pclmul,
+                    vg_aes_gcm_seal_gather_aesni_pclmul],
+                vaes: [vg_aes_gcm_seal_gather_vaes, vg_aes_gcm_seal_gather_vpclmul,
+                    vg_aes_gcm_seal_gather_vaes_pclmul, vg_aes_gcm_seal_gather_aesni_vpclmul,
+                    vg_aes_gcm_seal_gather_vaes_vpclmul, vg_aes_gcm_seal_gather_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_seal_gather_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_seal_gather_aes, vg_aes_gcm_seal_gather_aes_sha3]),
+                usize, *const u8, usize, *const u8, usize, *const [usize; 2], usize, *mut u8, usize,
+                *mut [u8; 16]; SealGatherFn),
+            stream_init: instance!(self, vg_aes_gcm_stream_init,
+                x86_64: [vg_aes_gcm_stream_init_aesni, vg_aes_gcm_stream_init_pclmul,
+                    vg_aes_gcm_stream_init_aesni_pclmul],
+                vaes: [vg_aes_gcm_stream_init_vaes, vg_aes_gcm_stream_init_vpclmul,
+                    vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_aesni_vpclmul,
+                    vg_aes_gcm_stream_init_vaes_vpclmul, vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_init_aes_sha3]),
+            stream_aad: instance!(self, vg_aes_gcm_stream_aad,
+                x86_64: [vg_aes_gcm_stream_aad_aesni, vg_aes_gcm_stream_aad_pclmul,
+                    vg_aes_gcm_stream_aad_aesni_pclmul],
+                vaes: [vg_aes_gcm_stream_aad_vaes, vg_aes_gcm_stream_aad_vpclmul,
+                    vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_aesni_vpclmul,
+                    vg_aes_gcm_stream_aad_vaes_vpclmul, vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_aad_aes_sha3]),
+            stream_encrypt,
+            stream_decrypt,
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            stream_encrypt_long: stream_encrypt,
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            stream_decrypt_long: stream_decrypt,
+            stream_finish: instance!(self, vg_aes_gcm_stream_finish,
+                x86_64: [vg_aes_gcm_stream_finish_aesni, vg_aes_gcm_stream_finish_pclmul,
+                    vg_aes_gcm_stream_finish_aesni_pclmul],
+                vaes: [vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vpclmul,
+                    vg_aes_gcm_stream_finish_vaes_pclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
+                    vg_aes_gcm_stream_finish_vaes_vpclmul, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_finish_aes_sha3]),
+            stream_verify: instance!(self, vg_aes_gcm_stream_verify,
+                x86_64: [vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_pclmul,
+                    vg_aes_gcm_stream_verify_aesni_pclmul],
+                vaes: [vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vpclmul,
+                    vg_aes_gcm_stream_verify_vaes_pclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
+                    vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_stream_verify_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_stream_verify_aes, vg_aes_gcm_stream_verify_aes_sha3]),
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            prepare: None,
+        }
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+impl Fns {
+    /// These functions, with the `_prepared` instances `p` in place of
+    /// `seal`, `open`, `seal_gather` and the long streaming updates, and its
+    /// key setup.
+    const fn with(self, p: &Prepared) -> Fns {
+        Fns {
+            seal: p.seal,
+            open: p.open,
+            seal_gather: p.seal_gather,
+            stream_encrypt_long: p.stream_encrypt,
+            stream_decrypt_long: p.stream_decrypt,
+            prepare: Some(p.prepare),
+            ..self
+        }
+    }
+}
+
+static FNS_SCALAR: Fns = Backend::Scalar.plain_fns();
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+static FNS_AESNI: Fns = Backend::AesNi.plain_fns();
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+static FNS_PCLMUL: Fns = Backend::Pclmul.plain_fns();
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+static FNS_AESNI_PCLMUL: Fns = Backend::AesNiPclmul.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_VAES: Fns = Backend::Vaes.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_VPCLMUL: Fns = Backend::Vpclmul.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_VAES_PCLMUL: Fns = Backend::VaesPclmul.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_AESNI_VPCLMUL: Fns = Backend::AesNiVpclmul.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_VAES_VPCLMUL: Fns = Backend::VaesVpclmul.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_VAES_VPCLMUL_AVX512: Fns = Backend::VaesVpclmulAvx512.plain_fns();
+#[cfg(target_arch = "x86_64")]
+static FNS_AESNI_PCLMUL_AVX: Fns = Backend::AesNiPclmulAvx.plain_fns();
+#[cfg(target_arch = "aarch64")]
+static FNS_AES: Fns = Backend::Aes.plain_fns();
+#[cfg(target_arch = "aarch64")]
+static FNS_AES_SHA3: Fns = Backend::AesSha3.plain_fns();
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+static FNS_VAES_VPCLMUL_PREPARED: Fns = Backend::VaesVpclmul
+    .plain_fns()
+    .with(&PREPARED_VAES_VPCLMUL);
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+static FNS_VAES_VPCLMUL_AVX512_PREPARED: Fns = Backend::VaesVpclmulAvx512
+    .plain_fns()
+    .with(&PREPARED_VAES_VPCLMUL_AVX512);
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+static FNS_AESNI_PCLMUL_AVX_PREPARED: Fns = Backend::AesNiPclmulAvx
+    .plain_fns()
+    .with(&PREPARED_AESNI_PCLMUL_AVX);
+
+impl Backend {
+    /// The functions a key of this backend calls: on x86-64, its
+    /// `_prepared` instances if the CPU runs them (`Backend::prepared`).
+    fn fns(self) -> &'static Fns {
+        // `with` if the CPU runs this backend's `_prepared` instances.
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        let or_prepared = |plain: &'static Fns, with: &'static Fns| {
+            if self.prepared().is_some() {
+                with
+            } else {
+                plain
+            }
+        };
+        match self {
+            Backend::Scalar => &FNS_SCALAR,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            Backend::AesNi => &FNS_AESNI,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            Backend::Pclmul => &FNS_PCLMUL,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            Backend::AesNiPclmul => &FNS_AESNI_PCLMUL,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => &FNS_VAES,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vpclmul => &FNS_VPCLMUL,
+            #[cfg(target_arch = "x86_64")]
+            Backend::VaesPclmul => &FNS_VAES_PCLMUL,
+            #[cfg(target_arch = "x86_64")]
+            Backend::AesNiVpclmul => &FNS_AESNI_VPCLMUL,
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            Backend::VaesVpclmul => or_prepared(&FNS_VAES_VPCLMUL, &FNS_VAES_VPCLMUL_PREPARED),
+            #[cfg(all(target_arch = "x86_64", not(feature = "alloc")))]
+            Backend::VaesVpclmul => &FNS_VAES_VPCLMUL,
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            Backend::VaesVpclmulAvx512 => {
+                or_prepared(&FNS_VAES_VPCLMUL_AVX512, &FNS_VAES_VPCLMUL_AVX512_PREPARED)
+            }
+            #[cfg(all(target_arch = "x86_64", not(feature = "alloc")))]
+            Backend::VaesVpclmulAvx512 => &FNS_VAES_VPCLMUL_AVX512,
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            Backend::AesNiPclmulAvx => {
+                or_prepared(&FNS_AESNI_PCLMUL_AVX, &FNS_AESNI_PCLMUL_AVX_PREPARED)
+            }
+            #[cfg(all(target_arch = "x86_64", not(feature = "alloc")))]
+            Backend::AesNiPclmulAvx => &FNS_AESNI_PCLMUL_AVX,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Aes => &FNS_AES,
+            #[cfg(target_arch = "aarch64")]
+            Backend::AesSha3 => &FNS_AES_SHA3,
+        }
+    }
+}
+
 /// The `_prepared` instances of a backend (`VG.Spec.Gcm.PreparedPowersRepr`),
 /// or its `_prepared16` ones (`VG.Spec.Gcm.PreparedPowers16Repr`), whose
 /// interleaved loops read the powers of the hash subkey from the key context
@@ -933,12 +1266,10 @@ pub struct AesGcm {
     /// with the powers of the hash subkey after it on x86-64 (`KeyCtx`).
     ctx: KeyCtx,
     rounds: usize,
-    /// The implementations of AES and GHASH the functions called call.
-    backend: Backend,
-    /// On x86-64, the backend's `_prepared` instances, if this CPU runs
-    /// them (`Backend::prepared`), and then `ctx` holds the powers.
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    prepared: Option<&'static Prepared>,
+    /// The functions it calls (`Backend::fns`); on x86-64, if they are a
+    /// backend's `_prepared` instances (`Fns::prepare`), `ctx` holds the
+    /// powers.
+    fns: &'static Fns,
     /// On AArch64, the powers of the hash subkey, once computed.
     #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
     powers: Powers,
@@ -966,19 +1297,11 @@ impl AesGcm {
         let mut k = AesGcm {
             ctx: [0; size_of::<KeyCtx>() / 8],
             rounds: key.len() / 4 + 6,
-            backend,
-            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            prepared: backend.prepared(),
+            fns: backend.fns(),
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
             powers: Powers::new(backend),
         };
-        let init = instance!(k.backend, vg_aes_gcm_init,
-            x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
-            vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init_vpclmul, vg_aes_gcm_init_vaes_pclmul,
-                vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
-                vg_aes_gcm_init_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_init_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_init_aes, vg_aes_gcm_init_aes_sha3]);
+        let init = k.fns.init;
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
@@ -986,8 +1309,8 @@ impl AesGcm {
         // has the features of the implementation selected.
         unsafe { init(key.as_ptr(), key.len(), k.key_mut()) };
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(fns) = k.prepared {
-            k.prepare(fns);
+        if let Some(prepare) = k.fns.prepare {
+            k.prepare(prepare);
         }
         Ok(k)
     }
@@ -1006,8 +1329,7 @@ impl AesGcm {
     /// Computes the powers of the hash subkey into `self.ctx`, after its key
     /// context, with `fns.prepare`.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    fn prepare(&mut self, fns: &Prepared) {
-        let prepare = fns.prepare;
+    fn prepare(&mut self, prepare: Prepare) {
         // SAFETY: `self.ctx` is valid for reads and writes of 1024 bytes,
         // and overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
@@ -1033,12 +1355,6 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // On x86-64, every message the backend's `_prepared` instance
-        // seals, which chooses its path for every length itself.
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(fns) = self.prepared {
-            return Ok(self.seal_with(fns, nonce, aad, data));
-        }
         // On AArch64, a message long enough to gain from the powers takes
         // them through `seal_prepared` (and counts towards computing them);
         // once they are ready, a shorter one of more than `PLAIN_MAX` bytes
@@ -1050,17 +1366,14 @@ impl AesGcm {
         {
             return Ok(tag);
         }
-        let seal = instance!(self.backend, vg_aes_gcm_seal,
-            x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
-            vaes: [vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vpclmul, vg_aes_gcm_seal_vaes_pclmul,
-                vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul,
-                vg_aes_gcm_seal_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_seal_aes, vg_aes_gcm_seal_aes_sha3]);
+        let seal = self.fns.seal;
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds (every implementation writes
-        // the same one), valid for reads of 256 bytes; `nonce` and `aad` are
+        // the same one), valid for reads of 256 bytes, followed on x86-64,
+        // when `seal` is a `_prepared` instance, by the powers
+        // `vg_aes_gcm_prepare` wrote for the same key (`AesGcm::new`), valid
+        // for reads of 1024 bytes in all; `nonce` and `aad` are
         // valid for reads and `data` for reads and writes of their lengths,
         // and `tag` (a local) for reads and writes of 16 bytes. They are
         // distinct objects (`data` a unique borrow), so the writable ones
@@ -1069,7 +1382,7 @@ impl AesGcm {
         // the implementation selected.
         unsafe {
             seal(
-                self.key(),
+                &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1127,15 +1440,10 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // On x86-64, every message the backend's `_prepared` instance
-        // opens, as in `encrypt_in_place`, through `open_prepared`: on
-        // Emerald Rapids, an inline call as there made every open about 5 ns
-        // slower. On AVX-512 the prepared instances make 16- to 255-byte
-        // opens 6–33% faster (#2775).
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(r) = self.open_prepared(nonce, aad, data, tag) {
-            return r;
-        }
+        // On x86-64, through `open_with`: on Emerald Rapids, an inline call
+        // as in `encrypt_in_place` made every open about 5 ns slower.
+        #[cfg(target_arch = "x86_64")]
+        return self.open_with(nonce, aad, data, tag);
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
         if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
@@ -1143,18 +1451,54 @@ impl AesGcm {
         {
             return r;
         }
-        let open = instance!(self.backend, vg_aes_gcm_open,
-            x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
-            vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
-                vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
-                vg_aes_gcm_open_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes_sha3]);
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            let open = self.fns.open;
+            // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+            // valid for reads of its length.
+            let ok = unsafe {
+                open(
+                    &self.ctx,
+                    self.rounds,
+                    nonce.as_ptr(),
+                    nonce.len(),
+                    aad.as_ptr(),
+                    aad.len(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    tag.as_ptr(),
+                    tag.len(),
+                )
+            };
+            // `open`'s contract leaves `data` as it was unless it returns 1.
+            if ok == 1 {
+                Ok(())
+            } else {
+                Err(Error::TagMismatch)
+            }
+        }
+    }
+
+    /// On x86-64, `open`'s call. It reads `self.fns` itself: taking the
+    /// function as a fifth argument put a fourth on the stack, which the
+    /// compiler copied 16 bytes at a time, and the loads of those copies
+    /// were not forwarded from the stores before them (4–6 ns an open on
+    /// Zen 4 and Zen 5).
+    #[cfg(target_arch = "x86_64")]
+    #[inline(never)]
+    fn open_with(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
+        let open = self.fns.open;
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
         // valid for reads of its length.
         let ok = unsafe {
             open(
-                self.key(),
+                &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1217,22 +1561,10 @@ impl AesGcm {
             d.write([p.as_ptr() as usize, p.len()]);
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
-        // On x86-64, every message the backend's `_prepared` gathering seals,
-        // which chooses its path for every shape itself (a TLS record's by
-        // `vg_aes_gcm_seal_split_prepared` from the first piece, before
-        // anything else).
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(fns) = self.prepared {
-            return Ok(self.seal_gather_with(fns, nonce, aad, src, plaintext.len(), out));
-        }
-        let f = instance!(self.backend, vg_aes_gcm_seal_gather,
-            x86_64: [vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_pclmul,
-                vg_aes_gcm_seal_gather_aesni_pclmul],
-            vaes: [vg_aes_gcm_seal_gather_vaes, vg_aes_gcm_seal_gather_vpclmul,
-                vg_aes_gcm_seal_gather_vaes_pclmul, vg_aes_gcm_seal_gather_aesni_vpclmul,
-                vg_aes_gcm_seal_gather_vaes_vpclmul, vg_aes_gcm_seal_gather_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_seal_gather_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_seal_gather_aes, vg_aes_gcm_seal_gather_aes_sha3]);
+        // The gathering seals every shape (on x86-64, a `_prepared` one a
+        // TLS record's by `vg_aes_gcm_seal_split_prepared` from the first
+        // piece, before anything else).
+        let f = self.fns.seal_gather;
         let mut tag: Block = [0; 16];
         // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
         // writes of `out.len()` bytes; `src` points to `plaintext.len()`
@@ -1243,7 +1575,7 @@ impl AesGcm {
         // the stack the function uses.
         unsafe {
             f(
-                self.key(),
+                &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1305,13 +1637,13 @@ impl AesGcm {
         Some(self.seal_with(ctx, fns, nonce, aad, data))
     }
 
-    /// `encrypt_in_place` with the `_prepared` instances `fns`: on x86-64,
-    /// the key's (`self.prepared`), with the powers in `self.ctx`; on
-    /// AArch64, with the powers `ctx` that `Powers::get` gave.
+    /// On AArch64, `encrypt_in_place` with the `_with_powers` instances
+    /// `fns` and the powers `ctx` that `Powers::get` gave.
+    #[cfg(target_arch = "aarch64")]
     #[inline(always)]
     fn seal_with(
         &self,
-        #[cfg(target_arch = "aarch64")] ctx: Got<'_>,
+        ctx: Got<'_>,
         fns: &Prepared,
         nonce: &[u8],
         aad: &[u8],
@@ -1320,26 +1652,10 @@ impl AesGcm {
         let mut tag: Block = [0; 16];
         let seal = fns.seal;
         // SAFETY: as in `encrypt_in_place`, with the powers of the same
-        // key: on x86-64 in `self.ctx`, the key context `vg_aes_gcm_prepare`
-        // wrote (`AesGcm::new`), valid for reads of 1024 bytes; on AArch64,
-        // `ctx`, the 128 bytes `store_powers` wrote from the key context,
-        // which overlap nothing the call writes. The CPU has the features of
-        // `self.backend`, whose `_prepared` instance this is.
-        #[cfg(target_arch = "x86_64")]
-        unsafe {
-            seal(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-            )
-        };
-        #[cfg(target_arch = "aarch64")]
+        // key, `ctx`, the 128 bytes `store_powers` wrote from the key
+        // context, which overlap nothing the call writes. The CPU has the
+        // features of the key's backend, whose `_with_powers` instance this
+        // is.
         match ctx {
             Got::Ready(ctx) => unsafe {
                 seal(
@@ -1396,46 +1712,6 @@ impl AesGcm {
             )
         };
         self.powers.publish(pw);
-    }
-
-    /// On x86-64, `open` with the key's `_prepared` instances and the
-    /// powers in `self.ctx`, if it has them. It reads `self.prepared`
-    /// itself: taking the instances as a fifth argument put a fourth on the
-    /// stack, which the compiler copied 16 bytes at a time, and the loads of
-    /// those copies were not forwarded from the stores before them (4–6 ns
-    /// an open on Zen 4 and Zen 5).
-    #[cfg(target_arch = "x86_64")]
-    #[inline(never)]
-    fn open_prepared(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        data: &mut [u8],
-        tag: &[u8],
-    ) -> Option<Result<(), Error>> {
-        let open = self.prepared?.open;
-        // SAFETY: as in `seal_with`, with the received tag `tag` valid for
-        // reads of its length.
-        let ok = unsafe {
-            open(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                tag.as_ptr(),
-                tag.len(),
-            )
-        };
-        // As in `open`.
-        Some(if ok == 1 {
-            Ok(())
-        } else {
-            Err(Error::TagMismatch)
-        })
     }
 
     /// On AArch64, `open` with the powers, if `Powers::get` gives them.
@@ -1539,41 +1815,6 @@ impl AesGcm {
         }
         Some(self.seal_with(ctx, fns, nonce, aad, out))
     }
-
-    /// `encrypt`'s call of the `_prepared` gathering `fns` gives, with the
-    /// powers in `self.ctx`.
-    #[cfg(target_arch = "x86_64")]
-    #[inline(always)]
-    fn seal_gather_with(
-        &self,
-        fns: &Prepared,
-        nonce: &[u8],
-        aad: &[u8],
-        src: *const [usize; 2],
-        count: usize,
-        out: &mut [u8],
-    ) -> Block {
-        let mut tag: Block = [0; 16];
-        let seal = fns.seal_gather;
-        // SAFETY: as in `encrypt`, with `src` the `count` descriptors it
-        // wrote, and with the powers in `self.ctx`, as in `seal_with`.
-        unsafe {
-            seal(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src,
-                count,
-                out.as_mut_ptr(),
-                out.len(),
-                &mut tag,
-            )
-        };
-        tag
-    }
 }
 
 /// The state of an incremental encryption or decryption (`DECRYPT`), which
@@ -1609,15 +1850,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             text_len: 0,
             in_text: false,
         };
-        let init = instance!(key.backend, vg_aes_gcm_stream_init,
-            x86_64: [vg_aes_gcm_stream_init_aesni, vg_aes_gcm_stream_init_pclmul,
-                vg_aes_gcm_stream_init_aesni_pclmul],
-            vaes: [vg_aes_gcm_stream_init_vaes, vg_aes_gcm_stream_init_vpclmul,
-                vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_aesni_vpclmul,
-                vg_aes_gcm_stream_init_vaes_vpclmul,
-                vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_init_aes_sha3]);
+        let init = key.fns.stream_init;
         // SAFETY: `key.ctx` is a key context (as in
         // `AesGcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
         // for reads of `nonce.len()`, and `s.state` for reads and writes of
@@ -1635,15 +1868,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         }
         let aad_len =
             add_len(self.aad_len, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let f = instance!(self.key.backend, vg_aes_gcm_stream_aad,
-            x86_64: [vg_aes_gcm_stream_aad_aesni, vg_aes_gcm_stream_aad_pclmul,
-                vg_aes_gcm_stream_aad_aesni_pclmul],
-            vaes: [vg_aes_gcm_stream_aad_vaes, vg_aes_gcm_stream_aad_vpclmul,
-                vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_aesni_vpclmul,
-                vg_aes_gcm_stream_aad_vaes_vpclmul,
-                vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_aad_aes_sha3]);
+        let f = self.key.fns.stream_aad;
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
@@ -1665,34 +1890,23 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if data.len() >= POWERS_MIN_LEN
-            && let Some(fns) = self.key.prepared
-        {
-            self.update_prepared(fns, data);
-            self.text_len = text_len;
-            return Ok(());
-        }
+        let fns = self.key.fns;
         let f = if DECRYPT {
-            instance!(self.key.backend, vg_aes_gcm_stream_decrypt,
-                x86_64: [vg_aes_gcm_stream_decrypt_aesni, vg_aes_gcm_stream_decrypt_pclmul,
-                    vg_aes_gcm_stream_decrypt_aesni_pclmul],
-                vaes: [vg_aes_gcm_stream_decrypt_vaes, vg_aes_gcm_stream_decrypt_vpclmul,
-                    vg_aes_gcm_stream_decrypt_vaes_pclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
-                    vg_aes_gcm_stream_decrypt_vaes_vpclmul,
-                vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_stream_decrypt_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_decrypt_aes_sha3])
+            fns.stream_decrypt
         } else {
-            instance!(self.key.backend, vg_aes_gcm_stream_encrypt,
-                x86_64: [vg_aes_gcm_stream_encrypt_aesni, vg_aes_gcm_stream_encrypt_pclmul,
-                    vg_aes_gcm_stream_encrypt_aesni_pclmul],
-                vaes: [vg_aes_gcm_stream_encrypt_vaes, vg_aes_gcm_stream_encrypt_vpclmul,
-                    vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_aesni_vpclmul,
-                    vg_aes_gcm_stream_encrypt_vaes_vpclmul,
-                vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_encrypt_aes_sha3])
+            fns.stream_encrypt
+        };
+        // On x86-64, a long update with the long ones, which, for a
+        // backend's `_prepared` instances, read the powers in the key
+        // context (`VG.Spec.Gcm.StreamRepr` depends on the hash subkey and
+        // key schedule alone, which both contexts hold).
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        let f = if data.len() < POWERS_MIN_LEN {
+            f
+        } else if DECRYPT {
+            fns.stream_decrypt_long
+        } else {
+            fns.stream_encrypt_long
         };
         // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
@@ -1700,7 +1914,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // additional data and `self.text_len` of text.
         unsafe {
             f(
-                self.key.key(),
+                &self.key.ctx,
                 self.key.rounds,
                 &mut self.state,
                 self.aad_len,
@@ -1714,50 +1928,10 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
     }
 }
 
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
-    /// `update` with the key's `_prepared` instances `fns` and the powers
-    /// in its key context (leaving `self.text_len` to the caller).
-    #[inline(never)]
-    fn update_prepared(&mut self, fns: &Prepared, data: &mut [u8]) {
-        let f = if DECRYPT {
-            fns.stream_decrypt
-        } else {
-            fns.stream_encrypt
-        };
-        // SAFETY: as in `update`, with the key context `vg_aes_gcm_prepare`
-        // wrote for the same key (`AesGcm::new`), valid for reads of 1024
-        // bytes (the other streaming functions read the key
-        // context of `vg_aes_gcm_init` for it, whose hash subkey and key
-        // schedule are the same: `VG.Spec.Gcm.StreamRepr` depends on those
-        // alone), and the CPU has the features of `self.key.backend`, whose
-        // `_prepared` instances these are.
-        unsafe {
-            f(
-                &self.key.ctx,
-                self.key.rounds,
-                &mut self.state,
-                self.aad_len,
-                self.text_len,
-                data.as_mut_ptr(),
-                data.len(),
-            )
-        };
-    }
-}
-
 impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
     fn finish(mut self) -> Block {
-        let f = instance!(self.key.backend, vg_aes_gcm_stream_finish,
-            x86_64: [vg_aes_gcm_stream_finish_aesni, vg_aes_gcm_stream_finish_pclmul,
-                vg_aes_gcm_stream_finish_aesni_pclmul],
-            vaes: [vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vpclmul,
-                vg_aes_gcm_stream_finish_vaes_pclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
-                vg_aes_gcm_stream_finish_vaes_vpclmul,
-                vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_finish_aes_sha3]);
+        let f = self.key.fns.stream_finish;
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
@@ -1780,15 +1954,7 @@ impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
     fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
-        let f = instance!(self.key.backend, vg_aes_gcm_stream_verify,
-            x86_64: [vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_pclmul,
-                vg_aes_gcm_stream_verify_aesni_pclmul],
-            vaes: [vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vpclmul,
-                vg_aes_gcm_stream_verify_vaes_pclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
-                vg_aes_gcm_stream_verify_vaes_vpclmul,
-                vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_stream_verify_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_verify_aes, vg_aes_gcm_stream_verify_aes_sha3]);
+        let f = self.key.fns.stream_verify;
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
@@ -1972,7 +2138,7 @@ mod tests {
             assert_eq!(f(&["sha3"]), Backend::Scalar);
         }
         assert_eq!(f(&[]), Backend::Scalar);
-        let best = AesGcm::new(&[0; 16]).unwrap().backend;
+        let best = AesGcm::new(&[0; 16]).unwrap().fns.backend;
         assert_eq!(best, select(detected()));
         for &(b, need) in Backend::ALL {
             assert_eq!(need, b.features());
@@ -2332,23 +2498,21 @@ mod tests {
         /// The same key, with `backend`'s instances.
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
-            k.backend = backend;
+            k.fns = backend.fns();
             // On x86-64, the powers `backend` computes, if the backend `new`
             // chose has no `_prepared` instances (VAES without VPCLMULQDQ
             // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs) or prepares
             // another number of them (AVX-512 all 48, VAES-256 16): from the
             // key context alone, as `new` would with `backend`.
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            if let Some(prepare) = k.fns.prepare
+                && self
+                    .fns
+                    .prepare
+                    .is_none_or(|old| !core::ptr::fn_addr_eq(old, prepare))
             {
-                k.prepared = backend.prepared();
-                if let Some(fns) = k.prepared
-                    && self
-                        .prepared
-                        .is_none_or(|old| !core::ptr::fn_addr_eq(old.prepare, fns.prepare))
-                {
-                    k.ctx[32..].fill(0);
-                    k.prepare(fns);
-                }
+                k.ctx[32..].fill(0);
+                k.prepare(prepare);
             }
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
             {
@@ -2682,18 +2846,21 @@ mod tests {
         for key_len in [16, 24, 32] {
             let key = &[0x3c; 32][..key_len];
             let fresh = AesGcm::new(key).unwrap();
-            assert_eq!(fresh.prepared.is_some(), fresh.backend.prepared().is_some());
-            if fresh.prepared.is_none() {
+            assert_eq!(
+                fresh.fns.prepare.is_some(),
+                fresh.fns.backend.prepared().is_some()
+            );
+            if fresh.fns.prepare.is_none() {
                 assert!(fresh.ctx[32..].iter().all(|&w| w == 0));
             }
             let base = fresh.with_backend(Backend::Scalar);
-            assert!(base.prepared.is_none());
+            assert!(base.fns.prepare.is_none());
             for &b in PREPARED {
                 if !detected().contains(b.features()) || b.prepared().is_none() {
                     continue;
                 }
                 let k = AesGcm::new(key).unwrap().with_backend(b);
-                assert!(k.prepared.is_some());
+                assert!(k.fns.prepare.is_some());
                 assert_eq!(k.key(), base.key());
                 assert_eq!(k.clone().ctx, k.ctx);
                 let mut want_powers = [0; 128];
