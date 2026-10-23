@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Verified
+
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
@@ -72,11 +74,11 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List A
     verified := Proof.Ecdsa.AArch64.P192.sign_verified h.law h.inv },
   Spec.Ecdsa.P192.verifyApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1). \
+      Public scalar multiplication uses a joint radix-four table of fifteen projective points, \
+      192 shared doublings and at most 96 additions with complete general RCB formulas. \
       Inversions are calls of `vg_p192_inv_mod_p` and `vg_p192_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
-    code := Impl.Ecdsa.Verify.AArch64.P192.verify
-    verified := Proof.Ecdsa.Verify.AArch64.P192.verify_verified h.law h.inv }]
+      Branches and memory addresses depend only on pointers, counters and the public verification scalars."]
+    code := Impl.Ecdsa.Verify.AArch64.P192.Joint.verify
+    verified := Proof.Ecdsa.Verify.AArch64.P192.Joint.verify_verified h.law h.inv }]
 
 end VG.Generic.P192.AArch64.EcdsaP192
