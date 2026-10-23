@@ -129,20 +129,20 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
       show (3 : BitVec 32).toNat = 3 from rfl]
     simp only [Geo.w, fK] at *
-    omega
-  refine stride_ok (by omega) h9 fun s9 h7 r9 m9 => ?_
+    omega_arith
+  refine stride_ok (by omega_arith) h9 fun s9 h7 r9 m9 => ?_
   have r79 : Rest [.r9, .r7] s6 s9 := (u7.rest (by simp)).trans ((u8.rest (by simp)).trans (r9.mono (by simp)))
   have m79 : s9.mem = s6.mem := m9.trans (u8.mem.trans u7.mem)
   have ws9 : Ws s9 (geo iS σ).B (geo iS σ).Z (geo iS σ).w nArr :=
-    ⟨fS, by rw [r79.wr, r6'.wr, b1.wr, h.wr]; simp, fits, by omega, by omega, h7,
+    ⟨fS, by rw [r79.wr, r6'.wr, b1.wr, h.wr]; simp, fits, by omega_arith, by omega_arith, h7,
       by rw [r79.gpr _ (by decide), e8], by rw [r9.gpr _ (by decide), h9]⟩
   have b9 := b6.of_rest r79 m79
   refine wp_strSlot ws9 (d := 16) (by decide) fun s10 u10 => ?_
   have ws10 := ws9.of_mupd u10
-  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
+  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   have o10 := writeW32_outside s9.mem (State.addr (geo iS σ).B) (d := 16) (s9.gpr .r9) (by decide)
   rw [← u10.mem] at o10
-  have b10 := b9.outside o10 (by omega) (by omega) u10.sp u10.rd u10.wr
+  have b10 := b9.outside o10 (by omega_arith) (by omega_arith) u10.sp u10.rd u10.wr
   have c10 : s10.mem.readW (off (State.addr (geo iS σ).B) 16) 32 = BitVec.ofNat 32 (geo iS σ).w := by
     rw [u10.mem, Mem.readW_writeW_self32, ws9.r9]
   refine wp_dp (op2_imm (by decide)) fun s11 u11 => ?_
@@ -165,29 +165,29 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_mul, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     simp only [nArr, S]
-    rw [Nat.mod_eq_of_lt (a := 24) (by decide), Nat.mod_eq_of_lt (a := 4 * ((geo iS σ).w + 2)) (by omega),
-      Nat.mod_eq_of_lt (a := 24 * (4 * ((geo iS σ).w + 2))) (by omega),
-      Nat.mod_eq_of_lt (a := 24 * ((geo iS σ).w + 2)) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := 24) (by decide), Nat.mod_eq_of_lt (a := 4 * ((geo iS σ).w + 2)) (by omega_arith),
+      Nat.mod_eq_of_lt (a := 24 * (4 * ((geo iS σ).w + 2))) (by omega_arith),
+      Nat.mod_eq_of_lt (a := 24 * ((geo iS σ).w + 2)) (by omega_arith)]
+    omega_arith
   have nfit : hdr + 4 * (nArr * ((geo iS σ).w + 2)) ≤ (geo iS σ).Z := by
-    simp only [arr, S, nArr] at fits ⊢; omega
+    simp only [arr, S, nArr] at fits ⊢; omega_arith
   refine WP.mono (zero_ok u (base := (geo iS σ).B) (size := (geo iS σ).Z) (o := hdr) (n := nArr * ((geo iS σ).w + 2))
     ⟨fS, nfit, ⟨rS iS σ, by rw [bu.wr, h.wr]; simp, Region.contains_self _ _⟩⟩
-    (by simp only [nArr]; omega) p0 plr (by rw [u15.gpr])) fun t inv => ?_
-  have bt := bu.outside inv.outside (by simp only [hdr]; omega) nfit inv.rest.sp inv.rest.rd inv.rest.wr
+    (by simp only [nArr]; omega_arith) p0 plr (by rw [u15.gpr])) fun t inv => ?_
+  have bt := bu.outside inv.outside (by simp only [hdr]; omega_arith) nfit inv.rest.sp inv.rest.rd inv.rest.wr
   have rT : Rest [.r0, .lr, .r3, .r7, .r9] s6 t :=
     (r79.mono (by simp)).trans ((u10.rest _).trans ((rest.trans (inv.rest.mono (by simp))).mono (by simp)))
   refine ⟨⟨bt, hu.rest inv.rest, ?_, fun j hj => ?_, by rw [rT.gpr _ (by decide), e10],
     by rw [rT.gpr _ (by decide), e11]⟩, by rw [rT.gpr _ (by decide), e4], by rw [rT.gpr _ (by decide), e6]⟩
-  · have e := inv.outside.w32 (d := 16) (by simp only [hdr]; omega) (by omega)
+  · have e := inv.outside.w32 (d := 16) (by simp only [hdr]; omega_arith) (by omega_arith)
     apply BitVec.eq_of_toNat_eq
     rw [show (t.mem.readW (off (State.addr (geo iS σ).B) 16) 32).toNat = w32 t.mem (State.addr (geo iS σ).B) 16
       from rfl, e, show w32 u.mem (State.addr (geo iS σ).B) 16 = (u.mem.readW (off (State.addr (geo iS σ).B) 16) 32).toNat
       from rfl, mu, c10]
   · have := VG.Proof.Rsa.Arm.CrtValues.val32_zero_part inv.value (a := j * ((geo iS σ).w + 2))
       (c := (geo iS σ).w + 2) (by
-      have := Nat.mul_le_mul_right ((geo iS σ).w + 2) (show j + 1 ≤ nArr by omega)
-      rw [Nat.succ_mul] at this; omega)
+      have := Nat.mul_le_mul_right ((geo iS σ).w + 2) (show j + 1 ≤ nArr by omega_arith)
+      rw [Nat.succ_mul] at this; omega_arith)
     simpa only [arr, S, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using this
 
 end

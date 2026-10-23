@@ -127,12 +127,12 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
   obtain ⟨_, _, wr₂, _, _, _, _, dOA₂, _, _, _, dSA₂, _, _, _, _, _, _, _, _, _⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (arg s₁ 0).toNat ≤ (arg s₁ 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (arg s₁ 0).toNat ≤ (arg s₁ 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have hb₂ : State.addr (arg s₂ 5) = State.addr (arg s₁ 5) := by rw [a5]
   have hz₂ : (arg s₂ 6).toNat * 8 = (arg s₁ 6).toNat * 8 := by rw [a6]
   simp only [Entry.operation, Core.sequence, List.foldr, ↓reduceIte]
-  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 28 _ rfl) (agree_args (n := 7) hsp (by omega) ha
+  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 28 _ rfl) (agree_args (n := 7) hsp (by omega_arith) ha
       (fun r hr => by
         rw [wr₁] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -145,19 +145,19 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
         rcases hr with rfl | rfl
         · exact dOA₂.symm
         · exact dSA₂.symm)))
-    (WP.mono (signEntry_ok h₁) fun u I => Env.of_installed I (by omega))
+    (WP.mono (signEntry_ok h₁) fun u I => Env.of_installed I (by omega_arith))
     (WP.mono (signEntry_ok h₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega)
+      have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine widthDispatch_trace true _ E₁.ws E₂.ws (by omega) (by omega) (widths_mem hv) (by decide)
+  refine widthDispatch_trace true _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (widths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := arg s₁ 0) (by simp)]) (by rw [E₁.field (d := 104) (v := arg s₁ 2) (by simp)])
     (by rw [E₂.field (d := 100) (v := arg s₂ 0) (by simp), a0])
     (by rw [E₂.field (d := 104) (v := arg s₂ 2) (by simp), a2])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 6).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s₁ 6).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -, -⟩ := signKeyIn h₁ rfl rfl F₁
   obtain ⟨Ip₂, Iq₂, -, -, -⟩ := signKeyIn h₂ hb₂ hz₂ F₂
   have Rp₂ : Ready t₂ (State.addr (arg s₁ 5)) (.input .p) (arg s₁ 0).toNat := by rw [a0]; exact Ip₂.toReady
@@ -172,8 +172,8 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [signPtr, hr2, a0, a1, a2, a3]
   have key := fun {o l : Nat} (h : o + l ≤ 3 * (arg s₁ 0).toNat + (arg s₁ 2).toNat) =>
     sign_keyBytes h₁ hl hr2 hr3 a0 a2 (o := o) (l := l) h
-  have kp := key (o := 0) (l := (arg s₁ 0).toNat) (by omega)
-  have kq := key (o := (arg s₁ 0).toNat) (l := (arg s₁ 2).toNat) (by omega)
+  have kp := key (o := 0) (l := (arg s₁ 0).toNat) (by omega_arith)
+  have kq := key (o := (arg s₁ 0).toNat) (l := (arg s₁ 2).toNat) (by omega_arith)
   rw [BitVec.add_zero] at kp
   have Pe : operand (State.addr (arg s₁ 5)) t₁ (.input .p) (arg s₁ 0).toNat =
       operand (State.addr (arg s₁ 5)) t₂ (.input .p) (arg s₁ 0).toNat := by
@@ -194,11 +194,11 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
   have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 6).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
   have G₁ := F₁.keep (signFields_ok s₁) S₁ (by decide) O₁ kee
   have G₂ := F₂.keep (signFields_ok s₂) S₂ (by decide) O₂ kee
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)
-  · exact failure_trace true G₁.ws G₂.ws (by omega) (by omega)
+  · exact failure_trace true G₁.ws G₂.ws (by omega_arith) (by omega_arith)
       (fun _ => by
         rw [G₁.field (d := 96) (v := s₁.gpr .r0) (by simp), G₂.field (d := 96) (v := s₂.gpr .r0) (by simp), hr0])
       (fun _ => by
@@ -209,8 +209,8 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
       exact Classical.not_not.mp (of_decide_eq_false (Option.some.inj hf))
     have valid₂ : shapeValid (operand (State.addr (arg s₁ 5)) t₂ (.input .p) (arg s₁ 0).toNat)
         (operand (State.addr (arg s₁ 5)) t₂ (.input .q) (arg s₁ 2).toNat) := by rw [← Pe, ← Qe]; exact valid
-    have kg := key (o := (arg s₁ 0).toNat + (arg s₁ 2).toNat) (l := (arg s₁ 0).toNat) (by omega)
-    have ky := key (o := 2 * (arg s₁ 0).toNat + (arg s₁ 2).toNat) (l := (arg s₁ 0).toNat) (by omega)
+    have kg := key (o := (arg s₁ 0).toNat + (arg s₁ 2).toNat) (l := (arg s₁ 0).toNat) (by omega_arith)
+    have ky := key (o := 2 * (arg s₁ 0).toNat + (arg s₁ 2).toNat) (l := (arg s₁ 0).toNat) (by omega_arith)
     have Vp : signVal s₂ 0 (.input .p) = signVal s₁ 0 (.input .p) := by
       simp only [signVal]; rw [← a0, ← hr2, kp]
     have Vq : signVal s₂ 0 (.input .q) = signVal s₁ 0 (.input .q) := by

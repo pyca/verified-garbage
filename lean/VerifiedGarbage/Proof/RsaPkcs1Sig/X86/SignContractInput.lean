@@ -32,30 +32,30 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
     at wr outWs nWs eWs iWs pWs qWs dpWs dqWs qiWs wsArgs stackWs wsFit retWs
   have sourceFit : ∀ i, ((signGeometry s).sources i).toNat + (signGeometry s).sourceLength i ≤ 2 ^ 32 := by
     intro i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit]
   have geometry : (signGeometry s).Valid := by
     refine ⟨valid.1, valid.2, (arg s 8).isLt, ePositive, eFits, pPositive, pShort, qPositive, qShort, space,
       ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [signGeometry_stackNat s stackFit]
-      simp only [sigStack, calleeBytes] at stackFit ⊢; omega
+      simp only [sigStack, calleeBytes] at stackFit ⊢; omega_arith
     · rw [signGeometry_stackNat s stackFit]
-      simp only [sigStack, VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes] at stackFit ⊢; omega
+      simp only [sigStack, VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes] at stackFit ⊢; omega_arith
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [outN, outE, outI, outP, outQ, outDP, outDQ, outQI]
     · rw [signGeometry_arguments s stackFit argFit]; exact outArgs
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs]
     · rw [signGeometry_arguments s stackFit argFit]; exact wsArgs
     · rw [signGeometry_wholeStack s stackFit]; exact stackOut
     · intro i
       rw [signGeometry_wholeStack s stackFit]
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI]
     · rw [signGeometry_wholeStack s stackFit]; exact stackWs
@@ -66,7 +66,7 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
     refine ⟨sourceFit i, ?_, rfl⟩
     refine ⟨(signGeometry s).sourceRegion i, List.mem_append_left _ ?_, Region.contains_self _ _⟩
     rw [rd]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact List.mem_cons_self
     · exact List.mem_cons_of_mem _ (List.mem_cons_self)
@@ -88,8 +88,8 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
       change (signGeometry s).argumentsRegion.base + BitVec.ofNat 64 (4 * j) = _
       rw [signGeometry_arguments s stackFit argFit]
       simp only [argAddr, Nat.mul_zero, Nat.add_zero]
-      have first := byteAddr_add (by omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
-      have last := byteAddr_add (by omega : (s.gpr .esp).toNat + (4 + 4 * j) < 2 ^ 32)
+      have first := byteAddr_add (by omega_arith : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+      have last := byteAddr_add (by omega_arith : (s.gpr .esp).toNat + (4 + 4 * j) < 2 ^ 32)
       change byteAddr (s.gpr .esp + BitVec.ofNat 32 4) + BitVec.ofNat 64 (4 * j) = byteAddr (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * j))
       rw [first, last, Offset.add_add]
     rw [address]
@@ -100,7 +100,7 @@ theorem sign_contract_pre (s : State) (h : (Spec.RsaPkcs1Sig.signContract abi si
     have dqe : arg s 16 = arg s 12 := BitVec.eq_of_toNat_eq dqLen
     rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨
         j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨
-        j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 by omega) with
+        j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp [signGeometry, Geometry.argument, oe, de, qe, dqe]
     all_goals rfl
