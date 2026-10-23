@@ -70,16 +70,23 @@ def loadN : Prog isa :=
     (.seq (.block [.add .r15 .r10 .r6, .subi .r15 .r15 1, .addi .r16 .r12 0, .addi .r17 .r6 0])
       (countLoop .r17 [.lbz .r0 .r16 0, .stb .r0 .r15 0, .addi .r16 .r16 1, .subi .r15 .r15 1])))
 
+/-- `n`'s last byte's low bit, inverted, into `r0`, its first byte into
+`r15`, and 1 into `r18`. -/
+def check1 : List Instr :=
+  [.add .r15 .r12 .r6, .subi .r15 .r15 1, .lbz .r0 .r15 0, .li .r18 1,
+    .logic .and .r0 .r0 .r18, .logic .xor .r0 .r0 .r18, .lbz .r15 .r12 0]
+
+/-- The rest of `check`, from the bytes `check1` loaded. -/
+def check2 : Prog isa :=
+  .seq (.ite (.zero .d .r15) (.block [.li .r0 1]) (.block []))
+    (.seq (.block [.subi .r16 .r6 64])
+      (.ite (.zero .d .r16) (.block [.lsr .d .r15 .r15 7, .logic .xor .r15 .r15 .r18,
+        .logic .or .r0 .r0 .r15]) (.block [])))
+
 /-- Whether `n` is a valid modulus, in `r0`: 0 if it is. Its last byte is
 odd, its first is not zero, and if `k = 64`, its first byte's top bit is
 set: `r0 := (1 - last & 1) | (first = 0) | (k = 64 ∧ first < 128)`. -/
-def check : Prog isa :=
-  .seq (.block [.add .r15 .r12 .r6, .subi .r15 .r15 1, .lbz .r0 .r15 0, .li .r18 1,
-      .logic .and .r0 .r0 .r18, .logic .xor .r0 .r0 .r18, .lbz .r15 .r12 0])
-    (.seq (.ite (.zero .d .r15) (.block [.li .r0 1]) (.block []))
-      (.seq (.block [.subi .r16 .r6 64])
-        (.ite (.zero .d .r16) (.block [.lsr .d .r15 .r15 7, .logic .xor .r15 .r15 .r18,
-          .logic .or .r0 .r0 .r15]) (.block []))))
+def check : Prog isa := .seq (.block check1) check2
 
 /-- `x := 1` in array 1 (`r5`). -/
 def one : Prog isa :=
