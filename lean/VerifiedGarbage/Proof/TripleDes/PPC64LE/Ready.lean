@@ -1,0 +1,93 @@
+module
+
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.WordState
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.RoundLit
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE
+
+open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Impl.TripleDes.PPC64LE
+open VG.Spec.TripleDes (Direction DesSchedule)
+open VG.Proof.TripleDes (roundKey)
+
+def componentBase (base : Addr) (component : Nat) : Addr :=
+  base + BitVec.ofNat 64 (128 * component)
+
+structure Ready (keys : Nat → DesSchedule) (base : Addr) (s : State) : Prop where
+  spills : Ok sboxCfg s
+  baseReg : s.gpr .r3 = base
+  read : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
+    InRegions (s.rd ++ s.wr) (keyAddr (componentBase base c) d j) 8
+  separate : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
+    (⟨keyAddr (componentBase base c) d j, 8⟩ : Region).Disjoint (spillRegion s)
+  values : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
+    (s.mem.readW (keyAddr (componentBase base c) d j) 64).setWidth 48 = roundKey (keys c) d j
+
+theorem Ready.congr {keys : Nat → DesSchedule} {base : Addr} {s t : State}
+    (hs : Ready keys base s) (hbase : t.gpr .r5 = s.gpr .r5)
+    (hkey : t.gpr .r3 = s.gpr .r3) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hf : Frame [spillRegion s] s.mem t.mem) : Ready keys base t := by
+  have hwork : spillRegion t = spillRegion s :=
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) hbase
+  refine ⟨hs.spills.congr hbase hbase hrd hwr, hkey.trans hs.baseReg, ?_, ?_, ?_⟩
+  · rw [hrd, hwr]; exact hs.read
+  · rw [hwork]; exact hs.separate
+  · intro c hc d j hj
+    have hmem := hf.readW (a := keyAddr (componentBase base c) d j) (w := 64)
+      (r := ⟨keyAddr (componentBase base c) d j, 8⟩) (Region.contains_self _ _)
+      (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hs.separate c hc d j hj) (by decide)
+    exact (congrArg (BitVec.setWidth 48) hmem).trans (hs.values c hc d j hj)
+
+theorem passPointer (base : Addr) (c : Nat) (d : Direction) :
+    base + BitVec.ofNat 64 (passOffset c d) = keyAddr (componentBase base c) d 0 := by
+  cases d
+  · change base + BitVec.ofNat 64 (128 * c + 0) = base + BitVec.ofNat 64 (128 * c) + (0 : BitVec 64)
+    exact (congrArg (fun n => base + BitVec.ofNat 64 n) (Nat.add_zero (128 * c))).trans
+      (BitVec.add_zero (base + BitVec.ofNat 64 (128 * c))).symm
+  · simp only [passOffset, keyAddr, componentBase, reduceCtorEq, ite_false]
+    rw [Offset.add_ofNat_add_ofNat]
+
+
+structure Stable (origin s : State) : Prop where
+  rd : s.rd = origin.rd
+  wr : s.wr = origin.wr
+  regs : ∀ q ∈ passKept, s.gpr q = origin.gpr q
+  frame : Frame [spillRegion origin] origin.mem s.mem
+
+theorem Stable.refl (s : State) : Stable s s :=
+  ⟨rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
+
+theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
+  have hwork : spillRegion t = spillRegion s :=
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) (hs.regs .r5 (by decide))
+  have hf := ht.frame
+  rw [hwork] at hf
+  exact ⟨ht.rd.trans hs.rd, ht.wr.trans hs.wr,
+    fun q hq => (ht.regs q hq).trans (hs.regs q hq), hs.frame.trans hf⟩
+
+theorem pass_word_ok (keys : Nat → DesSchedule) (base : Addr) (s : State) (x : BitVec 64)
+    (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
+    (hready : Ready keys base s) (hword : WordState x s)
+    (hpasses : s.gpr .r19 = BitVec.ofNat 64 p) :
+    WP isa (pass d) s (fun t =>
+      WordState (VG.Proof.TripleDes.desCore (keys (passOf d p).1) (passOf d p).2 x) t ∧
+      Ready keys base t ∧ Stable s t ∧
+      t.gpr .r19 = BitVec.ofNat 64 (p - 1) ∧
+      isa.eval (.nonzero .d .r19) t = some (decide (p ≠ 1))) := by
+  have hc := passOf_lt d p
+  have hptr : s.gpr .r3 + BitVec.ofNat 64 (passOffset (passOf d p).1 (passOf d p).2) =
+      keyAddr (componentBase base (passOf d p).1) (passOf d p).2 0 := by
+    rw [hready.baseReg]
+    exact passPointer base _ _
+  apply WP.mono (pass_ok d hp (keys (passOf d p).1) (componentBase base (passOf d p).1) s
+    ((x >>> 32).setWidth 32, x.setWidth 32) hready.spills hword.left hword.right
+    hpasses hptr (hready.read _ hc _) (hready.separate _ hc _) (hready.values _ hc _))
+  intro t ht
+  exact ⟨ht.wordState,
+    hready.congr (ht.regs .r5 (by decide)) (ht.regs .r3 (by decide)) ht.rd ht.wr ht.frame,
+    ⟨ht.rd, ht.wr, ht.regs, ht.frame⟩, ht.passes, ht.zf⟩
+
+end VG.Proof.TripleDes.PPC64LE

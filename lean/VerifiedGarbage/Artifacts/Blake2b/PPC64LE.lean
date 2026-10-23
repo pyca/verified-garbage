@@ -24,6 +24,14 @@ def artifacts : List Artifact := [
   Spec.Blake2.finalizeBApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b)
     stack := 48 + 608
-    verified := Proof.Blake2.PPC64LE.Stream.finalizeB_framed }]
+    verified := Proof.Blake2.PPC64LE.Stream.finalizeB_framed },
+  Spec.Blake2.updateBScratchApi.artifact PPC64LE.target {
+    code := Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.b
+    stack := 48
+    verified := Proof.Blake2.PPC64LE.Stream.updateB_verified },
+  Spec.Blake2.finalizeBScratchApi.artifact PPC64LE.target {
+    code := Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b
+    stack := 48
+    verified := Proof.Blake2.PPC64LE.Stream.finalizeB_verified }]
 
 end VG.Artifacts.Blake2b.PPC64LE

@@ -8,7 +8,13 @@ pub(crate) mod aes;
 pub(crate) mod aes_cbc;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ctr;
+
+#[rustfmt::skip]
 pub(crate) mod aes_ofb;
+
+#[rustfmt::skip]
+pub(crate) mod argon2;
 
 #[rustfmt::skip]
 pub(crate) mod blake2b;
@@ -44,7 +50,22 @@ pub(crate) mod chacha20poly1305;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ed25519;
+
+#[rustfmt::skip]
 pub(crate) mod ed25519_r32;
+
+#[rustfmt::skip]
+pub(crate) mod gcm;
 
 #[rustfmt::skip]
 pub(crate) mod gf25519_r32;
@@ -110,10 +131,19 @@ pub(crate) mod p521_mont;
 pub(crate) mod poly1305;
 
 #[rustfmt::skip]
+pub(crate) mod rc2;
+
+#[rustfmt::skip]
 pub(crate) mod rc4;
 
 #[rustfmt::skip]
+pub(crate) mod rsa;
+
+#[rustfmt::skip]
 pub(crate) mod rsa_mont;
+
+#[rustfmt::skip]
+pub(crate) mod scrypt;
 
 #[rustfmt::skip]
 pub(crate) mod secp256k1_mont;
@@ -135,6 +165,21 @@ pub(crate) mod sha512;
 
 #[rustfmt::skip]
 pub(crate) mod sm3;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb8;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod x25519;
