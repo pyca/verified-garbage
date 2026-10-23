@@ -134,10 +134,12 @@ theorem context_finish (m : Mem) (p : Addr) (i j : Byte) :
   · rw [table_write_sep, table_write_sep]
     · exact Offset.sep_base p (by decide) (by decide)
     · exact Offset.sep_base p (by decide) (by decide)
-  · change ((m.write (p + 256#64) 1 i).write (p + 257#64) 1 j) (p + 256#64) = i
-    rw [write_byte, ite_eq_right (show p + 256#64 ≠ p + 257#64 by bv_omega),
+  -- Match contextAt's read-address numerals before rewriting them; changing
+  -- their form while matching the memory application unfolds both stores.
+  · change ((m.write (p + 256#64) 1 i).write (p + 257#64) 1 j) (p + 256) = i
+    rw [show (256 : Addr) = 256#64 from rfl, write_byte, ite_eq_right (show p + 256#64 ≠ p + 257#64 by bv_omega),
       write_byte, ite_eq_left rfl]
-  · change ((m.write (p + 256#64) 1 i).write (p + 257#64) 1 j) (p + 257#64) = j
-    rw [write_byte, ite_eq_left rfl]
+  · change ((m.write (p + 256#64) 1 i).write (p + 257#64) 1 j) (p + 257) = j
+    rw [show (257 : Addr) = 257#64 from rfl, write_byte, ite_eq_left rfl]
 
 end VG.Proof.Rc4
