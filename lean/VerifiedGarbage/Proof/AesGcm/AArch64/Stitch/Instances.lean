@@ -40,12 +40,12 @@ def openPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
 /-- `vg_aes_gcm_seal_store_powers`, calling `g`. -/
 def sealStCode (v : GcmImpl) (g : GhashStoreImpl) : Prog isa :=
   if v.stitch then Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn
-  else Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn
+  else Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn
 
 /-- `vg_aes_gcm_open_store_powers`, calling `g`. -/
 def openStCode (v : GcmImpl) (g : GhashStoreImpl) : Prog isa :=
   if v.stitch then Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn
-  else Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn
+  else Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn
 
 section
 variable (v : GcmImpl) (hMK : MulKey) (hP : PrepPow) (gh : Gh8Ok)

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # AES-GCM on AArch64: `vg_aes_gcm_seal_store_powers`
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_store_powers`
-is `vg_aes_gcm_seal_with_powers`'s code (`Fast.sealWithPw`) with
+is `vg_aes_gcm_seal_with_powers`'s code (`Fast.sealStorePw`) with
 `vg_ghash_store_powers` (`GhashStoreImpl`) as the call on the whole blocks:
 on the path for TLS records, which its precondition requires (a 12-byte
 nonce and at most 16 bytes of additional data), the call hashes as
@@ -137,7 +137,7 @@ theorem pwCallS_keepsV : (Impl.AesGcm.AArch64.Fast.pwCall 8 g.fn).allInstrs keep
   decide
 
 theorem sealSt_wp {s : State} (hs : sealStN s) :
-    WP isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s fun s' =>
+    WP isa (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn) s fun s' =>
       (GprAbi s s' ∧ sealAArch64.post s s') ∧
         Spec.Gcm.Powers8Repr s'.mem (stackArg s 1) (Spec.Gcm.ctxH s.mem (s.gpr .x0)) := by
   have hs' := hs
@@ -153,13 +153,13 @@ theorem sealSt_wp {s : State} (hs : sealStN s) :
         ⟨gp, by rw [← q.2.2.2]; exact pp⟩
 
 theorem sealSt_correctN (s : State) (hs : sealStN s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       sealStAArch64.post s s' :=
   WP.withPreservedV (WP.mono (sealSt_wp v g hMK hs) fun _ ⟨⟨ga, p⟩, q⟩ => ⟨ga, p, q⟩)
     (fastSealWithE_keepsV v (.inr rfl) (pwCallS_keepsV g))
 
 theorem sealSt_ctN :
-    ConstantTime isa sealStN (onePub 3) (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) :=
+    ConstantTime isa sealStN (onePub 3) (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn) :=
   sealWithEX_ct (w := 2) v _ hMK (.inr rfl) (extra := fun _ => []) (extraW := fun s => [pwR s])
     (ex := fun s => [pwR s]) (fun _ h => h.1)
     (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.1.symm)
@@ -226,13 +226,13 @@ variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKe
 include hMK
 
 theorem sealSt_correct (s : State) (hs : sealStAArch64.pre s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       sealStAArch64.post s s' := by
   obtain ⟨t, s₁, he, ha, hp⟩ := sealSt_correctN v g hMK _ (narrowS_pre hs)
   exact ⟨t, _, narrowS_exec hs he, ha, hp⟩
 
 theorem sealSt_ct :
-    ConstantTime isa sealStAArch64.pre sealStAArch64.pub (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) := by
+    ConstantTime isa sealStAArch64.pre sealStAArch64.pub (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨u₁, r₁, f₁, -⟩ := sealSt_correctN v g hMK _ (narrowS_pre h₁)
   obtain ⟨u₂, r₂, f₂, -⟩ := sealSt_correctN v g hMK _ (narrowS_pre h₂)
@@ -240,7 +240,7 @@ theorem sealSt_ct :
   exact sealSt_ctN v g hMK _ _ _ _ _ _ (narrowS_pre h₁) (narrowS_pre h₂) hq f₁ f₂
 
 theorem sealSt_verified :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn)
       (Proof.AesGcm.sealStorePowersScratchContract AArch64.abi) :=
   Verified.of_correct (sealSt_correct v g hMK) (sealSt_ct v g hMK)
     { pre := by
@@ -300,7 +300,7 @@ theorem sealFrameSatSt_pre : ∃ s, (Spec.Gcm.sealStorePowersContract AArch64.ab
 
 theorem sealSt_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn))
+      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn))
       (Spec.Gcm.sealStorePowersContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealStorePowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.AesGcm.sealStorePowersPreP AArch64.abi.ptrBits)

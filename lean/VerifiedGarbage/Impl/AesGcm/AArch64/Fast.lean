@@ -206,4 +206,12 @@ def sealWithPw (gh : Fn) : Prog isa := sealWithE c 16 (pwSel c 8 gh)
 /-- `vg_aes_gcm_open_with_powers`: `tag`, `tag_len`, `pw`, then `work` on the stack. -/
 def openWithPw (gh : Fn) : Prog isa := openWithE c 24 (pwSel c 16 gh)
 
+/-- `vg_aes_gcm_seal_store_powers`: `sealWithPw`, with `gh` storing the
+powers, called for every length. -/
+def sealStorePw (gh : Fn) : Prog isa := sealWithE c 16 (pwCall 8 gh)
+
+/-- `vg_aes_gcm_open_store_powers`: `openWithPw`, with `gh` storing the
+powers, called for every length. -/
+def openStorePw (gh : Fn) : Prog isa := openWithE c 24 (pwCall 16 gh)
+
 end VG.Impl.AesGcm.AArch64.Fast
