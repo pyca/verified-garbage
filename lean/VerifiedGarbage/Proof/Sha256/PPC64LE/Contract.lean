@@ -46,15 +46,16 @@ def compressPPC64LE : Contract PPC64LE.isa where
     s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
 
 open PPC64LE in
-/-- PPC64LE contract for `vg_sha256_init(state: *mut [u8; 96])`: makes the
-streaming state at `state` represent the empty message.
+/-- PPC64LE contract for `vg_sha256_init(state: *mut [u8; 96])` (`iv` is
+`H0`) and `vg_sha224_init` (`iv` is `H0_224`): makes the streaming state at
+`state` represent the empty message, hashed from `iv`.
 
 The code may write `state` (96 bytes). The pointer is public. -/
-def initPPC64LE : Contract PPC64LE.isa where
+def initFromPPC64LE (iv : HashValue) : Contract PPC64LE.isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, 96⟩
     s.rd = [] ∧ s.wr = [state]
-  post s s' := Repr s'.mem (s.gpr .r3) []
+  post s s' := ReprFrom iv s'.mem (s.gpr .r3) []
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp = s₂.sp
 
 open PPC64LE in
@@ -108,6 +109,25 @@ def finalizePPC64LE : Contract PPC64LE.isa where
     48 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
   post s s' := ∀ iv m, ReprFrom iv s.mem (s.gpr .r3) m → s.gpr .r4 = BitVec.ofNat 64 m.length →
     bytesAt s'.mem (s.gpr .r5) 32 = Spec.Sha256.finalHash iv m
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
+
+open PPC64LE in
+/-- `finalizePPC64LE` writing the first `n` words (`4 n` bytes, `n` at most 8)
+of the final hash value: the digest of SHA-224 for `n = 7` (from `H0_224`),
+of SHA-256 for 8. `out` is `4 n` bytes. -/
+def finalizeNPPC64LE (n : Nat) : Contract PPC64LE.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .r3, 96⟩
+    let out : Region := ⟨s.gpr .r5, 4 * n⟩
+    let scratch : Region := ⟨s.gpr .r6, 160⟩
+    let stack : Region := ⟨s.sp - 48, 48⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    48 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, ReprFrom iv s.mem (s.gpr .r3) m → s.gpr .r4 = BitVec.ofNat 64 m.length →
+    bytesAt s'.mem (s.gpr .r5) (4 * n) = (Spec.Sha256.finalHash iv m).take (4 * n)
   pub s₁ s₂ :=
     s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp

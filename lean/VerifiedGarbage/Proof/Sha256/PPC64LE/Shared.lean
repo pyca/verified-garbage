@@ -123,8 +123,8 @@ theorem compress :
 theorem init :
     Verified PPC64LE.target Impl.Sha256.PPC64LE.Stream.init (Spec.Sha256.initContract PPC64LE.abi) :=
   Proof.Sha256.PPC64LE.Stream.init_verified.of_implies (by
-    contract_implies [Spec.Sha256.initContract, Spec.Sha256.initSig, Proof.Sha256.initPPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs]
+    contract_implies [Spec.Sha256.initContract, Spec.Sha256.initSig, Proof.Sha256.initFromPPC64LE,
+      Spec.Sha256.Repr, PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Sha256.PPC64LE.Stream.initSat] using Proof.Sha256.PPC64LE.Stream.initSat)
 
 theorem updateScratch :

@@ -2,6 +2,159 @@
 //! Verified `sha256` functions for `powerpc64le`.
 #![allow(dead_code)]
 
+/// Starts a SHA-224 computation: makes the SHA-256 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-224 (`VG.Spec.Sha256.H0_224`). Continue with `vg_sha256_update` and `vg_sha256_finalize`, and take the first 28 bytes of the final hash value as the digest.
+///
+/// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
+    core::arch::naked_asm!(
+        r"lis %r8, -16123
+ori %r8, %r8, 40664
+stw %r8, 0(%r3)
+lis %r8, 13948
+ori %r8, %r8, 54535
+stw %r8, 4(%r3)
+lis %r8, 12400
+ori %r8, %r8, 56599
+stw %r8, 8(%r3)
+lis %r8, -2290
+ori %r8, %r8, 22841
+stw %r8, 12(%r3)
+lis %r8, -64
+ori %r8, %r8, 2865
+stw %r8, 16(%r3)
+lis %r8, 26712
+ori %r8, %r8, 5393
+stw %r8, 20(%r3)
+lis %r8, 25849
+ori %r8, %r8, 36775
+stw %r8, 24(%r3)
+lis %r8, -16646
+ori %r8, %r8, 20388
+stw %r8, 28(%r3)
+blr",
+    )
+}
+
+/// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -640(%r1)
+addi %r6, %r1, 32
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r26, 112(%r6)
+std %r27, 120(%r6)
+std %r28, 128(%r6)
+std %r29, 136(%r6)
+std %r30, 144(%r6)
+std %r31, 152(%r6)
+addi %r26, %r3, 0
+addi %r27, %r6, 0
+addi %r28, %r5, 0
+addi %r29, %r4, 0
+li %r8, 63
+and %r30, %r29, %r8
+li %r8, 128
+add %r11, %r26, %r30
+stb %r8, 32(%r11)
+addi %r30, %r30, 1
+addi %r31, %r30, 7
+rldicl %r31, %r31, 58, 6
+20:
+li %r10, 64
+cmpldi %cr0, %r31, 0
+beq %cr0, 21f
+b 22f
+21:
+li %r10, 56
+22:
+li %r8, 0
+subf %r10, %r30, %r10
+cmpldi %cr0, %r10, 0
+beq %cr0, 23f
+25:
+add %r11, %r26, %r30
+stb %r8, 32(%r11)
+addi %r30, %r30, 1
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
+bne %cr0, 25b
+b 24f
+23:
+24:
+cmpldi %cr0, %r31, 0
+beq %cr0, 26f
+b 27f
+26:
+add %r8, %r29, %r29
+add %r8, %r8, %r8
+add %r8, %r8, %r8
+li %r11, 88
+stdbrx %r8, %r26, %r11
+27:
+addi %r4, %r26, 32
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha256_compress}
+li %r30, 0
+addi %r31, %r31, -1
+cmpldi %cr0, %r31, 0
+beq %cr0, 20b
+lwz %r8, 0(%r26)
+li %r11, 0
+stwbrx %r8, %r28, %r11
+lwz %r8, 4(%r26)
+li %r11, 4
+stwbrx %r8, %r28, %r11
+lwz %r8, 8(%r26)
+li %r11, 8
+stwbrx %r8, %r28, %r11
+lwz %r8, 12(%r26)
+li %r11, 12
+stwbrx %r8, %r28, %r11
+lwz %r8, 16(%r26)
+li %r11, 16
+stwbrx %r8, %r28, %r11
+lwz %r8, 20(%r26)
+li %r11, 20
+stwbrx %r8, %r28, %r11
+lwz %r8, 24(%r26)
+li %r11, 24
+stwbrx %r8, %r28, %r11
+ld %r26, 112(%r27)
+ld %r28, 128(%r27)
+ld %r29, 136(%r27)
+ld %r30, 144(%r27)
+ld %r31, 152(%r27)
+ld %r27, 120(%r27)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+addi %r1, %r1, 640
+blr",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
 /// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.

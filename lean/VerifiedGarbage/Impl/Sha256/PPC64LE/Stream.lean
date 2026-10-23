@@ -16,6 +16,9 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
 * `finalize(state = r3, count = r4, out = r5, scratch = r6)` pads the
   buffered bytes (one or two blocks), compresses them and writes the digest.
 
+SHA-224's `init224` stores its initial hash value instead, and its
+`finalize224` writes the first 7 words of the final hash value (28 bytes).
+
 `update` and `finalize` call the compression function (`vg_sha256_compress`)
 with `scratch[0..112)` as its scratch space. It preserves `r14`–`r31`, so our
 own variables live in `r26`–`r31` (`r26` = `state`, `r27` = `scratch`), and
@@ -41,11 +44,18 @@ open VG.Impl.Sha256.PPC64LE (compress)
 /-- `mr d, n` (as `addi d, n, 0`; `n` is not `r0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
 
-def init : Prog isa :=
+/-- `init` storing the initial hash value `iv`. -/
+def initWith (iv : Spec.Sha256.HashValue) : Prog isa :=
   .block ((List.range 8).flatMap fun k =>
-    [.lis .r8 (Spec.Sha256.H0[k]!.extractLsb' 16 16),
-     .ori .r8 .r8 (Spec.Sha256.H0[k]!.extractLsb' 0 16),
+    [.lis .r8 (iv[k]!.extractLsb' 16 16),
+     .ori .r8 .r8 (iv[k]!.extractLsb' 0 16),
      .store .w .r8 .r3 (4 * k)])
+
+/-- SHA-256's `init`. -/
+def init : Prog isa := initWith Spec.Sha256.H0
+
+/-- SHA-224's `init`. -/
+def init224 : Prog isa := initWith Spec.Sha256.H0_224
 
 /-- The nonvolatile registers we use, and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) :=
@@ -131,8 +141,12 @@ def finalizeBody : Prog isa :=
   (.seq compressAt
     (.block [.li .r30 0, .subi .r31 .r31 1])))))))
 
-/-- `finalize`, but for saving the link register. -/
-def finalizeMain : Prog isa :=
+/-- Word `k` of the final hash value to `out`, big-endian. -/
+def outW (k : Nat) : List Instr := [.load .w .r8 .r26 (4 * k), .li .r11 (4 * k), .storeRev .w .r8 .r28 .r11]
+
+/-- `finalize` writing the first `n` words of the final hash value, but for
+saving the link register. -/
+def finalizeMainWith (n : Nat) : Prog isa :=
   .seq (.block (save .r6 ++ [mov .r26 .r3, mov .r27 .r6, mov .r28 .r5, mov .r29 .r4,
       .li .r8 63, .logic .and .r30 .r29 .r8,
       -- The `0x80` byte.
@@ -140,12 +154,18 @@ def finalizeMain : Prog isa :=
       -- Two blocks iff that leaves fewer than 8 bytes for the length (r ≥ 57).
       .addi .r31 .r30 7, .lsr .d .r31 .r31 6]))
   (.seq (.loop finalizeBody (.zero .d .r31))
-    (.block ((List.range 8).flatMap (fun k =>
-        [.load .w .r8 .r26 (4 * k), .li .r11 (4 * k), .storeRev .w .r8 .r28 .r11]) ++
-      restore)))
+    (.block ((List.range n).flatMap outW ++ restore)))
 
-def finalize : Prog isa :=
+/-- `finalize` writing the first `n` words of the final hash value. -/
+def finalizeWith (n : Nat) : Prog isa :=
   .seq (.block [.mflr .r0])
-    (.seq (.frame (.push .r0) finalizeMain (.pop .r0)) (.block [.mtlr .r0]))
+    (.seq (.frame (.push .r0) (finalizeMainWith n) (.pop .r0)) (.block [.mtlr .r0]))
+
+/-- SHA-256's `finalize`, all of the final hash value (8 words). -/
+def finalizeMain : Prog isa := finalizeMainWith 8
+def finalize : Prog isa := finalizeWith 8
+
+/-- SHA-224's `finalize`, its first 7 words (28 bytes). -/
+def finalize224 : Prog isa := finalizeWith 7
 
 end VG.Impl.Sha256.PPC64LE.Stream
