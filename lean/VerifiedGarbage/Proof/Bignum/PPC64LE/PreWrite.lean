@@ -82,9 +82,9 @@ theorem copyWords_ok {s : State} {B P : Addr} {Z Zp dS dD w : Nat} (hs : Scr s B
       (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono
 
 /-- `write`, `n` at `dN` (`r10`) and `x` at `dX` (`r5`) of the working space,
-into `pre` (`r3`). -/
+into `pre` (`r19`). -/
 theorem write_ok {s : State} {B P : Addr} {Z Zp dN dX w : Nat} (hs : Scr s B Z) (hp : Scr s P Zp)
-    (h3 : s.gpr .r3 = off P 0) (h10 : s.gpr .r10 = off B dN) (h5 : s.gpr .r5 = off B dX)
+    (h19 : s.gpr .r19 = off P 0) (h10 : s.gpr .r10 = off B dN) (h5 : s.gpr .r5 = off B dX)
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hN : dN + 8 * w ≤ Z)
     (hX : dX + 8 * w ≤ Z) (hP : 16 * w ≤ Zp) (hsep : ∀ x, ofs B x < Z → Zp ≤ ofs P x) :
     WP isa write s fun t =>
@@ -95,10 +95,10 @@ theorem write_ok {s : State} {B P : Addr} {Z Zp dN dX w : Nat} (hs : Scr s B Z) 
   have hnp := hp.nowrap
   unfold write
   refine WP.seq ?_
-  have hpre : WP isa (.block [.addi .r14 .r3 0, .addi .r15 .r10 0]) s fun s₁ =>
+  have hpre : WP isa (.block [.addi .r14 .r19 0, .addi .r15 .r10 0]) s fun s₁ =>
       (s₁.gpr .r14 = off P 0 ∧ s₁.gpr .r15 = off B dN ∧ s₁.mem = s.mem) ∧ Keep [.r14, .r15] s s₁ := by
     refine WP.keep _ ?_ (by decide)
-    prun [h3, h10, BitVec.add_zero]
+    prun [h19, h10, BitVec.add_zero]
   refine WP.mono hpre fun s₁ ⟨⟨i14, i15, im⟩, k₁⟩ => ?_
   refine WP.seq (WP.mono (copyWords_ok (dD := 0) (hs.congr k₁.wr) (hp.congr k₁.wr) i15 i14
     ((k₁.gpr _ (by decide)).trans h11) hw hw' hN (by omega) hsep) fun s₂ ⟨⟨j14, jc, jout⟩, k₂⟩ => ?_)
@@ -122,9 +122,9 @@ theorem write_ok {s : State} {B P : Addr} {Z Zp dN dX w : Nat} (hs : Scr s B Z) 
     rw [lm] at tout
     exact (jout.mono (by omega) (by omega)).trans (tout.mono (by omega) (by omega))
 
-/-- `zeroPre`: `pre`'s (`r3`) `2 w` words := 0. -/
+/-- `zeroPre`: `pre`'s (`r19`) `2 w` words := 0. -/
 theorem zeroPre_ok {s : State} {P : Addr} {Zp w : Nat} (hp : Scr s P Zp)
-    (h3 : s.gpr .r3 = off P 0) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 1 ≤ w)
+    (h19 : s.gpr .r19 = off P 0) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 1 ≤ w)
     (hw' : w < 2 ^ 31) (hP : 16 * w ≤ Zp) :
     WP isa zeroPre s fun t =>
       ((∀ i < 2 * w, word t.mem P (8 * i) = 0) ∧ Outside P 0 (16 * w) s.mem t.mem) ∧
@@ -132,10 +132,10 @@ theorem zeroPre_ok {s : State} {P : Addr} {Zp w : Nat} (hp : Scr s P Zp)
   have hnp := hp.nowrap
   unfold zeroPre
   refine WP.seq ?_
-  have hpre : WP isa (.block [.addi .r14 .r3 0]) s fun s₁ =>
+  have hpre : WP isa (.block [.addi .r14 .r19 0]) s fun s₁ =>
       (s₁.gpr .r14 = off P 0 ∧ s₁.mem = s.mem) ∧ Keep [.r14] s s₁ := by
     refine WP.keep _ ?_ (by decide)
-    prun [h3, BitVec.add_zero]
+    prun [h19, BitVec.add_zero]
   refine WP.mono hpre fun s₁ ⟨⟨i14, im⟩, k₁⟩ => ?_
   refine WP.seq (WP.mono (zeroWords_ok (hp.congr k₁.wr) i14 ((k₁.gpr _ (by decide)).trans h11) hw hw'
     (by omega)) fun s₂ ⟨⟨j14, jz, jout⟩, k₂⟩ => ?_)
