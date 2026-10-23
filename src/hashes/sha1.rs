@@ -14,6 +14,10 @@
 //! the same contracts and call `vg_sha1_compress_shani`. On AArch64, the
 //! `sha2` feature group enables the `_sha2` variants using SHA1C/P/M/H and
 //! SHA1SU0/SHA1SU1.
+//!
+//! On AArch64 and x86-64, `digest` calls `vg_sha1_digest` (or its variant
+//! for the same features, contract `VG.Spec.Sha1.digestContract`), which
+//! hashes the whole message in one call.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -35,6 +39,13 @@ use crate::arch::sha1::{
 };
 use crate::arch::sha1::{vg_sha1_finalize, vg_sha1_init, vg_sha1_update};
 
+#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+use crate::arch::sha1::vg_sha1_digest;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha1::vg_sha1_digest_sha2;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha1::vg_sha1_digest_shani;
+
 super::streaming_hash!(
     /// An incremental SHA-1 computation.
     Sha1 {
@@ -50,6 +61,13 @@ super::streaming_hash!(
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
                 (vg_sha1_update_shani, vg_sha1_finalize_shani),
+        },
+        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
+            Scalar => vg_sha1_digest,
+            #[cfg(target_arch = "aarch64")]
+            Sha2 => vg_sha1_digest_sha2,
+            #[cfg(target_arch = "x86_64")]
+            ShaNi => vg_sha1_digest_shani,
         },
     }
 );
