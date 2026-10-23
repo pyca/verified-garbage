@@ -66,7 +66,9 @@ theorem key_start {p : KeyPublic} {s : State} (h : KeyInput p s) :
   · rw [← h.2]
     exact k.gpr (by decide)
   · intro r hcal hne
-    exact k.gpr (by cases r <;> simp_all [calleeSaved])
+    exact k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hcal
+        rcases hcal with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact (hne rfl).elim | decide)
   · rw [hm]
     change word (writeController s.mem p.control (entryValues s)) p.control (8 * 4) = _
     rw [writeController_word _ _ _ (entryValues_bound s) 4 (by decide)]

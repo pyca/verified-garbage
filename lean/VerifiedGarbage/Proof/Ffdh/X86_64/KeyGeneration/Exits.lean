@@ -105,7 +105,9 @@ theorem key_terminal_live {p : KeyPublic} {original s : State} {used keys scalar
     (terminalValues_bound status) (by
       simp only [terminalValues, List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) hm k.2.1 k.2.2
-    (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved])) hh
+    (fun r hr => k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) hh
   exact ⟨ht, hm⟩
 
 theorem key_exhausted {p : KeyPublic} {original s : State} {used keys scalars : Nat}
@@ -184,7 +186,9 @@ theorem key_request_live {p : KeyPublic} {original s : State} {used keys scalars
     (requestValues_bound p) (by
       simp only [requestValues, List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl) <;> dsimp only <;> decide) hm k.2.1 k.2.2
-    (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved])) hh
+    (fun r hr => k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) hh
   exact ⟨ht, hm⟩
 
 theorem key_request {p : KeyPublic} {original s : State} {used keys scalars : Nat}
