@@ -33,30 +33,30 @@ theorem finalMask_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
         Spec.Rsa.exponentValid (val32 s.mem B kEv 2) = true then 1 else 0) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
   unfold finalMask seqs
-  refine WP.seq (WP.mono (withFlag_ok bit (by split <;> omega) (topBit_ok h))
+  refine WP.seq (WP.mono (withFlag_ok bit (by split <;> omega_arith) (topBit_ok h))
     fun u ⟨hu, Ou, Mu, Ku⟩ => ?_)
   have Pu : num u.mem B n aPa = num s.mem B n aPa := Ou.num (by simp) (by decide) (h.fit64 (by decide))
   refine WP.seq (WP.mono (withFlag_ok (by rw [Mu]; exact mask_bit _)
-    (show num u.mem B n aPa % 2 ≤ 1 by omega) (bitOf_ok hu (by decide) (by decide)))
+    (show num u.mem B n aPa % 2 ≤ 1 by omega_arith) (bitOf_ok hu (by decide) (by decide)))
     fun v ⟨hv, Ov, Mv, Kv⟩ => ?_)
   rw [Pu, Mu] at Mv
   have Fv := Ou.trans Ov
   have Qv : num v.mem B n aQa = num s.mem B n aQa := Fv.num (by simp) (by decide) (h.fit64 (by decide))
   refine WP.seq (WP.mono (withFlag_ok (by rw [Mv]; exact mask_bit _)
-    (show num v.mem B n aQa % 2 ≤ 1 by omega) (bitOf_ok hv (by decide) (by decide)))
+    (show num v.mem B n aQa % 2 ≤ 1 by omega_arith) (bitOf_ok hv (by decide) (by decide)))
     fun w ⟨hw, Ow, Mw, Kw⟩ => ?_)
   rw [Qv, Mv] at Mw
   have Fw := Fv.trans Ow
   have Ew : num w.mem B n aE = val32 s.mem B kEv 2 :=
     (Fw.num (by simp) (by decide) (h.fit64 (by decide))).trans loaded
   refine WP.seq (WP.mono (withFlag_ok (by rw [Mw]; exact mask_bit _)
-    (show num w.mem B n aE % 2 ≤ 1 by omega) (bitOf_ok hw (by decide) (by decide)))
+    (show num w.mem B n aE % 2 ≤ 1 by omega_arith) (bitOf_ok hw (by decide) (by decide)))
     fun a ⟨ha, Oa, Ma, Ka⟩ => ?_)
   rw [Ew, Mw] at Ma
   have Fa := Fw.trans Oa
   have Ea : val32 a.mem B kEv 2 = val32 s.mem B kEv 2 := maskFlag_preserves_e Fa
   refine WP.seq (WP.mono (withFlag_ok (by rw [Ma]; exact mask_bit _)
-    (by split <;> omega) (exponentUpper_ok ha)) fun b ⟨hb, Ob, Mb, Kb⟩ => ?_)
+    (by split <;> omega_arith) (exponentUpper_ok ha)) fun b ⟨hb, Ob, Mb, Kb⟩ => ?_)
   rw [Ea, Ma] at Mb
   have Fb := Fa.trans Ob
   have Eb : num b.mem B n aE = val32 s.mem B kEv 2 :=
@@ -67,6 +67,12 @@ theorem finalMask_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   refine ⟨ht, Fb.join Ot (js := [aT1, aT2]) (ds := [kFlag, kOk]), ?_,
     (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans ((Kw.mono (by decide)).trans
       ((Ka.mono (by decide)).trans ((Kb.mono (by decide)).trans Kt))))⟩
+  generalize slot s.mem B kOk = initialMask at Mt ⊢
+  generalize num s.mem B n aN = modulus at Mt ⊢
+  generalize num s.mem B n aPa = primeP at Mt ⊢
+  generalize num s.mem B n aQa = primeQ at Mt ⊢
+  generalize val32 s.mem B kEv 2 = exponent at Mt ⊢
+  generalize slot t.mem B kOk = finalMaskValue at Mt ⊢
   simpa only [mask_ite_one, Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq,
     and_assoc, and_comm, and_left_comm] using Mt
 
