@@ -47,14 +47,8 @@ fn ed25519_test() {
             // key for its order (RFC 8032 §5.1.7 requires no such check), so
             // it accepts them.
             Expectation::Acceptable => {
-                assert!(
-                    test.flags
-                        .iter()
-                        .all(|f| f == "SmallOrderPublicKey" || f == "MixedOrderPublicKey"),
-                    "tcId {}: {:?}",
-                    test.tc_id,
-                    test.flags
-                );
+                let order = |f: &String| f == "SmallOrderPublicKey" || f == "MixedOrderPublicKey";
+                assert!(test.flags.iter().all(order), "tcId {}", test.tc_id);
                 Ok(())
             }
             Expectation::Invalid => Err(Error::InvalidSignature),
