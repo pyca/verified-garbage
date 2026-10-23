@@ -101,18 +101,14 @@ section
 variable {hF : FnsOK F} {s₀ : State} (hp : Pre F hF.X s₀)
 include hp
 
-/-- The other `c - 1` steps, with `iterate`: `T = T_{k+1}`. -/
-theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
-    (hu : bytesAt s.mem (sA s₀ F.uO) F.H.D = u) (ht : bytesAt s.mem (sA s₀ F.tO) F.H.D = u)
-    (h3 : s.gpr .r3 = sA s₀ F.st0O) (h4 : s.gpr .r4 = sA s₀ F.uO) (h5 : s.gpr .r5 = s₀.gpr .r7 - 1)
-    (h6 : s.gpr .r6 = sA s₀ F.tO) (h7 : s.gpr .r7 = sA s₀ 48) :
-    WP isa F.callIt s fun t => Inv hF s₀ k t ∧
-      bytesAt t.mem (sA s₀ F.tO) F.H.D = Spec.Pbkdf2.iterate (prf hF s₀) (cc s₀ - 1) u u := by
+/-- `iterate`'s arguments. -/
+theorem b8_args {k : Nat} {s : State} (h : Inv hF s₀ k s)
+    (h3 : s.gpr .r3 = sA s₀ F.st0O) (h4 : s.gpr .r4 = sA s₀ F.uO) (h6 : s.gpr .r6 = sA s₀ F.tO)
+    (h7 : s.gpr .r7 = sA s₀ 48) : ItArgs F s (sA s₀ F.st0O) (sA s₀ F.uO) (sA s₀ F.tO) (sA s₀ 48) := by
   have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach
   have hWc := hz.Wc; have hSS := hz.S; have hD := hz.D; have hN := hz.N; have hB := hz.B
   have hbH := iterBytes F.H
   have hsp := sp_toNat hp
-  have hK := blockKey_length hF.hH (bytesAt s₀.mem (pw s₀) (pwl s₀))
   have bs := below48 hp h.kr (n := 96) (by omega)
   have pd : ∀ {a m b n : Nat}, a + m ≤ b ∨ b + n ≤ a → a + m ≤ F.bytes → b + n ≤ F.bytes →
       Region.Disjoint (sR s₀ a m) (sR s₀ b n) := fun h₁ h₂ h₃ => part_disj hb h₁ h₂ h₃
@@ -124,11 +120,11 @@ theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
   have cv' : ∀ o n, o + n ≤ F.bytes → ∃ r' ∈ s.rd ++ s.wr, ∃ off,
       (sR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + n ≤ r'.len := fun o n h' => by
     obtain ⟨r', hr', off, e, l⟩ := cv o n h'; exact ⟨r', List.mem_append_right _ hr', off, e, l⟩
-  refine it_call hF h3 h4 h6 h7 (by rw [h.kr.sp, hsp]; have := hp.sp; omega)
-    (pd (.inl (by omega)) (by omega) (by omega)) (pd (.inr (by rw [hbH]; omega)) (by omega) (by rw [hbH]; omega))
-    (pd (.inl (by omega)) (by omega) (by omega)) (pd (.inr (by rw [hbH]; omega)) (by omega) (by rw [hbH]; omega))
-    (pd (.inr (by rw [hbH]; omega)) (by omega) (by rw [hbH]; omega))
-    (bp (by omega)) (bp (by omega)) (bp (by omega)) (bp (by rw [hbH]; omega)) ?_ ?_ fun t a hi => ?_
+  refine ⟨h3, h4, h6, h7, by rw [h.kr.sp, hsp]; have := hp.sp; omega,
+    pd (.inl (by omega)) (by omega) (by omega), pd (.inr (by rw [hbH]; omega)) (by omega) (by rw [hbH]; omega),
+    pd (.inl (by omega)) (by omega) (by omega), pd (.inr (by rw [hbH]; omega)) (by omega) (by rw [hbH]; omega),
+    pd (.inr (by rw [hbH]; omega)) (by omega) (by rw [hbH]; omega),
+    bp (by omega), bp (by omega), bp (by omega), bp (by rw [hbH]; omega), ?_, ?_⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -141,15 +137,28 @@ theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
     rcases hr with rfl | rfl
     · exact cv F.tO F.H.D (by omega)
     · exact cv 48 _ (by rw [hbH]; omega)
-  · refine ⟨h.keep hp a.rd a.wr a.sp (fun r hr => a.cs r (by revert r; decide)) a.frame fun r hr => ?_, ?_⟩
-    · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact .inr (.inl ⟨_, _, rfl, by omega, by omega⟩)
-      · exact .inl ⟨_, _, rfl, Nat.le_refl _, by rw [hbH]; omega⟩
-      · exact .inr (.inr ⟨96, by rw [h.kr.sp], by omega⟩)
-    · have e1 : sA s₀ F.st0O + BitVec.ofNat 64 F.H.S = sA s₀ F.st1O := by
-        rw [← VG.Proof.Hmac.Stream.PPC64LE.add_off]; rfl
-      rw [hi (K0 hF s₀) hK h.st.1 (by rw [e1]; exact h.st.2), hu, ht, h5, lo_pred _ hp.c0]
+
+/-- The other `c - 1` steps, with `iterate`: `T = T_{k+1}`. -/
+theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
+    (hu : bytesAt s.mem (sA s₀ F.uO) F.H.D = u) (ht : bytesAt s.mem (sA s₀ F.tO) F.H.D = u)
+    (h3 : s.gpr .r3 = sA s₀ F.st0O) (h4 : s.gpr .r4 = sA s₀ F.uO) (h5 : s.gpr .r5 = s₀.gpr .r7 - 1)
+    (h6 : s.gpr .r6 = sA s₀ F.tO) (h7 : s.gpr .r7 = sA s₀ 48) :
+    WP isa F.callIt s fun t => Inv hF s₀ k t ∧
+      bytesAt t.mem (sA s₀ F.tO) F.H.D = Spec.Pbkdf2.iterate (prf hF s₀) (cc s₀ - 1) u u := by
+  have hz := sizes hF; have hl := layout (F := F)
+  have hWc := hz.Wc; have hSS := hz.S; have hD := hz.D
+  have hbH := iterBytes F.H
+  have hK := blockKey_length hF.hH (bytesAt s₀.mem (pw s₀) (pwl s₀))
+  refine it_call hF (b8_args hp h h3 h4 h6 h7) fun t a hi => ?_
+  refine ⟨h.keep hp a.rd a.wr a.sp (fun r hr => a.cs r (by revert r; decide)) a.frame fun r hr => ?_, ?_⟩
+  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact .inr (.inl ⟨_, _, rfl, by omega, by omega⟩)
+    · exact .inl ⟨_, _, rfl, Nat.le_refl _, by rw [hbH]; omega⟩
+    · exact .inr (.inr ⟨96, by rw [h.kr.sp], by omega⟩)
+  · have e1 : sA s₀ F.st0O + BitVec.ofNat 64 F.H.S = sA s₀ F.st1O := by
+      rw [← VG.Proof.Hmac.Stream.PPC64LE.add_off]; rfl
+    rw [hi (K0 hF s₀) hK h.st.1 (by rw [e1]; exact h.st.2), hu, ht, h5, lo_pred _ hp.c0]
 
 end
 

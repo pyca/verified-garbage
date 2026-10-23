@@ -202,7 +202,9 @@ section
 variable (hF : FnsOK F) {s₀ : State} (hp : Pre F hF.X s₀)
 include hF hp
 
-theorem hi_ok {s : State} (h : Pro F hF.X s₀ s) : WP isa F.callHi s (Keyed hF s₀) := by
+/-- HMAC's `init`'s arguments, after the prologue. -/
+theorem hi_args {s : State} (h : Pro F hF.X s₀ s) :
+    HiArgs hF s (sA s₀ F.st0O) (sA s₀ F.st1O) (pw s₀) (pwl s₀) := by
   have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach
   have hsp := sp_toNat hp
   have hX := hF.hX
@@ -210,12 +212,11 @@ theorem hi_ok {s : State} (h : Pro F hF.X s₀ s) : WP isa F.callHi s (Keyed hF 
     rw [h.kr.sp]; exact below_stk hp (by omega)
   have p0 : Region.Sub (sR s₀ F.st0O F.H.S) (scR F s₀) := part_sub (by omega)
   have p1 : Region.Sub (sR s₀ F.st1O F.H.S) (scR F s₀) := part_sub (by omega)
-  refine hi_call hF (inn := sA s₀ F.st0O) (ou := sA s₀ F.st1O) (k := pw s₀) (kl := pwl s₀) h.r3 h.r4 h.r5
-    (by rw [h.r6]) (by rw [h.kr.sp, hsp]; have := hp.sp; omega)
-    (part_disj hb (.inl (by omega)) (by omega) (by omega)) (hp.pw_s.sub_right p0).symm
-    (hp.pw_s.sub_right p1).symm (hp.b_s.sub_left bsub |>.sub_right p0) (hp.b_s.sub_left bsub |>.sub_right p1)
-    (hp.b_pw.sub_left bsub) (by rw [sA_toNat hp (by omega)]; have := hp.nsc; omega)
-    (by rw [sA_toNat hp (by omega)]; have := hp.nsc; omega) hp.npw ?_ ?_ fun s' a hI hO => ?_
+  refine ⟨h.r3, h.r4, h.r5, by rw [h.r6], by rw [h.kr.sp, hsp]; have := hp.sp; omega,
+    part_disj hb (.inl (by omega)) (by omega) (by omega), (hp.pw_s.sub_right p0).symm,
+    (hp.pw_s.sub_right p1).symm, hp.b_s.sub_left bsub |>.sub_right p0, hp.b_s.sub_left bsub |>.sub_right p1,
+    hp.b_pw.sub_left bsub, by rw [sA_toNat hp (by omega)]; have := hp.nsc; omega,
+    by rw [sA_toNat hp (by omega)]; have := hp.nsc; omega, hp.npw, ?_, ?_⟩
   · rw [h.kr.rd, h.kr.wr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -228,14 +229,19 @@ theorem hi_ok {s : State} (h : Pro F hF.X s₀ s) : WP isa F.callHi s (Keyed hF 
     rcases hr with rfl | rfl
     · exact ⟨scR F s₀, sc_wr hp h.kr.wr, F.st0O, rfl, by show F.st0O + F.H.S ≤ F.bytes; omega⟩
     · exact ⟨scR F s₀, sc_wr hp h.kr.wr, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.bytes; omega⟩
-  · have kr' := h.kr.call hp hb a.rd a.wr a.sp a.cs a.frame fun r hr => by
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact .inl ⟨_, _, rfl, by omega, by omega⟩
-      · exact .inl ⟨_, _, rfl, by omega, by omega⟩
-      · exact .inr ⟨_, by rw [h.kr.sp], by omega⟩
-    rw [h.kr.pwBytes hp] at hI hO
-    exact ⟨kr', by rw [a.cs _ (by decide), h.r23], by rw [a.cs _ (by decide), h.r24], hI, hO⟩
+
+theorem hi_ok {s : State} (h : Pro F hF.X s₀ s) : WP isa F.callHi s (Keyed hF s₀) := by
+  have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach
+  have hX := hF.hX
+  refine hi_call hF (hi_args hF hp h) fun s' a hI hO => ?_
+  have kr' := h.kr.call hp hb a.rd a.wr a.sp a.cs a.frame fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact .inl ⟨_, _, rfl, by omega, by omega⟩
+    · exact .inl ⟨_, _, rfl, by omega, by omega⟩
+    · exact .inr ⟨_, by rw [h.kr.sp], by omega⟩
+  rw [h.kr.pwBytes hp] at hI hO
+  exact ⟨kr', by rw [a.cs _ (by decide), h.r23], by rw [a.cs _ (by decide), h.r24], hI, hO⟩
 
 end
 
