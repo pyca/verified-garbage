@@ -702,12 +702,16 @@ static FNS_AESNI_PCLMUL_AVX_PREPARED: Fns = Backend::AesNiPclmulAvx
 
 impl Backend {
     /// The functions a key of this backend calls: on x86-64, its
-    /// `_prepared` instances if the CPU runs them (`Backend::prepared`).
-    fn fns(self) -> &'static Fns {
+    /// `_prepared` instances if a CPU with the features `f` runs them
+    /// (`Backend::prepared`).
+    fn fns(self, f: Features) -> &'static Fns {
+        // Elsewhere no backend has `_prepared` instances in `Fns`.
+        #[cfg(not(all(target_arch = "x86_64", feature = "alloc")))]
+        let _ = f;
         // `with` if the CPU runs this backend's `_prepared` instances.
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         let or_prepared = |plain: &'static Fns, with: &'static Fns| {
-            if self.prepared().is_some() {
+            if self.prepared(f).is_some() {
                 with
             } else {
                 plain
@@ -976,10 +980,10 @@ static PREPARED_AES_SHA3: Prepared = Prepared {
     feature = "alloc"
 ))]
 impl Backend {
-    /// Its `_prepared` instances, if it has them and the CPU has the
-    /// features of their key setup (which on x86-64 needs AVX2 beyond the
-    /// `_aesni_pclmul_avx` instances' features).
-    fn prepared(self) -> Option<&'static Prepared> {
+    /// Its `_prepared` instances, if it has them and a CPU with the features
+    /// `f` has those of their key setup (which on x86-64 needs AVX2 beyond
+    /// the `_aesni_pclmul_avx` instances' features).
+    fn prepared(self, f: Features) -> Option<&'static Prepared> {
         let p = match self {
             #[cfg(target_arch = "x86_64")]
             Backend::VaesVpclmulAvx512 => &PREPARED_VAES_VPCLMUL_AVX512,
@@ -1001,7 +1005,7 @@ impl Backend {
             | Backend::AesNiVpclmul => return None,
             Backend::Scalar => return None,
         };
-        detected().contains(p.features).then_some(p)
+        f.contains(p.features).then_some(p)
     }
 }
 
@@ -1073,9 +1077,9 @@ struct Powers {
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 impl Powers {
     /// No powers yet, for a key whose backend is `backend`.
-    fn new(backend: Backend) -> Self {
+    fn new(backend: Backend, f: Features) -> Self {
         Powers {
-            fns: backend.prepared(),
+            fns: backend.prepared(f),
             calls: AtomicU32::new(0),
             ctx: AtomicPtr::new(core::ptr::null_mut()),
         }
@@ -1297,13 +1301,15 @@ impl AesGcm {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(Error::InvalidKeyLength);
         }
-        let backend = select(detected());
+        // The features, read once: each read is a call.
+        let f = detected();
+        let backend = select(f);
         let mut k = AesGcm {
             ctx: [0; size_of::<KeyCtx>() / 8],
             rounds: key.len() / 4 + 6,
-            fns: backend.fns(),
+            fns: backend.fns(f),
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-            powers: Powers::new(backend),
+            powers: Powers::new(backend, f),
         };
         // Chosen from `backend` rather than read from `k.fns`: the load
         // before the call made `new` 1–4% slower on Neoverse N2.
@@ -2507,7 +2513,7 @@ mod tests {
         /// The same key, with `backend`'s instances.
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
-            k.fns = backend.fns();
+            k.fns = backend.fns(detected());
             // On x86-64, the powers `backend` computes, if the backend `new`
             // chose has no `_prepared` instances (VAES without VPCLMULQDQ
             // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs) or prepares
@@ -2525,7 +2531,7 @@ mod tests {
             }
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
             {
-                k.powers.fns = backend.prepared();
+                k.powers.fns = backend.prepared(detected());
             }
             k
         }
@@ -2756,7 +2762,7 @@ mod tests {
     #[test]
     fn prepared_boundaries() {
         for &b in PREPARED {
-            if !detected().contains(b.features()) || b.prepared().is_none() {
+            if !detected().contains(b.features()) || b.prepared(detected()).is_none() {
                 continue;
             }
             for key_len in [16, 24, 32] {
@@ -2857,7 +2863,7 @@ mod tests {
             let fresh = AesGcm::new(key).unwrap();
             assert_eq!(
                 fresh.fns.prepare.is_some(),
-                fresh.fns.backend.prepared().is_some()
+                fresh.fns.backend.prepared(detected()).is_some()
             );
             if fresh.fns.prepare.is_none() {
                 assert!(fresh.ctx[32..].iter().all(|&w| w == 0));
@@ -2865,7 +2871,7 @@ mod tests {
             let base = fresh.with_backend(Backend::Scalar);
             assert!(base.fns.prepare.is_none());
             for &b in PREPARED {
-                if !detected().contains(b.features()) || b.prepared().is_none() {
+                if !detected().contains(b.features()) || b.prepared(detected()).is_none() {
                     continue;
                 }
                 let k = AesGcm::new(key).unwrap().with_backend(b);
@@ -2875,7 +2881,7 @@ mod tests {
                 let mut want_powers = [0; 128];
                 want_powers[..32].copy_from_slice(base.key());
                 // SAFETY: as in `AesGcm::prepare`.
-                unsafe { (b.prepared().unwrap().prepare)(&mut want_powers) };
+                unsafe { (b.prepared(detected()).unwrap().prepare)(&mut want_powers) };
                 assert_eq!(k.ctx, want_powers);
                 for len in [0, 1, 15, 16, 17, 63, 64, 255, 256, 300, 512, 700] {
                     let mut want = msg;
@@ -2934,7 +2940,7 @@ mod tests {
             for &b in PREPARED {
                 // Without the backend's features (or those of its key setup with
                 // the powers), only what needs none of them.
-                if !detected().contains(b.features()) || b.prepared().is_none() {
+                if !detected().contains(b.features()) || b.prepared(detected()).is_none() {
                     continue;
                 }
                 let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap().with_backend(b);
@@ -3049,7 +3055,7 @@ mod tests {
         let nonce = [9u8; 13];
         let aad = [4u8; 17];
         for &b in PREPARED {
-            if !detected().contains(b.features()) || b.prepared().is_none() {
+            if !detected().contains(b.features()) || b.prepared(detected()).is_none() {
                 continue;
             }
             for key_len in [16, 24, 32] {
