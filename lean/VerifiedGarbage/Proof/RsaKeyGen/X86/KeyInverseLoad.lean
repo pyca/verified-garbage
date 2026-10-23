@@ -36,41 +36,41 @@ theorem inverseLoad_ok {s : State} {B : Addr} {Z n src mo : Nat}
   have moSep := L.modulus_outside
   have sepSource : arr n 0 = src ∨ arr n 0 + 4 * n ≤ src ∨ src + 4 * n ≤ arr n 0 := by
     simp only [arr, S, aM] at *
-    omega
+    omega_arith
   have sepModulus : arr n aM = mo ∨ arr n aM + 4 * n ≤ mo ∨ mo + 4 * n ≤ arr n aM := by
     simp only [arr, S, aM] at *
-    omega
+    omega_arith
   unfold inverseLoad seqs
   refine WP.seq (WP.mono (zero_arrays h (by decide)) fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
   have zeros (j : Nat) (hj : j < 15) : num u.mem B n j = 0 := by
     have H := zero j hj
     rw [val32_append] at H
     change val32 u.mem B (arr n j) n = 0
-    omega
+    omega_arith
   have source : val32 u.mem B src n = val32 s.mem B src n :=
-    Ou.val32 (by simp only [arr, S] at srcSep; omega) (by omega)
+    Ou.val32 (by simp only [arr, S] at srcSep; omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Div.copyWords_ok hu.workspace h.wpos srcBound
-    (by change arr n 0 + 4 * n ≤ Z; unfold S at f0; omega) sepSource)
+    (by change arr n 0 + 4 * n ≤ Z; unfold S at f0; omega_arith) sepSource)
     fun v ⟨Ov, input, Kv⟩ => ?_)
   change Outside B (arr n 0) (4 * n) u.mem v.mem at Ov
   change num v.mem B n 0 = val32 u.mem B src n at input
   have hv := hu.rest Kv
   have vKeep : Keep B n [0] [] u.mem v.mem :=
-    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ov) (by unfold S; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ov) (by unfold S; omega_arith) (by simp)
   have vFrame : Outside B hdr (4 * (15 * (n + 2))) s.mem v.mem :=
-    Ou.trans (Ov.mono (by change hdr ≤ arr n 0; unfold arr; omega)
-      (by change arr n 0 + 4 * n ≤ hdr + 4 * (15 * (n + 2)); unfold arr S; omega))
+    Ou.trans (Ov.mono (by change hdr ≤ arr n 0; unfold arr; omega_arith)
+      (by change arr n 0 + 4 * n ≤ hdr + 4 * (15 * (n + 2)); unfold arr S; omega_arith))
   have modulus : val32 v.mem B mo n = val32 s.mem B mo n :=
-    vFrame.val32 (by simp only [arr, S] at moSep; omega) (by omega)
+    vFrame.val32 (by simp only [arr, S] at moSep; omega_arith) (by omega_arith)
   refine WP.mono (VG.Proof.Rsa.X86.Div.copyWords_ok hv.workspace h.wpos moBound
-    (by change arr n aM + 4 * n ≤ Z; unfold S at fm; omega) sepModulus)
+    (by change arr n aM + 4 * n ≤ Z; unfold S at fm; omega_arith) sepModulus)
     fun t ⟨Ot, valueM, Kt⟩ => ?_
   change Outside B (arr n aM) (4 * n) v.mem t.mem at Ot
   change num t.mem B n aM = val32 v.mem B mo n at valueM
   have tKeep : Keep B n [aM] [] v.mem t.mem :=
-    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ot) (by unfold S; omega) (by simp)
-  refine ⟨hv.rest Kt, vFrame.trans (Ot.mono (by change hdr ≤ arr n aM; unfold arr; omega)
-    (by change arr n aM + 4 * n ≤ hdr + 4 * (15 * (n + 2)); unfold arr S aM; omega)), ?_, valueM.trans modulus, ?_,
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ot) (by unfold S; omega_arith) (by simp)
+  refine ⟨hv.rest Kt, vFrame.trans (Ot.mono (by change hdr ≤ arr n aM; unfold arr; omega_arith)
+    (by change arr n aM + 4 * n ≤ hdr + 4 * (15 * (n + 2)); unfold arr S aM; omega_arith)), ?_, valueM.trans modulus, ?_,
     (Ku.mono (by decide)).trans (Kv.trans Kt)⟩
   · rw [tKeep.num (by decide) (by simp) (h.fit64 (by decide)), input, source]
   · intro j hj j0 jm
