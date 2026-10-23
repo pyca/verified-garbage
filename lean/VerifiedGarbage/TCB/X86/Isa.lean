@@ -93,6 +93,39 @@ Modelling choices:
   live. No modelled instruction reads or writes the x87 registers
   otherwise; the MMX registers are caller-saved (the x87 registers are
   scratch registers in the ABI), and their values on entry are unknown.
+* MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
+  `pmuludq`, although on Intel's DOIT list, may take up to a cycle longer
+  to retire for specific data values unless MXCSR holds `0x1FBF` (Intel,
+  "MXCSR Configuration Dependent Timing", and its list of the instructions
+  affected, "MCDT Data Operand Independent Timing Instructions"; the
+  processors that enumerate `MCDT_NO`, CPUID.(EAX=7H,ECX=2):EDX[5], are not
+  affected). The leakage model does not see this, so `pmuludq` runs only
+  inside an *MCDT frame*, `frame (mcdtEnter r) body mcdtLeave`, and faults
+  outside one. The frame is a stack frame of 12 bytes around Intel's
+  mitigation: its push is `lea esp, [esp - 12]`, then the prologue,
+  `stmxcsr DWORD PTR [esp + 4]` (SDM Vol. 2, "STMXCSR": `m32 := MXCSR`),
+  `mov r, 0x1FBF`, `mov DWORD PTR [esp], r`, `ldmxcsr DWORD PTR [esp]`
+  (SDM Vol. 2, "LDMXCSR": `MXCSR := m32`; `0x1FBF` sets no reserved bit,
+  bits 31:16) and `lfence`; its pop is the epilogue, `lfence` and `ldmxcsr
+  DWORD PTR [esp + 4]`, then `lea esp, [esp + 12]`. `lfence` (SDM Vol. 2,
+  "LFENCE") has no architectural effect.
+
+  MXCSR is modelled by the number of open MCDT frames (`State.mcdt`) and
+  its value outside them (`State.mxcsr`), which no instruction changes:
+  inside one MXCSR holds `0x1FBF`, which no modelled instruction reads
+  (integer and `pmuludq` instructions raise no SIMD floating-point
+  exceptions). So the push saves `State.mxcsr` outside an MCDT frame and
+  `0x1FBF` inside one (frames may nest, as a callee may open one inside its
+  caller's), and the pop faults unless the word it loads into MXCSR is the
+  value that leaves it as it was before the push. A frame's region is 9
+  bytes (the two words at its bottom, and a byte of its padding): a length
+  that is no multiple of 4, unlike every other frame's, so no other pop
+  (`free`, `pop`, `emms`) can remove an MCDT frame, and `mcdtLeave` removes
+  no other frame. Every execution that returns therefore leaves MXCSR as it
+  was on entry (its control bits are callee-saved in the System V i386 ABI;
+  `abiPreserved` need not mention it, as with the x87 state of MMX frames),
+  and every `pmuludq` runs between Intel's prologue and epilogue.
+  `ci/check_mcdt.py` also checks this in the generated code.
 -/
 
 @[expose] public section
@@ -176,6 +209,16 @@ inductive Instr
   /-- The push of an MMX frame: no instruction; enters the frame (see
   `push`). -/
   | mmxEnter
+  /-- `pmuludq dst, src` (66 0F F4 /r, `pmuludq` in `TCB/X86/Sse.lean`); it
+  faults outside an MCDT frame. -/
+  | pmuludq (dst src : XReg)
+  /-- The push of an MCDT frame (see `push`): `lea esp, [esp - 12]`,
+  `stmxcsr DWORD PTR [esp + 4]`, `mov r, 0x1FBF`, `mov DWORD PTR [esp], r`,
+  `ldmxcsr DWORD PTR [esp]`, `lfence`. -/
+  | mcdtEnter (r : Reg)
+  /-- The pop of an MCDT frame (see `pop`): `lfence`, `ldmxcsr DWORD PTR
+  [esp + 4]`, `lea esp, [esp + 12]`. -/
+  | mcdtLeave
   /-- `emms` (NP 0F 77): the pop of an MMX frame (see `pop`). -/
   | emms
   deriving DecidableEq, Repr
@@ -301,8 +344,10 @@ def exec : Instr → State → Option State
   | .xop op, s => some (op.exec s)
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
+  | .pmuludq d r, s => if 0 < s.mcdt then some (s.setXmm d (pmuludq (s.xmm d) (s.xmm r))) else none
   -- Only the push and pop of a frame (`push`, `pop`).
-  | .symPush .., _ | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _ => none
+  | .symPush .., _ | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _
+  | .mcdtEnter _, _ | .mcdtLeave, _ => none
 
 def addrs : Instr → State → List Addr
   | .symPush .., s => [(s.gpr .esp - 4).setWidth 64, (s.gpr .esp - 4).setWidth 64]
@@ -316,7 +361,11 @@ def addrs : Instr → State → List Addr
   | .mul _, _ | .xop _, _ => []
   | .mop op, s => op.addrs s
   | .mmxStore m _, s => [s.ea m]
-  | .mmxEnter, _ | .emms, _ => []
+  | .mmxEnter, _ | .emms, _ | .pmuludq .., _ => []
+  -- `stmxcsr`, then the store and `ldmxcsr` of `0x1FBF`, below `esp`.
+  | .mcdtEnter _, s =>
+    [(s.gpr .esp - 8).setWidth 64, (s.gpr .esp - 12).setWidth 64, (s.gpr .esp - 12).setWidth 64]
+  | .mcdtLeave, s => [(s.gpr .esp + 4).setWidth 64]
   | .movdquLoad _ m, s | .movdquStore m _, s => [s.ea m]
   | .movqLoad _ m, s | .movqStore m _, s => [s.ea m]
   | .push rs, s => (List.range rs.length).map fun i =>
@@ -370,6 +419,9 @@ def popReg (s : State) (r : Reg) : Nat → State
     popReg ((s.setReg r (s.mem.readW ((s.gpr .esp).setWidth 64) 32)).setReg .esp
       (s.gpr .esp + 4)) r k
 
+/-- MXCSR with `n` MCDT frames open, its value outside them being `v`. -/
+def mcdtSaved (n : Nat) (v : BitVec 32) : BitVec 32 := if n = 0 then v else 0x1FBF
+
 /-- The push of a frame: `push r` for each `r` of `rs` (`pushRegs`). The
 `4 * rs.length` bytes it stores become a writable region, at the head of
 `wr`. Faults if `rs` is empty or contains `esp`, or if the frame would wrap
@@ -387,7 +439,17 @@ multiple of 4, or if the frame would wrap around the address space.
 
 Or the push of an MMX frame (`mmxEnter`, no instruction): a frame of no
 bytes (the empty region at `esp`, at the head of `wr`; `esp` and memory
-unchanged), which enters MMX mode (`State.mmx`), faulting inside one. -/
+unchanged), which enters MMX mode (`State.mmx`), faulting inside one.
+
+Or the push of an MCDT frame (`mcdtEnter r`, Intel's prologue): `lea esp,
+[esp - 12]` (as `alloc`), whose first 9 bytes become a writable region, at
+the head of `wr`; `stmxcsr` stores MXCSR to the word at `esp + 4`: the
+value outside MCDT frames (`State.mxcsr`) if none is open, `0x1FBF`
+otherwise; `mov` sets `r` to `0x1FBF` and stores it to the word at `esp`,
+which `ldmxcsr` loads into MXCSR; `lfence` has no architectural effect. It
+opens an MCDT frame (`State.mcdt`), faulting if `r` is `esp` or if the
+frame would wrap around the address space; no flags are affected (SDM Vol.
+2, "LEA", "STMXCSR", "MOV", "LDMXCSR", "LFENCE"). -/
 def push : Instr → State → Option State
   -- Intel SDM Vol. 2, CALL (near, rel32), MOV (r32, r/m32), and ADD
   -- (r32, imm32). CALL pushes the next EIP; MOV reads it; ADD adds the
@@ -408,6 +470,14 @@ def push : Instr → State → Option State
     else none
   | .mmxEnter, s =>
     if s.mmx then none else some { s with mmx := true, wr := ⟨(s.gpr .esp).setWidth 64, 0⟩ :: s.wr }
+  | .mcdtEnter r, s =>
+    if r ≠ .esp ∧ 12 ≤ (s.gpr .esp).toNat then
+      let sp := s.gpr .esp - 12
+      some { (s.setReg .esp sp).setReg r 0x1FBF with
+        mem := (s.mem.writeW ((s.gpr .esp - 8).setWidth 64) (mcdtSaved s.mcdt s.mxcsr)).writeW
+          (sp.setWidth 64) (0x1FBF : BitVec 32)
+        mcdt := s.mcdt + 1, wr := ⟨sp.setWidth 64, 9⟩ :: s.wr }
+    else none
   | .alloc bytes, s =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0 ∧ bytes ≤ (s.gpr .esp).toNat then
       let sp := s.gpr .esp - BitVec.ofNat 32 bytes
@@ -435,12 +505,27 @@ Or `emms`, the pop of an MMX frame: SDM Vol. 2, "EMMS": `x87FPUTagWord :=
 FFFFH` (the x87 stack empty); "Flags Affected: None". It leaves the frame,
 faulting unless the code is in one and `esp` and the writable regions are
 those the push left (`s₁`) with the empty frame at their head, which it
-removes; it changes no register or memory. -/
+removes; it changes no register or memory.
+
+Or `mcdtLeave`, the pop of an MCDT frame (Intel's epilogue): `lfence`, no
+architectural effect, then `ldmxcsr DWORD PTR [esp + 4]` (SDM Vol. 2,
+"LDMXCSR": `MXCSR := m32`), then `lea esp, [esp + 12]` (as `free`). It
+closes the frame, faulting unless one is open, `esp` and the writable
+regions are those the push left (`s₁`) with the frame's region of 9 bytes
+at their head, which it removes, and the word at `esp + 4` is the value
+MXCSR had before the push (`mcdtSaved`); it changes no other register, no
+memory and no flags (SDM Vol. 2, "LDMXCSR", "LFENCE", "LEA"). -/
 def pop : Instr → State → State → Option State
   | .emms, s₁, s₂ =>
     if s₂.mmx ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 0⟩ then
       some { s₂ with mmx := false, wr := s₂.wr.tail }
+    else none
+  | .mcdtLeave, s₁, s₂ =>
+    if 0 < s₂.mcdt ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
+        s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 9⟩ ∧
+        s₂.mem.readW ((s₂.gpr .esp + 4).setWidth 64) 32 = mcdtSaved (s₂.mcdt - 1) s₂.mxcsr then
+      some { s₂.setReg .esp (s₂.gpr .esp + 12) with mcdt := s₂.mcdt - 1, wr := s₂.wr.tail }
     else none
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0 ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
@@ -458,20 +543,21 @@ def pop : Instr → State → State → Option State
 a frame also moves `esp`, as the push does): `mul` writes two, `eax` and
 `edx`, and stores none. -/
 def Instr.dst : Instr → Option Reg
-  | .symPush d _ => some d
+  | .symPush d _ | .mcdtEnter d => some d
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
   | .movqLoad .. | .movqStore .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .alloc _ | .free _ => none
+  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave => none
 
 /-- Intel SDM Vol. 2's "CPUID Feature Flag" column: PSHUFB/PALIGNR need
 SSSE3, SHA256MSG1/MSG2/RNDS2 and SHA1MSG1/MSG2/NEXTE/RNDS4 need SHA,
 AESENC/AESENCLAST/AESDEC/AESDECLAST/AESIMC/AESKEYGENASSIST need AES
 (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`, `66 0F 38 DF /r`,
 `66 0F 38 DB /r`, `66 0F 3A DF /r ib`), and PCLMULQDQ needs PCLMULQDQ.
-The remaining legacy instructions (among them PADDQ, PSHUFLW, PSHUFHW and
-MOVQ) are SSE2, and the MMX instructions MMX or SSE2, all already in this
-target's i686 baseline. -/
+The remaining legacy instructions (among them PADDQ, PMULUDQ, PSHUFLW,
+PSHUFHW, MOVQ and LFENCE) are SSE2, STMXCSR and LDMXCSR are SSE, and the
+MMX instructions MMX or SSE2, all already in this target's i686
+baseline. -/
 def Instr.requires : Instr → List String
   | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..)

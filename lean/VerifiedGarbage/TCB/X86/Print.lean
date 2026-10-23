@@ -126,6 +126,11 @@ def Instr.asm : Instr → List String
   -- The push of an MMX frame is no instruction.
   | .mmxEnter => []
   | .emms => ["emms"]
+  | .pmuludq d r => [s!"pmuludq {d.name}, {r.name}"]
+  -- Intel's MCDT prologue and epilogue, as `ci/check_mcdt.py` checks them.
+  | .mcdtEnter r => ["lea esp, [esp-12]", "stmxcsr DWORD PTR [esp+4]", s!"mov {r.name}, 8127",
+      s!"mov DWORD PTR [esp], {r.name}", "ldmxcsr DWORD PTR [esp]", "lfence"]
+  | .mcdtLeave => ["lfence", "ldmxcsr DWORD PTR [esp+4]", "lea esp, [esp+12]"]
 
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"

@@ -225,6 +225,15 @@ the XOR, over the bits `j` of `a` that are 1, of `b` shifted left by `j`. -/
 def clmul (a b : BitVec 64) : BitVec 128 :=
   (List.range 64).foldl (fun acc j => if a.getLsbD j then acc ^^^ (b.setWidth 128 <<< j) else acc) 0
 
+/-- SDM Vol. 2, "PMULUDQ—Multiply Packed Unsigned Doubleword Integers",
+128-bit legacy SSE version (`66 0F F4 /r`): `DEST[63:0] := DEST[31:0] *
+SRC[31:0]; DEST[127:64] := DEST[95:64] * SRC[95:64]` (unsigned, the full
+64-bit products). It is an `Instr` of its own, not an `XOp`, as it runs
+only inside an MCDT frame (`TCB/X86/Isa.lean`). -/
+def pmuludq (a b : BitVec 128) : BitVec 128 :=
+  ((dword a 2).setWidth 64 * (dword b 2).setWidth 64) ++
+    ((dword a 0).setWidth 64 * (dword b 0).setWidth 64)
+
 /-- SDM Vol. 2, named legacy register forms: MOVDQA copies all 128 bits;
 PADDD wraps independently in four doublewords; PXOR/POR/PAND/PANDN are
 bitwise (PANDN complements the old destination); PUNPCK interleaves the
