@@ -19,7 +19,9 @@ namespace VG.Proof.AesGcm.PPC64LE
 
 open VG VG.PPC64LE
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (StreamRepr KeyRepr ctxH)
+open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0)
+
+abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 12 ∨ r.toNat = 14
 
 /-- `vg_aes_gcm_init(key = r3, key_len = r4, ctx = r5, scratch = r6)`. -/
 def initPPC64LE : Contract isa where
@@ -68,5 +70,50 @@ def streamAadPPC64LE : Contract isa where
       (a ++ bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat) []
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.sp = s₂.sp
+
+/-- What `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` need:
+`(ctx = r3, rounds = r4, state = r5, aad_len = r6, text_len = r7, data = r8, len = r9,
+scratch = r10)`. -/
+def streamCryptPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .r3, 256⟩
+  let st : Region := ⟨s.gpr .r5, 80⟩
+  let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
+  let scr : Region := ⟨s.gpr .r10, 2560⟩
+  s.rd = [ctx] ∧ s.wr = [st, data, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
+    st.Disjoint data ∧ st.Disjoint scr ∧ data.Disjoint scr ∧
+    (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 2560 ≤ 2 ^ 64 ∧
+    rounds (s.gpr .r4)
+
+def streamCryptPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp
+
+/-- `vg_aes_gcm_stream_encrypt`. -/
+def streamEncryptPPC64LE : Contract isa where
+  pre := streamCryptPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat
+    let h := ctxH s.mem (s.gpr .r3)
+    ∀ iv a p, StreamRepr s.mem (s.gpr .r5) ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
+      s.gpr .r6 = BitVec.ofNat 64 a.length → (s.gpr .r7).toNat = p.length →
+      let c := gctr ciph (inc32 (j0 h iv)) (p ++ bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+      StreamRepr s'.mem (s.gpr .r5) ciph h iv a c ∧ bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat = c.drop p.length
+  pub := streamCryptPub
+
+/-- `vg_aes_gcm_stream_decrypt`. -/
+def streamDecryptPPC64LE : Contract isa where
+  pre := streamCryptPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat
+    let h := ctxH s.mem (s.gpr .r3)
+    ∀ iv a c, StreamRepr s.mem (s.gpr .r5) ciph h iv a c →
+      s.gpr .r6 = BitVec.ofNat 64 a.length → (s.gpr .r7).toNat = c.length →
+      let c' := c ++ bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat
+      StreamRepr s'.mem (s.gpr .r5) ciph h iv a c' ∧
+        bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
+  pub := streamCryptPub
 
 end VG.Proof.AesGcm.PPC64LE

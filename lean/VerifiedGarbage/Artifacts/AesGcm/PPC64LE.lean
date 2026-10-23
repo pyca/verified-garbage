@@ -25,6 +25,9 @@ def initNote : String := "This implementation calls `vg_aes_expand_key_scratch` 
 /-- How `stream_init` and `stream_aad` are built. -/
 def ghashNote : String := "This implementation calls `vg_ghash` for GHASH."
 
+/-- How the other functions are built. -/
+def callNote : String := "This implementation calls `vg_aes_ctr32` for the block cipher and `vg_ghash` for GHASH."
+
 def artifacts : List Artifact := [
   Spec.Gcm.initApi.artifact PPC64LE.target {
     notes := [initNote]
@@ -40,6 +43,16 @@ def artifacts : List Artifact := [
     notes := [ghashNote]
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 Impl.AesGcm.PPC64LE.streamAad
     stack := 2592
-    verified := streamAad_framed }]
+    verified := streamAad_framed },
+  Spec.Gcm.streamEncryptApi.artifact PPC64LE.target {
+    notes := [callNote]
+    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
+    stack := 2592
+    verified := streamEncrypt_framed },
+  Spec.Gcm.streamDecryptApi.artifact PPC64LE.target {
+    notes := [callNote]
+    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
+    stack := 2592
+    verified := streamDecrypt_framed }]
 
 end VG.Artifacts.AesGcm.PPC64LE

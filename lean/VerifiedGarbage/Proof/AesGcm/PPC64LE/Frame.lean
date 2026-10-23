@@ -90,4 +90,36 @@ theorem streamAad_framed :
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamAadPost_local _)
     streamAadFrameSat_pre
 
+/-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt` and
+`vg_aes_gcm_stream_decrypt`, without the working space. -/
+def streamCryptFrameSat : State := { streamCryptSat with wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
+
+theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract PPC64LE.abi 2592).pre s := by
+  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Spec.Gcm.streamEncryptPost, PPC64LE.abi, PPC64LE.argRegs] [streamCryptFrameSat, streamCryptSat]
+    using streamCryptFrameSat
+
+theorem streamEncrypt_framed :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamEncrypt)
+      (Spec.Gcm.streamEncryptContract PPC64LE.abi 2592) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
+    (post := Spec.Gcm.streamEncryptPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 2592) streamEncrypt_verified (by decide) (by decide)
+    (Proof.AesGcm.streamTextPre_local _) (Proof.AesGcm.streamEncryptPost_local _) streamEncryptFrameSat_pre
+
+theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract PPC64LE.abi 2592).pre s := by
+  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Spec.Gcm.streamDecryptPost, PPC64LE.abi, PPC64LE.argRegs] [streamCryptFrameSat, streamCryptSat]
+    using streamCryptFrameSat
+
+theorem streamDecrypt_framed :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamDecrypt)
+      (Spec.Gcm.streamDecryptContract PPC64LE.abi 2592) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
+    (post := Spec.Gcm.streamDecryptPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 2592) streamDecrypt_verified (by decide) (by decide)
+    (Proof.AesGcm.streamTextPre_local _) (Proof.AesGcm.streamDecryptPost_local _) streamDecryptFrameSat_pre
+
 end VG.Proof.AesGcm.PPC64LE
