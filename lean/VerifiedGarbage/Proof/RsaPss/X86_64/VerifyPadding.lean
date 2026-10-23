@@ -204,17 +204,17 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
       (by rw [h17, hk, BitVec.ofNat_toNat, BitVec.setWidth_eq])
       h23 h24 (by rw [h25])
       (by rw [h26])
-      (by rw [h35]) hlo (by omega) (by omega) hk2))
+      (by rw [h35]) hlo (by omega_arith) (by omega_arith) hk2))
     fun u4 ⟨⟨L4, rd4, wr4, cs4, V3, W3, R3, h33, h34, h27, hW3, hV3, hO3⟩, f4⟩ => ?_)
   have hM4 := vframe_keep hp hw L3.rsp hM3 f4
   -- `DB` as the specification's.
   have hm1 : (List.range db).map (fun i => V1 (oEm + lo + i)) = (x.drop lo).take db :=
-    map_range_drop (by omega) fun i hi => by rw [Nat.add_assoc, hV1 _ (by omega)]
+    map_range_drop (by omega_arith) fun i hi => by rw [Nat.add_assoc, hV1 _ (by omega_arith)]
   have hm2 : (List.range H.D).map (fun i => V1 (oEm + lo + db + i)) = vH lk.G (x.drop lo) db := by
-    have hl : db + H.D ≤ (x.drop lo).length := by rw [List.length_drop, hxl]; omega
+    have hl : db + H.D ≤ (x.drop lo).length := by rw [List.length_drop, hxl]; omega_arith
     have h := map_range_drop (x := x.drop lo) (lo := db) (n := H.D) (f := fun i => V1 (oEm + lo + db + i)) hl
       (fun i hi => by
-        rw [show oEm + lo + db + i = oEm + (lo + (db + i)) by omega, hV1 _ (by omega)]
+        rw [show oEm + lo + db + i = oEm + (lo + (db + i)) by omega_arith, hV1 _ (by omega_arith)]
         simp only [List.getD_eq_getElem?_getD, List.getElem?_drop])
     rw [h, vH, hD]
   rw [hm1, hm2] at h33 hV3
@@ -229,21 +229,21 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     rw [hW3 37 (by decide) (.inr (by decide)), h37]
   set posF := if (fixed && decide ((W1 36).toNat < db)) = true then db - (W1 36).toNat - 1
     else if lz dbL < db then lz dbL else 0 with hposF
-  have hpd : posF < db := by rw [hposF]; split <;> [omega; split <;> omega]
+  have hpd : posF < db := by rw [hposF]; split <;> [omega_arith; split <;> omega_arith]
   have hrd4 : u4.rd = s.rd := by rw [rd4, hrd]
   have hwr4 : u4.wr = frR s :: s.wr := by rw [wr4, hw]
   have wDg := hp.wDg
   -- The salt, its hash, and the comparison.
   refine WP.mono (WP.keepIn (saltBack_safe hH K) (by rw [saltBack_xd K])
     (saltBack_ok hH K lk L4 R3 (lo := lo) (db := db) (pos := posF) (dig := s.gpr .r8)
-      h23' h24' h34 h27 h37' hlo (by omega) hpd (by omega)
+      h23' h24' h34 h27 h37' hlo (by omega_arith) hpd (by omega_arith)
       (fun i hi => by
         rw [hrd4]
         exact hp.hrd.left _ _ ⟨⟨s.gpr .r8, lk.G.len⟩, by simp,
-          Offset.contains_base _ (by omega) (by omega)⟩)
+          Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
       (fun i hi => by
         have := hp.outside lk.G hp.ddgs hp.dKdg (a := s.gpr .r8 + BitVec.ofNat 64 i)
-          (Offset.contains_base _ (by omega) (by omega))
+          (Offset.contains_base _ (by omega_arith) (by omega_arith))
         rwa [← hwr4] at this)
       (fun hany hacc => by
         have hfixed : fixed = true := by
@@ -254,14 +254,14 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
         by_cases hff : (fixed && decide ((W1 36).toNat < db)) = true
         · have hlt : (W1 36).toNat < db := by simpa [hfixed] using hff
           have hpF : posF = db - (W1 36).toNat - 1 := by rw [hposF, ifp hff]
-          rw [hpF, show db - (db - (W1 36).toNat - 1) - 1 = (W1 36).toNat by omega]
+          rw [hpF, show db - (db - (W1 36).toNat - 1) - 1 = (W1 36).toNat by omega_arith]
           simp
         · rw [ifn hff] at hacc
           exact (hacc.2.2.2 hfixed).symm)))
     fun u5 ⟨⟨L5, rd5, wr5, cs5, ⟨V5, W5, R5, hW5⟩, hax5⟩, f5⟩ => ?_
   have g3 : ∀ j, j < nW → 34 < j → W3 j = W1 j := fun j hj h => hW3 j hj (.inr h)
   have g5 : ∀ j, j < nW → 34 < j → j ≠ 44 → j ≠ 45 → j ≠ 46 → W5 j = W1 j := fun j hj h a b c =>
-    (hW5 j hj (by omega) (by omega) (by omega) (by omega) a b c).trans (g3 j hj h)
+    (hW5 j hj (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) a b c).trans (g3 j hj h)
   refine ⟨L5, by rw [wr5, hwr4], fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · have hr' : r ∈ [Reg.r13, .r14, .r15, .rsp] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp
@@ -271,25 +271,25 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
   · rw [R5.rd (d := sR12) 43 rfl (by decide), g5 43 (by decide) (by decide) (by decide) (by decide) (by decide), h43]
   -- The result.
   have hmsg1 : (List.range H.D).map (bytesF u4.mem (s.gpr .r8)) = Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len := by
-    rw [hD]; exact bytesAt_frame hM4 (vin_apart hp.dKdg hp.ddgs) (by omega)
+    rw [hD]; exact bytesAt_frame hM4 (vin_apart hp.dKdg hp.ddgs) (by omega_arith)
   have hdbl : dbL.length = db := by
-    rw [hdbL, vDb, clearTop_length, Proof.Mgf1.xorBytes_length, Proof.Mgf1.mgf1_length hG]; simp; omega
+    rw [hdbL, vDb, clearTop_length, Proof.Mgf1.xorBytes_length, Proof.Mgf1.mgf1_length hG]; simp; omega_arith
   have hmsg2 : (List.range db).map (fun i => V3 (oEm + lo + i)) = dbL :=
     (eq_range_map hdbl (fun i hi => (hV3 i hi).symm)).symm
   have hHb : ∀ i < H.D, V3 (oEm + lo + db + i) = (vH lk.G (x.drop lo) db).getD i 0 := fun i hi => by
-    rw [hO3 _ (by omega) ⟨by unfold oLen; omega, by unfold oY; omega⟩ (by omega),
-      show oEm + lo + db + i = oEm + (lo + (db + i)) by omega, hV1 _ (by omega)]
-    simp only [vH, List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop, ifp (show i < lk.G.len by omega)]
+    rw [hO3 _ (by omega_arith) ⟨by unfold oLen; omega_arith, by unfold oY; omega_arith⟩ (by omega_arith),
+      show oEm + lo + db + i = oEm + (lo + (db + i)) by omega_arith, hV1 _ (by omega_arith)]
+    simp only [vH, List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop, ifp (show i < lk.G.len by omega_arith)]
   have hV := vlogic lk.G hG x (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (z := z) fixed (stackArg s 1) hsl hxl hlo
-    (by omega) hk2
+    (by omega_arith) hk2
   simp only [← hdb, ← hdbL] at hV
   rw [hax5, hmsg1, hmsg2]
   refine ite_setWidth ((Iff.trans ?_ hV).trans hspec.symm)
   have e0 : acc0V (V1 (oEm + k - 1)) (V1 oEm) (V1 (oEm + lo)) ((0xFF : Byte) >>> z) lo =
       acc0V (x.getD (k - 1) 0) (x.getD 0 0) (x.getD lo 0) ((0xFF : Byte) >>> z) lo := by
-    have h0 := hV1 0 (by omega)
+    have h0 := hV1 0 (by omega_arith)
     rw [Nat.add_zero] at h0
-    rw [hV1 lo (by omega), show oEm + k - 1 = oEm + (k - 1) by omega, hV1 _ (by omega), h0]
+    rw [hV1 lo (by omega_arith), show oEm + k - 1 = oEm + (k - 1) by omega_arith, hV1 _ (by omega_arith), h0]
   have hHC : ∀ q, (∀ i < H.D, (lk.G.hash (Spec.RsaPss.zeros 8 ++ Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len ++
       dbL.drop (q + 1))).getD i 0 = V3 (oEm + lo + db + i)) ↔
       (∀ i < lk.G.len, (lk.G.hash (Spec.RsaPss.zeros 8 ++ Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len ++
@@ -305,7 +305,7 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     have hsl64 : BitVec.ofNat 64 (W1 36).toNat = W1 36 := by simp
     constructor
     · rintro ⟨⟨ha, hl, h1, hsl'⟩, hh⟩
-      have hlz : lz dbL = db - (W1 36).toNat - 1 := by omega
+      have hlz : lz dbL = db - (W1 36).toNat - 1 := by omega_arith
       refine ⟨⟨ha, by rw [ifp hl]; exact h1, decide_eq_true hl, fun _ => ?_⟩, ?_⟩
       · rw [ifp hl, hsl', hsl64]
       · rw [ifp hl, hlz]; exact (hHC _).mp hh
@@ -314,8 +314,8 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
       rw [ifp hl] at h1 hsl' hh
       have hsl'' : db - lz dbL - 1 = (W1 36).toNat := by
         have := congrArg BitVec.toNat (hsl' hfx)
-        rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      have hlz : lz dbL = db - (W1 36).toNat - 1 := by omega
+        rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+      have hlz : lz dbL = db - (W1 36).toNat - 1 := by omega_arith
       exact ⟨⟨ha, hl, h1, hsl''⟩, by rw [← hlz]; exact (hHC _).mpr hh⟩
   · have hpF : posF = if lz dbL < db then lz dbL else 0 := by rw [hposF, ifn hff]
     rw [ifn hff, hpF]

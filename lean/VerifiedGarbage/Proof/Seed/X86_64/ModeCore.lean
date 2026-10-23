@@ -206,24 +206,24 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
   have hrdx : (s₇.gpr .rdx).toNat = 16 := by rw [rdx₇]; rfl
   have scr₇ : scratchR s₇ = ⟨B, 8 * scratchSlots⟩ := by simp only [scratchR, r9₇]
   have inScr : ∀ t n, t + n ≤ 1504 → InRegions s₇.wr (B + BitVec.ofNat 64 t) n := fun t n h =>
-    ⟨_, by rw [wr₇']; exact hw, Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, by rw [wr₇']; exact hw, Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   have hbuf : 8 * bufSlot = 1056 := rfl
   have hsch : 8 * schedSlot = 1312 := rfl
   have hpre : BatchPre d s₇ := by
     refine ⟨room₇, masks₇, by rw [hrdx]; decide, fun b hb w hw' => ?_, ?_, fun j hj => ?_, fun j hj => ?_⟩
     · rw [hrdx] at hb
       rw [rsi₇, bufAt, Offset.add_add, hbuf]
-      exact inScr _ _ (by omega)
+      exact inScr _ _ (by omega_arith)
     · rw [rsi₇, hrdx, scr₇, bufAt, hbuf]; exact Offset.disjoint_base B (by decide) (by decide)
     · rw [rdi₇, kp_start _ _ hj, schedAddr, Offset.add_add, scr₇, hsch]
       have := keyOff_le d hj
-      refine ⟨Modes.X86_64.inRd (inScr (1312 + keyOff d j) 4 (by omega)), ?_,
-        Offset.disjoint_base B (by unfold scratchSlots; omega) (by omega)⟩
+      refine ⟨Modes.X86_64.inRd (inScr (1312 + keyOff d j) 4 (by omega_arith)), ?_,
+        Offset.disjoint_base B (by unfold scratchSlots; omega_arith) (by omega_arith)⟩
       rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_add]
-      exact Modes.X86_64.inRd (inScr (1312 + keyOff d j + 4) 4 (by omega))
+      exact Modes.X86_64.inRd (inScr (1312 + keyOff d j + 4) 4 (by omega_arith))
     · rw [rdi₇, kp_start _ _ hj, schedAddr, Offset.add_add, rsi₇, hrdx, bufAt, hbuf, hsch]
       have := keyOff_le d hj
-      exact Offset.disjoint B (.inr (by omega)) (by omega) (by omega)
+      exact Offset.disjoint B (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   refine WP.seq (WP.of_runBlock ⟨s₇, ?_, ?_⟩)
   · show runBlock isa ([.xop (.movq .xmm13 .r12)] ++ ([.xop (.movq .xmm14 .r13)] ++
       ([Impl.Aes.X86_64.movR .rsi sb] ++ ([.alu .add .rsi (.imm (BitVec.ofNat 32 (8 * bufSlot)))] ++
@@ -273,7 +273,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
     have ea : blkAddr (dirCore d) B j = bufAt B + BitVec.ofNat 64 (16 * j) := by
       rw [blkAddr, bufAt, Offset.add_add]; simp only [dirCore, bufSlot, scratchSlots]
     rw [dirCore_bw, show 8 * 2 = 16 from rfl, ea, dirCipher_bytes, bytesAt_eq, m₉,
-      qdone j (by omega), rdi₇, crypt_keysAt, mem₇, hr.1]
+      qdone j (by omega_arith), rdi₇, crypt_keysAt, mem₇, hr.1]
 
 /-- SEED's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Direction) : BlockSpec (dirCore d) where

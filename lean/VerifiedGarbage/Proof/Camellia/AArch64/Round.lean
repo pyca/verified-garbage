@@ -92,27 +92,27 @@ theorem round_ok {off d : Nat}
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
-      exact ⟨by omega, by simp [W₁, hi]⟩)
+      exact ⟨by omega_arith, by simp [W₁, hi]⟩)
     (fun j i hji => by
       simp only [halvesIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨j, hj, rfl, rfl⟩ := hji
-      refine ⟨by simp [layerCfg, d1Slot, keySlot]; omega, by omega, ?_⟩
-      simp [W₁, show ¬ 24 + j < 8 by omega, show ¬ 24 + j < 24 by omega]; rfl)
+      refine ⟨by simp [layerCfg, d1Slot, keySlot]; omega_arith, by omega_arith, ?_⟩
+      simp [W₁, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl)
     (fun kv hkv => ⟨by simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
         simp [layerCfg, keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot], hm kv hkv⟩)
     (fun j hj => by
       simp only [layerCfg] at hj
-      exact ⟨by omega, by simp [W₁, show ¬ 8 + j < 8 by omega, show 8 + j < 24 by omega]; rfl⟩)
+      exact ⟨by omega_arith, by simp [W₁, show ¬ 8 + j < 8 by omega_arith, show 8 + j < 24 by omega_arith]; rfl⟩)
   have hX : ∀ j < 8, ∀ p < 64, (Qs s₁ j).getLsbD p =
       ((Qs s (inSrc (p / 8) j)).getLsbD p ^^ (keyW s (off + inSrc (p / 8) j)).getLsbD p) := by
     intro j hj p hp
-    have hi : inSrc (p / 8) j < 8 := by simp only [inSrc]; split <;> omega
+    have hi : inSrc (p / 8) j < 8 := by simp only [inSrc]; split <;> omega_arith
     have := x₁ (q j) (keyInG off j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp
     rw [this, keyInG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false,
       bitOf_word _ _ _ hp, bitOf_word _ _ _ hp]
-    simp [W₁, hi, show ¬ 8 + off + inSrc (p / 8) j < 8 by omega,
-      show 8 + off + inSrc (p / 8) j < 24 by rcases hoff with h | h <;> subst h <;> omega,
-      show 8 + off + inSrc (p / 8) j - 8 = off + inSrc (p / 8) j by omega]
+    simp [W₁, hi, show ¬ 8 + off + inSrc (p / 8) j < 8 by omega_arith,
+      show 8 + off + inSrc (p / 8) j < 24 by rcases hoff with h | h <;> subst h <;> omega_arith,
+      show 8 + off + inSrc (p / 8) j - 8 = off + inSrc (p / 8) j by omega_arith]
   have hok₁ : Ok layerCfg s₁ := hok.congr (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) rd₁ wr₁
   have hm₁ : MasksOk s₁ := fun kv hkv => by
     have hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
@@ -125,7 +125,7 @@ theorem round_ok {off d : Nat}
     have hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
     have := k₁ (d1Slot + j) (List.mem_append_right _ (by
       simp only [halvesIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
-      (by simp [layerCfg, keySlot, d1Slot]; omega)
+      (by simp [layerCfg, keySlot, d1Slot]; omega_arith)
     simp only [layerCfg] at this
     rw [slotW, hb, this]
   -- The S-box.
@@ -135,7 +135,7 @@ theorem round_ok {off d : Nat}
   have hok₂ : Ok layerCfg s₂ := hok₁.congr (o₂ sb (by decide)) (o₂ kp (by decide)) rd₂ wr₂
   have above₂ : ∀ k, 48 ≤ k → k < keySlot → slotW s₂ k = slotW s₁ k := fun k h1 h2 => by
     simp only [slotW, o₂ sb (by decide)]
-    exact slot_above (n := 48) f₂ h1 (by simp [keySlot] at h2; omega)
+    exact slot_above (n := 48) f₂ h1 (by simp [keySlot] at h2; omega_arith)
   have hm₂ : MasksOk s₂ := fun kv hkv => by
     rw [above₂ _ (by simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
         simp [evenSlot, oddSlot, m4Slot, m2Slot, m3Slot])
@@ -143,7 +143,7 @@ theorem round_ok {off d : Nat}
         simp [keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot])]
     exact hm₁ kv hkv
   have hh₂ : ∀ j < 16, slotW s₂ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
-    rw [above₂ _ (by simp [d1Slot]; omega) (by simp [d1Slot, keySlot]; omega), hh₁ j hj]
+    rw [above₂ _ (by simp [d1Slot]; omega_arith) (by simp [d1Slot, keySlot]; omega_arith), hh₁ j hj]
   -- The output selection and the P-function.
   let W₃ : Nat → BitVec 64 := fun i =>
     if i < 8 then Qs s₂ i else if i < 24 then slotW s₂ (d1Slot + (i - 8)) else keyW s₂ (i - 24)
@@ -154,8 +154,8 @@ theorem round_ok {off d : Nat}
     intro s' W hW j i hji
     simp only [bothIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
     obtain ⟨j, hj, rfl, rfl⟩ := hji
-    refine ⟨by simp [layerCfg, d1Slot, keySlot]; omega, by omega, ?_⟩
-    rw [hW _ (by omega) (by omega), show 8 + j - 8 = j by omega]; rfl
+    refine ⟨by simp [layerCfg, d1Slot, keySlot]; omega_arith, by omega_arith, ?_⟩
+    rw [hW _ (by omega_arith) (by omega_arith), show 8 + j - 8 = j by omega_arith]; rfl
   have masks_ok : ∀ s' : State, MasksOk s' → ∀ kv ∈ layerMasks, kv.1 < layerCfg.slots ∧
       s'.mem.readW (wordAddr (s'.gpr layerCfg.base) kv.1) 64 = kv.2 := fun s' hm' kv hkv =>
     ⟨by simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
@@ -164,17 +164,17 @@ theorem round_ok {off d : Nat}
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
-      exact ⟨by omega, by simp [W₃, hi]⟩)
-    (bothIns_ok s₂ W₃ fun i h1 h2 => by simp [W₃, show ¬ i < 8 by omega, h2])
+      exact ⟨by omega_arith, by simp [W₃, hi]⟩)
+    (bothIns_ok s₂ W₃ fun i h1 h2 => by simp [W₃, show ¬ i < 8 by omega_arith, h2])
     (masks_ok s₂ hm₂)
     (fun j hj => by
       simp only [layerCfg] at hj
-      exact ⟨by omega, by simp [W₃, show ¬ 24 + j < 8 by omega, show ¬ 24 + j < 24 by omega]; rfl⟩)
+      exact ⟨by omega_arith, by simp [W₃, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl⟩)
   have hY : ∀ j < 8, ∀ p < 64, (Qs s₃ j).getLsbD p = rowBits (Qs s₂) j (p % 8) (pRow (pos (p / 8))) := by
     intro j hj p hp
     rw [y₃ (q j) (outPG j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp,
       outPG]
-    exact xorBits_map_rows W₃ (Qs s₂) (fun i hi => by simp [W₃, hi]) j (p % 8) (by omega) hj _
+    exact xorBits_map_rows W₃ (Qs s₂) (fun i hi => by simp [W₃, hi]) j (p % 8) (by omega_arith) hj _
       fun i hi => Camellia.pRow_lt hi
   have b₃ : s₃.gpr sb = s₂.gpr sb := o₃ _ (by decide +kernel)
   have kp₃ : s₃.gpr kp = s₂.gpr kp := o₃ _ (by decide +kernel)
@@ -186,7 +186,7 @@ theorem round_ok {off d : Nat}
   have hh₃ : ∀ j < 16, slotW s₃ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
     have := k₃ (d1Slot + j) (List.mem_append_right _ (by
       simp only [bothIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
-      (by simp [layerCfg, keySlot, d1Slot]; omega)
+      (by simp [layerCfg, keySlot, d1Slot]; omega_arith)
     simp only [layerCfg] at this
     rw [slotW, b₃, this, ← hh₂ j hj]
   -- The Feistel XOR.
@@ -196,22 +196,22 @@ theorem round_ok {off d : Nat}
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
-      exact ⟨by omega, by simp [W₄, hi]⟩)
-    (bothIns_ok s₃ W₄ fun i h1 h2 => by simp [W₄, show ¬ i < 8 by omega, h2])
+      exact ⟨by omega_arith, by simp [W₄, hi]⟩)
+    (bothIns_ok s₃ W₄ fun i h1 h2 => by simp [W₄, show ¬ i < 8 by omega_arith, h2])
     (masks_ok s₃ hm₃)
     (fun j hj => by
       simp only [layerCfg] at hj
-      exact ⟨by omega, by simp [W₄, show ¬ 24 + j < 8 by omega, show ¬ 24 + j < 24 by omega]; rfl⟩)
+      exact ⟨by omega_arith, by simp [W₄, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl⟩)
   have hdj : ∀ j < 8, d + j = d1Slot + (d - d1Slot + j) := fun j _ => by
-    rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot] <;> omega
+    rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot] <;> omega_arith
   have hd8 : d - d1Slot < 16 - 7 := by rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot]
   have hfe : ∀ j < 8, ∀ p < 64, xorBits W₄ (feistelG d j p) =
       ((Qs s₃ j).getLsbD p ^^ (slotW s (d + j)).getLsbD p) := by
     intro j hj p hp
     rw [feistelG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp,
-      bitOf_word _ _ _ hp, hdj j hj, ← hh₃ _ (by omega)]
-    simp [W₄, hj, show ¬ 8 + (d - d1Slot) + j < 8 by omega, show 8 + (d - d1Slot) + j < 24 by omega,
-      show 8 + (d - d1Slot) + j - 8 = d - d1Slot + j by omega]
+      bitOf_word _ _ _ hp, hdj j hj, ← hh₃ _ (by omega_arith)]
+    simp [W₄, hj, show ¬ 8 + (d - d1Slot) + j < 8 by omega_arith, show 8 + (d - d1Slot) + j < 24 by omega_arith,
+      show 8 + (d - d1Slot) + j - 8 = d - d1Slot + j by omega_arith]
   have b₄ : s₄.gpr sb = s₃.gpr sb := o₄ _ (by rcases hd with rfl | rfl <;> decide +kernel)
   have hD : HalfRel (Qs s₄) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
     round_rel hQ hK hR hX sx₂ hY fun j hj p hp => by
@@ -220,7 +220,7 @@ theorem round_ok {off d : Nat}
   have hS : HalfRel (fun j => slotW s₄ (d + j)) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
     round_rel hQ hK hR hX sx₂ hY fun j hj p hp => by
       have := sl₄ (d + j) (feistelG d j) (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
-        (by rcases hd with rfl | rfl <;> simp [layerCfg, keySlot, d1Slot, d2Slot] <;> omega) p hp
+        (by rcases hd with rfl | rfl <;> simp [layerCfg, keySlot, d1Slot, d2Slot] <;> omega_arith) p hp
       simp only [layerCfg] at this
       rw [slotW, b₄, this, hfe j hj p hp, Bool.xor_comm]
   have keep_any : ∀ r, r ∉ layerWrites → ∀ is : List Instr,
@@ -241,9 +241,9 @@ theorem round_ok {off d : Nat}
       refine List.mem_append_right _ ?_
       simp only [List.mem_map, List.mem_range]
       rcases hd with rfl | rfl
-      · exact ⟨j - 8, by simp [d1Slot] at hjd; omega, by simp [d1Slot, d2Slot]; omega⟩
-      · exact ⟨j, by simp [d1Slot, d2Slot] at hjd; omega, by simp [d1Slot, d2Slot]⟩
-    have := k₄ _ hmem (by simp [layerCfg, keySlot, d1Slot]; omega)
+      · exact ⟨j - 8, by simp [d1Slot] at hjd; omega_arith, by simp [d1Slot, d2Slot]; omega_arith⟩
+      · exact ⟨j, by simp [d1Slot, d2Slot] at hjd; omega_arith, by simp [d1Slot, d2Slot]⟩
+    have := k₄ _ hmem (by simp [layerCfg, keySlot, d1Slot]; omega_arith)
     simp only [layerCfg] at this
     rw [slotW, b₄, this, ← hh₃ j hj, slotW, b₃]
   · intro r hr
