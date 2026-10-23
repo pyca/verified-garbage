@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Update
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
@@ -14,6 +14,9 @@ meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
 meta import VerifiedGarbage.Proof.Sha256.Scratch
 meta import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.Reloc
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 
 /-!
 # SHA-256's streaming functions, for the code over any streaming hash function

@@ -26,12 +26,13 @@ pub(crate) fn eq(a: &[u8], b: &[u8]) -> bool {
 /// different lengths share their prefixes, so a key checked at a length
 /// that came from elsewhere (a truncated stored key, or one an attacker sent)
 /// would be checked on as few bytes as that length. Its users (PBKDF2, scrypt
-/// and Argon2) are on these architectures.
+/// and Argon2) are on these architectures (PBKDF2 alone on PPC64LE).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 macro_rules! assert_verify_len {
     ($n:expr) => {
@@ -48,7 +49,8 @@ macro_rules! assert_verify_len {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub(crate) use assert_verify_len;
 
