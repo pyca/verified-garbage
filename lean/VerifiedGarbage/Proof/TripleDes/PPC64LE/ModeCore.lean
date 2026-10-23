@@ -6,10 +6,8 @@ public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Ecb.Call
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Block
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Covers

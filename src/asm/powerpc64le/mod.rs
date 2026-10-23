@@ -155,6 +155,18 @@ pub(crate) mod sm3;
 pub(crate) mod triple_des;
 
 #[rustfmt::skip]
+pub(crate) mod triple_des_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb8;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod x25519;
 
 #[rustfmt::skip]
