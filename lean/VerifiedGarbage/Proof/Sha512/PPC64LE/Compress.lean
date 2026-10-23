@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Nat.Bitwise.Basic
+import Mathlib.Tactic.IntervalCases
+meta import Mathlib.Tactic.IntervalCases
 
 /-!
 # SHA-512 compression function on PPC64LE: the whole function

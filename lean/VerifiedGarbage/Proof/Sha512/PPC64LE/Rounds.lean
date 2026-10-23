@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Impl.Sha512.PPC64LE
 import all Init.Data.Nat.Bitwise.Basic
+import Mathlib.Tactic.IntervalCases
 
 /-!
 # SHA-512 compression function on PPC64LE: the message schedule and the rounds

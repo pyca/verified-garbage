@@ -239,12 +239,12 @@ theorem Saved.sv_eq {s₀ s : State} (h : Saved s₀ s) {o : Nat}
 
 theorem Saved.sv23 {s₀ s : State} (h : Saved s₀ s) :
     s.mem.readW (scr s₀ + BitVec.ofNat 64 240) 64 = s₀.gpr .r23 := by
-  rw [h.sv_eq (.inr ⟨le_rfl, by omega⟩), svMem, readW_writeW_save _ _ _ (by omega) (by omega) (by omega),
+  rw [h.sv_eq (.inr ⟨(Nat.le_refl _), by omega⟩), svMem, readW_writeW_save _ _ _ (by omega) (by omega) (by omega),
     readW_writeW_save _ _ _ (by omega) (by omega) (by omega), Mem.readW_writeW_self64]
 
 theorem Saved.sv24 {s₀ s : State} (h : Saved s₀ s) :
     s.mem.readW (scr s₀ + BitVec.ofNat 64 160) 64 = s₀.gpr .r24 := by
-  rw [h.sv_eq (.inl ⟨le_rfl, by omega⟩), svMem, readW_writeW_save _ _ _ (by omega) (by omega) (by omega),
+  rw [h.sv_eq (.inl ⟨(Nat.le_refl _), by omega⟩), svMem, readW_writeW_save _ _ _ (by omega) (by omega) (by omega),
     Mem.readW_writeW_self64]
 
 theorem Saved.sv25 {s₀ s : State} (h : Saved s₀ s) :

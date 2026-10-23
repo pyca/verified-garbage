@@ -48,7 +48,7 @@ theorem round_nodup (t : Nat) :
   simp only [var]
   have := Nat.mod_lt t (show 8 > 0 by omega)
   generalize t % 8 = c at *
-  interval_cases c <;> decide
+  revert this; revert c; decide
 
 /-- The round is symbolically executed once, for any registers `a … h`
 (which `round_nodup` says are different from each other and the others). -/

@@ -1,6 +1,5 @@
 module
 
-public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.PPC64LE.Isa
@@ -187,7 +186,10 @@ theorem lis_ori (x : BitVec 32) :
   intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  interval_cases i <;> simp
+  by_cases h : i < 16
+  · simp [h, show i < 32 from hi, show i < 64 by omega]
+  · simp [h, show i < 32 from hi, show i < 64 by omega, show i - 16 < 16 by omega,
+      show 16 + (i - 16) = i by omega]
 
 /-- `lis_ori`, with the low word taken of each half, as `simp` leaves it. -/
 theorem lis_ori' (x : BitVec 32) :
@@ -197,7 +199,10 @@ theorem lis_ori' (x : BitVec 32) :
   intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  interval_cases i <;> simp
+  by_cases h : i < 16
+  · simp [h, show i < 32 from hi, show i < 64 by omega]
+  · simp [h, show i < 32 from hi, show i < 64 by omega, show i - 16 < 16 by omega,
+      show 16 + (i - 16) = i by omega]
 
 theorem rev32_readW (m : Mem) (a : Addr) :
     rev32 (m.readW a 32) = (m a ++ m (a + 1) ++ m (a + 1 + 1) ++ m (a + 1 + 1 + 1) : BitVec 32) :=

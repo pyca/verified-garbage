@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
 import all Init.Data.Nat.Bitwise.Basic
+import Mathlib.Tactic.IntervalCases
 
 /-!
 # Streaming SHA-512 on PPC64LE: common lemmas
