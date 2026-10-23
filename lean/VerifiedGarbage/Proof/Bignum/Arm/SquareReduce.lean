@@ -274,57 +274,57 @@ theorem redRound_ok (s : State) {k : Nat} (h : RedInv m0 base size out a mod M n
   rintro s1 ⟨p1, m1, r1⟩
   have e1 := env.of_mem m1 r1
   rw [WP.seq_iff]
-  refine WP.mono (redHeader_ok s1 e1.workspace (by omega) p1 e1.modNow e1.invNow e1.metaNow) ?_
+  refine WP.mono (redHeader_ok s1 e1.workspace (by omega_arith) p1 e1.modNow e1.invNow e1.metaNow) ?_
   rintro s2 ⟨q12, q1, q0, m2, r2⟩
   have e2 := e1.of_mem m2 r2
   rw [WP.seq_iff]
-  refine WP.mono (redArgs_ok s2 (P := o) e2.workspace (by omega) q0 (by rw [m2, m1]; exact h.md.count)
+  refine WP.mono (redArgs_ok s2 (P := o) e2.workspace (by omega_arith) q0 (by rw [m2, m1]; exact h.md.count)
     (by rw [m2, m1, ho]; exact h.tptr)) ?_
   rintro s3 ⟨g3lr, g30, m3, r3⟩
-  have o3 := writeW32_outside s2.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 4)) (by omega)
+  have o3 := writeW32_outside s2.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 4)) (by omega_arith)
   rw [← m3] at o3
-  have e3 := e2.next (Outs.of_outside (o3.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))
+  have e3 := e2.next (Outs.of_outside (o3.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r3
   rw [WP.seq_iff]
-  refine WP.mono (redScalar_ok s3 e3.workspace (D := o) (by omega) g30) ?_
+  refine WP.mono (redScalar_ok s3 e3.workspace (D := o) (by omega_arith) g30) ?_
   rintro s4 ⟨g41, g411, g40, m4, r4⟩
   have e4 := e3.of_mem m4 r4
-  have ctx : RowCtx s4 base size o mod n := ⟨nowrap, by omega, by omega, by omega, e4.workspace.writable⟩
+  have ctx : RowCtx s4 base size o mod n := ⟨nowrap, by omega_arith, by omega_arith, by omega_arith, e4.workspace.writable⟩
   rw [WP.seq_iff]
-  refine WP.mono (row_ok s4 ctx (by omega) (g40.trans g30)
+  refine WP.mono (row_ok s4 ctx (by omega_arith) (g40.trans g30)
     (by rw [r4.gpr .r12 (by simp), r3.gpr .r12 (by simp)]; exact q12)
     (by rw [r4.gpr .lr (by simp)]; exact g3lr)) ?_
   intro s5 ri
-  have e5 := e4.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega)
-    (by omega)) (by simp)) ri.rest
+  have e5 := e4.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith)
+    (by omega_arith)) (by simp)) ri.rest
   rw [WP.seq_iff]
   refine WP.mono (sqBase_ok s5 e5 .r2) ?_
   rintro s6 ⟨p6, m6, r6⟩
   have e6 := e5.of_mem m6 r6
   rw [WP.seq_iff]
-  refine wp_ldr (by decide) (sq_ea0 nowrap p6 (by omega)) (e6.read (by omega)) fun s7 u7 => WP.block_nil ?_
+  refine wp_ldr (by decide) (sq_ea0 nowrap p6 (by omega_arith)) (e6.read (by omega_arith)) fun s7 u7 => WP.block_nil ?_
   have e7 := e6.of_mem u7.mem (u7.rest (ws := [.r2]) (by simp))
   have p72 : s7.gpr .r2 = base + BitVec.ofNat 32 M := u7.gpr.trans e6.metaNow
   have p70 : s7.gpr .r0 = base + BitVec.ofNat 32 D := by
     rw [u7.other .r0 (by decide), r6.gpr .r0 (by simp), ri.outPtr, hD]
   rw [WP.seq_iff]
-  refine WP.mono (redCarry_ok s7 e7.workspace (D := D) (M := M) (by omega) (by omega) p70 p72) ?_
+  refine WP.mono (redCarry_ok s7 e7.workspace (D := D) (M := M) (by omega_arith) (by omega_arith) p70 p72) ?_
   rintro s8 ⟨lo, hi, car, m8, p80, r8⟩
-  have o8a := writeW32_outside s7.mem (State.addr base) (d := D) lo (by omega)
+  have o8a := writeW32_outside s7.mem (State.addr base) (d := D) lo (by omega_arith)
   have o8b := writeW32_outside (s7.mem.writeW (off (State.addr base) D) lo) (State.addr base) (d := M + 12) hi
-    (by omega)
+    (by omega_arith)
   rw [← m8] at o8b
-  have e8 := e7.next (Outs.of_outside ((o8a.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega)).trans
-    (o8b.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))) (by simp)) r8
+  have e8 := e7.next (Outs.of_outside ((o8a.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith)).trans
+    (o8b.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))) (by simp)) r8
   have cnt8 : s8.mem.readW (off (State.addr base) (M + 16)) 32 = BitVec.ofNat 32 (n - k) := by
-    rw [m8, rd_other _ (by omega) (by omega) (by omega), rd_other _ (by omega) (by omega) (by omega), u7.mem, m6,
-      outside_read32 ri.outside (by omega) (by omega), m4, m3, rd_other _ (by omega) (by omega) (by omega), m2, m1]
+    rw [m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), u7.mem, m6,
+      outside_read32 ri.outside (by omega_arith) (by omega_arith), m4, m3, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m2, m1]
     exact h.cnt
-  refine WP.mono (sqCount_ok s8 e8.workspace (by omega) p80 cnt8 (by omega) (by omega)) ?_
+  refine WP.mono (sqCount_ok s8 e8.workspace (by omega_arith) p80 cnt8 (by omega_arith) (by omega_arith)) ?_
   rintro t ⟨m9, z9, r9⟩
-  have o9 := writeW32_outside s8.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 (n - k - 1)) (by omega)
+  have o9 := writeW32_outside s8.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 (n - k - 1)) (by omega_arith)
   rw [← m9] at o9
-  have et := e8.next (Outs.of_outside (o9.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))
+  have et := e8.next (Outs.of_outside (o9.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r9
   -- Where memory changed.
   obtain ⟨w, hw⟩ : ∃ w, w = s7.mem.writeW (off (State.addr base) D) lo := ⟨_, rfl⟩
@@ -332,28 +332,28 @@ theorem redRound_ok (s : State) {k : Nat} (h : RedInv m0 base size out a mod M n
   have hw7 : s7.mem = s5.mem := u7.mem.trans m6
   have o8a' : Outside (State.addr base) D 4 s5.mem w := by rw [← hw7]; exact o8a
   have OW : Outside (State.addr base) o (4 * n + 4) s4.mem w :=
-    (ri.outside.mono (by omega) (by omega)).trans (o8a'.mono (by omega) (by omega))
+    (ri.outside.mono (by omega_arith) (by omega_arith)).trans (o8a'.mono (by omega_arith) (by omega_arith))
   have all : Outs (State.addr base) [(M + 12, 12), (o, 4 * n + 4)] s.mem t.mem := by
     have A1 : Outs (State.addr base) [(M + 12, 12), (o, 4 * n + 4)] s2.mem s3.mem :=
-      Outs.of_outside (o3.mono (o' := M + 12) (n' := 12) (by omega) (by omega)) (by simp)
+      Outs.of_outside (o3.mono (o' := M + 12) (n' := 12) (by omega_arith) (by omega_arith)) (by simp)
     have A2 : Outs (State.addr base) [(M + 12, 12), (o, 4 * n + 4)] s4.mem w := Outs.of_outside OW (by simp)
     have A4 : Outs (State.addr base) [(M + 12, 12), (o, 4 * n + 4)] w s8.mem :=
-      Outs.of_outside (o8b.mono (o' := M + 12) (n' := 12) (by omega) (by omega)) (by simp)
+      Outs.of_outside (o8b.mono (o' := M + 12) (n' := 12) (by omega_arith) (by omega_arith)) (by simp)
     have A5 : Outs (State.addr base) [(M + 12, 12), (o, 4 * n + 4)] s8.mem t.mem :=
-      Outs.of_outside (o9.mono (o' := M + 12) (n' := 12) (by omega) (by omega)) (by simp)
+      Outs.of_outside (o9.mono (o' := M + 12) (n' := 12) (by omega_arith) (by omega_arith)) (by simp)
     rw [m2, m1] at A1
     rw [m4] at A2
     exact A1.trans (A2.trans (A4.trans A5))
   -- The carry in, and the old values.
   have c4 : s4.mem.readW (off (State.addr base) (M + 12)) 32 = s.mem.readW (off (State.addr base) (M + 12)) 32 := by
-    rw [m4, m3, rd_other _ (by omega) (by omega) (by omega), m2, m1]
+    rw [m4, m3, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m2, m1]
   have c7 : s7.mem.readW (off (State.addr base) (M + 12)) 32 = s.mem.readW (off (State.addr base) (M + 12)) 32 := by
-    rw [hw7, outside_read32 ri.outside (by omega) (by omega), c4]
+    rw [hw7, outside_read32 ri.outside (by omega_arith) (by omega_arith), c4]
   have x7 : s7.mem.readW (off (State.addr base) D) 32 = s4.mem.readW (off (State.addr base) D) 32 := by
-    rw [hw7, outside_read32 ri.outside (by omega) (by omega)]
+    rw [hw7, outside_read32 ri.outside (by omega_arith) (by omega_arith)]
   have r7 : s7.gpr .r11 = s5.gpr .r11 := by rw [u7.other .r11 (by decide), r6.gpr .r11 (by simp)]
   have VT : val32 s4.mem (State.addr base) (M + 24) (2 * n) = val32 s.mem (State.addr base) (M + 24) (2 * n) := by
-    rw [m4, o3.val32 (by omega) (by omega), m2, m1]
+    rw [m4, o3.val32 (by omega_arith) (by omega_arith), m2, m1]
   have inv4 : s4.gpr .r1 = inv * s4.mem.readW (off (State.addr base) o) 32 := by
     rw [g41, r3.gpr .r1 (by simp), q1, m4]
   have N4 : val32 s4.mem (State.addr base) mod n = val32 m0 (State.addr base) mod n := e4.modVal
@@ -362,47 +362,47 @@ theorem redRound_ok (s : State) {k : Nat} (h : RedInv m0 base size out a mod M n
   rw [show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero] at row
   rw [x7, r7, c7] at car
   have rep := val32_replace (m := s4.mem) (m' := w) (base := State.addr base) (d := M + 24) (i := k) (j := n + 1)
-    (k := n - k - 1) (OW.val32 (by omega) (by omega)) (OW.val32 (by omega) (by omega))
-  rw [show k + (n + 1) + (n - k - 1) = 2 * n by omega, show M + 24 + 4 * k = o by omega] at rep
+    (k := n - k - 1) (OW.val32 (by omega_arith) (by omega_arith)) (OW.val32 (by omega_arith) (by omega_arith))
+  rw [show k + (n + 1) + (n - k - 1) = 2 * n by omega_arith, show M + 24 + 4 * k = o by omega_arith] at rep
   have hX := val32_succ s4.mem (State.addr base) o n
   have hX' := val32_succ w (State.addr base) o n
-  rw [o8a'.val32 (d := o) (k := n) (by omega) (by omega), ← hD, hw, w32_write_self, ← hw] at hX'
+  rw [o8a'.val32 (d := o) (k := n) (by omega_arith) (by omega_arith), ← hD, hw, w32_write_self, ← hw] at hX'
   rw [← hD] at hX
   have step := red_value (W := 2 ^ 32) rep (by rw [hX, Nat.mul_comm]) (by rw [hX', Nat.mul_comm]) row car
   obtain ⟨Q, hQ, value⟩ := h.value
   have pk : 2 ^ (32 * (k + 1 + n)) = 2 ^ (32 * k) * 2 ^ (32 * n) * 2 ^ 32 := by
-    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_arith
   have pk' : 2 ^ (32 * (k + n)) = 2 ^ (32 * k) * 2 ^ (32 * n) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_arith
   have mlt := (inv * s4.mem.readW (off (State.addr base) o) 32).isLt
   -- The cleared word.
   have hu : (inv * s4.mem.readW (off (State.addr base) o) 32).toNat =
       val32 s4.mem (State.addr base) o n * inv.toNat % 2 ^ 32 := by
     have := coefficient_value inv s4.mem (State.addr base) o (n - 1)
-    rw [show n - 1 + 1 = n by omega] at this
+    rw [show n - 1 + 1 = n by omega_arith] at this
     exact this
   have cancel := round_cancel (T := val32 s4.mem (State.addr base) o n)
     (T' := val32 s5.mem (State.addr base) o n + 2 ^ (32 * n) * (s5.gpr .r11).toNat) e4.invOk hu row
-  rw [show 32 * n = 32 + 32 * (n - 1) by omega, Nat.pow_add, Nat.mul_assoc, Nat.add_mul_mod_self_left,
-    show n = n - 1 + 1 by omega, val32_mod_low] at cancel
-  refine ⟨⟨et, h.md.of_outs all (by simp; omega) (by omega), by omega, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
-  · rw [m9, rd_self, show n - k - 1 = n - (k + 1) by omega]
-  · rw [m9, rd_other _ (by omega) (by omega) (by omega), m8, rd_other _ (by omega) (by omega) (by omega),
-      outside_read32 o8a' (by omega) (by omega), outside_read32 ri.outside (by omega) (by omega), m4, m3, rd_self,
-      ho, show M + 24 + 4 * k + 4 = M + 24 + 4 * (k + 1) by omega]
+  rw [show 32 * n = 32 + 32 * (n - 1) by omega_arith, Nat.pow_add, Nat.mul_assoc, Nat.add_mul_mod_self_left,
+    show n = n - 1 + 1 by omega_arith, val32_mod_low] at cancel
+  refine ⟨⟨et, h.md.of_outs all (by simp; omega_arith) (by omega_arith), by omega_arith, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rw [m9, rd_self, show n - k - 1 = n - (k + 1) by omega_arith]
+  · rw [m9, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
+      outside_read32 o8a' (by omega_arith) (by omega_arith), outside_read32 ri.outside (by omega_arith) (by omega_arith), m4, m3, rd_self,
+      ho, show M + 24 + 4 * k + 4 = M + 24 + 4 * (k + 1) by omega_arith]
   · refine ⟨Q + 2 ^ (32 * k) * (inv * s4.mem.readW (off (State.addr base) o) 32).toNat, ?_, ?_⟩
-    · rw [show 32 * (k + 1) = 32 * k + 32 by omega, Nat.pow_add]
+    · rw [show 32 * (k + 1) = 32 * k + 32 by omega_arith, Nat.pow_add]
       exact red_q hQ mlt
-    · rw [o9.val32 (by omega) (by omega), o8b.val32 (by omega) (by omega), m9,
-        rd_other _ (by omega) (by omega) (by omega), m8, rd_self, pk]
+    · rw [o9.val32 (by omega_arith) (by omega_arith), o8b.val32 (by omega_arith) (by omega_arith), m9,
+        rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m8, rd_self, pk]
       rw [VT] at step
       rw [step, ← pk', value]
       grind
-  · rw [val32_succ, all.val32 (by simp; omega) (by omega), h.low, o9.w32 (by omega) (by omega),
-      o8b.w32 (by omega) (by omega), o8a'.w32 (by omega) (by omega), show M + 24 + 4 * k = o by omega, cancel,
+  · rw [val32_succ, all.val32 (by simp; omega_arith) (by omega_arith), h.low, o9.w32 (by omega_arith) (by omega_arith),
+      o8b.w32 (by omega_arith) (by omega_arith), o8a'.w32 (by omega_arith) (by omega_arith), show M + 24 + 4 * k = o by omega_arith, cancel,
       Nat.mul_zero]
-  · rw [all.val32 (by simp; omega) (by omega)]; exact h.top
-  · rw [z9]; simp only [show n - k = 1 ↔ k + 1 = n by omega]
+  · rw [all.val32 (by simp; omega_arith) (by omega_arith)]; exact h.top
+  · rw [z9]; simp only [show n - k = 1 ↔ k + 1 = n by omega_arith]
   · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans
       ((r3.mono (by simp [roundClobbers])).trans ((r4.mono (by simp [roundClobbers])).trans
       ((ri.rest.mono (by simp [loopClobbers, roundClobbers])).trans ((r6.mono (by simp [roundClobbers])).trans

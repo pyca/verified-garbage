@@ -206,7 +206,7 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   refine wp_movX (P.readSk K2 (i := pInv) (by decide)) fun t3 u3 m3 x3 => ?_
   have K3 := K2.trans (Sk.of_upd [.edx] u3 m3 x3)
   have hw3 := hw.of_keeps K3.keep
-  refine wp_movX (readSrc_ptr hw3 (ptr_of_param u3.gpr hI) (d := 0) (by omega)) fun t4 u4 m4 x4 => ?_
+  refine wp_movX (readSrc_ptr hw3 (ptr_of_param u3.gpr hI) (d := 0) (by omega_arith)) fun t4 u4 m4 x4 => ?_
   have K4 := K3.trans (Sk.of_upd [.edx] u4 m4 x4)
   refine wp_mulX fun t5 u5 m5 x5 => ?_
   have K5 : Sk [.eax, .edx, .esi, .edi] t t5 := K4.trans ⟨u5.keeps, u5.mem, m5, x5⟩
@@ -216,19 +216,19 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   have p7 : PtrAt t7 W .edx (S + 4 * k) := by
     have := (t.gpr .ebx).isLt
     rw [PtrAt, u7.gpr, u6.gpr, u6.other _ (by decide), K5.keep.1 _ (by decide), K5.keep.1 _ (by decide),
-      BitVec.toNat_add, hb, hcx, toNat_ofNat_lt (by omega)]
-    omega
-  refine wp_storeX (ea_ptr hw7 p7 (by omega)) (ws_write hw7 (y := S + 4 * k + 24) (n := 4) (by omega))
+      BitVec.toNat_add, hb, hcx, toNat_ofNat_lt (by omega_arith)]
+    omega_arith
+  refine wp_storeX (ea_ptr hw7 p7 (by omega_arith)) (ws_write hw7 (y := S + 4 * k + 24) (n := 4) (by omega_arith))
     fun t8 M8 m8 x8 => ?_
   have O8 : Outside W (S + 24 + 4 * k) 4 t.mem t8.mem := by
-    rw [M8.mem, K7.mem, show S + 4 * k + 24 = S + 24 + 4 * k by omega]; exact writeW32_outside _ _ _ (by omega)
-  have Ot8 : Outs W [(0, L)] t.mem t8.mem := Outs.of_outside (O8.mono (by omega) (by omega)) (List.mem_singleton_self _)
+    rw [M8.mem, K7.mem, show S + 4 * k + 24 = S + 24 + 4 * k by omega_arith]; exact writeW32_outside _ _ _ (by omega_arith)
+  have Ot8 : Outs W [(0, L)] t.mem t8.mem := Outs.of_outside (O8.mono (by omega_arith) (by omega_arith)) (List.mem_singleton_self _)
   have K8k : Keeps [.eax, .edx, .esi, .edi] t t8 := K7.keep.trans (M8.keeps _)
   have P8 : Params t8 W L V 12 := P.keep Ot8 (K8k.1 _ (by decide)) K8k.2.1 K8k.2.2
   have hw8 := hw.of_keeps K8k
   refine wp_movX (P8.read pM (by decide)) fun t9 u9 m9 x9 => ?_
   have hw9 := hw8.of_keeps u9.keeps
-  refine wp_movX (readSrc_ptr hw9 (ptr_of_param u9.gpr hM) (d := 0) (by omega)) fun t10 u10 m10 x10 => ?_
+  refine wp_movX (readSrc_ptr hw9 (ptr_of_param u9.gpr hM) (d := 0) (by omega_arith)) fun t10 u10 m10 x10 => ?_
   refine wp_mulX fun t11 u11 m11 x11 => wp_addX rfl fun t12 u12 c12 m12 x12 => ?_
   refine wp_adcX rfl c12 fun t13 u13 _ m13 x13 => ?_
   have K13 : Keeps [.eax, .edx, .esi, .edi] t t13 :=
@@ -236,24 +236,24 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   have hw13 := hw.of_keeps K13
   have b13 : PtrAt t13 W .ebx S := by rw [PtrAt, K13.1 _ (by decide)]; exact hb
   have mem13 : t13.mem = t8.mem := by rw [u13.mem, u12.mem, u11.mem, u10.mem, u9.mem]
-  refine wp_movC (readSrc_ptr hw13 b13 (d := 8) (by omega)) fun t14 u14 f14 m14 x14 =>
+  refine wp_movC (readSrc_ptr hw13 b13 (d := 8) (by omega_arith)) fun t14 u14 f14 m14 x14 =>
     wp_addX rfl fun t15 u15 c15 m15 x15 => ?_
   have K15 : Keeps [.eax, .edx, .esi, .edi] t t15 := (K13.widen u14.keeps).widen u15.keeps
   have hw15 := hw.of_keeps K15
   have b15 : PtrAt t15 W .ebx S := by rw [PtrAt, K15.1 _ (by decide)]; exact hb
-  refine wp_storeX (ea_ptr hw15 b15 (d := 8) (by omega)) (ws_write hw15 (y := S + 8) (n := 4) (by omega))
+  refine wp_storeX (ea_ptr hw15 b15 (d := 8) (by omega_arith)) (ws_write hw15 (y := S + 8) (n := 4) (by omega_arith))
     fun t16 M16 m16 x16 => ?_
   have hw16 := hw15.of_wr M16.wr
   have b16 : PtrAt t16 W .ebx S := by rw [PtrAt, M16.gpr]; exact b15
-  refine wp_movC (readSrc_ptr hw16 b16 (d := 12) (by omega)) fun t17 u17 f17 m17 x17 =>
+  refine wp_movC (readSrc_ptr hw16 b16 (d := 12) (by omega_arith)) fun t17 u17 f17 m17 x17 =>
     wp_adcX rfl (by rw [f17, M16.cf, c15]) fun t18 u18 _ m18 x18 => ?_
   have K18 : Keeps [.eax, .edx, .esi, .edi] t t18 := ((K15.widen (M16.keeps [])).widen u17.keeps).widen u18.keeps
   have hw18 := hw.of_keeps K18
   have b18 : PtrAt t18 W .ebx S := by rw [PtrAt, K18.1 _ (by decide)]; exact hb
-  refine wp_storeX (ea_ptr hw18 b18 (d := 12) (by omega)) (ws_write hw18 (y := S + 12) (n := 4) (by omega))
+  refine wp_storeX (ea_ptr hw18 b18 (d := 12) (by omega_arith)) (ws_write hw18 (y := S + 12) (n := 4) (by omega_arith))
     fun t19 M19 m19 x19 => wp_movX rfl fun t20 u20 m20 x20 => WP.block_nil ?_
   -- The values.
-  have ezl : (t.gpr .eax).toNat = Z % 2 ^ 32 := by have := (t.gpr .eax).isLt; omega
+  have ezl : (t.gpr .eax).toNat = Z % 2 ^ 32 := by have := (t.gpr .eax).isLt; omega_arith
   have iv : (t4.gpr .edx).toNat = w32 t.mem W inv := by
     rw [u4.gpr, K3.mem, Nat.add_zero]
   have q5 : (t5.gpr .eax).toNat = (Z % 2 ^ 32 * w32 t.mem W inv) % 2 ^ 32 := by
@@ -262,7 +262,7 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   have m0 : (t10.gpr .edx).toNat = w32 t.mem W mo := by
     rw [u10.gpr, u9.mem, M8.mem]
     simp only [Nat.add_zero]
-    have := O8.w32 (d := mo) (by omega) (by omega)
+    have := O8.w32 (d := mo) (by omega_arith) (by omega_arith)
     rw [M8.mem] at this
     simp only [w32] at this
     rw [this]
@@ -288,7 +288,7 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   rw [q5, q10] at mw
   -- Memory.
   have mem8 : t8.mem = t.mem.writeW (off W (S + 24 + 4 * k)) (t5.gpr .eax) := by
-    rw [M8.mem, K7.mem, u7.other _ (by decide), u6.other _ (by decide), show S + 4 * k + 24 = S + 24 + 4 * k by omega]
+    rw [M8.mem, K7.mem, u7.other _ (by decide), u6.other _ (by decide), show S + 4 * k + 24 = S + 24 + 4 * k by omega_arith]
   have mem16 : t16.mem = t8.mem.writeW (off W (S + 8)) (t15.gpr .eax) := by
     rw [M16.mem, u15.mem, u14.mem, mem13]
   have mem20 : t20.mem = t16.mem.writeW (off W (S + 12)) (t18.gpr .eax) := by
@@ -298,11 +298,11 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
       u14.other _ (by decide)]
   have hlo : (t14.gpr .eax).toNat = w32 t.mem W (S + 8) := by
     rw [u14.gpr, mem13, mem8]
-    exact w32_write_ne (size := L) (o := S + 24 + 4 * k) (d := S + 8) hn (by omega) (by omega) (by omega) _
+    exact w32_write_ne (size := L) (o := S + 24 + 4 * k) (d := S + 8) hn (by omega_arith) (by omega_arith) (by omega_arith) _
   have hhi : (t17.gpr .eax).toNat = w32 t.mem W (S + 12) := by
     rw [u17.gpr, mem16, mem8]
-    exact (w32_write_ne (size := L) (o := S + 8) (d := S + 12) hn (by omega) (by omega) (by omega) _).trans
-      (w32_write_ne (size := L) (o := S + 24 + 4 * k) (d := S + 12) hn (by omega) (by omega) (by omega) _)
+    exact (w32_write_ne (size := L) (o := S + 8) (d := S + 12) hn (by omega_arith) (by omega_arith) (by omega_arith) _).trans
+      (w32_write_ne (size := L) (o := S + 24 + 4 * k) (d := S + 12) hn (by omega_arith) (by omega_arith) (by omega_arith) _)
   have e14 : t14.gpr .edx = t11.gpr .edx := by
     rw [u14.other _ (by decide), u13.other _ (by decide), hi12]
   have hsum := add_adc (t14.gpr .eax) (t14.gpr .edx) (t17.gpr .eax) 0
@@ -311,25 +311,25 @@ theorem digit_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [esi20]
     have := mw.1
-    omega
-  · rw [mem20, w32_write_ne (size := L) (o := S + 12) (d := S + 24 + 4 * k) hn (by omega) (by omega) (by omega),
-      mem16, w32_write_ne (size := L) (o := S + 8) (d := S + 24 + 4 * k) hn (by omega) (by omega) (by omega), mem8,
+    omega_arith
+  · rw [mem20, w32_write_ne (size := L) (o := S + 12) (d := S + 24 + 4 * k) hn (by omega_arith) (by omega_arith) (by omega_arith),
+      mem16, w32_write_ne (size := L) (o := S + 8) (d := S + 24 + 4 * k) hn (by omega_arith) (by omega_arith) (by omega_arith), mem8,
       w32_write_self, q5]
-  · rw [mem20, w32_write_ne (size := L) (o := S + 12) (d := S + 8) hn (by omega) (by omega) (by omega),
+  · rw [mem20, w32_write_ne (size := L) (o := S + 12) (d := S + 8) hn (by omega_arith) (by omega_arith) (by omega_arith),
       w32_write_self, mem16, w32_write_self]
     have := mw.1
     have z0 : (0 : BitVec 32).toNat = 0 := rfl
     rw [z0, Nat.add_zero] at hsum
-    omega
+    omega_arith
   · rw [mem20, mem16]
     have O16 : Outside W (S + 8) 4 t8.mem (t8.mem.writeW (off W (S + 8)) (t15.gpr .eax)) :=
-      writeW32_outside _ _ _ (by omega)
+      writeW32_outside _ _ _ (by omega_arith)
     have O20 : Outside W (S + 12) 4 (t8.mem.writeW (off W (S + 8)) (t15.gpr .eax))
         ((t8.mem.writeW (off W (S + 8)) (t15.gpr .eax)).writeW (off W (S + 12)) (t18.gpr .eax)) :=
-      writeW32_outside _ _ _ (by omega)
+      writeW32_outside _ _ _ (by omega_arith)
     exact ((Outs.of_outside O8 (by simp)).trans
-      (Outs.of_outside (O16.mono (o' := S + 8) (n' := 8) (by omega) (by omega)) (by simp))).trans
-      (Outs.of_outside (O20.mono (o' := S + 8) (n' := 8) (by omega) (by omega)) (by simp))
+      (Outs.of_outside (O16.mono (o' := S + 8) (n' := 8) (by omega_arith) (by omega_arith)) (by simp))).trans
+      (Outs.of_outside (O20.mono (o' := S + 8) (n' := 8) (by omega_arith) (by omega_arith)) (by simp))
   · exact (K18.widen (M19.keeps [])).widen u20.keeps
   · rw [m20, m19, m18, m17, m16, m15, m14, m13, m12, m11, m10, m9, m8, m7, m6, m5, m4, m3, m2, m1]
 
