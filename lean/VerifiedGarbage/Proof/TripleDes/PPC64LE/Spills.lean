@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 /-!
 # The S-boxes' spills
 
-The S-boxes only store to slots 17–63 of the scratch buffer (`spillRegion`),
-so they keep the registers saved in slots 0–16.
+The S-boxes only store to slots 15–63 of the scratch buffer (`spillRegion`),
+so they keep the registers saved in slots 0–14.
 -/
 
 @[expose] public section
@@ -17,11 +17,11 @@ namespace VG.Proof.TripleDes.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
 
-def spillRegion (s : State) : Region := ⟨s.gpr .r5 + BitVec.ofNat 64 136, 376⟩
+def spillRegion (s : State) : Region := ⟨s.gpr .r5 + BitVec.ofNat 64 120, 392⟩
 
 def spillSafe : Instr → Bool
   | .logic _ d _ _ | .li d _ | .subi d _ _ | .load .d d _ _ => d != .r5
-  | .store .d _ n off => decide (n = .r5 ∧ 136 ≤ off ∧ off + 8 ≤ 512)
+  | .store .d _ n off => decide (n = .r5 ∧ 120 ≤ off ∧ off + 8 ≤ 512)
   | _ => false
 
 theorem spillSafe_check : ∀ i < 8,

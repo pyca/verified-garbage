@@ -277,7 +277,7 @@ theorem roundOutput_piece (i : Nat) (hi : i < 8) (s : State) (b : BitVec 4)
     · simp only [hp32, decide_false, Bool.false_and]
 
 /-- The registers a round keeps. -/
-def roundKept : List Reg := [.r2, .r3, .r4, .r5, .r15, .r16, .r17, .r18, .r19, .r31]
+def roundKept : List Reg := [.r2, .r3, .r4, .r5, .r15, .r16, .r17, .r18, .r19, .r29, .r30, .r31]
 
 theorem roundInput_keeps : ∀ i < 8, (.r14 :: roundKept).all
     (fun r => (instrs (sboxInputsLiteral i)).all fun op => dstOf op != some r) = true := by

@@ -31,7 +31,7 @@ theorem Ready.congr {keys : Nat → DesSchedule} {base : Addr} {s t : State}
     (hkey : t.gpr .r3 = s.gpr .r3) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
     (hf : Frame [spillRegion s] s.mem t.mem) : Ready keys base t := by
   have hwork : spillRegion t = spillRegion s :=
-    congrArg (fun p => (⟨p + BitVec.ofNat 64 136, 376⟩ : Region)) hbase
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) hbase
   refine ⟨hs.spills.congr hbase hbase hrd hwr, hkey.trans hs.baseReg, ?_, ?_, ?_⟩
   · rw [hrd, hwr]; exact hs.read
   · rw [hwork]; exact hs.separate
@@ -62,7 +62,7 @@ theorem Stable.refl (s : State) : Stable s s :=
 
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
   have hwork : spillRegion t = spillRegion s :=
-    congrArg (fun p => (⟨p + BitVec.ofNat 64 136, 376⟩ : Region)) (hs.regs .r5 (by decide))
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) (hs.regs .r5 (by decide))
   have hf := ht.frame
   rw [hwork] at hf
   exact ⟨ht.rd.trans hs.rd, ht.wr.trans hs.wr,

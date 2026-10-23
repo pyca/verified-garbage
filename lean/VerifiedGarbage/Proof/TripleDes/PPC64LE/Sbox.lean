@@ -41,7 +41,7 @@ theorem sbox_check : ∀ i < 8,
   lit_decide
 
 /-- The registers the S-boxes keep. -/
-def sboxKept : List Reg := [.r2, .r3, .r4, .r5, .r14, .r15, .r16, .r17, .r18, .r19, .r31]
+def sboxKept : List Reg := [.r2, .r3, .r4, .r5, .r14, .r15, .r16, .r17, .r18, .r19, .r29, .r30, .r31]
 
 theorem sbox_preserves : ∀ i < 8,
     sboxKept.all (fun r => (instrs (sboxLiteral i)).all fun op => dstOf op != some r) = true := by

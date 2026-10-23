@@ -79,7 +79,7 @@ theorem contributions_roundFunction (r k : BitVec 64) (l : BitVec 64) :
   exact congrArg (fun x => l ^^^ x) ((hinit.symm.trans hf).trans hg)
 
 /-- The registers the half swap keeps. -/
-def roundOuterKept : List Reg := [.r2, .r3, .r4, .r5, .r16, .r17, .r18, .r19, .r31]
+def roundOuterKept : List Reg := [.r2, .r3, .r4, .r5, .r16, .r17, .r18, .r19, .r29, .r30, .r31]
 
 theorem swapHalves_ok (s : State) :
     ∃ s', runBlock isa swapHalves s = some s' ∧

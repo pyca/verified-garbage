@@ -14,7 +14,7 @@ namespace VG.Proof.TripleDes.PPC64LE
 open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Impl.TripleDes.PPC64LE
 
 /-- The registers a round and the step to the next keep. -/
-def roundStepKept : List Reg := [.r2, .r3, .r4, .r5, .r18, .r19, .r31]
+def roundStepKept : List Reg := [.r2, .r3, .r4, .r5, .r18, .r19, .r29, .r30, .r31]
 
 theorem countDown_rules : ∀ n < 17, 1 ≤ n →
     (BitVec.ofNat 64 n - 1 = BitVec.ofNat 64 (n - 1)) ∧

@@ -53,13 +53,13 @@ theorem block_ok (keys : Schedule) (base : Addr) (direction : Direction) (s : St
     intro q hq
     exact (hs₂.2.2.regs q hq).trans (hs₁.regs q hq)
   have saved₂ := hs₁.saved.congr (hs₂.2.2.regs .r5 (by decide)) hs₂.2.2.frame
-  have savedRead₂ : ∀ i < 17, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8 := by
+  have savedRead₂ : ∀ i < 15, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8 := by
     rw [hs₂.2.2.rd, hs₂.2.2.wr, hs₁.rd, hs₁.wr, hregs₂ .r5 (by decide)]
     exact hp.saveRead
   have hwrite₂ : InRegions s₂.wr (s₂.gpr .r4) 8 := by
     rw [hs₂.2.2.wr, hs₁.wr, hregs₂ .r4 (by decide)]
     exact hwrite
-  have hsep₂ : (⟨s₂.gpr .r4, 8⟩ : Region).Disjoint ⟨s₂.gpr .r5, 136⟩ := by
+  have hsep₂ : (⟨s₂.gpr .r4, 8⟩ : Region).Disjoint ⟨s₂.gpr .r5, 120⟩ := by
     rw [hregs₂ .r4 (by decide), hregs₂ .r5 (by decide)]
     exact hp.dataSeparate
   apply WP.mono (blockTail_ok s s₂ _ hs₂.1 saved₂ savedRead₂ hwrite₂ hsep₂)
@@ -79,7 +79,7 @@ theorem block_ok (keys : Schedule) (base : Addr) (direction : Direction) (s : St
       obtain rfl := List.mem_singleton.mp hr
       refine ⟨⟨s.gpr .r5, 512⟩, by simp [blockRegions], ?_⟩
       have hbase := hs₁.regs .r5 (by decide)
-      change Region.Sub ⟨s₁.gpr .r5 + BitVec.ofNat 64 136, 376⟩ ⟨s.gpr .r5, 512⟩
+      change Region.Sub ⟨s₁.gpr .r5 + BitVec.ofNat 64 120, 392⟩ ⟨s.gpr .r5, 512⟩
       rw [hbase]
       exact Offset.sub_base _ (by decide))
     have hf₃ : Frame (blockRegions s) s₂.mem s₃.mem := hs₃.frame.sub (by

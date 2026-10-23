@@ -81,7 +81,7 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
       exact branch t₂ 1 (by omega) rfl rfl rfl hg₂
 
 /-- The registers a pass keeps. -/
-def passKept : List Reg := [.r2, .r3, .r4, .r5, .r31]
+def passKept : List Reg := [.r2, .r3, .r4, .r5, .r29, .r30, .r31]
 
 structure PassPost (keys : DesSchedule) (direction : Direction)
     (origin : State) (v : BitVec 32 × BitVec 32) (n : Nat) (s : State) : Prop where

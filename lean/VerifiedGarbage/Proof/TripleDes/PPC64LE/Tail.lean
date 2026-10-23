@@ -26,9 +26,9 @@ structure TailPost (original origin : State) (x : BitVec 64) (s : State) : Prop 
 
 theorem blockTail_ok (original s : State) (x : BitVec 64)
     (hword : WordState x s) (hsaved : Saved original s)
-    (hsavedRead : ∀ i < 17, InRegions (s.rd ++ s.wr) (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8)
+    (hsavedRead : ∀ i < 15, InRegions (s.rd ++ s.wr) (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8)
     (hwrite : InRegions s.wr (s.gpr .r4) 8)
-    (hsep : (⟨s.gpr .r4, 8⟩ : Region).Disjoint ⟨s.gpr .r5, 136⟩) :
+    (hsep : (⟨s.gpr .r4, 8⟩ : Region).Disjoint ⟨s.gpr .r5, 120⟩) :
     WP isa (.block (blockStore ++ blockRestore)) s (TailPost original s x) := by
   obtain ⟨s₁, run₁, mem₁, rd₁, wr₁, regs₁⟩ :=
     blockStore_ok s ((x >>> 32).setWidth 32) (x.setWidth 32) hword.left hword.right hwrite
@@ -42,7 +42,7 @@ theorem blockTail_ok (original s : State) (x : BitVec 64)
       (Region.contains_self _ _) (fun q hq => ?_) (by decide)).trans (hsaved i hi)
     obtain rfl := List.mem_singleton.mp hq
     exact (hsep.sub_right (Offset.sub_base _ (by omega))).symm
-  have savedRead₁ : ∀ i < 17, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8 := by
+  have savedRead₁ : ∀ i < 15, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8 := by
     rw [rd₁, wr₁, regs₁ .r5 (by decide)]
     exact hsavedRead
   apply WP.block_append

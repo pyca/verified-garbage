@@ -17,13 +17,13 @@ open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Impl.TripleDes.PPC64LE
 open VG.Spec.TripleDes (Direction DesSchedule)
 open VG.Proof.TripleDes (roundKey)
 
-def saveRegion (s : State) : Region := ⟨s.gpr .r5, 136⟩
+def saveRegion (s : State) : Region := ⟨s.gpr .r5, 120⟩
 
 structure HeadPre (keys : Nat → DesSchedule) (base : Addr) (s : State) : Prop where
   spills : Ok sboxCfg s
   pointer : s.gpr .r3 = base
-  saveRead : ∀ i < 17, InRegions (s.rd ++ s.wr) (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
-  saveWrite : ∀ i < 17, InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
+  saveRead : ∀ i < 15, InRegions (s.rd ++ s.wr) (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
+  saveWrite : ∀ i < 15, InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
   dataRead : InRegions (s.rd ++ s.wr) (s.gpr .r4) 8
   dataSeparate : (⟨s.gpr .r4, 8⟩ : Region).Disjoint (saveRegion s)
   read : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
@@ -53,7 +53,7 @@ theorem ready_afterSave {keys : Nat → DesSchedule} {base : Addr} {s t : State}
   refine ⟨hp.spills.congr hbase hbase hrd hwr, (congrFun hg .r3).trans hp.pointer, ?_, ?_, ?_⟩
   · rw [hrd, hwr]; exact hp.read
   · rw [show spillRegion t = spillRegion s from
-      congrArg (fun p => (⟨p + BitVec.ofNat 64 136, 376⟩ : Region)) hbase]
+      congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) hbase]
     exact hp.separateWork
   · intro c hc d j hj
     have hmem := hf.readW (a := keyAddr (componentBase base c) d j) (w := 64)

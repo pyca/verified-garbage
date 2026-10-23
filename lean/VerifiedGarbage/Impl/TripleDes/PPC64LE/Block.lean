@@ -14,10 +14,11 @@ through Boolean circuits, and XORed directly into their P-permuted
 destinations. The three passes share IP and FP, and one loop runs them, with
 the pass's first key and its step chosen by the passes left. `r16` counts
 the rounds, `r17` points at the round key, `r18` holds the key step (8 or
-−8) and `r19` the passes left. Slots 0–16 of the scratch buffer save
-`r14`–`r30`, and slots 17–63 are the S-boxes' spills. `r31` is never
-written, so that a caller can keep a public value (ECB's count of blocks) in
-it across a call. Round counters and key addresses are public.
+−8) and `r19` the passes left. Slots 0–14 of the scratch buffer save
+`r14`–`r28`, and slots 15–63 are the S-boxes' spills. `r29`–`r31` are never
+written, so that a caller can keep public values (ECB's count of blocks, a
+mode's pointers and count) in them across a call: the taint analysis cannot
+follow a value through memory. Round counters and key addresses are public.
 -/
 
 @[expose] public section
@@ -28,7 +29,7 @@ open VG.PPC64LE
 open VG.Spec.TripleDes (Direction)
 
 def savedRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24,
-  .r25, .r26, .r27, .r28, .r29, .r30]
+  .r25, .r26, .r27, .r28]
 
 def blockSave : List Instr := savedRegs.zipIdx.map fun (r, i) => .store .d r .r5 (8 * i)
 def blockRestore : List Instr := savedRegs.zipIdx.map fun (r, i) => .load .d r .r5 (8 * i)

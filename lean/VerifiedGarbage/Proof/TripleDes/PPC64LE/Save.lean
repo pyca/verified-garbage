@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# Saving and restoring `r14`–`r30` in slots 0–16 of the scratch buffer
+# Saving and restoring `r14`–`r28` in slots 0–14 of the scratch buffer
 -/
 
 @[expose] public section
@@ -19,14 +19,14 @@ open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
 
 def savedReg (i : Nat) : Reg := savedRegs.getD i .r14
 
-theorem blockSave_eq : blockSave = Spill.saveCode .r5 (Spill.slots savedReg 17) := by
+theorem blockSave_eq : blockSave = Spill.saveCode .r5 (Spill.slots savedReg 15) := by
   decide +kernel
 
-theorem blockRestore_eq : blockRestore = Spill.restoreCode .r5 (Spill.slots savedReg 17) := by
+theorem blockRestore_eq : blockRestore = Spill.restoreCode .r5 (Spill.slots savedReg 15) := by
   decide +kernel
 
 def Saved (original current : State) : Prop :=
-  ∀ i < 17, current.mem.readW (current.gpr .r5 + BitVec.ofNat 64 (8 * i)) 64 =
+  ∀ i < 15, current.mem.readW (current.gpr .r5 + BitVec.ofNat 64 (8 * i)) 64 =
     original.gpr (savedReg i)
 
 structure SavePost (original current : State) : Prop where
@@ -34,16 +34,16 @@ structure SavePost (original current : State) : Prop where
   rd : current.rd = original.rd
   wr : current.wr = original.wr
   saved : Saved original current
-  frame : Frame [⟨original.gpr .r5, 136⟩] original.mem current.mem
+  frame : Frame [⟨original.gpr .r5, 120⟩] original.mem current.mem
 
 theorem blockSave_ok (s : State)
-    (hw : ∀ i < 17, InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8) :
+    (hw : ∀ i < 15, InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8) :
     WP isa (.block blockSave) s (SavePost s) := by
   rw [blockSave_eq]
   refine WP.mono (Spill.save_wp (by decide) (by decide) (Spill.forall_slots hw)) fun s' h =>
     ⟨h.gpr, h.rd, h.wr, fun i hi => ?_, ?_⟩
   · rw [h.gpr, h.mem]
-    exact Spill.saveMem_saved (l := Spill.slots savedReg 17) (by decide) s.mem (s.gpr .r5) s.gpr
+    exact Spill.saveMem_saved (l := Spill.slots savedReg 15) (by decide) s.mem (s.gpr .r5) s.gpr
       (savedReg i, 8 * i) (Spill.mem_slots hi)
   · rw [h.mem]; exact Spill.saveMem_frame_base (by decide) (by decide) _ _ _
 
@@ -53,16 +53,16 @@ structure RestorePost (original origin current : State) : Prop where
   mem : current.mem = origin.mem
 
 theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
-    (hread : ∀ i < 17, InRegions (s.rd ++ s.wr) (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8) :
+    (hread : ∀ i < 15, InRegions (s.rd ++ s.wr) (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8) :
     WP isa (.block blockRestore) s (RestorePost original s) := by
   rw [blockRestore_eq]
-  have hregs : (Spill.slots savedReg 17).map Prod.fst = savedRegs := by decide +kernel
+  have hregs : (Spill.slots savedReg 15).map Prod.fst = savedRegs := by decide +kernel
   exact WP.mono (Spill.restore_wp (by decide) rfl (by decide) (by decide) (Spill.forall_slots hread)
     (Spill.forall_slots hsaved)) fun s' h =>
     ⟨fun r hr => h.gpr_of (.inl (hregs ▸ hr)), ⟨fun r hr => h.other r (hregs ▸ hr), h.rd, h.wr⟩,
       h.mem⟩
 
-theorem savedSlot_spill_disjoint (s : State) (i : Nat) (hi : i < 17) :
+theorem savedSlot_spill_disjoint (s : State) (i : Nat) (hi : i < 15) :
     (⟨s.gpr .r5 + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint (spillRegion s) :=
   Offset.disjoint (s.gpr .r5) (by omega) (by omega) (by decide)
 
