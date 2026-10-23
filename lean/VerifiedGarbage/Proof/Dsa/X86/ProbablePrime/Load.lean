@@ -66,7 +66,7 @@ theorem load_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
   have twoW := b.words_le
   have twoK := b.words_two
   have bytes := b.bytes_eq
-  have e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega
+  have e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega_arith
   have e5 : slot E.width 5 = 256 + 5 * (8 * E.width + 16) := by unfold slot stride VG.Impl.Bignum.hdrBytes; rfl
   have eS : E.scratch = 256 + 28 * (8 * E.width + 16) := by
     unfold Environment.scratch scratchBytes slot stride VG.Impl.Bignum.hdrBytes; rfl
@@ -82,28 +82,28 @@ theorem load_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
   have esi : e.gpr .esi = e.gpr .edi + BitVec.ofNat 32 E.scratch := by
     rw [B.gpr, A.gpr, Ke.1 .edi (by decide)]
   have srcAddr : (e.gpr .esi).setWidth 64 = off E.base E.scratch := by
-    rw [esi]; exact Se.ea (by omega)
+    rw [esi]; exact Se.ea (by omega_arith)
   have dstAddr : (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64 = off E.base (slot E.width 0) :=
-    Se.ea (by omega)
+    Se.ea (by omega_arith)
   have srcNat : (e.gpr .esi).toNat = E.workspace.toNat + E.scratch := by
     rw [esi, BitVec.toNat_add, Se.edi_toNat, v.baseNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : E.scratch < 2 ^ 32), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith : E.scratch < 2 ^ 32), Nat.mod_eq_of_lt (by omega_arith)]
   have dstNat : (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).toNat = E.workspace.toNat + slot E.width 0 := by
     rw [BitVec.toNat_add, Se.edi_toNat, v.baseNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : slot E.width 0 < 2 ^ 32), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith : slot E.width 0 < 2 ^ 32), Nat.mod_eq_of_lt (by omega_arith)]
   have C : VG.Proof.RsaKeyGen.X86.Import.Context
       ⟨e.gpr .esi, e.gpr .edi + BitVec.ofNat 32 (slot E.width 0), E.words⟩ e := by
-    refine VG.Proof.RsaKeyGen.X86.Import.context_of_regions (by show 0 < E.words; omega)
-      (by show (e.gpr .esi).toNat + 4 * E.words ≤ 2 ^ 32; omega)
-      (by show (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).toNat + 4 * E.words ≤ 2 ^ 32; omega) ?_ ?_ ?_
+    refine VG.Proof.RsaKeyGen.X86.Import.context_of_regions (by show 0 < E.words; omega_arith)
+      (by show (e.gpr .esi).toNat + 4 * E.words ≤ 2 ^ 32; omega_arith)
+      (by show (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).toNat + 4 * E.words ≤ 2 ^ 32; omega_arith) ?_ ?_ ?_
     · change InRegions _ ((e.gpr .esi).setWidth 64) (4 * E.words)
-      rw [srcAddr]; exact Se.read (by omega)
+      rw [srcAddr]; exact Se.read (by omega_arith)
     · change InRegions _ ((e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64) (4 * E.words)
-      rw [dstAddr]; exact Se.write (by omega)
+      rw [dstAddr]; exact Se.write (by omega_arith)
     · change (⟨(e.gpr .esi).setWidth 64, 4 * E.words⟩ : Region).Disjoint
         ⟨(e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64, 4 * E.words⟩
       rw [srcAddr, dstAddr]
-      exact Offset.disjoint E.base (Or.inr (by omega)) (by omega) (by omega)
+      exact Offset.disjoint E.base (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   have loaded := VG.Proof.RsaKeyGen.X86.Import.load_ok C rfl rfl
   change WP isa (VG.Impl.RsaKeyGen.X86.Import.load E.words (slot E.width 0)) e _ at loaded
   refine WP.seq (WP.mono loaded fun f ⟨value, F, Kf⟩ => ?_)
@@ -116,23 +116,23 @@ theorem load_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
     rw [hk, bytes, show e.mem = s.mem from by rw [B.mem, A.mem]]
   change Frame [⟨(e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64, 4 * E.words⟩] e.mem f.mem at F
   rw [dstAddr] at F
-  have Of : Outside E.base (slot E.width 0) (4 * E.words) e.mem f.mem := frame_outside F (by omega)
+  have Of : Outside E.base (slot E.width 0) (4 * E.words) e.mem f.mem := frame_outside F (by omega_arith)
   have Sf := Se.of_keeps Kf (by decide)
   refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.WitnessLoad.zeros_ok Sf (slot E.width 0 + 4 * E.words)
-    (2 * E.width - E.words) (by omega)) fun g ⟨Zg, Og, Kg⟩ => ?_)
+    (2 * E.width - E.words) (by omega_arith)) fun g ⟨Zg, Og, Kg⟩ => ?_)
   have Sg := Sf.of_keeps Kg (by decide)
   have whole : val32 g.mem E.base (slot E.width 0) (2 * E.width) = c := by
-    rw [show 2 * E.width = E.words + (2 * E.width - E.words) by omega, val32_append, Zg, Nat.mul_zero,
-      Nat.add_zero, Og.val32 (Or.inl (by omega)) (by omega), low]
+    rw [show 2 * E.width = E.words + (2 * E.width - E.words) by omega_arith, val32_append, Zg, Nat.mul_zero,
+      Nat.add_zero, Og.val32 (Or.inl (by omega_arith)) (by omega_arith), low]
   refine WP.mono (VG.Proof.RsaKeyGen.X86.CandidateSave.save_ok Sg (n := 2 * E.width)
-    (src := slot E.width 0) (dst := slot E.width 5) (by omega) (by omega) (by omega) (Or.inr (Or.inr (by omega)))
+    (src := slot E.width 0) (dst := slot E.width 5) (by omega_arith) (by omega_arith) (by omega_arith) (Or.inr (Or.inr (by omega_arith)))
     (by rw [whole]; exact odd)) fun t ⟨minus, Ot, Kt⟩ => ?_
   rw [whole] at minus
-  refine ⟨?_, by omega, ?_, ?_⟩
-  · rw [Ot.val32 (Or.inl (by omega)) (by omega)]; exact whole
+  refine ⟨?_, by omega_arith, ?_, ?_⟩
+  · rw [Ot.val32 (Or.inl (by omega_arith)) (by omega_arith)]; exact whole
   · rw [B.mem, A.mem] at Of
-    exact ((Of.mono (by omega) (by omega)).trans (Og.mono (by omega) (by omega))).trans
-      (Ot.mono (by omega) (by omega))
+    exact ((Of.mono (by omega_arith) (by omega_arith)).trans (Og.mono (by omega_arith) (by omega_arith))).trans
+      (Ot.mono (by omega_arith) (by omega_arith))
   · exact (((Ke.mono (by decide)).trans (Kf.mono (by decide))).trans (Kg.mono (by decide))).trans
       (Kt.mono (by decide))
 
