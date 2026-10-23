@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Stash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Key
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.TailO.Kernel
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.TailO.Rest
@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 
 /-!
 # ChaCha20-Poly1305 on AArch64: `open` from 513 to 704 bytes

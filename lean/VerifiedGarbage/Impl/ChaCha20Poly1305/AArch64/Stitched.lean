@@ -537,15 +537,16 @@ def route (sve enc : Bool) : List Instr :=
   [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
     .lsr .x .x9 .x9 (wideSh sve enc)] ++ List.replicate 11 (.movz .x .x10 0 0)
 
-/-- `route` when decrypting, and `x10 = 0` iff `513 ≤ x5 ≤ 704`, the lengths
+/-- `route` when decrypting, after `x10 = 0` iff `513 ≤ x5 ≤ 704`, the lengths
 `OpenKey.openMain` takes: `b₂ - b₁ + 1`, with `b₁ = (x5 - 705) >> 63`
-(`x5 < 705`) and `b₂ = (x5 - 513) >> 63` (`x5 < 513`), for `x5` below `2^63`.
-With the two branches, the block is 64 bytes long, as `route`'s with its
-branch and moves, so that `openStitchedMain` keeps its alignment. -/
+(`x5 < 705`, in `x9`) and `b₂ = (x5 - 513) >> 63` (`x5 < 513`), for `x5`
+below `2^63`. Four moves first keep the block, with its two branches, 64
+bytes long, as `route`'s with its branch, so that `openStitchedMain` keeps
+its alignment; only `x9` and `x10` are written. -/
 def routeOpen (sve : Bool) : List Instr :=
-  (route sve false).take 4 ++
-    [.subImm .x .x10 .x5 705, .lsr .x .x10 .x10 63, .subImm .x .x11 .x5 513, .lsr .x .x11 .x11 63,
-      .sub .x .x10 .x11 .x10, .addImm .x .x10 .x10 1] ++ List.replicate 4 (.movz .x .x12 0 0)
+  List.replicate 4 (.movz .x .x10 0 0) ++
+    [.subImm .x .x9 .x5 705, .lsr .x .x9 .x9 63, .subImm .x .x10 .x5 513, .lsr .x .x10 .x10 63,
+      .sub .x .x10 .x10 .x9, .addImm .x .x10 .x10 1] ++ (route sve false).take 4
 
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
 checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route when
