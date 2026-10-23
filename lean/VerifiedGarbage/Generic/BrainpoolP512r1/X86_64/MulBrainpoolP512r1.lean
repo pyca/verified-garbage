@@ -31,7 +31,7 @@ def note : String :=
   top: each step doubles the accumulator and adds `Q` by the general complete addition formulas \
   of Renes, Costello and Batina (Algorithm 1, with `a` and `3 b` read from `ws`), and keeps the \
   sum or the double by a mask of the bit. Field elements are eight 64-bit words in Montgomery \
-  form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
+  form, multiplied by column-wise Montgomery multiplication (FIPS) with a final conditional \
   subtraction; nothing depends on `k` or `Q` but through masks."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP512r1.curve) : List Artifact :=

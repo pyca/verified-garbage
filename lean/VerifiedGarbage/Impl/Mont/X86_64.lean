@@ -74,7 +74,7 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
   `k + 8`; then `csubW`. `sqrP o a`, `mulP o a a` with each product of two
   different words computed once and added twice.
 
-* `mulF o a b`: for any other modulus of nine words (P-521's order),
+* `mulF o a b`: for any other modulus of eight or nine words (P-521's order),
   Montgomery multiplication by columns too, each column also adding the
   reduction's `u_k m_j` and the first nine computing their `u` (Koç, Acar and
   Kaliski's FIPS).
@@ -1112,7 +1112,7 @@ def fCol (M : Mod) (a b c : Nat) : List Instr :=
     if c < M.n then fRed M c
     else [.store (sc (M.tmp + 8 * (c - M.n))) (pAcc (c + M.n) 0), .mov32 (pAcc (c + M.n) 0) (.imm 0)]
 
-/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`) for a modulus of nine
+/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`) for a modulus of eight or nine
 words, by Montgomery multiplication in product scanning (Koç, Acar and
 Kaliski's FIPS): column `c` sums the products `a_i b_j` and the reduction's
 `u_k m_j` with `i + j = k + j = c` in three registers (`pAcc`); at the end of
@@ -1132,7 +1132,7 @@ def mul (M : Mod) (o a b : Nat) : List Instr :=
   else if M.red = .friendly p521Ws then
     (if M.adx then (if a = b then sqrPX M o a else mulPX M o a b)
       else if a = b then sqrP M o a else mulP M o a b)
-  else if M.n = 9 then mulF M o a b else mulW M o a b
+  else if M.n = 8 ∨ M.n = 9 then mulF M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (o a b : Nat) : List Instr :=

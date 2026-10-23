@@ -385,7 +385,7 @@ def restore : List Instr :=
 
 def body (order : Bool) : List Instr :=
   [.mov .r12 (.reg .rcx), .alu .add .rsi (.reg .rdi)] ++ save ++ store order ++
-    reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)] (mulW (mod order) mO mA mB) ++ restore
+    reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)] (mulF (mod order) mO mA mB) ++ restore
 
 def fn (order : Bool) : Prog isa :=
   .seq (.block zext) (.seq (.block setup) (.seq (.block (body order)) (.block restores)))

@@ -25,7 +25,7 @@ open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64.BrainpoolP512r1.Check
 def note : String :=
   "The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs. It \
   compares `x` and `y` with `p` by subtraction with borrow, takes them into Montgomery's form \
-  and computes `y² - (x³ + a x + b)` modulo `p` by `mul` and word-by-word Montgomery reduction, \
+  and computes `y² - (x³ + a x + b)` modulo `p` by `mul` and column-wise Montgomery reduction, \
   and selects the point by masks; nothing depends on the numbers but through masks."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP512r1.curve) : List Artifact :=
