@@ -37,7 +37,7 @@ abbrev columnClob : List Reg := [.eax,.edx,.edi,.ebp,.esi,.ebx,.ecx]
       let cn := total s.mem W a S m N k c/2^32
       t.mem=stepMem s.mem W S k word cn ∧ Keeps columnClob s t ∧
       PtrAt t W .edi S ∧ w32 t.mem W (S+8)+2^32*w32 t.mem W (S+12)=cn := by
-  have np : 0<N := by omega
+  have np : 0<N := by omega_arith
   have b := column_bounds (k:=k) s.mem W a S m np nl cb
   have pb := pre_bounds s.mem W a S m N k c b.1
   have scr := lay.scr
@@ -70,8 +70,8 @@ abbrev columnClob : List Reg := [.eax,.edx,.edi,.ebp,.esi,.ebx,.ecx]
   have byCarry : value y+w32 y.mem W (S+8)+2^32*w32 y.mem W (S+12)<2^96 := by
     rw [valueY,M₃]
     unfold pre at pb
-    omega
-  refine WP.seq (WP.mono (carryIn_ok (hw.of_keeps K₃) ps (by omega) byCarry) fun z ⟨vz,kz,mz⟩ => ?_)
+    omega_arith
+  refine WP.seq (WP.mono (carryIn_ok (hw.of_keeps K₃) ps (by omega_arith) byCarry) fun z ⟨vz,kz,mz⟩ => ?_)
   have K₄ : Keeps columnClob s z := K₃.trans (kz.mono (by decide))
   have M₄ : z.mem=s.mem := mz.trans M₃
   have pz : PtrAt z W .edi S := by rw [PtrAt,kz.1 .edi (by decide)]; exact ps
@@ -80,8 +80,8 @@ abbrev columnClob : List Reg := [.eax,.edx,.edi,.ebp,.esi,.ebx,.ecx]
   have redBound : value z+reductionSum z.mem W S m N k N<2^96 := by
     rw [valueZ,M₄,reductionSum_full]
     unfold pre redCoeff at pb
-    omega
-  refine WP.seq (WP.mono (reductionProducts_ok z (hw.of_keeps K₄) pz pzm (by omega)
+    omega_arith
+  refine WP.seq (WP.mono (reductionProducts_ok z (hw.of_keeps K₄) pz pzm (by omega_arith)
     lay.mo_le (Nat.le_refl _) redBound) fun r ⟨vr,kr,mr⟩ => ?_)
   have K₅ : Keeps columnClob s r := K₄.trans (kr.mono (by decide))
   have M₅ : r.mem=s.mem := mr.trans M₄
@@ -90,26 +90,26 @@ abbrev columnClob : List Reg := [.eax,.edx,.edi,.ebp,.esi,.ebx,.ecx]
   have valueR : value r=pre s.mem W a S m N k c := by
     rw [vr,valueZ,M₄,reductionSum_full]
     unfold pre redCoeff
-    omega
+    omega_arith
   have lowR : (r.gpr .esi).toNat=pre s.mem W a S m N k c%2^32 := by rw [←value_low,valueR]
   have qr : (if k<N then ((r.gpr .esi).toNat*w32 r.mem W (S+16))%2^32 else 0)=
       quot s.mem W a S m N k c := by rw [lowR,M₅]; rfl
   have digitBound : value r+(if k<N then ((r.gpr .esi).toNat*w32 r.mem W (S+16))%2^32 else 0)*w32 r.mem W m<2^96 := by
     rw [valueR,qr,M₅]
     exact b.1
-  refine WP.seq (WP.mono (digit_ok (hw.of_keeps K₅) pr prm (by omega)
-    (by have := lay.mo_le; omega) (by have := lay.smo; omega) digitBound) fun d ⟨vd,kd,md⟩ => ?_)
+  refine WP.seq (WP.mono (digit_ok (hw.of_keeps K₅) pr prm (by omega_arith)
+    (by have := lay.mo_le; omega_arith) (by have := lay.smo; omega_arith) digitBound) fun d ⟨vd,kd,md⟩ => ?_)
   rw [qr] at vd md
   have valueD : value d=total s.mem W a S m N k c := by rw [vd,valueR,M₅]; rfl
   have K₆ : Keeps columnClob s d := K₅.trans (kd.mono (by decide))
   have pd : PtrAt d W .edi S := by rw [PtrAt,kd.1 .edi (by decide)]; exact pr
-  refine WP.mono (carryOut_ok (hw.of_keeps K₆) pd (by omega)) fun t ⟨kt,mt⟩ => ?_
+  refine WP.mono (carryOut_ok (hw.of_keeps K₆) pd (by omega_arith)) fun t ⟨kt,mt⟩ => ?_
   refine ⟨?_,K₆.trans (kt.mono (by decide)),?_,?_⟩
   · rw [mt,valueD,md,M₅,lowR]
     simp only [stepMem,Nat.add_assoc]
   · rw [PtrAt,kt.1 .edi (by decide)]
     exact pd
   · rw [mt,valueD]
-    exact carryMem_value _ W hw.nowrap (by omega) (by omega)
+    exact carryMem_value _ W hw.nowrap (by omega_arith) (by omega_arith)
 
 end VG.Proof.Mont.X86.StaticSquare
