@@ -153,4 +153,124 @@ theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
 
 end
 
+/-! ## Copying `T` out -/
+
+/-- The sign bit of `a - b`, for `a, b < 2⁶³`: whether `a < b`. -/
+theorem sub_sign {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
+    ((BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 != 0) = decide (a < b) := by
+  have e : ((BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63).toNat = if a < b then 1 else 0 := by
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      Nat.shiftRight_eq_div_pow]
+    split <;> omega
+  by_cases hab : a < b
+  · simp only [hab, ↓reduceIte] at e
+    have : (BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 ≠ 0 := fun h0 => by rw [h0] at e; simp at e
+    simp only [bne_iff_ne, ne_eq, this, not_false_eq_true, hab, decide_true]
+  · simp only [hab, ↓reduceIte] at e
+    have : (BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 = 0 := BitVec.eq_of_toNat_eq (by rw [e]; rfl)
+    rw [this]
+    simp [hab]
+
+section
+variable {hF : FnsOK F} {s₀ : State} (hp : Pre F hF.X s₀)
+include hp
+
+theorem ol_lt : ol s₀ < 2 ^ 38 := by
+  have := hp.olD; have := (sizes hF).D; omega
+
+omit hp in
+/-- Before block `k + 1`, some output is left. -/
+theorem dn_lt (hD : 0 < F.H.D) {k : Nat} (hk : k < nbk s₀ (F := F)) :
+    dn s₀ (F := F) k = k * F.H.D ∧ k * F.H.D < ol s₀ := by
+  have := (Whole.lt_nb hD).1 hk
+  exact ⟨by show min _ _ = _; omega, this⟩
+
+/-- The bytes of `T` the output still needs, `min (ol - k D, D)`, in `r9`. -/
+theorem outLen_ok {k : Nat} (hk : k < nbk s₀ (F := F)) {s : State} (h : Inv hF s₀ k s) :
+    WP isa F.outLen s fun t => Inv hF s₀ k t ∧ t.mem = s.mem ∧
+      t.gpr .r9 = BitVec.ofNat 64 (min (ol s₀ - k * F.H.D) F.H.D) := by
+  have hD := (sizes hF).D
+  have hol := ol_lt hp
+  obtain ⟨hdn, hkD⟩ := dn_lt hD.1 hk
+  unfold Fns.outLen
+  refine WP.seq (wp_subi (by omega) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_mov fun s₃ u₃ =>
+    WP.block_nil ?_)
+  have i₃ : Inv hF s₀ k s₃ := h.keep hp (by rw [u₃.rd, u₂.rd, u₁.rd]) (by rw [u₃.wr, u₂.wr, u₁.wr])
+    (by rw [u₃.sp, u₂.sp, u₁.sp]) (fun r hr => by
+      rw [u₃.other r (by revert r; decide), u₂.other r (by revert r; decide), u₁.other r (by revert r; decide)])
+    (rs := []) (by rw [u₃.mem, u₂.mem, u₁.mem]; exact Frame.refl _ _) (by simp)
+  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  have e24 : s.gpr .r24 = BitVec.ofNat 64 (ol s₀ - k * F.H.D) := by rw [h.r24, hdn]
+  have e9 : s₃.gpr .r9 = BitVec.ofNat 64 (ol s₀ - k * F.H.D) := by
+    rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), e24]
+  have e12 : s₃.gpr .r12 = (BitVec.ofNat 64 (ol s₀ - k * F.H.D) - BitVec.ofNat 64 F.H.D) >>> 63 := by
+    rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr, e24]
+  refine WP.ite (decide (ol s₀ - k * F.H.D < F.H.D)) (by
+      show VG.PPC64LE.eval (.nonzero .d .r12) s₃ = _
+      rw [VG.Proof.MdStream.PPC64LE.eval_nonzero, e12, sub_sign (by omega) (by omega)])
+    (fun hT => WP.block_nil ⟨i₃, m₃, ?_⟩) fun hE => wp_li (by omega) fun s₄ u₄ => WP.block_nil
+      ⟨i₃.keep hp u₄.rd u₄.wr u₄.sp (fun r hr => u₄.other r (by revert r; decide)) (rs := [])
+        (by rw [u₄.mem]; exact Frame.refl _ _) (by simp), by rw [u₄.mem, m₃], ?_⟩
+  · rw [e9, Nat.min_eq_left (Nat.le_of_lt (of_decide_eq_true hT))]
+  · have := of_decide_eq_false hE
+    rw [u₄.gpr, Nat.min_eq_right (by omega)]
+
+end
+
+/-- The output loop after `j` of its `n` bytes, copying from `A` to `B`. -/
+structure CI (s : State) (A B : Addr) (n j : Nat) (t : State) : Prop where
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  sp : t.sp = s.sp
+  other : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r11 → r ≠ .r12 → t.gpr r = s.gpr r
+  r8 : t.gpr .r8 = BitVec.ofNat 64 j
+  r9 : t.gpr .r9 = BitVec.ofNat 64 (n - j)
+  mem : t.mem = writeBytes s.mem B (bytesAt s.mem A j)
+
+/-- The loop copying `n` bytes from `scratch + tO` to `r23`. -/
+theorem copyLoop_ok {s : State} {n : Nat} {A B : Addr} {tO : Nat} (hn : 0 < n) (hn' : n < 2 ^ 32)
+    (ho : tO < 2 ^ 15) (hA : s.gpr .r21 + BitVec.ofNat 64 tO = A) (hB : s.gpr .r23 = B)
+    (hin : ∀ j < n, InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 j) 1)
+    (hout : ∀ j < n, InRegions s.wr (B + BitVec.ofNat 64 j) 1)
+    (hd : Region.Disjoint ⟨A, n⟩ ⟨B, n⟩) {t : State} (h : CI s A B n 0 t) :
+    WP isa (.loop (.block [.add .r11 .r21 .r8, .lbz .r12 .r11 tO, .add .r11 .r23 .r8, .stb .r12 .r11 0,
+      .addi .r8 .r8 1, .subi .r9 .r9 1]) (.nonzero .d .r9)) t (CI s A B n n) := by
+  refine WP.loop (M := isa) (fun m t => ∃ j, m = n - j ∧ j < n ∧ CI s A B n j t) ?_ n t ⟨0, rfl, hn, h⟩
+  rintro m t ⟨j, rfl, hj, c⟩
+  refine wp_add fun t₁ u₁ => wp_lbz (a := A + BitVec.ofNat 64 j) ho
+    (by rw [u₁.gpr, c.other _ (by decide) (by decide) (by decide) (by decide), c.r8, ← hA]; ac_rfl)
+    (by rw [u₁.rd, u₁.wr, c.rd, c.wr]; exact hin j hj) fun t₂ u₂ => wp_add fun t₃ u₃ => ?_
+  refine wp_stb (a := B + BitVec.ofNat 64 j) (by decide)
+    (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), u₂.other _ (by decide),
+      u₁.other _ (by decide), c.other _ (by decide) (by decide) (by decide) (by decide), c.r8, hB]; simp)
+    (by rw [u₃.wr, u₂.wr, u₁.wr, c.wr]; exact hout j hj) fun t₄ m₄ => wp_addi (by decide) fun t₅ u₅ =>
+    wp_subi (by decide) fun t₆ u₆ => WP.block_nil ?_
+  have hl : (bytesAt s.mem A j).length = j := bytesAt_length _ _ _
+  have byte : (t₃.gpr .r12).setWidth 8 = s.mem (A + BitVec.ofNat 64 j) := by
+    rw [u₃.other _ (by decide), u₂.gpr, u₁.mem, c.mem, VG.Proof.Hmac.Common.writeBytes_other _ _ _
+      (by rw [hl]; exact VG.Proof.Hmac.Generic.Common.not_mem_of_disjoint hd hj (Nat.le_of_lt hj) (by omega))]
+    ext i hi; simp
+  have c' : CI s A B n (j + 1) t₆ := by
+    refine ⟨by rw [u₆.rd, u₅.rd, m₄.rd, u₃.rd, u₂.rd, u₁.rd, c.rd], by rw [u₆.wr, u₅.wr, m₄.wr, u₃.wr, u₂.wr,
+      u₁.wr, c.wr], by rw [u₆.sp, u₅.sp, m₄.sp, u₃.sp, u₂.sp, u₁.sp, c.sp], fun r a b d e => ?_, ?_, ?_, ?_⟩
+    · rw [u₆.other r b, u₅.other r a, m₄.gpr, u₃.other r d, u₂.other r e, u₁.other r d, c.other r a b d e]
+    · rw [u₆.other _ (by decide), u₅.gpr, m₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
+        u₁.other _ (by decide), c.r8]
+      exact (BitVec.ofNat_add _ _).symm
+    · rw [u₆.gpr, u₅.other _ (by decide), m₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
+        u₁.other _ (by decide), c.r9]
+      exact (VG.Proof.MdStream.PPC64LE.ofNat_pred (k := n - j) (by omega)).trans (by rw [Nat.sub_sub])
+    · rw [u₆.mem, u₅.mem, m₄.mem, byte, u₃.mem, u₂.mem, u₁.mem, c.mem,
+        VG.Proof.Hmac.Generic.Common.bytesAt_snoc', ← VG.Proof.Hmac.Generic.Common.writeBytes_snoc _ _ _ _
+          (by rw [hl]; omega), hl]
+  have hz : isa.eval (.nonzero .d .r9) t₆ = some (decide (n - (j + 1) ≠ 0)) := by
+    show VG.PPC64LE.eval (.nonzero .d .r9) t₆ = _
+    rw [VG.Proof.MdStream.PPC64LE.eval_nonzero, c'.r9, bne, VG.Proof.MdStream.PPC64LE.ofNat_beq_zero (by omega)]
+    simp
+  by_cases hl' : n - (j + 1) = 0
+  · refine .inl ⟨by rw [hz, decide_eq_false fun h => h hl'], ?_⟩
+    have e : n = j + 1 := by omega
+    rw [e]; rw [e] at c'; exact c'
+  · exact .inr ⟨by rw [hz, decide_eq_true hl'], _, by omega, j + 1, rfl, by omega, c'⟩
+
 end VG.Proof.Pbkdf2.Whole.PPC64LE
