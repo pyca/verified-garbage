@@ -1523,6 +1523,7 @@ impl AesGcm {
         tag
     }
 
+    #[allow(dead_code)]
     #[inline(never)]
     fn seal_pieces_prepared(
         &self,
