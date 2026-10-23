@@ -785,7 +785,7 @@ theorem loopsWith_ok {s₀ : State} (hp : Pm s₀) {pro pow : List Instr}
 
 theorem loops_ok {s₀ : State} (hp : Pm s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghash s₀ fun s' => Proof.Gcm.ghashAArch64.post s₀ s' :=
-  loopsWith_ok hp (prologue_ok hp) fun _ _ h => powers_ok h
+  loopsWith_ok hp (prologueT_ok hp) fun _ _ h => powersS_ok h
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghash s₀ fun s' =>

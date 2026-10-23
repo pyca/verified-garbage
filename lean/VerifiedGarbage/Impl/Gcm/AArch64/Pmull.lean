@@ -158,7 +158,7 @@ def ghashWith (pro pow : List Instr) : Prog isa :=
         (.seq (.block pow) (.seq (.loop (.block (body 8)) (.nonzero .x .x5)) tail)))
       (.block epilogue))
 
-def ghash : Prog isa := ghashWith prologue powers
+
 
 /-! ## With the prepared powers
 
@@ -279,6 +279,10 @@ def prologueT : List Instr :=
 
 /-- `pw` kept in `x8`, then the prologue, and the powers. -/
 def prologueS : List Instr := ([.addImm .x .x8 .x5 0] : List Instr) ++ prologueT ++ powersS
+
+/-- `vg_ghash_aes`, with `H'` by `twist` and the powers by `powersS`
+(defined below). -/
+def ghash : Prog isa := ghashWith prologueT powersS
 
 /-- `H'ᵏ` stored to `pw` (`x8`). -/
 def storePw (k : Nat) : List Instr := [.strq (tReg k) .x8 (pwOff k)]
