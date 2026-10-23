@@ -100,6 +100,11 @@ def copyLoop : Prog isa :=
   .loop (.block [.lbz .r0 .r3 0, .stb .r0 .r4 0, .addi .r3 .r3 1, .addi .r4 .r4 1, .subi .r5 .r5 1])
     (.nonzero .d .r5)
 
+/-- XORs the `r5` (at least 1) bytes at `r3` into those at `r4`, advancing both. -/
+def xorLoop : Prog isa :=
+  .loop (.block [.lbz .r0 .r4 0, .lbz .r6 .r3 0, .logic .xor .r0 .r0 .r6, .stb .r0 .r4 0,
+    .addi .r3 .r3 1, .addi .r4 .r4 1, .subi .r5 .r5 1]) (.nonzero .d .r5)
+
 /-- `r5 := min (16 - r26, r25)`: `16 - r26` if `r25 ≥ 16`, and otherwise
 whichever the sign of their difference (both being small) says. -/
 def minLen : Prog isa :=
@@ -169,6 +174,50 @@ def lensBlock : List Instr :=
 def lens (yo : Nat) : Prog isa :=
   .seq (.block lensBlock) (ghash1 yo .r31 tO)
 
+/-! ## Counter mode -/
+
+/-- The rest of the keystream block, from byte `r26`, into `r24`. -/
+def cryptHead : Prog isa :=
+  .seq minLen
+  (.seq (.block [.addi .r3 .r30 64, .add .r3 .r3 .r26, mov .r4 .r24, .add .r24 .r24 .r5,
+      .sub .r25 .r25 .r5])
+    xorLoop)
+
+/-- The whole blocks at `r24` split off: their address in `r6` and number in
+`r7`, `r24` and `r25` the rest. -/
+def splitCtr : List Instr :=
+  [mov .r6 .r24, .lsr .d .r7 .r25 4, .li .r0 15, .logic .and .r8 .r25 .r0, .sub .r9 .r25 .r8,
+   .add .r24 .r24 .r9, mov .r25 .r8]
+
+/-- The arguments of `vg_aes_ctr32` but the data and their number: the key
+schedule, the rounds, the counter block (at `r30 + c`) and the working
+space. -/
+def ctrArgs (c : Nat) : List Instr :=
+  [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 c, .addi .r8 .r31 scrO]
+
+/-- Whole blocks at `r24`, by `vg_aes_ctr32`. -/
+def cryptWhole : Prog isa :=
+  .seq (.block splitCtr)
+    (.ite (.zero .d .r7) (.block []) (.seq (.block (ctrArgs 48)) ctrCall))
+
+/-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` on it. -/
+def tailArgs : List Instr :=
+  ([.li .r0 0, .store .d .r0 .r30 64, .store .d .r0 .r30 72, .addi .r6 .r30 64, .li .r7 1] :
+    List Instr) ++ ctrArgs 48
+
+/-- The last `r25` bytes at `r24`, with a new keystream block. -/
+def cryptTail : Prog isa :=
+  .ite (.zero .d .r25) (.block [])
+    (.seq (.seq (.block tailArgs) ctrCall)
+      (.seq (.block [.addi .r3 .r30 64, mov .r4 .r24, mov .r5 .r25]) xorLoop))
+
+/-- The rest of the keystream block first, if the text so far ends within a block. -/
+def cryptFill : Prog isa :=
+  .ite (.zero .d .r26) (.block []) cryptHead
+
+def crypt : Prog isa :=
+  .ite (.zero .d .r25) (.block []) (.seq cryptFill (.seq cryptWhole cryptTail))
+
 /-! ## `J₀` -/
 
 /-- The accumulator copied to `W + o`, and the arguments of `vg_aes_ctr32` on
@@ -233,5 +282,34 @@ def streamAadPre : List Instr :=
 def streamAad : Prog isa :=
   .seq (.block streamAadPre) (.seq (absorb 16) (.block restore))
 
+
+/-- The entry of `encrypt` and `decrypt`: `(ctx = r3, rounds = r4, state = r5,
+aad_len = r6, text_len = r7, data = r8, len = r9, scratch = r10)`, kept in
+`r29`, `r28`, `r30`, `r22`, `r23`, `r20` and `r19`. -/
+def cryptEntry : List Instr :=
+  save .r10 ++ ([mov .r30 .r5, mov .r29 .r3, mov .r28 .r4, mov .r22 .r6, mov .r23 .r7,
+    mov .r20 .r8, mov .r19 .r9] : List Instr)
+
+/-- The arguments of `crypt` or `absorb` for the text: the data, its length,
+and the length of the text so far modulo 16. -/
+def textArgs : List Instr := [mov .r24 .r20, mov .r25 .r19, .li .r0 15, .logic .and .r26 .r23 .r0]
+
+/-- The additional data padded, before the first text. -/
+def firstFlush : Prog isa :=
+  .seq (.block [.li .r0 15, .logic .and .r26 .r22 .r0]) (flush 16)
+
+/-- The text (`len` bytes at `data`) absorbed into GHASH. -/
+def textAbsorb : Prog isa :=
+  .ite (.zero .d .r19) (.block [])
+    (.seq (.ite (.zero .d .r23) firstFlush (.block []))
+      (.seq (.block textArgs) (absorb 16)))
+
+/-- `vg_aes_gcm_stream_encrypt`. -/
+def streamEncrypt : Prog isa :=
+  .seq (.block (cryptEntry ++ textArgs)) (.seq crypt (.seq textAbsorb (.block restore)))
+
+/-- `vg_aes_gcm_stream_decrypt`. -/
+def streamDecrypt : Prog isa :=
+  .seq (.block cryptEntry) (.seq textAbsorb (.seq (.block textArgs) (.seq crypt (.block restore))))
 
 end VG.Impl.AesGcm.PPC64LE

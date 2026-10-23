@@ -449,6 +449,574 @@ blr",
     )
 }
 
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation calls `vg_aes_ctr32` for the block cipher and `vg_ghash` for GHASH.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r10, %r1, 32
+std %r18, 128(%r10)
+std %r19, 136(%r10)
+std %r20, 144(%r10)
+std %r21, 152(%r10)
+std %r22, 160(%r10)
+std %r23, 168(%r10)
+std %r24, 176(%r10)
+std %r25, 184(%r10)
+std %r26, 192(%r10)
+std %r27, 200(%r10)
+std %r28, 208(%r10)
+std %r29, 216(%r10)
+std %r30, 224(%r10)
+std %r31, 232(%r10)
+mflr %r0
+std %r0, 240(%r10)
+or %r31, %r10, %r10
+or %r30, %r5, %r5
+or %r29, %r3, %r3
+or %r28, %r4, %r4
+or %r22, %r6, %r6
+or %r23, %r7, %r7
+or %r20, %r8, %r8
+or %r19, %r9, %r9
+or %r24, %r20, %r20
+or %r25, %r19, %r19
+li %r0, 15
+and %r26, %r23, %r0
+cmpldi %cr0, %r25, 0
+beq %cr0, 20f
+cmpldi %cr0, %r26, 0
+beq %cr0, 22f
+li %r5, 16
+subf %r5, %r26, %r5
+rldicl %r6, %r25, 60, 4
+cmpldi %cr0, %r6, 0
+bne %cr0, 24f
+subf %r6, %r5, %r25
+rldicl %r6, %r6, 1, 63
+cmpldi %cr0, %r6, 0
+bne %cr0, 26f
+b 27f
+26:
+or %r5, %r25, %r25
+27:
+b 25f
+24:
+25:
+addi %r3, %r30, 64
+add %r3, %r3, %r26
+or %r4, %r24, %r24
+add %r24, %r24, %r5
+subf %r25, %r5, %r25
+28:
+lbz %r0, 0(%r4)
+lbz %r6, 0(%r3)
+xor %r0, %r0, %r6
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 28b
+b 23f
+22:
+23:
+or %r6, %r24, %r24
+rldicl %r7, %r25, 60, 4
+li %r0, 15
+and %r8, %r25, %r0
+subf %r9, %r8, %r25
+add %r24, %r24, %r9
+or %r25, %r8, %r8
+cmpldi %cr0, %r7, 0
+beq %cr0, 29f
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+addi %r5, %r30, 48
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+b 210f
+29:
+210:
+cmpldi %cr0, %r25, 0
+beq %cr0, 211f
+li %r0, 0
+std %r0, 64(%r30)
+std %r0, 72(%r30)
+addi %r6, %r30, 64
+li %r7, 1
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+addi %r5, %r30, 48
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+addi %r3, %r30, 64
+or %r4, %r24, %r24
+or %r5, %r25, %r25
+213:
+lbz %r0, 0(%r4)
+lbz %r6, 0(%r3)
+xor %r0, %r0, %r6
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 213b
+b 212f
+211:
+212:
+b 21f
+20:
+21:
+cmpldi %cr0, %r19, 0
+beq %cr0, 214f
+cmpldi %cr0, %r23, 0
+beq %cr0, 216f
+b 217f
+216:
+li %r0, 15
+and %r26, %r22, %r0
+cmpldi %cr0, %r26, 0
+beq %cr0, 218f
+li %r0, 0
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+addi %r3, %r30, 32
+addi %r4, %r31, 96
+or %r5, %r26, %r26
+220:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 220b
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 219f
+218:
+219:
+217:
+or %r24, %r20, %r20
+or %r25, %r19, %r19
+li %r0, 15
+and %r26, %r23, %r0
+cmpldi %cr0, %r25, 0
+beq %cr0, 221f
+cmpldi %cr0, %r26, 0
+beq %cr0, 223f
+li %r5, 16
+subf %r5, %r26, %r5
+rldicl %r6, %r25, 60, 4
+cmpldi %cr0, %r6, 0
+bne %cr0, 225f
+subf %r6, %r5, %r25
+rldicl %r6, %r6, 1, 63
+cmpldi %cr0, %r6, 0
+bne %cr0, 227f
+b 228f
+227:
+or %r5, %r25, %r25
+228:
+b 226f
+225:
+226:
+addi %r4, %r30, 32
+add %r4, %r4, %r26
+or %r3, %r24, %r24
+add %r24, %r24, %r5
+subf %r25, %r5, %r25
+add %r26, %r26, %r5
+229:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 229b
+addi %r6, %r26, -16
+cmpldi %cr0, %r6, 0
+beq %cr0, 230f
+b 231f
+230:
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r30, 32
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+231:
+b 224f
+223:
+224:
+or %r5, %r24, %r24
+rldicl %r6, %r25, 60, 4
+li %r0, 15
+and %r8, %r25, %r0
+subf %r9, %r8, %r25
+add %r24, %r24, %r9
+or %r25, %r8, %r8
+cmpldi %cr0, %r6, 0
+beq %cr0, 232f
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 233f
+232:
+233:
+cmpldi %cr0, %r25, 0
+beq %cr0, 234f
+or %r3, %r24, %r24
+addi %r4, %r30, 32
+or %r5, %r25, %r25
+236:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 236b
+b 235f
+234:
+235:
+b 222f
+221:
+222:
+b 215f
+214:
+215:
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation calls `vg_aes_ctr32` for the block cipher and `vg_ghash` for GHASH.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r10, %r1, 32
+std %r18, 128(%r10)
+std %r19, 136(%r10)
+std %r20, 144(%r10)
+std %r21, 152(%r10)
+std %r22, 160(%r10)
+std %r23, 168(%r10)
+std %r24, 176(%r10)
+std %r25, 184(%r10)
+std %r26, 192(%r10)
+std %r27, 200(%r10)
+std %r28, 208(%r10)
+std %r29, 216(%r10)
+std %r30, 224(%r10)
+std %r31, 232(%r10)
+mflr %r0
+std %r0, 240(%r10)
+or %r31, %r10, %r10
+or %r30, %r5, %r5
+or %r29, %r3, %r3
+or %r28, %r4, %r4
+or %r22, %r6, %r6
+or %r23, %r7, %r7
+or %r20, %r8, %r8
+or %r19, %r9, %r9
+cmpldi %cr0, %r19, 0
+beq %cr0, 20f
+cmpldi %cr0, %r23, 0
+beq %cr0, 22f
+b 23f
+22:
+li %r0, 15
+and %r26, %r22, %r0
+cmpldi %cr0, %r26, 0
+beq %cr0, 24f
+li %r0, 0
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+addi %r3, %r30, 32
+addi %r4, %r31, 96
+or %r5, %r26, %r26
+26:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 26b
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 25f
+24:
+25:
+23:
+or %r24, %r20, %r20
+or %r25, %r19, %r19
+li %r0, 15
+and %r26, %r23, %r0
+cmpldi %cr0, %r25, 0
+beq %cr0, 27f
+cmpldi %cr0, %r26, 0
+beq %cr0, 29f
+li %r5, 16
+subf %r5, %r26, %r5
+rldicl %r6, %r25, 60, 4
+cmpldi %cr0, %r6, 0
+bne %cr0, 211f
+subf %r6, %r5, %r25
+rldicl %r6, %r6, 1, 63
+cmpldi %cr0, %r6, 0
+bne %cr0, 213f
+b 214f
+213:
+or %r5, %r25, %r25
+214:
+b 212f
+211:
+212:
+addi %r4, %r30, 32
+add %r4, %r4, %r26
+or %r3, %r24, %r24
+add %r24, %r24, %r5
+subf %r25, %r5, %r25
+add %r26, %r26, %r5
+215:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 215b
+addi %r6, %r26, -16
+cmpldi %cr0, %r6, 0
+beq %cr0, 216f
+b 217f
+216:
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r30, 32
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+217:
+b 210f
+29:
+210:
+or %r5, %r24, %r24
+rldicl %r6, %r25, 60, 4
+li %r0, 15
+and %r8, %r25, %r0
+subf %r9, %r8, %r25
+add %r24, %r24, %r9
+or %r25, %r8, %r8
+cmpldi %cr0, %r6, 0
+beq %cr0, 218f
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 219f
+218:
+219:
+cmpldi %cr0, %r25, 0
+beq %cr0, 220f
+or %r3, %r24, %r24
+addi %r4, %r30, 32
+or %r5, %r25, %r25
+222:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 222b
+b 221f
+220:
+221:
+b 28f
+27:
+28:
+b 21f
+20:
+21:
+or %r24, %r20, %r20
+or %r25, %r19, %r19
+li %r0, 15
+and %r26, %r23, %r0
+cmpldi %cr0, %r25, 0
+beq %cr0, 223f
+cmpldi %cr0, %r26, 0
+beq %cr0, 225f
+li %r5, 16
+subf %r5, %r26, %r5
+rldicl %r6, %r25, 60, 4
+cmpldi %cr0, %r6, 0
+bne %cr0, 227f
+subf %r6, %r5, %r25
+rldicl %r6, %r6, 1, 63
+cmpldi %cr0, %r6, 0
+bne %cr0, 229f
+b 230f
+229:
+or %r5, %r25, %r25
+230:
+b 228f
+227:
+228:
+addi %r3, %r30, 64
+add %r3, %r3, %r26
+or %r4, %r24, %r24
+add %r24, %r24, %r5
+subf %r25, %r5, %r25
+231:
+lbz %r0, 0(%r4)
+lbz %r6, 0(%r3)
+xor %r0, %r0, %r6
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 231b
+b 226f
+225:
+226:
+or %r6, %r24, %r24
+rldicl %r7, %r25, 60, 4
+li %r0, 15
+and %r8, %r25, %r0
+subf %r9, %r8, %r25
+add %r24, %r24, %r9
+or %r25, %r8, %r8
+cmpldi %cr0, %r7, 0
+beq %cr0, 232f
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+addi %r5, %r30, 48
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+b 233f
+232:
+233:
+cmpldi %cr0, %r25, 0
+beq %cr0, 234f
+li %r0, 0
+std %r0, 64(%r30)
+std %r0, 72(%r30)
+addi %r6, %r30, 64
+li %r7, 1
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+addi %r5, %r30, 48
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+addi %r3, %r30, 64
+or %r4, %r24, %r24
+or %r5, %r25, %r25
+236:
+lbz %r0, 0(%r4)
+lbz %r6, 0(%r3)
+xor %r0, %r0, %r6
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 236b
+b 235f
+234:
+235:
+b 224f
+223:
+224:
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.

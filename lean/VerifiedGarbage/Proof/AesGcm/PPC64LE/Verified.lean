@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamAad
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCT
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCryptFn
 
 /-!
 # AES-GCM on PPC64LE: `Verified`
@@ -37,6 +39,14 @@ theorem streamInit_correct (s : State) (hs : streamInitPPC64LE.pre s) :
 theorem streamAad_correct (s : State) (hs : streamAadPPC64LE.pre s) :
     ∃ t s', Exec isa streamAad s t s' ∧ abiPreserved s s' ∧ streamAadPPC64LE.post s s' :=
   streamAad_wp hs
+
+theorem streamEncrypt_correct (s : State) (hs : streamEncryptPPC64LE.pre s) :
+    ∃ t s', Exec isa streamEncrypt s t s' ∧ abiPreserved s s' ∧ streamEncryptPPC64LE.post s s' :=
+  streamEncrypt_wp hs
+
+theorem streamDecrypt_correct (s : State) (hs : streamDecryptPPC64LE.pre s) :
+    ∃ t s', Exec isa streamDecrypt s t s' ∧ abiPreserved s s' ∧ streamDecryptPPC64LE.post s s' :=
+  streamDecrypt_wp hs
 
 /-! ## States satisfying the preconditions (with empty buffers) -/
 
@@ -67,6 +77,15 @@ def streamAadSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
 
+def streamCryptSat : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 10 | .r5 => 0x3000 | .r8 => 0x2000 | .r10 => 0x4000 | _ => 0
+  lr := 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 256⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, 2560⟩]
+
 /-! ## The shared contracts -/
 
 theorem init_verified :
@@ -88,5 +107,19 @@ theorem streamAad_verified :
     sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig,
       Spec.Gcm.streamAadPost, streamAadPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [streamAadSat] using streamAadSat)
+
+theorem streamEncrypt_verified :
+    Verified PPC64LE.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract PPC64LE.abi) :=
+  Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
+      Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, streamEncryptPPC64LE, streamCryptPre,
+      streamCryptPub, rounds, PPC64LE.abi, PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
+
+theorem streamDecrypt_verified :
+    Verified PPC64LE.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract PPC64LE.abi) :=
+  Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
+      Spec.Gcm.streamTextPre, Spec.Gcm.streamDecryptPost, streamDecryptPPC64LE, streamCryptPre,
+      streamCryptPub, rounds, PPC64LE.abi, PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
 end VG.Proof.AesGcm.PPC64LE
