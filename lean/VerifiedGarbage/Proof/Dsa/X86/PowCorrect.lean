@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.PowABI
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86.PowTiming
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.X86.PowTiming
+import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Dsa.X86.PowBody
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -19,19 +21,19 @@ theorem scratch_fits {n size : Nat} (h : contextBytes n ≤ size) :
   simp only [scratch, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> simp only [contextBytes, slot, stride] at * <;> omega
 
-theorem correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
-    (s : State) (h : (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pre s) :
+theorem correct {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
+    (s : State) (h : (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre s) :
     ∃ tr t, Exec isa (body n e) s tr t ∧ abiPreserved s t ∧
-      (Spec.Dsa.ModPow.powContract (layout n e) abi 20).post s t := by
+      (Spec.Dsa.ModPow.powContract (layout n e) abi 96).post s t := by
   have A := abi_of h
   have M : wordsVal s.mem (ws s) (slot n 0) n =
       Spec.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) := (numAt_eq8 ..).symm
-  obtain ⟨tr, t, E, V, O, R, _, _⟩ := body_ok A.entry A.size hn hn48 he hen M A.gt_one A.odd
-  have F : Frame [⟨ws s, bytes s⟩] s.mem t.mem := by
+  have Rm := A.room
+  obtain ⟨tr, t, E, V, O, R, _, _⟩ := body_ok (A.entry (by decide)) Rm A.size hn hn48 he hen M A.gt_one A.odd
+  have F : Frame [⟨ws s, bytes s⟩, below (s.gpr .esp) 96] s.mem t.mem := by
     intro x hx
-    apply O x
-    intro r hr
-    have H := hx _ (List.mem_singleton_self _)
+    have H := hx _ (List.mem_cons_self ..)
+    refine O x (fun r hr => ?_) (hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
     have B := scratch_fits A.size r hr
     simp only [Region.Contains, ofs] at H ⊢
     omega
@@ -39,37 +41,50 @@ theorem correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e
   · exact F.readW (by
       simpa only [BitVec.add_zero] using
         Offset.contains_base ((s.gpr .esp).setWidth 64) (d := 0) (n := 4) (k := 4) (by decide) (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.retScratch) (by decide)
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact A.retScratch
+        · simp only [below]
+          rw [VG.X86.Taint.sub_setWidth A.stackLow]
+          exact Offset.base_disjoint_below _ (by decide)) (by decide)
   · sig_post [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_⟩
     · simpa only [numAt_eq8, numAt_eq4] using V
     · intro i hi hj
-      apply O _
-      intro r hr
       have bound := A.bound
-      rw [show ofs (ws s) (ws s + BitVec.ofNat 64 i) = i by
-        simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by dsimp only [bytes] at bound; omega)]]
-      exact hj r hr
+      have e : ofs (ws s) (ws s + BitVec.ofNat 64 i) = i := by
+        simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by dsimp only [bytes] at bound; omega)]
+      refine O _ (fun r hr => by rw [e]; exact hj r hr) fun hz => ?_
+      have := OutsS.zone_ofs Rm hz
+      rw [e] at this
+      dsimp only [bytes] at this
+      omega
 
 theorem publicArgs {n e : Nat} {s t : State}
-    (H : (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pub s t) :
+    (H : (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 := by
   sig_pub [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   constructor <;> with_reducible assumption
 
-theorem ABI.readArg {n e : Nat} {s : State} (A : ABI n e s) :
+theorem ABI.readArg {n e k : Nat} {s : State} (A : ABI n e s k) (hk : 20 ≤ k := by decide) :
     readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) := by
   show s.load32 (argAddr s 0) = some (arg s 0)
-  rw [State.load32, ite_eq_left_iff.mpr fun h => absurd A.entry.arg h]
+  rw [State.load32, ite_eq_left_iff.mpr fun h => absurd (A.entry hk).arg h]
   rfl
 
-theorem constantTime (n e : Nat) :
-    ConstantTime isa (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pre
-      (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pub (body n e) := by
+theorem ABI.bodyIn {n e : Nat} {s : State} (A : ABI n e s 96) : BodyIn n s := by
+  have M : wordsVal s.mem (ws s) (slot n 0) n = Spec.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) :=
+    (numAt_eq8 ..).symm
+  exact ⟨bytes s, (A.entry (by decide)), A.room, A.size, M ▸ A.gt_one, M ▸ A.odd⟩
+
+theorem constantTime {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
+    ConstantTime isa (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre
+      (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pub (body n e) := by
   intro s t tr ur sf tf hs ht hp E F
   have A := publicArgs hp
-  exact ((body_relCT n e) s t tr ur sf tf
-    ⟨A.1, A.2, (abi_of hs).readArg, (abi_of ht).readArg⟩ E F).1
+  exact ((body_relCT n e hn hn48 he hen) s t tr ur sf tf
+    ⟨A.1, A.2, (abi_of hs).readArg, (abi_of ht).readArg, (abi_of hs).bodyIn, (abi_of ht).bodyIn⟩ E F).1
 
 end VG.Proof.Dsa.X86.Pow

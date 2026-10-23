@@ -20,7 +20,7 @@ def checkInvoke : CheckInvoke keyInvariant where
   correct := by
     intro s₀ t A R C
     obtain ⟨reads,writes⟩ := CheckCall.call_covers A R
-    have low : 24≤(t.gpr .esp).toNat := by have := CheckCall.esp_toNat A R; omega
+    have low : 112≤(t.gpr .esp).toNat := by have := CheckCall.esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega
     let v := (allocated 4 t).withRegions (CheckCall.callRd s₀) (CheckCall.callWr s₀)
     have args (i : Nat) (hi : i<6) : arg v i=CheckCall.callVal s₀ (t.gpr .esp) i := by
       rw [allocated_arg R (by omega)]

@@ -28,5 +28,5 @@ def deriveFn : DeriveFn where
 
 theorem keyGeneration_verified :
     Verified target (GenerateKey.code checkFn.name deriveFn.name checkFn.code deriveFn.code)
-      (Spec.Dsa.generateKeyContract abi 156) := verified checkFn deriveFn
+      (Spec.Dsa.generateKeyContract abi 232) := verified checkFn deriveFn
 end VG.Proof.Dsa.X86.KeyRandom

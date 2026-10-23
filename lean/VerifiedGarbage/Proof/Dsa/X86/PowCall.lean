@@ -20,7 +20,7 @@ open VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.X86.Pow
 theorem call_ok {s : State} {base : Addr} {size n e m : Nat}
     (hs : Scr s base size) (room : Room (s.gpr .esp) base size)
     (hz : contextBytes n ≤ size) (hused : VG.Impl.Dsa.Layout.usedBytes ≤ size)
-    (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
+    (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
     (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
     WP isa (Impl.Dsa.X86.Pow.call n e) s fun t =>
       wordsVal t.mem base (slot n 6) n =
@@ -42,8 +42,8 @@ theorem call_ok {s : State} {base : Addr} {size n e m : Nat}
     · rw [wordsVal_eq_val32,wordsVal_eq_val32]
       exact vals _ _ (by simp only [contextBytes,slot,stride] at hz ⊢; omega)
     · exact vals _ _ (by simp only [contextBytes,slot,stride] at hz ⊢; omega)
-  · intro v E ⟨M,G,X⟩
-    exact WP.mono (body_ok E hz hn hn48 he hen M hm1 hodd) fun w ⟨V,O,R,Rd,Wr⟩ =>
+  · intro v E C ⟨M,G,X⟩
+    exact WP.mono (body_ok E C hz hn hn48 he hen M hm1 hodd) fun w ⟨V,O,R,Rd,Wr⟩ =>
       ⟨by rw [V,G,X],O,R,Rd,Wr⟩
 
 end VG.Proof.Dsa.X86.Pow

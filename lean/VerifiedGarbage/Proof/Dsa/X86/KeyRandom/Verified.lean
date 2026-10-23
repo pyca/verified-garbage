@@ -20,7 +20,7 @@ def satState : State where
   rd := [⟨0x2000, 276⟩, ⟨0x5000, 0⟩]
   wr := [⟨0x1000, 424⟩, ⟨0x7000, 8⟩, ⟨0x8000, 73728⟩, ⟨0x20004, 44⟩]
 
-theorem satisfiable : ∃ s, (Spec.Dsa.generateKeyContract abi 156).pre s := by
+theorem satisfiable : ∃ s, (Spec.Dsa.generateKeyContract abi 232).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 424 := by decide
   have a2 : arg satState 2 = 28672 := by decide
@@ -41,11 +41,11 @@ theorem satisfiable : ∃ s, (Spec.Dsa.generateKeyContract abi 156).pre s := by
 theorem verifiedWith {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
     (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code)
     (ctC : CheckInvokeCT C) (ctD : DeriveInvokeCT D) :
-    Verified target (codeWith C.code D.code) (Spec.Dsa.generateKeyContract abi 156) :=
+    Verified target (codeWith C.code D.code) (Spec.Dsa.generateKeyContract abi 232) :=
   ⟨generateKeyWith_correct C D stable nc nd,
     generateKeyWith_constantTime C D stable ctC ctD, satisfiable⟩
 
 theorem verified (C : CheckCall.CheckFn) (D : DeriveFn) :
-    Verified target (code C.name D.name C.code D.code) (Spec.Dsa.generateKeyContract abi 156) :=
+    Verified target (code C.name D.name C.code D.code) (Spec.Dsa.generateKeyContract abi 232) :=
   ⟨generateKey_correct C D, generateKey_constantTime C D, satisfiable⟩
 end VG.Proof.Dsa.X86.KeyRandom

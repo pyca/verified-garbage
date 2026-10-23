@@ -10,7 +10,7 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86
 
 structure DerivingABI (s : State) : Prop where
-  stackLow : 32 ≤ (s.gpr .esp).toNat
+  stackLow : 108 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 40 ≤ 2 ^ 32
   rd : s.rd = [⟨argumentPointer s 2, (arg s 3).toNat⟩,
     ⟨argumentPointer s 5, (arg s 6).toNat⟩]
@@ -31,11 +31,11 @@ structure DerivingABI (s : State) : Prop where
   scratchArgs : (⟨argumentPointer s 7, (arg s 8).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint
     ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
     ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
-  belowKey : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+  belowKey : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
     ⟨argumentPointer s 2, (arg s 3).toNat⟩
-  belowScalar : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+  belowScalar : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
     ⟨argumentPointer s 5, (arg s 6).toNat⟩
   keyBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   scalarBound : (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32
@@ -45,7 +45,7 @@ structure DerivingABI (s : State) : Prop where
   outLength : (arg s 1).toNat = 3 * (arg s 4).toNat + 2 * (arg s 6).toNat
   scratchLength : Spec.Dsa.scratchWords (arg s 4).toNat ≤ (arg s 8).toNat
 
-theorem derivingABI_of {s : State} (h : (Spec.Dsa.deriveKeyContract abi 32).pre s) : DerivingABI s := by
+theorem derivingABI_of {s : State} (h : (Spec.Dsa.deriveKeyContract abi 108).pre s) : DerivingABI s := by
   sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> first | with_reducible assumption | apply Region.Disjoint.symm; with_reducible assumption

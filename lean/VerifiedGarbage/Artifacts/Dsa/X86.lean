@@ -40,28 +40,28 @@ def artifacts : List Artifact := [
       exact tape consumption. The checker and prevalidated derivation are internal bodies."]
     code := Impl.Dsa.X86.Comb.generateKey
     verified := Proof.Dsa.X86.Comb.key_verified
-    stack := 156 },
+    stack := 232 },
   Spec.Dsa.deriveKeyApi.artifact X86.target {
     notes := ["Checks the generator subgroup once and derives the public key with fixed-iteration \
       Montgomery exponentiation. The public key subgroup identity follows from the generator \
       check. A mask clears every output component on failure; saved registers reside in scratch."]
     code := Impl.Dsa.X86.Generate.deriveKey
     verified := Proof.Dsa.X86.deriving_verified
-    stack := 32 },
+    stack := 108 },
   Spec.Dsa.checkParametersApi.artifact X86.target {
     notes := ["Uses the signer's public-width dispatch and Montgomery arithmetic. \
       The domain's generator range and subgroup power are checked once; the mask \
       also checks that q divides p-1. Callee-saved registers reside in scratch."]
     code := Impl.Dsa.X86.Generate.checkParameters
     verified := Proof.Dsa.X86.checking_verified
-    stack := 32 },
+    stack := 108 },
   Spec.Dsa.randomSignApi.artifact X86.target {
     notes := ["Rejection sampling and signing retries are verified against the bounded \
       random-tape specification; each signing attempt calls `vg_dsa_sign`. Every failure zeros \
       the entire output. Callee-saved registers and the loop's state reside in a stack frame."]
     code := Impl.Dsa.X86.RandomSign.code Proof.Dsa.X86.signFn.name Proof.Dsa.X86.signFn.code
     verified := Proof.Dsa.X86.randomSigning_verified
-    stack := 156 },
+    stack := 232 },
   Spec.Dsa.signApi.artifact X86.target {
     notes := ["Each supported (p, q) width has its own code, chosen by the public lengths. \
       Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`; \
@@ -71,7 +71,7 @@ def artifacts : List Artifact := [
       registers reside in `scratch`."]
     code := Impl.Dsa.X86.Entry.operation true
     verified := Proof.Dsa.X86.signing_verified
-    stack := 32 },
+    stack := 108 },
   Spec.Dsa.verifyApi.artifact X86.target {
     notes := ["Each supported (p, q) width has its own code, chosen by the public lengths. \
       Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`. \
@@ -79,7 +79,7 @@ def artifacts : List Artifact := [
       registers reside in `scratch`."]
     code := Impl.Dsa.X86.Entry.operation false
     verified := Proof.Dsa.X86.verifying_verified
-    stack := 32 },
+    stack := 108 },
   combPrepare 16 5 Proof.Dsa.X86.Comb.supported_16_5,
   combPower 16 5 Proof.Dsa.X86.Comb.supported_16_5,
   combPrepare 32 5 Proof.Dsa.X86.Comb.supported_32_5,

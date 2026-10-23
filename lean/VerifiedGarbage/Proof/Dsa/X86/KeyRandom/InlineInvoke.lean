@@ -11,13 +11,13 @@ namespace VG.Proof.Dsa.X86.KeyRandom
 open VG VG.X86
 
 theorem inlineInvoke_ok {body : Prog isa} {s : State} {rd wr : List Region} {Q : Mem → BitVec 32 → Prop}
-    (safe : NoSp body) (depth : stackUse body≤20) (low : 24≤(s.gpr .esp).toNat)
+    (safe : NoSp body) (depth : stackUse body≤108) (low : 112≤(s.gpr .esp).toNat)
     (reads : Covers (rd++wr) (s.rd++s.wr)) (writes : Covers wr s.wr)
     (correct : WP isa body ((allocated 4 s).withRegions rd wr) fun u =>
       abiPreserved ((allocated 4 s).withRegions rd wr) u ∧ Q u.mem (u.gpr .eax)) :
     WP isa (VG.Impl.Dsa.X86.Comb.invoke body) s fun u =>
       u.rd=s.rd ∧ u.wr=s.wr ∧ (∀ r∈calleeSaved, u.gpr r=s.gpr r) ∧
-      Frame (wr++[below (s.gpr .esp) 24]) s.mem u.mem ∧ Q u.mem (u.gpr .eax) := by
+      Frame (wr++[below (s.gpr .esp) 112]) s.mem u.mem ∧ Q u.mem (u.gpr .eax) := by
   have readWide : Covers (rd++wr) ((allocated 4 s).rd++(allocated 4 s).wr) :=
     reads.trans (Covers.append (Covers.refl _) (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr))
   have writeWide : Covers wr (allocated 4 s).wr :=

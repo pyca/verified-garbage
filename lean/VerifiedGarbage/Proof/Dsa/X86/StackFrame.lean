@@ -11,23 +11,23 @@ import VerifiedGarbage.TCB.X86.State
 /-! # Workspace frames that account for helper-call stack writes
 
 Inside DSA's workspace only the listed ranges may change. Outside it,
-changes are confined to the 32 bytes below the caller's stack pointer.
+changes are confined to the 108 bytes below the caller's stack pointer.
 -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Impl.Dsa.Layout
 
-def callStack (sp : BitVec 32) : Region := ⟨(sp - 32#32).setWidth 64, 32⟩
+def callStack (sp : BitVec 32) : Region := ⟨(sp - 108#32).setWidth 64, 108⟩
 
 def StackOuts (base : Addr) (sp : BitVec 32) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
   ∀ x, (∀ r ∈ rs, ofs base x < r.1 ∨ r.1 + r.2 ≤ ofs base x) →
     (ofs base x < usedBytes ∨ ¬ (callStack sp).Contains x 1) → m' x = m x
 
-/-- The helper needs twelve bytes for arguments/return and twenty for its
-arithmetic workspace invariant. -/
+/-- The helper needs twelve bytes for arguments/return and 96 for the
+calls of its Montgomery multiplications. -/
 def Pow.Room (sp : BitVec 32) (base : Addr) (size : Nat) : Prop :=
-  32 ≤ sp.toNat ∧ (sp.toNat ≤ base.toNat ∨ base.toNat + size + 32 ≤ sp.toNat)
+  108 ≤ sp.toNat ∧ (sp.toNat ≤ base.toNat ∨ base.toNat + size + 108 ≤ sp.toNat)
 
 namespace StackOuts
 

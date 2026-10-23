@@ -37,8 +37,8 @@ theorem read_ones (a : Addr) : ∀ k, (Mem.read (fun _ => 1) a (k + 2)).toNat % 
   rw [show (1 : BitVec 8).toNat = 1 from rfl]
   omega
 
-theorem satisfiable {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
-    ∃ s, (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pre s := by
+theorem satisfiable {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) :
+    ∃ s, (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre s := by
   refine ⟨satState, ?_⟩
   have a0 : arg satState 0 = 0x01010101 := by decide
   have a1 : arg satState 1 = 0x01010101 := by decide
@@ -56,9 +56,9 @@ theorem satisfiable {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
   · exact (read_ones _ k).1
   · exact Nat.lt_trans (by decide) (read_ones _ k).2
 
-theorem verified (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide)
+theorem verified (n e : Nat) (hn : 2 ≤ n := by decide) (hn48 : n ≤ 48 := by decide)
     (he : 1 < e := by decide) (hen : e ≤ 2 * n := by decide) :
-    Verified target (body n e) (Spec.Dsa.ModPow.powContract (layout n e) abi 20) :=
-  ⟨correct hn hn48 he hen, constantTime n e, satisfiable hn hn48⟩
+    Verified target (body n e) (Spec.Dsa.ModPow.powContract (layout n e) abi 96) :=
+  ⟨correct hn hn48 he hen, constantTime hn hn48 he hen, satisfiable hn hn48⟩
 
 end VG.Proof.Dsa.X86.Pow

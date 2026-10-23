@@ -10,7 +10,7 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86
 
 structure CheckingABI (s : State) : Prop where
-  stackLow : 32 ≤ (s.gpr .esp).toNat
+  stackLow : 108 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32
   rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩]
   wr : s.wr = [⟨argumentPointer s 4, (arg s 5).toNat * 8⟩, ⟨argAddr s 0, 24⟩]
@@ -19,9 +19,9 @@ structure CheckingABI (s : State) : Prop where
   scratchArgs : (⟨argumentPointer s 4, (arg s 5).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 24⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint
     ⟨argumentPointer s 4, (arg s 5).toNat * 8⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
     ⟨argumentPointer s 4, (arg s 5).toNat * 8⟩
-  belowKey : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+  belowKey : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
     ⟨argumentPointer s 0, (arg s 1).toNat⟩
   keyBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   scratchBound : (arg s 4).toNat + (arg s 5).toNat * 8 ≤ 2 ^ 32
@@ -29,7 +29,7 @@ structure CheckingABI (s : State) : Prop where
   keyLength : (arg s 1).toNat = 2 * (arg s 2).toNat + (arg s 3).toNat
   scratchLength : Spec.Dsa.scratchWords (arg s 2).toNat ≤ (arg s 5).toNat
 
-theorem checkingABI_of {s : State} (h : (Spec.Dsa.checkParametersContract abi 32).pre s) : CheckingABI s := by
+theorem checkingABI_of {s : State} (h : (Spec.Dsa.checkParametersContract abi 108).pre s) : CheckingABI s := by
   sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption

@@ -15,7 +15,7 @@ theorem derive_noSp : NoSp deriveKey := NoSp.of_all (by decide +kernel)
 theorem check_invoke_noSp : NoSp (invoke checkParameters) := NoSp.of_all (by decide +kernel)
 theorem derive_invoke_noSp : NoSp (invoke deriveKey) := NoSp.of_all (by decide +kernel)
 
-theorem check_depth : stackUse checkParameters≤20 := by decide +kernel
-theorem derive_depth : stackUse deriveKey≤20 := by decide +kernel
+theorem check_depth : stackUse checkParameters≤108 := by decide +kernel
+theorem derive_depth : stackUse deriveKey≤108 := by decide +kernel
 
 end VG.Proof.Dsa.X86.Comb

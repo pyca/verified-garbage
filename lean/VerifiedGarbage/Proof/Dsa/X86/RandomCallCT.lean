@@ -25,7 +25,7 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : RandomSignABI s₁) (A₂
     (hk : Spec.Dsa.publicBytesLeak (rInput s₁).pLen (rInput s₁).qLen (rInput s₁).key =
       Spec.Dsa.publicBytesLeak (rInput s₂).pLen (rInput s₂).qLen (rInput s₂).key)
     (hr : Spec.Dsa.signStatus (callResult s₁ t₁) = Spec.Dsa.signStatus (callResult s₂ t₂)) :
-    (Spec.Dsa.signContract abi 32).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
+    (Spec.Dsa.signContract abi 108).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
   sig_pub [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes]
   simp only [ce_arg A₁ h₁ C₁ rd wr (show 0 < 11 by decide),
     ce_arg A₁ h₁ C₁ rd wr (show 1 < 11 by decide),
@@ -56,14 +56,14 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : RandomSignABI s₁) (A₂
   have hql₂ := rQBytes_le A₂
   have hqn₂ := rQBytes_length A₂
   have esp := esp_of_rf h₁.rf (pub_rBase e ▸ h₂.rf)
-  rw [callEntry_bytes A₁ h₁ (A₁.stackKey.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
+  rw [callEntry_bytes A₁ h₁ (A₁.stackKeyWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
     callEntry_bytes A₁ h₁ ((Offset.disjoint _ (by omega) (by omega) (by omega) :
       Region.Disjoint ⟨off (rLow s₁) 20, 4⟩ ⟨off (rLow s₁) 112, (X86.arg s₁ 6).toNat⟩).symm) (by omega),
-    callEntry_bytes A₁ h₁ (A₁.stackDigest.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
-    callEntry_bytes A₂ h₂ (A₂.stackKey.symm.sub_right (stk_sub s₂ (by decide))) (by omega),
+    callEntry_bytes A₁ h₁ (A₁.stackDigestWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
+    callEntry_bytes A₂ h₂ (A₂.stackKeyWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega),
     callEntry_bytes A₂ h₂ ((Offset.disjoint _ (by omega) (by omega) (by omega) :
       Region.Disjoint ⟨off (rLow s₂) 20, 4⟩ ⟨off (rLow s₂) 112, (X86.arg s₂ 6).toNat⟩).symm) (by omega),
-    callEntry_bytes A₂ h₂ (A₂.stackDigest.symm.sub_right (stk_sub s₂ (by decide))) (by omega)]
+    callEntry_bytes A₂ h₂ (A₂.stackDigestWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega)]
   have k₁ := callKey A₁ h₁
   have k₂ := callKey A₂ h₂
   simp only [argumentPointer] at k₁ k₂

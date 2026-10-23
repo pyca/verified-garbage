@@ -25,7 +25,7 @@ theorem drop_take_prefix {α : Type} (xs : List α) {p q n : Nat} (h : p + q ≤
 
 /-- Two entries with the same public data: the same arguments, q, public
 key bytes, status and trace. -/
-theorem random_public {s t : State} (H : (Spec.Dsa.randomSignContract abi 156).pub s t) :
+theorem random_public {s t : State} (H : (Spec.Dsa.randomSignContract abi 232).pub s t) :
     pubOf s = pubOf t ∧ keyLeak s = keyLeak t ∧ (rResult s).status = (rResult t).status ∧
       (rResult s).trace = (rResult t).trace := by
   sig_pub [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes] at H
@@ -66,7 +66,7 @@ theorem alloc_push {s₀ : State} (A : RandomSignABI s₀) :
 
 /-- `vg_dsa_sign_random` leaks only what its contract makes public. -/
 theorem randomSign_constantTime (F : SignFn) :
-    ConstantTime isa (Spec.Dsa.randomSignContract abi 156).pre (Spec.Dsa.randomSignContract abi 156).pub
+    ConstantTime isa (Spec.Dsa.randomSignContract abi 232).pre (Spec.Dsa.randomSignContract abi 232).pub
       (code F.name F.code) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have As := randomSignABI_of hs

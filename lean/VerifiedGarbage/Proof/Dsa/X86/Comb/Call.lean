@@ -45,7 +45,7 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
   refine workspaceCall_ok (P := P) (Q := fun mem => wordsVal mem base (slot n 6) n=
       wordsVal s.mem base (slot n 5) n^val32 s.mem base (slot n 8) e%m ∧
       (prepare=true → canonical n e m (wordsVal s.mem base (slot n 5) n) base mem))
-    (bytes := (layout n e).size) (name := name prepare n e) hs room hused (body_noSp h prepare) (body_stack h prepare)
+    (bytes := (layout n e).size) (name := name prepare n e) hs room hused (body_noSp h prepare) (by rw [body_stack h prepare]; decide)
     (fun r hr => Nat.le_trans (scratch_fits h prepare r hr) hz) ?_ ?_
   · intro mem F
     have vals : ∀ d k, d+4*k≤size → val32 mem base d k=val32 s.mem base d k :=
@@ -59,8 +59,8 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
       unfold canonical
       rw [wordsAt_canonical,wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32,←wordsAt_canonical]
       exact H hp
-  · intro v E ⟨M,G,X,C⟩
+  · intro v E _ ⟨M,G,X,C⟩
     refine WP.mono (body_wide_ok h prepare E hz M hm odd (by rw [G]; exact C)) fun w ⟨V,Cw,O,R,Rd,Wr⟩ => ?_
-    exact ⟨⟨by rw [V,G,X],by rw [G] at Cw; exact Cw⟩,O,R,Rd,Wr⟩
+    exact ⟨⟨by rw [V,G,X],by rw [G] at Cw; exact Cw⟩,Pow.OutsS.of_outs O,R,Rd,Wr⟩
 
 end VG.Proof.Dsa.X86.Comb

@@ -27,7 +27,7 @@ theorem deriveFrame_outer {s₀ : State} {m m' : Mem} (F : Frame (callWrites s�
   · exact ⟨_,by simp [rWrites,rScratch],fun _ h => h⟩
   · exact ⟨rStack s₀,by simp [rWrites],stk_sub s₀ (by decide)⟩
   · refine ⟨rStack s₀,by simp [rWrites],?_⟩
-    have H := Offset.sub_base (rLow s₀) (d := 0) (n := 24) (k := 144) (by decide)
+    have H := Offset.sub_base (rCall s₀) (d := 0) (n := 112) (k := 232) (by decide)
     rwa [BitVec.add_zero] at H
 
 theorem checkFrame_outer {s₀ : State} {m m' : Mem} (F : Frame (CheckCall.callWrites s₀) m m') :
@@ -39,15 +39,15 @@ theorem checkFrame_outer {s₀ : State} {m m' : Mem} (F : Frame (CheckCall.callW
   · exact ⟨_,by simp [rWrites,rScratch],fun _ h => h⟩
   · exact ⟨rStack s₀,by simp [rWrites],stk_sub s₀ (by decide)⟩
   · refine ⟨rStack s₀,by simp [rWrites],?_⟩
-    have H := Offset.sub_base (rLow s₀) (d := 0) (n := 24) (k := 144) (by decide)
+    have H := Offset.sub_base (rCall s₀) (d := 0) (n := 112) (k := 232) (by decide)
     rwa [BitVec.add_zero] at H
 
 theorem invocation_below {s₀ t : State} (A : KeyABI s₀) (R : Ready s₀ t) :
-    below (t.gpr .esp) 24=⟨rLow s₀,24⟩ := by
-  have low : 24≤(t.gpr .esp).toNat := by have := esp_toNat A R; omega
-  apply congrArg (fun base => Region.mk base 24)
+    below (t.gpr .esp) 112=⟨rCall s₀,112⟩ := by
+  have low : 112≤(t.gpr .esp).toNat := by have := esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega
+  apply congrArg (fun base => Region.mk base 112)
   rw [Taint.sub_setWidth low,R.rf.esp]
-  unfold rBase off
+  unfold rBase off rLow rCall
   bv_omega
 
 end VG.Proof.Dsa.X86.KeyRandom

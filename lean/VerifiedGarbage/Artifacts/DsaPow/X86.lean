@@ -124,14 +124,15 @@ namespace VG.Artifacts.DsaPow.X86
 
 def helper (n e : Nat)
     (v : Verified X86.target (Impl.Dsa.X86.Pow.body n e)
-      (Spec.Dsa.ModPow.powContract (Impl.Dsa.X86.Pow.layout n e) X86.abi 20)) : Artifact :=
+      (Spec.Dsa.ModPow.powContract (Impl.Dsa.X86.Pow.layout n e) X86.abi 96)) : Artifact :=
   (Spec.Dsa.ModPow.powApi (Impl.Dsa.X86.Pow.layout n e)).artifact X86.target {
     notes := ["The context's setup and the fixed-schedule square-and-multiply of the DSA functions, \
-      on 32-bit words, with a masked selection. The callee-saved registers reside in the header \
-      of `ws`."]
+      with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The \
+      setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. \
+      The callee-saved registers reside in the header of `ws`."]
     code := Impl.Dsa.X86.Pow.body n e
     verified := v
-    stack := 20
+    stack := 96
     spSafe := Code.all_of_allInstrs (Proof.Dsa.X86.Pow.body_spSafe n e) }
 
 open Proof.Dsa.X86.Pow in

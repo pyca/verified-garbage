@@ -14,7 +14,7 @@ theorem callKey {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
   refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackKey.symm
+  · exact A.stackKeyWide.symm
   · exact A.outKey.symm
   · exact A.keyScratch
   · exact A.usedKey.symm
