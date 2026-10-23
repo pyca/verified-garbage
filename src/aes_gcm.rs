@@ -1506,6 +1506,7 @@ impl AesGcm {
     /// `vg_aes_gcm_seal_gather` does), and seals them there with
     /// `seal_prepared`. Which bytes it copies where depends only on the
     /// pieces' lengths (whose sum `encrypt` checked is `out.len()`).
+    #[allow(dead_code)]
     #[inline(never)]
     fn seal_pieces_prepared(
         &self,
