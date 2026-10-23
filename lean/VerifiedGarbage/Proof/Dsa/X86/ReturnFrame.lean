@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.X86
 
-theorem return_stack_disjoint {sp : BitVec 32} (h : 32 ≤ sp.toNat) :
+theorem return_stack_disjoint {sp : BitVec 32} (h : 108 ≤ sp.toNat) :
     Region.Disjoint ⟨sp.setWidth 64, 4⟩ (callStack sp) := by
   rw [callStack_eq h]
   intro x hx hc
@@ -22,7 +22,7 @@ theorem return_stack_disjoint {sp : BitVec 32} (h : 32 ≤ sp.toNat) :
 
 theorem outside_return {s t : State} {base : Addr} {size : Nat}
     (O : StackOutside (s.gpr .esp) base size s.mem t.mem)
-    (apart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨base, size⟩) (hsp : 32 ≤ (s.gpr .esp).toNat) :
+    (apart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨base, size⟩) (hsp : 108 ≤ (s.gpr .esp).toNat) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
   apply Mem.readW_congr
   intro i hi
@@ -33,7 +33,7 @@ theorem outside_return {s t : State} {base : Addr} {size : Nat}
 theorem outputFrame_return {s t : State} {base out : Addr} {size len : Nat}
     (O : StackOutputFrame (s.gpr .esp) base out size len s.mem t.mem)
     (scratchApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨base, size⟩)
-    (outApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨out, len⟩) (hsp : 32 ≤ (s.gpr .esp).toNat) :
+    (outApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨out, len⟩) (hsp : 108 ≤ (s.gpr .esp).toNat) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
   apply Mem.readW_congr
   intro i hi

@@ -15,7 +15,7 @@ open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom
 structure CheckFn where
   name : String
   code : Prog isa
-  verified : Verified X86.target code (Spec.Dsa.checkParametersContract X86.abi 32)
+  verified : Verified X86.target code (Spec.Dsa.checkParametersContract X86.abi 108)
   noSp : NoSp code
   depth : stackUse code ≤ 20
 

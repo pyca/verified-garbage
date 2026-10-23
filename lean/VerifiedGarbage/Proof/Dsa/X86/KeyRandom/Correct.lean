@@ -63,9 +63,9 @@ theorem freed_esp_eq {s₀ u : State} (A : KeyABI s₀) (h : Ready s₀ u) :
 
 /-- `vg_dsa_generate_key` meets its contract. -/
 theorem generateKeyWith_correct {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
-    (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 156).pre s) :
+    (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 232).pre s) :
     ∃ t s', Exec isa (codeWith C.code D.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.Dsa.generateKeyContract abi 156).post s s' := by
+      (Spec.Dsa.generateKeyContract abi 232).post s s' := by
   have A := keyABI_of hpre
   obtain ⟨t, s', he, u, hF, rfl⟩ := codeWith_ok C D stable nc nd A
   refine ⟨t, _, he, ⟨fun r hr => ?_, ?_⟩, ?_⟩
@@ -110,9 +110,9 @@ theorem generateKeyWith_correct {I : State → Mem → Prop} (C : CheckInvoke I)
       rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
       rfl
 
-theorem generateKey_correct (C : CheckCall.CheckFn) (D : DeriveFn) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 156).pre s) :
+theorem generateKey_correct (C : CheckCall.CheckFn) (D : DeriveFn) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 232).pre s) :
     ∃ t s', Exec isa (code C.name D.name C.code D.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.Dsa.generateKeyContract abi 156).post s s' :=
+      (Spec.Dsa.generateKeyContract abi 232).post s s' :=
   generateKeyWith_correct C.invoke D.invoke (fun _ _ _ => trivial) (.call' C.noSp) (.call' D.noSp) s hpre
 
 end VG.Proof.Dsa.X86.KeyRandom

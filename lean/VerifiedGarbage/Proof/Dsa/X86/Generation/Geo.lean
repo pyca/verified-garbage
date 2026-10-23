@@ -27,7 +27,7 @@ structure GeoOk (g : Geo) where
   pv : Verified target g.pCode (ppContract (8 * g.pLen))
   pNoSp : NoSp g.pCode
   pStack : stackUse g.pCode ≤ 152
-  cv : Verified target g.checkCode (Spec.Dsa.checkParametersContract abi 32)
+  cv : Verified target g.checkCode (Spec.Dsa.checkParametersContract abi 108)
   cNoSp : NoSp g.checkCode
   cStack : stackUse g.checkCode ≤ 32
   /-- The hash's blocks: their traces depend only on `esp` and `edi`, and

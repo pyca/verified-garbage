@@ -22,7 +22,7 @@ open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
 theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat} {a b : Pointer} {modulus : Field}
     (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
     (room : Pow.Room (s.gpr .esp) base size) (hused : usedBytes ≤ size)
-    (hn : n = (len + 7) / 8) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0)
+    (hn : n = (len + 7) / 8) (h4 : 16 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0)
     (he4 : 8 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0)
     (Rq : OperandReady s base n (.input modulus) len)
     (Ra : OperandReady s base n a len) (Rb : OperandReady s base n b expLen)
@@ -46,14 +46,14 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
   dsimp only
   rw [←hn]
   apply WP.assoc
-  refine WP.seq (WP.mono (coreLoadPower_ok hs hz hn h4 hmax hw4 he4 he hwe Rq Ra Rb hm (by omega))
+  refine WP.seq (WP.mono (coreLoadPower_ok hs hz hn (by omega) hmax hw4 he4 he hwe Rq Ra Rb hm (by omega))
     fun w ⟨Mw,Aw,Ew,Opre,Ksw⟩ => ?_)
   have ek : (expLen+3)/4≤2*n := by omega
   have Wscr := hs.of_keeps Ksw (by decide)
   refine WP.seq (WP.mono (Pow.call_ok Wscr (by rw [Ksw.1 _ (by decide)]; exact room)
     (by omega) hused (by omega) hn48 (by omega) ek Mw hm1 hodd) fun v ⟨Vv, Ov, Kv⟩ => ?_)
   refine WP.mono (coreStore_ok (Wscr.of_keeps Kv (by decide)) hz hn.symm
-    (bounds 6 (by decide)) h4 hl hw4 ho (by have := bound 6 (by decide); omega)) fun t ⟨Vt, Kt, Ot⟩ => ?_
+    (bounds 6 (by decide)) (by omega) hl hw4 ho (by have := bound 6 (by decide); omega)) fun t ⟨Vt, Kt, Ot⟩ => ?_
   refine ⟨by rw [Vt, Vv, Aw, Ew], ?_, ?_⟩
   · rw [Ksw.1 _ (by decide)] at Ov
     have Of : StackOuts base (s.gpr .esp) [(0, contextBytes n), (output, len)] w.mem v.mem :=

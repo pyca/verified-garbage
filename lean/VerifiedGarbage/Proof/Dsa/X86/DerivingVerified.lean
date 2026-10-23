@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Impl.Dsa.X86
 
-theorem derivingPublicArgs {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 32).pub s t) :
+theorem derivingPublicArgs {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 108).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 9, arg s i = arg t i := by
   sig_pub [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes] at H
   sig_split H
@@ -20,7 +20,7 @@ theorem derivingPublicArgs {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 32
     have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem derivingPublicParams {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 32).pub s t) :
+theorem derivingPublicParams {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 108).pub s t) :
     derivingParams s = derivingParams t := by
   have Args := (derivingPublicArgs H).2
   have Bytes : (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat).map (·.toNat) =
@@ -30,9 +30,9 @@ theorem derivingPublicParams {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 
   have Eq := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 Bytes
   simp only [derivingParams, Args 4 (by decide), Args 6 (by decide), Eq]
 
-theorem derivingCorrect (s : State) (h : (Spec.Dsa.deriveKeyContract abi 32).pre s) :
+theorem derivingCorrect (s : State) (h : (Spec.Dsa.deriveKeyContract abi 108).pre s) :
     ∃ trace t, Exec isa Generate.deriveKey s trace t ∧ abiPreserved s t ∧
-      (Spec.Dsa.deriveKeyContract abi 32).post s t := by
+      (Spec.Dsa.deriveKeyContract abi 108).post s t := by
   obtain ⟨trace, t, E, V, B, ABI, _⟩ := derivingOperation_spec (derivingABI_of h)
   refine ⟨trace, t, E, ABI, ?_⟩
   sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes]
@@ -40,8 +40,8 @@ theorem derivingCorrect (s : State) (h : (Spec.Dsa.deriveKeyContract abi 32).pre
   rw [BitVec.setWidth_append_eq_right]
   exact ⟨V, B⟩
 
-theorem derivingConstantTime : ConstantTime isa (Spec.Dsa.deriveKeyContract abi 32).pre
-    (Spec.Dsa.deriveKeyContract abi 32).pub Generate.deriveKey := by
+theorem derivingConstantTime : ConstantTime isa (Spec.Dsa.deriveKeyContract abi 108).pre
+    (Spec.Dsa.deriveKeyContract abi 108).pub Generate.deriveKey := by
   intro s t tr ur sf tf S T H E F
   have Args := derivingPublicArgs H
   have Params := derivingPublicParams H
@@ -59,7 +59,7 @@ def derivingSatState : State where
   rd := [⟨0x2000, 276⟩, ⟨0x3000, 20⟩]
   wr := [⟨0x1000, 424⟩, ⟨0x8000, 16384⟩, ⟨0x20004, 36⟩]
 
-theorem derivingSatisfiable : ∃ s, (Spec.Dsa.deriveKeyContract abi 32).pre s := by
+theorem derivingSatisfiable : ∃ s, (Spec.Dsa.deriveKeyContract abi 108).pre s := by
   have a0 : arg derivingSatState 0 = 4096 := by decide
   have a1 : arg derivingSatState 1 = 424 := by decide
   have a2 : arg derivingSatState 2 = 8192 := by decide
@@ -76,7 +76,7 @@ theorem derivingSatisfiable : ∃ s, (Spec.Dsa.deriveKeyContract abi 32).pre s :
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp, derivingSatState] using derivingSatState
 
 theorem deriving_verified :
-    Verified target Generate.deriveKey (Spec.Dsa.deriveKeyContract abi 32) :=
+    Verified target Generate.deriveKey (Spec.Dsa.deriveKeyContract abi 108) :=
   ⟨derivingCorrect, derivingConstantTime, derivingSatisfiable⟩
 
 end VG.Proof.Dsa.X86

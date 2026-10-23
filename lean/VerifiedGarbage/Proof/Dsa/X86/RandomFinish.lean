@@ -172,7 +172,7 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ 
     exact (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
   have ap : ∀ d, d + 4 ≤ 120 → slot t₆.mem (rBase s₀) d = slot t₃.mem (rBase s₀) d := fun d hd =>
-    apart_slot fu A.stackUsed hd
+    apart_slot fu A.stackUsedWide hd
   have k₆ : Keeps [.eax, .edx] t₁ t₆ :=
     ((((u₂.keeps.mono (by decide)).trans (u₃.keeps.mono (by decide))).trans (m₄.keeps _)).trans
       (u₅.keeps.mono (by decide))).trans (m₆.keeps _)
@@ -234,7 +234,7 @@ theorem finish_ok {s₀ t : State} (A : RandomSignABI s₀) (F : Fin s₀ t) (hR
     rBytes_frame hf (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact A.stackOut.symm
+      · exact A.stackOutWide.symm
       · exact A.outUsed) (by omega)
   unfold finish
   refine WP.seq (wp_movS (v := BitVec.ofNat 32 (rResult s₀).status)
@@ -259,7 +259,7 @@ theorem finish_ok {s₀ t : State} (A : RandomSignABI s₀) (F : Fin s₀ t) (hR
   · refine WP.seq (WP.ite true (by simp only [eval, z₂, h1, decide_false, Option.map_some, Bool.not_false])
       (fun _ => WP.mono (zeroOut_ok A h₂) fun v ⟨hv, fv, zv, _⟩ => ?_) (fun e => Bool.noConfusion e))
     have ap : ∀ d, d + 4 ≤ 120 → slot v.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd => by
-      rw [apart_slot fv A.stackOut hd, m₂]
+      rw [apart_slot fv A.stackOutWide hd, m₂]
     exact fin v hv (F.saved.of_slots fun d _ hd => ap d (by omega)) (by rw [ap _ (by decide)]; exact F.usedW)
       (by rw [ap _ (by decide)]; exact F.status) (by rw [zv, hsig h1]; rfl)
 

@@ -25,7 +25,7 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : KeyA
     (hk : (rInput s₁).key.map (·.toNat) =
       (rInput s₂).key.map (·.toNat))
     (hr : Spec.Dsa.signStatus (callResult s₁ t₁) = Spec.Dsa.signStatus (callResult s₂ t₂)) :
-    (Spec.Dsa.deriveKeyContract abi 32).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
+    (Spec.Dsa.deriveKeyContract abi 108).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
   sig_pub [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes]
   simp only [ce_arg A₁ h₁ C₁ rd wr (show 0 < 9 by decide),
     ce_arg A₁ h₁ C₁ rd wr (show 1 < 9 by decide),

@@ -27,7 +27,7 @@ theorem publicLeak_domain {pLen qLen : Nat} {a b : List Byte}
   simp only [List.drop_zero] at P
   exact ⟨congrArg Spec.Dsa.decodeBE P, congrArg Spec.Dsa.decodeBE Q⟩
 
-theorem verifyingPublicDomain {s t : State} (H : (Spec.Dsa.verifyContract abi 32).pub s t) :
+theorem verifyingPublicDomain {s t : State} (H : (Spec.Dsa.verifyContract abi 108).pub s t) :
     (verifyKey s).params.p = (verifyKey t).params.p ∧ (verifyKey s).params.q = (verifyKey t).params.q := by
   have Args := (verifyingPublicArgs H).2
   have Leak := verifyingPublicLeak H
@@ -35,7 +35,7 @@ theorem verifyingPublicDomain {s t : State} (H : (Spec.Dsa.verifyContract abi 32
   have D := publicLeak_domain Leak
   simpa only [verifyKey, Args 2 (by decide), Args 3 (by decide)] using D
 
-theorem signingPublicDomain {s t : State} (H : (Spec.Dsa.signContract abi 32).pub s t) :
+theorem signingPublicDomain {s t : State} (H : (Spec.Dsa.signContract abi 108).pub s t) :
     (signKey s).params.p = (signKey t).params.p ∧ (signKey s).params.q = (signKey t).params.q := by
   have Args := (signingPublicArgs H).2
   have Leak := signingPublicLeak H

@@ -27,7 +27,7 @@ theorem DerivingABI.stackArgument {s : State} (A : DerivingABI s) {i : Nat} (hi 
 
 theorem DerivingABI.stack {s : State} (A : DerivingABI s) :
     StkOk (s.gpr .esp) (argumentPointer s 7) ((arg s 8).toNat * 8) := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 32) A.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 108) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 7).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
   · have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega

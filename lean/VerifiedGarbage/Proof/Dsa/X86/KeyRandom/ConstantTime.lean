@@ -24,7 +24,7 @@ open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.GenerateKey
 
 /-- Two entries with the same public data: the same arguments, q, public
 key bytes, status and trace. -/
-theorem random_public {s t : State} (H : (Spec.Dsa.generateKeyContract abi 156).pub s t) :
+theorem random_public {s t : State} (H : (Spec.Dsa.generateKeyContract abi 232).pub s t) :
     pubOf s = pubOf t ∧ keyLeak s = keyLeak t ∧ (rResult s).status = (rResult t).status ∧
       (rResult s).trace = (rResult t).trace := by
   sig_pub [Spec.Dsa.generateKeyContract, Spec.Dsa.generateKeySig, abi, argSlots, argVal, argBytes] at H
@@ -63,7 +63,7 @@ theorem alloc_push {s₀ : State} (A : KeyABI s₀) :
 /-- `vg_dsa_generate_key` leaks only what its contract makes public. -/
 theorem generateKeyWith_constantTime {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
     (stable : StableScratch I) (ctC : CheckInvokeCT C) (ctD : DeriveInvokeCT D) :
-    ConstantTime isa (Spec.Dsa.generateKeyContract abi 156).pre (Spec.Dsa.generateKeyContract abi 156).pub
+    ConstantTime isa (Spec.Dsa.generateKeyContract abi 232).pre (Spec.Dsa.generateKeyContract abi 232).pub
       (codeWith C.code D.code) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have As := keyABI_of hs
@@ -80,7 +80,7 @@ theorem generateKeyWith_constantTime {I : State → Mem → Prop} (C : CheckInvo
       simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
 
 theorem generateKey_constantTime (C : CheckCall.CheckFn) (D : DeriveFn) :
-    ConstantTime isa (Spec.Dsa.generateKeyContract abi 156).pre (Spec.Dsa.generateKeyContract abi 156).pub
+    ConstantTime isa (Spec.Dsa.generateKeyContract abi 232).pre (Spec.Dsa.generateKeyContract abi 232).pub
       (code C.name D.name C.code D.code) :=
   generateKeyWith_constantTime C.invoke D.invoke (fun _ _ _ => trivial) C.invoke_ct D.invoke_ct
 

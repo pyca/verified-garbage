@@ -145,7 +145,7 @@ theorem frameOuts_bytes {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
     have he : p + BitVec.ofNat 64 i = off (rBase s₀) (ofs (rBase s₀) (p + BitVec.ofNat 64 i)) := by
       simp only [ofs, off, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       rw [BitVec.add_comm (rBase s₀), BitVec.sub_add_cancel]
-    rw [he, rBase_off]
+    rw [he, rBase_off, rLow_off]
     exact Offset.contains_base _ (by omega) (by omega)
   · right; omega
 
@@ -155,7 +155,7 @@ theorem callKey {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
   refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackKey.symm
+  · exact A.stackKeyWide.symm
   · exact A.outKey.symm
   · exact A.keyScratch
   · exact A.usedKey.symm
@@ -172,7 +172,7 @@ theorem callResult_eq {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ 
     refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
     simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact A.stackDigest.symm
+    · exact A.stackDigestWide.symm
     · exact A.outDigest.symm
     · exact A.digestScratch
     · exact A.usedDigest.symm
@@ -285,7 +285,7 @@ theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used 
         by rw [VG.Proof.Dsa.random_sign_trace_success _ _ _ _ hsc hsb]; simp⟩
       · have e : (rResult s₀).used = used + (spl s₀ 128 used).used := (Nat.zero_add _).symm.trans hused
         rw [e]; exact S₅
-      · rw [frameOuts_bytes o₅ (by decide) A.stackOut (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _)
+      · rw [frameOuts_bytes o₅ (by decide) A.stackOutWide (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _)
           (by decide))), out₄, hsb, hsig]
     | none =>
       obtain ⟨at₅, st₅⟩ := hT0 (by rw [hsb]; rfl)

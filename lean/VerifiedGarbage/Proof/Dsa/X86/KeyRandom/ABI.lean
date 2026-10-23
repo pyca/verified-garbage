@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 Its arguments: `out`, `out_len`, `used`, `key`, `key_len`, `p_len`, `q_len`,
 `rand`, `rand_len`, `scratch`, `scratch_len`. The
-156 bytes of stack below the return address hold its frame and the call of
+232 bytes of stack below the return address hold its frame and the call of
 the key derivation.
 -/
 
@@ -21,7 +21,7 @@ open VG VG.X86
 abbrev argRegion (s : State) (i n : Nat) : Region := ⟨argumentPointer s i, n⟩
 
 structure KeyABI (s : State) : Prop where
-  stackLow : 156 ≤ (s.gpr .esp).toNat
+  stackLow : 232 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 4 + 44 ≤ 2 ^ 32
   rd : s.rd = [argRegion s 3 (arg s 4).toNat, argRegion s 7 (arg s 8).toNat]
   wr : s.wr = [argRegion s 0 (arg s 1).toNat, argRegion s 2 8, argRegion s 9 ((arg s 10).toNat * 8),
@@ -45,11 +45,11 @@ structure KeyABI (s : State) : Prop where
   retKey : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (argRegion s 3 (arg s 4).toNat)
   retRand : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (argRegion s 7 (arg s 8).toNat)
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (argRegion s 9 ((arg s 10).toNat * 8))
-  stackOutWide : (⟨(s.gpr .esp).setWidth 64 - 156#64, 156⟩ : Region).Disjoint (argRegion s 0 (arg s 1).toNat)
-  stackUsedWide : (⟨(s.gpr .esp).setWidth 64 - 156#64, 156⟩ : Region).Disjoint (argRegion s 2 8)
-  stackKeyWide : (⟨(s.gpr .esp).setWidth 64 - 156#64, 156⟩ : Region).Disjoint (argRegion s 3 (arg s 4).toNat)
-  stackRandWide : (⟨(s.gpr .esp).setWidth 64 - 156#64, 156⟩ : Region).Disjoint (argRegion s 7 (arg s 8).toNat)
-  stackScratchWide : (⟨(s.gpr .esp).setWidth 64 - 156#64, 156⟩ : Region).Disjoint
+  stackOutWide : (⟨(s.gpr .esp).setWidth 64 - 232#64, 232⟩ : Region).Disjoint (argRegion s 0 (arg s 1).toNat)
+  stackUsedWide : (⟨(s.gpr .esp).setWidth 64 - 232#64, 232⟩ : Region).Disjoint (argRegion s 2 8)
+  stackKeyWide : (⟨(s.gpr .esp).setWidth 64 - 232#64, 232⟩ : Region).Disjoint (argRegion s 3 (arg s 4).toNat)
+  stackRandWide : (⟨(s.gpr .esp).setWidth 64 - 232#64, 232⟩ : Region).Disjoint (argRegion s 7 (arg s 8).toNat)
+  stackScratchWide : (⟨(s.gpr .esp).setWidth 64 - 232#64, 232⟩ : Region).Disjoint
     (argRegion s 9 ((arg s 10).toNat * 8))
   outBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   usedBound : (arg s 2).toNat + 8 ≤ 2 ^ 32
@@ -61,7 +61,7 @@ structure KeyABI (s : State) : Prop where
   keyLength : (arg s 4).toNat = 2 * (arg s 5).toNat + (arg s 6).toNat
   scratchLength : Spec.Dsa.generationScratchWords (arg s 5).toNat ≤ (arg s 10).toNat
 
-theorem keyABI_of {s : State} (h : (Spec.Dsa.generateKeyContract abi 156).pre s) :
+theorem keyABI_of {s : State} (h : (Spec.Dsa.generateKeyContract abi 232).pre s) :
     KeyABI s := by
   sig_pre [Spec.Dsa.generateKeyContract, Spec.Dsa.generateKeySig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
@@ -70,22 +70,22 @@ theorem keyABI_of {s : State} (h : (Spec.Dsa.generateKeyContract abi 156).pre s)
 
 theorem KeyABI.stackOut {s : State} (A : KeyABI s) :
     (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 0 (arg s 1).toNat) :=
-  A.stackOutWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 156) (by decide) (by decide) x hx)
+  A.stackOutWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
 
 theorem KeyABI.stackUsed {s : State} (A : KeyABI s) :
     (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 2 8) :=
-  A.stackUsedWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 156) (by decide) (by decide) x hx)
+  A.stackUsedWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
 
 theorem KeyABI.stackKey {s : State} (A : KeyABI s) :
     (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 3 (arg s 4).toNat) :=
-  A.stackKeyWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 156) (by decide) (by decide) x hx)
+  A.stackKeyWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
 
 theorem KeyABI.stackRand {s : State} (A : KeyABI s) :
     (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 7 (arg s 8).toNat) :=
-  A.stackRandWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 156) (by decide) (by decide) x hx)
+  A.stackRandWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
 
 theorem KeyABI.stackScratch {s : State} (A : KeyABI s) :
     (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 9 ((arg s 10).toNat * 8)) :=
-  A.stackScratchWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 156) (by decide) (by decide) x hx)
+  A.stackScratchWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
 
 end VG.Proof.Dsa.X86.KeyRandom

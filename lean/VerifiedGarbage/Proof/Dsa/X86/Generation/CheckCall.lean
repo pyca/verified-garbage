@@ -24,7 +24,7 @@ open VG.Impl.Dsa.X86.Generation
 abbrev chkRegs : List Reg := [.ebp, .esi, .ebx, .edx, .ecx, .eax]
 
 /-- The check's contract, as its registration gives it. -/
-abbrev chkContract : Contract isa := Spec.Dsa.checkParametersContract abi 32
+abbrev chkContract : Contract isa := Spec.Dsa.checkParametersContract abi 108
 
 /-- The regions the check is given: p||q||g, its working space and its
 arguments. -/
