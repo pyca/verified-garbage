@@ -114,11 +114,32 @@ theorem bytes_W {m m' : Mem} {W p : Addr} {n : Nat} (hf : Frame [(⟨W, 2560⟩ 
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n :=
   bytesAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) hn
 
-/-- `open` from the comparison of the tags on, once the tag length is allowed. -/
-theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
-    (h19 : s₄.gpr .r19 = stackArg s₀ 1) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) :
-    WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .r19 .r3])
-      (.seq (.ite (.zero .d .r19) (.block []) oneCrypt) (.block [mov .r3 .r19]))))))) s₄ (OpenOut s₀) := by
+/-- Whether the computed tag, cut to the tag length, is the received one. -/
+abbrev openTagOk (s₀ : State) : Prop :=
+  (fullTag (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat) (ctxH s₀.mem (s₀.gpr .r3))
+      (bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat) (bytesAt s₀.mem (s₀.gpr .r7) (s₀.gpr .r8).toNat)
+      (bytesAt s₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat)).take (stackArg s₀ 1).toNat =
+    bytesAt s₀.mem (stackArg s₀ 0) (stackArg s₀ 1).toNat
+
+/-- After the tags are compared, with the result in `r19`, from `s₄` (after
+the entry). -/
+structure OpenMid (s₀ s₄ s : State) : Prop where
+  env : Env s.gpr s₀.sp s
+  regs : ∀ r ∈ frozen, r ≠ .r19 → s.gpr r = s₄.gpr r
+  rd : s.rd = s₄.rd
+  wr : s.wr = s₄.wr
+  saved : SavedAt s.mem (stackArg s₀ 2) s₀
+  frame : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s.mem
+  cb : blockAt s.mem (stackArg s₀ 2 + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+    inc32 (j0 (ctxH s₀.mem (s₀.gpr .r3)) (bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat))
+  r19 : s.gpr .r19 = BitVec.ofNat 64 (if openTagOk s₀ then 1 else 0)
+
+/-- `open`, once the tag length is allowed, up to the comparison of the tags,
+followed by any `T`. -/
+theorem open_head {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
+    (h19 : s₄.gpr .r19 = stackArg s₀ 1) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) {T : Prog isa}
+    {Q : State → Prop} (k : ∀ s₉, OpenMid s₀ s₄ s₉ → WP isa T s₉ Q) :
+    WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .r19 .r3]) T))))) s₄ Q := by
   have hh := h
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
   obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
@@ -234,8 +255,42 @@ theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
   have e : ∀ r ∈ frozen, r ≠ .r19 → s₉.gpr r = s₄.gpr r := fun r hf hr => (g₉ r hr).trans (he₈.fr r hf)
   have rd₉ : s₉.rd = s₄.rd := k₉.rd.trans (k₈.rd.trans (k₇.rd.trans (rd₆.trans rd₅)))
   have wr₉ : s₉.wr = s₄.wr := k₉.wr.trans (k₈.wr.trans (k₇.wr.trans (wr₆.trans wr₅)))
-  have sv₉ : SavedAt s₉.mem (stackArg s₀ 2) s₀ := k₉.mem ▸ sv₈
-  have F₉ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₉.mem := k₉.mem ▸ F₈
+  refine k s₉ ⟨he₉, e, rd₉, wr₉, k₉.mem ▸ sv₈, k₉.mem ▸ F₈, by rw [k₉.mem]; exact cb₈, ?_⟩
+  rw [h19₉, r3₈]
+  show _ = BitVec.ofNat 64 (if X then 1 else 0)
+  by_cases hx : X
+  · simp only [eq_true hx, ite_true]; rfl
+  · simp only [eq_false hx, ite_false]; rfl
+
+/-- `open` from the comparison's result on. -/
+theorem open_tail {s₀ s₄ s₉ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
+    (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) (om : OpenMid s₀ s₄ s₉) :
+    WP isa (.seq (.ite (.zero .d .r19) (.block []) oneCrypt) (.block [mov .r3 .r19])) s₉ (OpenOut s₀) := by
+  have hh := h
+  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
+  have L₀ := oneLay fc fW dcW
+  have hk₄ := h4.en.keeps
+  have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
+  have dcF : ∀ r ∈ [(⟨stackArg s₀ 2, 2560⟩ : Region)], (⟨s₀.gpr .r3, 256⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact dcW
+  have hDw₄ : Covers [⟨s₀.gpr .r9, (s₀.gpr .r10).toNat⟩] s₄.wr := by
+    rw [hk₄.wr, hwr]; exact covers_mem (by simp)
+  have hd₄ : DataW (s₄.gpr .r29) (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₄.gpr .r27) (s₄.gpr .r23).toNat := by
+    rw [h4.r29, h4.r30, h4.r31, h4.r27, h4.r23]
+    exact ⟨⟨covers_left hDw₄, (s₀.gpr .r10).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw₄, dcd⟩
+  have h28 : s₄.gpr .r28 = BitVec.ofNat 64 (s₀.gpr .r4).toNat := by rw [h4.r28]; exact toN
+  let iv := bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat
+  let ct := bytesAt s₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat
+  let ciph := ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat
+  let H := ctxH s₀.mem (s₀.gpr .r3)
+  have he₉ := om.env
+  have e := om.regs
+  have rd₉ := om.rd
+  have wr₉ := om.wr
+  have sv₉ := om.saved
+  have F₉ := om.frame
+  have dat₉ : bytesAt s₉.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = ct :=
+    bytes_W F₉ ddW (by have := (s₀.gpr .r10).isLt; omega)
   have hd₉₀ : DataW (s₀.gpr .r3) (stackArg s₀ 2 + BitVec.ofNat 64 16) (stackArg s₀ 2) s₉ (s₀.gpr .r9)
       (s₀.gpr .r10).toNat := by
     have := hd₄.of_eq rd₉ wr₉
@@ -243,14 +298,12 @@ theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
   -- the data decrypted only if the tags are equal
   have mid : WP isa (.ite (.zero .d .r19) (.block []) oneCrypt) s₉ fun s₁₀ =>
       Env s₉.gpr s₀.sp s₁₀ ∧ SavedAt s₁₀.mem (stackArg s₀ 2) s₀ ∧ s₁₀.rd = s₄.rd ∧ s₁₀.wr = s₄.wr ∧
-      (X → bytesAt s₁₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = gctr ciph (inc32 (j0 H iv)) ct) ∧
-      (¬X → bytesAt s₁₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = ct) := by
-    have h19n : s₉.gpr .r19 = BitVec.ofNat 64 (if X then 1 else 0) := by
-      rw [h19₉, r3₈]; split <;> rfl
-    refine WP.ite _ (eval_zero h19n (by split <;> decide)) (fun ht => ?_) (fun hf => ?_)
-    · have hx : ¬X := fun x => by simp [x] at ht
-      exact WP.block_nil ⟨he₉, sv₉, rd₉, wr₉, fun x => absurd x hx, fun _ => k₉.mem ▸ dat₈⟩
-    · have hx : X := Classical.byContradiction fun x => by simp [x] at hf
+      ((openTagOk s₀) → bytesAt s₁₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = gctr ciph (inc32 (j0 H iv)) ct) ∧
+      (¬(openTagOk s₀) → bytesAt s₁₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = ct) := by
+    refine WP.ite _ (eval_zero om.r19 (by split <;> decide)) (fun ht => ?_) (fun hf => ?_)
+    · have hx : ¬(openTagOk s₀) := fun x => by simp [x] at ht
+      exact WP.block_nil ⟨he₉, sv₉, rd₉, wr₉, fun x => absurd x hx, fun _ => dat₉⟩
+    · have hx : (openTagOk s₀) := Classical.byContradiction fun x => by simp [x] at hf
       have L₉ : Lay (s₉.gpr .r29) (s₉.gpr .r30) (s₉.gpr .r31) := by
         rw [e _ (by decide) (by decide), e _ (by decide) (by decide), e _ (by decide) (by decide), h4.r29, h4.r30,
           h4.r31]
@@ -261,7 +314,7 @@ theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
         exact hd₄.of_eq rd₉ wr₉
       have h28₉ : s₉.gpr .r28 = BitVec.ofNat 64 (s₀.gpr .r4).toNat := by rw [e _ (by decide) (by decide)]; exact h28
       have cb₉ : blockAt s₉.mem (s₉.gpr .r30 + BitVec.ofNat 64 48) = inc32 (j0 H iv) := by
-        rw [e _ (by decide) (by decide), h4.r30, k₉.mem]; exact cb₈
+        rw [e _ (by decide) (by decide), h4.r30]; exact om.cb
       refine WP.mono (WP.with_rdwr (oneCrypt_ok L₉ he₉ h28₉ hR hd₉ cb₉)) fun s₁₀ ⟨oc, rd₁₀, wr₁₀, _⟩ => ?_
       have cf := oc.frame
       rw [e _ (by decide) (by decide), e _ (by decide) (by decide), e _ (by decide) (by decide),
@@ -270,17 +323,20 @@ theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
         fun x => absurd hx x⟩
       have ho := oc.out
       rw [e _ (by decide) (by decide), e _ (by decide) (by decide), e _ (by decide) (by decide), h4.r27, h4.r23,
-        h4.r29, ciph_keep F₉ dcF hR, k₉.mem, dat₈] at ho
+        h4.r29, ciph_keep F₉ dcF hR, dat₉] at ho
       exact ho
   refine WP.seq (WP.mono mid fun s₁₀ ⟨he₁₀, sv₁₀, rd₁₀, wr₁₀, hd₁, hd₂⟩ => ?_)
   -- the result back into `r3`
   refine WP.of_runBlock ⟨_, rfl, ?_⟩
   have g₁₁ : ∀ r, r ≠ .r3 → (s₁₀.write .r3 (s₁₀.gpr .r19 ||| s₁₀.gpr .r19)).gpr r = s₁₀.gpr r := fun r hr => by
     simp [State.write, hr]
-  have r3₁₁ : (s₁₀.write .r3 (s₁₀.gpr .r19 ||| s₁₀.gpr .r19)).gpr .r3 = if X then 1 else 0 := by
+  have r3₁₁ : (s₁₀.write .r3 (s₁₀.gpr .r19 ||| s₁₀.gpr .r19)).gpr .r3 = if (openTagOk s₀) then 1 else 0 := by
     have : (s₁₀.write .r3 (s₁₀.gpr .r19 ||| s₁₀.gpr .r19)).gpr .r3 = s₁₀.gpr .r19 := by simp [State.write]
-    rw [this, he₁₀.fr _ (by decide), h19₉, r3₈]
-  have hres : openRes s₀ = if X then some (gctr ciph (inc32 (j0 H iv)) ct) else none := by
+    rw [this, he₁₀.fr _ (by decide), om.r19]
+    by_cases hx : openTagOk s₀
+    · simp only [eq_true hx, ite_true]; rfl
+    · simp only [eq_false hx, ite_false]; rfl
+  have hres : openRes s₀ = if (openTagOk s₀) then some (gctr ciph (inc32 (j0 H iv)) ct) else none := by
     simp only [openRes, openResult, hok, ite_true, decryptWith]; rfl
   refine ⟨by rw [g₁₁ _ (by decide), he₁₀.fr _ (by decide), e _ (by decide) (by decide), h4.r31],
     by simp only [State.write]; exact he₁₀.sp, fun r hr => ?_, by simp only [State.write]; rw [rd₁₀, hk₄.rd],
@@ -288,11 +344,18 @@ theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
   · have hf : r ∈ frozen := by revert hr; revert r; decide
     rw [g₁₁ r (by revert hr; revert r; decide), he₁₀.fr r hf, e r hf (by revert hr; revert r; decide)]
     exact h4.en.low r hr
-  · by_cases hx : X
+  · by_cases hx : (openTagOk s₀)
     · exact openPost_some (hres.trans (ite_eq_left_of_eq_true _ _ (eq_true hx)))
         (r3₁₁.trans (ite_eq_left_of_eq_true _ _ (eq_true hx))) (hd₁ hx)
     · exact openPost_none (hres.trans (ite_eq_right_of_eq_false _ _ (eq_false hx)))
         (r3₁₁.trans (ite_eq_right_of_eq_false _ _ (eq_false hx))) (hd₂ hx)
+
+
+theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
+    (h19 : s₄.gpr .r19 = stackArg s₀ 1) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) :
+    WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .r19 .r3])
+      (.seq (.ite (.zero .d .r19) (.block []) oneCrypt) (.block [mov .r3 .r19]))))))) s₄ (OpenOut s₀) :=
+  open_head h h4 h19 hok fun _ om => open_tail h h4 hok om
 
 /-- The contract's postcondition, from `OpenPost`, through `restore`. -/
 theorem openPost_out {s₀ s s' : State} (op : OpenPost s₀ s) (hm : s'.mem = s.mem) (h3 : s'.gpr .r3 = s.gpr .r3) :
@@ -303,10 +366,11 @@ theorem openPost_out {s₀ s s' : State} (op : OpenPost s₀ s) (hm : s'.mem = s
   rw [hm, h3]
   split <;> rename_i heq <;> rw [heq] at op <;> exact ⟨by rw [op.1]; rfl, op.2⟩
 
-theorem open_wp {s₀ : State} (h : openPPC64LE.pre s₀) :
-    WP isa «open» s₀ fun s' => abiPreserved s₀ s' ∧ openPPC64LE.post s₀ s' := by
-  have h' : openPre s₀ := h
-  have hh := h'
+/-- The entry of `open`, and `tag_len` in `r19`. -/
+theorem openEntry_wp {s₀ : State} (h : openPre s₀) :
+    WP isa (.block openEntry) s₀ fun s₂ =>
+      SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₂ ∧ s₂.gpr .r19 = stackArg s₀ 1 := by
+  have hh := h
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
   have hW : Covers [⟨stackArg s₀ 2, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hA : Covers [args s₀ 3] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
@@ -318,10 +382,10 @@ theorem open_wp {s₀ : State} (h : openPPC64LE.pre s₀) :
     have hs := Offset.sub_base (s₀.sp + BitVec.ofNat 64 96) (d := 8) (n := 8) (k := 24) (by decide)
     rw [add_ofNat_assoc] at hs
     exact dA.sub_left hs
-  unfold «open» openEntry
-  refine WP.seq (WP.block_append (WP.mono (one1_wp (off := 112) (W := stackArg s₀ 2) (T := stackArg s₀ 0)
+  unfold openEntry
+  refine WP.block_append (WP.mono (one1_wp (off := 112) (W := stackArg s₀ 2) (T := stackArg s₀ 0)
     (.inr rfl) hW (args_in hA (by decide) (i := 2) (by decide)) rfl (args_in hA (by decide) (i := 0) (by decide))
-    rfl hTd) fun s₁ h1 => ?_))
+    rfl hTd) fun s₁ h1 => ?_)
   -- `tag_len` into `r19`
   have hi : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r12 + BitVec.ofNat 64 104) 8 := by
     rw [h1.r12, h1.en.keeps.rd, h1.en.keeps.wr]; exact args_in hA (by decide) (i := 1) (by decide)
@@ -330,7 +394,16 @@ theorem open_wp {s₀ : State} (h : openPPC64LE.pre s₀) :
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hLd) (by decide)]
     rfl
   refine WP.mono (ld_ok (t := .r19) (by decide) (by decide) (by decide) hi hv) fun s₂ ⟨h19, g₂, k₂⟩ => ?_
-  have h2 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₂ := h1.keep (fun r _ hr => g₂ r hr) k₂
+  exact ⟨h1.keep (fun r _ hr => g₂ r hr) k₂, h19⟩
+
+theorem open_wp {s₀ : State} (h : openPPC64LE.pre s₀) :
+    WP isa «open» s₀ fun s' => abiPreserved s₀ s' ∧ openPPC64LE.post s₀ s' := by
+  have h' : openPre s₀ := h
+  have hh := h'
+  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
+  have hW : Covers [⟨stackArg s₀ 2, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  unfold «open»
+  refine WP.seq (WP.mono (openEntry_wp h') fun s₂ ⟨h2, h19⟩ => ?_)
   -- the tag length
   have h19' : s₂.gpr .r19 = BitVec.ofNat 64 (stackArg s₀ 1).toNat := by rw [h19]; simp
   refine WP.seq (WP.mono (tagLenOk_ok h19' (stackArg s₀ 1).isLt) fun s₃ ⟨h25, g₃, k₃⟩ => ?_)
