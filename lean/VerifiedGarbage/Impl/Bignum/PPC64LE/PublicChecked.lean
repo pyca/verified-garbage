@@ -19,8 +19,9 @@ Nothing branches on a value read from memory: the code is the same for every
 and a Montgomery multiplication by the input, the product selected with a
 mask of the bit. The Montgomery multiplications are `MontMul.lean`'s `tail`,
 inline, in its working space (`n` in array 0, `R² mod n` in array 1, its
-accumulator and temporary in arrays 2 and 3, the input and the product in
-array 4, the power in array 5, `x R mod n` in array 6, 1 in array 7). The
+accumulator and temporary in arrays 2 and 3, the input and then the square
+in array 4, the power in array 5, `x R mod n` in array 6, 1 in array 7; the
+product in array 1 once `R² mod n` is no longer needed). The
 result is written with a mask of whether `e` and the input are valid.
 
 Registers kept throughout: `r23` the working space, `r24` the exponent's
@@ -111,12 +112,13 @@ def one : Prog isa :=
   .seq (.block (base .r14 7)) (.seq Precompute.zeroWords
     (.block (base .r14 7 ++ [.li .r0 1, .store .w .r0 .r14 0])))
 
-/-- A step of the scan: `a := a²`, then `a := a x` if the top bit of `r24`
-is set, by a mask; `r24` shifted left. -/
+/-- A step of the scan: `a²` into array 4, `a² x` into array 1 (whose
+`R² mod n` is no longer needed), then `a :=` the one or the other by a mask
+of the top bit of `r24`, which is shifted left. -/
 def step : Prog isa :=
-  .seq (montOp 5 5 5) (.seq (montOp 4 5 6)
+  .seq (montOp 4 5 5) (.seq (montOp 1 4 6)
     (.seq (.block ([.lsr .d .r0 .r24 63, .li .r3 0, .sub .r20 .r3 .r0, .lsl .r24 .r24 1] ++
-        base .r8 4 ++ base .r9 5 ++ base .r5 5)) selectAcc))
+        base .r8 1 ++ base .r9 4 ++ base .r5 5)) selectAcc))
 
 /-- `x^e mod n` into array 4: `a := R mod n`, `x R mod n` into array 6, the
 33 steps, then out of Montgomery form. -/
