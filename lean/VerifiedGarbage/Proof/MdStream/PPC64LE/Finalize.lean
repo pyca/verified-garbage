@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Streaming Merkle–Damgård hash functions on PPC64LE: `finalize`

@@ -2,14 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.MdStream.PPC64LE
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sha256.Stream
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Streaming Merkle–Damgård hash functions on PPC64LE: common lemmas

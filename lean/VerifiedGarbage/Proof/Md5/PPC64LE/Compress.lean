@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Md5.Spec
 public import VerifiedGarbage.Impl.Md5.PPC64LE
 public import VerifiedGarbage.Proof.Md5.StateMem
@@ -25,6 +25,11 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # MD5 compression function on PPC64LE

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Streaming Merkle–Damgård hash functions on PPC64LE: `update`

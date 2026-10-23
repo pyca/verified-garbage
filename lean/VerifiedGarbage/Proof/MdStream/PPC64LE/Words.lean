@@ -4,10 +4,16 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MdStream.Spec
 
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.Stream
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Streaming Merkle–Damgård hash functions on PPC64LE: length fields and digests
