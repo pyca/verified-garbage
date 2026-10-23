@@ -17,7 +17,8 @@ code with its working space as its last argument
 which allocate it in a frame on the stack and wipe it after the code
 (`Verified.stackArgScratchWipedX`): `work` is passed on the stack after `tag`,
 so the frame holds a copy of `tag` and the address of `work`, and the 1696
-bytes of `work`, 1720 bytes in all. The wrapper zeroes the first 672 bytes of
+bytes of `work`, with 8 bytes unused at the top that keep `work` 16-byte
+aligned, 1728 bytes in all. The wrapper zeroes the first 672 bytes of
 `work`; the code itself zeroes the keystream it keeps after them. The code's
 calls use 24 bytes below the frame.
 -/
