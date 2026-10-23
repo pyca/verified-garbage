@@ -36,6 +36,25 @@ def sdepth : Prog isa → Nat
   | .call _ b => sdepth b
   | .frame i b _ => i.frameBytes + sdepth b
 
+/-- Code whose frames all save a register uses `48` bytes of stack per frame. -/
+theorem sdepth_le_fdepth : ∀ c : Prog isa, pushFrames c = true → sdepth c ≤ 48 * c.fdepth
+  | .block _, _ => Nat.zero_le _
+  | .seq a b, h => by
+    simp only [pushFrames, Bool.and_eq_true] at h
+    have := sdepth_le_fdepth a h.1; have := sdepth_le_fdepth b h.2
+    simp only [sdepth, Code.fdepth]; omega
+  | .ite _ t e, h => by
+    simp only [pushFrames, Bool.and_eq_true] at h
+    have := sdepth_le_fdepth t h.1; have := sdepth_le_fdepth e h.2
+    simp only [sdepth, Code.fdepth]; omega
+  | .loop b _, h => by simp only [pushFrames] at h; simpa [sdepth, Code.fdepth] using sdepth_le_fdepth b h
+  | .call _ b, h => by simp only [pushFrames] at h; simpa [sdepth, Code.fdepth] using sdepth_le_fdepth b h
+  | .frame i b _, h => by
+    simp only [pushFrames, Bool.and_eq_true] at h
+    have := sdepth_le_fdepth b h.2
+    cases i <;> simp only [Instr.isPush, Bool.false_eq_true, false_and] at h
+    simp only [sdepth, Instr.frameBytes, Code.fdepth]; omega
+
 /-- The stack a frame's body uses is below the frame. -/
 theorem below_body' (sp : Addr) (a n : Nat) :
     Region.Sub (below (sp - BitVec.ofNat 64 a) n) (below sp (n + a)) := by
