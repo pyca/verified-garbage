@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb.AArch64.Verified
+public import VerifiedGarbage.Proof.AesCfb.AArch64.Caller
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCfb.AArch64.Body
 
@@ -33,10 +34,11 @@ def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Cfb.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."]
-    code := Impl.AesCfb.AArch64.decrypt v.enc
-    verified := decrypt_verified v
+    notes := [Caller.note v]
+    code := Caller.decrypt v
+    verified := Caller.verified v
+    written := Caller.written v
+    writtenOk := Caller.written_ok v
     features := v.features }]
 
 end VG.Generic.AesBlocks.AArch64.AesCfb
