@@ -9,10 +9,11 @@
 //! blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at
 //! `iv`, which they replace with the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
-//! The modes use bitsliced SM4. ARMv7 prepares round keys once
-//! per call. Decryption processes eight independent ciphertext inputs per
-//! batch; encryption follows the serial feedback chain. This module holds the key schedule
-//! and handles a partial last
+//! AArch64 uses a serial core for encryption and short decryption, and
+//! processes sixteen independent decryption inputs per batch for larger
+//! buffers. Other targets use bitsliced SM4; ARMv7 prepares round keys once
+//! per call and decrypts eight inputs per batch. This module holds the key
+//! schedule and handles a partial last
 //! segment: CFB encryption of a zero block is
 //! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
 //! rest of the input.

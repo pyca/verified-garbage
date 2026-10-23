@@ -2,6 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Sm4.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Sm4.FbScratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
@@ -31,18 +34,11 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 /-!
 # SM4-OFB and SM4-CFB128 on AArch64 meet their contracts
 
-`ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
-(`Proof.Modes.AArch64.fb_wp`) over SM4 encryption's core (`modeCoreSpec`),
-with the IV's address in `x19`, which the core keeps in `v31` around its
-code (`BlockSpec.viaV`, `keepsReg_viaV`), and the specification's results
-(`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each is correct and constant
-time, by the taint analysis with public values in vector registers
-(`VectorTaint`): the pointers, `n` and the stack pointer are public, and so
-is everything the code computes from them, which it keeps in registers (the
-IV's address in `v31` across the core, which uses no vector instruction);
-the IV is secret. `ofb_framed`, …
-run them with their working space on the stack, zeroed on return: 3264
-bytes, the 408 words of the scratch buffer.
+The dependent OFB/CFB chains use the serial core and preserve the IV pointer
+in `x19`. CFB decryption of at least eight blocks uses the generic batched
+CFB proof with the sixteen-block encryption core. Both paths meet the same
+contracts, constant-time and ABI obligations. The existing 3264-byte scratch
+buffer is wiped on return.
 -/
 
 @[expose] public section
@@ -92,9 +88,8 @@ def cfbDecAArch64 : Contract isa where
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
-/-- SM4 encryption's core, with `x19` kept in `v31`. -/
-def fbCoreSpec : Modes.AArch64.BlockSpec fbCore :=
-  (modeCoreSpec.toBlock rfl).viaV .v31 (by decide) (by decide) (by decide) fun _ h => h
+/-- The existing serial encryption core for dependent feedback. -/
+def fbCoreSpec : Modes.AArch64.BlockSpec fbCore := Serial.blockSpec
 
 attribute [local irreducible] Spec.Sm4.cipher in
 /-- The core's cipher is the contract's, without unfolding it. -/
@@ -102,7 +97,7 @@ theorem fbCipher_eq (k : Spec.Sm4.Schedule) : fbCoreSpec.cipher k = Spec.Sm4.cip
 
 /-- The core keeps `x19`, where the modes keep the IV's address. -/
 theorem keeps_x19 : Modes.AArch64.KeepsReg .x19 fbCore.prepare ∧ Modes.AArch64.KeepsReg .x19 fbCore.crypt :=
-  Modes.AArch64.keepsReg_viaV (by decide +kernel) (by decide +kernel)
+  Serial.keeps_x19
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
@@ -140,12 +135,59 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncAArch64.pre s₀) :
     obtain ⟨h1, h2⟩ := Modes.cfbEnc_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat
     exact ⟨hg, hd.trans h1, hv.trans h2⟩
 
-theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
-    WP isa cfbDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+theorem cfbDecryptSerial_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
+    WP isa (fbCore.fb .cfbDec ⟨.x1,.x2,.x3,.x4⟩ .x19) s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' :=
   WP.mono (fb_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
     obtain ⟨h1, h2⟩ := Modes.cfbDec_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat
     exact ⟨hg, hd.trans h1, hv.trans h2⟩
+
+attribute [local irreducible] Spec.Sm4.cipher in
+theorem batchCipher_eq (k : Spec.Sm4.Schedule) :
+    (modeCoreSpec.toBlock rfl).cipher k = Spec.Sm4.cipher k := rfl
+
+/-- The parallel core encrypts the preceding ciphertext blocks for CFB decryption. -/
+theorem cfbDecryptBatch_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
+    WP isa (modeCore.cfbDecryptBatched ⟨.x1,.x2,.x3,.x4⟩) s₀ fun s' =>
+      (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
+  obtain ⟨hrd,hwr,dKV,dKD,dKS,dVD,dVS,dDS,fitK,fitV,fitD,fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .x4,8*(slots+12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Modes.AArch64.CfbDec.batched_wp (modeCoreSpec.toBlock rfl) rfl
+    (r:=⟨.x1,.x2,.x3,.x4⟩) ⟨by decide,by decide,by decide⟩ (by decide)
+    (B:=s₀.gpr .x4) (P:=s₀.gpr .x1) (D:=s₀.gpr .x2) (n:=(s₀.gpr .x3).toNat)
+    (k:=Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0))
+    rfl rfl rfl rfl ⟨hwS,fitB⟩ (by rw [hwr]; simp) (by rw [hwr]; simp)
+    dVS dDS dVD fitD
+    ⟨s₀.gpr .x0,rfl,rfl,by rw [hrd]; simp,fitK,
+      fun r hr => by
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dKS
+        · exact dKV⟩) fun s' ⟨hg,hd,hv,_,_,_⟩ => ⟨hg,?_⟩
+  rw [batchCipher_eq] at hd
+  exact ⟨hd,hv⟩
+
+attribute [local irreducible] Spec.Sm4.cipher in
+theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
+    WP isa cfbDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
+  obtain ⟨s₁,e₁,_,g₁,m₁,rd₁,wr₁⟩ := Modes.AArch64.lsr_ok s₀ .x13 .x3 (sh:=3) (by decide)
+  have hp₁ : cfbDecAArch64.pre s₁ := by
+    simpa only [cfbDecAArch64,fbPre,m₁,rd₁,wr₁,g₁ .x0 (by decide),g₁ .x1 (by decide),g₁ .x2 (by decide),g₁ .x3 (by decide),g₁ .x4 (by decide)] using hp
+  have transfer {s' : State}
+      (h : (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₁.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₁ s') :
+      (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
+    refine ⟨fun i hi => (h.1 i hi).trans (g₁ _ ?_),?_⟩
+    · have : ∀ i < 10, Impl.Modes.AArch64.Core.savedRegs.getD i .x19 ≠ .x13 := by decide
+      exact this i hi
+    · simpa only [cfbDecAArch64,blocksOf,ciphOf,ivOf,m₁,g₁ .x0 (by decide),g₁ .x1 (by decide),g₁ .x2 (by decide),g₁ .x3 (by decide),g₁ .x4 (by decide)] using h.2
+  unfold cfbDecrypt
+  refine WP.seq (WP.of_runBlock ⟨s₁,e₁,?_⟩)
+  refine WP.ite _ rfl (fun _ => WP.mono (cfbDecryptSerial_wp hp₁) fun _ h => transfer h)
+    (fun _ => WP.mono (cfbDecryptBatch_wp hp₁) fun _ h => transfer h)
 
 /-! ## Constant time -/
 
