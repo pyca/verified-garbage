@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
 import VerifiedGarbage.Proof.Rsa.RecoverTries
@@ -44,7 +44,7 @@ namespace VG.Proof.Rsa.AArch64
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.Recover
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64
-open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
 open VG.Spec.Rsa (splitTwos recoverStep recoverPrimes recoverTries)
 open VG.Proof.Rsa (pqOf go_le cand_cond)
@@ -117,9 +117,9 @@ theorem setX_ct : RelCT isa (Two CG) (setWord aX) (Two CK) := by
     exact ⟨minv, N, r, t, hc.congr (Frm.rg_of_out o (Nat.le_refl _) [aX] [] (by decide)) (by decide) (by simp) k
       (by decide)⟩
 
-/-- `g`, `g R mod n`, its copy and `Y = R mod n`, and the exponentiation. -/
-theorem candA_ct (M : Mont) : RelCT isa (Two CA)
-    (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop M.mm])
+/-- `g`, `g R mod n`, its copy and `Y = R mod n`. -/
+theorem candPre_ct (M : Mont) : RelCT isa (Two CA)
+    (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO])
     fun _ _ => True := by
   have hK : ∀ p s, CK p s → Ws s p.B p.Z (wk p.k) := fun _ _ h => h.ws
   have hX : ∀ j p s, CX j p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ ⟨_, _, _, _, _, hc, _⟩ => hc.ws
@@ -142,8 +142,8 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
     exact ⟨minv, N, r, t, _, hc.congr (Frm.rg_of_arrays ha [aXm, aAcc, aTmp] [] (by decide)) (by decide) (by simp)
       k (by decide), hlt, VG.Proof.Rsa.g_mont hc.coprime hc.hr2 hm⟩
   refine RelCT.seq (R := Two (CX aG)) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hX aXm) (by taint_decide)
-    fun p s h => ?_) (RelCT.seq (R := Two EX) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hX aG) (by taint_decide)
-      fun p s h => ?_) ((expLoop_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial))
+    fun p s h => ?_) ((copyA_gct (Ψ := EX fun _ => True) RpP.B RpP.Z (fun p => wk p.k) (hX aG) (by taint_decide)
+      fun p s h => ?_).mono (fun _ _ h => h) fun _ _ _ => trivial)
   · obtain ⟨minv, N, r, t, g, hc, hlt, hm⟩ := h
     have hZ16 := hc.hZ16
     refine WP.mono (copyA_ok hc.ws (o := aG) (a := aXm) (by decide) (by decide) (by decide))
@@ -159,7 +159,92 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
     have hG : wv u.mem p.B (slot (wk p.k) aG) (wk p.k) = wv s.mem p.B (slot (wk p.k) aG) (wk p.k) :=
       hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)
     exact ⟨minv, N, r, t, g, hc.congr hf (by decide) (by simp) k (by decide), by rw [hG]; exact hlt,
-      by rw [hG]; exact hm, by rw [hv, hc.ho]⟩
+      by rw [hG]; exact hm, by rw [hv, hc.ho], trivial⟩
+
+/-- Before `expSel`: `G ≡ g R` for the candidate `g = q.2 + 2`, whose number
+`q.2` is in `sCand`, and `Y = R mod n`. -/
+def EXq (q : RpP × Nat) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (N r t : Nat), Cst s q.1.B q.1.Z (wk q.1.k) minv N q.1.el r t ∧
+    wv s.mem q.1.B (slot (wk q.1.k) aG) (wk q.1.k) < N ∧
+    wv s.mem q.1.B (slot (wk q.1.k) aG) (wk q.1.k) % N = (q.2 + 2) * 2 ^ (64 * wk q.1.k) % N ∧
+    wv s.mem q.1.B (slot (wk q.1.k) aY) (wk q.1.k) = 2 ^ (64 * wk q.1.k) % N ∧
+    word s.mem q.1.B (8 * sCand) = BitVec.ofNat 64 q.2 ∧ q.2 < 100
+
+theorem EXq.ws {q : RpP × Nat} {s : State} (h : EXq q s) : Ws s q.1.B q.1.Z (wk q.1.k) := by
+  obtain ⟨_, _, _, _, hc, -⟩ := h
+  exact hc.ws
+
+theorem EXq.cand {q : RpP × Nat} {s : State} (h : EXq q s) : word s.mem q.1.B (8 * sCand) = BitVec.ofNat 64 q.2 := by
+  obtain ⟨_, _, _, _, _, _, _, _, hcand, _⟩ := h
+  exact hcand
+
+theorem EXq.lt {q : RpP × Nat} {s : State} (h : EXq q s) : q.2 < 100 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, h100⟩ := h
+  exact h100
+
+theorem EXq.ex {q : RpP × Nat} {s : State} (h : EXq q s) {G : Nat → Prop} (hG : G (q.2 + 2)) : EX G q.1 s := by
+  obtain ⟨minv, N, r, t, hc, hlt, hm, hY, -⟩ := h
+  exact ⟨minv, N, r, t, q.2 + 2, hc, hlt, hm, hY, hG⟩
+
+/-- `EXq` after a block that writes only `x3`. -/
+theorem EXq.x3 {q : RpP × Nat} {s u : State} (h : EXq q s) (m : u.mem = s.mem) (k : Keep [.x3] s u) : EXq q u := by
+  obtain ⟨minv, N, r, t, hc, hlt, hm, hY, hcand, h100⟩ := h
+  exact ⟨minv, N, r, t, hc.congr (js := []) (hs := []) (by rw [m]; exact Frm.refl _ _ _) (by simp) (by simp) k
+    (by decide), by rw [m]; exact hlt, by rw [m]; exact hm, by rw [m]; exact hY, by rw [m]; exact hcand, h100⟩
+
+/-- `expSel` leaks the same in runs that agree on the public data and on the
+candidate's number. -/
+theorem expSel_ct (M : Mont) : RelCT isa (Two EXq) (expSel M.mm) fun _ _ => True := by
+  have hpin : ∀ (Φ : RpP × Nat → State → Prop), (∀ q s, Φ q s → EXq q s) → Pins Φ [.x0] := fun Φ hΦ =>
+    pins_ws (fun q => q.1.B) (fun q => q.1.Z) (fun q => wk q.1.k) fun q s h => (hΦ q s h).ws
+  unfold expSel
+  refine RelCT.seq (R := Two fun q s => EXq q s ∧ s.gpr .x3 = BitVec.ofNat 64 q.2)
+    (two_piece [.x0] (hpin EXq fun _ _ h => h) (by taint_decide) fun q s h => ?_) ?_
+  · exact WP.mono (candNum_ok h.ws h.cand) fun u ⟨⟨h3, m⟩, k⟩ => ⟨h.x3 m k, h3⟩
+  refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_
+  · refine two_map (fun q => q.1) (fun q s hh => ?_) ((expLoopWith_ct (bitSmall_two_code M)).mono
+      (fun _ _ h => h) fun _ _ _ => trivial)
+    obtain ⟨⟨h, h3⟩, he⟩ := hh
+    have h100 := h.lt
+    rw [eval_zero, h3, ofNat_beq_zero (by omega)] at he
+    have h0 : q.2 = 0 := by simpa using he
+    exact h.ex (G := (· = 2)) (by omega)
+  refine RelCT.seq (R := Two fun q s => (EXq q s ∧ q.2 ≠ 0) ∧ s.gpr .x3 = BitVec.ofNat 64 q.2 - 1#64)
+    (two_piece [.x0] (hpin _ fun _ _ h => h.1.1) (by taint_decide) fun q s hh => ?_) ?_
+  · obtain ⟨⟨h, h3⟩, he⟩ := hh
+    have h100 := h.lt
+    rw [eval_zero, h3, ofNat_beq_zero (by omega)] at he
+    have h0 : q.2 ≠ 0 := by simpa using he
+    exact WP.mono (candNum1_ok h.ws h.cand) fun u ⟨⟨h3', m⟩, k⟩ => ⟨⟨h.x3 m k, h0⟩, h3'⟩
+  refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_
+  · refine two_map (fun q => q.1) (fun q s hh => ?_) ((expLoopWith_ct (bitSmall_three_code M)).mono
+      (fun _ _ h => h) fun _ _ _ => trivial)
+    obtain ⟨⟨⟨h, _⟩, h3⟩, he⟩ := hh
+    have h100 := h.lt
+    rw [eval_zero, h3, ofNat_sub_one_beq_zero (by omega)] at he
+    have h1 : q.2 = 1 := by simpa using he
+    exact h.ex (G := (· = 3)) (by omega)
+  · exact two_map (fun q => q.1) (fun q s hh => hh.1.1.1.ex (G := fun _ => True) trivial)
+      ((expLoop_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial)
+
+/-- At a candidate's start, with its number `q.2`. -/
+def CAq (q : RpP × Nat) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (N r t : Nat), Cst s q.1.B q.1.Z (wk q.1.k) minv N q.1.el r t ∧
+    word s.mem q.1.B (8 * sCand) = BitVec.ofNat 64 q.2 ∧ q.2 < 100
+
+/-- `g`, `g R mod n`, its copy and `Y = R mod n`, and the exponentiation. -/
+theorem candA_ct (M : Mont) : RelCT isa (Two CAq)
+    (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expSel M.mm])
+    fun _ _ => True := by
+  rw [show [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expSel M.mm] =
+    [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO] ++ [expSel M.mm] from rfl]
+  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two EXq) (two_post (two_map (fun q => q.1)
+    (fun q s ⟨minv, N, r, t, hc, hcand, h100⟩ => ⟨minv, N, r, t, q.2, hc, hcand, h100⟩) (candPre_ct M))
+    fun q s ⟨minv, N, r, t, hc, hcand, h100⟩ => ?_) (expSel_ct M))
+  have hZ16 := hc.hZ16
+  refine WP.mono (candPre_ok M hc hcand h100) fun u ⟨hf, k, hlt, hm, hY⟩ =>
+    ⟨minv, N, r, t, hc.congr hf (by decide) (by simp) k (by decide), hlt, hm, hY, ?_, h100⟩
+  rw [hf.rg_word (by decide) (by simp)]; exact hcand
 
 /-- The checks of `y = ±1` and the start of the squarings. -/
 theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ (([.block (zeroMask ++ [sth .x15 sC2])] :
@@ -186,16 +271,21 @@ theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ (([.block (zeroMask ++
   simp only [seqs]
   exact two_taint [.x0] (pins_ws RpP.B RpP.Z (fun p => wk p.k) hK) (by taint_decide)
 
-/-- A candidate leaks the same in runs that agree on the public data. -/
-theorem candBody_ct (M : Mont) : RelCT isa (Two CA) (candBody M.mm) fun _ _ => True := by
+/-- After a candidate's exponentiation: `Y ≡ y R` for some `y < n`. -/
+def CY (p : RpP) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (N r t y : Nat), Cst s p.B p.Z (wk p.k) minv N p.el r t ∧
+    wv s.mem p.B (slot (wk p.k) aY) (wk p.k) = y * 2 ^ (64 * wk p.k) % N ∧ y < N
+
+/-- A candidate leaks the same in runs that agree on the public data and on
+the candidate's number. -/
+theorem candBody_ct (M : Mont) : RelCT isa (Two CAq) (candBody M.mm) fun _ _ => True := by
   rw [show candBody M.mm = seqs ([.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
-      expLoop M.mm] ++ ((eqA aY aO ++ ([.block (zeroMask ++ [sth .x15 sC2])] ++ (eqA aY aNg ++
+      expSel M.mm] ++ ((eqA aY aO ++ ([.block (zeroMask ++ [sth .x15 sC2])] ++ (eqA aY aNg ++
         [.block chkBlk]))) ++ [.loop (sqBody M.mm) (.nonzero .x .x3), .block candNext])) by
     simp only [candBody, List.append_assoc, List.cons_append, List.nil_append]]
-  refine RelCT.seqs_append (by simp) (by simp [eqA]) (RelCT.seq (R := Two fun p s => ∃ (minv : BitVec 64)
-      (N r t y : Nat), Cst s p.B p.Z (wk p.k) minv N p.el r t ∧
-        wv s.mem p.B (slot (wk p.k) aY) (wk p.k) = y * 2 ^ (64 * wk p.k) % N ∧ y < N)
-    (two_post (candA_ct M) fun p s ⟨minv, N, r, t, c, hc, hcand, hc100⟩ => ?_) ?_)
+  refine RelCT.seqs_append (by simp) (by simp [eqA]) (RelCT.seq (R := Two fun (q : RpP × Nat) s => CY q.1 s)
+    (two_post (candA_ct M) fun q s ⟨minv, N, r, t, hc, hcand, hc100⟩ => ?_)
+    (two_map (Φ' := CY) (fun q => q.1) (fun _ _ h => h) ?_))
   · have hN : 0 < N := by have := hc.n1; omega
     exact WP.mono (candA_ok M hc hcand hc100) fun u ⟨hf, k, hY⟩ =>
       ⟨minv, N, r, t, _, hc.congr hf (by decide) (by decide) k (by decide), hY,
@@ -227,11 +317,11 @@ def CL (p : RpP) (j : Nat) (u : State) : Prop :=
 
 theorem candLoopL_ct (M : Mont) : RelCT isa (Two fun p s => 0 < p.cnt ∧ CL p 0 s)
     (.loop (candBody M.mm) (.nonzero .x .x15)) (Two fun (_ : RpP) (_ : State) => True) :=
-  two_loop RpP.cnt (two_map (fun q => q.1) (fun q s hq => by
+  two_loop RpP.cnt ((candBody_ct M).mono (fun _ _ h => two_mono (fun q s hq => by
       obtain ⟨hj, s₀, minv, N, r, t, hc, hcnt, hI⟩ := hq
       have := go_le N t r recoverTries (Nat.le_refl _)
-      exact ⟨minv, N, r, t, q.2, hc.congr hI.frm (by decide) cand_hs hI.keep (by decide), hI.cand,
-        by have : recoverTries = 100 := rfl; omega⟩) (candBody_ct M))
+      exact ⟨minv, N, r, t, hc.congr hI.frm (by decide) cand_hs hI.keep (by decide), hI.cand,
+        by have : recoverTries = 100 := rfl; omega⟩) h) fun _ _ h => h)
     fun p j s hj ⟨s₀, minv, N, r, t, hc, hcnt, hI⟩ => by
       have hle := go_le N t r recoverTries (Nat.le_refl _)
       have hj100 : j < 100 := by have : recoverTries = 100 := rfl; omega

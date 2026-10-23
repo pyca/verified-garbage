@@ -49,12 +49,13 @@ theorem gBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Nat}
       h.scr.ld (d := 8 * sCand) (by simp only [sCand, sFn]; omega), h.scr.ld (d := 8 * sW) (by simp only [sW]; omega),
       hcand, h.hw, BitVec.ofNat_add_ofNat]) (by decide) (by decide) (by decide +kernel)
 
-/-- The candidate's `y = g^r mod n`, in Montgomery form in `Y`. -/
-theorem candA_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t c : Nat}
+/-- Before the exponentiation: `G ≡ g R` for `g = c + 2`, and `Y = R mod n`. -/
+theorem candPre_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t c : Nat}
     (hc : Cst u B Z w minv N el r t) (hcand : word u.mem B (8 * sCand) = BitVec.ofNat 64 c) (hc100 : c < 100) :
-    WP isa (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop M.mm]) u
-      fun u' => Frm B (rg w [aX, aAcc, aTmp, aXm, aG, aY] [sC1, sC2, sC3]) u.mem u'.mem ∧ Keep mmRegs u u' ∧
-        wv u'.mem B (slot w aY) w = powMod (c + 2) r N * 2 ^ (64 * w) % N := by
+    WP isa (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO]) u
+      fun u' => Frm B (rg w [aX, aAcc, aTmp, aXm, aG, aY] []) u.mem u'.mem ∧ Keep mmRegs u u' ∧
+        wv u'.mem B (slot w aG) w < N ∧ wv u'.mem B (slot w aG) w % N = (c + 2) * 2 ^ (64 * w) % N ∧
+        wv u'.mem B (slot w aY) w = 2 ^ (64 * w) % N := by
   have hZ16 := hc.hZ16
   have hw1 := hc.ws.w1
   have hw2 := hc.ws.w2
@@ -83,22 +84,34 @@ theorem candA_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64
     fun u₄ ⟨hg₄, o₄, _, _, k₄⟩ => ?_)
   have hf₄ : Frm B (rg w [aG] []) u₃.mem u₄.mem := Frm.rg_of_out o₄ (by omega) _ _ (by decide)
   have hc₄ := hc₃.congr hf₄ (by decide) (by simp) k₄ (by decide)
-  refine WP.seq (WP.mono (copyA_ok hc₄.ws (o := aY) (a := aO) (by decide) (by decide) (by decide))
-    fun u₅ ⟨hy₅, o₅, _, _, k₅⟩ => ?_)
+  refine WP.mono (copyA_ok hc₄.ws (o := aY) (a := aO) (by decide) (by decide) (by decide))
+    fun u₅ ⟨hy₅, o₅, _, _, k₅⟩ => ?_
   have hf₅ : Frm B (rg w [aY] []) u₄.mem u₅.mem := Frm.rg_of_out o₅ (by omega) _ _ (by decide)
-  have hc₅ := hc₄.congr hf₅ (by decide) (by simp) k₅ (by decide)
   rw [hc₄.ho] at hy₅
   have hG₅ : wv u₅.mem B (slot w aG) w = wv u₃.mem B (slot w aXm) w := by
     rw [hf₅.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hg₄]
-  refine WP.mono (expLoop_ok M hc₅ (g := c + 2) (by rw [hG₅]; exact hlt₃) (by rw [hG₅]; exact hXm) hy₅)
-    fun u' ⟨hf₆, k₆, hlt₆, hy₆⟩ => ⟨?_, ?_, ?_⟩
-  · have hf₁ : Frm B (rg w [] []) u.mem u₁.mem := by rw [m₁]; exact Frm.refl _ _ _
-    exact (((((hf₁.rg_trans hf₂).rg_trans hf₃).rg_trans hf₄).rg_trans hf₅).rg_trans hf₆).rg_mono
-      (by decide) (by decide)
-  · exact (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).mono (by decide)
+  have hf₁ : Frm B (rg w [] []) u.mem u₁.mem := by rw [m₁]; exact Frm.refl _ _ _
+  refine ⟨((((hf₁.rg_trans hf₂).rg_trans hf₃).rg_trans hf₄).rg_trans hf₅).rg_mono (by decide) (by decide),
+    ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide), by rw [hG₅]; exact hlt₃,
+    by rw [hG₅]; exact hXm, hy₅⟩
+
+/-- The candidate's `y = g^r mod n`, in Montgomery form in `Y`. -/
+theorem candA_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t c : Nat}
+    (hc : Cst u B Z w minv N el r t) (hcand : word u.mem B (8 * sCand) = BitVec.ofNat 64 c) (hc100 : c < 100) :
+    WP isa (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expSel M.mm]) u
+      fun u' => Frm B (rg w [aX, aAcc, aTmp, aXm, aG, aY] [sC1, sC2, sC3]) u.mem u'.mem ∧ Keep mmRegs u u' ∧
+        wv u'.mem B (slot w aY) w = powMod (c + 2) r N * 2 ^ (64 * w) % N := by
+  rw [show [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expSel M.mm] =
+    [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO] ++ [expSel M.mm] from rfl]
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (candPre_ok M hc hcand hc100) fun u₅ ⟨hf₅, k₅, hGlt, hG, hY⟩ => ?_)
+  have hc₅ := hc.congr hf₅ (by decide) (by simp) k₅ (by decide)
+  have hcand₅ : word u₅.mem B (8 * sCand) = BitVec.ofNat 64 c := by
+    rw [hf₅.rg_word (by decide) (by simp)]; exact hcand
+  refine WP.mono (expSel_ok M hc₅ hcand₅ hc100 hGlt hG hY) fun u' ⟨hf₆, k₆, hlt₆, hy₆⟩ => ⟨?_, ?_, ?_⟩
+  · exact (hf₅.rg_trans hf₆).rg_mono (by decide) (by decide)
+  · exact (k₅.trans k₆).mono (by decide)
   · rw [← Nat.mod_eq_of_lt hlt₆, hy₆, powMod_eq, Nat.mod_mul_mod]
 
-/-- `chkBlk`: `done := y = -1 ∨ y = 1`, `ok := 0` and `k := 0`. -/
 theorem chkBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {e1 : Bool}
     (hc2 : word s.mem B (8 * sC2) = mask e1) :
     WP isa (.block chkBlk) s fun u =>
@@ -228,7 +241,7 @@ theorem candBody_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec
   have hw2 := hc.ws.w2
   have h256 := hc.ws.h256
   rw [show candBody M.mm = seqs ([.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
-      expLoop M.mm] ++ ((eqA aY aO ++ ([.block (zeroMask ++ [sth .x15 sC2])] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
+      expSel M.mm] ++ ((eqA aY aO ++ ([.block (zeroMask ++ [sth .x15 sC2])] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
         [.loop (sqBody M.mm) (.nonzero .x .x3), .block candNext])) by
     simp only [candBody, List.append_assoc, List.cons_append, List.nil_append]]
   refine wp_seqs_append (by simp) (by simp [eqA]) (WP.mono (candA_ok M hc hcand hc100) fun u₁ ⟨hf₁, k₁, hY₁⟩ => ?_)
