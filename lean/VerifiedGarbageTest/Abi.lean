@@ -141,7 +141,19 @@ def ppcState : PPC64LE.State where
 
 #guard (PPC64LE.abi.args (List.replicate 8 64)).map (· ppcState) == some [1, 2, 3, 4, 5, 6, 7, 8]
 #guard (PPC64LE.abi.args [64, 32]).map (· ppcState) == some [1, 2]
-#guard (PPC64LE.abi.args (List.replicate 9 64)).isNone
+-- A ninth argument is in memory, in the Parameter Save Area at `sp + 32`
+-- after the eight doublewords standing for `r3`–`r10`: at `sp + 96`.
+def ppcStack : PPC64LE.State :=
+  { ppcState with mem := fun a => if a.toNat = 0x1060 then 9 else if a.toNat = 0x1068 then 10 else 0 }
+#guard PPC64LE.stackArgAddr ppcStack 0 == 0x1060
+#guard PPC64LE.stackArg ppcStack 0 == 9
+#guard PPC64LE.stackArg ppcStack 1 == 10
+#guard (PPC64LE.abi.args (List.replicate 9 64)).map (· ppcStack) == some [1, 2, 3, 4, 5, 6, 7, 8, 9]
+#guard (PPC64LE.abi.args (List.replicate 10 64)).map (· ppcStack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+#guard (PPC64LE.abi.args (List.replicate 8 64 ++ [32])).isNone
+#guard PPC64LE.abi.argArea (List.replicate 10 64) ppcStack == [(⟨0x1060, 16⟩, false)]
+#guard PPC64LE.abi.argArea (List.replicate 8 64) ppcStack == []
 #guard PPC64LE.abi.ret ppcState == 1
 #guard PPC64LE.abi.reserved 48 ppcState == [⟨0xfd0, 48⟩]
 

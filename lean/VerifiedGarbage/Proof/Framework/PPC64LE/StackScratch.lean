@@ -103,8 +103,9 @@ theorem pre_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
   have hwf : (match stack with | 0 => True | n => n ≤ s.sp.toNat) ↔
       (stack = 0 ∨ stack ≤ s.sp.toNat) := by
     cases stack <;> simp
+  have hz : (sig.words 64).length - argRegs.length = 0 := Nat.sub_eq_zero_of_le hk'
   have hL := fun vs => Sig.lists_of_noLists 64 s.mem sig.params vs hl
-  simp only [Sig.contract, abi, List.length_map, hk', ite_true, List.map_nil, List.append_nil, hL]
+  simp only [Sig.contract, abi, List.length_map, hk', hz, ite_true, List.map_nil, List.append_nil, hL]
   exact and_congr hwf Iff.rfl
 
 /-- The postcondition of a contract whose arguments are all in registers. -/
