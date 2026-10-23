@@ -251,10 +251,10 @@ def tagArgs (o : Nat) : List Instr :=
 def tag (o : Nat) : Prog isa :=
   .seq (lens 16) (.seq (.block (tagArgs o)) ctrCall)
 
-/-- `J₀` of a 12-byte nonce: its 12 bytes and `0x00000001` (big-endian). -/
+/-- `J₀` of a 12-byte nonce: its three words and `0x00000001` (big-endian). -/
 def j012 : List Instr :=
-  [.load .d .r0 .r24 0, .store .d .r0 .r30 0, .load .w .r0 .r24 8, .store .w .r0 .r30 8,
-   .lis .r0 0x0100, .store .w .r0 .r30 12]
+  [.load .w .r3 .r24 0, .load .w .r4 .r24 4, .load .w .r5 .r24 8, .lis .r6 0x0100,
+   .store .w .r3 .r30 0, .store .w .r4 .r30 4, .store .w .r5 .r30 8, .store .w .r6 .r30 12]
 
 /-- `J₀` of any other nonce: GHASH of the nonce padded, then of the lengths
 block of no additional data and the nonce, from a zero block at the state. -/
@@ -268,9 +268,10 @@ def j0hash : Prog isa :=
 
 /-- The first counter block `inc₃₂(J₀)`, and the accumulator zeroed. -/
 def initState : List Instr :=
-  [.load .d .r0 .r30 0, .store .d .r0 .r30 48, .load .w .r0 .r30 8, .store .w .r0 .r30 56,
-   .addi .r3 .r30 12, .li .r4 0, .loadRev .w .r5 .r3 .r4, .addi .r5 .r5 1, .addi .r3 .r30 60,
-   .storeRev .w .r5 .r3 .r4, .store .d .r4 .r30 16, .store .d .r4 .r30 24]
+  [.load .w .r3 .r30 0, .load .w .r4 .r30 4, .load .w .r5 .r30 8, .addi .r7 .r30 12, .li .r8 0,
+   .loadRev .w .r6 .r7 .r8, .addi .r6 .r6 1, .store .w .r3 .r30 48, .store .w .r4 .r30 52,
+   .store .w .r5 .r30 56, .addi .r7 .r30 60, .storeRev .w .r6 .r7 .r8, .store .d .r8 .r30 16,
+   .store .d .r8 .r30 24]
 
 /-- The streaming state for the `r25`-byte nonce at `r24`. -/
 def j0 : Prog isa :=
