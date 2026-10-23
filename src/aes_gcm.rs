@@ -2511,7 +2511,11 @@ mod tests {
                     .encrypt(&nonce, &[5; 5], &[&[0; 256], &[1]], &mut cold)
                     .unwrap();
                 cipher.warm();
-                for len in (256..272).chain([511, 512, 767, 768, 4097, 9995, 10000, 16384]) {
+                for len in [15, 16, 17, 31, 32, 47, 48, 63, 64]
+                    .into_iter()
+                    .chain(256..272)
+                    .chain([511, 512, 767, 768, 4097, 9995, 10000, 16384])
+                {
                     let plain: alloc::vec::Vec<u8> =
                         (0..len).map(|i| (i * 37 + 11) as u8).collect();
                     for aad_len in [0, 5, 16, 17] {

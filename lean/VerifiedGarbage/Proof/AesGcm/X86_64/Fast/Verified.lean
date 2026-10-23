@@ -9,6 +9,10 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixSCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixS
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 
 /-!
 # AES-GCM `seal_split` on x86-64 with a prepared key context: `Verified`
@@ -66,11 +70,13 @@ theorem _root_.VG.Proof.AesGcm.X86_64.OnePassName.xdepth : ∀ n : OnePassName, 
   | .z => encNZ_xdepth
 
 /-- The whole blocks of the path for TLS records: in one pass if `v` takes
-them so (`SealSplit.prefixN`, with its loop), and otherwise by `fTo`
+them so (`SealSplit.prefixN`, with its loop; on 256-bit registers, one to
+three whole blocks without it, `SealSplit.prefixS`), and otherwise by `fTo`
 (`SealSplit.prefix`). -/
 def _root_.VG.Proof.AesGcm.X86_64.GcmImpl.splitPre (v : GcmImpl) (fTo : Fn) : Prog isa :=
   match v.onePass with
-  | some n => SealSplit.prefixN fTo n.code
+  | some .r => SealSplit.prefixS ⟨v.ctr.callee.name, v.ctr.callee.code⟩ fTo OnePassName.r.code
+  | some .z => SealSplit.prefixN fTo OnePassName.z.code
   | none => SealSplit.prefix fTo
 
 /-- `seal_split`'s code after the entry for the implementations `v` and a
@@ -113,18 +119,20 @@ omit B in
 theorem splitPre_mx (tp : (SealSplit.prefix T.fn).allInstrs (fun i => !loadsMxcsr i) = true) :
     (v.splitPre T.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
   unfold GcmImpl.splitPre; split
-  exacts [prefixN_mx (OnePassName.mx _) tp, tp]
+  exacts [prefixS_mx v.ctr.mxcsr (prefixN_mx (OnePassName.mx _) tp), prefixN_mx (OnePassName.mx _) tp, tp]
 
 omit B in
 theorem splitPre_spSafe (tp : (SealSplit.prefix T.fn).all (fun i => !X86_64.isa.writesSp i) = true) :
     (v.splitPre T.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
   unfold GcmImpl.splitPre; split
-  exacts [prefixN_spSafe (OnePassName.spSafe _) tp, tp]
+  exacts [prefixS_spSafe v.ctr.spSafe (prefixN_spSafe (OnePassName.spSafe _) tp),
+    prefixN_spSafe (OnePassName.spSafe _) tp, tp]
 
 omit B in
 theorem splitPre_xdepth (tp : (SealSplit.prefix T.fn).x86_64Depth ≤ 56) : (v.splitPre T.fn).x86_64Depth ≤ 56 := by
   unfold GcmImpl.splitPre; split
-  exacts [prefixN_xdepth (OnePassName.xdepth _) tp, tp]
+  exacts [prefixS_xdepth v.ctr.noStack (by decide) (prefixN_xdepth (OnePassName.xdepth _) tp),
+    prefixN_xdepth (OnePassName.xdepth _) tp, tp]
 
 theorem splitMidR_mx : (v.splitMidR (v.withBlk B) T.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
   unfold GcmImpl.splitMidR; split
@@ -169,9 +177,13 @@ theorem splitMidR_xdepth : (v.splitMidR (v.withBlk B) T.fn).x86_64Depth ≤ 56 :
 
 theorem splitMidR_ok (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) : MidOk (CtxMode.preparedN np hpn) (v.splitMidR (v.withBlk B) T.fn) := by
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
+  · exact Fast.sel_ok hF v B (prefixSOk hF v.ctr rfl (OnePassName.ok hF .r nofun) T) Short.finKs_ksOk
+      (splitFin_ok v hF) (splitMid_ok v B T hF)
   · exact Fast.sel_ok hF v B (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T) Short.finKs_ksOk (splitFin_ok v hF)
       (splitMid_ok v B T hF)
   · exact Fast.sel_ok hF v B (prefixOk T) Short.finKs_ksOk (splitFin_ok v hF) (splitMid_ok v B T hF)
+  · exact Fast.sel_ok hF v B (prefixSOk hF v.ctr rfl (OnePassName.ok hF .r nofun) T) Short.finKsA_ksOk
+      (splitFin_ok v hF) (splitMid_ok v B T hF)
   · exact Fast.sel_ok hF v B (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T) Short.finKsA_ksOk (splitFin_ok v hF)
       (splitMid_ok v B T hF)
   · exact Fast.sel_ok hF v B (prefixOk T) Short.finKsA_ksOk (splitFin_ok v hF) (splitMid_ok v B T hF)
@@ -182,11 +194,17 @@ theorem splitMidR_rel (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = 
       16 * (if 1 ≤ sl / 256 ∧ sl / 256 < n / 256 then 16 * (n / 256) else sl / 16) ≤ n :=
     fun n sl h => by split <;> omega
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
+  · exact @Fast.sel_rel _ _ false v B _ _ (prefixSOk hF v.ctr rfl (OnePassName.ok hF .r nofun) T)
+      (prefixSRel hF v.ctr rfl (OnePassName.ok hF .r nofun) (OnePassName.check _) T) nq hF _ Short.finKs_ksOk
+      Short.finKs_rel _ (splitFin_rel v hF) _ (splitMid_rel v B T hF)
   · exact @Fast.sel_rel _ _ false v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
       (prefixNRel (OnePassName.ok hF _ (hz _ ‹_›)) (OnePassName.check _) T) nq hF _ Short.finKs_ksOk Short.finKs_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
   · exact @Fast.sel_rel _ _ false v B _ _ (prefixOk T) (prefixRel T) hq hF _ Short.finKs_ksOk Short.finKs_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)
+  · exact @Fast.sel_rel _ _ true v B _ _ (prefixSOk hF v.ctr rfl (OnePassName.ok hF .r nofun) T)
+      (prefixSRel hF v.ctr rfl (OnePassName.ok hF .r nofun) (OnePassName.check _) T) nq hF _ Short.finKsA_ksOk
+      Short.finKsA_rel _ (splitFin_rel v hF) _ (splitMid_rel v B T hF)
   · exact @Fast.sel_rel _ _ true v B _ _ (prefixNOk (OnePassName.ok hF _ (hz _ ‹_›)) T)
       (prefixNRel (OnePassName.ok hF _ (hz _ ‹_›)) (OnePassName.check _) T) nq hF _ Short.finKsA_ksOk Short.finKsA_rel _
       (splitFin_rel v hF) _ (splitMid_rel v B T hF)

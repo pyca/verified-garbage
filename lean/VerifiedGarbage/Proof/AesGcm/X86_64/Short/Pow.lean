@@ -488,6 +488,17 @@ theorem step2 (H Y X₁ X₂ T₁ T₂ : Block) (h₁ : x * φ T₁ = φ H) (h�
     VG.Proof.Gcm.X86_64.Pclmul.Prod.val_acc, VG.Proof.Gcm.X86_64.Pclmul.Prod.val_zero, φ_mul, φ_xor]
   linear_combination (φ Y + φ X₁) * h₂ + φ X₂ * h₁
 
+/-- Three blocks, `Y` added to the first: `GHASH` over them from `Y`. -/
+theorem step3 (H Y X₁ X₂ X₃ T₁ T₂ T₃ : Block) (h₁ : x * φ T₁ = φ H) (h₂ : x * φ T₂ = φ H ^ 2)
+    (h₃ : x * φ T₃ = φ H ^ 3) :
+    VG.Proof.Gcm.X86_64.Pclmul.reduce
+      (((VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₃).acc X₂ T₂).acc X₃ T₁) =
+      Spec.Gcm.ghashFrom H Y [X₁, X₂, X₃] := by
+  apply φ_inj
+  simp only [Spec.Gcm.ghashFrom, List.foldl_cons, List.foldl_nil, VG.Proof.Gcm.X86_64.Pclmul.φ_reduce,
+    VG.Proof.Gcm.X86_64.Pclmul.Prod.val_acc, VG.Proof.Gcm.X86_64.Pclmul.Prod.val_zero, φ_mul, φ_xor]
+  linear_combination (φ Y + φ X₁) * h₃ + φ X₂ * h₂ + φ X₃ * h₁
+
 /-- One block, with `Y`: `GHASH` over it from `Y`. -/
 theorem step1' (H Y X₁ T₁ : Block) (h₁ : x * φ T₁ = φ H) :
     VG.Proof.Gcm.X86_64.Pclmul.reduce (VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₁) =
