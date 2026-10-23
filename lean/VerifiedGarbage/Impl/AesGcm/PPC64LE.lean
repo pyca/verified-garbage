@@ -437,4 +437,29 @@ def «seal» : Prog isa :=
   .seq (.block (oneEntry 104))
     (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
 
+/-- The entry of `open`, with `tag_len = [sp + 104]` in `r19` and
+`scratch = [sp + 112]`. -/
+def openEntry : List Instr := oneEntry 112 ++ ([.load .d .r19 .r12 104] : List Instr)
+
+/-- `open` once the tag length is allowed: the nonce's length back in `r25`,
+the tag of the ciphertext at `W + 112`, compared with the received one, the
+result (`r3`) kept in `r19`, and the data decrypted only if they are equal. -/
+def openGood : Prog isa :=
+  .seq (.block [mov .r25 .r18])
+  (.seq oneAad
+  (.seq (oneTag 112)
+  (.seq recv
+  (.seq (cmp 112)
+  (.seq (.block [mov .r19 .r3])
+  (.seq (.ite (.zero .d .r19) (.block []) oneCrypt)
+    (.block [mov .r3 .r19])))))))
+
+/-- `vg_aes_gcm_open`, with `tag = [sp + 96]`, `tag_len = [sp + 104]` and
+`scratch = [sp + 112]`. -/
+def «open» : Prog isa :=
+  .seq (.block openEntry)
+  (.seq tagLenOk
+  (.seq (.ite (.zero .d .r25) (.block [.li .r3 0]) openGood)
+    (.block restore)))
+
 end VG.Impl.AesGcm.PPC64LE

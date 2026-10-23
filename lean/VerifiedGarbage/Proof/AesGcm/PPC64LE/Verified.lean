@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOpen
 import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
@@ -66,6 +68,10 @@ theorem streamVerify_correct (s : State) (hs : streamVerifyPPC64LE.pre s) :
 theorem seal_correct (s : State) (hs : sealPPC64LE.pre s) :
     ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
   seal_wp hs
+
+theorem open_correct (s : State) (hs : openPPC64LE.pre s) :
+    ∃ t s', Exec isa «open» s t s' ∧ abiPreserved s s' ∧ openPPC64LE.post s s' :=
+  open_wp hs
 
 /-! ## States satisfying the preconditions (with empty buffers) -/
 
@@ -190,5 +196,59 @@ theorem seal_verified :
       Spec.Gcm.sealPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
       stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+
+/-- `tag` at `0x5000`, `tag_len` 0 and the working space at `0x6000`, the stack arguments. -/
+def openSat : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 10 | .r5 => 0x2000 | .r7 => 0x3000 | .r9 => 0x4000 | _ => 0
+  lr := 0
+  sp := 0x9000
+  mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9071 then 0x60 else 0
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9060, 24⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x6000, 2560⟩]
+
+/-- The leak `open` may have: whether it succeeds. -/
+theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
+  cases a <;> cases b <;> simp_all
+
+/-- The postconditions match on `openResult`; the result is the low 32 bits
+of `r3`; and `open`'s public data include its leak, whether it succeeds (for
+`rounds` of 10, 12 or 14). -/
+theorem open_verified :
+    Verified PPC64LE.target «open» (Proof.AesGcm.openScratchContract PPC64LE.abi) :=
+  Verified.of_correct open_correct open_ct
+    { pre := by
+        sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          openPPC64LE, openPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      post := by
+        intro s s' _ h
+        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPost, PPC64LE.abi,
+          PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+        simp only [openPPC64LE] at h
+        intro _
+        exact h
+      pub := by
+        intro s₁ s₂ _ _ h
+        sig_pub [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openLeak, openPPC64LE,
+          openPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr, List.getD,
+          List.range, List.range.loop] at h
+        obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2⟩ := h
+        refine ⟨⟨h3, h4, h5, h6, h7, h8, h9, h10, hsp, fun i hi => ?_⟩, fun hr => leak_bool ?_⟩
+        · rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+          · exact a0
+          · exact a1
+          · exact a2
+        · have e₁ : ¬((s₁.gpr .r4).toNat = 10 ∨ (s₁.gpr .r4).toNat = 12 ∨ (s₁.gpr .r4).toNat = 14) ↔ False :=
+            ⟨fun x => x hr, False.elim⟩
+          have e₂ : ¬((s₂.gpr .r4).toNat = 10 ∨ (s₂.gpr .r4).toNat = 12 ∨ (s₂.gpr .r4).toNat = 14) ↔ False :=
+            ⟨fun x => x (h4 ▸ hr), False.elim⟩
+          simp only [e₁, e₂, ↓reduceIte] at hl
+          exact hl
+      sat := by
+        sig_implies_sat [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          openPPC64LE, openPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+          [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat }
 
 end VG.Proof.AesGcm.PPC64LE

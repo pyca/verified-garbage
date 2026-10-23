@@ -8,8 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 
 A registration file (see `TCB/Emit.lean`): the artifacts it lists are
 emitted. Each function keeps its working space in a frame of its own, of
-2592 bytes, or 2672 for `seal`, whose frame also copies its stack argument
-(`Proof/AesGcm/PPC64LE/Frame.lean`); the functions it calls use no stack.
+2592 bytes, or 2672 for `seal` and 2688 for `open`, whose frames also copy
+their stack arguments (`Proof/AesGcm/PPC64LE/Frame.lean`); the functions it calls use no stack.
 -/
 
 @[expose] public section
@@ -68,6 +68,11 @@ def artifacts : List Artifact := [
     notes := [callNote]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.seal
     stack := 2672
-    verified := seal_framed }]
+    verified := seal_framed },
+  Spec.Gcm.openApi.artifact PPC64LE.target {
+    notes := [callNote]
+    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesGcm.PPC64LE.open
+    stack := 2688
+    verified := open_framed }]
 
 end VG.Artifacts.AesGcm.PPC64LE
