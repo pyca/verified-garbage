@@ -17,6 +17,8 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.GatherPw.Instances
+public import VerifiedGarbage.Proof.AesGcm.AArch64.GatherPw.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
@@ -60,6 +62,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.GatherPw.Instances
+import VerifiedGarbage.Proof.AesGcm.AArch64.GatherPw.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.Init
 import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
@@ -252,7 +256,8 @@ def shortNote (v : GcmImpl) (isSeal : Bool) : List String :=
     pass of its products, from the table of the powers read from `pw`."] else []
 
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
-`g` on the path for TLS records. -/
+`g` on the path for TLS records, and `vg_aes_gcm_seal_gather_with_powers`,
+calling that `vg_aes_gcm_seal_with_powers`. -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
@@ -267,6 +272,15 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
     verified := openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures },
+  Spec.Gcm.sealGatherWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [gatherNote (Spec.Gcm.sealWithPowersApi.name ++ v.suffix)]
+    code := Impl.AesGcm.AArch64.SealGather.sealGatherPw
+      (Proof.AesGcm.AArch64.sealPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok).fn
+    stack := 2624
+    verified := Proof.AesGcm.AArch64.GatherPw.sealGatherPw_verified
+      (Proof.AesGcm.AArch64.sealPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok)
     features := v.stitchFeatures }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

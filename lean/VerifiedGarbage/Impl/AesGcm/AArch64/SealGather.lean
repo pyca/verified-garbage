@@ -76,4 +76,34 @@ def sealGather (f : Fn) : Prog isa :=
       (.block [.ldrSp .x30 8])))))
     (.free 16)
 
+/-! ## With the powers
+
+`vg_aes_gcm_seal_gather_with_powers(…, dst = [sp], len = [sp + 8],
+tag = [sp + 16], pw = [sp + 24])`, calling `f`, an implementation of
+`vg_aes_gcm_seal_with_powers`: the same gathering, then
+`vg_aes_gcm_seal_with_powers(ctx, rounds, nonce, nonce_len, aad, aad_len,
+dst, len, tag, pw)`. Its frame of 32 bytes holds the call's stack arguments
+`tag` and `pw` at `sp` and `sp + 8`, and our return address at `sp + 16`;
+our stack arguments are then at `sp + 32` … `sp + 56`. -/
+
+/-- The frame's stack arguments `tag` and `pw` and our return address, and
+`dst` in `x11`. -/
+def entryPw : List Instr :=
+  [.addSp .x16 0, .str .x .x30 .x16 16, .ldrSp .x17 48, .str .x .x17 .x16 0, .ldrSp .x17 56,
+    .str .x .x17 .x16 8, .ldrSp .x11 32]
+
+/-- `dst` and `len` as the call's `data` and `len`. -/
+def callArgsPw : List Instr := [.ldrSp .x6 32, .ldrSp .x7 40]
+
+/-- `vg_aes_gcm_seal_gather_with_powers`, calling `f`, an implementation of
+`vg_aes_gcm_seal_with_powers`. -/
+def sealGatherPw (f : Fn) : Prog isa :=
+  .frame (.alloc 32)
+    (.seq (.block entryPw)
+    (.seq gather
+    (.seq (.block callArgsPw)
+    (.seq (.call f.name f.code)
+      (.block [.ldrSp .x30 16])))))
+    (.free 32)
+
 end VG.Impl.AesGcm.AArch64.SealGather
