@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.SelectX
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Numbers in private CRT at a run-time width
@@ -152,6 +153,43 @@ theorem select_ok (h : In Ex base bytes len args s) {x d : Loc} {n : Cnt} (N : C
   have mw' : w.mem = s.mem := by rw [mw, mv, m]
   refine WP.seq (WP.mono (selectLoop_ok (h.ws.of_keeps Kw') (x := lo len x) (d := lo len d) (N := cw len n) k
     (cw_pos h.lower') (by omega) (by omega) (by omega)
+    (by rw [PtrAt, Kw.1 _ (by decide), Kv.1 _ (by decide)]; exact p)
+    (by rw [PtrAt, Kw.1 _ (by decide)]; exact pv)
+    (cnt_toNat h.upper' N cw')
+    (by rw [Kw.1 _ (by decide), Kv.1 _ (by decide), K.1 _ (by decide)]; exact hk))
+    fun t ⟨O, V, _, Kt⟩ => ?_)
+  have Kall : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (Kw'.mono (by decide)).trans Kt
+  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← mw']; exact O.mono (Nat.zero_le _) (by omega)
+  refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
+  have e : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
+  refine ⟨by rw [u₁.mem, ← mw', ce]; exact O, by rw [u₁.mem, V, mw'],
+    PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .edx, .ebp]) (Kall.trans (u₁.keeps.mono (by decide))) e⟩
+
+/-- `select_ok` for `selectX`. -/
+theorem selectX_ok (h : In Ex base bytes len args s) {x d : Loc} {n : Cnt} (N : CntOk n)
+    (hx : lo len x + cb len n ≤ bytes) (hd : lo len d + cb len n ≤ bytes)
+    (hxd : Apart (lo len d) (cb len n) (lo len x) (cb len n)) (h4 : 4 ≤ cw len n) {k : Bool} (hk : s.gpr .ecx = cmask k) :
+    WP isa (selectX x d n) s fun u => Outside base (lo len d) (cb len n) s.mem u.mem ∧
+      val32 u.mem base (lo len d) (cw len n) =
+        (if k then val32 s.mem base (lo len x) (cw len n) else val32 s.mem base (lo len d) (cw len n)) ∧
+      Keeps [.eax, .ebx, .edx, .ebp] s u := by
+  have bl := h.bytes_lt
+  have ce := cb_eq (len := len) N
+  unfold selectX
+  simp only [List.append_assoc]
+  refine WP.seq (ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega)
+    fun u K m p => ?_)
+  have hu := h.regs K m
+  refine ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega)
+    fun v Kv mv pv => ?_
+  have hv := hu.regs Kv mv
+  rw [← List.append_nil (cntTo n .edi)]
+  refine cntTo_ok (r := .edi) hv.width h.upper' N.extra fun w Kw mw cw' => WP.block_nil ?_
+  have Kw' : Keeps [.ebx, .edx, .ebp, .edi] s w :=
+    ((K.mono (by decide)).trans (Kv.mono (by decide))).trans (Kw.mono (by decide))
+  have mw' : w.mem = s.mem := by rw [mw, mv, m]
+  refine WP.seq (WP.mono (selectLoopX_ok (h.ws.of_keeps Kw') (x := lo len x) (d := lo len d) (N := cw len n) k
+    h4 (by omega) (by omega) (by omega)
     (by rw [PtrAt, Kw.1 _ (by decide), Kv.1 _ (by decide)]; exact p)
     (by rw [PtrAt, Kw.1 _ (by decide)]; exact pv)
     (cnt_toNat h.upper' N cw')

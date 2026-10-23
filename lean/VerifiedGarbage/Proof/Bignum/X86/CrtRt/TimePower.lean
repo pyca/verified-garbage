@@ -52,13 +52,13 @@ theorem prepBase_wst (R : Run Ex base bytes len args sp s) (c : Ctx) :
 
 /-- The taint checks of a context's setup. -/
 structure PrepChecks (c : Ctx) : Prop where
-  base : ACheck (prepBase c)
+  base : XCheck (prepBase c)
   count : ACheck (.block [.mov .esi (.imm (BitVec.ofNat 32 6))])
   dec : ACheck (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
   m444 : MulCheck c 4 4 4
 
 theorem prepChecks (c : Ctx) : PrepChecks c := by
-  cases c <;> constructor <;> (try dsimp only [MulCheck, ACheck]) <;> taint_decide
+  cases c <;> constructor <;> (try dsimp only [MulCheck, ACheck, XCheck]) <;> taint_decide
 
 /-- A run of the squares of a context's setup, with `n` of them left. -/
 abbrev SqSt (c : Ctx) (n : Nat) (s : State) : Prop :=
@@ -112,7 +112,8 @@ theorem squares4_relCT {c : Ctx} (hc : PrepChecks c) :
 theorem prepare_relCT (c : Ctx) :
     RelCT isa (Both (Run Ex base bytes len args sp)) (prepare c) (Both (WSt Ex base bytes len args sp c [3, 4] 0)) :=
   have hc := prepChecks c
-  VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ hc.base fun _ R => prepBase_wst R c)
+  VG.RelCT.seq (PublicRt.relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h.1.agree h.2) hc.base)
+    fun _ R => prepBase_wst R c)
     (squares4_relCT hc)
 
 theorem copyDown_run {j d : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hd : d ≤ 8) (R : Run Ex base bytes len args sp s) :

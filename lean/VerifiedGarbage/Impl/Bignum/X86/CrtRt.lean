@@ -168,6 +168,10 @@ def setSmall (x : Loc) (n : Cnt) (v : Nat) : Prog isa :=
 def select (x d : Loc) (n : Cnt) : Prog isa :=
   .seq (.block (ptrTo x .ebp .edx ++ ptrTo d .ebx .edx ++ cntTo n .edi)) (.seq selectLoop (.block restoreEdi))
 
+/-- `select` with `selectLoopX`, for numbers of at least sixteen bytes. -/
+def selectX (x d : Loc) (n : Cnt) : Prog isa :=
+  .seq (.block (ptrTo x .ebp .edx ++ ptrTo d .ebx .edx ++ cntTo n .edi)) (.seq selectLoopX (.block restoreEdi))
+
 /-- `d` set to `x`. -/
 def copy (x d : Loc) (n : Cnt) : Prog isa :=
   .seq (.block [.mov .ecx (.imm (BitVec.allOnes 32))]) (select x d n)
@@ -237,7 +241,7 @@ def doubleStep (c : Ctx) : Prog isa :=
   .seq (chain .sbb (.slot c 4) (.slot c 1) (.slot c 0) (one c)) <|
   .seq (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx), .alu .sbb .eax (.imm 0),
     .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax)]) <|
-  .seq (select (.slot c 1) (.slot c 4) (one c)) (.block [.alu .sub .esi (.imm 1)])
+  .seq (selectX (.slot c 1) (.slot c 4) (one c)) (.block [.alu .sub .esi (.imm 1)])
 
 /-- `2^(8 Bc + Bc / 8) mod M` in slot 4: one, doubled `8 Bc + Bc / 8` times. -/
 def powerTwo (c : Ctx) : Prog isa :=
