@@ -177,12 +177,12 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
   obtain ⟨_, _, wr₂, _, _, _, dOA₂, _, _, dSA₂, _, _, _, _, _, _, _, _⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (arg s₁ 0).toNat ≤ (arg s₁ 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (arg s₁ 0).toNat ≤ (arg s₁ 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have hb₂ : State.addr (arg s₂ 3) = State.addr (arg s₁ 3) := by rw [a3]
   have hz₂ : (arg s₂ 4).toNat * 8 = (arg s₁ 4).toNat * 8 := by rw [a4]
   simp only [Generate.deriveKey, Core.sequence, List.foldr]
-  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 20 _ rfl) (agree_args (n := 5) hsp (by omega) ha
+  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 20 _ rfl) (agree_args (n := 5) hsp (by omega_arith) ha
       (fun r hr => by
         rw [wr₁] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -195,19 +195,19 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
         rcases hr with rfl | rfl
         · exact dOA₂.symm
         · exact dSA₂.symm)))
-    (WP.mono (deriveEntry_ok h₁) fun u I => Env.of_installed I (by omega))
+    (WP.mono (deriveEntry_ok h₁) fun u I => Env.of_installed I (by omega_arith))
     (WP.mono (deriveEntry_ok h₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega)
+      have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Generate.deriveSized _ E₁.ws E₂.ws (by omega) (by omega) (genWidths_mem hv) (by decide)
+  refine genDispatch_trace Generate.deriveSized _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := arg s₁ 0) (by simp)]) (by rw [E₁.field (d := 104) (v := arg s₁ 2) (by simp)])
     (by rw [E₂.field (d := 100) (v := arg s₂ 0) (by simp), a0])
     (by rw [E₂.field (d := 104) (v := arg s₂ 2) (by simp), a2])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 4).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
   have C₁ := deriveCtx h₁ rfl rfl F₁
   have C₂ := deriveCtx h₂ hb₂ hz₂ F₂
   rw [← a0, ← a2] at C₂
@@ -219,11 +219,11 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
     rw [derivePtrs G₁ i hi, derivePtrs (pLen := (arg s₁ 0).toNat) (qLen := (arg s₁ 2).toNat) G₂ i hi, hr2, a0, a1, a2]
   have key := fun {o l : Nat} (h : o + l ≤ (s₁.gpr .r3).toNat) => derive_bytes hl hr2 hr3 (o := o) (l := l) h
   have Vp : deriveVal s₂ (.input .p) = deriveVal s₁ (.input .p) := by
-    have k := key (o := 0) (l := (arg s₁ 0).toNat) (by omega)
+    have k := key (o := 0) (l := (arg s₁ 0).toNat) (by omega_arith)
     rw [BitVec.add_zero] at k
     simp only [deriveVal]; rw [← hr2, ← a0, k]
   have Vq : deriveVal s₂ (.input .q) = deriveVal s₁ (.input .q) := by
-    simp only [deriveVal]; rw [← hr2, ← a0, ← a2, key (by omega)]
+    simp only [deriveVal]; rw [← hr2, ← a0, ← a2, key (by omega_arith)]
   have mp : (.input .p, (arg s₁ 0).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
   have mq : (.input .q, (arg s₁ 2).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
   have mg : (.input .g, (arg s₁ 0).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
@@ -243,7 +243,7 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
   have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
   have G₁ := F₁.keep (deriveFields_ok s₁) S₁ (by decide) O₁ kee
   have G₂ := F₂.keep (deriveFields_ok s₂) S₂ (by decide) O₂ kee
   have ho : ∀ {w₁ w₂ : State}, Env s₁ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₁) w₁ →
@@ -255,7 +255,7 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
       by rw [H₁.field (d := 64) (v := s₁.gpr .r2) (by simp), H₂.field (d := 64) (v := s₂.gpr .r2) (by simp), hr2],
       by rw [H₁.field (d := 88) (v := arg s₁ 1) (by simp), H₂.field (d := 88) (v := arg s₂ 1) (by simp), a1]⟩
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)
-  · exact deriveFailure_trace _ _ G₁.ws G₂.ws (by omega) (by omega) (by omega) (ho G₁ G₂).1
+  · exact deriveFailure_trace _ _ G₁.ws G₂.ws (by omega_arith) (by omega_arith) (by omega_arith) (ho G₁ G₂).1
   · have valid : shapeValid (operand (State.addr (arg s₁ 3)) t₁ (.input .p) (arg s₁ 0).toNat)
         (operand (State.addr (arg s₁ 3)) t₁ (.input .q) (arg s₁ 2).toNat) := by
       rw [eval_eq, Z₁] at hf
@@ -278,10 +278,10 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
     have keep : ∀ r ∈ runRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
         (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
     have H₁ := G₁.keep (deriveFields_ok s₁) Rn₁.rest (by decide) Rn₁.mem keep
     have H₂ := G₂.keep (deriveFields_ok s₂) Rn₂.rest (by decide) Rn₂.mem keep
     obtain ⟨e96, e64, e88⟩ := ho H₁ H₂
-    exact writeKey_trace _ _ H₁.ws H₂.ws (by omega) (by omega) e96 e64 e88
+    exact writeKey_trace _ _ H₁.ws H₂.ws (by omega_arith) (by omega_arith) e96 e64 e88
 
 end VG.Proof.Dsa.Arm

@@ -133,39 +133,39 @@ theorem rowTail_ok (h : In Ex base bytes len args s) {i : Nat} (hi : i < cwc len
   have po : prodOff = 256 := rfl
   have ma : mulAOff = 2312 := rfl
   simp only [List.cons_append]
-  refine wp_storeS (ea_ptr h.ws hp (d := 0) (by omega))
-    (ws_write h.ws (y := prodOff + 4 * i + 4 * cwc len .wide + 0) (n := 4) (by omega)) fun u₁ m₁ => ?_
+  refine wp_storeS (ea_ptr h.ws hp (d := 0) (by omega_arith))
+    (ws_write h.ws (y := prodOff + 4 * i + 4 * cwc len .wide + 0) (n := 4) (by omega_arith)) fun u₁ m₁ => ?_
   have O₁ : Outside base (prodOff + 4 * (i + cwc len .wide)) 4 s.mem u₁.mem := by
-    rw [m₁.mem, show prodOff + 4 * (i + cwc len .wide) = prodOff + 4 * i + 4 * cwc len .wide + 0 by omega]
-    exact writeW32_outside _ _ _ (by omega)
-  have h₁ := h.keep (m₁.keeps []) (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+    rw [m₁.mem, show prodOff + 4 * (i + cwc len .wide) = prodOff + 4 * i + 4 * cwc len .wide + 0 by omega_arith]
+    exact writeW32_outside _ _ _ (by omega_arith)
+  have h₁ := h.keep (m₁.keeps []) (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine widthC_ok (k := 0) (c := .wide) (r := .eax) h₁.width h.upper' fun u₂ K₂ m₂ e₂ => ?_
   refine wp_subS rfl fun u₃ a₃ _ => wp_addS rfl fun u₄ a₄ _ => wp_addS rfl fun u₅ a₅ _ => ?_
   refine wp_addS rfl fun u₆ a₆ _ => wp_cmpS rfl fun u₇ f₇ z₇ => WP.block_nil ?_
   have ebp₂ : PtrAt u₂ base .ebp (prodOff + 4 * i + 4 * cwc len .wide) := by
     rw [PtrAt, K₂.1 _ (by decide), m₁.gpr]; exact hp
   have eB : (BitVec.ofNat 32 (bc len .wide)).toNat = 4 * cwc len .wide := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), bw]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), bw]
   have ebp₃ : PtrAt u₃ base .ebp (prodOff + 4 * i) := by
     rw [PtrAt, a₃.gpr, e₂, ptr_sub ebp₂ _ (by omega_using [eB]), eB, Nat.add_sub_cancel]
   have ebp₇ : PtrAt u₇ base .ebp (prodOff + 4 * (i + 1)) := by
     rw [PtrAt, f₇.gpr, a₆.other _ (by decide), a₅.other _ (by decide), a₄.gpr, ptr_add ebp₃]
-    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega_arith
   have edi₄ : (u₄.gpr .edi).toNat = base.toNat := by
     rw [a₄.other _ (by decide), a₃.other _ (by decide), K₂.1 _ (by decide), m₁.gpr]; exact h.edi
   have eax₇ : PtrAt u₇ base .eax (prodOff + 4 * cwc len .wide) := by
     rw [PtrAt, f₇.gpr, a₆.gpr, a₅.gpr, a₄.other _ (by decide), a₃.other _ (by decide), e₂, BitVec.toNat_add,
       BitVec.toNat_add, eB, edi₄, BitVec.toNat_ofNat (x := prodOff)]
-    omega
+    omega_arith
   have mem₇ : u₇.mem = u₁.mem := by rw [f₇.mem, a₆.mem, a₅.mem, a₄.mem, a₃.mem, m₂]
   refine ⟨by rw [mem₇]; exact O₁, ?_, ebp₇, ?_, ?_⟩
-  · rw [mem₇, m₁.mem, show prodOff + 4 * (i + cwc len .wide) = prodOff + 4 * i + 4 * cwc len .wide + 0 by omega,
+  · rw [mem₇, m₁.mem, show prodOff + 4 * (i + cwc len .wide) = prodOff + 4 * i + 4 * cwc len .wide + 0 by omega_arith,
       w32_write_self]
   · have ebp₆ : PtrAt u₆ base .ebp (prodOff + 4 * (i + 1)) := by rw [PtrAt, ← f₇.gpr]; exact ebp₇
     have eax₆ : PtrAt u₆ base .eax (prodOff + 4 * cwc len .wide) := by rw [PtrAt, ← f₇.gpr]; exact eax₇
-    rw [z₇, ptr_beq ebp₆ eax₆ (by omega) (by omega)]
+    rw [z₇, ptr_beq ebp₆ eax₆ (by omega_arith) (by omega_arith)]
     congr 1
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_arith)
   · exact (((((m₁.keeps []).mono (by decide)).trans (K₂.mono (by decide))).trans
       ((a₃.keeps.trans a₄.keeps).mono (by decide))).trans ((a₅.keeps.trans a₆.keeps).mono (by decide))).trans
       (f₇.keeps _)

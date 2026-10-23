@@ -143,7 +143,7 @@ theorem col_le {h r : Nat → Nat} {H R : Nat} (hh : ∀ j < 10, h j ≤ H) (hr 
     apply Nat.mul_le_mul (hh j hj)
     simp only [coef]; split
     · have := hr (k - j) (by omega_using [hk, hj]); omega_using [this]
-    · have := hr (k + 10 - j) (by omega); omega_using [this]
+    · have := hr (k + 10 - j) (by omega_arith); omega_using [this]
   have := rsum_le_of_lt 10 this
   rw [rsum_const] at this
   exact this
@@ -271,7 +271,7 @@ theorem carryN_top (f : Nat → Nat) (a : Nat) (hf : ∀ j < 10, f j < 2 ^ 32 - 
     rw [carryN_above f a n _ (by omega_using [])]
     have := hf (n + a + 1) (by omega_using [h])
     have : carryN f a n (n + a) / 2 ^ 13 < 2 ^ 19 := by omega_using [ih]
-    omega
+    omega_arith
 
 /-- The carry step's sum does not overflow. -/
 theorem carryN_step_lt (f : Nat → Nat) (a : Nat) (hf : ∀ j < 10, f j < 2 ^ 32 - 2 ^ 19) (n : Nat)
@@ -280,7 +280,7 @@ theorem carryN_step_lt (f : Nat → Nat) (a : Nat) (hf : ∀ j < 10, f j < 2 ^ 3
   have := carryN_top f a hf n (by omega_using [hn])
   rw [carryN_above f a n _ (by omega_using [])]
   have := hf (n + a + 1) (by omega_using [hn])
-  omega
+  omega_arith
 
 /-- After carrying from columns `0, …, 8`, and then adding column 9's bits from 13 up, times 5,
 to column 0 and carrying it once more: the result is congruent to the columns modulo `p`
@@ -436,7 +436,7 @@ theorem val_mask_top {g g' : Nat → Nat} (h : ∀ k < 9, g k < 2 ^ 13) (h' : �
     simp only [val, h' 0 (by decide), h' 1 (by decide), h' 2 (by decide), h' 3 (by decide),
       h' 4 (by decide), h' 5 (by decide), h' 6 (by decide), h' 7 (by decide), h' 8 (by decide), h9]
     have : g 9 % 2 ^ 13 < 2 ^ 13 := Nat.mod_lt _ (by decide)
-    omega
+    omega_arith
   rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hl]
 
 /-- The final reduction: with `c = ⌊(h + 5) / 2¹³⁰⌋`, `(h + 5 c) mod 2¹³⁰` is `h mod p`,
@@ -459,8 +459,8 @@ theorem chainT_le (u : Nat → Nat) (hu : ∀ j < 10, u j ≤ 2 ^ 13) : ∀ k < 
     have := chainT_le u hu k (by omega_using [h])
     have := hu (k + 1) h
     simp only [chainT]
-    have : chainT u k / 2 ^ 13 ≤ 1 := by omega
-    omega
+    have : chainT u k / 2 ^ 13 ≤ 1 := by omega_arith
+    omega_arith
 
 /-- The limbs after `carry2`. -/
 def redK (E : Nat → Nat) : Nat → Nat := carryN (fold E) 1 8
@@ -508,7 +508,7 @@ theorem red_facts (E : Nat → Nat) (hE : ∀ j < 10, E j < 2 ^ 32 - 2 ^ 19) :
   · simp only [redL]
     split
     · exact Nat.mod_lt _ (by decide)
-    · exact hl j (by omega)
+    · exact hl j (by omega_arith)
 
 /-! ## Clamping -/
 
@@ -1049,11 +1049,11 @@ theorem carries_ok (a n : Nat) (hn : n + a ≤ 9) {f : Nat → Nat} (hf : ∀ j 
     · subst ej'; rw [iteF ej, iteT rfl, e1, h.cols _ hj, h.cols _ (by omega_using [hj])]
     · rw [iteF ej, iteF ej', hk.gpr _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨fun e => ej (yr_inj _ hj _ (by omega) e), fun e => ej' (yr_inj _ hj _ (by omega) e)⟩),
+        exact ⟨fun e => ej (yr_inj _ hj _ (by omega_arith) e), fun e => ej' (yr_inj _ hj _ (by omega_arith) e)⟩),
         h.cols _ hj]
   · exact h.keeps.trans (hk.mono fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact yr_cregs _ (by omega))
+      rcases hr with rfl | rfl <;> exact yr_cregs _ (by omega_arith))
 
 end VG.Proof.Poly1305.Arm
 
@@ -1187,7 +1187,7 @@ theorem reduceRegs_ok {E : Nat → Nat} (hE : ∀ j < 10, E j < 2 ^ 32 - 2 ^ 19)
     · rename_i e; subst e; show (s4.gpr .r3).toNat = _; rw [h4, chainT_top]; rfl
     · rw [k4.gpr _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨(yr_ne' j hj).2.2, fun e => by have := yr_inj _ hj 0 (by decide) e; omega⟩)]
+        exact ⟨(yr_ne' j hj).2.2, fun e => by have := yr_inj _ hj 0 (by decide) e; omega_arith⟩)]
       exact hc3 j hj
   have hm4 : s4.gpr .r2 = maskV := by
     rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ cregs_r2, hm1]
@@ -1201,7 +1201,7 @@ theorem reduceRegs_ok {E : Nat → Nat} (hE : ∀ j < 10, E j < 2 ^ 32 - 2 ^ 19)
       have := hc5 9 (by decide)
       simp only [yr] at this ⊢
       rw [u6.gpr, hm5, toNat_and_mask, this]
-    · rw [u6.other _ (fun e => by have := yr_inj _ hj 9 (by decide) e; omega)]
+    · rw [u6.other _ (fun e => by have := yr_inj _ hj 9 (by decide) e; omega_arith)]
       exact hc5 j hj
   · rw [u6.other _ (by decide), hm5]
   · refine k1.trans ((k2.mono fun r hr => by simp only [List.mem_cons, hr, or_true]).trans ((k3.mono (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq, reduceCtorEq, true_or, or_true])).trans
@@ -1400,8 +1400,8 @@ theorem mac_step {h r : Nat → Nat} (hh : ∀ j < 10, h j ≤ Hb) (hr : ∀ i <
       omega_using [hj', ha]
   · simp only [mac, h5, ite_false, List.nil_append]
     refine core s (Keeps.refl _ _) ?_ ?_
-    · rw [hs.a]; split <;> split <;> omega
-    · rw [hs.a]; split <;> split <;> omega
+    · rw [hs.a]; split <;> split <;> omega_arith
+    · rw [hs.a]; split <;> split <;> omega_arith
 
 /-- `h`, two limbs per word, at `[0, 20)` of the state at `B`. -/
 def HMem (h : Nat → Nat) (m : Mem) (B : Addr) : Prop :=
@@ -1420,7 +1420,7 @@ theorem loadH_ok {h : Nat → Nat} (hh : ∀ j < 10, h j ≤ Hb) {j : Nat} (hj :
           ((u2.keeps (by simp only [List.mem_cons, List.not_mem_nil, or_false])).trans (u3.keeps (by simp only [List.mem_cons, List.not_mem_nil, or_false])))⟩
     rw [u3.gpr, u2.gpr, u1.gpr, toNat_shr, toNat_shl, hw']
     have := hb (2 * i) (by omega_using [hj]); have := hb (2 * i + 1) (by omega_using [hj])
-    omega
+    omega_arith
   · have hw' := hH i (by omega_using [hj])
     simp only [loadH, show (2 * i + 1) % 2 = 1 by omega_using [], show 1 ≠ 0 by decide, ite_false,
       show 2 * i + 1 - 1 = 2 * i by omega_using [hj]]
@@ -1547,7 +1547,7 @@ theorem pack_step {H : Nat → Nat} (hH : ∀ k < 10, H k < 2 ^ 16) {s₀ : Stat
     have a := hs.cols (2 * i) (by omega_using [hi]) (Nat.le_refl _)
     have b := hs.cols (2 * i + 1) (by omega_using [hi]) (by omega_using [])
     have := hH (2 * i) (by omega_using [hi]); have := hH (2 * i + 1) (by omega_using [hi])
-    rw [u1.gpr, toNat_add_lt (by rw [toNat_shl, a, b]; omega), toNat_shl, a, b]
+    rw [u1.gpr, toNat_add_lt (by rw [toNat_shl, a, b]; omega_arith), toNat_shl, a, b]
     omega_using [b, this]
   refine wp_str (off := 4 * i) (a := State.addr st + BitVec.ofNat 64 (4 * i)) (by omega_using [hi]) (by rw [u1.other _ (yr_ne' (2 * i) (by omega_using [hi])).1.symm, hs0]; exact ea hfit (off := 4 * i) (by omega_using [hi]))
     (by rw [u1.wr]; exact outSt hsw (off := 4 * i) (n := 4) (by omega_using [hi])) fun s2 u2 => WP.block_nil ⟨fun i' hi' => ?_, ?_, ?_⟩
@@ -1623,13 +1623,13 @@ theorem absorb_ok (pad : Bool) {R D : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 1
   have hw4 : ∀ i, (word s i).toNat < 2 ^ 32 := fun i => (word s i).isLt
   have hEb : ∀ k < 10, addE D (fun i => (word s i).toNat) pad k < 2 ^ 32 - 2 ^ 19 := fun k hk => by
     have := hD k hk; have := mlimb_lt (hw4 0) (hw4 1) (hw4 2) (hw4 3) k
-    simp only [addE]; split <;> omega
+    simp only [addE]; split <;> omega_arith
   rw [absorb]
   simp only [List.append_assoc]
   refine WP.append (addWords_ok hin) fun s1 ⟨hc1, hr2, k1⟩ => ?_
   have e1 : ∀ k < 9, (s1.gpr (yr k)).toNat = addE D (fun i => (word s i).toNat) pad k := fun k hk => by
     have := hD k (by omega_using [hk]); have := mlimb_lt (hw4 0) (hw4 1) (hw4 2) (hw4 3) k
-    rw [hc1 k hk, toNat_add_lt (by rw [wsum_toNat _ hk, hc.1 k hk]; omega), wsum_toNat _ hk, hc.1 k hk]
+    rw [hc1 k hk, toNat_add_lt (by rw [wsum_toNat _ hk, hc.1 k hk]; omega_arith), wsum_toNat _ hk, hc.1 k hk]
     simp only [addE, iteF (show ¬(k = 9 ∧ pad = true) by omega_using [hk]), Nat.add_zero]
   have hs10 : s1.gpr .r0 = st := by rw [k1.gpr _ (by decide), h0]
   have hsw1 : stR st ∈ s1.wr := by rw [k1.wr]; exact hw
@@ -2047,7 +2047,7 @@ theorem setupR_ok {s : State} (h0 : s.gpr .r0 = st) (hw : stR st ∈ s.wr) :
       rw [u5.other _ (yr_ne k hk).2.1]; exact e4 k hk
     have b4 : rlimb s.mem (State.addr st) 4 < 2 ^ 8 := by
       have := cw_lt s.mem (State.addr st) 1; have := cw2_even s.mem (State.addr st)
-      simp only [rlimb, mlimb]; omega
+      simp only [rlimb, mlimb]; omega_arith
     have b9 : rlimb s.mem (State.addr st) 9 < 2 ^ 8 := by
       have := cw_lt s.mem (State.addr st) 3
       simp only [rlimb, mlimb]; omega_using [this]

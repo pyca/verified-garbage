@@ -161,15 +161,15 @@ theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.l
     kN, kE, kD, kG, kS, kR, kA, fN, fE, fD, fG, fS, fR, kv, el1, elK, glK, scrK, rlK⟩ := h
   simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kN kE kD kG kS kR kA
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
-    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 260, 260⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [Taint.sub_setWidth (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, glK := glK, scrK := scrK, rlK := rlK
@@ -177,15 +177,15 @@ theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.l
       scl32 := (arg s 10).isLt
       nB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below16).symm)
-        (by show (arg s 1).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 1).toNat ≤ 2 ^ 64; omega_arith)
       eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
-        (by show (arg s 3).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 3).toNat ≤ 2 ^ 64; omega_arith)
       pw := Proof.RsaPkcs1Sig.wordsAt_frame' hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kR.sub_left below16).symm)
-        (by show (arg s 12).toNat * 8 ≤ 2 ^ 64; have := (arg s 12).isLt; omega) }
+        (by show (arg s 12).toNat * 8 ≤ 2 ^ 64; have := (arg s 12).isLt; omega_arith) }
   rw [ep_lay]
-  refine ok_entered (S := 260) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 260) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -206,15 +206,15 @@ theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.l
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth]
     all_goals first
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 5).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 9).isLt; omega)]; omega)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 5).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 9).isLt; omega_arith)]; omega_arith)
   · intro j hj
     have : j < 13 := hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
         j = 10 ∨ j = 11 ∨ j = 12) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep]
 

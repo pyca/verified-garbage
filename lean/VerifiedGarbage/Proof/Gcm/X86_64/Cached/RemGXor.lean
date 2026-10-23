@@ -176,14 +176,14 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
       fun s' ⟨⟨v, m'⟩, b', z', g', rd', wr', k'⟩ => ⟨fun n hn => ?_, fun n hn => ?_, ?_, g', rd', wr',
         fun r hr h13' l hl => k' r (fun h => hr (h ▸ List.mem_singleton_self _)) h13' l hl⟩
     · have := b' n hn
-      rw [Offset.add_add, Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega] at this
-      rw [this, show n / 4 = 0 by omega, show n % 4 = n by omega]; rfl
+      rw [Offset.add_add, Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega_arith] at this
+      rw [this, show n / 4 = 0 by omega_arith, show n % 4 = n by omega_arith]; rfl
     · have := z' n hn
-      rw [Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega] at this
-      rw [← this, show n / 4 = 0 by omega, show n % 4 = n by omega]; rfl
+      rw [Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega_arith] at this
+      rw [← this, show n / 4 = 0 by omega_arith, show n % 4 = n by omega_arith]; rfl
     · rw [m']
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (by rw [show 128 * c / 8 = 16 * c by omega]; exact Region.contains_self _ _)
+        (by rw [show 128 * c / 8 = 16 * c by omega_arith]; exact Region.contains_self _ _)
   | b :: b₂ :: bs, j, s, c, _, hnd, h13, hc, hk, hb, hinS, hinD, hsep, hw => by
     have hb13 : b ≠ .xmm13 := fun h => h13 (h ▸ List.mem_cons_self)
     have hbs : b ∉ b₂ :: bs := (List.nodup_cons.mp hnd).1
@@ -192,13 +192,13 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
     rw [show xorG src (b :: b₂ :: bs) j = ([.vmovdqu32Load .xmm13 (at_ src (64 * j)), .zop (.zbin .vpxord b b .xmm13),
       .vmovdqu32Store (at_ .rdx (64 * j)) b] : List Instr) ++ xorG src (b₂ :: bs) (j + 1) from rfl,
       WP.block_append_iff]
-    have hlen : 64 ≤ 64 * (bs.length + 1 + 1 - 1) + 16 * c := by omega
-    have hn64 : 64 * (bs.length + 1 + 1 - 1) + 16 * c < 2 ^ 64 := by omega
+    have hlen : 64 ≤ 64 * (bs.length + 1 + 1 - 1) + 16 * c := by omega_arith
+    have hn64 : 64 * (bs.length + 1 + 1 - 1) + 16 * c < 2 ^ 64 := by omega_arith
     refine WP.mono (xor1G_ok src b (64 * j) s hb13
-      (by have := CallLay.inRegions_sub (off := 0) (l := 64) hinS (by omega) hn64
+      (by have := CallLay.inRegions_sub (off := 0) (l := 64) hinS (by omega_arith) hn64
           rwa [show s.gpr src + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 0 = s.gpr src + BitVec.ofNat 64 (64 * j)
             from BitVec.add_zero _] at this)
-      (by have := CallLay.inRegions_sub (off := 0) (l := 64) hinD (by omega) hn64
+      (by have := CallLay.inRegions_sub (off := 0) (l := 64) hinD (by omega_arith) hn64
           rwa [show s.gpr .rdx + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 0 = s.gpr .rdx + BitVec.ofNat 64 (64 * j)
             from BitVec.add_zero _] at this))
       fun s₁ ⟨⟨v, m₁⟩, b₁, z₁, g₁, rd₁, wr₁, k₁⟩ => ?_
@@ -210,17 +210,17 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
       (by
         rw [rd₁, wr₁, g₁]
         have := CallLay.inRegions_sub (off := 64) (l := 64 * ((b₂ :: bs).length - 1) + 16 * c) hinS
-          (by simp only [List.length_cons]; omega) hn64
-        rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega] at this)
+          (by simp only [List.length_cons]; omega_arith) hn64
+        rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega_arith] at this)
       (by
         rw [wr₁, g₁]
         have := CallLay.inRegions_sub (off := 64) (l := 64 * ((b₂ :: bs).length - 1) + 16 * c) hinD
-          (by simp only [List.length_cons]; omega) hn64
-        rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega] at this)
+          (by simp only [List.length_cons]; omega_arith) hn64
+        rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega_arith] at this)
       (fun n q' hq hn => by
-        rw [g₁, show 4 * (j + 1) + n = 4 * j + (n + 4) by omega, show j + 1 + q' = j + (q' + 1) by omega]
-        exact hsep (n + 4) (q' + 1) (by omega) (by simp only [List.length_cons] at hn ⊢; omega))
-      (by simp only [List.length_cons] at hw ⊢; omega))
+        rw [g₁, show 4 * (j + 1) + n = 4 * j + (n + 4) by omega_arith, show j + 1 + q' = j + (q' + 1) by omega_arith]
+        exact hsep (n + 4) (q' + 1) (by omega_arith) (by simp only [List.length_cons] at hn ⊢; omega_arith))
+      (by simp only [List.length_cons] at hw ⊢; omega_arith))
       fun s' ⟨b', z', f', g', rd', wr', k'⟩ => ?_
     simp only [List.length_cons] at b' z' f'
     rw [g₁] at b' z' f'
@@ -229,55 +229,55 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
         blockAt s₁.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (4 * j + n))) := fun n hn =>
       blockAt_frame f' fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+        exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     -- The later registers' data, which the first write keeps.
     have keepS : ∀ n, 4 ≤ n → n < 4 * (bs.length + 1) + c →
         blockAt s₁.mem (s.gpr src + BitVec.ofNat 64 (16 * (4 * j + n))) =
           blockAt s.mem (s.gpr src + BitVec.ofNat 64 (16 * (4 * j + n))) := fun n h4 hn => by
       rw [m₁]
       apply Stitch.blockAt_writeW_sep' (R := ⟨s.gpr .rdx + BitVec.ofNat 64 (64 * j), 64⟩) _ rfl
-      have := hsep n 0 (by omega) (by omega)
+      have := hsep n 0 (by omega_arith) (by omega_arith)
       rwa [Nat.add_zero] at this
     refine ⟨fun n hn => ?_, fun n hn => ?_, ?_, by rw [g', g₁], by rw [rd', rd₁], by rw [wr', wr₁],
       fun r hr h13'' l hl => ?_⟩
     · by_cases h4 : n < 4
       · rw [keep0 n h4]
         have := b₁ n h4
-        rw [Offset.add_add, Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega] at this
-        rw [this, show n / 4 = 0 by omega, show n % 4 = n by omega]; rfl
-      · have := b' (n - 4) (by omega)
-        rw [show 4 * (j + 1) + (n - 4) = 4 * j + n by omega, show (n - 4) / 4 = n / 4 - 1 by omega,
-          show (n - 4) % 4 = n % 4 by omega] at this
-        rw [this, keepS n (by omega) (by omega)]
-        have hq : n / 4 = (n / 4 - 1) + 1 := by omega
+        rw [Offset.add_add, Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega_arith] at this
+        rw [this, show n / 4 = 0 by omega_arith, show n % 4 = n by omega_arith]; rfl
+      · have := b' (n - 4) (by omega_arith)
+        rw [show 4 * (j + 1) + (n - 4) = 4 * j + n by omega_arith, show (n - 4) / 4 = n / 4 - 1 by omega_arith,
+          show (n - 4) % 4 = n % 4 by omega_arith] at this
+        rw [this, keepS n (by omega_arith) (by omega_arith)]
+        have hq : n / 4 = (n / 4 - 1) + 1 := by omega_arith
         rw [hq, List.getD_cons_succ, Nat.add_sub_cancel, k₁ _ (fun h => by
           have hm : (b₂ :: bs).getD (n / 4 - 1) .xmm0 ∈ b₂ :: bs := by
-            rw [← List.getElem_eq_getD (h := by simp only [List.length_cons]; omega)]
+            rw [← List.getElem_eq_getD (h := by simp only [List.length_cons]; omega_arith)]
             exact List.getElem_mem _
           exact hbs (h ▸ hm)) (fun h => by
           have hm : (b₂ :: bs).getD (n / 4 - 1) .xmm0 ∈ b₂ :: bs := by
-            rw [← List.getElem_eq_getD (h := by simp only [List.length_cons]; omega)]
+            rw [← List.getElem_eq_getD (h := by simp only [List.length_cons]; omega_arith)]
             exact List.getElem_mem _
-          exact h13' (h ▸ hm)) _ (by omega)]
+          exact h13' (h ▸ hm)) _ (by omega_arith)]
     · by_cases h4 : n < 4
-      · rw [keep0 n h4, show n / 4 = 0 by omega, show n % 4 = n by omega, List.getD_cons_zero,
-          k' b hbs hb13 _ (by omega)]
+      · rw [keep0 n h4, show n / 4 = 0 by omega_arith, show n % 4 = n by omega_arith, List.getD_cons_zero,
+          k' b hbs hb13 _ (by omega_arith)]
         have := z₁ n h4
-        rw [Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega] at this
+        rw [Offset.add_add, show 64 * j + 16 * n = 16 * (4 * j + n) by omega_arith] at this
         exact this
-      · have := z' (n - 4) (by omega)
-        rw [show 4 * (j + 1) + (n - 4) = 4 * j + n by omega, show (n - 4) / 4 = n / 4 - 1 by omega,
-          show (n - 4) % 4 = n % 4 by omega] at this
-        rw [show n / 4 = (n / 4 - 1) + 1 by omega, List.getD_cons_succ]
+      · have := z' (n - 4) (by omega_arith)
+        rw [show 4 * (j + 1) + (n - 4) = 4 * j + n by omega_arith, show (n - 4) / 4 = n / 4 - 1 by omega_arith,
+          show (n - 4) % 4 = n % 4 by omega_arith] at this
+        rw [show n / 4 = (n / 4 - 1) + 1 by omega_arith, List.getD_cons_succ]
         exact this
     · have F1 : Frame [⟨s.gpr .rdx + BitVec.ofNat 64 (64 * j), 64 * (bs.length + 1 + 1 - 1) + 16 * c⟩]
           s.mem s₁.mem := by
         rw [m₁]
         exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith)
       exact F1.trans (f'.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega) (by omega)⟩)
+        exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_arith) (by omega_arith)⟩)
     · rw [k' r (fun h => hr (List.mem_cons_of_mem _ h)) h13'' l hl,
         k₁ r (fun h => hr (h ▸ List.mem_cons_self)) h13'' l hl]
 

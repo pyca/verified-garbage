@@ -42,13 +42,13 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
   refine WP.mono (jacAdd_ok hL.lay hm hC ha (hL.rcbApart_twice hJ) ds hf hv hOne
     (hC.onCurve_mul hP _) (hC.onCurve_mul hP _) hI.point hI.twice) fun u ⟨eu,ka,iu,ju⟩ => ?_
   have jw : InvJ C (eu K.D.x) (eu K.D.y) (eu K.D.z) (mul (2*(m+1)-1) P) := by
-    rw [hC.add_mul_mul hP,show 2*m-1+2=2*(m+1)-1 by omega] at ju
+    rw [hC.add_mul_mul hP,show 2*m-1+2=2*(m+1)-1 by omega_arith] at ju
     exact ju
   have ka := ka.mono (W' := winOther K) (fun _ hx => List.mem_append_right _ hx)
   have cm : u.gpr .rbx=BitVec.ofNat 64 m := by
     rw [ka.gpr _ (rbx_not_clob _),hI.counter]
   rw [WP.block_append_iff]
-  refine WP.mono (nafCopyStore_ok hL (by omega) ht iu
+  refine WP.mono (nafCopyStore_ok hL (by omega_arith) ht iu
     (fun _ hx => List.mem_append_left _ hx) cm jw) fun v ⟨ks,iv,jr,jnew⟩ => ?_
   let W := winOther K ++ jacCoords (K.tblPt (m+1))
   have kas : ProgKeep K.M base W s v := (ka.mono (fun _ hx => List.mem_append_left _ hx)).trans (ks.mono (by
@@ -60,13 +60,13 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     · exact List.mem_append_right _ hx))
   have cb : v.gpr .rbx=BitVec.ofNat 64 m := by
     rw [kas.gpr _ (rbx_not_clob _),hI.counter]
-  refine WP.mono (nafTable_advance_ok (by omega) cb) fun t ⟨hc,cf,kc⟩ => ?_
+  refine WP.mono (nafTable_advance_ok (by omega_arith) cb) fun t ⟨hc,cf,kc⟩ => ?_
   have it := (iv.of_keeps kc (by decide)).to_tmv.sub (nafTableLive_next K m)
   have slots : ∀ x∈W, x∈nafSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ (List.mem_append_right _ hx)
-    · exact nafTblPt_mem K (by omega) (by omega) x hx
+    · exact nafTblPt_mem K (by omega_arith) (by omega_arith) x hx
   have kct : KeepRegs (nafTableClob K) v t := (VG.Proof.Mont.X86_64.Keeps.regs kc).mono (fun _ hx => List.mem_append_right _ hx)
   have kst : KeepRegs (nafTableClob K) s t :=
     (KeepRegs.mono ⟨kas.gpr,kas.rd,kas.wr⟩ (fun _ hx => List.mem_append_left _ hx)).trans kct
@@ -82,23 +82,23 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       · apply Or.inr
         simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl | rfl | rfl
-        · rw [tblPt_x]; exact nafTbl_slot K (by omega)
-        · rw [tblPt_y]; exact nafTbl_slot K (by omega)
-        · rw [tblPt_z]; exact nafTbl_slot K (by omega)
+        · rw [tblPt_x]; exact nafTbl_slot K (by omega_arith)
+        · rw [tblPt_y]; exact nafTbl_slot K (by omega_arith)
+        · rw [tblPt_z]; exact nafTbl_slot K (by omega_arith)
     · exact Or.inr rfl
   have beq (x : Nat) (hx : x∈jacCoords (Naf.twice K)) : tmv C K.M.n base t x=tmv C K.M.n base s x := by
     unfold tmv; rw [kc.2.1]
     rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K (by decide) (by decide) x hx) ?_]
     intro hw
     have := hL.n
-    have := entry_end_le (24*K.M.n) (show m<8 by omega)
+    have := entry_end_le (24*K.M.n) (show m<8 by omega_arith)
     rcases List.mem_append.mp hw with hw | hw
     · have sep := hL.tbl x (List.mem_append_right _ hw)
       simp only [jacCoords,Naf.twice,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-      omega
+      omega_arith
     · simp only [jacCoords,Naf.twice,WinCfg.tblPt,Nat.add_sub_cancel,List.mem_cons,
         List.not_mem_nil,or_false] at hx hw
-      omega
+      omega_arith
   refine ⟨⟨it,?_,?_,?_,hc,hI.keep.trans kst,?_⟩,cf⟩
   · simpa only [tmv,kc.2.1] using jr
   · rw [beq _ (by simp [jacCoords]),beq _ (by simp [jacCoords]),beq _ (by simp [jacCoords])]
@@ -106,22 +106,22 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
   · intro a ha1 ham
     by_cases he : a=m+1
     · subst a; simpa only [tmv,kc.2.1] using jnew
-    · have ham' : a≤m := by omega
+    · have ham' : a≤m := by omega_arith
       have teq (x : Nat) (hx : x∈jacCoords (K.tblPt a)) :
           tmv C K.M.n base t x=tmv C K.M.n base s x := by
         unfold tmv; rw [kc.2.1]
-        rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K ha1 (by omega) x hx) ?_]
+        rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K ha1 (by omega_arith) x hx) ?_]
         intro hw
         have := hL.n
-        have := entry_end_le (24*K.M.n) (show m<8 by omega)
-        have := entry_end_le (24*K.M.n) (show a-1<m by omega)
+        have := entry_end_le (24*K.M.n) (show m<8 by omega_arith)
+        have := entry_end_le (24*K.M.n) (show a-1<m by omega_arith)
         rcases List.mem_append.mp hw with hw | hw
         · have sep := hL.tbl x (List.mem_append_right _ hw)
           simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-          omega
+          omega_arith
         · simp only [jacCoords,WinCfg.tblPt,Nat.add_sub_cancel,List.mem_cons,List.not_mem_nil,
             or_false] at hx hw
-          omega
+          omega_arith
       rw [teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords])]
       exact hI.table a ha1 ham'
   · exact (hI.unch.trans uw).mono (fun _ hw => (List.mem_append.mp hw).elim id id)

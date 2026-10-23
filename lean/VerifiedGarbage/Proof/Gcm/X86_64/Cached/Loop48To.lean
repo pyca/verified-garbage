@@ -55,17 +55,17 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
     { rdx := rfl
       r11 := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
       xs := fun i _ hi => by
-        rw [show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega),
-          hI.a.blocks _ (by omega)]
+        rw [show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_arith),
+          hI.a.blocks _ (by omega_arith)]
       pv := hI.pv
       pm := hI.pm
       ina := fun o ho => by
         rw [hI.a.rd, hI.a.wr, BitVec.ofInt_natCast,
-          show a + BitVec.ofNat 64 o = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + o) from addr_eq (by omega)]
-        exact in_rdwr (in_sub hp.o_in (by omega))
+          show a + BitVec.ofNat 64 o = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + o) from addr_eq (by omega_arith)]
+        exact in_rdwr (in_sub hp.o_in (by omega_arith))
       inp := fun o ho => by
         rw [hI.a.rd, hI.a.wr]
-        exact in_rdwr (in_sub_int hp.p_in (by omega))
+        exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
       m0 := hI.a.msk }
   let Q : Nat → Nat → State → Prop := QG48 (dst s₀) (fun _ => 0) a X T yl
   have hgq : ∀ b < 3, ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → Q b j t →
@@ -77,20 +77,20 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
       t'.wr = t.wr → (∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) →
       Frame [⟨oAddr s₀ c, 256⟩] t.mem t'.mem → Q b 10 t' :=
     fun _ _ hc hc' _ _ h hg hrd hwr hl hf =>
-      QG48.data hd (by omega) (g := e - 1) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl hf
+      QG48.data hd (by omega_arith) (g := e - 1) (by omega_arith) ha (fun i _ hi => by omega_arith) h hg hrd hwr hl hf
   have hQ₀ : Q 0 1 s := ⟨hE, by
     rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun _ _ _ => rfl⟩⟩
   -- Group `e + 2`, hashing group `e - 1`.
   refine WP.seq (WP.mono (batchTo_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
-    (hqx 0 _ (by omega) (by omega)) (c := 16 * (e + 2)) (j := 12) (by omega) hI.a hCache (gq48_keeps 0)
-    (by show a.toNat + _ = _; omega) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
+    (hqx 0 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2)) (j := 12) (by omega_arith) hI.a hCache (gq48_keeps 0)
+    (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
   refine WP.seq (WP.mono (batchTo_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
-    (hqx 1 _ (by omega) (by omega)) (c := 16 * (e + 2) + 16) (j := 16) (by omega) hA₁ hCache₁ (gq48_keeps 1)
-    (by rw [hg₁]; show a.toNat + _ = _; omega) (hQ₁.next (by decide) (Nat.le_refl _)))
+    (hqx 1 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16) (j := 16) (by omega_arith) hA₁ hCache₁ (gq48_keeps 1)
+    (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (Nat.le_refl _)))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _, hCache₂⟩ => ?_)
   refine WP.seq (WP.mono (batchTo_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
-    (hqx 2 _ (by omega) (by omega)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega) hA₂ hCache₂ (gq48_keeps 2)
-    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega) (hQ₂.next (by decide) (Nat.le_refl _)))
+    (hqx 2 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega_arith) hA₂ hCache₂ (gq48_keeps 2)
+    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (Nat.le_refl _)))
     fun s₃ ⟨hA₃, hQ₃, hg₃, _, _, _⟩ => ?_)
   refine WP.mono (next48_ok s₃ 96 96 (by decide)) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨hE₃, h2⟩ := hQ₃
@@ -98,19 +98,19 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
   have g₃ : s₃.gpr = s.gpr := by rw [hg₃, hg₂, hg₁]
   have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, g₃]
   have hr9 : s₃.gpr .r9 - 48 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 3 - 1)) := by
-    rw [g₃, hI.r9, show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
-  refine ⟨⟨by rw [show 16 * (e + 3 + 2) = 16 * (e + 2) + 16 + 16 + 16 by omega]; exact hA₃.gpr2 fg fl fm frd fwr,
-    by omega, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
+    rw [g₃, hI.r9, show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
+    congr 1; omega_arith
+  refine ⟨⟨by rw [show 16 * (e + 3 + 2) = 16 * (e + 2) + 16 + 16 + 16 by omega_arith]; exact hA₃.gpr2 fg fl fm frd fwr,
+    by omega_arith, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun g hg k hk l hl => by rw [fm]; exact hE₃.pv g hg k hk l hl, fun l hl => by rw [fm]; exact hE₃.pm l hl,
     ?_, fun l h1 h4 => by rw [fl]; exact h2.2 l h1 h4⟩, ?_⟩
   · rw [frdx, g₃, BitVec.toNat_add, show (768 : BitVec 64).toNat = 768 from rfl,
-      Nat.mod_eq_of_lt (by show a.toNat + 768 < 2 ^ 64; omega)]
+      Nat.mod_eq_of_lt (by show a.toNat + 768 < 2 ^ 64; omega_arith)]
     show a.toNat + 768 = _
-    rw [ha, show e + 3 - 1 = (e - 1) + 3 by omega]; omega
-  · rw [fl, h2.1, hT X yl hI.y1, show 16 * (e + 3 - 1) = 16 * (e - 1) + 48 by omega, ghash_append48, ← hI.y]
-  · rw [fcf, hr9, toNat_ofNat_lt (by omega), show e + 3 - 1 = e + 2 by omega]
+    rw [ha, show e + 3 - 1 = (e - 1) + 3 by omega_arith]; omega_arith
+  · rw [fl, h2.1, hT X yl hI.y1, show 16 * (e + 3 - 1) = 16 * (e - 1) + 48 by omega_arith, ghash_append48, ← hI.y]
+  · rw [fcf, hr9, toNat_ofNat_lt (by omega_arith), show e + 3 - 1 = e + 2 by omega_arith]
     rfl
 
 theorem loop48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat → Nat → Nat → Block}

@@ -284,7 +284,7 @@ theorem column_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N
     (Column.prefixDigits (digits t.mem W (S + 24)) k) (fun i => by
       unfold Column.prefixDigits; split
       · exact digits_lt _ _ _ _
-      · omega)
+      · omega_arith)
   have fl := F.le
   have fw := F.low
   have fz := F.z
@@ -303,8 +303,8 @@ theorem column_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N
   have ecx5 : t5.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [f5.gpr, u45.other _ (by decide)]; exact F.ecx
   have hv := (V pN4).isLt
   have cf5 : t5.cf = some (decide (k < N)) := by
-    rw [c5, u45.gpr, u45.other _ (by decide), F.ecx, PV.n4, toNat_ofNat_lt (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [c5, u45.gpr, u45.other _ (by decide), F.ecx, PV.n4, toNat_ofNat_lt (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
   have z5 : (t5.gpr .eax).toNat + 2 ^ 32 * (t5.gpr .edx).toNat = (AB + QM + c) % 2 ^ 64 := by
     rw [f5.gpr, u45.other _ (by decide), u45.other _ (by decide)]; exact fz
   have hH5 : w32 t5.mem W (S + 8) + 2 ^ 32 * w32 t5.mem W (S + 12) = H := by rw [mem5]; exact F.hw
@@ -313,14 +313,14 @@ theorem column_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N
     rw [mem5]
     exact I.out.trans (outs_widen F.out fun y hy r hr => by
       have := hy _ (List.mem_singleton_self _)
-      simp only [List.mem_singleton] at hr; subst hr; simp only at this ⊢; omega)
+      simp only [List.mem_singleton] at hr; subst hr; simp only at this ⊢; omega_arith)
   have iv5 : w32 t5.mem W inv = w32 s0.mem W inv :=
-    Outs.w32 O5 (by have := Ly.sinv; simp only [List.mem_singleton, forall_eq]; omega)
-      (by have := Ly.inv_le; omega)
+    Outs.w32 O5 (by have := Ly.sinv; simp only [List.mem_singleton, forall_eq]; omega_arith)
+      (by have := Ly.inv_le; omega_arith)
   have m05 : w32 t5.mem W mo = digits s0.mem W mo 0 := by
     rw [digits, Nat.mul_zero, Nat.add_zero]
-    exact Outs.w32 O5 (by have := Ly.smo; simp only [List.mem_singleton, forall_eq]; omega)
-      (by have := Ly.mo_le; omega)
+    exact Outs.w32 O5 (by have := Ly.smo; simp only [List.mem_singleton, forall_eq]; omega_arith)
+      (by have := Ly.mo_le; omega_arith)
   have Kt5 : Keeps [.eax, .ebx, .edx, .esi, .edi, .ebp] t t5 := F.keep.trans (K5.mono (by decide))
   have mc5 : t5.mcdt = s0.mcdt := by rw [m5, m45, F.mcdt, I.mcdt]
   have Ot5 : Outs W [(S, 16)] t.mem t5.mem := by rw [mem5]; exact F.out

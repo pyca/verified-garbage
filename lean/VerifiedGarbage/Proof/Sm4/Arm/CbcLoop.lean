@@ -81,13 +81,13 @@ theorem loopInv_step {s₀ s : State} {B I D : BitVec 32} {K : Spec.Sm4.Schedule
       LoopInv s₀ B I D K t n (i + min (n - i) 8) s' ∧ s'.z = decide (i + min (n - i) 8 = n) := by
   let Di := D + BitVec.ofNat 32 (16 * i)
   let g := min (n - i) 8
-  have hg : 1 ≤ g := by dsimp only [g]; omega
+  have hg : 1 ≤ g := by dsimp only [g]; omega_arith
   have hgn : g ≤ n - i := Nat.min_le_left _ _
-  have hgi : i + g ≤ n := by omega
-  have diNat : Di.toNat = D.toNat + 16 * i := offset_nat _ _ (by omega)
-  have diAddr : State.addr Di = State.addr D + BitVec.ofNat 64 (16 * i) := addr_add (by omega)
+  have hgi : i + g ≤ n := by omega_arith
+  have diNat : Di.toNat = D.toNat + 16 * i := offset_nat _ _ (by omega_arith)
+  have diAddr : State.addr Di = State.addr D + BitVec.ofNat 64 (16 * i) := addr_add (by omega_arith)
   have subD : Region.Sub ⟨State.addr Di, 16 * (n - i)⟩ ⟨State.addr D, 16 * n⟩ := by
-    rw [diAddr]; exact Offset.sub_base _ (by omega)
+    rw [diAddr]; exact Offset.sub_base _ (by omega_arith)
   have wdi : Covers [⟨State.addr Di, 16 * (n - i)⟩] s.wr := by
     rw [h.wr]
     apply Covers.trans (rs' := [⟨State.addr D, 16 * n⟩]) _ wd
@@ -95,12 +95,12 @@ theorem loopInv_step {s₀ s : State} {B I D : BitVec 32} {K : Spec.Sm4.Schedule
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 16 * i, diAddr,
-      by change 16 * i + 16 * (n - i) ≤ 16 * n; omega⟩
+      by change 16 * i + 16 * (n - i) ≤ 16 * n; omega_arith⟩
   have sb' : s.gpr sb = B := (h.regs _ (by simp [sb])).trans hB
   have gp : CbcGroup.Pre B I Di (n - i) s := ⟨sb', (h.regs _ (by simp)).trans hI, h.data, h.left,
-    fitB, fitI, by rw [diNat]; omega, by rw [h.wr]; exact hw, by rw [h.wr]; exact hiv, wdi,
+    fitB, fitI, by rw [diNat]; omega_arith, by rw [h.wr]; exact hw, by rw [h.wr]; exact hiv, wdi,
     id.sub_right subD, ib, sep.sub_left subD⟩
-  refine WP.mono (group_wp gp (by omega) (by omega) h.table)
+  refine WP.mono (group_wp gp (by omega_arith) (by omega_arith) h.table)
     fun s' hs => ?_
   have fNew : Frame (regions B I D (i + g)) s.mem s'.mem := hs.frame.sub fun r hr => by
     simp only [regions, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -109,63 +109,63 @@ theorem loopInv_step {s₀ s : State} {B I D : BitVec 32} {K : Spec.Sm4.Schedule
     · exact ⟨⟨counterAddr B, 16⟩, by simp [regions], fun _ h => h⟩
     · exact ⟨⟨State.addr I, 16⟩, by simp [regions], fun _ h => h⟩
     · refine ⟨⟨State.addr D, 16 * (i + g)⟩, by simp [regions], ?_⟩
-      rw [diAddr]; exact Offset.sub_base _ (by omega)
+      rw [diAddr]; exact Offset.sub_base _ (by omega_arith)
   have fOld : Frame (regions B I D (i + g)) s₀.mem s.mem := h.frame.sub fun r hr => by
     simp only [regions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · exact ⟨⟨counterAddr B, 16⟩, by simp [regions], fun _ h => h⟩
     · exact ⟨⟨State.addr I, 16⟩, by simp [regions], fun _ h => h⟩
-    · exact ⟨⟨State.addr D, 16 * (i + g)⟩, by simp [regions], Region.sub_prefix (by omega)⟩
+    · exact ⟨⟨State.addr D, 16 * (i + g)⟩, by simp [regions], Region.sub_prefix (by omega_arith)⟩
   refine ⟨⟨fun r hr => (hs.regs r hr).trans (h.regs r hr), ?_, ?_, hgi,
     hs.rd.trans h.rd, hs.wr.trans h.wr, hs.sp.trans h.sp, fOld.trans fNew, hs.table, ?_, ?_⟩, ?_⟩
   · rw [hs.data]
     change D + BitVec.ofNat 32 (16 * i) + BitVec.ofNat 32 (16 * g) = _
-    rw [Offset.add_add]; congr 2; omega
-  · rw [hs.left, show n - i - min (n - i) 8 = n - (i + min (n - i) 8) by omega]
+    rw [Offset.add_add]; congr 2; omega_arith
+  · rw [hs.left, show n - i - min (n - i) 8 = n - (i + min (n - i) 8) by omega_arith]
   · rw [hs.counter]
     have ha : dataAddr Di (g - 1) = dataAddr D (i + g - 1) := by
       change State.addr Di + BitVec.ofNat 64 (16 * (g - 1)) = _
       rw [diAddr, Offset.add_add]
-      congr 2; omega
-    rw [ha, future_data hn32 (by omega) (by omega) sep id h.frame]
-    simp only [chain, show i + min (n - i) 8 ≠ 0 by omega, ↓reduceIte]
+      congr 2; omega_arith
+    rw [ha, future_data hn32 (by omega_arith) (by omega_arith) sep id h.frame]
+    simp only [chain, show i + min (n - i) 8 ≠ 0 by omega_arith, ↓reduceIte]
     rfl
   · intro j hj
     by_cases hjOld : j < i
     · rw [bytes_frame (P := dataAddr D j) hs.frame (fun r hr => ?_), h.blocks j hjOld]
       simp only [regions, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact (sep.sub_left (Offset.sub_base _ (by omega))).sub_right
-          (Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega))
-      · exact (sep.sub_left (Offset.sub_base _ (by omega))).sub_right
+      · exact (sep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right
+          (Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega_arith))
+      · exact (sep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right
           (Offset.sub_base _ (by change 4 * BatchCtr.counterSlot + 16 ≤ 4 * BatchCtr.totalSlots; decide))
-      · exact id.symm.sub_left (Offset.sub_base _ (by omega))
+      · exact id.symm.sub_left (Offset.sub_base _ (by omega_arith))
       · rw [diAddr]
-        exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-    · have hjG : j - i < g := by omega
+        exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+    · have hjG : j - i < g := by omega_arith
       have ha : dataAddr Di (j - i) = dataAddr D j := by
         change State.addr Di + BitVec.ofNat 64 (16 * (j - i)) = _
         rw [diAddr, Offset.add_add]
-        congr 2; omega
+        congr 2; omega_arith
       have hb := hs.blocks (j - i) hjG
-      rw [ha, future_data hn32 (by omega) (by omega) sep id h.frame] at hb
+      rw [ha, future_data hn32 (by omega_arith) (by omega_arith) sep id h.frame] at hb
       have inp : prevBlock s.mem B Di (j - i) = chain s₀.mem D t j := by
         by_cases he : j = i
         · subst j
           simpa only [prevBlock, Nat.sub_self, ↓reduceIte] using h.counter
-        · have ne : j - i ≠ 0 := by omega
+        · have ne : j - i ≠ 0 := by omega_arith
           have az : dataAddr Di (j - i - 1) = dataAddr D (j - 1) := by
             change State.addr Di + BitVec.ofNat 64 (16 * (j - i - 1)) = _
             rw [diAddr, Offset.add_add]
-            congr 2; omega
-          simp only [prevBlock, ne, ↓reduceIte, chain, show j ≠ 0 by omega]
-          rw [az, future_data hn32 (by omega) (by omega) sep id h.frame]
+            congr 2; omega_arith
+          simp only [prevBlock, ne, ↓reduceIte, chain, show j ≠ 0 by omega_arith]
+          rw [az, future_data hn32 (by omega_arith) (by omega_arith) sep id h.frame]
       rw [inp] at hb
       exact hb
   · rw [hs.z, Bool.eq_iff_iff]
     simp only [decide_eq_true_iff]
-    omega
+    omega_arith
 
 theorem loop_wp {s₀ : State} {B I D : BitVec 32} {K : Spec.Sm4.Schedule} {t : List Byte} {n : Nat}
     (hn : 1 ≤ n) (hn32 : n < 2 ^ 32) (hB : s₀.gpr sb = B) (hD : s₀.gpr .r6 = D)

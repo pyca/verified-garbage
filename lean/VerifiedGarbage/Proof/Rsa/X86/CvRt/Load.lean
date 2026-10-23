@@ -92,23 +92,23 @@ theorem load_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g
   have kwEq : kw (g.args 7).toNat = 2 * g.n := by rw [wd]
   simp only [CallGeometry.buffer] at positive bound sourceFit sourceRead apart ⊢
   generalize hL : (g.args (6 + 2 * i.val + 1)).toNat = L at positive bound sourceFit sourceRead apart ⊢
-  have srcLen : L < 2 ^ 32 := by omega
-  have Lw : L ≤ 4 * kw (g.args 7).toNat := by omega
+  have srcLen : L < 2 ^ 32 := by omega_arith
+  have Lw : L ≤ 4 * kw (g.args 7).toNat := by omega_arith
   unfold load inputArgs
   simp only [List.cons_append, List.nil_append]
-  refine WP.seq (wp_movS (h.arguments _ (by omega)).readSrc fun u₁ U₁ _ => ?_)
+  refine WP.seq (wp_movS (h.arguments _ (by omega_arith)).readSrc fun u₁ U₁ _ => ?_)
   have h₁ := h.after U₁.keeps (by decide) (by decide) (by rw [U₁.mem]; exact Frame.refl _ _)
-  refine wp_movS (h₁.arguments _ (by omega)).readSrc fun u₂ U₂ _ => ?_
+  refine wp_movS (h₁.arguments _ (by omega_arith)).readSrc fun u₂ U₂ _ => ?_
   have K₂ : Keeps [.esi, .ecx] s u₂ := (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
   have m₂ : u₂.mem = s.mem := by rw [U₂.mem, U₁.mem]
   have r₂ := r.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _)
-  refine arrPtr_ok (lenSrc r₂) r₂.lenLe r₂.edi (by decide) (by decide) (by omega) fun v Kv mv pv _ => ?_
+  refine arrPtr_ok (lenSrc r₂) r₂.lenLe r₂.edi (by decide) (by decide) (by omega_arith) fun v Kv mv pv _ => ?_
   refine wp_addS rfl fun v₃ u₃ _ => wp_subS rfl fun v₄ u₄ _ => WP.block_nil ?_
   let dst := v.gpr .ebx
   have dstAddr : byteAddr dst = off g.base (arr (kw (g.args 7).toNat) j) :=
-    VG.Proof.Bignum.X86.PublicRt.byteAddr_ptr pv (by omega)
+    VG.Proof.Bignum.X86.PublicRt.byteAddr_ptr pv (by omega_arith)
   have dstNat : dst.toNat = g.base.toNat + arr (kw (g.args 7).toNat) j := by
-    show (v.gpr .ebx).toNat = _; rw [pv, Nat.mod_eq_of_lt (by omega)]
+    show (v.gpr .ebx).toNat = _; rw [pv, Nat.mod_eq_of_lt (by omega_arith)]
   have K₄ : Keeps [.ebx, .ecx, .edx, .esi] v v₄ :=
     (u₃.keeps.mono (by decide)).trans (u₄.keeps.mono (by decide))
   have m₄ : v₄.mem = s.mem := by rw [u₄.mem, u₃.mem, mv, m₂]
@@ -122,50 +122,50 @@ theorem load_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g
       rw [Kv.1 _ (by decide), U₂.gpr, ← hL, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     rw [u₄.gpr, u₃.gpr, ecx₂, Kv.1 _ (by decide), U₂.other _ (by decide), U₁.gpr]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
   have keep : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v₄ :=
     (K₂.mono (by decide)).trans ((Kv.mono (by decide)).trans (K₄.mono (by decide)))
   have vr : InRegions (v₄.rd ++ v₄.wr) (byteAddr (g.args (6 + 2 * i.val))) L := by
     rw [keep.2.1, keep.2.2]; exact sourceRead
   have vw : InRegions v₄.wr (byteAddr dst) L := by
-    rw [keep.2.2, dstAddr]; exact r.ws.workspace.write (by omega)
+    rw [keep.2.2, dstAddr]; exact r.ws.workspace.write (by omega_arith)
   have hsub : Region.Sub ⟨off g.base (arr (kw (g.args 7).toNat) j), L⟩ ⟨g.base, g.size⟩ := by
     have := Offset.sub g.base (d := arr (kw (g.args 7).toNat) j) (n := L) (e := 0) (k := g.size) (Nat.zero_le _)
-      (by omega)
+      (by omega_arith)
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   have apart' : Region.Disjoint ⟨byteAddr (g.args (6 + 2 * i.val)), L⟩ ⟨g.base, g.size⟩ := apart
   have hd : Region.Disjoint ⟨byteAddr (g.args (6 + 2 * i.val)), L⟩ ⟨off g.base (arr (kw (g.args 7).toNat) j), L⟩ :=
     apart'.sub_right hsub
   have fit : (g.args (6 + 2 * i.val)).toNat + L ≤ 2 ^ 32 := sourceFit
-  have ctx := reverseCtx_of_regions v₄ (g.args (6 + 2 * i.val)) dst srcLen fit (by omega) vr vw
+  have ctx := reverseCtx_of_regions v₄ (g.args (6 + 2 * i.val)) dst srcLen fit (by omega_arith) vr vw
     (by rw [dstAddr]; exact hd)
-  refine WP.mono (reverseBytes_ok v₄ ctx (by omega) esi₄ ebx₄ ecx₄) fun t I => ?_
+  refine WP.mono (reverseBytes_ok v₄ ctx (by omega_arith) esi₄ ebx₄ ecx₄) fun t I => ?_
   have Ot : Outside g.base (arr (kw (g.args 7).toNat) j) (4 * kw (g.args 7).toNat) v₄.mem t.mem := by
     intro a ha
     apply I.outside a
     intro k hk he
     have ek : ofs g.base a = arr (kw (g.args 7).toNat) j + k := by
-      rw [he, byteAddr_add (by omega), dstAddr]
-      exact ofs_off g.base (by omega)
-    omega
+      rw [he, byteAddr_add (by omega_arith), dstAddr]
+      exact ofs_off g.base (by omega_arith)
+    omega_arith
   have O : Outside g.base 0 g.size s.mem t.mem := by
-    rw [← m₄]; exact Ot.mono (Nat.zero_le _) (by omega)
+    rw [← m₄]; exact Ot.mono (Nat.zero_le _) (by omega_arith)
   have keepT : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := keep.trans (I.rest.mono (by decide))
   refine ⟨h.after keepT (by decide) (by decide) (scratchFrame h O), ?_, ?_, keepT⟩
-  · rw [← m₄]; exact Keep.of_arr (d := 0) (by simpa using Ot) (by simp only [S]; omega) (by simp)
+  · rw [← m₄]; exact Keep.of_arr (d := 0) (by simpa using Ot) (by simp only [S]; omega_arith) (by simp)
   have input : Spec.Rsa.bytesAt v₄.mem (byteAddr (g.args (6 + 2 * i.val))) L =
       Spec.Rsa.bytesAt s.mem (byteAddr (g.args (6 + 2 * i.val))) L := by rw [m₄]
   have padding : ∀ k, L ≤ k → k < 4 * kw (g.args 7).toNat →
       t.mem (off g.base (arr (kw (g.args 7).toNat) j) + BitVec.ofNat 64 k) = 0 := by
     intro k hk hkn
     rw [I.outside _ ?_, m₄]
-    · exact byte_zero_of_val32 zero (by omega)
+    · exact byte_zero_of_val32 zero (by omega_arith)
     · intro i hi he
-      rw [byteAddr_add (by omega), dstAddr] at he
+      rw [byteAddr_add (by omega_arith), dstAddr] at he
       have e := congrArg (fun a => (a - off g.base (arr (kw (g.args 7).toNat) j)).toNat) he
-      rw [Mem.sub_ofNat_toNat _ (by omega : k < 2 ^ 64), Mem.sub_ofNat_toNat _ (by omega : i < 2 ^ 64)] at e
-      omega
-  have value := I.os2ip fit (by omega : dst.toNat + L ≤ 2 ^ 32)
+      rw [Mem.sub_ofNat_toNat _ (by omega_arith : k < 2 ^ 64), Mem.sub_ofNat_toNat _ (by omega_arith : i < 2 ^ 64)] at e
+      omega_arith
+  have value := I.os2ip fit (by omega_arith : dst.toNat + L ≤ 2 ^ 32)
   rw [dstAddr, input] at value
   change val32 t.mem g.base (arr (kw (g.args 7).toNat) j) (kw (g.args 7).toNat) = _
   rw [← read_eq_val32]

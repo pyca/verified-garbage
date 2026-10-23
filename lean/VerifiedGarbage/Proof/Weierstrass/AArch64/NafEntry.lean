@@ -162,9 +162,9 @@ theorem nafEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size e j : Nat}
       InvJ C (tmv C K.M.n base t K.E.x) (tmv C K.M.n base t K.E.y) (tmv C K.M.n base t K.E.z)
         (if nafNegative (β j) then negPt (mul (nafMagnitude (β j)) P) else mul (nafMagnitude (β j)) P) := by
   let a := (nafMagnitude (β j)+1)/2
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha8 : a≤8 := by dsimp [a]; omega
-  have he : 2*a-1=nafMagnitude (β j) := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_arith
+  have ha8 : a≤8 := by dsimp [a]; omega_arith
+  have he : 2*a-1=nafMagnitude (β j) := by dsimp [a]; omega_arith
   have hd : ∀ x∈[K.E.x,K.E.y,K.E.z],x∈jacWinSlots K := by
     intro x hx; simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl <;> nmem
@@ -183,15 +183,15 @@ theorem nafEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size e j : Nat}
     apply List.mem_append_right
     simp only [Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega⟩
-    · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
-    · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by omega⟩
+    · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega_arith),by omega_arith⟩
+    · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_arith),by omega_arith⟩
+    · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_arith),by omega_arith⟩
   have sep : K.E.x+96≤K.tbl+96*(a-1) ∨ K.tbl+96*(a-1)+96≤K.E.x := by
     have hx := hL.tbl K.E.x (by nmem)
     have hy := hL.tbl K.E.y (by nmem)
     have hz := hL.tbl K.E.z (by nmem)
     rw [hL.exy] at hy; rw [hL.exz] at hz
-    omega
+    omega_arith
   rw [Naf.signedEntry]
   apply WP.seq
   rw [WP.block_append_iff]
@@ -207,7 +207,7 @@ theorem nafEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size e j : Nat}
   have pv : v.gpr .x19=BitVec.ofNat 64 j := by rw [kv.gpr _ (x19_not_clob _),ku.gpr _ (by decide),h19]
   have kp := kpu.trans (kv.mono hw)
   apply WP.seq
-  refine WP.mono (nafSignRead_ok iv.scr hBits (by have := hL.bits; omega) pv (cv.stable.bits j hj))
+  refine WP.mono (nafSignRead_ok iv.scr hBits (by have := hL.bits; omega_arith) pv (cv.stable.bits j hj))
     fun w ⟨w3,kw⟩ => ?_
   have cw := cv.of_keeps kw (by decide)
   have iw := iv.of_keeps kw (by decide)

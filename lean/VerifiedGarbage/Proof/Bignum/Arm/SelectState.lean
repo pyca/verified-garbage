@@ -43,19 +43,19 @@ theorem select_value_step {s0 s t : State} {base : BitVec 32} {size o a b n i : 
   have hb := ctx.bFits
   have sa := ctx.sepA
   have sb := ctx.sepB
-  have aold := inv.outside.w32 (d := a + 4 * i) (by omega) (by omega)
-  have bold := inv.outside.w32 (d := b + 4 * i) (by omega) (by omega)
+  have aold := inv.outside.w32 (d := a + 4 * i) (by omega_arith) (by omega_arith)
+  have bold := inv.outside.w32 (d := b + 4 * i) (by omega_arith) (by omega_arith)
   have bit := inv.rest.gpr .r11 (by simp [selectLoopClobbers])
   have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i)
     (if (s.gpr .r11).toNat = 0 then s.mem.readW (off (State.addr base) (a + 4 * i)) 32
-      else s.mem.readW (off (State.addr base) (b + 4 * i)) 32) (by omega)
+      else s.mem.readW (off (State.addr base) (b + 4 * i)) 32) (by omega_arith)
   rw [← hm] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
+  have low := wr.val32 (d := o) (k := i) (by omega_arith) (by omega_arith)
   have top : w32 t.mem (State.addr base) (o + 4 * i) = if (s0.gpr .r11).toNat = 0 then
       w32 s0.mem (State.addr base) (a + 4 * i) else w32 s0.mem (State.addr base) (b + 4 * i) := by
     rw [hm, w32_write_self, bit]
     split <;> first | exact aold | exact bold
-  refine ⟨(inv.outside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_⟩
+  refine ⟨(inv.outside.mono (Nat.le_refl _) (by omega_arith)).trans (wr.mono (by omega_arith) (by omega_arith)), ?_⟩
   rw [val32_succ, low, top, inv.value]
   split <;> rw [val32_succ]
 

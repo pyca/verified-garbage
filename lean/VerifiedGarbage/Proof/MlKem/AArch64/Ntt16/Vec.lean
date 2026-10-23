@@ -29,8 +29,8 @@ theorem getLsbD_vhalf (x : BitVec 128) (e : Nat) {i : Nat} (hi : i < 16) :
 
 theorem vhalf_ext {x y : BitVec 128} (h : ∀ e < 8, vhalf x e = vhalf y e) : x = y := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  have := congrArg (fun w : BitVec 16 => w.getLsbD (i % 16)) (h (i / 16) (by omega))
-  simp only [getLsbD_vhalf _ _ (Nat.mod_lt _ (by decide)), show 16 * (i / 16) + i % 16 = i by omega]
+  have := congrArg (fun w : BitVec 16 => w.getLsbD (i % 16)) (h (i / 16) (by omega_arith))
+  simp only [getLsbD_vhalf _ _ (Nat.mod_lt _ (by decide)), show 16 * (i / 16) + i % 16 = i by omega_arith]
     at this
   exact this
 
@@ -40,8 +40,8 @@ theorem vhalf_ofVHalves (f : Nat → BitVec 16) {e : Nat} (he : e < 8) : vhalf (
   simp only [ofVHalves, BitVec.getLsbD_append]
   match e, he with
   | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
-    simp (disch := omega) only [ite_eq_left, ite_eq_right]
-    all_goals exact congrArg _ (by omega)
+    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
+    all_goals exact congrArg _ (by omega_arith)
 
 theorem ofVHalves_congr {f g : Nat → BitVec 16} (h : ∀ e < 8, f e = g e) : ofVHalves f = ofVHalves g :=
   vhalf_ext fun e he => by rw [vhalf_ofVHalves _ he, vhalf_ofVHalves _ he, h e he]
@@ -58,8 +58,8 @@ theorem vword_half (x : BitVec 128) (j : Nat) {h : Nat} (hh : h < 2) :
     (vword x j).extractLsb' (16 * h) 16 = vhalf x (2 * j + h) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, getLsbD_vhalf _ _ hi,
-    show 16 * h + i < 32 by omega]
-  exact congrArg _ (by omega)
+    show 16 * h + i < 32 by omega_arith]
+  exact congrArg _ (by omega_arith)
 
 theorem vword_lo (x : BitVec 128) (j : Nat) : (vword x j).extractLsb' 0 16 = vhalf x (2 * j) :=
   vword_half x j (h := 0) (by decide)
@@ -72,19 +72,19 @@ theorem vdword_half (x : BitVec 128) (j : Nat) {h : Nat} (hh : h < 4) :
     (vdword x j).extractLsb' (16 * h) 16 = vhalf x (4 * j + h) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vdword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, getLsbD_vhalf _ _ hi,
-    show 16 * h + i < 64 by omega]
-  exact congrArg _ (by omega)
+    show 16 * h + i < 64 by omega_arith]
+  exact congrArg _ (by omega_arith)
 
 theorem vhalf_ofVWords (w0 w1 w2 w3 : BitVec 32) {e : Nat} (he : e < 8) :
-    vhalf (ofVWords w0 w1 w2 w3) e = ([w0, w1, w2, w3][e / 2]'(by simp; omega)).extractLsb' (16 * (e % 2)) 16 := by
+    vhalf (ofVWords w0 w1 w2 w3) e = ([w0, w1, w2, w3][e / 2]'(by simp; omega_arith)).extractLsb' (16 * (e % 2)) 16 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [getLsbD_vhalf _ _ hi]
   simp only [ofVWords, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
   match e, he with
   | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
-    simp (disch := omega) only [Nat.mul_zero, Nat.zero_add, Nat.reduceMul, Nat.reduceDiv,
+    simp (disch := omega_arith) only [Nat.mul_zero, Nat.zero_add, Nat.reduceMul, Nat.reduceDiv,
       Nat.reduceMod, List.getElem_cons_zero, List.getElem_cons_succ, ite_eq_left, ite_eq_right]
-    all_goals exact congrArg _ (by omega)
+    all_goals exact congrArg _ (by omega_arith)
 
 theorem vhalf_ofVDwords (d0 d1 : BitVec 64) {e : Nat} (he : e < 8) :
     vhalf (ofVDwords d0 d1) e = (if e < 4 then d0 else d1).extractLsb' (16 * (e % 4)) 16 := by
@@ -93,8 +93,8 @@ theorem vhalf_ofVDwords (d0 d1 : BitVec 64) {e : Nat} (he : e < 8) :
   simp only [ofVDwords, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', hi, decide_true,
     Bool.true_and]
   by_cases h : e < 4
-  · rw [ite_eq_left (show 16 * e + i < 64 by omega), ite_eq_left h]; exact congrArg _ (by omega)
-  · rw [ite_eq_right (show ¬ 16 * e + i < 64 by omega), ite_eq_right h]; exact congrArg _ (by omega)
+  · rw [ite_eq_left (show 16 * e + i < 64 by omega_arith), ite_eq_left h]; exact congrArg _ (by omega_arith)
+  · rw [ite_eq_right (show ¬ 16 * e + i < 64 by omega_arith), ite_eq_right h]; exact congrArg _ (by omega_arith)
 
 /-! ## Permutations -/
 
@@ -175,12 +175,12 @@ theorem vhalf_trn_d2 (x y : BitVec 128) {e : Nat} (he : e < 8) :
     vhalf (VPermOp.eval .trn2 .d2 x y) e = (if e < 4 then vhalf x (e + 4) else vhalf y e) := by
   rw [(eval_trn_d2 x y).1, (eval_trn_d2 x y).2, vhalf_ofVDwords _ _ he, vhalf_ofVDwords _ _ he]
   by_cases h : e < 4
-  · rw [ite_eq_left h, ite_eq_left h, ite_eq_left h, ite_eq_left h, vdword_half _ _ (by omega),
-      vdword_half _ _ (by omega)]
-    exact ⟨congrArg _ (by omega), congrArg _ (by omega)⟩
-  · rw [ite_eq_right h, ite_eq_right h, ite_eq_right h, ite_eq_right h, vdword_half _ _ (by omega),
-      vdword_half _ _ (by omega)]
-    exact ⟨congrArg _ (by omega), congrArg _ (by omega)⟩
+  · rw [ite_eq_left h, ite_eq_left h, ite_eq_left h, ite_eq_left h, vdword_half _ _ (by omega_arith),
+      vdword_half _ _ (by omega_arith)]
+    exact ⟨congrArg _ (by omega_arith), congrArg _ (by omega_arith)⟩
+  · rw [ite_eq_right h, ite_eq_right h, ite_eq_right h, ite_eq_right h, vdword_half _ _ (by omega_arith),
+      vdword_half _ _ (by omega_arith)]
+    exact ⟨congrArg _ (by omega_arith), congrArg _ (by omega_arith)⟩
 
 /-! ## Lanes modulo `q` -/
 
@@ -195,7 +195,7 @@ def Rep (x : BitVec 128) (g : Nat → Zq) (B : Nat) : Prop := ∀ e < 8, LRep (v
 def Cst (x : BitVec 128) (c : Nat → Nat) : Prop := ∀ e < 8, vhalf x e = BitVec.ofNat 16 (c e)
 
 theorem LRep.mono {a : BitVec 16} {X : Zq} {B B' : Nat} (h : LRep a X B) (hB : B ≤ B') : LRep a X B' :=
-  ⟨by have := h.1; omega, by have := h.2.1; omega, h.2.2⟩
+  ⟨by have := h.1; omega_arith, by have := h.2.1; omega_arith, h.2.2⟩
 
 theorem Rep.mono {x : BitVec 128} {g : Nat → Zq} {B B' : Nat} (h : Rep x g B) (hB : B ≤ B') : Rep x g B' :=
   fun e he => (h e he).mono hB
@@ -205,14 +205,14 @@ theorem Rep.congr {x : BitVec 128} {g g' : Nat → Zq} {B : Nat} (h : Rep x g B)
 
 private theorem toInt_add16 {a r : BitVec 16} (h1 : -32768 ≤ a.toInt + r.toInt)
     (h2 : a.toInt + r.toInt < 32768) : (a + r).toInt = a.toInt + r.toInt := by
-  rw [BitVec.toInt_add]; simp only [Int.bmod_def]; split <;> omega
+  rw [BitVec.toInt_add]; simp only [Int.bmod_def]; split <;> omega_arith
 
 private theorem toInt_sub16 {a r : BitVec 16} (h1 : -32768 ≤ a.toInt - r.toInt)
     (h2 : a.toInt - r.toInt < 32768) : (a - r).toInt = a.toInt - r.toInt := by
-  rw [BitVec.toInt_sub]; simp only [Int.bmod_def]; split <;> omega
+  rw [BitVec.toInt_sub]; simp only [Int.bmod_def]; split <;> omega_arith
 
 private theorem toInt_ofNat16 {z : Nat} (hz : z < 32768) : (BitVec.ofNat 16 z).toInt = z := by
-  rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega
+  rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega_arith
 
 /-- A butterfly on one lane: `a ± r`, `r = b · z - t · q`, `t = sqrdmulh(b, tw z)`. -/
 theorem bf_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) (hb : LRep b Y By)
@@ -220,14 +220,14 @@ theorem bf_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) 
     ∃ t, sqdmulhHLane true b (BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw z)) = some t ∧
       LRep (a + (b * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329)) (X + ofNat z * Y) (Bx + 3329) ∧
       LRep (a - (b * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329)) (X - ofNat z * Y) (Bx + 3329) := by
-  obtain ⟨t, ht, h1, h2, h3⟩ := mm_ok b (z := z) (by have := hb.1; omega) hz
+  obtain ⟨t, ht, h1, h2, h3⟩ := mm_ok b (z := z) (by have := hb.1; omega_arith) hz
   refine ⟨t, ht, ?_⟩
   generalize b * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329 = r at h1 h2 h3
   obtain ⟨a1, a2, a3⟩ := ha
   obtain ⟨-, -, b3⟩ := hb
   obtain ⟨k, hk⟩ := Int.dvd_of_emod_eq_zero b3
   have hbz : b.toInt * z = (Y.val : Int) * z + 3329 * (k * z) := by
-    rw [show b.toInt = Y.val + 3329 * k by omega]; grind
+    rw [show b.toInt = Y.val + 3329 * k by omega_arith]; grind
   have e2 : (ofNat z * Y).val = z * Y.val % 3329 := by
     rw [val_mul, val_ofNat, Nat.mod_eq_of_lt (show z < q from hz)]
   have e1 : (X + ofNat z * Y).val = (X.val + z * Y.val % 3329) % 3329 := by rw [val_add', e2]
@@ -239,9 +239,9 @@ theorem bf_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) 
     rw [Int.natCast_mul, Int.mul_comm]
   generalize z * Y.val = W at e1 e3 hW
   generalize (Y.val : Int) * z = Wi at hbz hW
-  simp only [LRep, toInt_add16 (a := a) (r := r) (by omega) (by omega),
-    toInt_sub16 (a := a) (r := r) (by omega) (by omega), e1, e3]
-  omega
+  simp only [LRep, toInt_add16 (a := a) (r := r) (by omega_arith) (by omega_arith),
+    toInt_sub16 (a := a) (r := r) (by omega_arith) (by omega_arith), e1, e3]
+  omega_arith
 
 /-! ## Instructions -/
 
