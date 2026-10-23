@@ -32,6 +32,8 @@ theorem State.withRegions_syms (s : State) (rd wr : List Region) :
 @[simp] theorem State.withRegions_cf (s : State) (rd wr) : (s.withRegions rd wr).cf = s.cf := rfl
 @[simp] theorem State.withRegions_zf (s : State) (rd wr) : (s.withRegions rd wr).zf = s.zf := rfl
 @[simp] theorem State.withRegions_mmx (s : State) (rd wr) : (s.withRegions rd wr).mmx = s.mmx := rfl
+@[simp] theorem State.withRegions_mcdt (s : State) (rd wr) : (s.withRegions rd wr).mcdt = s.mcdt := rfl
+@[simp] theorem State.withRegions_mxcsr (s : State) (rd wr) : (s.withRegions rd wr).mxcsr = s.mxcsr := rfl
 @[simp] theorem State.withRegions_ea (s : State) (rd wr) (m : MemOp) :
     (s.withRegions rd wr).ea m = s.ea m := rfl
 @[simp] theorem State.withRegions_self (s : State) : s.withRegions s.rd s.wr = s := rfl
@@ -123,6 +125,12 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_ea, hw _ _ hi, ite_true]
     rfl
   | mul r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
+  | pmuludq d r =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hm; cases h]
+    cases h
+    simp only [State.withRegions_mcdt, hm, ite_true]
+    rfl
   | xop op =>
     simp only [exec, Option.some.injEq] at h ⊢; subst h
     cases op <;> rfl
@@ -163,7 +171,8 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     subst h
     simp only [State.withRegions_mmx, State.withRegions_wr, State.withRegions_ea, hm, hw _ _ hi, ite_true]
     rfl
-  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
+  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
+    simp only [exec, reduceCtorEq] at h
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :
     addrs i (s.withRegions rd wr) = addrs i s := by
@@ -196,6 +205,10 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, Frame.refl _ _⟩
   | mul r => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, Frame.refl _ _⟩
+  | pmuludq d r =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    cases h; exact ⟨rfl, rfl, Frame.refl _ _⟩
   | xop op =>
     simp only [exec, Option.some.injEq] at h; subst h
     cases op <;> exact ⟨rfl, rfl, Frame.refl _ _⟩
@@ -230,7 +243,8 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
-  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
+  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
+    simp only [exec, reduceCtorEq] at h
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : exec i s = some s') :
     s'.gpr r = s.gpr r := by
@@ -275,7 +289,12 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : ex
       split at h <;> [skip; cases h]
       simp only [Option.some.injEq] at h
       subst h; rfl
-    | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
+    | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
+      simp only [exec, reduceCtorEq] at h
+    | pmuludq d r =>
+      simp only [exec] at h
+      split at h <;> [skip; cases h]
+      cases h; rfl
     | _ => simp [Taint.dst] at hd
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
@@ -310,23 +329,32 @@ theorem popReg_withRegions (s : State) (d : Reg) (k : Nat) (rd wr : List Region)
 /-- A frame's push adds its region at the head of `wr`, and changes no
 register but `esp` and the destination of a static-address push. -/
 theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
-    ∃ k, s₁.rd = s.rd ∧ s₁.wr = ⟨(s₁.gpr .esp).setWidth 64, 4 * k⟩ :: s.wr ∧
+    ∃ k l, l ≤ 4 * k ∧ 4 * k < l + 4 ∧ s₁.rd = s.rd ∧ s₁.wr = ⟨(s₁.gpr .esp).setWidth 64, l⟩ :: s.wr ∧
       (∀ r, r ≠ .esp → dstOf i ≠ some r → s₁.gpr r = s.gpr r) ∧
       s₁.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (4 * k) := by
   cases i <;> simp only [isa, push, reduceCtorEq] at h
   case mmxEnter =>
     split at h <;> cases h
-    exact ⟨0, rfl, rfl, fun _ _ _ => rfl, by simp⟩
+    exact ⟨0, 0, by omega, by omega, rfl, rfl, fun _ _ _ => rfl, by simp⟩
+  case mcdtEnter d =>
+    split at h <;> cases h
+    rename_i hc
+    have he : Reg.esp ≠ d := fun e => hc.1 e.symm
+    refine ⟨3, 9, by omega, by omega, rfl, ?_, fun r hr hd => ?_, ?_⟩
+    · simp only [State.setReg, he, ↓reduceIte]
+    · have hd' : r ≠ d := fun e => hd (by simp [dstOf, Taint.dst, e])
+      simp only [State.setReg, hr, hd', ↓reduceIte]
+    · simp only [State.setReg, he, ↓reduceIte]; rfl
   case push rs =>
     split at h <;> cases h
     obtain ⟨h₁, -, h₃, h₄⟩ := pushRegs_eq s rs
-    exact ⟨rs.length, h₁, by rw [h₃], fun r hr _ => h₄ r hr, h₃⟩
+    exact ⟨rs.length, 4 * rs.length, by omega, by omega, h₁, by rw [h₃], fun r hr _ => h₄ r hr, h₃⟩
   case alloc bytes =>
     split at h <;> cases h
     rename_i hc
     have e : 4 * (bytes / 4) = bytes := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hc.2.2.1)
-    refine ⟨bytes / 4, rfl, ?_, fun r hr _ => ?_, ?_⟩
-    · simp only [State.setReg, ite_true, e]
+    refine ⟨bytes / 4, bytes, by omega, by omega, rfl, ?_, fun r hr _ => ?_, ?_⟩
+    · simp only [State.setReg, ite_true]
     · simp only [State.setReg, hr, ite_false]
     · simp only [State.setReg, ite_true, e]
 
@@ -334,7 +362,7 @@ theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     split at h <;> cases h
     rename_i hc
     have he : Reg.esp ≠ d := hc.1.symm
-    refine ⟨1, rfl, ?_, fun r hr hd => ?_, ?_⟩
+    refine ⟨1, 4, by omega, by omega, rfl, ?_, fun r hr hd => ?_, ?_⟩
     · simp only [State.setReg, he, ↓reduceIte]
     · have hd' : r ≠ d := fun e => hd (by simp [dstOf, Taint.dst, e])
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, hd', ↓reduceIte]
@@ -345,25 +373,32 @@ its register and `esp`. -/
 theorem pop_eq {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
     s₂.wr = s₁.wr ∧ s'.rd = s₂.rd ∧ s'.wr = s₂.wr.tail ∧
       (∀ r, r ≠ .esp → dstOf j ≠ some r → s'.gpr r = s₂.gpr r) ∧ s₂.gpr .esp = s₁.gpr .esp ∧
-      ∃ k, s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 4 * k⟩ ∧
+      ∃ k l, l ≤ 4 * k ∧ 4 * k < l + 4 ∧ s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, l⟩ ∧
         s'.gpr .esp = s₂.gpr .esp + BitVec.ofNat 32 (4 * k) := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
   case emms =>
     split at h <;> cases h
     rename_i hc
-    exact ⟨hc.2.2.1, rfl, rfl, fun _ _ _ => rfl, hc.2.1, 0, hc.2.2.2, by simp⟩
+    exact ⟨hc.2.2.1, rfl, rfl, fun _ _ _ => rfl, hc.2.1, 0, 0, by omega, by omega, hc.2.2.2, by simp⟩
+  case mcdtLeave =>
+    split at h <;> cases h
+    rename_i hc
+    refine ⟨hc.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.1, 3, 9, by omega, by omega, hc.2.2.2.1, ?_⟩
+    · simp only [State.setReg, hr, ite_false]
+    · simp only [State.setReg, ite_true]; rfl
   case pop d k =>
     split at h <;> cases h
     rename_i hc
     obtain ⟨h₁, -, h₃, h₄⟩ := popReg_eq s₂ d k
-    refine ⟨hc.2.2.2.1, h₁, rfl, fun r hr hd => h₄ r hr ?_, hc.2.2.1, k, hc.2.2.2.2, h₃⟩
+    refine ⟨hc.2.2.2.1, h₁, rfl, fun r hr hd => h₄ r hr ?_, hc.2.2.1, k, 4 * k, by omega, by omega,
+      hc.2.2.2.2, h₃⟩
     intro e; exact hd (by simp [dstOf, Taint.dst, e])
   case free bytes =>
     split at h <;> cases h
     rename_i hc
     have e : 4 * (bytes / 4) = bytes := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hc.2.2.1)
-    refine ⟨hc.2.2.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.2.2.1, bytes / 4,
-      by rw [e]; exact hc.2.2.2.2.2, ?_⟩
+    refine ⟨hc.2.2.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.2.2.1, bytes / 4, bytes, by omega, by omega,
+      hc.2.2.2.2.2, ?_⟩
     · simp only [State.setReg, hr, ite_false]
     · simp only [State.setReg, ite_true, e]
 
@@ -376,6 +411,13 @@ theorem push_widen {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     rename_i hm
     refine ⟨_, rfl, rfl, fun rd wr => ?_⟩
     simp only [isa, push, State.withRegions_mmx, hm]
+    rfl
+  case mcdtEnter d =>
+    split at h <;> cases h
+    rename_i hc
+    refine ⟨_, rfl, rfl, fun rd wr => ?_⟩
+    simp only [isa, push, State.withRegions_gpr, State.withRegions_mcdt, State.withRegions_mxcsr, ne_eq,
+      hc.1, hc.2, not_false_eq_true, and_self, ↓reduceIte]
     rfl
   case push rs =>
     split at h <;> cases h
@@ -410,6 +452,15 @@ theorem pop_widen {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = 
     simp only [isa, pop, State.withRegions_gpr, State.withRegions_wr, State.withRegions_mmx, hw, hc.1,
       hc.2.1, hc.2.2.2, and_self, ite_true]
     rfl
+  case mcdtLeave =>
+    split at h <;> cases h
+    rename_i hc
+    simp only [isa, pop, State.withRegions_gpr, State.withRegions_wr, State.withRegions_mcdt,
+      State.withRegions_mem, State.withRegions_mxcsr]
+    have h₅ := hc.2.2.2.2
+    rw [hc.2.1] at h₅
+    simp only [hc.1, hc.2.1, hw.trans hc.2.2.2.1, h₅, and_self, ↓reduceIte]
+    rfl
   case pop =>
     split at h <;> cases h
     rename_i hc
@@ -438,8 +489,8 @@ theorem call_ret_gpr {s s₁ s₂ s' : State} (hc : isa.call s = some s₁) (hr 
 theorem frame_gpr {i j : Instr} {s s₁ s₂ s' : State} {r : Reg} (hi : Taint.clobbers i r = false) (hj : Taint.clobbers j r = false)
     (hp : isa.push i s = some s₁) (hq : isa.pop j s₁ s₂ = some s') (hb : s₂.gpr r = s₁.gpr r) :
     s'.gpr r = s.gpr r := by
-  obtain ⟨k, -, w₁, g₁, e₁⟩ := push_eq hp
-  obtain ⟨-, -, -, g₂, e₂, k', h₃, e₃⟩ := pop_eq hq
+  obtain ⟨k, l, hl₁, hl₂, -, w₁, g₁, e₁⟩ := push_eq hp
+  obtain ⟨-, -, -, g₂, e₂, k', l', hl₁', hl₂', h₃, e₃⟩ := pop_eq hq
   by_cases hrs : r = .esp
   · subst hrs
     rw [w₁] at h₃

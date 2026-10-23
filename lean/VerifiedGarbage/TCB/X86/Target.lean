@@ -25,8 +25,10 @@ calling it through the C ABI).
 Not modelled: the direction flag (no modelled instruction changes it; it is
 clear on entry and exit), x87 state other than the MMX registers (which only
 MMX frames use, ending with `emms`, so the x87 stack is empty on exit when
-it was on entry: see `TCB/X86/Isa.lean`), MXCSR (never modified), and memory
-below `esp` (never granted to a function).
+it was on entry: see `TCB/X86/Isa.lean`), and memory below `esp` (never
+granted to a function). MXCSR, whose control bits are callee-saved, changes
+only inside MCDT frames, whose pop restores it (`TCB/X86/Isa.lean`), so
+`abiPreserved` need not mention it.
 -/
 
 @[expose] public section
