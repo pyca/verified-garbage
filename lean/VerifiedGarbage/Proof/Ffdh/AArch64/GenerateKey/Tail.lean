@@ -401,7 +401,7 @@ theorem t10_t11n (p : GkP) (rb : List Byte) (t : State) (h : T10 p rb t)
   have hk1 := hP.1.k1
   refine WP.block_nil ⟨⟨⟨mi, hP, ?_⟩, ho⟩, Keep.refl _ _⟩
   rw [hF]
-  exact VG.Proof.Ffdh.AArch64.CheckPrivate.bit_iff ⟨fun h => ⟨h, fun e => absurd (e.symm.trans h2) (by
+  exact VG.Proof.Ffdh.AArch64.bit_iff ⟨fun h => ⟨h, fun e => absurd (e.symm.trans h2) (by
     simp at hk1 ⊢; omega)⟩, fun h => h.1⟩
 
 /-- After q's scan. -/
@@ -542,7 +542,7 @@ theorem q4_t11 (p : GkP) (rb : List Byte) (t : State) (h : Q4 p rb t) :
   refine ⟨⟨⟨mi, hP', ?_⟩, ho, hpv⟩, keep_trans (k₁.mono (by decide)) (k.mono (by decide))⟩
   have hm' : u.mem = t₁.mem.writeW (off p.B (8 * sF)) (t₁.gpr .x9 &&& bit (p.fl rb)) := hm
   rw [hm', word_writeW_self, (k₁.gpr .x9 (by decide)).trans h9, VG.Proof.Ffdh.AArch64.bit_and]
-  exact VG.Proof.Ffdh.AArch64.CheckPrivate.bit_iff ⟨fun ⟨a, b⟩ => ⟨b, fun _ => a⟩, fun ⟨a, b⟩ => ⟨b hq, a⟩⟩
+  exact VG.Proof.Ffdh.AArch64.bit_iff ⟨fun ⟨a, b⟩ => ⟨b, fun _ => a⟩, fun ⟨a, b⟩ => ⟨b hq, a⟩⟩
 
 theorem t10_t11q (W : Window) (M : Mont) (S : Selector) (p : GkP) (rb : List Byte) (t : State) (h : T10 p rb t)
     (he : isa.eval (.zero .x .x3) t = some false) :

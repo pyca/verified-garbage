@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.CT
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Correct
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
-import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Stages
+import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.CT
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Correct
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Stages
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -148,7 +148,7 @@ theorem t6_fin1 (p : GkP) (rb : List Byte) (s : State) (h : T6 p rb s) (hd : Dst
   have hw : WP isa (.block (yb1 ++ yb2)) s fun u => T7 p rb u ∧ Dst p u :=
     WP.mono (t6_t7 p rb s h) fun _ ⟨hu, k⟩ => ⟨hu, hd.keep k⟩
   rw [WP.block_append_iff] at hw
-  exact WP.mono (wp_and (Exchange.finBlk1_ok hc.x0 (hc.hdr.harr aY (by decide)) hc.link hI.hlG) hw)
+  exact WP.mono (wp_and (OutMask.finBlk1_ok hc.x0 (hc.hdr.harr aY (by decide)) hc.link hI.hlG) hw)
     fun t ⟨h₁, h₂⟩ => ⟨h₁, rb, h₂⟩
 
 theorem yBlk_ct : RelCT isa (Two (Ex T6)) (.block yBlk) (Two (Ex T7)) :=

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Correct
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRangeCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -9,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Correct
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRangeCT
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -163,47 +165,14 @@ theorem tail_ct (W : Window) (M : Mont) (S : Selector) :
   rw [seqs_one]
   exact two_taint [] (pins_nil _) (by taint_decide)
 
-/-- x's range checks. -/
+/-- The public part of the run's data. -/
+abbrev KpP.pub (p : KpP) : FD := (p.D []).pub
+
+/-- x's range checks (`ScalarRange.scalarRange_ct`). -/
 theorem scalar_ct :
-    RelCT isa (Two (Ex K2)) (seqs (CheckPrivate.scalarRange)) (Two (Ex K7)) := by
-  rw [scalarRange_eq]
-  refine RelCT.seqs_append (by simp [isNonzero, geArr, cmpArr]) (by simp) (RelCT.seq (R := Two (Ex K3))
-    (show RelCT isa (Two (Ex K2)) (seqs (isNonzero aXm)) (Two (Ex K3)) from
-      ex_post (two_map KpP.ws (fun p s ⟨xb, ⟨mi, hI, _⟩, _⟩ => hI.goodW1.1)
-        (geArr_ct (by decide) (by decide) (by taint_decide))) k2_k3) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K4)) (ex_post (two_taint [.x0]
-    (pins_x0B KpP.g fun (p : KpP) s (h : Ex K3 p s) => by
-      obtain ⟨_, ⟨_, hI, _⟩, _⟩ := h; exact hI.2.1.x0) (by taint_decide)) k3_k4) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K5)) (ex_post (two_taint [.x0]
-    (pins_x0B KpP.B fun (p : KpP) s (h : Ex K4 p s) => by
-      obtain ⟨_, ⟨_, hP, _⟩, _⟩ := h; exact hP.2.2.2.2.2.2) (by taint_decide)) k4_k5) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K6)) (two_ite
-    (fun p s₁ s₂ ⟨_, h₁⟩ ⟨_, h₂⟩ => by rw [k5_eval h₁, k5_eval h₂]) ?_ ?_) ?_)
-  · simp only [List.cons_append, List.nil_append]
-    refine seqs_cons_ct (by simp [ltP, Crt.copyArr]) (RelCT.seq
-      (R := Two (Ex fun p xb t => K5e p xb t ∧ p.dl = 2 * p.k)) (ex_post' (two_taint [.x0]
-        (pins_x0B KpP.B fun (p : KpP) s (h : Ex K5 p s ∧ _) => by
-          obtain ⟨⟨_, ⟨_, hP, _⟩, _⟩, _⟩ := h; exact hP.2.2.2.2.2.2) (by taint_decide))
-        fun p xb s h he => WP.mono (k5_e p xb s h) fun u ⟨hu, k⟩ =>
-          ⟨⟨hu, h.1.choose_spec.1.1.noq (Option.some.inj ((k5_eval h).symm.trans he))⟩, k⟩) ?_)
-    exact ex_post (two_map KpP.ws (fun p s ⟨xb, ⟨⟨mi, hI, _⟩, _⟩, _⟩ => hI.goodW1)
-      (ltP_ct (by decide) (by decide) (by taint_decide) (by taint_decide))) fun p xb s h => e_k6n p xb s h.1 h.2
-  · simp only [List.cons_append, List.nil_append]
-    refine seqs_cons_ct (by simp [Crt.loadArr]) (RelCT.seq
-      (R := Two (Ex fun p xb t => K5e p xb t ∧ p.dl = 3 * p.k)) (ex_post' (two_taint [.x0]
-        (pins_x0B KpP.B fun (p : KpP) s (h : Ex K5 p s ∧ _) => by
-          obtain ⟨⟨_, ⟨_, hP, _⟩, _⟩, _⟩ := h; exact hP.2.2.2.2.2.2) (by taint_decide))
-        fun p xb s h he => WP.mono (k5_e p xb s h) fun u ⟨hu, k⟩ =>
-          ⟨⟨hu, h.1.choose_spec.1.1.q (Option.some.inj ((k5_eval h).symm.trans he))⟩, k⟩) ?_)
-    refine RelCT.seqs_append (by simp [Crt.loadArr]) (by simp [ltArr, cmpArr]) (RelCT.seq (R := Two (Ex K5q))
-      (ex_post (two_map (fun p : KpP => (⟨⟨p.B, p.Z, inner ((p.k + 7) / 8), (p.k + 7) / 8, (p.k + 7) / 8⟩,
-          p.dp + BitVec.ofNat 64 (2 * p.k), p.k⟩ : BPub)) (fun p s ⟨xb, h⟩ => e_lpreQ p xb s h.1 h.2)
-        (loadArr_ct (by decide) (by taint_decide) (by taint_decide))) fun p xb s h => e_q p xb s h.1 h.2) ?_)
-    exact ex_post (two_map KpP.ws (fun p s ⟨xb, ⟨mi, hI, _⟩, _⟩ => hI.goodW1.1)
-      (ltArr_ct (by decide) (by decide) (by taint_decide))) q_k6
-  rw [seqs_one]
-  exact ex_post (two_taint [.x0] (pins_x0B KpP.g fun (p : KpP) s (h : Ex K6 p s) => by
-    obtain ⟨_, ⟨_, hI, _⟩, _⟩ := h; exact hI.2.1.x0) (by taint_decide)) k6_k7
+    RelCT isa (Two (Ex K2)) (seqs (CheckPrivate.scalarRange)) (Two (Ex K7)) :=
+  ex_post (two_map KpP.pub (fun p _ ⟨xb, ⟨mi, hI, hx⟩, _⟩ => ⟨p.D xb, X xb, rfl, mi, hI, hx⟩)
+    (ScalarRange.scalarRange_ct.mono (fun _ _ h => h) fun _ _ _ => trivial)) k2_k7
 
 /-- The main part, for a valid p. -/
 theorem main_ct (W : Window) (M : Mont) (S : Selector) :

@@ -235,23 +235,10 @@ impl PrivateKey {
         }
         let mut y = alloc::vec![0; params.p.len()];
         // One exponentiation checks the scalar range and derives a valid y.
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
-        {
-            if params.domain.derive_public(scalar, &mut y) != 1 {
-                return Err(Error::InvalidKey);
-            }
-            Ok(Self::assemble(params, canonical(&y), scalar, exponent_len))
+        if params.domain.derive_public(scalar, &mut y) != 1 {
+            return Err(Error::InvalidKey);
         }
-        // A checked domain's generator is a valid public value. Exchange
-        // computes g^x, rejecting degenerate results; from_components then
-        // checks the scalar range and the resulting key pair.
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm")))]
-        {
-            if !params.domain.exchange(scalar, &params.g, &mut y) {
-                return Err(Error::InvalidKey);
-            }
-            Self::from_components(params, &y, x)
-        }
+        Ok(Self::assemble(params, canonical(&y), scalar, exponent_len))
     }
 
     /// Import y and x with variable-time parsing; check range and y=g^x mod p.
