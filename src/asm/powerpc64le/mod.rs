@@ -164,6 +164,9 @@ pub(crate) mod idea;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod mlkem;
+
+#[rustfmt::skip]
 pub(crate) mod p192_mont;
 
 #[rustfmt::skip]
