@@ -1702,7 +1702,7 @@ pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation computes the key schedule as `vg_aes_expand_key_scratch_aes` does, and the hash subkey with the AES instructions, one round as soon as its round key is complete, without calls or stack.
 ///
 /// # Safety
 ///
@@ -1710,60 +1710,711 @@ pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".arch_extension aes
-sub sp, sp, #2560
-add x3, sp, #0
-str x20, [x3, #136]
-str x21, [x3, #144]
-str x22, [x3, #152]
-str x23, [x3, #160]
-str x24, [x3, #168]
-str x25, [x3, #176]
-str x26, [x3, #184]
-str x27, [x3, #192]
-str x28, [x3, #200]
-str x30, [x3, #208]
-str x19, [x3, #128]
-add x19, x3, #0
-add x21, x2, #0
-lsr x22, x1, #2
-add x22, x22, #6
-add x3, x19, #512
-bl {vg_aes_expand_key_scratch_aes}
-movz x9, #0, lsl #0
-str x9, [x21, #240]
-str x9, [x21, #248]
-str x9, [x19, #96]
-str x9, [x19, #104]
-add x0, x21, #0
-add x1, x22, #0
-add x2, x19, #96
-add x3, x21, #240
-movz x4, #1, lsl #0
-add x5, x19, #512
-bl {vg_aes_ctr32_aes}
-ldr x20, [x19, #136]
-ldr x21, [x19, #144]
-ldr x22, [x19, #152]
-ldr x23, [x19, #160]
-ldr x24, [x19, #168]
-ldr x25, [x19, #176]
-ldr x26, [x19, #184]
-ldr x27, [x19, #192]
-ldr x28, [x19, #200]
-ldr x30, [x19, #208]
-ldr x19, [x19, #128]
-add sp, sp, #2560
+movi v0.2d, #0
+movi v3.2d, #0
+sub x9, x1, #24
+sub x10, x1, #32
+cbz x9, 20f
+cbz x10, 22f
+ldr w4, [x0, #0]
+str w4, [x2, #0]
+ldr w5, [x0, #4]
+str w5, [x2, #4]
+ldr w6, [x0, #8]
+str w6, [x2, #8]
+ldr w7, [x0, #12]
+str w7, [x2, #12]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #1, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #16]
+eor w5, w5, w4
+str w5, [x2, #20]
+eor w6, w6, w5
+str w6, [x2, #24]
+eor w7, w7, w6
+str w7, [x2, #28]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #2, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #32]
+eor w5, w5, w4
+str w5, [x2, #36]
+eor w6, w6, w5
+str w6, [x2, #40]
+eor w7, w7, w6
+str w7, [x2, #44]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #4, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #48]
+eor w5, w5, w4
+str w5, [x2, #52]
+eor w6, w6, w5
+str w6, [x2, #56]
+eor w7, w7, w6
+str w7, [x2, #60]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #8, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #64]
+eor w5, w5, w4
+str w5, [x2, #68]
+eor w6, w6, w5
+str w6, [x2, #72]
+eor w7, w7, w6
+str w7, [x2, #76]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #16, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #80]
+eor w5, w5, w4
+str w5, [x2, #84]
+eor w6, w6, w5
+str w6, [x2, #88]
+eor w7, w7, w6
+str w7, [x2, #92]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #32, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #96]
+eor w5, w5, w4
+str w5, [x2, #100]
+eor w6, w6, w5
+str w6, [x2, #104]
+eor w7, w7, w6
+str w7, [x2, #108]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #64, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #112]
+eor w5, w5, w4
+str w5, [x2, #116]
+eor w6, w6, w5
+str w6, [x2, #120]
+eor w7, w7, w6
+str w7, [x2, #124]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #128, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #128]
+eor w5, w5, w4
+str w5, [x2, #132]
+eor w6, w6, w5
+str w6, [x2, #136]
+eor w7, w7, w6
+str w7, [x2, #140]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #27, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #144]
+eor w5, w5, w4
+str w5, [x2, #148]
+eor w6, w6, w5
+str w6, [x2, #152]
+eor w7, w7, w6
+str w7, [x2, #156]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #54, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #160]
+eor w5, w5, w4
+str w5, [x2, #164]
+eor w6, w6, w5
+str w6, [x2, #168]
+eor w7, w7, w6
+str w7, [x2, #172]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+eor v3.16b, v3.16b, v2.16b
+b 23f
+22:
+ldr w4, [x0, #0]
+str w4, [x2, #0]
+ldr w5, [x0, #4]
+str w5, [x2, #4]
+ldr w6, [x0, #8]
+str w6, [x2, #8]
+ldr w7, [x0, #12]
+str w7, [x2, #12]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+ldr w8, [x0, #16]
+str w8, [x2, #16]
+ldr w11, [x0, #20]
+str w11, [x2, #20]
+ldr w12, [x0, #24]
+str w12, [x2, #24]
+ldr w13, [x0, #28]
+str w13, [x2, #28]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #1, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #32]
+eor w5, w5, w4
+str w5, [x2, #36]
+eor w6, w6, w5
+str w6, [x2, #40]
+eor w7, w7, w6
+str w7, [x2, #44]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #48]
+eor w11, w11, w8
+str w11, [x2, #52]
+eor w12, w12, w11
+str w12, [x2, #56]
+eor w13, w13, w12
+str w13, [x2, #60]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #2, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #64]
+eor w5, w5, w4
+str w5, [x2, #68]
+eor w6, w6, w5
+str w6, [x2, #72]
+eor w7, w7, w6
+str w7, [x2, #76]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #80]
+eor w11, w11, w8
+str w11, [x2, #84]
+eor w12, w12, w11
+str w12, [x2, #88]
+eor w13, w13, w12
+str w13, [x2, #92]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #4, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #96]
+eor w5, w5, w4
+str w5, [x2, #100]
+eor w6, w6, w5
+str w6, [x2, #104]
+eor w7, w7, w6
+str w7, [x2, #108]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #112]
+eor w11, w11, w8
+str w11, [x2, #116]
+eor w12, w12, w11
+str w12, [x2, #120]
+eor w13, w13, w12
+str w13, [x2, #124]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #8, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #128]
+eor w5, w5, w4
+str w5, [x2, #132]
+eor w6, w6, w5
+str w6, [x2, #136]
+eor w7, w7, w6
+str w7, [x2, #140]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #144]
+eor w11, w11, w8
+str w11, [x2, #148]
+eor w12, w12, w11
+str w12, [x2, #152]
+eor w13, w13, w12
+str w13, [x2, #156]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #16, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #160]
+eor w5, w5, w4
+str w5, [x2, #164]
+eor w6, w6, w5
+str w6, [x2, #168]
+eor w7, w7, w6
+str w7, [x2, #172]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #176]
+eor w11, w11, w8
+str w11, [x2, #180]
+eor w12, w12, w11
+str w12, [x2, #184]
+eor w13, w13, w12
+str w13, [x2, #188]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #32, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #192]
+eor w5, w5, w4
+str w5, [x2, #196]
+eor w6, w6, w5
+str w6, [x2, #200]
+eor w7, w7, w6
+str w7, [x2, #204]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #208]
+eor w11, w11, w8
+str w11, [x2, #212]
+eor w12, w12, w11
+str w12, [x2, #216]
+eor w13, w13, w12
+str w13, [x2, #220]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #64, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #224]
+eor w5, w5, w4
+str w5, [x2, #228]
+eor w6, w6, w5
+str w6, [x2, #232]
+eor w7, w7, w6
+str w7, [x2, #236]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+eor v3.16b, v3.16b, v2.16b
+23:
+b 21f
+20:
+ldr w4, [x0, #0]
+str w4, [x2, #0]
+ldr w5, [x0, #4]
+str w5, [x2, #4]
+ldr w6, [x0, #8]
+str w6, [x2, #8]
+ldr w7, [x0, #12]
+str w7, [x2, #12]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+ldr w8, [x0, #16]
+str w8, [x2, #16]
+ldr w11, [x0, #20]
+str w11, [x2, #20]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #1, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #24]
+eor w5, w5, w4
+str w5, [x2, #28]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #32]
+eor w7, w7, w6
+str w7, [x2, #36]
+eor w8, w8, w7
+str w8, [x2, #40]
+eor w11, w11, w8
+str w11, [x2, #44]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #2, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #48]
+eor w5, w5, w4
+str w5, [x2, #52]
+eor w6, w6, w5
+str w6, [x2, #56]
+eor w7, w7, w6
+str w7, [x2, #60]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w8, w8, w7
+str w8, [x2, #64]
+eor w11, w11, w8
+str w11, [x2, #68]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #4, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #72]
+eor w5, w5, w4
+str w5, [x2, #76]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #80]
+eor w7, w7, w6
+str w7, [x2, #84]
+eor w8, w8, w7
+str w8, [x2, #88]
+eor w11, w11, w8
+str w11, [x2, #92]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #8, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #96]
+eor w5, w5, w4
+str w5, [x2, #100]
+eor w6, w6, w5
+str w6, [x2, #104]
+eor w7, w7, w6
+str w7, [x2, #108]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w8, w8, w7
+str w8, [x2, #112]
+eor w11, w11, w8
+str w11, [x2, #116]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #16, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #120]
+eor w5, w5, w4
+str w5, [x2, #124]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #128]
+eor w7, w7, w6
+str w7, [x2, #132]
+eor w8, w8, w7
+str w8, [x2, #136]
+eor w11, w11, w8
+str w11, [x2, #140]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #32, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #144]
+eor w5, w5, w4
+str w5, [x2, #148]
+eor w6, w6, w5
+str w6, [x2, #152]
+eor w7, w7, w6
+str w7, [x2, #156]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w8, w8, w7
+str w8, [x2, #160]
+eor w11, w11, w8
+str w11, [x2, #164]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #64, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #168]
+eor w5, w5, w4
+str w5, [x2, #172]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #176]
+eor w7, w7, w6
+str w7, [x2, #180]
+eor w8, w8, w7
+str w8, [x2, #184]
+eor w11, w11, w8
+str w11, [x2, #188]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #128, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #192]
+eor w5, w5, w4
+str w5, [x2, #196]
+eor w6, w6, w5
+str w6, [x2, #200]
+eor w7, w7, w6
+str w7, [x2, #204]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+eor v3.16b, v3.16b, v2.16b
+21:
+str q3, [x2, #240]
 ret
 .arch_extension noaes
 .p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -10934,7 +11585,7 @@ pub(crate) const VG_AES_GCM_INIT_AES_SHA3_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation computes the key schedule as `vg_aes_expand_key_scratch_aes` does, and the hash subkey with the AES instructions, one round as soon as its round key is complete, without calls or stack.
 ///
 /// # Safety
 ///
@@ -10942,60 +11593,711 @@ pub(crate) const VG_AES_GCM_INIT_AES_SHA3_FEATURES: crate::cpu::Features = crate
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes_sha3(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".arch_extension aes
-sub sp, sp, #2560
-add x3, sp, #0
-str x20, [x3, #136]
-str x21, [x3, #144]
-str x22, [x3, #152]
-str x23, [x3, #160]
-str x24, [x3, #168]
-str x25, [x3, #176]
-str x26, [x3, #184]
-str x27, [x3, #192]
-str x28, [x3, #200]
-str x30, [x3, #208]
-str x19, [x3, #128]
-add x19, x3, #0
-add x21, x2, #0
-lsr x22, x1, #2
-add x22, x22, #6
-add x3, x19, #512
-bl {vg_aes_expand_key_scratch_aes}
-movz x9, #0, lsl #0
-str x9, [x21, #240]
-str x9, [x21, #248]
-str x9, [x19, #96]
-str x9, [x19, #104]
-add x0, x21, #0
-add x1, x22, #0
-add x2, x19, #96
-add x3, x21, #240
-movz x4, #1, lsl #0
-add x5, x19, #512
-bl {vg_aes_ctr32_aes}
-ldr x20, [x19, #136]
-ldr x21, [x19, #144]
-ldr x22, [x19, #152]
-ldr x23, [x19, #160]
-ldr x24, [x19, #168]
-ldr x25, [x19, #176]
-ldr x26, [x19, #184]
-ldr x27, [x19, #192]
-ldr x28, [x19, #200]
-ldr x30, [x19, #208]
-ldr x19, [x19, #128]
-add sp, sp, #2560
+movi v0.2d, #0
+movi v3.2d, #0
+sub x9, x1, #24
+sub x10, x1, #32
+cbz x9, 20f
+cbz x10, 22f
+ldr w4, [x0, #0]
+str w4, [x2, #0]
+ldr w5, [x0, #4]
+str w5, [x2, #4]
+ldr w6, [x0, #8]
+str w6, [x2, #8]
+ldr w7, [x0, #12]
+str w7, [x2, #12]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #1, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #16]
+eor w5, w5, w4
+str w5, [x2, #20]
+eor w6, w6, w5
+str w6, [x2, #24]
+eor w7, w7, w6
+str w7, [x2, #28]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #2, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #32]
+eor w5, w5, w4
+str w5, [x2, #36]
+eor w6, w6, w5
+str w6, [x2, #40]
+eor w7, w7, w6
+str w7, [x2, #44]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #4, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #48]
+eor w5, w5, w4
+str w5, [x2, #52]
+eor w6, w6, w5
+str w6, [x2, #56]
+eor w7, w7, w6
+str w7, [x2, #60]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #8, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #64]
+eor w5, w5, w4
+str w5, [x2, #68]
+eor w6, w6, w5
+str w6, [x2, #72]
+eor w7, w7, w6
+str w7, [x2, #76]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #16, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #80]
+eor w5, w5, w4
+str w5, [x2, #84]
+eor w6, w6, w5
+str w6, [x2, #88]
+eor w7, w7, w6
+str w7, [x2, #92]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #32, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #96]
+eor w5, w5, w4
+str w5, [x2, #100]
+eor w6, w6, w5
+str w6, [x2, #104]
+eor w7, w7, w6
+str w7, [x2, #108]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #64, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #112]
+eor w5, w5, w4
+str w5, [x2, #116]
+eor w6, w6, w5
+str w6, [x2, #120]
+eor w7, w7, w6
+str w7, [x2, #124]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #128, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #128]
+eor w5, w5, w4
+str w5, [x2, #132]
+eor w6, w6, w5
+str w6, [x2, #136]
+eor w7, w7, w6
+str w7, [x2, #140]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #27, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #144]
+eor w5, w5, w4
+str w5, [x2, #148]
+eor w6, w6, w5
+str w6, [x2, #152]
+eor w7, w7, w6
+str w7, [x2, #156]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #54, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #160]
+eor w5, w5, w4
+str w5, [x2, #164]
+eor w6, w6, w5
+str w6, [x2, #168]
+eor w7, w7, w6
+str w7, [x2, #172]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+eor v3.16b, v3.16b, v2.16b
+b 23f
+22:
+ldr w4, [x0, #0]
+str w4, [x2, #0]
+ldr w5, [x0, #4]
+str w5, [x2, #4]
+ldr w6, [x0, #8]
+str w6, [x2, #8]
+ldr w7, [x0, #12]
+str w7, [x2, #12]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+ldr w8, [x0, #16]
+str w8, [x2, #16]
+ldr w11, [x0, #20]
+str w11, [x2, #20]
+ldr w12, [x0, #24]
+str w12, [x2, #24]
+ldr w13, [x0, #28]
+str w13, [x2, #28]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #1, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #32]
+eor w5, w5, w4
+str w5, [x2, #36]
+eor w6, w6, w5
+str w6, [x2, #40]
+eor w7, w7, w6
+str w7, [x2, #44]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #48]
+eor w11, w11, w8
+str w11, [x2, #52]
+eor w12, w12, w11
+str w12, [x2, #56]
+eor w13, w13, w12
+str w13, [x2, #60]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #2, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #64]
+eor w5, w5, w4
+str w5, [x2, #68]
+eor w6, w6, w5
+str w6, [x2, #72]
+eor w7, w7, w6
+str w7, [x2, #76]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #80]
+eor w11, w11, w8
+str w11, [x2, #84]
+eor w12, w12, w11
+str w12, [x2, #88]
+eor w13, w13, w12
+str w13, [x2, #92]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #4, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #96]
+eor w5, w5, w4
+str w5, [x2, #100]
+eor w6, w6, w5
+str w6, [x2, #104]
+eor w7, w7, w6
+str w7, [x2, #108]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #112]
+eor w11, w11, w8
+str w11, [x2, #116]
+eor w12, w12, w11
+str w12, [x2, #120]
+eor w13, w13, w12
+str w13, [x2, #124]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #8, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #128]
+eor w5, w5, w4
+str w5, [x2, #132]
+eor w6, w6, w5
+str w6, [x2, #136]
+eor w7, w7, w6
+str w7, [x2, #140]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #144]
+eor w11, w11, w8
+str w11, [x2, #148]
+eor w12, w12, w11
+str w12, [x2, #152]
+eor w13, w13, w12
+str w13, [x2, #156]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #16, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #160]
+eor w5, w5, w4
+str w5, [x2, #164]
+eor w6, w6, w5
+str w6, [x2, #168]
+eor w7, w7, w6
+str w7, [x2, #172]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #176]
+eor w11, w11, w8
+str w11, [x2, #180]
+eor w12, w12, w11
+str w12, [x2, #184]
+eor w13, w13, w12
+str w13, [x2, #188]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #32, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #192]
+eor w5, w5, w4
+str w5, [x2, #196]
+eor w6, w6, w5
+str w6, [x2, #200]
+eor w7, w7, w6
+str w7, [x2, #204]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w7
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+eor w8, w8, w9
+str w8, [x2, #208]
+eor w11, w11, w8
+str w11, [x2, #212]
+eor w12, w12, w11
+str w12, [x2, #216]
+eor w13, w13, w12
+str w13, [x2, #220]
+orr x14, x8, x11, ror #32
+orr x15, x12, x13, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+dup v1.4s, w13
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #64, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #224]
+eor w5, w5, w4
+str w5, [x2, #228]
+eor w6, w6, w5
+str w6, [x2, #232]
+eor w7, w7, w6
+str w7, [x2, #236]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+eor v3.16b, v3.16b, v2.16b
+23:
+b 21f
+20:
+ldr w4, [x0, #0]
+str w4, [x2, #0]
+ldr w5, [x0, #4]
+str w5, [x2, #4]
+ldr w6, [x0, #8]
+str w6, [x2, #8]
+ldr w7, [x0, #12]
+str w7, [x2, #12]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+ldr w8, [x0, #16]
+str w8, [x2, #16]
+ldr w11, [x0, #20]
+str w11, [x2, #20]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #1, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #24]
+eor w5, w5, w4
+str w5, [x2, #28]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #32]
+eor w7, w7, w6
+str w7, [x2, #36]
+eor w8, w8, w7
+str w8, [x2, #40]
+eor w11, w11, w8
+str w11, [x2, #44]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #2, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #48]
+eor w5, w5, w4
+str w5, [x2, #52]
+eor w6, w6, w5
+str w6, [x2, #56]
+eor w7, w7, w6
+str w7, [x2, #60]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w8, w8, w7
+str w8, [x2, #64]
+eor w11, w11, w8
+str w11, [x2, #68]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #4, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #72]
+eor w5, w5, w4
+str w5, [x2, #76]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #80]
+eor w7, w7, w6
+str w7, [x2, #84]
+eor w8, w8, w7
+str w8, [x2, #88]
+eor w11, w11, w8
+str w11, [x2, #92]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #8, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #96]
+eor w5, w5, w4
+str w5, [x2, #100]
+eor w6, w6, w5
+str w6, [x2, #104]
+eor w7, w7, w6
+str w7, [x2, #108]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w8, w8, w7
+str w8, [x2, #112]
+eor w11, w11, w8
+str w11, [x2, #116]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #16, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #120]
+eor w5, w5, w4
+str w5, [x2, #124]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #128]
+eor w7, w7, w6
+str w7, [x2, #132]
+eor w8, w8, w7
+str w8, [x2, #136]
+eor w11, w11, w8
+str w11, [x2, #140]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #32, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #144]
+eor w5, w5, w4
+str w5, [x2, #148]
+eor w6, w6, w5
+str w6, [x2, #152]
+eor w7, w7, w6
+str w7, [x2, #156]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w8, w8, w7
+str w8, [x2, #160]
+eor w11, w11, w8
+str w11, [x2, #164]
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #64, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #168]
+eor w5, w5, w4
+str w5, [x2, #172]
+orr x14, x8, x11, ror #32
+orr x15, x4, x5, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+aesmc v3.16b, v3.16b
+eor w6, w6, w5
+str w6, [x2, #176]
+eor w7, w7, w6
+str w7, [x2, #180]
+eor w8, w8, w7
+str w8, [x2, #184]
+eor w11, w11, w8
+str w11, [x2, #188]
+orr x14, x6, x7, ror #32
+orr x15, x8, x11, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+aese v3.16b, v2.16b
+dup v1.4s, w11
+aese v1.16b, v0.16b
+umov w9, v1.s[0]
+movz w10, #128, lsl #0
+eor w9, w10, w9, ror #8
+eor w4, w4, w9
+str w4, [x2, #192]
+eor w5, w5, w4
+str w5, [x2, #196]
+eor w6, w6, w5
+str w6, [x2, #200]
+eor w7, w7, w6
+str w7, [x2, #204]
+orr x14, x4, x5, ror #32
+orr x15, x6, x7, ror #32
+dup v2.2d, x14
+mov v2.d[1], x15
+eor v3.16b, v3.16b, v2.16b
+21:
+str q3, [x2, #240]
 ret
 .arch_extension noaes
 .p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
 
