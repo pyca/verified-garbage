@@ -55,7 +55,8 @@ theorem pointFromScalar_ok {s : State} (hc : Ctx8 b s) {count : Nat} (hc1 : 1 �
     WP isa (pointFromScalar count) s fun t =>
       Rest (.r19 :: .r7 :: batchR) s t ∧ Frame (mulW b) s.mem t.mem ∧
       point (env t.mem b) 0 1 2 3 =
-        Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem p (2 * count))) (point (env s.mem b) 0 1 2 3) := by
+        Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem p (2 * count))) (point (env s.mem b) 0 1 2 3) ∧
+      env t.mem b 16 = Spec.Ed25519.d := by
   unfold pointFromScalar
   refine WP.seq (wp_addi (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
   have hc1' : Ctx8 b s1 := hc.of_rest (u1.rest (ws := [.r19]) (by decide)) (by decide)
@@ -71,8 +72,8 @@ theorem pointFromScalar_ok {s : State} (hc : Ctx8 b s) {count : Nat} (hc1 : 1 �
       (by omega) (List.mem_range.mp hi)
   refine WP.mono (pointMultiply_ok hc2 d2 (p := p) hc1 hc32
     (by rw [k2.rest.gpr _ (by decide), u1.gpr, h14, BitVec.add_zero])
-    (fun i hi => by rw [k2.rest.rd, k2.rest.wr, u1.rd, u1.wr]; exact hin i hi) hpd) fun t ⟨rt, ft, pt, _⟩ =>
-      ⟨?_, ?_, ?_⟩
+    (fun i hi => by rw [k2.rest.rd, k2.rest.wr, u1.rd, u1.wr]; exact hin i hi) hpd) fun t ⟨rt, ft, pt, dt⟩ =>
+      ⟨?_, ?_, ?_, dt⟩
   · exact (u1.rest (by decide)).trans ((k2.rest.mono (by decide)).trans (rt.mono (by decide)))
   · rw [← u1.mem]
     exact (k2.frame.mono (by simp)).trans ft
@@ -105,7 +106,7 @@ theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) {p : Addr} (h14 : s.gpr 
   have hR2' : Rest fclob s s2 := (r1.mono (by decide)).trans k2.rest
   refine WP.seq (WP.mono (pointFromScalar_ok hc2 (count := 16) (by decide) (by decide) (p := p)
     (by rw [hR2'.gpr _ (by decide), h14])
-    (fun i hi => by rw [hR2.rd, hR2.wr]; exact hin i hi) hpd) fun s3 ⟨r3, f3, p3⟩ => ?_)
+    (fun i hi => by rw [hR2.rd, hR2.wr]; exact hin i hi) hpd) fun s3 ⟨r3, f3, p3, _⟩ => ?_)
   rw [hb2, p2] at p3
   have hc3 : Ctx8 b s3 := hc2.of_rest r3 (by decide)
   refine WP.mono (pointEncode_ok hc3) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
