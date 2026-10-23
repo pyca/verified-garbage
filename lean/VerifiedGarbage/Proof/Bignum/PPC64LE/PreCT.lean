@@ -211,7 +211,10 @@ theorem fn_rel : RelCT isa (Two C0) precompute fun _ _ => True := by
       exact ⟨d, ⟨h₁, h0⟩, ⟨h₂, fun e => h0 (h₁.2.2.mpr (h₂.2.2.mp e))⟩, hsp⟩
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub precompute :=
-  RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, hsp, h3, h4, h5, h6, h7, h8, hb⟩ =>
-    ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, by simp only [dataOf]; rw [hb, h3, h5, h6, h7, h8]⟩, hsp⟩) fun _ _ h => h)
+  RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, hsp, hb, h3, h4, h5, h6, h7, h8⟩ =>
+    ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, by
+      simp only [dataOf]
+      rw [(List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp hb, h3, h5, h6, h7, h8]⟩,
+      hsp⟩) fun _ _ h => h)
 
 end VG.Proof.Bignum.PPC64LE.Pre

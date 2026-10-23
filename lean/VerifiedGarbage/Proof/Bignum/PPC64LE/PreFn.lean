@@ -73,19 +73,20 @@ abbrev scrR (s : State) : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat * 8⟩
 scratch = r7, scratch_len = r8)`. -/
 def fnContract : Contract isa where
   pre s :=
-    let k := (s.gpr .r6).toNat
     s.rd = [nR s] ∧ s.wr = [preR s, scrR s] ∧ (preR s).Disjoint (nR s) ∧ (preR s).Disjoint (scrR s) ∧
       (nR s).Disjoint (scrR s) ∧ (s.gpr .r3).toNat + (s.gpr .r4).toNat * 8 ≤ 2 ^ 64 ∧
-      (s.gpr .r5).toNat + k ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + (s.gpr .r8).toNat * 8 ≤ 2 ^ 64 ∧
-      64 ≤ k ∧ k ≤ 1024 ∧ (s.gpr .r4).toNat = 2 * ((k + 7) / 8) ∧ 8 * ((k + 7) / 8) + 48 ≤ (s.gpr .r8).toNat
+      (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + (s.gpr .r8).toNat * 8 ≤ 2 ^ 64 ∧
+      Spec.Rsa.lenValid (s.gpr .r6).toNat ∧ (s.gpr .r4).toNat = Spec.Rsa.precomputedWords (s.gpr .r6).toNat ∧
+      Spec.Rsa.publicScratchWords (s.gpr .r6).toNat ≤ (s.gpr .r8).toNat
   post s s' :=
     preOut (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (s.gpr .r3) (s.gpr .r4).toNat (s'.gpr .r3)
       s'.mem
   pub s₁ s₂ :=
-    s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
-      s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
-      Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat =
-        Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat
+    s₁.sp = s₂.sp ∧
+      (Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat).map (·.toNat) =
+        (Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat).map (·.toNat) ∧
+      s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+      s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8
 
 /-- The saved words are in the working space. -/
 theorem sav_in {S : Addr} {Z : Nat} (hZ : 200 ≤ Z) {i : Nat} (hi : i < 9) :
@@ -107,7 +108,8 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
     WP isa (.block (Precompute.save ++ setup)) s fun s₂ =>
       C1 (dataOf s) s₂ ∧ (∀ i < 9, s₂.mem.readW (off (savW (s.gpr .r7)) (8 * i)) 64 = s.gpr (saved i)) ∧
         Keep ([.r21] ++ [.r4, .r5, .r8, .r9, .r10, .r11, .r12, .r19]) s s₂ := by
-  obtain ⟨hrd, hwr, dPN, dPS, dNS, nwP, nwN, nwS, hk, hk', hpl, hsl⟩ := h
+  obtain ⟨hrd, hwr, dPN, dPS, dNS, nwP, nwN, nwS, ⟨hk, hk'⟩, hpl, hsl⟩ := h
+  simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords] at hpl hsl
   have hs : Scr s (s.gpr .r7) ((s.gpr .r8).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) nwS
   have hin : ∀ i < 9, InRegions s.wr (off (savW (s.gpr .r7)) (8 * i)) 8 := fun i hi =>
     ⟨scrR s, by rw [hwr]; simp, sav_in (by omega) hi⟩
@@ -160,7 +162,8 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     ∃ tr t, Exec isa precompute s tr t ∧ abiPreserved s t ∧ fnContract.post s t := by
   show WP isa precompute s fun t => abiPreserved s t ∧ fnContract.post s t
   have hpre := h
-  obtain ⟨_, hwr, _, dPS, _, nwP, _, nwS, hk, hk', hpl, hsl⟩ := h
+  obtain ⟨_, hwr, _, dPS, _, nwP, _, nwS, ⟨hk, hk'⟩, hpl, hsl⟩ := h
+  simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords] at hpl hsl
   have hin : ∀ i < 9, InRegions s.wr (off (savW (s.gpr .r7)) (8 * i)) 8 := fun i hi =>
     ⟨scrR s, by rw [hwr]; simp, sav_in (by omega) hi⟩
   unfold precompute
