@@ -42,7 +42,7 @@ theorem columnStep_ok {n context size m g d i : Nat} {base : Addr} {s t : State}
   have bound := L.bound
   have apart := L.apart
   have nh := slot_header n 9
-  have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega
+  have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega_arith
   have nw := I.ctx.scr.nowrap
   have b5 := L.slot (i := 5) (by decide)
   unfold VG.Impl.Mont.X86.Comb.columnStep VG.Impl.Mont.X86.Comb.seq
@@ -60,44 +60,44 @@ theorem columnStep_ok {n context size m g d i : Nat} {base : Addr} {s t : State}
   have Hu : w32 u.mem base 28 = 2^i := by
     have H := Ou.val32 (d := 28) (k := 1) (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> left <;> simp [slot, stride] <;> omega) (by decide)
+      rcases hr with rfl | rfl | rfl <;> left <;> simp [slot, stride] <;> omega_arith) (by decide)
     have equal : w32 u.mem base 28 = w32 t.mem base 28 := by simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
     exact equal.trans I.header
-  refine WP.seq (WP.mono (columnAdvance_ok Cu.scr (by omega) hi Hu) fun v ⟨Ov, Hv, ESI, Kv⟩ => ?_)
+  refine WP.seq (WP.mono (columnAdvance_ok Cu.scr (by omega_arith) hi Hu) fun v ⟨Ov, Hv, ESI, Kv⟩ => ?_)
   have Cv := Cu.outside_keep Kv (by decide) (by decide) Ov (.inr (by simp [slot])) (by decide)
   have Vv : wordsVal v.mem base (slot n 5) n = columnValue n m g d (i+1) :=
-    (Ov.wordsVal (.inr (by have := slot_header n 5; omega)) (by omega)).trans Vnext
-  have idx : (v.gpr .esi).toNat = 2^(i+1) := by rw [ESI, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (column_bound _ (by omega))]
+    (Ov.wordsVal (.inr (by have := slot_header n 5; omega_arith)) (by omega_arith)).trans Vnext
+  have idx : (v.gpr .esi).toNat = 2^(i+1) := by rw [ESI, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (column_bound _ (by omega_arith))]
   obtain ⟨ipos, ilt⟩ := column_index i hi
   have ent := L.entry ilt
   have tablow : context+24*n ≤ entry n (context+16*n) (2^(i+1)) := by
     have := Nat.mul_le_mul_left (8*n) ipos
     simp only [Nat.mul_one] at this
-    unfold entry; omega
-  refine WP.seq (WP.mono (copyToComb_ok L.positive (hs := Cv.scr) (by omega)
-    (by rw [idx]; omega) (.inl (by rw [idx]; omega))) fun w ⟨Ow, Vw, Kw⟩ => ?_)
+    unfold entry; omega_arith
+  refine WP.seq (WP.mono (copyToComb_ok L.positive (hs := Cv.scr) (by omega_arith)
+    (by rw [idx]; omega_arith) (.inl (by rw [idx]; omega_arith))) fun w ⟨Ow, Vw, Kw⟩ => ?_)
   rw [idx] at Ow Vw
-  have Cw := outside_high_context L Cv Kw (by decide) (by decide) Ow (by omega)
+  have Cw := outside_high_context L Cv Kw (by decide) (by decide) Ow (by omega_arith)
   refine WP.seq (wp_cmpS rfl fun z F Z => WP.block_nil (WP.block_nil ?_))
   have ESIw : w.gpr .esi = BitVec.ofNat 32 (2^(i+1)) := (Kw.1 .esi (by decide)).trans ESI
   have Cz : Context n m base size z :=
     ⟨Cw.scr.of_keeps (F.keeps []) (by decide), Cw.size_le, F.mem ▸ Cw.modulus, Cw.gt_one, F.mem ▸ Cw.inverse⟩
   refine ⟨⟨Cz, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [F.mem, Ow.w32 (by omega) (by decide), Hv]
-  · rw [F.mem, high_write_low L Cv.scr (by decide) Ow (by omega), Vv]
+  · rw [F.mem, Ow.w32 (by omega_arith) (by decide), Hv]
+  · rw [F.mem, high_write_low L Cv.scr (by decide) Ow (by omega_arith), Vv]
   · intro j hj
     rw [F.mem]
     by_cases eq : j=i+1
     · subst j; exact Vw.trans Vv
-    · have ji : j ≤ i := by omega
+    · have ji : j ≤ i := by omega_arith
       have jlt : 2^j < 32 := by
         have : ∀ j < 5, 2^j < 32 := by decide
-        exact this j (by omega)
+        exact this j (by omega_arith)
       have ej := L.entry jlt
       have unequal : 2^j ≠ 2^(i+1) := by
-        exact Nat.ne_of_lt (Nat.pow_lt_pow_right (by decide) (by omega))
-      rw [Ow.wordsVal (entry_apart n (context+16*n) unequal) (by omega),
-        Ov.wordsVal (.inr (by omega)) (by omega), encode_high L I.ctx.scr Oenc (by omega) (by omega)]
+        exact Nat.ne_of_lt (Nat.pow_lt_pow_right (by decide) (by omega_arith))
+      rw [Ow.wordsVal (entry_apart n (context+16*n) unequal) (by omega_arith),
+        Ov.wordsVal (.inr (by omega_arith)) (by omega_arith), encode_high L I.ctx.scr Oenc (by omega_arith) (by omega_arith)]
       exact I.table j ji
   · have arithmetic : Outs base (columnRanges n context) t.mem u.mem := Ou.mono (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -106,7 +106,7 @@ theorem columnStep_ok {n context size m g d i : Nat} {base : Addr} {s t : State}
     have table : Outs base (columnRanges n context) v.mem w.mem :=
       widen (Outs.of_outside Ow (rs := [(entry n (context+16*n) (2^(i+1)),8*n)]) (by simp)) (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact ⟨(context+24*n,248*n), by simp [columnRanges], tablow, by omega⟩)
+        exact ⟨(context+24*n,248*n), by simp [columnRanges], tablow, by omega_arith⟩)
     rw [F.mem]; exact ((I.mem.trans arithmetic).trans header).trans table
   · exact (((I.keeps.trans Ku).trans (Kv.mono (by decide))).trans (Kw.mono (by decide))).trans (F.keeps _)
   · rw [Z, ESIw, column_end i hi]
