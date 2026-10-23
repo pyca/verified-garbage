@@ -14,13 +14,14 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Cold
 
 /-!
 # AES-GCM `seal_split` on x86-64: one to three whole blocks at `src`
 
 Untrusted: everything here is checked by Lean. `prefixF` tells the texts
-whose first slice holds one to three whole blocks from the others by
-`prefix`'s count of them (`preTest4_ok`, `tst_ok`): those it copies to `dst`
+whose first slice holds one or two whole blocks from the others by
+`prefix`'s count of them (`preTest3_ok`, `tst_ok`): those it copies to `dst`
 (`copySrc`), encrypts their whole blocks there with a call of
 `vg_aes_ctr32` from the counter block, and absorbs them into `Y` at once
 with the prepared powers of the key context (`sPath_ok`), then keeps the
@@ -57,19 +58,19 @@ theorem add_ofInt_back (p : Addr) {a k : Nat} (h : k ≤ a) :
 section
 variable {Ctx W SP : Addr}
 
-/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than four. -/
-theorem preTest4_ok {sl : Nat} (hsl : sl < 2 ^ 64) {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than three. -/
+theorem preTest3_ok {sl : Nat} (hsl : sl < 2 ^ 64) {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
     (hslot : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 sl) :
-    WP isa (.block SealSplit.preTest4) s fun t => t.gpr .rax = BitVec.ofNat 64 (sl / 16) ∧
-      t.cf = some (decide (sl / 16 < 4)) ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧
+    WP isa (.block SealSplit.preTest3) s fun t => t.gpr .rax = BitVec.ofNat 64 (sl / 16) ∧
+      t.cf = some (decide (sl / 16 < 3)) ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have q₁ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
   have h4 := shr4 sl hsl
-  have i4 := imm_eq (n := 4) (by decide)
+  have i3 := imm_eq (n := 3) (by decide)
   have hq : sl / 16 < 2 ^ 64 := by omega_arith
-  unfold SealSplit.preTest4
+  unfold SealSplit.preTest3
   apply WP.of_runBlock
-  refine ⟨_, by xrun [he.r15, q₁, hslot, h4, i4], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨_, by xrun [he.r15, q₁, hslot, h4, i3], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, h4]
   · simp only [cf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, reduceCtorEq, ↓reduceIte, h4,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt hq, Nat.reducePow, Nat.reduceMod]
@@ -724,12 +725,12 @@ theorem prefixF_ok (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) (T : BlkTo
   have hsl := h.sl_le
   have he := h.env
   unfold SealSplit.prefixF
-  refine WP.seq (WP.mono (preTest4_ok (sl := sl) (by omega) he h.slen) fun s₁ ⟨ax₁, cf₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
+  refine WP.seq (WP.mono (preTest3_ok (sl := sl) (by omega) he h.slen) fun s₁ ⟨ax₁, cf₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
   have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
-  refine WP.ite (decide (sl / 16 < 4)) (by simp only [eval, cf₁]) (fun h4 => ?_) (fun _ => ?_)
-  · have h4' : sl / 16 < 4 := of_decide_eq_true h4
+  refine WP.iteCold_iff.mpr (WP.ite (decide (sl / 16 < 3)) (by simp only [eval, cf₁]) (fun h4 => ?_) (fun _ => ?_))
+  · have h4' : sl / 16 < 3 := of_decide_eq_true h4
     refine WP.seq (WP.mono (tst_ok (q := sl / 16) (by omega) ax₁) fun s₂ ⟨zf₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
     have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun r _ => g₂ r) rd₂ wr₂
     refine WP.ite (decide (sl / 16 = 0)) (by simp only [eval, zf₂]) (fun h0 => ?_) (fun h0 => ?_)

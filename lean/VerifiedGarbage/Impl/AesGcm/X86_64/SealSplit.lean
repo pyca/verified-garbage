@@ -168,20 +168,21 @@ def copySrc : Prog isa :=
 /-! ## One to three whole blocks, without calls but `vg_aes_ctr32`
 
 `prefixS` is `prefixN` with `prefixF` in place of `prefix`. `prefixF` takes
-the texts whose first slice holds one to three whole blocks, for which a call
+the texts whose first slice holds one or two whole blocks, for which a call
 of `fTo` costs more than its work: it copies the slice to `dst` (`copySrc`),
 encrypts its whole blocks there in place by a call of `vg_aes_ctr32`
 (`sCtrArgs`) from the counter block, and absorbs them into `Y` at once
 (`sGh`): the products of the blocks, `Y` added to the first, with the
 prepared powers `H'ᵏ` … `H'` of the key context, added and reduced once. It
-tells them apart by `prefix`'s own test of the number of blocks (`preTest4`),
-so the others run what `prefix` runs. -/
+tells them apart by `prefix`'s own test of the number of blocks (`preTest3`),
+in a cold branch (`Code.iteCold`), so the others run what `prefix` runs, at
+the same addresses but for the test. -/
 
-/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than four:
-`preTest` with `cmp` in place of `test`, so that the texts of four blocks or
+/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than three:
+`preTest` with `cmp` in place of `test`, so that the texts of three blocks or
 more run as many instructions as `prefix` would. -/
-def preTest4 : List Instr :=
-  [.mov .rax (.mem (at_ .r15 tlenO)), .shift .shr .rax 4, .alu .cmp .rax (imm 4)]
+def preTest3 : List Instr :=
+  [.mov .rax (.mem (at_ .r15 tlenO)), .shift .shr .rax 4, .alu .cmp .rax (imm 3)]
 
 /-- The arguments of `vg_aes_ctr32(ctx, rounds, counter, data, n, scratch)`
 for the whole blocks at `dst`, and, kept across the call for `sGh`, their
@@ -228,12 +229,14 @@ and `rest`. -/
 def preTail : Prog isa :=
   .seq (.block copyArgs) (.seq (.ite .e (.block []) copyLoop) (.block rest))
 
-/-- `prefix fTo`, but for the texts of one to three whole blocks: `src`
+/-- `prefix fTo`, but for the texts of one or two whole blocks: `src`
 copied to `dst`, its whole blocks encrypted there by `ctr` and absorbed at
-once, and the data from them on kept. -/
+once, and the data from them on kept. The texts of fewer than three blocks
+(none too) take a cold branch, laid out after the function's return, so
+that the code the others run keeps its addresses. -/
 def prefixF (ctr fTo : Fn) : Prog isa :=
-  .seq (.block preTest4)
-    (.ite .b
+  .seq (.block preTest3)
+    (Code.iteCold .b
       (.seq (.block [.alu .test .rax (.reg .rax)])
         (.ite .e preTail
           (.seq copySrc (.seq (.block sCtrArgs) (.seq (.call ctr.name ctr.code) (.seq sGh (.block rest)))))))
