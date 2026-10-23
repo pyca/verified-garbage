@@ -105,3 +105,37 @@ fn errors() {
         );
     }
 }
+
+/// Independent batches must gather original ciphertext before overwriting it,
+/// including short batches and unaligned data and IV buffers.
+#[test]
+fn decrypt_batches_unaligned() {
+    let iv = core::array::from_fn(|i| (11 * i + 5) as u8);
+    for key_len in [16, 24, 32] {
+        let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let ctx = CamelliaCfb128::new(&key).unwrap();
+        for blocks in [0, 1, 2, 3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 64, 65, 1024] {
+            for tail in [0, 7] {
+                let len = 16 * blocks + tail;
+                let input: Vec<u8> = (0..len).map(|i| (31 * i + 7) as u8).collect();
+                let (output, after) = reference(&key, iv, &input, false);
+                for offset in 0..16 {
+                    let mut buffer = vec![0xa5; len + 32];
+                    buffer[offset..offset + len].copy_from_slice(&input);
+                    let mut chain = [0xa5; 48];
+                    chain[offset..offset + 16].copy_from_slice(&iv);
+                    ctx.decrypt(
+                        (&mut chain[offset..offset + 16]).try_into().unwrap(),
+                        &mut buffer[offset..offset + len],
+                    );
+                    assert_eq!(&buffer[offset..offset + len], output);
+                    assert_eq!(&chain[offset..offset + 16], after);
+                    assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
+                    assert!(buffer[offset + len..].iter().all(|&b| b == 0xa5));
+                    assert!(chain[..offset].iter().all(|&b| b == 0xa5));
+                    assert!(chain[offset + 16..].iter().all(|&b| b == 0xa5));
+                }
+            }
+        }
+    }
+}
