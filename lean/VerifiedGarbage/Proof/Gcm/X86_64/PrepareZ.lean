@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -17,8 +18,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # Preparing a key context's powers on 512-bit registers
 
-`prepare_ok`: `PrepareZ.prepare` writes the 48 prepared powers. `setupG` and
-the stores of pairs 0–7 are `Prepare.prepare`'s (`Prepare.stored`); each
+`prepare_ok`: `PrepareZ.prepare` writes the 48 prepared powers. Pairs 0–7
+are `Prepare16.prepare16`'s (`Prepare16.setup_ok`, `Prepare16.plan_ok`); each
 table (`StitchZ.table_ok`, with `r11` at pair 0) multiplies pairs 0–7, lane
 by lane, by the power it broadcasts (`H'¹⁶`, then `H'³²`, which the first
 table stored), and a reduced product of two prepared powers is the prepared
@@ -32,7 +33,6 @@ namespace VG.Proof.Gcm.X86_64.PrepareZ
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
-open VG.Impl.Gcm.X86_64.Stitch (setupG storesK pregs)
 open VG.Impl.Gcm.X86_64.PrepareZ (table prepare)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB eq_prepared x_φ_prepared φ_reduceB)
 open VG.Proof.Gcm.X86_64.Stitch (setupG_ok' storesK_ok in_sub_int)
@@ -72,34 +72,25 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
     exact ⟨r, List.mem_append_right _ hr, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
   simp only [prepare, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (setupG_ok' hk) fun s₁ ⟨_, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
-  have r₁ : s₁.gpr .rdi = C := g₁ _ (by decide)
+  refine WP.mono (Prepare16.setup_ok s₀ hw hwrap) fun s₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
   -- Pairs 0–7.
   rw [WP.block_append_iff]
-  refine WP.mono (storesK_ok .rdi pregs.reverse 8 s₁
-    (fun k hk' => by rw [wr₁, r₁]; exact in_sub_int hw (by rw [pregs_rev_length] at hk'; omega_arith))
-    (by rw [r₁, pregs_rev_length]; exact Nat.le_trans (by omega_arith) hwrap))
-    fun s₂ ⟨sv₂, fr₂, g₂, rd₂, wr₂, ln₂⟩ => ?_
-  rw [r₁] at sv₂ fr₂
-  have P0 := stored (H := H) (j := 8) (d := 0) rfl (by decide) sv₂ (fun k hk l hl => by
-    rw [pw k hk l hl, Nat.add_zero]; rfl)
+  refine WP.mono (Prepare16.plan_ok _ _ _ s₁ Prepare16.plan_valid hi₁) fun s₂ ⟨⟨_, hi₂⟩, g₂, rd₂, wr₂⟩ => ?_
   have P0' : ∀ i < 8, ∀ l < 2, s₂.mem.readW (C + BitVec.ofNat 64 (256 + 32 * i + 16 * l)) 128 =
-      Spec.Gcm.preparedPower (hpow H (2 * i + 2 - l)) := fun i hi l hl => by
-    have := P0 i hi l hl
-    rwa [show 8 - 8 + i = i by omega_arith] at this
+      Spec.Gcm.preparedPower (hpow H (2 * i + 2 - l)) := fun i hi l hl =>
+    (hi₂.st i (Prepare16.plan_stored i hi)).2 l hl
   -- The reduction constant in every lane of `zmm1`.
   rw [WP.block_append_iff]
   refine WP.mono (Proof.AesGcm.X86_64.Short.bcast_ok .xmm1 s₂) fun s₃ ⟨b₃, f₃⟩ => ?_
   have h1₃ : ∀ l < 4, s₃.zlane .xmm1 l = poly := fun l hl => by
     rw [b₃ l hl]
-    have := l1 0 (by decide)
-    rw [← ln₂ .xmm1 0] at this
+    have := hi₂.h1 0 (by decide)
     simpa [State.lane] using this
   -- `r11` at pair 0.
   rw [WP.block_append_iff]
   refine WP.mono (r11_ok s₃) fun s₄ ⟨e₄, g₄, z₄, m₄, rd₄, wr₄⟩ => ?_
-  have c₄ : s₄.gpr .rdi = C := by rw [g₄ _ (by decide), f₃.gpr, g₂, r₁]
-  have q₄ : s₄.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [e₄, f₃.gpr, g₂, r₁]
+  have c₄ : s₄.gpr .rdi = C := by rw [g₄ _ (by decide), f₃.gpr, g₂ _ (by decide), g₁ _ (by decide)]
+  have q₄ : s₄.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [e₄, f₃.gpr, g₂ _ (by decide), g₁ _ (by decide)]
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, f₃.wr, wr₂, wr₁]
   have mem₄ : s₄.mem = s₂.mem := by rw [m₄, f₃.mem]
   have hin₄ : InRegions s₄.wr (s₄.gpr .r11) 768 := by
@@ -190,10 +181,9 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     rw [q₄, e5] at f₅
     rw [q₅, e6] at f₆
-    rw [← m₁]
-    exact ((fr₂.sub (sub (by decide) (by decide))).trans (by rw [← mem₄]; exact f₅.sub (sub (by decide) (by decide)))).trans
+    exact ((hi₂.fr.sub (sub (by decide) (by decide))).trans (by rw [← mem₄]; exact f₅.sub (sub (by decide) (by decide)))).trans
       (f₆.sub (sub (by decide) (by decide)))
-  · rw [g, g₆, g₅, g₄ r h11, f₃.gpr, g₂, g₁ r hr]
+  · rw [g, g₆, g₅, g₄ r h11, f₃.gpr, g₂ r hr, g₁ r hr]
   · rw [rd, rd₆, rd₅, rd₄, f₃.rd, rd₂, rd₁]
   · rw [wr, wr₆, wr₅, wr₄']
 
