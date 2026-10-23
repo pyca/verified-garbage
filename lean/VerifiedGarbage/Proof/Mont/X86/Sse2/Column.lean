@@ -342,8 +342,8 @@ theorem digitBlock_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {
     (sep : mo + 4 ≤ S + 24 + 4 * (N - 1 - k) ∨ S + 24 + 4 * (N - 1 - k) + 4 ≤ mo)
     (hb : PtrAt t W .ebx S) (hz : (t.gpr .eax).toNat + 2 ^ 32 * (t.gpr .edx).toNat = Z)
     (hH : w32 t.mem W (S + 8) + 2 ^ 32 * w32 t.mem W (S + 12) = H) :
-    WP isa (.block (digit ++ (carry ++ ([.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] ++
-      ((if false then [.alu .add .eax (.reg .eax)] else []) ++ [.alu .cmp .ecx (.reg .eax)]))))) t fun u =>
+    WP isa (.block (digit ++ (carry ++ (([.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] : List Instr) ++
+      ((if false then ([.alu .add .eax (.reg .eax)] : List Instr) else []) ++ ([.alu .cmp .ecx (.reg .eax)] : List Instr)))))) t fun u =>
       ∃ Hl Hh, Hl < 2 ^ 32 ∧ Hl + 2 ^ 32 * Hh =
           (H + (Z % 2 ^ 32 * w32 t.mem W inv) % 2 ^ 32 * w32 t.mem W mo / 2 ^ 32) % 2 ^ 64 ∧
         w32 u.mem W (S + 16) =
@@ -480,8 +480,8 @@ dead digit, the carry stored, `ecx` up a word. -/
 theorem wordBlock_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S : Nat}
     (hw : Ws t W L) (P : Params t W L V 12) (hcx : t.gpr .ecx = BitVec.ofNat 32 (4 * k)) (hk : k < 2 * N)
     (hN4 : (V pN4).toNat = 4 * N) (hN28 : N < 2 ^ 29) (hs : S + 24 + 8 * N ≤ L) (hb : PtrAt t W .ebx S) :
-    WP isa (.block (VG.Impl.Mont.X86.Sse2.word ++ (carry ++ ([.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] ++
-      ((if true then [.alu .add .eax (.reg .eax)] else []) ++ [.alu .cmp .ecx (.reg .eax)]))))) t fun u =>
+    WP isa (.block (VG.Impl.Mont.X86.Sse2.word ++ (carry ++ (([.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] : List Instr) ++
+      ((if true then ([.alu .add .eax (.reg .eax)] : List Instr) else []) ++ ([.alu .cmp .ecx (.reg .eax)] : List Instr)))))) t fun u =>
       w32 u.mem W (S + 16) = (t.gpr .edx).toNat ∧
       w32 u.mem W (S + 20) = (w32 t.mem W (S + 12) +
         (decide ((t.gpr .edx).toNat < w32 t.mem W (S + 8))).toNat) % 2 ^ 32 ∧

@@ -474,8 +474,8 @@ theorem carry_ok {t : State} {W : Addr} {L : Nat} {S : Nat} (hw : Ws t W L) (hs 
 theorem step_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k : Nat} (P : Params t W L V 12)
     (hN : (V pN4).toNat = 4 * N) (hcx : t.gpr .ecx = BitVec.ofNat 32 (4 * k)) (hk : k < 2 * N)
     (hN28 : N < 2 ^ 29) (hi : Bool) :
-    WP isa (.block ([.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] ++
-      ((if hi then [.alu .add .eax (.reg .eax)] else []) ++ [.alu .cmp .ecx (.reg .eax)]))) t fun u =>
+    WP isa (.block (([.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] : List Instr) ++
+      ((if hi then ([.alu .add .eax (.reg .eax)] : List Instr) else []) ++ ([.alu .cmp .ecx (.reg .eax)] : List Instr)))) t fun u =>
       u.gpr .ecx = BitVec.ofNat 32 (4 * (k + 1)) ∧ u.zf = some (decide (k + 1 = if hi then 2 * N else N)) ∧
       Keeps [.eax, .ecx] t u ∧ u.mem = t.mem ∧ u.mcdt = t.mcdt ∧ u.xmm = t.xmm := by
   have hv := (V pN4).isLt
