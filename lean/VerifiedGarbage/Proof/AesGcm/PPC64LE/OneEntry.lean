@@ -41,6 +41,19 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   r27 : s₁.gpr .r27 = s₀.gpr .r9
   r23 : s₁.gpr .r23 = s₀.gpr .r10
   r20 : s₁.gpr .r20 = T
+  r12 : s₁.gpr .r12 = s₀.sp
+
+/-- A doubleword loaded into `t` from `b + off`. -/
+theorem ld_ok {s : State} {t b : Reg} {off : Nat} {v : BitVec 64} (hb : b ≠ .r0) (ho4 : off % 4 = 0)
+    (ho15 : off < 2 ^ 15) (hi : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
+    (hv : s.mem.readW (s.gpr b + BitVec.ofNat 64 off) 64 = v) :
+    WP isa (.block [.load .d t b off]) s fun s' =>
+      s'.gpr t = v ∧ (∀ r, r ≠ t → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
+    hi, hb, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hv, Option.bind_some, Option.map_some, Option.some.injEq,
+    exists_eq_left', ne_eq, not_false_eq_true, ↓reduceIte, and_self, implies_true, BitVec.setWidth_eq]
+  exact ⟨by simp, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- The head of the entry: `W`, the stack argument at `sp + off`, into `r12`. -/
 theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off = 112)
@@ -94,7 +107,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ of
       s₁.gpr .r31 = W ∧ s₁.gpr .r30 = W + BitVec.ofNat 64 16 ∧ s₁.gpr .r29 = s₀.gpr .r3 ∧
       s₁.gpr .r28 = s₀.gpr .r4 ∧ s₁.gpr .r24 = s₀.gpr .r5 ∧ s₁.gpr .r25 = s₀.gpr .r6 ∧
       s₁.gpr .r18 = s₀.gpr .r6 ∧ s₁.gpr .r21 = s₀.gpr .r7 ∧ s₁.gpr .r22 = s₀.gpr .r8 ∧
-      s₁.gpr .r27 = s₀.gpr .r9 ∧ s₁.gpr .r23 = s₀.gpr .r10 ∧ s₁.gpr .r20 = T ∧
+      s₁.gpr .r27 = s₀.gpr .r9 ∧ s₁.gpr .r23 = s₀.gpr .r10 ∧ s₁.gpr .r20 = T ∧ s₁.gpr .r12 = s₂.sp ∧
       (∀ r ∈ [Reg.r2, .r14, .r15, .r16, .r17], s₁.gpr r = s₂.gpr r) ∧ Keeps s₂ s₁ := by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
@@ -109,14 +122,28 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ of
       | exact ⟨rfl, rfl, rfl, rfl, rfl⟩
       | (intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
          rcases hr with rfl | rfl | rfl | rfl | rfl <;> rfl)
-  refine WP.mono hB fun s₁ ⟨b31, b30, b29, b28, b24, b25, b18, b21, b22, b27, b23, b20, bl, bk⟩ => ?_
+  refine WP.mono hB fun s₁ ⟨b31, b30, b29, b28, b24, b25, b18, b21, b22, b27, b23, b20, b12, bl, bk⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ⟨bk.rd.trans (hk.rd.trans kA.rd), bk.wr.trans (hk.wr.trans kA.wr),
     bk.sp.trans (hk.sp.trans kA.sp), bk.lr.trans (hk.lr.trans kA.lr)⟩, ?_, ?_⟩,
-    b31, b30, b29, b28, b24, b25, b18, b21, b22, b27, b23, b20⟩
+    b31, b30, b29, b28, b24, b25, b18, b21, b22, b27, b23, b20, by rw [b12, hk.sp, kA.sp]⟩
   · rw [bl r hr]
     exact e r (by revert hr; revert r; decide) (by revert hr; revert r; decide) (by revert hr; revert r; decide)
   · rw [bk.mem]
     exact hsv.congr (fun p hp => (gA p.1 (by revert hp; revert p; decide)).symm) kA.lr.symm
   · rw [bk.mem, ← kA.mem]; exact hf
+
+/-- After a step that changes no register the entry set but `r19` (and `r0`). -/
+theorem SO1.keep {W T : Addr} {s₀ s₁ s₂ : State} (h1 : SO1 W T s₀ s₁) (hg : ∀ r, r ≠ .r0 → r ≠ .r19 → s₂.gpr r = s₁.gpr r)
+    (hk : Keeps s₁ s₂) : SO1 W T s₀ s₂ :=
+  ⟨⟨fun r hr => by rw [hg r (by revert hr; revert r; decide) (by revert hr; revert r; decide)]; exact h1.en.low r hr,
+    ⟨hk.rd.trans h1.en.keeps.rd, hk.wr.trans h1.en.keeps.wr, hk.sp.trans h1.en.keeps.sp,
+      hk.lr.trans h1.en.keeps.lr⟩, hk.mem ▸ h1.en.saved, hk.mem ▸ h1.en.frame⟩,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r31, by rw [hg _ (by decide) (by decide)]; exact h1.r30,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r29, by rw [hg _ (by decide) (by decide)]; exact h1.r28,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r24, by rw [hg _ (by decide) (by decide)]; exact h1.r25,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r18, by rw [hg _ (by decide) (by decide)]; exact h1.r21,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r22, by rw [hg _ (by decide) (by decide)]; exact h1.r27,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r23, by rw [hg _ (by decide) (by decide)]; exact h1.r20,
+    by rw [hg _ (by decide) (by decide)]; exact h1.r12⟩
 
 end VG.Proof.AesGcm.PPC64LE
