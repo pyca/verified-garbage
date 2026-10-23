@@ -206,15 +206,15 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_encrypt_aes_sha3, vg_aes_gcm_stream_finish_aes_sha3,
     vg_aes_gcm_stream_init_aes_sha3, vg_aes_gcm_stream_verify_aes_sha3,
 };
-use crate::arch::gcm::{
-    vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
-    vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
-    vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
-};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
     VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN, vg_aes_gcm_open_with_powers_aes,
     vg_aes_gcm_seal_with_powers_aes, vg_ghash_store_powers_aes,
+};
+use crate::arch::gcm::{
+    vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
+    vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
+    vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
