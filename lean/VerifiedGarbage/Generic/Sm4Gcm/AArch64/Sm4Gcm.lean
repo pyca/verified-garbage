@@ -102,19 +102,19 @@ def artifactsAes (v : GcmVariant) : List Artifact := [
     suffix := v.gh.impl.suffix
     notes := [aesNote "vg_aes_gcm_stream_init" v.gh.impl.fn.name]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4
-      (Impl.AesGcm.AArch64.streamInit (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩).callees)
+      (Impl.AesGcm.AArch64.streamInit (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false, false⟩).callees)
     stack := 2560
     verified := Proof.AesGcm.AArch64.streamInit_framed
-      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩)
+      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false, false⟩)
     features := v.gh.impl.features },
   Spec.Sm4.Gcm.streamAadApi.artifact AArch64.target {
     suffix := v.gh.impl.suffix
     notes := [aesNote "vg_aes_gcm_stream_aad" v.gh.impl.fn.name]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5
-      (Impl.AesGcm.AArch64.streamAad (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩).callees)
+      (Impl.AesGcm.AArch64.streamAad (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false, false⟩).callees)
     stack := 2560
     verified := Proof.AesGcm.AArch64.streamAad_framed
-      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩)
+      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false, false⟩)
     features := v.gh.impl.features }]
 
 /-- The artifacts calling the implementation of `vg_ghash` the variant `v` names. -/
