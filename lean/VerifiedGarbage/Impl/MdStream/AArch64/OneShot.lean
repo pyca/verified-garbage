@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Impl.Tbl.AArch64
 
 /-!
 # One-shot Merkle–Damgård digests: AArch64 implementation
@@ -18,14 +19,16 @@ call, in a frame of its own (`frameBytes P` bytes at `sp`):
 It runs the initial hash value's code `init` on the hash value, compresses
 every whole block straight from `data` with one call, then builds the last
 block in the frame: it zeroes it (`zeroBuf`), copies the bytes left sixteen at
-a time and then one at a time, appends the `0x80` byte, compresses it and
-zeroes it again if the length field does not fit after them, stores the
-length field (`P.len`) and compresses it. It writes the digest (`P.out`),
-zeroes the hash value and the block, and restores the registers.
+a time, then the 16 bytes holding the last of them and the `0x80` byte, built
+in registers (`copyTail`), compresses it and zeroes it again if the length
+field does not fit after them, stores the length field (`P.len`, then
+`lenStore`) and compresses it. It writes the digest (`P.out`), zeroes the
+hash value and the block, and restores the registers.
 
-Every block the compression function reads from the frame is written there
-by sixteen-byte stores at the sixteen-byte offsets it loads from, but for the
-one holding the last bytes and the `0x80` byte.
+Every 16 bytes the compression function loads from the frame (16 at a time)
+are written there by one 16-byte store, so that the load can take them from
+that store, but for those holding the last bytes of a message shorter than
+16 bytes.
 
 `len` is in `x25`, `out` in `x26`, the message's next byte in `x27` and the
 number of blocks or bytes being handled in `x28`, which no compression
@@ -94,16 +97,51 @@ def copy1 : List Instr :=
   [.ldrb .x9 .x27 0, .strb .x9 .x12 0, .addImm .x .x27 .x27 1, .addImm .x .x12 .x12 1,
     .subImm .x .x11 .x11 1]
 
-/-- Copy the `len mod B` bytes left (counted in `x28`) to the block at `x12`,
-sixteen at a time (`x13` of them), then one at a time (`x11`), and append the
+/-- When the bytes left end at a multiple of 16: the 16 bytes at `x12` are
+`0x80` and zeros, one 16-byte store. -/
+def mark16 : List Instr := [.movz .x .x9 0x80 0, .movz .x .x10 0 0, .stp .x9 .x10 .x12 0]
+
+/-- The bytes `i + 16` for `i < 16`: `tail16`'s indices for the last
+`r = 16` bytes, less `r`. -/
+def idx16 : BitVec 128 := BitVec.ofNat 128 0x1F1E1D1C1B1A19181716151413121110
+
+/-- The last `r = x11` bytes left (at `x27`), `0 < r < 16`, then `0x80` and
+zeros, as the 16 bytes at `x12`, with one 16-byte store: the 16 bytes of the
+message that end with them, in `v0`, and `0x80` in `v1`, looked up (`tbl`)
+at `i + 16 - r` for byte `i`, which is `v0`'s byte `i + 16 - r` for `i < r`,
+`0x80` for `i = r` and zero beyond. (A message of at least 16 bytes has
+those 16.) -/
+def tail16 : List Instr :=
+  [.add .x .x13 .x27 .x11, .subImm .x .x13 .x13 16, .movz .x .x9 0x80 0, .ldrq .v0 .x13 0,
+    .vop (.movi0 .v1), .vop (.ins .d2 .v1 0 .x9)] ++ Tbl.AArch64.const128 .v2 idx16 ++
+  [.vop (.dup .b16 .v3 .x11), .vop (.sub .b16 .v2 .v2 .v3), .vop (.tblN false 2 .v4 .v0 .v2),
+    .strq .v4 .x12 0]
+
+/-- Fewer than 16 bytes in all: one at a time (`x11` of them), then the
 `0x80` byte. -/
+def bytesTail : Prog isa :=
+  .seq (.loop (.block copy1) (.nonzero .x .x11)) (.block [.movz .x .x9 0x80 0, .strb .x9 .x12 0])
+
+/-- Copy the `len mod B` bytes left (counted in `x28`) to the block at `x12`,
+sixteen at a time (`x13` of them), and the 16 bytes holding the last of them
+and the `0x80` byte with one 16-byte store (`mark16`, `tail16`): the
+compression function reads the block 16 bytes at a time, and a 16-byte load
+of bytes that narrower stores wrote cannot take them from those stores (it
+waits until they reach the cache). Only a message shorter than 16 bytes is
+copied a byte at a time (`bytesTail`). -/
 def copyTail : Prog isa :=
   .seq (.block [.movz .x .x9 (BitVec.ofNat 16 (P.B - 1)) 0, .logic .and .x .x28 .x25 .x9,
       .lsr .x .x13 .x28 4])
   (.seq (.ite (.zero .x .x13) (.block []) (.loop (.block copy16) (.nonzero .x .x13)))
   (.seq (.block [.movz .x .x9 15 0, .logic .and .x .x11 .x28 .x9])
-  (.seq (.ite (.zero .x .x11) (.block []) (.loop (.block copy1) (.nonzero .x .x11)))
-    (.block [.movz .x .x9 0x80 0, .strb .x9 .x12 0]))))
+    (.ite (.zero .x .x11) (.block mark16)
+      (.seq (.block [.lsr .x .x9 .x25 4]) (.ite (.zero .x .x9) bytesTail (.block tail16))))))
+
+/-- After `P.len`: the block's last 16 bytes, loaded 8 at a time (each from
+the one store that wrote it) and stored again 16 at a time, so that the
+compression function's 16-byte load takes them from a single store. -/
+def lenStore : List Instr :=
+  [.addSp .x12 (P.N + P.B - 16), .ldr .x .x9 .x12 0, .ldr .x .x10 .x12 8, .stp .x9 .x10 .x12 0]
 
 /-- The last block or two: the bytes left, `0x80`, zeros and the length field.
 It takes two blocks iff `len mod B + 1 > B - L`, that is iff
@@ -113,7 +151,7 @@ def tail (name : String) (code : Prog isa) : Prog isa :=
   (.seq (copyTail P)
   (.seq (.block [.addImm .x .x9 .x28 P.L, .lsr .x .x9 .x9 (lg P)])
   (.seq (.ite (.zero .x .x9) (.block []) (.seq (compressBuf P name code) (.block (zeroBuf P))))
-  (.seq (.block ([.addSp .x19 0, mov .x22 .x25] ++ P.len))
+  (.seq (.block ([.addSp .x19 0, mov .x22 .x25] ++ P.len ++ lenStore P))
     (compressBuf P name code)))))
 
 /-- Zero the hash value and the block, through `x16` (`sp`) and `x17` (zero). -/
