@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Table2
 import VerifiedGarbage.Proof.Mont.X86.WindowSelect
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.SelectX
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The window's entry of a run-time-width table
@@ -53,6 +54,29 @@ theorem selPtrs_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 16) {
   · rw [PtrAt, K₃.1 _ (by decide)]; exact p₂
   · rw [cnt_toNat h.upper' (one_ok c) c₃, cw1]
 
+/-- `selectTail_ok` with `selectLoopX`, for at least four words. -/
+theorem selectTailX_ok {s₀ : State} (h : In Ex base bytes len args s₀)
+    (K₀ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s₀ s) (m₀ : s.mem = s₀.mem)
+    {x d N : Nat} {k : Bool} (hN : 4 ≤ N) (hx : x + 4 * N ≤ bytes) (hd : d + 4 * N ≤ bytes)
+    (hxd : d + 4 * N ≤ x ∨ x + 4 * N ≤ d) (pe : PtrAt s base .ebp x) (pb : PtrAt s base .ebx d)
+    (ce : (s.gpr .edi).toNat = 4 * N) (hk : s.gpr .ecx = cmask k) :
+    WP isa (.seq selectLoopX (.block restoreEdi)) s fun u =>
+      Outside base d (4 * N) s.mem u.mem ∧
+      val32 u.mem base d N = (if k then val32 s.mem base x N else val32 s.mem base d N) ∧
+      PtrAt u base .ebx (d + 4 * N) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s₀ u := by
+  have ws : Ws s base bytes := h.ws.of_keeps K₀
+  have hn := h.scratch.nowrap
+  refine WP.seq (WP.mono (selectLoopX_ok ws (x := x) (d := d) (N := N) k hN hx hd hxd pe pb ce hk)
+    fun t ⟨O, V, pbt, Kt⟩ => ?_)
+  have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s₀ t := K₀.trans (Kt.mono (by decide))
+  have Oall : Outside base 0 bytes s₀.mem t.mem := by rw [← m₀]; exact O.mono (Nat.zero_le _) (by omega)
+  refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
+  have ed : t₁.gpr .edi = s₀.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
+  refine ⟨by rw [u₁.mem]; exact O, by rw [u₁.mem]; exact V, by rw [PtrAt, u₁.other _ (by decide)]; exact pbt,
+    PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp]) ?_ ed⟩
+  exact (Kall.trans (u₁.keeps.mono (by decide))).mono (by decide)
+
 /-- Entry `j` into slot 7 when the window word is `j`. -/
 theorem selectEntry_ok (h : In Ex base bytes len args s) (hw : w32 s.mem base winOff < 16) {j : Nat}
     (hj : j < 16) :
@@ -83,7 +107,7 @@ theorem selectEntry_ok (h : In Ex base bytes len args s) (hw : w32 s.mem base wi
     show _ = cmask (decide (w32 s.mem base 4 = j))
     by_cases e : w32 s.mem base 4 = j <;> simp only [e, cmask, decide_true, decide_false, ↓reduceIte, Bool.false_eq_true]
   have mw : w₂.mem = s.mem := by rw [m₂, M]
-  refine WP.mono (selectTail_ok h K₀ mw (x := te len c j) (d := lo len (.slot c 7)) (N := cwc len c)
+  refine WP.mono (selectTailX_ok h K₀ mw (x := te len c j) (d := lo len (.slot c 7)) (N := cwc len c)
     (k := decide (w32 s.mem base winOff = j)) (by omega) (by omega) (by omega) (by omega) pe pb ce hk)
     fun u ⟨O, V, _, Ku⟩ => ⟨?_, ?_, Ku⟩
   · rw [bw, ← mw]; exact O

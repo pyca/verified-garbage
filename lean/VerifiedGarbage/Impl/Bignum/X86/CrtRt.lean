@@ -117,6 +117,18 @@ def selectLoop : Prog isa :=
     .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
     .alu .sub .edi (.imm 4)]) .ne
 
+/-- `selectLoop` sixteen bytes at a time with SSE2: the mask `ecx` in every
+doubleword of `xmm7`, `edi / 16` blocks counted in `eax`, then the last
+`edi mod 16` bytes by `selectLoop`; at least sixteen bytes. -/
+def selectLoopX : Prog isa :=
+  .seq (.block [.mov .eax (.reg .edi), .shift .shr .eax 4, .xop (.movd .xmm7 .ecx),
+    .xop (.pshufd .xmm7 .xmm7 0)]) <|
+  .seq (.loop (.block [.movdquLoad .xmm0 (at_ .ebx 0), .movdquLoad .xmm1 (at_ .ebp 0),
+    .xop (.bin .pxor .xmm1 .xmm0), .xop (.bin .pand .xmm1 .xmm7), .xop (.bin .pxor .xmm0 .xmm1),
+    .movdquStore (at_ .ebx 0) .xmm0, .alu .add .ebp (.imm 16), .alu .add .ebx (.imm 16),
+    .alu .sub .eax (.imm 1)]) .ne) <|
+  .seq (.block [.alu .and .edi (.imm 15)]) (.ite .ne selectLoop (.block []))
+
 /-- `[edi] = [ebp] op [ebx]` with the carry (or borrow) as a mask in `ecx`; `edx` bytes.
 Reuse the key-workspace loop: eight words per iteration, then scalar tails. -/
 def chainLoop (op : AluOp) : Prog isa := VG.Impl.Rsa.X86.Chain.loop op
@@ -155,6 +167,10 @@ def setSmall (x : Loc) (n : Cnt) (v : Nat) : Prog isa :=
 /-- `d` set to `x` where the mask `ecx` is all ones, else kept. -/
 def select (x d : Loc) (n : Cnt) : Prog isa :=
   .seq (.block (ptrTo x .ebp .edx ++ ptrTo d .ebx .edx ++ cntTo n .edi)) (.seq selectLoop (.block restoreEdi))
+
+/-- `select` with `selectLoopX`, for numbers of at least sixteen bytes. -/
+def selectX (x d : Loc) (n : Cnt) : Prog isa :=
+  .seq (.block (ptrTo x .ebp .edx ++ ptrTo d .ebx .edx ++ cntTo n .edi)) (.seq selectLoopX (.block restoreEdi))
 
 /-- `d` set to `x`. -/
 def copy (x d : Loc) (n : Cnt) : Prog isa :=
@@ -225,7 +241,7 @@ def doubleStep (c : Ctx) : Prog isa :=
   .seq (chain .sbb (.slot c 4) (.slot c 1) (.slot c 0) (one c)) <|
   .seq (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx), .alu .sbb .eax (.imm 0),
     .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax)]) <|
-  .seq (select (.slot c 1) (.slot c 4) (one c)) (.block [.alu .sub .esi (.imm 1)])
+  .seq (selectX (.slot c 1) (.slot c 4) (one c)) (.block [.alu .sub .esi (.imm 1)])
 
 /-- `2^(8 Bc + Bc / 8) mod M` in slot 4: one, doubled `8 Bc + Bc / 8` times. -/
 def powerTwo (c : Ctx) : Prog isa :=
@@ -298,7 +314,7 @@ def selectEntry (c : Ctx) (j : Nat) : Prog isa :=
   .seq (.block ([.mov .eax (.mem (sc winOff)), .alu .xor .eax (.imm (BitVec.ofNat 32 j)),
       .alu .sub .eax (.imm 1), .shift .shr .eax 31, .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax)] ++
       entryPtr c .ebp j .edx ++ ptrTo (.slot c 7) .ebx .edx ++ cntTo (one c) .edi))
-    (.seq selectLoop (.block restoreEdi))
+    (.seq selectLoopX (.block restoreEdi))
 
 /-- Entries `1` to `k`, each when the window names it. -/
 def selectEntries (c : Ctx) : Nat → Prog isa

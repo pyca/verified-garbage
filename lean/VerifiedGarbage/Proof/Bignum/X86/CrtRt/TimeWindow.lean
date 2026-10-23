@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTable
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTable
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 
@@ -32,6 +34,9 @@ abbrev MulCheck (c : Ctx) (o a b : Nat) : Prop :=
 /-- Code checked by the taint analysis from `τA`. -/
 abbrev ACheck (p : Prog isa) : Prop := (VG.Taint.check taint τA p (VG.Taint.hintOf taint τA p)).isSome = true
 
+/-- Code checked by the SIMD taint analysis from `τA`. -/
+abbrev XCheck (p : Prog isa) : Prop := (VG.Taint.check sseTaint τA p (VG.Taint.hintOf sseTaint τA p)).isSome = true
+
 /-- The taint checks of a context's windowed power. -/
 structure WinChecks (c : Ctx) : Prop where
   m643 : MulCheck c 6 4 3
@@ -43,12 +48,12 @@ structure WinChecks (c : Ctx) : Prop where
   tail : (VG.Taint.check taint τAs (tableTail c) (VG.Taint.hintOf taint τAs (tableTail c))).isSome = true
   setup : ACheck (Prog.chain (tableSetup c) (.block []))
   next : ACheck (nextWindow c)
-  select : ACheck (selectWindow c)
+  select : XCheck (selectWindow c)
   count : ACheck (.block (widthC 0 c .esi ++ [.alu .add .esi (.reg .esi)]))
   dec : ACheck (.block [.alu .sub .esi (.imm 1)])
 
 theorem winChecks (c : Ctx) : WinChecks c := by
-  cases c <;> constructor <;> (try dsimp only [MulCheck, ACheck]) <;> taint_decide
+  cases c <;> constructor <;> (try dsimp only [MulCheck, ACheck, XCheck]) <;> taint_decide
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {sp : BitVec 32}
@@ -153,8 +158,8 @@ theorem windowStep_relCT (hc : WinChecks c) {n : Nat} (hn0 : 0 < n) (hn : n < 2 
   unfold windowStep
   refine VG.RelCT.seq sq (VG.RelCT.seq sq (VG.RelCT.seq sq (VG.RelCT.seq sq ?_)))
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.1.agree W₂.1) _ hc.next fun _ W => nextWindow_wst W) ?_
-  refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.1.1.agree W₂.1.1) _ hc.select
-    fun _ W => selectWindow_wst W) ?_
+  refine VG.RelCT.seq (PublicRt.relCT_both (VG.RelCT.taint (A := sseTaint) τA
+    (fun _ _ h => h.1.1.1.agree h.2.1.1) hc.select) fun _ W => selectWindow_wst W) ?_
   refine VG.RelCT.seq (mul_wst_relCT (X := fun s => s.gpr .esi = BitVec.ofNat 32 n)
     (X' := fun s => s.gpr .esi = BitVec.ofNat 32 n) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) hc.m667 (ks' := [3, 6]) (by decide) (by decide) (by decide)
