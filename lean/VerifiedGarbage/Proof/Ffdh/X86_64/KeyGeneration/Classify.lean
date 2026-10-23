@@ -94,7 +94,9 @@ theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalar
   have hv := hu.update (u := used + p.len) (k := keys) (c := scalars) hroom h.keys_le h.scalars_le _
     hb (by simp only [advanceValues, List.mem_cons, List.not_mem_nil, or_false]
            rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hmv kv.2.1 kv.2.2
-    (fun r hr => kv.gpr (by cases r <;> simp_all [calleeSaved])) hh
+    (fun r hr => kv.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) hh
   have hout := output_frame h.input (hmv ▸ writeController_frame u.mem p.control _ hb)
   have hpv : AttemptPost p (keyRand original) used v := by
     unfold AttemptPost at hpu ⊢
@@ -126,7 +128,9 @@ theorem key_terminal_done {p : KeyPublic} {original s : State} {used keys scalar
   have ht := h.update (u := used) (k := 0) (c := 0) h.used_le (by decide) (by decide) _ hb (by
       simp only [terminalValues, List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) hm k.2.1 k.2.2
-    (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved])) hh
+    (fun r hr => k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) hh
   have hw (j : Nat) (hj : j < 16) : word t.mem p.control (8 * j) =
       controllerValue (terminalValues status) j (word s.mem p.control (8 * j)) := by
     rw [hm, writeController_word _ _ _ hb j hj]
