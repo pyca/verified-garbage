@@ -151,8 +151,7 @@ def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
 /-! ## The streaming state on memory
 
 The streaming functions apply `keystreamOf key nonce` in pieces, keeping
-what is left of it in a state in memory (`[u64; 96]`, or `[u64; 17]`, the
-first 136 bytes alone, with a separate working space: opaque to the caller):
+what is left of it in a state in memory (`[u64; 96]`, opaque to the caller):
 
 * bytes 0–63: a 16-word state (`stateAt`): the constants, the key (bytes
   16–47), and the block counter (word 12) and nonce of the next block;
@@ -160,7 +159,7 @@ first 136 bytes alone, with a separate working space: opaque to the caller):
   to be used;
 * bytes 128–135: the number of bytes of keystream left (`leftAt`), a
   little-endian 64-bit integer;
-* bytes 136–767 of the 768-byte form: working space.
+* bytes 136–767: working space.
 
 The state represents the key `keyAt` and the keystream bytes left `restAt`.
 Every state represents some key and keystream: the contracts hold whatever
