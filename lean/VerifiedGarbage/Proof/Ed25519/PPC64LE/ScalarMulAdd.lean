@@ -402,21 +402,20 @@ theorem mulAddEngine_ok {b : Addr} {s : State} (hc : Ctx b s) {R K Sc : Nat} (hV
       ((f10.sub (sub1 512 64 (by omega))).trans (ft.sub (sub1 SR 64 (by omega)))))
   · rw [vt, v10, v9, hv8, hr8]
 
-/-- The remainder at `SR` to `out` (at `P`), and the registers restored from the slots. -/
-theorem scalarOut_ok {b : Addr} {u : State} (hc : Ctx b u) {P : Reg} (hP : P ≠ .r0) {q : Addr}
+/-- The element at `a` to `out` (at `P`), and the registers restored from the slots. -/
+theorem scalarOut_ok {b : Addr} {u : State} (hc : Ctx b u) {a : Nat} (ha : a + 32 ≤ 1024) {P : Reg} (hP : P ≠ .r0) {q : Addr}
     (hq : u.gpr P = q) (hout : (⟨q, 32⟩ : Region) ∈ u.wr) (hd : (⟨q, 32⟩ : Region).Disjoint ⟨b, 8192⟩)
     (hws : (⟨b, 8192⟩ : Region) ∈ u.wr) {g : Reg → BitVec 64} (hsv : Spill.Saved b g saveList u.mem) :
-    WP isa (.block (([.addi .r14 P 0] : List Instr) ++ packField SR 0 ++ scalarRestore)) u fun t =>
+    WP isa (.block (([.addi .r14 P 0] : List Instr) ++ packField a 0 ++ scalarRestore)) u fun t =>
       (∀ r ∈ savedRegs, t.gpr r = g r) ∧ (∀ r, r ∉ savedRegs → r ≠ .r7 → r ≠ .r14 → t.gpr r = u.gpr r) ∧
-      t.sp = u.sp ∧ bytesAt t.mem q 32 = Spec.Ed25519.encodeLE 32 (V u.mem b SR) := by
-  have hS := SR_eq
+      t.sp = u.sp ∧ bytesAt t.mem q 32 = Spec.Ed25519.encodeLE 32 (V u.mem b a) := by
   have hV := SAVE_eq
   rw [scalarRestore_eq]
   simp only [List.cons_append, List.nil_append]
   refine wp_addi hP (by decide) fun s1 u1 => ?_
   have e14 : s1.gpr .r14 = q := by rw [u1.gpr, hq, BitVec.add_zero]
   have hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := [.r14]) (by decide)) (by decide)
-  refine WP.append (packField_ok hc1 e14 (a := SR) (dst := 0) (by omega) (by decide)
+  refine WP.append (packField_ok hc1 e14 (a := a) (dst := 0) (by omega) (by decide)
     (fun k hk => by rw [u1.wr]; exact in_base hout (by omega) (by omega))
     (by rw [BitVec.add_zero]; exact disj_ws hd (by omega))) fun s2 hp2 => ?_
   have hsv2 : Spill.Saved b g saveList s2.mem := by
@@ -456,7 +455,7 @@ theorem mulAdd_ok {s : State} (hp : MulAddPre s) :
   have hsv : Spill.Saved b s.gpr saveList s11.mem :=
     h7.saved.frame_in (lo := SAVE) (n := 96) saveList_in f11 fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega) (by omega)
-  refine WP.mono (scalarOut_ok (h7.ctx.of_rest r11 (by decide)) (P := .r18) (by decide)
+  refine WP.mono (scalarOut_ok (h7.ctx.of_rest r11 (by decide)) (a := SR) (by decide) (P := .r18) (by decide)
     (by rw [r11.gpr _ (by decide), h7.r18]) (by rw [hwr]; exact hout) (hb ▸ hp.out_ws) (by rw [hwr]; exact hws) hsv)
     fun t ⟨hg, ho, hsp, hbytes⟩ => ⟨fun r hr => ?_, ?_, ?_⟩
   · by_cases hm : r ∈ savedRegs

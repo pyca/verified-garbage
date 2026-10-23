@@ -35,22 +35,21 @@ section
 variable {b : Addr}
 
 /-- The start of `freeze`: bit 255 of `[X2]` cleared, 19 times it in `r8`. -/
-theorem freezeA_ok {s : State} (hc : Ctx b s) :
-    WP isa (.block freezeA) s fun s' =>
+theorem freezeA_ok {X2 : Nat} (hX : X2 + 32 ≤ 4096) {s : State} (hc : Ctx b s) :
+    WP isa (.block (freezeAAt X2)) s fun s' =>
       (s'.gpr .r8).toNat = 19 * (limb s.mem b X2 7 / 2 ^ 31) ∧
       (∀ k < 8, limb s'.mem b X2 k = mask31 (limb s.mem b X2) k) ∧
       Frame [⟨b + BitVec.ofNat 64 X2, 32⟩] s.mem s'.mem ∧
       Rest [.r5, .r7, .r8] s s' := by
-  have hX : X2 = 32 := rfl
-  simp only [freezeA, low31, List.cons_append, List.nil_append]
-  refine lw0_ok hc (d := X2 + 28) (by decide) fun s2 u2 => ?_
+  simp only [freezeAAt, low31, List.cons_append, List.nil_append]
+  refine lw0_ok hc (d := X2 + 28) (by omega) fun s2 u2 => ?_
   refine wp_lsr (by decide) fun s3 u3 => wp_lsl (by decide) fun s4 u4 =>
     wp_lsr (by decide) fun s5 u5 => ?_
   have hr5 : Rest [.r7, .r8] s s5 :=
     (u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans (u5.rest (by decide))))
   have hc5 : Ctx b s5 := hc.of_rest hr5 (by decide)
-  refine sw0_ok hc5 (d := X2 + 28) (by decide) fun s6 u6 => ?_
+  refine sw0_ok hc5 (d := X2 + 28) (by omega) fun s6 u6 => ?_
   refine wp_li (by decide) fun s7 u7 => wp_mul fun s8 u8 => WP.block_nil ?_
   have hl7 := limb_lt s.mem b X2 7
   have e2 : (s2.gpr .r7).toNat = limb s.mem b X2 7 := by rw [u2.gpr, toNat_ext32]; rfl
@@ -76,20 +75,19 @@ theorem freezeA_ok {s : State} (hc : Ctx b s) :
   · exact hr5.mono (by decide) |>.trans ((u6.rest _).trans ((u7.rest (by decide)).trans (u8.rest (by decide))))
 
 /-- `freezeB`: the mask `-(bit 255 of [Y])` in `r11`, and bit 255 of `[Y]` cleared. -/
-theorem freezeB_ok {s : State} (hc : Ctx b s) :
-    WP isa (.block freezeB) s fun s' =>
+theorem freezeB_ok {Y : Nat} (hY : Y + 32 ≤ 4096) {s : State} (hc : Ctx b s) :
+    WP isa (.block (freezeBAt Y)) s fun s' =>
       s'.gpr .r11 = 0 - BitVec.ofNat 64 (limb s.mem b Y 7 / 2 ^ 31) ∧
       (∀ k < 8, limb s'.mem b Y k = mask31 (limb s.mem b Y) k) ∧
       Frame [⟨b + BitVec.ofNat 64 Y, 32⟩] s.mem s'.mem ∧ Rest [.r4, .r7, .r11] s s' := by
-  have hY : Y = 512 := rfl
-  simp only [freezeB, low31, List.cons_append, List.nil_append]
-  refine lw0_ok hc (d := Y + 28) (by decide) fun s1 u1 => ?_
+  simp only [freezeBAt, low31, List.cons_append, List.nil_append]
+  refine lw0_ok hc (d := Y + 28) (by omega) fun s1 u1 => ?_
   refine wp_lsr (by decide) fun s2 u2 => wp_li (by decide) fun s3 u3 =>
     wp_sub fun s4 u4 => wp_lsl (by decide) fun s5 u5 => wp_lsr (by decide) fun s6 u6 => ?_
   have hr6 : Rest [.r4, .r7, .r11] s s6 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
-  refine sw0_ok (hc.of_rest hr6 (by decide)) (d := Y + 28) (by decide) fun s7 u7 => WP.block_nil ?_
+  refine sw0_ok (hc.of_rest hr6 (by decide)) (d := Y + 28) (by omega) fun s7 u7 => WP.block_nil ?_
   have e1 : (s1.gpr .r7).toNat = limb s.mem b Y 7 := by rw [u1.gpr, toNat_ext32]; rfl
   have hm7 : s7.mem = s.mem.writeW (b + BitVec.ofNat 64 (Y + 28)) ((s6.gpr .r7).setWidth 32) := by
     rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
@@ -188,7 +186,7 @@ theorem freeze_ok {s : State} (hc : Ctx b s) {o : Addr}
   obtain ⟨tA, tY, hS, hR, hv⟩ := freeze_facts hl
   obtain ⟨-, -, lm, c1⟩ := mask31_facts hl
   simp only [freeze, List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.append (freezeA_ok hc) fun s1 ⟨h8, hl1, hf1, hr1⟩ => ?_
+  refine WP.append (freezeA_ok (by decide) hc) fun s1 ⟨h8, hl1, hf1, hr1⟩ => ?_
   have hc1 : Ctx b s1 := hc.of_rest hr1 (by decide)
   refine WP.append (pass_ok (rb := .r6) (o := X2) (s0 := s1) (c := mask31 (limb s.mem b X2))
     (cin := 19 * (limb s.mem b X2 7 / 2 ^ 31)) (by decide) (by decide) (by decide)
@@ -225,7 +223,7 @@ theorem freeze_ok {s : State} (hc : Ctx b s) {o : Addr}
     rw [limb, wd_frame hpf4 fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX, hY, hk])) (by omega_using [hX, hk]) (by omega_using [hY]),
       u3.mem, hpo2 k hk]
-  refine WP.append (freezeB_ok hc4) fun s5 ⟨h11, hy5, hf5, hr5⟩ => ?_
+  refine WP.append (freezeB_ok (by decide) hc4) fun s5 ⟨h11, hy5, hf5, hr5⟩ => ?_
   have hc5 : Ctx b s5 := hc4.of_rest hr5 (by decide)
   have hx5 : ∀ k < 8, limb s5.mem b X2 k = frA (limb s.mem b X2) k := by
     intro k hk
