@@ -83,10 +83,10 @@ theorem invU_ok {s : State} {B : Addr} {Z len N A D : Nat} (h : RtWs L s B Z len
   refine WP.block_append (WP.mono (storeSlot_ok h2 hsB .ebx) fun t3' ⟨h3', k3', sB3, r3'⟩ => ?_)
   have o3 : slot t3'.mem B sOdd = u % 2 := by
     rw [k3'.slot hsOdd (by decide), k2.slot hsOdd (by simp), o1]
-  refine WP.mono (andS_ok h3' hsC hsOdd hsB (by rw [o3]; omega) (by rw [sB3]; exact b2)) fun t3 ⟨h3, k3, c3, r3⟩ => ?_
+  refine WP.mono (andS_ok h3' hsC hsOdd hsB (by rw [o3]; omega_arith) (by rw [sB3]; exact b2)) fun t3 ⟨h3, k3, c3, r3⟩ => ?_
   rw [o3, sB3] at c3
   have lt : (t2.gpr .ebx).toNat = 1 ↔ u < v := by
-    have := borrow_iff d2 (val32_lt _ _ _ _) b2; omega
+    have := borrow_iff d2 (val32_lt _ _ _ _) b2; omega_arith
   have c3' : slot t3.mem B sC = (if u % 2 = 1 ∧ u < v then 1 else 0) := by
     rw [c3]; by_cases e : u < v <;> simp [e, lt]
   have K3 : Keep B (kw len) [] [sB, sC] t2.mem t3.mem := k3'.join k3
@@ -101,7 +101,7 @@ theorem invU_ok {s : State} {B : Addr} {Z len N A D : Nat} (h : RtWs L s B Z len
   rw [u3, v3] at d4
   have cs4 : slot t4.mem B sC = (if u % 2 = 1 ∧ u < v then 1 else 0) := by
     rw [k4.slot hsC (by simp), c3']
-  have cb4 : slot t4.mem B sC ≤ 1 := by rw [cs4]; split <;> omega
+  have cb4 : slot t4.mem B sC ≤ 1 := by rw [cs4]; split <;> omega_arith
   -- 5: `v'`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_ok h4 (by idx) (by idx) (by idx) hsC cb4 (.inl (by idx))) fun t5 ⟨h5, k5, e5, r5⟩ => ?_
@@ -117,7 +117,7 @@ theorem invU_ok {s : State} {B : Addr} {Z len N A D : Nat} (h : RtWs L s B Z len
   have od6 : slot t6.mem B sOdd = u % 2 := by
     rw [k6.slot hsOdd (by simp), k5.slot hsOdd (by simp), k4.slot hsOdd (by simp), o3']
   refine WP.mono (sel_ok h6 (by idx) (by idx) (by idx) hsOdd
-    (by rw [od6]; omega) (.inl (by idx))) fun t7 ⟨h7, k7, e7, r7⟩ => ?_
+    (by rw [od6]; omega_arith) (.inl (by idx))) fun t7 ⟨h7, k7, e7, r7⟩ => ?_
   rw [od6, e6, k6.num (by idx) (by simp) fA, k5.num (by idx) (by simp) fA, k4.num (by idx) (by simp) fA, u3] at e7
   -- 8, 9: the halving.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
