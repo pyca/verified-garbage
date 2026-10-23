@@ -720,3 +720,82 @@ blr",
         vg_scrypt_blockmix = sym super::scrypt::vg_scrypt_blockmix,
     )
 }
+
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+///
+/// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
+///
+/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The return address, the caller's `r30` and the arguments the calls do not keep are saved in a 112-byte stack frame, to which `r30` points; the calls use the 1008 bytes below it.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `b` must be valid for reads and writes of `128 * blen` bytes.
+/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
+/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `r` must be positive, `blen` must be `p * r` and `vlen` must be `N * r` for parameters that RFC 7914 §6 accepts (`N` a power of two greater than 1 and less than `2^(16 r)`, `0 < p ≤ (2^32 - 1) * 32 / (128 r)`, `0 < out_len ≤ (2^32 - 1) * 32`), and `slen` must be `r + 16`.
+/// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
+/// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 1120 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -112(%r1)
+addi %r12, %r1, 0
+mflr %r0
+std %r0, 32(%r12)
+std %r30, 40(%r12)
+std %r3, 48(%r12)
+std %r4, 56(%r12)
+std %r7, 64(%r12)
+std %r8, 72(%r12)
+std %r9, 80(%r12)
+std %r10, 88(%r12)
+addi %r30, %r12, 0
+li %r7, 1
+rldicr %r9, %r9, 7, 56
+ld %r10, 216(%r30)
+bl {vg_pbkdf2_hmac_sha256_scratch}
+ld %r3, 72(%r30)
+std %r3, 96(%r30)
+20:
+ld %r3, 96(%r30)
+ld %r4, 64(%r30)
+ld %r5, 88(%r30)
+ld %r6, 208(%r30)
+ld %r7, 216(%r30)
+addi %r8, %r4, 2
+bl {vg_scrypt_romix}
+ld %r3, 96(%r30)
+ld %r4, 64(%r30)
+rldicr %r4, %r4, 7, 56
+add %r3, %r3, %r4
+std %r3, 96(%r30)
+ld %r5, 72(%r30)
+ld %r6, 80(%r30)
+rldicr %r6, %r6, 7, 56
+add %r5, %r5, %r6
+subf %r5, %r3, %r5
+cmpldi %cr0, %r5, 0
+bne %cr0, 20b
+ld %r3, 48(%r30)
+ld %r4, 56(%r30)
+ld %r5, 72(%r30)
+ld %r6, 80(%r30)
+rldicr %r6, %r6, 7, 56
+li %r7, 1
+ld %r8, 232(%r30)
+ld %r9, 240(%r30)
+ld %r10, 216(%r30)
+bl {vg_pbkdf2_hmac_sha256_scratch}
+ld %r0, 32(%r30)
+mtlr %r0
+ld %r30, 40(%r30)
+addi %r1, %r1, 112
+blr",
+        vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
+        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
+    )
+}
