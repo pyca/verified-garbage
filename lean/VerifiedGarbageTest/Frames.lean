@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Golden tests for the push and pop of frames
@@ -134,5 +135,65 @@ def x64Entry : Option X86_64.State := x64Push.bind X86_64.call
     fun (r, w) => (r.base, r.len, w)) == some [(0xff0, 16, false)]
 #guard (x64Entry.map fun s => decide (InRegions (s.rd ++ s.wr) (X86_64.stackArgAddr s 0) 16)) ==
   some true
+
+/-! ## PPC64LE -/
+
+def ppc : PPC64LE.State :=
+  { gpr := fun r => if r = .r0 then 0x1122334455667788 else 0, lr := 0, sp := 0x1000,
+    mem := fun _ => 0, rd := [], wr := [⟨0x8000, 8⟩] }
+
+def ppcPush : Option PPC64LE.State := PPC64LE.push (.push .r0) ppc
+
+-- `stdu r1, -48(r1)` stores the back chain (the old `sp`) at the new `sp`; `std r0, 32(r1)`
+-- stores `r0` above the 32-byte header, and the 16 bytes there become a writable region at
+-- the head of `wr`.
+#guard (ppcPush.map fun s => (s.sp, s.mem.read 0xfd0 8, s.mem.read 0xff0 8, s.mem.read 0xfd8 24,
+    s.wr.map (·.base), s.wr.map (·.len))) ==
+  some (0xfd0, 0x1000, 0x1122334455667788, 0, [0xff0, 0x8000], [16, 8])
+
+-- The pop loads its register from the frame, moves `sp` back and removes the region.
+#guard (ppcPush.bind fun s₁ => (PPC64LE.pop (.pop .r9) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .r9, s.wr.map (·.base))) == some (0x1000, 0x1122334455667788, [0x8000])
+
+-- It faults if the stack pointer or the regions are not those the push left.
+#guard (ppcPush.bind fun s₁ => PPC64LE.pop (.pop .r9) s₁ { s₁ with sp := s₁.sp + 16 }).isNone
+#guard (ppcPush.bind fun s₁ => PPC64LE.pop (.pop .r9) s₁ { s₁ with wr := s₁.wr.tail }).isNone
+#guard (PPC64LE.pop (.pop .r9) ppc ppc).isNone
+-- The push faults if the frame would wrap around the address space.
+#guard (PPC64LE.push (.push .r0) { ppc with sp := 32 }).isNone
+-- Neither is an instruction of a block.
+#guard (PPC64LE.exec (.push .r0) ppc).isNone && (PPC64LE.exec (.pop .r0) ppc).isNone
+
+def ppcAlloc : Option PPC64LE.State := PPC64LE.push (.alloc 112) ppc
+
+-- `stdu r1, -112(r1)` stores the back chain at the new `sp`; the 80 bytes above the 32-byte
+-- header become a writable region at the head of `wr`, unwritten.
+#guard (ppcAlloc.map fun s => (s.sp, s.mem.read 0xf90 8, s.mem.read 0xfb0 80 == 0,
+    s.wr.map (·.base), s.wr.map (·.len))) ==
+  some (0xf90, 0x1000, true, [0xfb0, 0x8000], [80, 8])
+-- `addi r9, r1, 32` points at that region.
+#guard (ppcAlloc.bind fun s => (PPC64LE.exec (.addSp .r9 32) s).map (·.gpr .r9)) == some 0xfb0
+#guard (PPC64LE.exec (.addSp .r9 32768) ppc).isNone
+
+-- `addi r1, r1, 112` moves `sp` back and removes the region, changing no register.
+#guard (ppcAlloc.bind fun s₁ => (PPC64LE.pop (.free 112) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .r0, s.wr.map (·.base))) == some (0x1000, 0x1122334455667788, [0x8000])
+-- It faults unless the frame has the size released and `sp` and the regions are those the
+-- push left.
+#guard (ppcAlloc.bind fun s₁ => PPC64LE.pop (.free 96) s₁ s₁).isNone
+#guard (ppcAlloc.bind fun s₁ => PPC64LE.pop (.free 112) s₁ { s₁ with sp := s₁.sp + 16 }).isNone
+#guard (ppcAlloc.bind fun s₁ => PPC64LE.pop (.free 112) s₁ { s₁ with wr := s₁.wr.tail }).isNone
+-- A `push` frame has the shape of an `alloc 48` frame, so `free 48` releases it too, as on
+-- hardware (`addi r1, r1, 48`), without reloading the register.
+#guard (ppcPush.bind fun s₁ => (PPC64LE.pop (.free 48) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .r9, s.wr.map (·.base))) == some (0x1000, 0, [0x8000])
+-- The allocation faults unless its size is a multiple of 16 above 32 and below 4096, or if
+-- it would wrap around the address space.
+#guard (PPC64LE.push (.alloc 32) ppc).isNone && (PPC64LE.push (.alloc 120) ppc).isNone
+#guard (PPC64LE.push (.alloc 4096) { ppc with sp := 0x8000 }).isNone
+#guard (PPC64LE.push (.alloc 4080) { ppc with sp := 0x8000 }).isSome
+#guard (PPC64LE.push (.alloc 112) { ppc with sp := 96 }).isNone
+-- Neither is an instruction of a block.
+#guard (PPC64LE.exec (.alloc 112) ppc).isNone && (PPC64LE.exec (.free 112) ppc).isNone
 
 end VG.Test.Frames
