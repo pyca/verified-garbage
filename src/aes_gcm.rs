@@ -1370,9 +1370,9 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "aarch64")]
         if out.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
+            && let Some(_p) = self.fns.powers
         {
-            return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
+            return Ok(self.seal_pieces_plain(nonce, aad, plaintext, out));
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
@@ -1505,6 +1505,24 @@ impl AesGcm {
     /// `vg_aes_gcm_seal_gather` does), and seals them there with
     /// `seal_prepared`. Which bytes it copies where depends only on the
     /// pieces' lengths (whose sum `encrypt` checked is `out.len()`).
+    /// Experiment: the pieces copied in Rust, then the plain `seal`.
+    #[inline(never)]
+    fn seal_pieces_plain(&self, nonce: &[u8], aad: &[u8], plaintext: &[&[u8]], out: &mut [u8]) -> Block {
+        let mut rest = &mut *out;
+        for piece in plaintext {
+            let (dst, tail) = rest.split_at_mut(piece.len());
+            dst.copy_from_slice(piece);
+            rest = tail;
+        }
+        let seal = self.fns.seal;
+        let mut tag: Block = [0; 16];
+        unsafe {
+            seal(&self.ctx, self.rounds, nonce.as_ptr(), nonce.len(), aad.as_ptr(), aad.len(),
+                out.as_mut_ptr(), out.len(), &mut tag)
+        };
+        tag
+    }
+
     #[inline(never)]
     fn seal_pieces_prepared(
         &self,
