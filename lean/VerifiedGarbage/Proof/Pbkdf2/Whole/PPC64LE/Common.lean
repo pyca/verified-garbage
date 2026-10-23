@@ -122,25 +122,34 @@ section
 variable {F : Fns}
 
 /-- Where the parts of `scratch` are. -/
-theorem layout : F.st0O = 48 + F.Wc ∧ F.st1O = 48 + F.Wc + F.H.S ∧ F.stSO = 48 + F.Wc + 2 * F.H.S ∧
-    F.stWO = 48 + F.Wc + 3 * F.H.S ∧ F.uO = 48 + F.Wc + 4 * F.H.S ∧
-    F.tO = 48 + F.Wc + 4 * F.H.S + F.H.D ∧ F.intO = 48 + F.Wc + 4 * F.H.S + 2 * F.H.D ∧
-    F.bytes = 48 + F.Wc + 4 * F.H.S + 2 * F.H.D + 4 := by
-  dsimp only [Fns.st0O, Fns.st1O, Fns.stSO, Fns.stWO, Fns.uO, Fns.tO, Fns.intO, Fns.bytes, Fns.cO]
+theorem layout : F.st0O = 48 + F.Wc ∧ F.st1O = 48 + F.Wc + F.H.S ∧
+    F.stWO = 48 + F.Wc + 2 * F.H.S ∧ F.uO = 48 + F.Wc + 3 * F.H.S ∧
+    F.tO = 48 + F.Wc + 3 * F.H.S + F.H.D ∧ F.intO = 48 + F.Wc + 3 * F.H.S + 2 * F.H.D ∧
+    F.bytes = 48 + F.Wc + 3 * F.H.S + 2 * F.H.D + 4 := by
+  dsimp only [Fns.st0O, Fns.st1O, Fns.stWO, Fns.uO, Fns.tO, Fns.intO, Fns.bytes, Fns.cO]
   omega
 
 variable (hF : FnsOK F)
 include hF
 
 /-- The sizes the proofs use. -/
-theorem sizes : 0 < F.H.N ∧ F.H.N ≤ 64 ∧ (F.H.B = 64 ∨ F.H.B = 128) ∧ F.H.S = F.H.N + F.H.B ∧
-    0 < F.H.D ∧ F.H.D ≤ F.H.FD ∧ F.H.FD ≤ 64 ∧ F.H.D ≤ F.H.B ∧ F.H.W ≤ 1024 ∧
-    F.H.W + 48 + F.H.S + F.H.FD + F.H.FD ≤ F.Wc ∧ F.bytes ≤ 4096 := by
+structure Sz (F : Fns) : Prop where
+  N : 0 < F.H.N ∧ F.H.N ≤ 64
+  B : F.H.B = 64 ∨ F.H.B = 128
+  S : F.H.S = F.H.N + F.H.B
+  D : 0 < F.H.D ∧ F.H.D ≤ F.H.FD ∧ F.H.FD ≤ 64 ∧ F.H.D ≤ F.H.B
+  D4 : F.H.D % 4 = 0
+  N4 : F.H.N % 4 = 0
+  W : F.H.W ≤ 1024
+  Wc : F.H.W + 48 + F.H.S + F.H.FD + F.H.FD ≤ F.Wc
+  reach : F.bytes ≤ 4096
+
+theorem sizes : Sz F := by
   have hN := hF.hH.dims.N; have hB := hF.hH.dims.B; have hW := hF.hH.dims.so
   have hb := hF.hWc
   simp only [Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes, Impl.Pbkdf2.Stream.PPC64LE.Iter.ub,
     Impl.Pbkdf2.Stream.PPC64LE.Iter.dig, Impl.Pbkdf2.Stream.PPC64LE.Iter.st] at hb
-  exact ⟨hN.1, hN.2, hB, rfl, hF.hH.hD0, hF.hH.hDF, hF.hH.hFD64, hF.hH.hDB, hW.2, hb, hF.reach⟩
+  exact ⟨hN, hB, rfl, ⟨hF.hH.hD0, hF.hH.hDF, hF.hH.hFD64, hF.hH.hDB⟩, hF.hH.hD4, hF.hH.hN4, hW.2, hb, hF.reach⟩
 
 end
 
@@ -197,14 +206,13 @@ structure KR (F : Fns) (X : Nat) (s₀ s : State) : Prop where
   r20 : s.gpr .r20 = s₀.gpr .r6
   r21 : s.gpr .r21 = scr s₀
   r22 : s.gpr .r22 = s₀.gpr .r7
-  r23 : s.gpr .r23 = out s₀
-  r24 : s.gpr .r24 = s₀.gpr .r9
+  r25 : s.gpr .r25 = salt s₀
   un : ∀ r ∈ untouched, s.gpr r = s₀.gpr r
   saved : Saved 0 (scr s₀) s₀.gpr s.mem
   frame : Frame (wrs F X s₀) s₀.mem s.mem
 
 /-- The registers `KR` fixes. -/
-abbrev kregs : List Reg := [.r20, .r21, .r22, .r23, .r24, .r2, .r14, .r15, .r16, .r17, .r18, .r19, .r26, .r27, .r28,
+abbrev kregs : List Reg := [.r20, .r21, .r22, .r25, .r2, .r14, .r15, .r16, .r17, .r18, .r19, .r26, .r27, .r28,
   .r29, .r30, .r31]
 
 theorem kregs_pres : ∀ r ∈ kregs, r ∈ preserved := by decide
@@ -217,7 +225,7 @@ theorem KR.keep {s s' : State} (h : KR F X s₀ s) (hrd : s'.rd = s.rd) (hwr : s
     (hs : ∀ r ∈ rs, Region.Disjoint ⟨scr s₀ + BitVec.ofNat 64 0, 48⟩ r)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ wrs F X s₀, Region.Sub r r') : KR F X s₀ s' :=
   ⟨hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, (hg _ (by simp)).trans h.r20, (hg _ (by simp)).trans h.r21,
-    (hg _ (by simp)).trans h.r22, (hg _ (by simp)).trans h.r23, (hg _ (by simp)).trans h.r24,
+    (hg _ (by simp)).trans h.r22, (hg _ (by simp)).trans h.r25,
     fun r hr => (hg r (by revert r; decide)).trans (h.un r hr), saved_keep h.saved hf hs,
     h.frame.trans (hf.sub hsub)⟩
 
@@ -239,7 +247,7 @@ theorem Wk.ok (hp : Pre F X s₀) (hr : F.bytes ≤ 4096) {r : Region} (h : Wk F
   rcases h with ⟨o, n, rfl, h₁, h₂⟩ | ⟨n, rfl, hn⟩
   · exact ⟨part_disj (s₀ := s₀) hr (.inl h₁) (by omega) h₂, _, by simp, part_sub (s₀ := s₀) h₂⟩
   · exact ⟨((hp.b_s.sub_left (below_stk hp hn)).sub_right (part_sub (s₀ := s₀) (o := 0) (n := 48) (by
-      have := hr; simp only [Fns.bytes, Fns.intO, Fns.tO, Fns.uO, Fns.stWO, Fns.stSO, Fns.st1O, Fns.st0O,
+      have := hr; simp only [Fns.bytes, Fns.intO, Fns.tO, Fns.uO, Fns.stWO, Fns.st1O, Fns.st0O,
         Fns.cO]; omega))).symm, _, by simp, below_stk hp hn⟩
 
 /-- What a call leaves, writing parts of `scratch` after the save area and
