@@ -161,7 +161,7 @@ theorem exec_of_wp {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
 theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     (hb : wordsVal s.mem (s.gpr .r3) (lo s .r6) n < m) :
-    ∃ t s', Exec isa (mulFn n m) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (mulFn n m) s t s' ∧ abiPreserved s s' ∧ (∀ r, r ∉ fnClob → s'.gpr r = s.gpr r) ∧
       wordsVal s'.mem (s.gpr .r3) (lo s .r4) n < m ∧
       wordsVal s'.mem (s.gpr .r3) (lo s .r4) n * 2 ^ (64 * n) % m =
         wordsVal s.mem (s.gpr .r3) (lo s .r5) n * wordsVal s.mem (s.gpr .r3) (lo s .r6) n % m ∧
@@ -174,7 +174,7 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (minv_lt m)]
     exact hM.inv
   have en : (mod n m).n = n := rfl
-  refine WP.mono (mul_ok P (lay hM hp) hinv hbu) fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))),
+  refine WP.mono (mul_ok P (lay hM hp) hinv hbu) fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr,
     by rw [en] at V; exact V, ?_, kept_of hM O₁ O₂⟩
   rw [en] at C
   rw [C]
@@ -187,7 +187,7 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
 /-- `vg_<curve>_add_mod_<p|n>`. -/
 theorem addFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     (hab : wordsVal s.mem (s.gpr .r3) (lo s .r5) n + wordsVal s.mem (s.gpr .r3) (lo s .r6) n < 2 * m) :
-    ∃ t s', Exec isa (addFn n m) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (addFn n m) s t s' ∧ abiPreserved s s' ∧ (∀ r, r ∉ fnClob → s'.gpr r = s.gpr r) ∧
       wordsVal s'.mem (s.gpr .r3) (lo s .r4) n =
         (wordsVal s.mem (s.gpr .r3) (lo s .r5) n + wordsVal s.mem (s.gpr .r3) (lo s .r6) n) % m ∧
       Kept n (s.gpr .r3) (lo s .r4) s.mem s'.mem := by
@@ -198,14 +198,14 @@ theorem addFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
   have hb' := O₁.wordsVal (d := lo s .r6) (k := n) (by have := hp.b; simp only [moAt, tmpAt]; omega)
     (by have := hp.fit; have := hp.a; have := hp.b; omega)
   refine WP.mono (add_ok (M := mod n m) P (lay hM hp) (by simp only [mod]; rw [ha, hb']; exact hab))
-    fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), ?_, kept_of hM O₁ O₂⟩
+    fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr, ?_, kept_of hM O₁ O₂⟩
   have en : (mod n m).n = n := rfl
   rw [en] at V; rw [V, ha, hb']
 
 /-- `vg_<curve>_sub_mod_<p|n>`. -/
 theorem subFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     (ha : wordsVal s.mem (s.gpr .r3) (lo s .r5) n < m) (hb : wordsVal s.mem (s.gpr .r3) (lo s .r6) n < m) :
-    ∃ t s', Exec isa (subFn n m) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (subFn n m) s t s' ∧ abiPreserved s s' ∧ (∀ r, r ∉ fnClob → s'.gpr r = s.gpr r) ∧
       wordsVal s'.mem (s.gpr .r3) (lo s .r4) n =
         (wordsVal s.mem (s.gpr .r3) (lo s .r5) n + m - wordsVal s.mem (s.gpr .r3) (lo s .r6) n) % m ∧
       Kept n (s.gpr .r3) (lo s .r4) s.mem s'.mem := by
@@ -217,7 +217,7 @@ theorem subFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     (by have := hp.fit; have := hp.a; have := hp.b; omega)
   refine WP.mono (sub_ok (M := mod n m) P (lay hM hp) (by simp only [mod]; rw [ha']; exact ha)
     (by simp only [mod]; rw [hb']; exact hb))
-    fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), ?_, kept_of hM O₁ O₂⟩
+    fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr, ?_, kept_of hM O₁ O₂⟩
   have en : (mod n m).n = n := rfl
   rw [en] at V; rw [V, ha', hb']
 

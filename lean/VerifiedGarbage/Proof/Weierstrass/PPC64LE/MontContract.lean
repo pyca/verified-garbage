@@ -85,19 +85,19 @@ theorem keeps_of_kept {k : Nat} (hk : k ≤ 9) {ws : Addr} {o : BitVec 32} {m m'
 
 theorem mul_ppc {M : Modulus} (hM : ModOk M.k M.m) (s : State) (hs : (mulPPC M).pre s) :
     ∃ t s', Exec isa (mulFn M.k M.m) s t s' ∧ abiPreserved s s' ∧ (mulPPC M).post s s' := by
-  obtain ⟨t, s', he, A, V, C, K⟩ := mulFn_ok hM (pre_of hs.1) (by have := hs.2; simp only [arg, numAt_eq] at this; exact this)
+  obtain ⟨t, s', he, A, -, V, C, K⟩ := mulFn_ok hM (pre_of hs.1) (by have := hs.2; simp only [arg, numAt_eq] at this; exact this)
   refine ⟨t, s', he, A, ?_, ?_, keeps_of_kept hM.n9 K⟩
   · rw [numAt_eq]; exact V
   · simp only [arg, numAt_eq, Modulus.R]; exact C
 
 theorem add_ppc {M : Modulus} (hM : ModOk M.k M.m) (s : State) (hs : (addPPC M).pre s) :
     ∃ t s', Exec isa (addFn M.k M.m) s t s' ∧ abiPreserved s s' ∧ (addPPC M).post s s' := by
-  obtain ⟨t, s', he, A, V, K⟩ := addFn_ok hM (pre_of hs.1) (by have := hs.2; simp only [arg, numAt_eq] at this; exact this)
+  obtain ⟨t, s', he, A, -, V, K⟩ := addFn_ok hM (pre_of hs.1) (by have := hs.2; simp only [arg, numAt_eq] at this; exact this)
   exact ⟨t, s', he, A, by simp only [arg, numAt_eq]; exact V, keeps_of_kept hM.n9 K⟩
 
 theorem sub_ppc {M : Modulus} (hM : ModOk M.k M.m) (s : State) (hs : (subPPC M).pre s) :
     ∃ t s', Exec isa (subFn M.k M.m) s t s' ∧ abiPreserved s s' ∧ (subPPC M).post s s' := by
-  obtain ⟨t, s', he, A, V, K⟩ := subFn_ok hM (pre_of hs.1) (by have := hs.2.1; simp only [arg, numAt_eq] at this; exact this)
+  obtain ⟨t, s', he, A, -, V, K⟩ := subFn_ok hM (pre_of hs.1) (by have := hs.2.1; simp only [arg, numAt_eq] at this; exact this)
     (by have := hs.2.2; simp only [arg, numAt_eq] at this; exact this)
   exact ⟨t, s', he, A, by simp only [arg, numAt_eq]; exact V, keeps_of_kept hM.n9 K⟩
 
