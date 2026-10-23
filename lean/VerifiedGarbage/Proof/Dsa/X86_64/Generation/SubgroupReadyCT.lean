@@ -16,7 +16,7 @@ open VG.Impl.Dsa.X86_64.Generation
 
 theorem subgroup_candidate_ready (H : GenerationHashes) {n : Nat}
     {p : SubgroupPublic} {s : State} (h : SubgroupBefore n p s) :
-    WP isa (qCandidate H.sha1 H.sha256) s fun t =>
+    WP isa (qCandidate H.sha1 H.sha256 p.plan.prime.len) s fun t =>
       PrimeFrameInputs p.call t ∧ Scr t p.plan.prime.B p.plan.prime.Z := by
   obtain ⟨W, hw, hs, _, hwr⟩ := h
   let q := p.plan.withWords W hw

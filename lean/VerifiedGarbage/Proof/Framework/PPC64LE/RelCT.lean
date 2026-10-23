@@ -111,4 +111,20 @@ theorem RelCT.frame {r r' : Reg} {body : Prog isa} {P R : State → State → Pr
       refine ⟨?_, show s₁'.sp = s₂'.sp by rw [g₁', g₂', e]⟩
       simp only [addrs, g₁, g₂, e]
 
+/-- A call of verified code, narrowed in each run to regions of its own. -/
+theorem RelCT.callEx {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
+      k.pre (s₁.callEntry.withRegions rd₁ wr₁) ∧ k.pre (s₂.callEntry.withRegions rd₂ wr₂) ∧
+      k.pub (s₁.callEntry.withRegions rd₁ wr₁) (s₂.callEntry.withRegions rd₂ wr₂) ∧
+      Covers (rd₁ ++ wr₁) (s₁.rd ++ s₁.wr) ∧ Covers wr₁ s₁.wr ∧
+      Covers (rd₂ ++ wr₂) (s₂.rd ++ s₂.wr) ∧ Covers wr₂ s₂.wr) :
+    RelCT isa P (.call n c) fun _ _ => True := by
+  refine regionModel.relCT_call hv hct fun s₁ s₂ e₁ e₂ hp h₁ h₂ => ?_
+  rw [call_callEntry, Option.some.injEq] at h₁ h₂
+  subst h₁ h₂
+  obtain ⟨rd₁, wr₁, rd₂, wr₂, p₁, p₂, hpub, c₁, w₁, c₂, w₂⟩ := hP _ _ hp
+  exact ⟨rd₁, wr₁, rd₂, wr₂, p₁, p₂, hpub, c₁, w₁, c₂, w₂, rfl, fun _ _ _ _ _ _ => rfl⟩
+
 end VG.PPC64LE

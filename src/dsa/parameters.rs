@@ -59,7 +59,7 @@ impl Parameters {
         random(&mut witnesses.0)?;
         let mut packed = vec![0; 2 * p_len + q_len];
         let mut scratch = Secret(vec![0u64; 64 * p_len + 1024]);
-        let generate = select(detected());
+        let generate = select(detected(), p_len);
         // SAFETY: the size match establishes the three supported widths.
         // Seed and h tapes contain whole chunks, output has 2*p_len+q_len
         // bytes, and scratch has 64*p_len+1024 words. Every buffer is a
@@ -139,12 +139,13 @@ type Generate = unsafe extern "C" fn(
 ) -> u32;
 
 #[cfg(target_arch = "x86_64")]
-fn select(features: Features) -> Generate {
+fn select(features: Features, p_len: usize) -> Generate {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
         Sha1Backend::select(features),
         Sha256Backend::select(features),
-        features.contains(VG_DSA_GENERATE_PARAMETERS_MR_ADX_FEATURES),
+        features.contains(VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES),
+        p_len,
     )
 }
 
@@ -153,23 +154,34 @@ fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
     adx: bool,
+    p_len: usize,
 ) -> Generate {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    // Match both enums exhaustively, including combinations whose hash
-    // features currently coincide. New hash backends must be propagated here.
-    match (sha1, sha256, adx) {
-        (H1::Scalar, H256::Scalar, false) => vg_dsa_generate_parameters,
-        (H1::Scalar, H256::Scalar, true) => vg_dsa_generate_parameters_mr_adx,
-        (H1::Scalar, H256::Avx2, false) => vg_dsa_generate_parameters_sha256_avx2,
-        (H1::Scalar, H256::Avx2, true) => vg_dsa_generate_parameters_sha256_avx2_mr_adx,
-        (H1::Scalar, H256::ShaNi, false) => vg_dsa_generate_parameters_sha256_shani,
-        (H1::Scalar, H256::ShaNi, true) => vg_dsa_generate_parameters_sha256_shani_mr_adx,
-        (H1::ShaNi, H256::Scalar, false) => vg_dsa_generate_parameters_sha1_shani,
-        (H1::ShaNi, H256::Scalar, true) => vg_dsa_generate_parameters_sha1_shani_mr_adx,
-        (H1::ShaNi, H256::Avx2, false) => vg_dsa_generate_parameters_sha1_shani_sha256_avx2,
-        (H1::ShaNi, H256::Avx2, true) => vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx,
-        (H1::ShaNi, H256::ShaNi, false) => vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-        (H1::ShaNi, H256::ShaNi, true) => vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx,
+    // The public size is validated before selection. Match the active hash's
+    // enum exhaustively so new hash backends reach every generation width.
+    match p_len {
+        128 => match (sha1, adx) {
+            (H1::Scalar, false) => vg_dsa_generate_parameters_1024,
+            (H1::Scalar, true) => vg_dsa_generate_parameters_1024_mr_adx,
+            (H1::ShaNi, false) => vg_dsa_generate_parameters_1024_sha1_shani,
+            (H1::ShaNi, true) => vg_dsa_generate_parameters_1024_sha1_shani_mr_adx,
+        },
+        256 => match (sha256, adx) {
+            (H256::Scalar, false) => vg_dsa_generate_parameters_2048,
+            (H256::Scalar, true) => vg_dsa_generate_parameters_2048_mr_adx,
+            (H256::Avx2, false) => vg_dsa_generate_parameters_2048_sha256_avx2,
+            (H256::Avx2, true) => vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx,
+            (H256::ShaNi, false) => vg_dsa_generate_parameters_2048_sha256_shani,
+            (H256::ShaNi, true) => vg_dsa_generate_parameters_2048_sha256_shani_mr_adx,
+        },
+        _ => match (sha256, adx) {
+            (H256::Scalar, false) => vg_dsa_generate_parameters_3072,
+            (H256::Scalar, true) => vg_dsa_generate_parameters_3072_mr_adx,
+            (H256::Avx2, false) => vg_dsa_generate_parameters_3072_sha256_avx2,
+            (H256::Avx2, true) => vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx,
+            (H256::ShaNi, false) => vg_dsa_generate_parameters_3072_sha256_shani,
+            (H256::ShaNi, true) => vg_dsa_generate_parameters_3072_sha256_shani_mr_adx,
+        },
     }
 }
 
@@ -177,7 +189,7 @@ fn select_backends(
 mod tests;
 
 #[cfg(target_arch = "x86")]
-fn select(features: Features) -> Generate {
+fn select(features: Features, _p_len: usize) -> Generate {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
         Sha1Backend::select(features),
@@ -200,7 +212,7 @@ fn select_backends(
 }
 
 #[cfg(target_arch = "aarch64")]
-fn select(features: Features) -> Generate {
+fn select(features: Features, _p_len: usize) -> Generate {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
         Sha1Backend::select(features),
@@ -234,7 +246,7 @@ fn select_backends(
         target_os = "openbsd"
     )
 ))]
-fn select(features: Features) -> Generate {
+fn select(features: Features, _p_len: usize) -> Generate {
     select_backends(features.contains(VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES))
 }
 
@@ -265,6 +277,6 @@ fn select_backends(umaal: bool) -> Generate {
         target_os = "openbsd"
     ))
 ))]
-fn select(_features: Features) -> Generate {
+fn select(_features: Features, _p_len: usize) -> Generate {
     vg_dsa_generate_parameters
 }
