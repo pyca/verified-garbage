@@ -74,7 +74,9 @@ class FetchLeanCacheTests(unittest.TestCase):
         FakeRegistry.digest = DIGEST
         FakeRegistry.ranges = []
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), FakeRegistry)
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        # A short poll, so that `shutdown` in tearDown does not wait out the default
+        # half second.
+        threading.Thread(target=self.server.serve_forever, args=(0.01,), daemon=True).start()
         self.sleeps = []
 
     def tearDown(self):

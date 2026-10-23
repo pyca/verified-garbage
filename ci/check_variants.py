@@ -70,11 +70,15 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ASM = ROOT / "src" / "asm"
 
+# A function's header; its body ends at the first line starting with `}`.
 FN = re.compile(
-    r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n(.*?)^\}",
+    r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n",
     re.MULTILINE | re.DOTALL,
 )
-SYM = re.compile(r"\w+ = sym (?:\w+::)*(vg_\w+)")
+# `<operand> = sym <path>`, found from the literal ` = sym ` (a leading
+# `\w+` would be tried at every word character of the code: 30 times slower).
+SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
+WORD = re.compile(r"\w")
 FEATURES = re.compile(
     r"^pub\(crate\) const (VG_\w+)_FEATURES: crate::cpu::Features = "
     r"crate::cpu::Features::of\(&\[(.*?)\]\);",
@@ -82,24 +86,44 @@ FEATURES = re.compile(
 )
 
 
-def functions():
+def sources():
+    """Each generated file's target and text."""
+    return [(path.parent.name, path.read_text()) for path in sorted(ASM.glob("*/*.rs"))]
+
+
+def bodies(text):
+    """Each generated function's name, parameters, return type and body."""
+    pos = 0
+    while m := FN.search(text, pos):
+        start = m.end()
+        end = start if text.startswith("}", start) else text.find("\n}", start) + 1
+        if not end:
+            return
+        yield (*m.groups(), text[start:end])
+        pos = end
+
+
+def callees(body):
+    return {m.group(1) for m in SYM.finditer(body) if m.start() and WORD.match(body, m.start() - 1)}
+
+
+def functions(srcs):
     """For each target, each generated function's signature and callees."""
     targets = {}
-    for path in sorted(ASM.glob("*/*.rs")):
-        fns = targets.setdefault(path.parent.name, {})
-        for m in FN.finditer(path.read_text()):
-            name, params, ret, body = m.groups()
-            fns[name] = ((params, (ret or "").strip()), set(SYM.findall(body)))
+    for target, text in srcs:
+        fns = targets.setdefault(target, {})
+        for name, params, ret, body in bodies(text):
+            fns[name] = ((params, (ret or "").strip()), callees(body))
     return targets
 
 
-def features():
+def features(srcs):
     """For each target, the CPU features each generated function needs, by
     its name (functions that need none are left out)."""
     targets = {}
-    for path in sorted(ASM.glob("*/*.rs")):
-        feats = targets.setdefault(path.parent.name, {})
-        for m in FEATURES.finditer(path.read_text()):
+    for target, text in srcs:
+        feats = targets.setdefault(target, {})
+        for m in FEATURES.finditer(text):
             feats[m.group(1).lower()] = frozenset(re.findall(r'"(\w+)"', m.group(2)))
     return targets
 
@@ -386,6 +410,9 @@ def production_rust(src):
 
 def check(targets, rust, feats=None):
     errors = []
+    # The identifiers of the Rust code: `name` is one exactly when
+    # `\bname\b` matches it, and a set answers without scanning the code.
+    words = set(re.findall(r"\w+", rust))
     for target, fns in sorted(targets.items()):
         var = variants(fns)
         errors += best_callees(target, fns, var, (feats or {}).get(target, {}))
@@ -420,7 +447,7 @@ def check(targets, rust, feats=None):
             Rust code does not use `name`, and every function calling it has a
             variant for `suffix` that does not (or, without one, is itself a
             function whose variant nothing would call)."""
-            if name in seen or not callers.get(name) or re.search(rf"\b{name}\b", rust):
+            if name in seen or not callers.get(name) or name in words:
                 return False
             for h in callers[name]:
                 found = variants_for(h, suffix)
@@ -465,7 +492,7 @@ def check(targets, rust, feats=None):
                         )
         called = set().union(*(c for _, c in fns.values())) if fns else set()
         for name in sorted(var):
-            if name not in called and not re.search(rf"\b{name}\b", rust):
+            if name not in called and name not in words:
                 errors.append(
                     f"{target}: the variant {name} is neither called by another generated "
                     f"function nor used by the Rust code in src/ (outside src/asm/ and tests): "
@@ -510,7 +537,8 @@ def best_callees(target, fns, var, feats):
 
 
 def main():
-    errors = check(functions(), production_rust(ROOT / "src"), features())
+    srcs = sources()
+    errors = check(functions(srcs), production_rust(ROOT / "src"), features(srcs))
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

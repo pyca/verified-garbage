@@ -31,6 +31,7 @@ LEAN = ROOT / "lean" / "VerifiedGarbage"
 # The start of an import: `import`, and in a module `public`, `meta` and
 # `all` imports.
 IMPORT = r"\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?"
+IMPORT_ANY = re.compile(IMPORT + r"(\S+)")
 
 ALLOWED_IMPORTS = {
     "TCB": ("Lean", "VerifiedGarbage.TCB."),
@@ -61,24 +62,31 @@ def tcb_lemmas(lean: pathlib.Path) -> list[str]:
     return out
 
 
+def imports(f: pathlib.Path):
+    """Each import of `f`, with its line number."""
+    for n, line in enumerate(f.read_text().splitlines(), 1):
+        # Most lines are not imports: skip them before matching.
+        if "import" in line and (m := IMPORT_ANY.match(line)):
+            yield n, m.group(1)
+
+
 def main() -> int:
     errors = tcb_lemmas(LEAN)
     targets = {p.name for p in (LEAN / "TCB").iterdir() if p.is_dir()}
+    lean = len(str(LEAN)) + 1
     for f in sorted(LEAN.rglob("*.lean")):
-        own = target_of(f.relative_to(LEAN).with_suffix("").parts, targets)
+        own = target_of(str(f)[lean : -len(".lean")].split("/"), targets)
         if own is None:
             continue
-        for n, line in enumerate(f.read_text().splitlines(), 1):
-            m = re.match(IMPORT + r"(VerifiedGarbage\.\S+)", line)
-            other = m and target_of(m.group(1).split("."), targets)
+        for n, mod in imports(f):
+            other = mod.startswith("VerifiedGarbage.") and target_of(mod.split("."), targets)
             if other and other != own:
-                errors.append(f"{f.relative_to(ROOT)}:{n}: a module of {own} may not import {m.group(1)}, of {other}")
+                errors.append(f"{f.relative_to(ROOT)}:{n}: a module of {own} may not import {mod}, of {other}")
     for d, prefixes in ALLOWED_IMPORTS.items():
         for f in sorted((LEAN / d).rglob("*.lean")):
-            for n, line in enumerate(f.read_text().splitlines(), 1):
-                m = re.match(IMPORT + r"(\S+)", line)
-                if m and not allowed(m.group(1), prefixes):
-                    errors.append(f"{f.relative_to(ROOT)}:{n}: {d}/ may not import {m.group(1)}")
+            for n, mod in imports(f):
+                if not allowed(mod, prefixes):
+                    errors.append(f"{f.relative_to(ROOT)}:{n}: {d}/ may not import {mod}")
     for e in errors:
         print(e, file=sys.stderr)
     if not errors:
