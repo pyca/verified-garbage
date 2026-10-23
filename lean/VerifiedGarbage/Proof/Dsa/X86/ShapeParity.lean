@@ -38,15 +38,15 @@ theorem shapeParity_ok {s : State} {base : Addr} {size n : Nat}
   change 64 ≤ contextBytes n at bh
   simp only [stride] at b0
   unfold Shape.parity
-  refine wp_movS (readSrc_sc hs (d := slot n 0) (by omega)) fun s1 u1 _ => ?_
+  refine wp_movS (readSrc_sc hs (d := slot n 0) (by omega_arith)) fun s1 u1 _ => ?_
   have hs1 := hs.of_keeps u1.keeps (by decide)
-  refine wp_logicS (.inl rfl) (readSrc_sc hs1 (d := 56) (by omega)) fun s2 u2 => ?_
+  refine wp_logicS (.inl rfl) (readSrc_sc hs1 (d := 56) (by omega_arith)) fun s2 u2 => ?_
   refine wp_logicS (.inl rfl) rfl fun s3 u3 => ?_
   refine wp_movS rfl fun s4 u4 _ => ?_
   refine wp_subS rfl fun s5 u5 _ => ?_
   have K : Keeps [.eax, .edx] s s5 := ((((u1.keeps.mono (by decide)).widen u2.keeps).widen u3.keeps).widen u4.keeps).widen u5.keeps
   have hs5 := hs.of_keeps K (by decide)
-  refine wp_storeS (hs5.ea (d := 56) (by omega)) (hs5.write (d := 56) (n := 4) (by omega)) fun t mt =>
+  refine wp_storeS (hs5.ea (d := 56) (by omega_arith)) (hs5.write (d := 56) (n := 4) (by omega_arith)) fun t mt =>
     WP.block_nil ⟨?_, K.trans (mt.keeps _), ?_⟩
   · rw [shapeWord, mt.mem, Mem.readW_writeW_self32, u5.gpr, u4.gpr,
       u4.other .edx (by decide), u3.gpr, u2.gpr, u1.gpr, u1.mem]
