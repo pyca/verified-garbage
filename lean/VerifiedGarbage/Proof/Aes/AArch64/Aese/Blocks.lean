@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
@@ -539,6 +539,29 @@ theorem blocks_correct (B : BlockFn) {setup : List Instr}
   obtain ⟨t, s', he, h₂, h₁⟩ := WP.gprs (rs := preserved) (bcorrect B (bpre_of hp) (hs s (bpre_of hp))) hg hnc
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he hv⟩, h₂⟩
 
+/-- A run of the functions changes no byte outside the data. -/
+theorem blocks_frame (B : BlockFn) {setup : List Instr}
+    (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
+      BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
+    {s : State} (hp : BPre s) {t : List Leak} {s' : State} (he : Exec isa (blocks setup B.f) s t s') :
+    Frame [bdR s] s.mem s'.mem := by
+  obtain ⟨t', s'', he', hf⟩ : WP isa (blocks setup B.f) s fun s' => Frame [bdR s] s.mem s'.mem :=
+    WP.seq (WP.mono (hs s hp) fun _ ⟨hI₁, h13⟩ => WP.mono (loops_ok B hp hI₁ h13) fun _ hI => hI.frame)
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  exact hf
+
+/-- So they write none of `scratch` (`Artifact.written`). -/
+theorem blocks_scratch (B : BlockFn) {setup : List Instr}
+    (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
+      BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
+    {s : State} (hp : BPre s) {t : List Leak} {s' : State} (he : Exec isa (blocks setup B.f) s t s')
+    {i : Nat} (hi : i < 2048) :
+    s'.mem (s.gpr .x4 + BitVec.ofNat 64 i) = s.mem (s.gpr .x4 + BitVec.ofNat 64 i) :=
+  blocks_frame B hs hp he _ fun r hr hc => by
+    rw [List.mem_singleton] at hr
+    subst hr
+    exact hp.d_s _ hc (Offset.contains_base _ (by omega) (by omega))
+
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' :=
@@ -569,16 +592,38 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.in
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+theorem encryptBlocks_implies :
+    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).Implies (Spec.Aes.encryptBlocksContract AArch64.abi) := by
+  sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+    AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat
+
+theorem decryptBlocks_implies :
+    (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).Implies (Spec.Aes.decryptBlocksContract AArch64.abi) := by
+  sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+    AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat
+
 theorem encryptBlocks_verified :
     Verified AArch64.target encryptBlocks (Spec.Aes.encryptBlocksContract AArch64.abi) :=
-  Verified.of_correct encryptBlocks_correct encryptBlocks_ct (by
-    sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
-      AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat)
+  Verified.of_correct encryptBlocks_correct encryptBlocks_ct encryptBlocks_implies
 
 theorem decryptBlocks_verified :
     Verified AArch64.target decryptBlocks (Spec.Aes.decryptBlocksContract AArch64.abi) :=
-  Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
-      AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat)
+  Verified.of_correct decryptBlocks_correct decryptBlocks_ct decryptBlocks_implies
+
+theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Spec.Aes.encryptBlocksContract AArch64.abi).pre s) (he : Exec isa encryptBlocks s t s') :
+    Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
+  have hp := bpre_of (encryptBlocks_implies.pre s hs)
+  simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  exact fun i h => blocks_scratch encFn (fun _ hp => encSetup_ok hp) hp he (by simpa [Elem.size] using h)
+
+theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Spec.Aes.decryptBlocksContract AArch64.abi).pre s) (he : Exec isa decryptBlocks s t s') :
+    Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
+  have hp := bpre_of (decryptBlocks_implies.pre s hs)
+  simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  exact fun i h => blocks_scratch decFn (fun _ hp => decSetup_ok hp) hp he (by simpa [Elem.size] using h)
 
 end VG.Proof.Aes.AArch64.Aese

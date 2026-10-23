@@ -109,8 +109,10 @@ def artifacts : List Artifact := [
   Spec.Aes.encryptBlocksApi.artifact X86_64.target {
     suffix := "_aesni"
     notes := ["Uses AES-NI: eight blocks at a time, then one at a time."]
+    written := [("scratch", 0)]
     code := Impl.Aes.X86_64.AesNi.encryptBlocks
     verified := Proof.Aes.X86_64.AesNi.encryptBlocks_verified
+    writtenOk := Proof.Aes.X86_64.AesNi.encryptBlocks_written
     features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact X86_64.target {
     suffix := "_aesni"
@@ -124,8 +126,10 @@ def artifacts : List Artifact := [
     suffix := "_vaes"
     notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks \
         left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`."]
+    written := [("scratch", 0)]
     code := Impl.Aes.X86_64.VaesBlocks.encryptBlocks
     verified := Proof.Aes.X86_64.VaesBlocks.encryptBlocks_verified
+    writtenOk := Proof.Aes.X86_64.VaesBlocks.encryptBlocks_written
     features := ["aes", "avx", "avx2", "vaes"] },
   Spec.Aes.decryptBlocksApi.artifact X86_64.target {
     suffix := "_vaes"
