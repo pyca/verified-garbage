@@ -44,6 +44,16 @@ Modelling choices:
   "Notation", `MEM(x, y)`), i.e. a little-endian read (`Mem.read`).
 * Instructions whose timing depends on their operands (e.g. `divd`) must
   never be added: the constant-time leakage model assumes they do not exist.
+  The Power ISA makes no architectural promise about multiply timing. The
+  model has only the 64-bit multiplies `mulld` and `mulhdu`, which T.
+  Pornin's survey ("Constant-Time Mul", BearSSL,
+  https://www.bearssl.org/ctmul.html) reports as constant time on POWER8 and
+  POWER9 in 64-bit mode (its table: "Y" for every multiply on both, "POWER8
+  and POWER9 have constant-time multiplications"), the cores of the baseline
+  ISA of `powerpc64le-unknown-linux-gnu` (Power ISA 2.07, POWER8) and its
+  successor; it does not cover POWER10 or later. The 32-bit `mullw` is left
+  out: the survey notes that older cores may terminate it early depending
+  on its operands.
 * Calls are `bl` and returns `blr` (Book I §2.4, "Branch Instructions"). The
   return addresses are the next of the state's `unknowns`, which nothing
   constrains (see `TCB/Code.lean`). Linkage code the linker may put between
@@ -114,6 +124,10 @@ inductive Instr
   | add (d n m : Reg)
   /-- `subf RT, RB, RA` (extended mnemonic `sub RT, RA, RB`): `d := n - m` -/
   | sub (d n m : Reg)
+  /-- `mulld RT, RA, RB`: the low 64 bits of the product -/
+  | mul (d n m : Reg)
+  /-- `mulhdu RT, RA, RB`: the high 64 bits of the unsigned product -/
+  | mulhu (d n m : Reg)
   /-- `addi RT, RA, SI` with `0 ≤ SI < 2 ^ 15`, `RA ≠ 0` -/
   | addi (d n : Reg) (imm : Nat)
   /-- `addi RT, RA, -imm` (extended mnemonic `subi`), `0 ≤ imm ≤ 2 ^ 15`,
@@ -242,6 +256,12 @@ abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
   Shifted" (`lis RT, SI` is `addis RT, 0, SI`: `RT ← EXTS(SI ||
   0x0000)`); the non-record, non-overflow forms, which set no other
   register;
+* §3.3.9.1, "64-bit Fixed-Point Arithmetic Instructions": "Multiply Low
+  Doubleword" (`prod0:127 ← (RA) × (RB)`, `RT ← prod64:127`: the low 64
+  bits of the product, which are the same for signed and unsigned
+  operands) and "Multiply High Doubleword Unsigned" (`prod0:127 ← (RA) ×u
+  (RB)`, `RT ← prod0:63`: the high 64 bits of the unsigned product); the
+  non-record, non-overflow forms, which set no other register;
 * §3.3.13 "OR Immediate" (`RA ← (RS) | (48 0 || UI)`), "OR Immediate
   Shifted" (`RA ← (RS) | (32 0 || UI || 16 0)`), "AND", "OR", "XOR" (the
   non-record forms);
@@ -273,6 +293,9 @@ abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
 def exec : Instr → State → Option State
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
+  | .mul d n m, s => some (s.write d (s.gpr n * s.gpr m))
+  | .mulhu d n m, s =>
+    some (s.write d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64)))
   | .addi d n imm, s =>
     if n ≠ .r0 ∧ imm < 2 ^ 15 then some (s.write d (s.gpr n + BitVec.ofNat 64 imm)) else none
   | .subi d n imm, s =>
