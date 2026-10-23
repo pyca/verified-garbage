@@ -22,7 +22,8 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -499,7 +500,8 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 fn tls_records(c: &mut Criterion) {
     /// The payloads: a full record, a common web record, and smaller ones,
@@ -644,7 +646,8 @@ impl AsRef<[u8]> for Aligned {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: &str) {
     use std::hint::black_box;
@@ -820,7 +823,8 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 fn tls_connection_rows(c: &mut Criterion) {
     use std::hint::black_box;
@@ -922,7 +926,8 @@ fn tls_connection_rows(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 fn key_setup_rows(c: &mut Criterion) {
     use std::hint::black_box;
@@ -968,6 +973,7 @@ fn key_setup_rows(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 )))]
 pub fn bench(_: &mut Criterion) {}
