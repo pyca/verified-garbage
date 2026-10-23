@@ -89,4 +89,12 @@ theorem mulDS_ok (d a b : XReg) (s : State) (ha8 : a ≠ .xmm8) (ha9 : a ≠ .xm
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
+/-- The registers a step uses for itself, and the reduction constant. -/
+def scratch : List XReg := [.xmm1, .xmm8, .xmm9, .xmm10, .xmm11]
+
+theorem not_scratch {r : XReg} (h : r ∉ scratch) :
+    r ≠ .xmm1 ∧ r ≠ .xmm8 ∧ r ≠ .xmm9 ∧ r ≠ .xmm10 ∧ r ≠ .xmm11 := by
+  simp only [scratch, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
+  exact h
+
 end VG.Proof.Gcm.X86_64.PrepareAvx

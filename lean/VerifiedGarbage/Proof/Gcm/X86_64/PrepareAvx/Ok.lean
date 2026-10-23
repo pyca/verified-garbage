@@ -7,9 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
@@ -54,9 +52,6 @@ def setupS : List Instr :=
 theorem lane0_prepare16 :
     lane0Block (setup ++ plan.flatMap step) = some (setupS ++ plan.flatMap stepS) := by
   decide +kernel
-
-/-- The registers a step uses for itself, and the reduction constant. -/
-def scratch : List XReg := [.xmm1, .xmm8, .xmm9, .xmm10, .xmm11]
 
 /-- Each step's operands hold powers adding up to its own, which is one of
 the first 48, and no step writes or reads a scratch register. -/
@@ -140,11 +135,6 @@ theorem store_ok {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} 
       exact ⟨k1, k48, by rw [readW_sep k1 k48 h1 h48 hkn]; exact hs⟩
   · rw [m']
     exact hi.fr.writeW (List.mem_singleton_self _) _ (Offset.contains C (by omega) (by omega) (by decide))
-
-theorem not_scratch {r : XReg} (h : r ∉ scratch) :
-    r ≠ .xmm1 ∧ r ≠ .xmm8 ∧ r ≠ .xmm9 ∧ r ≠ .xmm10 ∧ r ≠ .xmm11 := by
-  simp only [scratch, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
-  exact h
 
 theorem lookup_cons {env : List (XReg × Nat)} {d r : XReg} {n : Nat} :
     ((d, n) :: env).lookup r = if r = d then some n else env.lookup r := by
