@@ -30,7 +30,7 @@ open VG.PPC64LE
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Impl.Pbkdf2.Stream.PPC64LE.Iter (st dig ub bytes)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK untouched untouched_pres Saved saved_keep)
-open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_li wp_mov wp_addi contains_offset)
+open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_li wp_mov wp_addi wp_subi contains_offset)
 open VG.Proof.Hmac.Stream.PPC64LE.Init (cover_self cover_pre cover_off Regs)
 open VG.WriteBytes (writeBytes)
 open Spec.Sha256 (bytesAt)
@@ -431,6 +431,229 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
     rw [VG.Proof.Hmac.Stream.PPC64LE.bytesAt_take _ _ hDF, hfin₁₂ _ (by rw [m₁₁]; exact hI₇)
       (by rw [hl]; omega)
       (by rw [x₁₁.other _ (by decide), x₁₀.other _ (by decide), x₉.gpr, hl]), hH.hashTake]
-  sorry
+  -- The outer key state's hash value over `st`'s.
+  refine WP.seq (VG.Proof.Hmac.Stream.PPC64LE.copy32_ok (src := .r20) (dst := .r21) (by decide) (by decide)
+    (by decide) (by decide) H.S (st H) (H.N / 4)
+    ⟨by have := hz.S; omega, by have := hz.S; have := hz.W; show H.W + 48 + 4 * (H.N / 4) ≤ 2 ^ 15; omega⟩
+    _ s₁₂ _
+    (fun k hk => in_rdwr (by rw [r₁₂.rd, r₁₂.wr, ← hr.rd, ← hr.wr]; exact kRW)
+      (by rw [v₁₂.r20, ← add_off]; exact contains_at (by simp only [Hash.S] at *; omega) (by have := hz.S; omega)))
+    (fun k hk => in_wr (by rw [r₁₂.wr, ← hr.wr]; exact scW)
+      (by rw [v₁₂.r21, ← add_off]; exact contains_at (by rw [← hst]; simp only [Hash.S] at *; omega) hbl))
+    (by
+      rw [v₁₂.r20, v₁₂.r21, hNq]
+      exact hp.k_s.sep (contains_at (by simp only [Hash.S]; omega) (by have := hz.S; omega))
+        (contains_at (by rw [← hst]; simp only [Hash.S]; omega) hbl))
+    fun s₁₃ g₁₃ rd₁₃ wr₁₃ sp₁₃ m₁₃ => ?_)
+  rw [v₁₂.r20, v₁₂.r21, hNq] at m₁₃
+  have fS₁₃ : Frame [stR] s₁₂.mem s₁₃.mem := by
+    rw [m₁₃]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by
+      rw [VG.Proof.Hmac.Common.bytesAt_length]; exact contains_start (by simp only [Hash.S]; omega))
+  have v₁₃ : Vars s₀ s₁₃ := v₁₂.of_keep fun r _ _ _ _ _ h8 _ _ => g₁₃ r h8
+  have hO₁₃ : hH.SH.Repr s₁₃.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 opad) := by
+    refine hH.reloc s₀.mem s₁₃.mem (kp s₀ + BitVec.ofNat 64 H.S) _ _ (by simp [xorPad, hk0]) (fun i hi => ?_) hO
+    rw [m₁₃, VG.Proof.Hmac.Common.writeBytes_at _ _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length]; exact hi)
+      (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega),
+      VG.Proof.Hmac.Common.bytesAt_getD' _ _ hi, ← add_off]
+    exact key_keep _ f₁₂' (H.S + i) (by simp only [Hash.S] at *; omega)
+  have d₁₃ : bytesAt s₁₃.mem (scr s₀ + BitVec.ofNat 64 (dig H)) H.D = hH.SH.H.hash (xorPad k0 ipad ++ U) := by
+    rw [keep fS₁₃ (by simp only [List.mem_singleton]; rintro r rfl; exact ((st_dig hz _).sub_right dsub).symm)
+      (by omega), hd₁₂]
+  -- `update` with the inner digest.
+  refine wp_addi (by have := hz.W; show H.W + 48 < 2 ^ 15; omega) fun s₁₄ x₁₄ =>
+    wp_li (by rcases hB with h | h <;> rw [h] <;> decide) fun s₁₅ x₁₅ =>
+    wp_addi (by have := hz.W; have := hz.S; show H.W + 48 + H.S < 2 ^ 15; omega) fun s₁₆ x₁₆ =>
+    wp_li (by omega) fun s₁₇ x₁₇ => wp_mov fun s₁₈ x₁₈ => WP.block_nil ?_
+  have r₁₈ : Regs s₀ s₁₈ :=
+    ⟨by rw [x₁₈.rd, x₁₇.rd, x₁₆.rd, x₁₅.rd, x₁₄.rd, rd₁₃, r₁₂.rd],
+      by rw [x₁₈.wr, x₁₇.wr, x₁₆.wr, x₁₅.wr, x₁₄.wr, wr₁₃, r₁₂.wr],
+      by rw [x₁₈.sp, x₁₇.sp, x₁₆.sp, x₁₅.sp, x₁₄.sp, sp₁₃, r₁₂.sp]⟩
+  have m₁₈ : s₁₈.mem = s₁₃.mem := by rw [x₁₈.mem, x₁₇.mem, x₁₆.mem, x₁₅.mem, x₁₄.mem]
+  have v₁₈ : Vars s₀ s₁₈ := v₁₃.of_keep fun r a b c d e _ _ _ => by
+    rw [x₁₈.other r e, x₁₇.other r d, x₁₆.other r c, x₁₅.other r b, x₁₄.other r a]
+  refine WP.seq (hH.callUpd_ok (st := scr s₀ + BitVec.ofNat 64 (st H)) (dat := scr s₀ + BitVec.ofNat 64 (dig H))
+    (scr := scr s₀) (len := H.D)
+    (by rw [x₁₈.other _ (by decide), x₁₇.other _ (by decide), x₁₆.other _ (by decide), x₁₅.other _ (by decide),
+      x₁₄.gpr, v₁₃.r21])
+    (by rw [x₁₈.other _ (by decide), x₁₇.other _ (by decide), x₁₆.gpr, x₁₅.other _ (by decide),
+      x₁₄.other _ (by decide), v₁₃.r21])
+    (by rw [x₁₈.other _ (by decide), x₁₇.gpr]; exact VG.Proof.MdStream.PPC64LE.toNat_ofNat_lt (by omega))
+    (by rw [x₁₈.gpr, x₁₇.other _ (by decide), x₁₆.other _ (by decide), x₁₅.other _ (by decide),
+      x₁₄.other _ (by decide), v₁₃.r21])
+    (w_st hz _).symm ((st_dig hz _).sub_right dsub).symm ((w_dig hz _).sub_right dsub).symm
+    (by rw [r₁₈.sp]; exact hp.sp48) (by rw [r₁₈.sp]; exact hp.ss.sub_right (st_sub _))
+    (by rw [r₁₈.sp]; exact hp.ss.sub_right (fun a h => dig_sub _ a (dsub a h)))
+    (by rw [r₁₈.sp]; exact hp.ss.sub_right (w_sub _))
+    (by
+      rw [r₁₈.rd, r₁₈.wr, ← hr.rd, ← hr.wr]
+      refine Covers.of_sub fun r hr => ?_
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact cS (by rw [← hst]; simp [dig] <;> omega)
+      · exact cS (by rw [← hst]; omega)
+      · exact cS0)
+    (by
+      rw [r₁₈.wr, ← hr.wr]
+      refine Covers.of_sub fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact cW (by rw [← hst]; omega)
+      · exact cW0)
+    fun s₁₉ rd₁₉ wr₁₉ sp₁₉ f₁₉ cs₁₉ hup₁₉ => ?_)
+  rw [r₁₈.sp] at f₁₉
+  have r₁₉ : Regs s₀ s₁₉ := ⟨rd₁₉.trans r₁₈.rd, wr₁₉.trans r₁₈.wr, sp₁₉.trans r₁₈.sp⟩
+  have v₁₉ : Vars s₀ s₁₉ := v₁₈.of_pres cs₁₉
+  have fr₁₉ : ∀ r ∈ [stR, wR] ++ [below s₀.sp 48], ∃ r' ∈ all H s₀, Region.Sub r r' := by
+    intro r hr
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact inAll _ (st_sub _)
+    · exact inAll _ (w_sub _)
+    · exact spAll
+  have f₁₉' : Frame (all H s₀) s₀.mem s₁₉.mem := f₁₂'.trans
+    ((fS₁₃.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inAll _ (st_sub _)).trans
+      (by rw [← m₁₈]; exact f₁₉.sub fr₁₉))
+  have sv₁₉ : Saved H.W (scr s₀) s₀.gpr s₁₉.mem := saved_keep (by
+      rw [m₁₈]; exact saved_keep sv₁₂ fS₁₃ (by simp only [List.mem_singleton]; rintro r rfl; exact sv_st hz _))
+    f₁₉ (by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl | rfl)
+      · exact sv_st hz _
+      · exact (w_sv hz _).symm
+      · exact (hp.ss.sub_right (sv_sub _)).symm)
+  have tk₁₉ : ∀ r ∈ [stR, wR] ++ [below s₀.sp 48], Region.Disjoint (tR H s₀) r := by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact hp.t_s.sub_right (st_sub _)
+    · exact hp.t_s.sub_right (w_sub _)
+    · exact hp.st.symm
+  have t₁₉ : bytesAt s₁₉.mem (tp s₀) H.D = bytesAt s.mem (tp s₀) H.D := by
+    rw [keep f₁₉ tk₁₉ (by omega), m₁₈, keep fS₁₃ (by
+      simp only [List.mem_singleton]; rintro r rfl; exact hp.t_s.sub_right (st_sub _)) (by omega), t₁₂]
+  have hO₁₉ : hH.SH.Repr s₁₉.mem (scr s₀ + BitVec.ofNat 64 (st H))
+      (xorPad k0 opad ++ hH.SH.H.hash (xorPad k0 ipad ++ U)) := by
+    have := hup₁₉ _ (by rw [m₁₈]; exact hO₁₃)
+      (by rw [x₁₈.other _ (by decide), x₁₇.other _ (by decide), x₁₆.other _ (by decide), x₁₅.gpr]
+          simp [xorPad, hk0])
+    rwa [m₁₈, d₁₃] at this
+  -- `finalize` into `ub`.
+  refine WP.seq (wp_addi (by have := hz.W; show H.W + 48 < 2 ^ 15; omega) fun s₂₀ x₂₀ =>
+    wp_li (by rcases hB with h | h <;> rw [h] <;> omega) fun s₂₁ x₂₁ =>
+    wp_addi (by have := hz.W; have := hz.S; have := hz.FD; show H.W + 48 + H.S + H.FD < 2 ^ 15; omega)
+      fun s₂₂ x₂₂ =>
+    wp_mov fun s₂₃ x₂₃ => WP.block_nil ?_)
+  have r₂₃ : Regs s₀ s₂₃ :=
+    ⟨by rw [x₂₃.rd, x₂₂.rd, x₂₁.rd, x₂₀.rd, r₁₉.rd], by rw [x₂₃.wr, x₂₂.wr, x₂₁.wr, x₂₀.wr, r₁₉.wr],
+      by rw [x₂₃.sp, x₂₂.sp, x₂₁.sp, x₂₀.sp, r₁₉.sp]⟩
+  have m₂₃ : s₂₃.mem = s₁₉.mem := by rw [x₂₃.mem, x₂₂.mem, x₂₁.mem, x₂₀.mem]
+  have v₂₃ : Vars s₀ s₂₃ := v₁₉.of_keep fun r a b c d _ _ _ _ => by
+    rw [x₂₃.other r d, x₂₂.other r c, x₂₁.other r b, x₂₀.other r a]
+  refine WP.seq (hH.callFin_ok (st := scr s₀ + BitVec.ofNat 64 (st H)) (o := scr s₀ + BitVec.ofNat 64 (ub H))
+    (scr := scr s₀)
+    (by rw [x₂₃.other _ (by decide), x₂₂.other _ (by decide), x₂₁.other _ (by decide), x₂₀.gpr, v₁₉.r21])
+    (by rw [x₂₃.other _ (by decide), x₂₂.gpr, x₂₁.other _ (by decide), x₂₀.other _ (by decide), v₁₉.r21])
+    (by rw [x₂₃.gpr, x₂₂.other _ (by decide), x₂₁.other _ (by decide), x₂₀.other _ (by decide), v₁₉.r21])
+    (st_ub hz _) (w_st hz _).symm (w_ub hz _).symm
+    (by rw [r₂₃.sp]; exact hp.sp48) (by rw [r₂₃.sp]; exact hp.ss.sub_right (st_sub _))
+    (by rw [r₂₃.sp]; exact hp.ss.sub_right (ub_sub _)) (by rw [r₂₃.sp]; exact hp.ss.sub_right (w_sub _))
+    (by
+      rw [r₂₃.rd, r₂₃.wr, ← hr.rd, ← hr.wr]
+      refine Covers.of_sub fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact cS (by rw [← hst]; omega)
+      · exact cS (by rw [← hst]; simp [ub, dig] <;> omega)
+      · exact cS0)
+    (by
+      rw [r₂₃.wr, ← hr.wr]
+      refine Covers.of_sub fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact cW (by rw [← hst]; omega)
+      · exact cW (by rw [← hst]; simp [ub, dig] <;> omega)
+      · exact cW0)
+    fun s₂₄ rd₂₄ wr₂₄ sp₂₄ f₂₄ cs₂₄ hfin₂₄ => ?_)
+  rw [r₂₃.sp] at f₂₄
+  have r₂₄ : Regs s₀ s₂₄ := ⟨rd₂₄.trans r₂₃.rd, wr₂₄.trans r₂₃.wr, sp₂₄.trans r₂₃.sp⟩
+  have v₂₄ : Vars s₀ s₂₄ := v₂₃.of_pres cs₂₄
+  have f₂₄' : Frame (all H s₀) s₀.mem s₂₄.mem := f₁₉'.trans (by
+    rw [← m₂₃]
+    exact f₂₄.sub fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact inAll _ (st_sub _)
+      · exact inAll _ (ub_sub _)
+      · exact inAll _ (w_sub _)
+      · exact spAll)
+  have sv₂₄ : Saved H.W (scr s₀) s₀.gpr s₂₄.mem := saved_keep (by rw [m₂₃]; exact sv₁₉) f₂₄ (by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl)
+    · exact sv_st hz _
+    · exact sv_ub hz _
+    · exact (w_sv hz _).symm
+    · exact (hp.ss.sub_right (sv_sub _)).symm)
+  have t₂₄ : bytesAt s₂₄.mem (tp s₀) H.D = bytesAt s.mem (tp s₀) H.D := by
+    rw [keep f₂₄ (by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl | rfl | rfl)
+      · exact hp.t_s.sub_right (st_sub _)
+      · exact hp.t_s.sub_right (ub_sub _)
+      · exact hp.t_s.sub_right (w_sub _)
+      · exact hp.st.symm) (by omega), m₂₃, t₁₉]
+  have hu₂₄ : bytesAt s₂₄.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D = hmacBlockKey hH.SH.H k0 U := by
+    have hl : (xorPad k0 opad ++ hH.SH.H.hash (xorPad k0 ipad ++ U)).length = H.B + H.D := by
+      simp [xorPad, hk0, hH.hashLen]
+    rw [VG.Proof.Hmac.Stream.PPC64LE.bytesAt_take _ _ hDF, hfin₂₄ _ (by rw [m₂₃]; exact hO₁₉)
+      (by rw [hl]; omega)
+      (by rw [x₂₃.other _ (by decide), x₂₂.other _ (by decide), x₂₁.gpr, hl]), ← hH.hashTake]
+    rfl
+  -- `T ← T ⊕ U`, and the steps left.
+  have hmacLen : (hmacBlockKey hH.SH.H k0 U).length = H.D := hH.hashLen _
+  refine xor32_ok (src := .r21) (dst := .r23) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by decide)
+    (by decide) (ub H) (H.D / 4)
+    ⟨by have := hz.W; have := hz.S; have := hz.FD; show H.W + 48 + H.S + H.FD + 4 * (H.D / 4) ≤ 2 ^ 15; omega,
+      by omega⟩ _ s₂₄ _
+    (fun k hk => in_rdwr (by rw [r₂₄.rd, r₂₄.wr, ← hr.rd, ← hr.wr]; exact scRW)
+      (by rw [v₂₄.r21, ← add_off]; exact contains_at (by rw [← hst]; simp [ub, dig]; omega) hbl))
+    (fun k hk => in_wr (by rw [r₂₄.wr, ← hr.wr]; exact tW)
+      (by rw [v₂₄.r23]; exact contains_at (by omega) (by omega)))
+    (by
+      rw [v₂₄.r21, v₂₄.r23, hDq]
+      exact (hp.t_s.sub_right (ubD_sub hz _)).symm.sep (contains_start (Nat.le_refl _))
+        (contains_start (Nat.le_refl _)))
+    fun s₂₅ g₂₅ rd₂₅ wr₂₅ sp₂₅ m₂₅ => ?_
+  rw [v₂₄.r21, v₂₄.r23, hDq, t₂₄, hu₂₄] at m₂₅
+  refine wp_subi (by decide) fun s₂₆ x₂₆ => WP.block_nil ?_
+  have fT : Frame [tR H s₀] s₂₄.mem s₂₅.mem := by
+    rw [m₂₅]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by
+      rw [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, hmacLen]),
+        VG.Proof.Hmac.Common.bytesAt_length]
+      exact contains_start (Nat.le_refl _))
+  refine ⟨⟨by rw [x₂₆.rd, rd₂₅, r₂₄.rd], by rw [x₂₆.wr, wr₂₅, r₂₄.wr], by rw [x₂₆.sp, sp₂₅, r₂₄.sp]⟩,
+    (v₂₄.of_keep fun r _ _ _ _ _ h8 h9 _ => g₂₅ r h8 h9).of_keep fun r _ _ _ _ _ _ _ h22 => x₂₆.other r h22,
+    ?_, ?_, ?_, ?_, ?_⟩
+  · rw [x₂₆.gpr, g₂₅ _ (by decide) (by decide), cs₂₄ _ (by decide), x₂₃.other _ (by decide),
+      x₂₂.other _ (by decide), x₂₁.other _ (by decide), x₂₀.other _ (by decide), cs₁₉ _ (by decide),
+      x₁₈.other _ (by decide), x₁₇.other _ (by decide), x₁₆.other _ (by decide), x₁₅.other _ (by decide),
+      x₁₄.other _ (by decide), g₁₃ _ (by decide), cs₁₂ _ (by decide), x₁₁.other _ (by decide),
+      x₁₀.other _ (by decide), x₉.other _ (by decide), x₈.other _ (by decide), cs₇ _ (by decide),
+      x₆.other _ (by decide), x₅.other _ (by decide), x₄.other _ (by decide), x₃.other _ (by decide),
+      x₂.other _ (by decide), g₁ _ (by decide)]
+    rfl
+  · rw [x₂₆.mem]
+    exact f₂₄'.trans (fT.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨tR H s₀, by simp [all], fun _ h => h⟩)
+  · rw [x₂₆.mem]
+    exact saved_keep sv₂₄ fT (by
+      simp only [List.mem_singleton]; rintro r rfl; exact (hp.t_s.sub_right (sv_sub _)).symm)
+  · rw [x₂₆.mem, keep fT (by simp only [List.mem_singleton]; rintro r rfl; exact (hp.t_s.sub_right (ubD_sub hz _)).symm)
+      (by omega), hu₂₄]
+  · rw [x₂₆.mem, m₂₅]
+    have := VG.Proof.Hmac.Common.bytesAt_writeBytes_self s₂₄.mem (tp s₀)
+      (xorBytes (bytesAt s.mem (tp s₀) H.D) (hmacBlockKey hH.SH.H k0 U))
+      (by rw [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, hmacLen]),
+        VG.Proof.Hmac.Common.bytesAt_length]; omega)
+    rwa [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, hmacLen]),
+      VG.Proof.Hmac.Common.bytesAt_length] at this
 
 end VG.Proof.Pbkdf2.Stream.PPC64LE.Iter
