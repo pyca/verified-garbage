@@ -244,22 +244,50 @@ theorem openWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
       rw [s₂'.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₂ r hr]
     refine rel_ite (eval_zero y9₁ (by omega)) (eval_zero y9₂ (by omega)) (fun hz => ?_) (fun _ => ?_)
     · have h96 := of_decide_eq_true hz
-      unfold Impl.AesGcm.AArch64.Stitch.openShortF
-      refine openRestWith_rel v₁ v₂ y12₁ y12₂
-        (fun o' hT hok hx => have e := regs kk₁ hx
-          by rw [hc.2] at o' ⊢
-             exact openShort_post gh o' e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 (by omega) hT hok
-               fun u he hrd hwr hf => htbP p₁ u he hrd hwr hf)
-        (fun o' hT hok hx => have e := regs kk₂ hx
-          by rw [hc.2] at o' ⊢
-             exact openShort_post gh o' e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 (by omega) hT hok
-               fun u he hrd hwr hf => htbP₂ u he hrd hwr hf)
-        fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => ?_
-      rw [hc.2] at p₁' p₂' hb
-      exact openShort_rel gh p₁' p₂' (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 (by omega) rt₁ rt₂ hok
-        (by rw [← tagEqS_iff hok, ← tagEqS_iff hok]; exact hb)
-        (fun u he hrd hwr hf => htbP p₁ u he hrd hwr hf) (fun u he hrd hwr hf => htbP₂ u he hrd hwr hf)
-        fun v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => htbrelS p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
+      have x7w₁ : w₁.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := by rw [kk₁ .x7 (by simp), ofNat_toNat']
+      have x7w₂ : w₂.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := by rw [kk₂ .x7 (by simp), ofNat_toNat']
+      -- `shortMin`, on the length, which is public.
+      refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
+          (by agree_tac [x7w₁, x7w₂]) ⟨_, by taint_decide⟩)
+        (shortMin_ok w₁ x7w₁ (by omega)) (shortMin_ok w₂ x7w₂ (by omega)) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
+      have v₁ := v₁.of_regs t₁
+      have v₂ := v₂.of_regs t₂
+      have y12₁ : z₁.gpr .x12 = stackArg σ₁ 0 := by rw [t₁.others _ (by decide), y12₁]
+      have y12₂ : z₂.gpr .x12 = stackArg σ₁ 0 := by rw [t₂.others _ (by decide), y12₂]
+      have kk₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₁.gpr r = σ₁.gpr r := fun r hr => by
+        rw [t₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₁ r hr]
+      have kk₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₂.gpr r = σ₁.gpr r := fun r hr => by
+        rw [t₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₂ r hr]
+      refine rel_ite (eval_zero m9₁ (by omega)) (eval_zero m9₂ (by omega)) (fun _ => ?_) (fun _ => ?_)
+      · unfold Impl.AesGcm.AArch64.Fast.openFastP
+        refine openRestWith_rel v₁ v₂ y12₁ y12₂
+          (fun o' hT hok hx => have e := regs kk₁ hx
+            openRunWith_postE cl v hMK o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok (hexW p₁) (hexD p₁) (hexC p₁)
+              fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
+          (fun o' hT hok hx => have e := regs kk₂ hx
+            openRunWith_postE cl v hMK o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok (hexW p₁) (hexD p₁) (hexC p₁)
+              fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
+          fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWith_relX v cl hMK (hexW p₁) (hexD p₁) (hexC p₁) p₁' p₂' hc.2
+            (regs kk₁ hx₁) (regs kk₂ hx₂)
+            hc.1 rt₁ rt₂ hok hb (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
+            (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
+            fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
+      · unfold Impl.AesGcm.AArch64.Stitch.openShortF
+        refine openRestWith_rel v₁ v₂ y12₁ y12₂
+          (fun o' hT hok hx => have e := regs kk₁ hx
+            by rw [hc.2] at o' ⊢
+               exact openShort_post gh o' e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 (by omega) hT hok
+                 fun u he hrd hwr hf => htbP p₁ u he hrd hwr hf)
+          (fun o' hT hok hx => have e := regs kk₂ hx
+            by rw [hc.2] at o' ⊢
+               exact openShort_post gh o' e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 (by omega) hT hok
+                 fun u he hrd hwr hf => htbP₂ u he hrd hwr hf)
+          fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => ?_
+        rw [hc.2] at p₁' p₂' hb
+        exact openShort_rel gh p₁' p₂' (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 (by omega) rt₁ rt₂ hok
+          (by rw [← tagEqS_iff hok, ← tagEqS_iff hok]; exact hb)
+          (fun u he hrd hwr hf => htbP p₁ u he hrd hwr hf) (fun u he hrd hwr hf => htbP₂ u he hrd hwr hf)
+          fun v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => htbrelS p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
     -- `thr`, on the length, which is public.
     refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
         (by agree_tac [kk₁ .x7 (by simp), kk₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)

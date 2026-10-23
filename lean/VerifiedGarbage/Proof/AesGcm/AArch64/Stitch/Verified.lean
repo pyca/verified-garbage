@@ -51,7 +51,7 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) 
   rcases hk with rfl | rfl <;> cases sh <;>
   simp only [Impl.AesGcm.AArch64.Stitch.openWithS, Impl.AesGcm.AArch64.Stitch.openFastS,
     Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Fast.openFastP, Impl.AesGcm.AArch64.Fast.openRunWithP,
-    Impl.AesGcm.AArch64.Stitch.openShortF, Impl.AesGcm.AArch64.Stitch.openShort, Impl.AesGcm.AArch64.Stitch.plainOut, Impl.AesGcm.AArch64.Stitch.shortThr,
+    Impl.AesGcm.AArch64.Stitch.openShortF, Impl.AesGcm.AArch64.Stitch.openShort, Impl.AesGcm.AArch64.Stitch.plainOut, Impl.AesGcm.AArch64.Stitch.shortThr, Impl.AesGcm.AArch64.Stitch.shortMin,
     Impl.AesGcm.AArch64.Stitch.shortPre, Impl.AesGcm.AArch64.Stitch.textIn, Impl.AesGcm.AArch64.Stitch.copyQ,
     Impl.AesGcm.AArch64.Stitch.ctToB2, Impl.AesGcm.AArch64.Stitch.aadIn, Impl.AesGcm.AArch64.Stitch.shortAes,
     Impl.AesGcm.AArch64.SealGather.copyBlocks, Impl.Gcm.AArch64.Stitch.byRounds, Bool.false_eq_true, ite_true, ite_false,

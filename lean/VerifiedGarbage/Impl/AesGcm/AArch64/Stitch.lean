@@ -155,9 +155,10 @@ most `shortMax`. -/
 def shortThr : List Instr := [.addImm .x .x9 .x7 (127 - shortMax), .lsr .x .x9 .x9 7]
 
 /-- `x9 = ⌊(x7 + 15) / 32⌋`, zero exactly when the text's length `x7` is at
-most 16 bytes, which `seal` gives `Fast.lean`'s path: modelled for Neoverse
-N2, `sealShort` costs about as much as that path for 16 bytes, and less for
-more. `open` takes `openShort` for these too, which costs less there. -/
+most 16 bytes, which `seal` and `open` give `Fast.lean`'s path: modelled for
+Neoverse N2, `sealShort` costs about as much as that path for 16 bytes, and
+less for more; `openShort`, which the model put below it, ran 50–150 more
+instructions for these, measured 1.5–8% slower on Neoverse N2 (#2865). -/
 def shortMin : List Instr := [.addImm .x .x9 .x7 15, .lsr .x .x9 .x9 5]
 
 /-- The length in `x26`, the text in `x27`, the additional data's length in
@@ -288,14 +289,15 @@ def sealWithS (k : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) :
       else .seq (.block thr) (.ite (.zero .x .x9) (runWithP c cl) (runWithS c tb cl)))
       (sealRest c)))
 
-/-- `vg_aes_gcm_open`, with `work` at `sp + k`: with `sh`, up to `shortMax`
-bytes, `openShort`; otherwise below `minLen` bytes, `Fast.lean`'s path (as
-for `sealWithS`'s `sh`). -/
+/-- `vg_aes_gcm_open`, with `work` at `sp + k`: with `sh`, from 17 to
+`shortMax` bytes, `openShort`; otherwise below `minLen` bytes, `Fast.lean`'s
+path (as for `sealWithS`'s `sh`). -/
 def openWithS (k : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) : Prog isa :=
   .seq (.block (oneEntry k ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
     (.seq cond (.ite (.zero .x .x10)
       (if sh then
-        .seq (.block shortThr) (.ite (.zero .x .x9) (openShortF tb)
+        .seq (.block shortThr) (.ite (.zero .x .x9)
+          (.seq (.block shortMin) (.ite (.zero .x .x9) (openFastP c cl) (openShortF tb)))
           (.seq (.block thr) (.ite (.zero .x .x9) (openFastP c cl) (openFastS c tb cl))))
       else .seq (.block thr) (.ite (.zero .x .x9) (openFastP c cl) (openFastS c tb cl)))
       (openRest c)))
