@@ -10,7 +10,8 @@ pub const USES: &[&str] = &["aes_cfb", "aes"];
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -97,6 +98,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 )))]
 pub fn bench(_: &mut Criterion) {}
