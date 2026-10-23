@@ -264,6 +264,24 @@ theorem gpr_ce (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) 
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
   rw [State.withRegions_gpr, State.callEntry_gpr _ h]
 
+/-- What a call reads and writes is ours: at most the seed, and parts of `scratch`. -/
+theorem call_covers {s₀ s : State} (hp : Pre s₀) (h : SEnv s₀ s) {rd wr : List Region}
+    (hrd : ∀ r ∈ rd, r = ⟨SEED s₀, 34⟩)
+    (hwr : ∀ r ∈ wr, ∃ o n, o + n ≤ 1680 ∧ r = ⟨S s₀ + BitVec.ofNat 64 o, n⟩) :
+    Covers (rd ++ wr) (s.rd ++ s.wr) ∧ Covers wr s.wr := by
+  have hsc : ∀ r ∈ wr, ∃ off, r.base = S s₀ + BitVec.ofNat 64 off ∧ off + r.len ≤ 2048 := fun r hr => by
+    obtain ⟨o, n, ho, rfl⟩ := hwr r hr; exact ⟨o, rfl, by simp only; omega⟩
+  have hw : Covers wr s.wr := Covers.of_sub fun r hr => by
+    obtain ⟨off, hb, hl⟩ := hsc r hr
+    exact ⟨⟨S s₀, 2048⟩, by rw [h.wr, hp.wr]; simp, off, hb, hl⟩
+  have hc : Covers (rd ++ wr) (s.rd ++ s.wr) := Covers.of_sub fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · rw [hrd r hr]
+      exact ⟨⟨SEED s₀, 34⟩, by rw [h.rd, hp.rd]; simp, 0, (BitVec.add_zero _).symm, by simp⟩
+    · obtain ⟨off, hb, hl⟩ := hsc r hr
+      exact ⟨⟨S s₀, 2048⟩, by rw [h.wr, hp.wr]; simp, off, hb, hl⟩
+  exact ⟨hc, hw⟩
+
 /-- A call of verified code using at most 48 bytes of stack, reading at
 most the seed and writing parts of `scratch` below the saved registers:
 afterwards `SEnv` holds again, memory changed only within what it writes and
@@ -277,17 +295,7 @@ theorem call_ok {s₀ s : State} (hp : Pre s₀) (h : SEnv s₀ s) {n : String} 
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
       k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s') :
     WP isa (.call n c) s Q := by
-  have hsc : ∀ r ∈ wr, ∃ off, r.base = S s₀ + BitVec.ofNat 64 off ∧ off + r.len ≤ 2048 := fun r hr => by
-    obtain ⟨o, n, ho, rfl⟩ := hwr r hr; exact ⟨o, rfl, by simp only; omega⟩
-  have hw : Covers wr s.wr := Covers.of_sub fun r hr => by
-    obtain ⟨off, hb, hl⟩ := hsc r hr
-    exact ⟨⟨S s₀, 2048⟩, by rw [h.wr, hp.wr]; simp, off, hb, hl⟩
-  have hc : Covers (rd ++ wr) (s.rd ++ s.wr) := Covers.of_sub fun r hr => by
-    rcases List.mem_append.mp hr with hr | hr
-    · rw [hrd r hr]
-      exact ⟨⟨SEED s₀, 34⟩, by rw [h.rd, hp.rd]; simp, 0, (BitVec.add_zero _).symm, by simp⟩
-    · obtain ⟨off, hb, hl⟩ := hsc r hr
-      exact ⟨⟨S s₀, 2048⟩, by rw [h.wr, hp.wr]; simp, off, hb, hl⟩
+  obtain ⟨hc, hw⟩ := call_covers hp h hrd hwr
   refine WP.callAny hv hpre hc hw (fun s' hrd' hwr' hsp' hf hcs hpost => ?_) (by omega)
   have hsp48 := hp.sp48
   have hf' : Frame (wr ++ [STK s₀]) s.mem s'.mem := by
@@ -321,6 +329,16 @@ theorem wrS {s₀ : State} {r : Region} (hr : r ∈ [(⟨S s₀, 200⟩ : Region
   · exact ⟨0, 200, by decide, by rw [BitVec.add_zero]⟩
   · exact ⟨200, 640, by decide, rfl⟩
 
+/-- The state, the output and the sponge's working space, in `scratch`. -/
+theorem wrSq {s₀ : State} {r : Region} (hr : r ∈ [(⟨S s₀, 200⟩ : Region), ⟨S s₀ + BitVec.ofNat 64 840, 840⟩,
+    ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) :
+    ∃ o n, o + n ≤ 1680 ∧ r = ⟨S s₀ + BitVec.ofNat 64 o, n⟩ := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨0, 200, by decide, by rw [BitVec.add_zero]⟩
+  · exact ⟨840, 840, by decide, rfl⟩
+  · exact ⟨200, 640, by decide, rfl⟩
+
 section
 variable {s₀ : State} (hp : Pre s₀)
 include hp
@@ -342,6 +360,19 @@ theorem absorbArgs_ok {s : State} (h : SEnv s₀ s) :
   prun [absorbSeedArgs, h.r29, h.r31]
   exact ⟨h.regs hp rfl (by pres_tac) rfl rfl rfl, trivial⟩
 
+theorem absorb_pre {t : State} (ht : SEnv s₀ t) (g3 : t.gpr .r3 = S s₀) (g4 : t.gpr .r4 = BitVec.ofNat 64 168) (g5 : t.gpr .r5 = BitVec.ofNat 64 0)
+    (g6 : t.gpr .r6 = SEED s₀) (g7 : t.gpr .r7 = BitVec.ofNat 64 34) (g8 : t.gpr .r8 = S s₀ + BitVec.ofNat 64 200) :
+    Proof.Sha3.absorbPPC64LE.pre (t.callEntry.withRegions [⟨SEED s₀, 34⟩] [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) := by
+  have hsp48 := hp.sp48
+  simp only [Proof.Sha3.absorbPPC64LE, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
+    State.callEntry_sp, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs),
+    g3, g4, g5, g6, g7, g8, ht.sp, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  exact ⟨trivial, trivial, st_off hp (by decide) (by decide), hp.seed_s.sub_right (Region.sub_prefix (by decide)),
+    hp.seed_s.sub_right (s_sub (by decide)), hsp48, stk_st hp, hp.b_seed, stk_off hp (by decide), by decide,
+    by decide⟩
+
 theorem absorb_phase {s : State} (h : SEnv s₀ s) (hz : stateAt s.mem (S s₀) = Spec.Sha3.zero) :
     WP isa (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb_scratch" Impl.Sha3.PPC64LE.Stream.absorb)) s
       fun s' => SEnv s₀ s' ∧ Repr s'.mem (S s₀) 168 (B s₀) ∧ (s'.gpr .r3).toNat = 34 := by
@@ -351,14 +382,7 @@ theorem absorb_phase {s : State} (h : SEnv s₀ s) (hz : stateAt s.mem (S s₀) 
     (rd := [⟨SEED s₀, 34⟩]) (wr := [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) ?_
     (fun r hr => by rw [List.mem_singleton] at hr; exact hr) (fun r hr => wrS hr)
     fun s' hs' _ _ hpost => ⟨hs', ?_, ?_⟩
-  · simp only [Proof.Sha3.absorbPPC64LE, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
-      State.callEntry_sp, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs),
-      g3, g4, g5, g6, g7, g8, ht.sp, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-    exact ⟨trivial, trivial, st_off hp (by decide) (by decide), hp.seed_s.sub_right (Region.sub_prefix (by decide)),
-      hp.seed_s.sub_right (s_sub (by decide)), hsp48, stk_st hp, hp.b_seed, stk_off hp (by decide), by decide,
-      by decide⟩
+  · exact absorb_pre hp ht g3 g4 g5 g6 g7 g8
   · simp only [Proof.Sha3.absorbPPC64LE, State.withRegions_mem, State.callEntry_mem,
       gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
       gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
@@ -387,6 +411,17 @@ theorem padArgs_ok {s : State} (h : SEnv s₀ s) (h3 : (s.gpr .r3).toNat = 34) :
   prun [padArgs, e3, h.r31]
   exact ⟨h.regs hp rfl (by pres_tac) rfl rfl rfl, trivial⟩
 
+theorem pad_pre {t : State} (ht : SEnv s₀ t) (g3 : t.gpr .r3 = S s₀) (g4 : t.gpr .r4 = BitVec.ofNat 64 168) (g5 : t.gpr .r5 = BitVec.ofNat 64 34)
+    (g7 : t.gpr .r7 = S s₀ + BitVec.ofNat 64 200) :
+    Proof.Sha3.padPPC64LE.pre (t.callEntry.withRegions [] [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) := by
+  have hsp48 := hp.sp48
+  simp only [Proof.Sha3.padPPC64LE, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
+    State.callEntry_sp, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs),
+    g3, g4, g5, g7, ht.sp, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  exact ⟨trivial, trivial, st_off hp (by decide) (by decide), hsp48, stk_st hp, stk_off hp (by decide),
+    by decide, by decide⟩
+
 theorem pad_phase {s : State} (h : SEnv s₀ s) (hr : Repr s.mem (S s₀) 168 (B s₀)) (h3 : (s.gpr .r3).toNat = 34) :
     WP isa (.seq (.block padArgs) (.call "vg_keccak_pad_scratch" Impl.Sha3.PPC64LE.Stream.pad)) s
       fun s' => SEnv s₀ s' ∧ stateAt s'.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀) := by
@@ -396,12 +431,7 @@ theorem pad_phase {s : State} (h : SEnv s₀ s) (hr : Repr s.mem (S s₀) 168 (B
     (rd := []) (wr := [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) ?_
     (fun r hr => absurd hr List.not_mem_nil) (fun r hr => wrS hr)
     fun s' hs' _ _ hpost => ⟨hs', ?_⟩
-  · simp only [Proof.Sha3.padPPC64LE, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
-      State.callEntry_sp, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs),
-      g3, g4, g5, g7, ht.sp, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-    exact ⟨trivial, trivial, st_off hp (by decide) (by decide), hsp48, stk_st hp, stk_off hp (by decide),
-      by decide, by decide⟩
+  · exact pad_pre hp ht g3 g4 g5 g7
   · simp only [Proof.Sha3.padPPC64LE, State.withRegions_mem, State.callEntry_mem,
       gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
       gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
@@ -416,6 +446,20 @@ theorem squeezeArgs_ok {s : State} (h : SEnv s₀ s) :
   prun [squeezeArgs, h.r31]
   exact ⟨h.regs hp rfl (by pres_tac) rfl rfl rfl, trivial⟩
 
+theorem squeeze_pre {t : State} (ht : SEnv s₀ t) (g3 : t.gpr .r3 = S s₀) (g4 : t.gpr .r4 = BitVec.ofNat 64 168) (g5 : t.gpr .r5 = BitVec.ofNat 64 0)
+    (g6 : t.gpr .r6 = S s₀ + BitVec.ofNat 64 840) (g7 : t.gpr .r7 = BitVec.ofNat 64 840)
+    (g8 : t.gpr .r8 = S s₀ + BitVec.ofNat 64 200) :
+    Proof.Sha3.squeezePPC64LE.pre (t.callEntry.withRegions [] [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 840, 840⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) := by
+  have hsp48 := hp.sp48
+  simp only [Proof.Sha3.squeezePPC64LE, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
+    State.callEntry_sp, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs),
+    g3, g4, g5, g6, g7, g8, ht.sp, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  exact ⟨trivial, trivial, st_off hp (by decide) (by decide), st_off hp (by decide) (by decide),
+    s_disj hp (by decide) (by decide) (by decide), hsp48, stk_st hp, stk_off hp (by decide),
+    stk_off hp (by decide), by decide, by decide⟩
+
 theorem squeeze_phase {s : State} (h : SEnv s₀ s)
     (hst : stateAt s.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀)) :
     WP isa (.seq (.block squeezeArgs) (.call "vg_keccak_squeeze_scratch" Impl.Sha3.PPC64LE.Stream.squeeze)) s
@@ -424,21 +468,9 @@ theorem squeeze_phase {s : State} (h : SEnv s₀ s)
   have hsp48 := hp.sp48
   refine call_ok hp ht (k := Proof.Sha3.squeezePPC64LE) Proof.Sha3.PPC64LE.Stream.squeeze_correct squeeze_sdepth
     (rd := []) (wr := [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 840, 840⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩]) ?_
-    (fun r hr => absurd hr List.not_mem_nil) (fun r hr => ?_)
+    (fun r hr => absurd hr List.not_mem_nil) (fun r hr => wrSq hr)
     fun s' hs' _ _ hpost => ⟨hs', ?_⟩
-  · simp only [Proof.Sha3.squeezePPC64LE, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
-      State.callEntry_sp, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs),
-      g3, g4, g5, g6, g7, g8, ht.sp, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-    exact ⟨trivial, trivial, st_off hp (by decide) (by decide), st_off hp (by decide) (by decide),
-      s_disj hp (by decide) (by decide) (by decide), hsp48, stk_st hp, stk_off hp (by decide),
-      stk_off hp (by decide), by decide, by decide⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨0, 200, by decide, by rw [BitVec.add_zero]⟩
-    · exact ⟨840, 840, by decide, rfl⟩
-    · exact ⟨200, 640, by decide, rfl⟩
+  · exact squeeze_pre hp ht g3 g4 g5 g6 g7 g8
   · simp only [Proof.Sha3.squeezePPC64LE, State.withRegions_mem, State.callEntry_mem,
       gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
       gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
