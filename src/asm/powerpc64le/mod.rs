@@ -8,6 +8,15 @@ pub(crate) mod blake2b;
 pub(crate) mod blake2s;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_mont;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_mont;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_mont;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
@@ -20,10 +29,28 @@ pub(crate) mod hmac_sha256;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod p192_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p224_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p256_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p384_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p521_mont;
+
+#[rustfmt::skip]
 pub(crate) mod poly1305;
 
 #[rustfmt::skip]
 pub(crate) mod rc4;
+
+#[rustfmt::skip]
+pub(crate) mod secp256k1_mont;
 
 #[rustfmt::skip]
 pub(crate) mod sha1;
