@@ -126,8 +126,8 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   have l5 : (BitVec.ofNat 32 (16 * g.pLen)).toNat = 16 * g.pLen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have nat28 : (s.gpr .esp - 28#32).toNat = E.sp.toNat - 28 := by rw [spU]; exact sub_toNat (by omega_arith)
-  have callee : (s.gpr .esp - 28#32).setWidth 64 - 32#64 = (s.gpr .esp - 60#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [nat28]; omega_arith : 32 ≤ (s.gpr .esp - 28#32).toNat), BitVec.sub_sub]; rfl
+  have callee : (s.gpr .esp - 28#32).setWidth 64 - 108#64 = (s.gpr .esp - 136#32).setWidth 64 := by
+    rw [← Taint.sub_setWidth (by rw [nat28]; omega_arith : 108 ≤ (s.gpr .esp - 28#32).toNat), BitVec.sub_sub]; rfl
   have oL : E.outLen = 2 * g.pLen + g.qLen := by simp only [Env.outLen, hp, hq]
   simp only [a0, a1, a2, a3, a4, a5, uesp, uarg0, urd, uwr, chkRd, chkWr, pW, cW, pN, cN, l1, l2, l3, l5, callee,
     oL, hp]
@@ -140,8 +140,8 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     rw [spU]; exact below_sub (by decide) (by omega_arith)
   have subRet : Region.Sub ⟨(s.gpr .esp - 28#32).setWidth 64, 4⟩ E.stackRegion :=
     sub_of_contains (by rw [spU]; exact below_top (k := 28) (by decide) (by omega_arith) (by decide))
-  have subCal : Region.Sub ⟨(s.gpr .esp - 60#32).setWidth 64, 32⟩ E.stackRegion :=
-    sub_of_contains (by rw [spU]; exact below_top (k := 60) (by decide) (by omega_arith) (by decide))
+  have subCal : Region.Sub ⟨(s.gpr .esp - 136#32).setWidth 64, 108⟩ E.stackRegion :=
+    sub_of_contains (by rw [spU]; exact below_top (k := 136) (by decide) (by omega_arith) (by decide))
   refine ⟨by rw [nat28]; omega_arith, by rw [nat28]; omega_arith, trivial, trivial,
     Offset.disjoint E.base (by simp only [sPk, sChk]; omega_arith) (by simp only [sPk]; omega_arith) (by simp only [sChk]; omega_arith),
     (ss.sub_left subP).sub_right subArgs, (ss.sub_left subC).sub_right subArgs,
@@ -155,7 +155,7 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     exact Offset.disjoint_of_le (by simp only [nat28', nat24]; omega_arith) (by simp only [nat24]; omega_arith)
   · have nat24 : ((s.gpr .esp - 24#32).setWidth 64).toNat = E.sp.toNat - 24 := by
       rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
-    have nat60 : ((s.gpr .esp - 60#32).setWidth 64).toNat = E.sp.toNat - 60 := by
+    have nat60 : ((s.gpr .esp - 136#32).setWidth 64).toNat = E.sp.toNat - 136 := by
       rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
     exact Offset.disjoint_of_le (by simp only [nat60, nat24]; omega_arith) (by simp only [nat24]; omega_arith)
   · rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide

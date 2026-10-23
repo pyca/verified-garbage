@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Dsa.X86.RandomContext
 
 /-!
@@ -74,7 +75,20 @@ def rLow (s₀ : State) : Addr := (s₀.gpr .esp).setWidth 64 - 144#64
 /-- The frame's base. -/
 def rBase (s₀ : State) : Addr := off (rLow s₀) 24
 
-def rStack (s₀ : State) : Region := ⟨rLow s₀, 144⟩
+/-- The lowest byte of the stack the generator's calls use: the 88 bytes
+below `rLow` and its 24, for a callee's 108 and the return address. -/
+def rCall (s₀ : State) : Addr := (s₀.gpr .esp).setWidth 64 - 232#64
+
+def rStack (s₀ : State) : Region := ⟨rCall s₀, 232⟩
+
+theorem rLow_eq (s₀ : State) : rLow s₀ = off (rCall s₀) 88 := by
+  simp only [rLow, rCall, off]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
+theorem rLow_off (s₀ : State) (d : Nat) : off (rLow s₀) d = off (rCall s₀) (88 + d) := by
+  rw [rLow_eq, off, off, off, Offset.add_add]
 def rOut (s₀ : State) : Region := argRegion s₀ 0 (X86.arg s₀ 1).toNat
 def rUsed (s₀ : State) : Region := argRegion s₀ 2 8
 def rScratch (s₀ : State) : Region := argRegion s₀ 9 ((X86.arg s₀ 10).toNat * 8)
@@ -154,14 +168,14 @@ theorem args_apart : ∀ r ∈ rWrites s₀, Region.Disjoint ⟨argAddr s₀ 0, 
   intro r hr
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · rw [argAddr_eq A (by decide)]
-    exact Offset.disjoint_base (rLow s₀) (by decide) (by decide)
+  · rw [argAddr_eq A (by decide), rLow_off]
+    exact Offset.disjoint_base (rCall s₀) (by decide) (by decide)
   · exact A.outArgs.symm
   · exact A.scratchArgs.symm
   · exact A.usedArgs.symm
 
 /-- The return address on entry is apart from the buffers. -/
-theorem stack_apart_key : (rStack s₀).Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) := A.stackKey
+theorem stack_apart_key : (rStack s₀).Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) := A.stackKeyWide
 end
 
 theorem rBytes_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
@@ -197,7 +211,7 @@ theorem Ready.fupd {s₀ t t' : State} (h : Ready s₀ t) (u : Fupd t t') : Read
 theorem frame_store (s₀ : State) (m : Mem) {d : Nat} (hd : d + 4 ≤ KeyRandom.frameBytes)
     (v : BitVec 32) : Frame [rStack s₀] m (m.writeW (off (rBase s₀) d) v) := by
   refine Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) v ?_
-  rw [rBase_off]
+  rw [rBase_off, rLow_off]
   have : KeyRandom.frameBytes = 120 := rfl
   exact Offset.contains_base _ (by omega) (by omega)
 
@@ -205,7 +219,7 @@ theorem frame_store (s₀ : State) (m : Mem) {d : Nat} (hd : d + 4 ≤ KeyRandom
 theorem frame_store8 (s₀ : State) (m : Mem) {d : Nat} (hd : d + 1 ≤ KeyRandom.frameBytes)
     (v : BitVec 8) : Frame [rStack s₀] m (m.writeW (off (rBase s₀) d) v) := by
   refine Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) v ?_
-  rw [rBase_off]
+  rw [rBase_off, rLow_off]
   have : KeyRandom.frameBytes = 120 := rfl
   exact Offset.contains_base _ (by omega) (by omega)
 
@@ -240,7 +254,7 @@ theorem Ready.rand {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
   refine h.bytes (by rw [A.rd]; simp) A.randBound fun r hr => ?_
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackRand.symm
+  · exact A.stackRandWide.symm
   · exact A.outRand.symm
   · exact A.randScratch
   · exact A.usedRand.symm
@@ -250,7 +264,7 @@ theorem Ready.key {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
   refine h.bytes (by rw [A.rd]; simp) A.keyBound fun r hr => ?_
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackKey.symm
+  · exact A.stackKeyWide.symm
   · exact A.outKey.symm
   · exact A.keyScratch
   · exact A.usedKey.symm

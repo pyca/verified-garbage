@@ -17,9 +17,9 @@ structure CheckFn where
   code : Prog isa
   verified : Verified X86.target code (Spec.Dsa.checkParametersContract X86.abi 108)
   noSp : NoSp code
-  depth : stackUse code ≤ 20
+  depth : stackUse code ≤ 108
 
-def callWrites (s₀ : State) : List Region := callWr s₀ ++ [⟨rLow s₀, 24⟩]
+def callWrites (s₀ : State) : List Region := callWr s₀ ++ [⟨rCall s₀, 112⟩]
 
 def callResult (s₀ t : State) : Bool :=
   Spec.Dsa.checkParametersBytes (X86.arg s₀ 5).toNat (X86.arg s₀ 6).toNat
@@ -51,12 +51,14 @@ theorem call_ok (F : CheckFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀
   have hfit := rLow_fit A (d := 192) (by decide)
   obtain ⟨hc, hcw⟩ := call_covers A h
   have hd := F.depth
+  have hlo := A.stackLow
+  have hrl := rLow_toNat A
   refine WP.call F.verified.1 F.noSp (by omega) (call_pre A h C) hc hcw
     fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
   have hesp : u.gpr .esp = t.gpr .esp := hcs .esp (by simp [calleeSaved])
-  have hbelow : Region.Sub (below (t.gpr .esp) (stackUse F.code + 4)) ⟨rLow s₀, 24⟩ := by
+  have hbelow : Region.Sub (below (t.gpr .esp) (stackUse F.code + 4)) ⟨rCall s₀, 112⟩ := by
     show Region.Sub ⟨(t.gpr .esp - BitVec.ofNat 32 (stackUse F.code + 4)).setWidth 64, _⟩ _
-    rw [Taint.sub_setWidth (by omega), h.rf.esp, rBase, Offset.add_ofNat_sub _ (by omega)]
+    rw [Taint.sub_setWidth (by omega), h.rf.esp, rBase, rLow_off, Offset.add_ofNat_sub _ (by omega)]
     exact Offset.sub_base _ (by omega)
   have hf' : Frame (callWrites s₀) t.mem u.mem := hf.sub fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
@@ -71,7 +73,7 @@ theorem call_ok (F : CheckFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀
     · exact ⟨_, by simp [rWrites, rScratch], fun _ h => h⟩
     · exact ⟨rStack s₀, by simp [rWrites], stk_sub s₀ (by decide)⟩
     · refine ⟨rStack s₀, by simp [rWrites], ?_⟩
-      have := Offset.sub_base (rLow s₀) (d := 0) (n := 24) (k := 144) (by decide)
+      have := Offset.sub_base (rCall s₀) (d := 0) (n := 112) (k := 232) (by decide)
       rwa [BitVec.add_zero] at this
   refine ⟨hu, hf', hcs, ?_⟩
   sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow] at hpost
@@ -79,7 +81,7 @@ theorem call_ok (F : CheckFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀
     ce_arg A h C (callRd s₀) (callWr s₀) (show 1 < 6 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 6 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 3 < 6 by decide), callVal] at hpost
-  rw [KeyRandom.callEntry_bytes A h (A.stackKey.symm.sub_right (stk_sub s₀ (by decide))) (by omega),
+  rw [KeyRandom.callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega),
     BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hpost
   apply BitVec.eq_of_toNat_eq
   change (u.gpr Reg.eax).toNat = _

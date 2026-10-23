@@ -39,7 +39,7 @@ def geo (pLen qLen : Nat) (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) 
 
 theorem check_noSp : NoSp Impl.Dsa.X86.Generate.checkParameters := NoSp.of_all (by decide +kernel)
 
-theorem check_stack : stackUse Impl.Dsa.X86.Generate.checkParameters ≤ 32 := by decide +kernel
+theorem check_stack : stackUse Impl.Dsa.X86.Generate.checkParameters ≤ 108 := by decide +kernel
 
 /-- The geometry `(pLen, qLen)` is one the proofs support. -/
 def geoOk {pLen qLen : Nat} {H : Impl.Pbkdf2.Md.X86.Hash} {iv : List (BitVec 32)} (v : RoundImpl)

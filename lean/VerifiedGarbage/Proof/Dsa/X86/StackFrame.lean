@@ -11,7 +11,7 @@ import VerifiedGarbage.TCB.X86.State
 /-! # Workspace frames that account for helper-call stack writes
 
 Inside DSA's workspace only the listed ranges may change. Outside it,
-changes are confined to the 32 bytes below the caller's stack pointer.
+changes are confined to the 108 bytes below the caller's stack pointer.
 -/
 
 @[expose] public section

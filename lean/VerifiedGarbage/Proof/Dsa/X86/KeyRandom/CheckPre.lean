@@ -64,11 +64,11 @@ theorem ce_arg {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : CallSl
   exact C i hi
 
 theorem stk_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 144) :
-    Region.Sub ⟨off (rLow s₀) d, n⟩ (rStack s₀) := Offset.sub_base _ h
+    Region.Sub ⟨off (rLow s₀) d, n⟩ (rStack s₀) := by
+  rw [rLow_off]; exact Offset.sub_base _ (by omega)
 
 theorem low_sub (s₀ : State) : Region.Sub ⟨rLow s₀, 20⟩ (rStack s₀) := by
-  have := Offset.sub_base (rLow s₀) (d := 0) (n := 20) (k := 144) (by decide)
-  rwa [BitVec.add_zero] at this
+  rw [rLow_eq]; exact Offset.sub_base _ (by decide)
 
 theorem call_pre {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : CallSlots s₀ t) :
     (Spec.Dsa.checkParametersContract abi 108).pre (t.callEntry.withRegions (callRd s₀) (callWr s₀)) := by
@@ -86,15 +86,15 @@ theorem call_pre {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : Call
     unfold rLow
     bv_omega
   have d_key_arg : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 24, 24⟩ :=
-    A.stackKey.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega))
   have d_key_ret : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 20, 4⟩ :=
-    A.stackKey.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega))
   have d_key_low : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ :=
     A.stackKeyWide.symm.sub_right (Region.sub_prefix (by decide))
   have d_scr_arg : Region.Disjoint (argRegion s₀ 9 ((X86.arg s₀ 10).toNat * 8)) ⟨off (rLow s₀) 24, 24⟩ :=
-    A.stackScratch.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega))
   have d_scr_ret : Region.Disjoint (argRegion s₀ 9 ((X86.arg s₀ 10).toNat * 8)) ⟨off (rLow s₀) 20, 4⟩ :=
-    A.stackScratch.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega))
   have d_scr_low : Region.Disjoint (argRegion s₀ 9 ((X86.arg s₀ 10).toNat * 8)) ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ :=
     A.stackScratchWide.symm.sub_right (Region.sub_prefix (by decide))
   have d_ret_arg : Region.Disjoint ⟨off (rLow s₀) 20, 4⟩ ⟨off (rLow s₀) 24, 24⟩ :=

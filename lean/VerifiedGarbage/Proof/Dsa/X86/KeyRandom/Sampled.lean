@@ -73,7 +73,7 @@ theorem sampledWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stable
     · rw [R, mf, slot_write_self]
     · intro _
       rw [R]
-      rw [rBytes_frame frame (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.stackOut.symm)
+      rw [rBytes_frame frame (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.stackOutWide.symm)
         (by have := A.outBound; omega)]
       exact bw
     · exact savedW.of_slots fun e he he' => by

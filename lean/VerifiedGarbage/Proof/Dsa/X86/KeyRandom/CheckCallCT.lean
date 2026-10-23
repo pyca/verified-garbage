@@ -33,8 +33,8 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : KeyA
     ce_arg A₂ h₂ C₂ rd wr (show 5 < 6 by decide),
     callVal]
   have esp := esp_of_rf h₁.rf (pub_rBase e ▸ h₂.rf)
-  rw [callEntry_bytes A₁ h₁ (A₁.stackKey.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
-    callEntry_bytes A₂ h₂ (A₂.stackKey.symm.sub_right (stk_sub s₂ (by decide))) (by omega)]
+  rw [callEntry_bytes A₁ h₁ (A₁.stackKeyWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
+    callEntry_bytes A₂ h₂ (A₂.stackKeyWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega)]
   have k₁ := callKey A₁ h₁
   have k₂ := callKey A₂ h₂
   simp only [argumentPointer] at k₁ k₂

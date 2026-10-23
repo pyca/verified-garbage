@@ -29,7 +29,7 @@ structure GeoOk (g : Geo) where
   pStack : stackUse g.pCode ≤ 152
   cv : Verified target g.checkCode (Spec.Dsa.checkParametersContract abi 108)
   cNoSp : NoSp g.checkCode
-  cStack : stackUse g.checkCode ≤ 32
+  cStack : stackUse g.checkCode ≤ 108
   /-- The hash's blocks: their traces depend only on `esp` and `edi`, and
   they keep `esp`. -/
   prepCt : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))

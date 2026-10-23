@@ -21,8 +21,9 @@ theorem samplerFrame {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
   refine (O.frame fits).sub ?_
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨rStack s₀,List.mem_singleton_self _,Offset.sub_base (rLow s₀) (d := 24) (n := 120) (k := 144)
-    (by decide)⟩
+  refine ⟨rStack s₀,List.mem_singleton_self _,?_⟩
+  rw [rBase, rLow_off]
+  exact Offset.sub_base (rCall s₀) (d := 88 + 24) (n := 120) (k := 232) (by decide)
 
 theorem sampler_context_kept {s₀ : State} {n e p g : Nat} {m m' : Mem}
     (A : KeyABI s₀) (F : Frame [rStack s₀] m m')
@@ -33,7 +34,7 @@ theorem sampler_context_kept {s₀ : State} {n e p g : Nat} {m m' : Mem}
   rw [VG.Proof.Rsa.wordsAt_frame F (by have := A.scratchBound; omega) (by
     intro r hr
     obtain rfl := List.mem_singleton.mp hr
-    exact A.stackScratch.symm.sub_left (Offset.sub_base (argumentPointer s₀ 9)
+    exact A.stackScratchWide.symm.sub_left (Offset.sub_base (argumentPointer s₀ 9)
       (d := context n) (n := 8*Spec.Dsa.FixedBaseComb.contextWords (layout n e))
       (k := (arg s₀ 10).toNat*8) fits))]
   exact C

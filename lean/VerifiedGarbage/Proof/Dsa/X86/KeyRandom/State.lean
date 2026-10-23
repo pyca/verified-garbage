@@ -44,17 +44,18 @@ theorem self_contains (x : Addr) : (⟨x, 1⟩ : Region).Contains x 1 := by
 /-- The frame above its argument words is apart from where the call writes. -/
 theorem call_frame_byte {s₀ : State} (A : KeyABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
     {d : Nat} (h₁ : 44 ≤ d) (h₂ : d < 120) : m' (off (rBase s₀) d) = m (off (rBase s₀) d) := by
-  rw [rBase_off]
-  have hs : (rStack s₀).Contains (off (rLow s₀) (24 + d)) 1 := Offset.contains_base _ (by omega) (by omega)
+  rw [rBase_off, rLow_off]
+  have hs : (rStack s₀).Contains (off (rCall s₀) (88 + (24 + d))) 1 := Offset.contains_base _ (by omega) (by omega)
   refine hf _ fun r hr => ?_
   simp only [callWrites, callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackOut _ hs
-  · exact A.stackScratch _ hs
-  · exact (Offset.disjoint (rLow s₀) (d := 24 + d) (n := 1) (e := 24) (k := 36) (by omega) (by omega)
-      (by omega)) _ (self_contains _)
-  · exact (Offset.disjoint_base (rLow s₀) (d := 24 + d) (n := 1) (k := 24) (by omega) (by omega)) _
+  · exact A.stackOutWide _ hs
+  · exact A.stackScratchWide _ hs
+  · rw [rLow_off]
+    exact (Offset.disjoint (rCall s₀) (d := 88 + (24 + d)) (n := 1) (e := 88 + 24) (k := 36) (by omega)
+      (by omega) (by omega)) _ (self_contains _)
+  · exact (Offset.disjoint_base (rCall s₀) (d := 88 + (24 + d)) (n := 1) (k := 112) (by omega) (by omega)) _
       (self_contains _)
 
 theorem call_frame_slot {s₀ : State} (A : KeyABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
