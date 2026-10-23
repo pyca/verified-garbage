@@ -1370,9 +1370,10 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "aarch64")]
         if out.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
+            && let Some(_p) = self.fns.powers
+            && false
         {
-            return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
+            unreachable!();
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
