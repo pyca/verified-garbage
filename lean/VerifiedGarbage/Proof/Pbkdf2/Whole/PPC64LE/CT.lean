@@ -281,4 +281,106 @@ theorem loop_rel :
 
 end
 
+section
+variable {hF : FnsOK F} {s₀ s₀' : State} (hp : Pre F hF.X s₀) (hp' : Pre F hF.X s₀') (hq : PubEq s₀ s₀')
+  (hc : Checks F)
+include hp hp' hq hc
+
+/-- Two runs of `pbkdf2` in its frame. -/
+theorem main_rel : RelCT isa (fun s s' => s = entry s₀ ∧ s' = entry s₀') F.main fun _ _ => True := by
+  unfold Fns.main
+  have rp := rel_agree (P₁ := fun s => s = entry s₀) (P₂ := fun s => s = entry s₀') (fun s s' h h' => by
+      subst h h'
+      refine ⟨by show s₀.sp - 48 = s₀'.sp - 48; rw [hq.sp], fun r hr => ?_⟩
+      rw [entry_gpr s₀ (by revert r hr; decide), entry_gpr s₀' (by revert r hr; decide)]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [hq.r3, hq.r4, hq.r5, hq.r6, hq.r8, hq.r9, hq.r10]) hc.pro
+    (fun s h => h ▸ prologue_ok hF hp) (fun s h => h ▸ prologue_ok hF hp')
+  have rh : RelCT isa (fun s s' => Pro F hF.X s₀ s ∧ Pro F hF.X s₀' s') F.callHi
+      fun s s' => Keyed hF s₀ s ∧ Keyed hF s₀' s' :=
+    rel_wp (hi_rel hF fun s s' ⟨h, h'⟩ => by
+        have a' := hi_args hF hp' h'
+        rw [hq.sA, hq.sA, show pw s₀' = pw s₀ by simp only [PPC64LE.pw, hq.r3],
+          show pwl s₀' = pwl s₀ by simp only [PPC64LE.pwl, hq.r4]] at a'
+        exact ⟨hi_args hF hp h, a', by rw [h.kr.sp, h'.kr.sp, hq.sp]⟩)
+      (fun s h => hi_ok hF hp h) (fun s h => hi_ok hF hp' h)
+  have ri := rel_agree (fun s s' (h : Keyed hF s₀ s) (h' : Keyed hF s₀' s') => by
+      refine ⟨by rw [h.kr.sp, h'.kr.sp, hq.sp], fun r hr => ?_⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [h.kr.r20, h'.kr.r20, hq.r6]
+      · rw [h.kr.r21, h'.kr.r21, scr, scr, hq.r10]
+      · rw [h.r23, h'.r23, hq.out]
+      · rw [h.r24, h'.r24, hq.r9]
+      · rw [h.kr.r25, h'.kr.r25, salt, salt, hq.r5]) hc.li
+    (fun s h => loopInit_ok hp h) (fun s h => loopInit_ok hp' h)
+  have rl := loop_rel hp hp' hq hc
+  obtain ⟨_, hr⟩ := hc.restore
+  have rr : RelCT isa (fun s s' => Inv hF s₀ (nbk s₀ (F := F)) s ∧ Inv hF s₀' (nbk s₀' (F := F)) s')
+      (.block (Hash.restoreAt 0)) fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs [.r21]) (fun s s' ⟨h, h'⟩ => ⟨by rw [h.kr.sp, h'.kr.sp, hq.sp],
+      fun r hr => by
+        rw [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr
+        rw [h.kr.r21, h'.kr.r21, scr, scr, hq.r10]⟩) hr
+  exact rp.seq (rh.seq (ri.seq (rl.seq rr)))
+
+end
+
+/-- A run of `main` from the start of the frame, and the frame's push. -/
+theorem rel_pushed {r : Reg} {c : Prog isa} {P Q : State → State → Prop}
+    (h : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = framed r s₁ ∧ b = framed r s₂) c Q)
+    (hw : ∀ s₁ s₂, P s₁ s₂ → (∃ t x, Exec isa c (framed r s₁) t x) ∧ (∃ t x, Exec isa c (framed r s₂) t x)) :
+    RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = pushed r s₁ ∧ b = pushed r s₂) c fun _ _ => True := by
+  rintro a b t₁ t₂ a' b' ⟨s₁, s₂, hp, rfl, rfl⟩ e₁ e₂
+  obtain ⟨⟨u₁, x₁, f₁⟩, ⟨u₂, x₂, f₂⟩⟩ := hw s₁ s₂ hp
+  have cov : ∀ s : State, Covers ((framed r s).rd ++ (framed r s).wr) ((pushed r s).rd ++ (pushed r s).wr) :=
+    fun s a n ⟨r', hr, hc⟩ => ⟨r', by
+      simp only [framed, pushed, List.mem_append, List.mem_cons] at hr ⊢
+      rcases hr with h | h
+      exacts [.inl h, .inr (.inr h)], hc⟩
+  have covw : ∀ s : State, Covers (framed r s).wr (pushed r s).wr :=
+    fun s a n ⟨r', hr, hc⟩ => ⟨r', by simp only [framed, pushed, List.mem_cons] at hr ⊢; exact .inr hr, hc⟩
+  have w₁ := Exec.widen f₁ (cov s₁) (covw s₁)
+  have w₂ := Exec.widen f₂ (cov s₂) (covw s₂)
+  have e : ∀ s : State, (framed r s).withRegions (pushed r s).rd (pushed r s).wr = pushed r s := fun _ => rfl
+  rw [e] at w₁ w₂
+  obtain ⟨rfl, -⟩ := Exec.det e₁ w₁
+  obtain ⟨rfl, -⟩ := Exec.det e₂ w₂
+  exact ⟨(h _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, rfl⟩ f₁ f₂).1, trivial⟩
+
+variable (hF : FnsOK F)
+
+/-- `pbkdf2` is constant time, given the taint checks of its pieces. -/
+theorem ct (hc : Checks F) :
+    ConstantTime isa (pbkG hF.hH.SH F.bytes (hF.X + 144)).pre (pbkG hF.hH.SH F.bytes (hF.X + 144)).pub F.pbkdf2 := by
+  refine RelCT.constantTime (Q := fun _ _ => True) fun s₀ s₀' t₁ t₂ a b ⟨h, h', hpub⟩ e₁ e₂ => ?_
+  have hp := pre_of hF h; have hp' := pre_of hF h'
+  obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp⟩ := hpub
+  have hq : PubEq s₀ s₀' := ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp⟩
+  revert e₁ e₂
+  generalize hP : (fun x y : State => x = s₀ ∧ y = s₀') = P
+  suffices hr : RelCT isa P F.pbkdf2 fun _ _ => True by
+    intro e₁ e₂; exact hr _ _ _ _ _ _ (hP ▸ ⟨rfl, rfl⟩) e₁ e₂
+  subst hP
+  unfold Fns.pbkdf2
+  have m1 : RelCT isa (fun x y => x = s₀ ∧ y = s₀') (.block [.mflr .r0])
+      fun x y => x = s₀.write .r0 s₀.lr ∧ y = s₀'.write .r0 s₀'.lr :=
+    rel_agree (rs := []) (fun x y hx hy => by subst hx hy; exact ⟨qsp, by simp⟩) ⟨.block [], by decide⟩
+      (fun x hx => hx ▸ VG.Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil rfl))
+      (fun x hx => hx ▸ VG.Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil rfl))
+  have fr : RelCT isa (fun x y => x = s₀.write .r0 s₀.lr ∧ y = s₀'.write .r0 s₀'.lr)
+      (.frame (.push .r0) F.main (.pop .r0)) fun x y => x.sp = y.sp := by
+    refine RelCT.frame (R := fun _ _ => True) (fun x y ⟨hx, hy⟩ => by subst hx hy; exact qsp) ?_
+    refine rel_pushed (P := fun x y => x = s₀.write .r0 s₀.lr ∧ y = s₀'.write .r0 s₀'.lr)
+      ((main_rel hp hp' hq hc).mono (fun x y ⟨_, _, ⟨e₁, e₂⟩, hx, hy⟩ => by subst e₁ e₂ hx hy; exact ⟨rfl, rfl⟩)
+        fun _ _ h => h) fun x y ⟨e₁, e₂⟩ => ?_
+    subst e₁ e₂
+    obtain ⟨t, x, he, -⟩ := main_ok hp (hF := hF)
+    obtain ⟨t', x', he', -⟩ := main_ok hp' (hF := hF)
+    exact ⟨⟨t, x, he⟩, ⟨t', x', he'⟩⟩
+  have m2 : RelCT isa (fun x y : State => x.sp = y.sp) (.block [.mtlr .r0]) fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs []) (fun x y h => ⟨h, by simp⟩) (hc := .block []) (by decide)
+  exact m1.seq (fr.seq m2)
+
 end VG.Proof.Pbkdf2.Whole.PPC64LE
