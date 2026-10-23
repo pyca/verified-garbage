@@ -47,7 +47,7 @@ structure Checks (F : Fns) : Prop where
   pro : Ck inRegs (.block F.prologue)
   li : Ck lpRegs (.block F.loopInit)
   b1 : Ck lpRegs (.block (F.copyW ++ F.saltArgs))
-  upd : Ck lpRegs F.H.callUpd
+  upd : Ck (lpRegs ++ [.r3, .r4, .r5, .r6, .r7]) F.H.callUpd
   b3 : Ck lpRegs (.block F.updArgs)
   b5 : Ck lpRegs (.block F.finArgs)
   b7 : Ck lpRegs (.block (F.copyT ++ F.iterArgs))
@@ -192,11 +192,35 @@ theorem block_rel {k : Nat} (hk : k < nbk s₀ (F := F)) :
   unfold Fns.block
   have r1 := rel_agree (fun s s' (h : Inv hF s₀ k s) (h' : Inv hF s₀' k s') => ag_lp hq h h') hc.b1
     (fun s h => st1 hp h) (fun s h => st1 hp' h)
-  have r2 := rel_agree (fun s s' (h : G1 hF k s₀ s) (h' : G1 hF k s₀' s') => ag_lp hq h.1 h'.1) hc.upd
+  have r2 := rel_agree (fun s s' (h : G1 hF k s₀ s) (h' : G1 hF k s₀' s') => by
+      obtain ⟨e, g⟩ := ag_lp hq h.1 h'.1
+      refine ⟨e, fun r hr => ?_⟩
+      rw [List.mem_append] at hr
+      rcases hr with hr | hr
+      · exact g r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [h.2.2.1, h'.2.2.1, hq.sA]
+      · rw [h.2.2.2.1, h'.2.2.2.1]
+      · rw [h.2.2.2.2.1, h'.2.2.2.2.1, salt, salt, hq.r5]
+      · rw [h.2.2.2.2.2.1, h'.2.2.2.2.2.1, hq.r6]
+      · rw [h.2.2.2.2.2.2, h'.2.2.2.2.2.2, hq.sA]) hc.upd
     (fun s h => st2 hp h) (fun s h => st2 hp' h)
   have r3 := rel_agree (fun s s' (h : G2 hF k s₀ s) (h' : G2 hF k s₀' s') => ag_lp hq h.1 h'.1) hc.b3
     (fun s h => st3 hp h) (fun s h => st3 hp' h)
-  have r4 := rel_agree (fun s s' (h : G3 hF k s₀ s) (h' : G3 hF k s₀' s') => ag_lp hq h.1 h'.1) hc.upd
+  have r4 := rel_agree (fun s s' (h : G3 hF k s₀ s) (h' : G3 hF k s₀' s') => by
+      obtain ⟨e, g⟩ := ag_lp hq h.1 h'.1
+      refine ⟨e, fun r hr => ?_⟩
+      rw [List.mem_append] at hr
+      rcases hr with hr | hr
+      · exact g r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [h.2.2.1, h'.2.2.1, hq.sA]
+      · rw [h.2.2.2.1, h'.2.2.2.1, sl']
+      · rw [h.2.2.2.2.1, h'.2.2.2.2.1, hq.sA]
+      · rw [h.2.2.2.2.2.1, h'.2.2.2.2.2.1]
+      · rw [h.2.2.2.2.2.2, h'.2.2.2.2.2.2, hq.sA]) hc.upd
     (fun s h => st4 hp h) (fun s h => st4 hp' h)
   have r5 := rel_agree (fun s s' (h : G4 hF k s₀ s) (h' : G4 hF k s₀' s') => ag_lp hq h.1 h'.1) hc.b5
     (fun s h => st5 hp h) (fun s h => st5 hp' h)
