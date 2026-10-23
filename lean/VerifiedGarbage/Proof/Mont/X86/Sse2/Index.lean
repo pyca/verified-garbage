@@ -4,15 +4,11 @@ public import VerifiedGarbage.Proof.Mont.X86.Sse2.Dot
 public import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # The parameters and the column's indices
+/-! # The parameters
 
 The kernel's seven parameters are words on the stack, `d` bytes above `esp`
-(`Params`), past the working space, so changes within it keep them. Each
-column computes, from `ecx = 4 k` and the parameter `4 N`, the first index of
-its products, `4 max(0, k + 1 - N)` (`lowIdx_ok`), and their end: `4 min(k +
-1, N)` for a product (`endProduct_ok`), `4 ⌊(k + 1) / 2⌋` for the products
-above the diagonal of a square (`endHalf_ok`) and `4 min(k, N)` for the
-quotient digits (`endReduce_ok`).
+(`Params`), past the working space, so changes within it keep them; `Sk`
+records what a step keeps.
 -/
 
 @[expose] public section
@@ -74,90 +70,5 @@ theorem Params.readSk {s t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32}
 
 theorem ofNat_of_toNat {v : BitVec 32} {n : Nat} (h : v.toNat = n) : v = BitVec.ofNat 32 n := by
   apply BitVec.eq_of_toNat_eq; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (h ▸ v.isLt)]
-
-/-! ## The indices -/
-
-section
-variable {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k : Nat}
-
-/-- `edx = 4 (k + 1 - N)`, the first product's index. -/
-theorem lowIdx_ok (P : Params s W L V 12) (hN : (V pN4).toNat = 4 * N) (hc : s.gpr .ecx = BitVec.ofNat 32 (4 * k))
-    (hk : 4 * (k + 1) < 2 ^ 32) :
-    WP isa lowIdx s fun t => t.gpr .edx = BitVec.ofNat 32 (4 * (k + 1 - N)) ∧ Sk [.edx, .eax] s t := by
-  unfold lowIdx
-  refine WP.seq (wp_movX (P.read pN4 (by decide)) fun t0 u0 m0 x0 => wp_movX rfl fun t1 u1 m1 x1 =>
-    wp_addX rfl fun t2 u2 _ m2 x2 => ?_)
-  have K2 : Sk [.edx, .eax] s t2 :=
-    ((Sk.of_upd [.edx, .eax] u0 m0 x0).trans (Sk.of_upd [.edx, .eax] u1 m1 x1)).trans (Sk.of_upd [.edx, .eax] u2 m2 x2)
-  have a2 : t2.gpr .eax = V pN4 := by rw [u2.other _ (by decide), u1.other _ (by decide), u0.gpr]
-  refine wp_subX (show some (t2.gpr .eax) = _ by rw [a2]) fun t3 u3 c3 m3 x3 => WP.block_nil ?_
-  have K3 : Sk [.edx, .eax] s t3 := K2.trans (Sk.of_upd [.edx, .eax] u3 m3 x3)
-  have e2 : t2.gpr .edx = BitVec.ofNat 32 (4 * k + 4) := by
-    rw [u2.gpr, u1.gpr, u0.other _ (by decide), hc]; exact BitVec.ofNat_add _ _ |>.symm
-  have hv := (V pN4).isLt
-  by_cases hlt : k + 1 < N
-  · refine WP.ite true (by show t3.cf = _; rw [c3, e2, toNat_ofNat_lt (by omega), hN, decide_eq_true (by omega)])
-      (fun _ => wp_movX rfl fun t4 u4 m4 x4 => WP.block_nil ⟨?_, K3.trans (Sk.of_upd [.edx, .eax] u4 m4 x4)⟩)
-      (fun h => absurd h (by decide))
-    rw [u4.gpr, show k + 1 - N = 0 by omega]; rfl
-  · refine WP.ite false (by show t3.cf = _; rw [c3, e2, toNat_ofNat_lt (by omega), hN, decide_eq_false (by omega)])
-      (fun h => absurd h (by decide)) (fun _ => WP.block_nil ⟨?_, K3⟩)
-    rw [u3.gpr, e2, ofNat_of_toNat hN, sub_ofNat (by omega), show 4 * (k + 1 - N) = 4 * k + 4 - 4 * N by omega]
-
-/-- `ebx = 4 min(k + 1, N)`, the end of a product's column. -/
-theorem endProduct_ok (P : Params s W L V 12) (hN : (V pN4).toNat = 4 * N)
-    (hc : s.gpr .ecx = BitVec.ofNat 32 (4 * k)) (hk : 4 * (k + 1) < 2 ^ 32) :
-    WP isa endProduct s fun t => t.gpr .ebx = BitVec.ofNat 32 (4 * min (k + 1) N) ∧ Sk [.ebx, .eax] s t := by
-  unfold endProduct
-  refine WP.seq (wp_movX (P.read pN4 (by decide)) fun t0 u0 m0 x0 => wp_movX rfl fun t1 u1 m1 x1 =>
-    wp_addX rfl fun t2 u2 _ m2 x2 => ?_)
-  have K2 : Sk [.ebx, .eax] s t2 :=
-    ((Sk.of_upd [.ebx, .eax] u0 m0 x0).trans (Sk.of_upd [.ebx, .eax] u1 m1 x1)).trans (Sk.of_upd [.ebx, .eax] u2 m2 x2)
-  have a2 : t2.gpr .eax = V pN4 := by rw [u2.other _ (by decide), u1.other _ (by decide), u0.gpr]
-  refine wp_cmpX (show some (t2.gpr .eax) = _ by rw [a2]) fun t3 f3 c3 _ m3 x3 => WP.block_nil ?_
-  have K3 : Sk [.ebx, .eax] s t3 := K2.trans (Sk.of_fupd f3 m3 x3 [.ebx, .eax])
-  have e2 : t2.gpr .ebx = BitVec.ofNat 32 (4 * k + 4) := by
-    rw [u2.gpr, u1.gpr, u0.other _ (by decide), hc]; exact BitVec.ofNat_add _ _ |>.symm
-  have e3 : t3.gpr .ebx = BitVec.ofNat 32 (4 * k + 4) := by rw [f3.gpr, e2]
-  have a3 : t3.gpr .eax = V pN4 := by rw [f3.gpr, a2]
-  have hv := (V pN4).isLt
-  by_cases hlt : k + 1 < N
-  · refine WP.ite false (by
-        show t3.cf.map _ = _; rw [c3, e2, toNat_ofNat_lt (by omega), hN, decide_eq_true (by omega)]; rfl)
-      (fun h => absurd h (by decide)) (fun _ => WP.block_nil ⟨?_, K3⟩)
-    rw [e3, Nat.min_eq_left (by omega)]; rfl
-  · refine WP.ite true (by
-        show t3.cf.map _ = _; rw [c3, e2, toNat_ofNat_lt (by omega), hN, decide_eq_false (by omega)]; rfl)
-      (fun _ => wp_movX (show some (t3.gpr .eax) = _ by rw [a3]) fun t4 u4 m4 x4 =>
-        WP.block_nil ⟨?_, K3.trans (Sk.of_upd [.ebx, .eax] u4 m4 x4)⟩)
-      (fun h => absurd h (by decide))
-    rw [u4.gpr, ofNat_of_toNat hN, Nat.min_eq_right (by omega)]
-
-/-- `ebx = 4 min(k, N)`, the end of the quotient digits' products. -/
-theorem endReduce_ok (P : Params s W L V 12) (hN : (V pN4).toNat = 4 * N)
-    (hc : s.gpr .ecx = BitVec.ofNat 32 (4 * k)) (hk : 4 * (k + 1) < 2 ^ 32) :
-    WP isa endReduce s fun t => t.gpr .ebx = BitVec.ofNat 32 (4 * min k N) ∧ Sk [.ebx, .eax] s t := by
-  unfold endReduce
-  refine WP.seq (wp_movX (P.read pN4 (by decide)) fun t0 u0 m0 x0 => wp_movX rfl fun t1 u1 m1 x1 => ?_)
-  have K1 : Sk [.ebx, .eax] s t1 := (Sk.of_upd [.ebx, .eax] u0 m0 x0).trans (Sk.of_upd [.ebx, .eax] u1 m1 x1)
-  have a1 : t1.gpr .eax = V pN4 := by rw [u1.other _ (by decide), u0.gpr]
-  refine wp_cmpX (show some (t1.gpr .eax) = _ by rw [a1]) fun t3 f3 c3 _ m3 x3 => WP.block_nil ?_
-  have K3 : Sk [.ebx, .eax] s t3 := K1.trans (Sk.of_fupd f3 m3 x3 [.ebx, .eax])
-  have e1 : t1.gpr .ebx = BitVec.ofNat 32 (4 * k) := by rw [u1.gpr, u0.other _ (by decide), hc]
-  have a3 : t3.gpr .eax = V pN4 := by rw [f3.gpr, a1]
-  have hv := (V pN4).isLt
-  by_cases hlt : k < N
-  · refine WP.ite false (by
-        show t3.cf.map _ = _; rw [c3, e1, toNat_ofNat_lt (by omega), hN, decide_eq_true (by omega)]; rfl)
-      (fun h => absurd h (by decide)) (fun _ => WP.block_nil ⟨?_, K3⟩)
-    rw [f3.gpr, e1, Nat.min_eq_left (by omega)]
-  · refine WP.ite true (by
-        show t3.cf.map _ = _; rw [c3, e1, toNat_ofNat_lt (by omega), hN, decide_eq_false (by omega)]; rfl)
-      (fun _ => wp_movX (show some (t3.gpr .eax) = _ by rw [a3]) fun t4 u4 m4 x4 =>
-        WP.block_nil ⟨?_, K3.trans (Sk.of_upd [.ebx, .eax] u4 m4 x4)⟩)
-      (fun h => absurd h (by decide))
-    rw [u4.gpr, ofNat_of_toNat hN, Nat.min_eq_right (by omega)]
-
-end
 
 end VG.Proof.Mont.X86.Sse2
