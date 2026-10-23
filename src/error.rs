@@ -82,6 +82,8 @@ mod tests {
             crate::aes_cbc::Error::IncompleteBlock,
             crate::triple_des_ecb::Error::InvalidKeyLength,
             crate::triple_des_ecb::Error::IncompleteBlock,
+            crate::triple_des_cbc::Error::InvalidKeyLength,
+            crate::triple_des_cbc::Error::IncompleteBlock,
         );
         #[cfg(any(
             target_arch = "x86_64",
@@ -152,6 +154,7 @@ mod tests {
             crate::seed_cbc::Error::IncompleteBlock,
             crate::seed_ecb::Error::IncompleteBlock,
             crate::sm4_cbc::Error::IncompleteBlock,
+            crate::sm4_ecb::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::InvalidKeyLength,
             crate::triple_des_cbc::Error::IncompleteBlock,
             crate::x448::Error::ZeroSharedSecret,
