@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 
 /-!
 # The RSA public-key operation on PPC64LE: the power
@@ -148,5 +150,71 @@ theorem step_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 ≤
     exact Outs.of_outside (o := slot w 5) (n := 8 * (w + 2)) (out.mono (Nat.le_refl _) (by omega))
       (by simp [stepRs])
   · rw [k4.gpr .r24 (by decide), a24, k12.gpr .r24 (by decide)]
+
+/-! ## The arithmetic of the scan -/
+
+theorem sq_step {A S X c R N : Nat} (hR : Nat.Coprime R N) (hA : A % N = X ^ c * R % N)
+    (hS : S * R % N = A * A % N) : S % N = X ^ (2 * c) * R % N := by
+  refine VG.Proof.Bignum.mont_cancel hR ?_
+  rw [hS, Nat.mul_mod, hA, ← Nat.mul_mod, Nat.two_mul, Nat.pow_add]
+  congr 1
+  grind
+
+theorem mul_step {S P X c R N XM : Nat} (hR : Nat.Coprime R N) (hS : S % N = X ^ (2 * c) * R % N)
+    (hX : XM % N = X * R % N) (hP : P * R % N = S * XM % N) : P % N = X ^ (2 * c + 1) * R % N := by
+  refine VG.Proof.Bignum.mont_cancel hR ?_
+  rw [hP, Nat.mul_mod, hS, hX, ← Nat.mul_mod, Nat.pow_succ]
+  congr 1
+  grind
+
+/-- `one`: 1 in array 7. -/
+theorem oneP_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) :
+    WP isa PublicChecked.one s fun t =>
+      (val32 t.mem B (slot w 7) (2 * w) = 1 ∧ Outside B (slot w 7) (8 * w) s.mem t.mem) ∧
+        Keep [.r0, .r14, .r17] s t := by
+  have hnw := hs.nowrap
+  have s7 := slot_le (w := w) (j := 7) (by decide)
+  unfold PublicChecked.one
+  refine WP.seq (WP.mono (base_ok (rd := .r14) (by decide) (by decide) h10 h29 7) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (zeroWords_ok (hs.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans h11) hw1 hw'
+    (by omega)) fun s₂ ⟨⟨_, hz, out₂⟩, k₂⟩ => ?_)
+  have k12 := k1.trans k₂
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok (rd := .r14) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10)
+    ((k12.gpr _ (by decide)).trans h29) 7) fun s₃ ⟨⟨b14, m3⟩, k3⟩ => ?_
+  have k13 := k12.trans k3
+  refine WP.mono (WP.keep [.r0] (Q := fun t =>
+    t.mem = s₃.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) ?_ (by decide))
+    fun t ⟨tm, k4⟩ => ⟨⟨?_, ?_⟩, (k13.trans k4).mono⟩
+  · prun [b14, BitVec.add_zero, (hs.congr k13.wr).st (d := slot w 7) (n := 4) (by omega)]
+    rfl
+  · rw [m3] at tm
+    have hz32 : ∀ j < 2 * w, w32 s₂.mem B (slot w 7 + 4 * j) = 0 := fun j hj => by
+      have hword := word_eq_w32 s₂.mem B (slot w 7 + 8 * (j / 2))
+      rw [hz (j / 2) (by omega)] at hword
+      have : w32 s₂.mem B (slot w 7 + 8 * (j / 2)) = 0 ∧ w32 s₂.mem B (slot w 7 + 8 * (j / 2) + 4) = 0 := by
+        rw [show (0 : BitVec 64).toNat = 0 from rfl] at hword; omega
+      rcases Nat.mod_two_eq_zero_or_one j with h | h
+      · rw [show slot w 7 + 4 * j = slot w 7 + 8 * (j / 2) by omega]; exact this.1
+      · rw [show slot w 7 + 4 * j = slot w 7 + 8 * (j / 2) + 4 by omega]; exact this.2
+    have ho := writeW32_outside s₂.mem B (d := slot w 7) ((1 : BitVec 64).setWidth 32) (by omega)
+    have e := val32_append (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7) 1
+      (2 * w - 1)
+    rw [show 1 + (2 * w - 1) = 2 * w by omega] at e
+    have hrest : val32 (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7 + 4 * 1)
+        (2 * w - 1) = 0 := by
+      rw [ho.val32 (by omega) (by omega)]
+      exact val32_zero fun j hj => by
+        rw [show slot w 7 + 4 * 1 + 4 * j = slot w 7 + 4 * (j + 1) by omega]; exact hz32 _ (by omega)
+    have h1 := val32_succ (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7) 0
+    rw [show slot w 7 + 4 * 0 = slot w 7 from rfl, w32_write_self] at h1
+    rw [tm, e, hrest, Nat.mul_zero, Nat.add_zero, h1]
+    rfl
+  · rw [m3] at tm
+    rw [m1] at out₂
+    rw [tm]
+    exact out₂.trans ((writeW32_outside s₂.mem B (d := slot w 7) _ (by omega)).mono (by omega) (by omega))
 
 end VG.Proof.Bignum.PPC64LE.Pub
