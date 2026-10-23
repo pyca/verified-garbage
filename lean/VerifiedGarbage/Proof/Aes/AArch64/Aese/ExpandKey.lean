@@ -349,11 +349,13 @@ theorem eor_ok (d n m : Reg) (s : State) :
   WP.of_runBlock ⟨s.write .w d (s.read .w n ^^^ s.read .w m), rfl, write32 _ _ _,
     Fr.write (by simp) _⟩
 
-theorem ror_ok (s : State) :
-    WP isa (.block [.ror .w .x9 .x9 8]) s fun s' =>
-      (s'.gpr .x9).setWidth 32 = ((s.gpr .x9).setWidth 32).rotateRight 8 ∧ Fr [.x9] [] s s' :=
-  WP.of_runBlock ⟨s.write .w .x9 ((s.read .w .x9).rotateRight 8), rfl, write32 _ _ _,
-    Fr.write (by simp) _⟩
+/-- `RotWord` and the round constant: `x9 ← w10 ⊕ (w9 ⋙ 8)`. -/
+theorem eorRor_ok (s : State) :
+    WP isa (.block [.logicRor .eor .w .x9 .x10 .x9 8]) s fun s' =>
+      (s'.gpr .x9).setWidth 32 = (s.gpr .x10).setWidth 32 ^^^ ((s.gpr .x9).setWidth 32).rotateRight 8 ∧
+        Fr [.x9] [] s s' :=
+  WP.of_runBlock ⟨s.write .w .x9 (s.read .w .x10 ^^^ (s.read .w .x9).rotateRight 8), rfl,
+    write32 _ _ _, Fr.write (by simp) _⟩
 
 theorem movz_ok (d : Reg) (imm : BitVec 16) (s : State) :
     WP isa (.block [.movz .w d imm 0]) s fun s' =>
@@ -441,18 +443,17 @@ theorem word_ok {s₀ : State} (hp : Pre s₀) {nk : Nat} (hnk : nk = 4 ∨ nk =
   by_cases h1 : i % nk = 0
   · rw [ite_eq_left h1, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (subW_ok _ s hI.v0) fun s₁ ⟨e₁, f₁⟩ => ?_
-    refine wp_cons _ (ror_ok s₁) fun s₂ ⟨e₂, f₂⟩ => ?_
-    refine wp_cons _ (movz_ok .x10 _ s₂) fun s₃ ⟨e₃, f₃⟩ => ?_
-    refine wp_cons _ (eor_ok .x9 .x9 .x10 s₃) fun s₄ ⟨e₄, f₄⟩ => ?_
+    refine wp_cons _ (movz_ok .x10 _ s₁) fun s₃ ⟨e₃, f₃⟩ => ?_
+    refine wp_cons _ (eorRor_ok s₃) fun s₄ ⟨e₄, f₄⟩ => ?_
     refine WP.mono (eor_ok _ _ .x9 s₄) fun s₅ ⟨e₅, f₅⟩ => ?_
     have f : Fr [wreg nk i, .x9, .x10] [.v1] s s₅ :=
-      (((f₁.mono (by simp) (by simp)).trans (f₂.mono (by simp) (by simp))).trans
+      ((f₁.mono (by simp) (by simp)).trans
         ((f₃.mono (by simp) (by simp)).trans (f₄.mono (by simp) (by simp)))).trans
         (f₅.mono (by simp) (by simp))
     refine st f ?_
-    rw [e₅, e₄, e₃, f₃.gpr .x9 (by simp), e₂, e₁, f₄.gpr _ (by simp [n9]), f₃.gpr _ (by simp [n10]),
-      f₂.gpr _ (by simp [n9]), f₁.gpr _ (by simp [n9]), hA, hW, temp32, ite_eq_left h1, hP,
-      BitVec.setWidth_setWidth (by omega_arith)]
+    rw [e₅, e₄, e₃, f₃.gpr .x9 (by simp), e₁, f₄.gpr _ (by simp [n9]), f₃.gpr _ (by simp [n10]),
+      f₁.gpr _ (by simp [n9]), hA, hW, temp32, ite_eq_left h1, hP,
+      BitVec.setWidth_setWidth (by omega_arith), BitVec.xor_comm ((rc (i / nk)).setWidth 32)]
   by_cases h2 : nk > 6 ∧ i % nk = 4
   · rw [ite_eq_right h1, ite_eq_left h2, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (subW_ok _ s hI.v0) fun s₁ ⟨e₁, f₁⟩ => ?_
