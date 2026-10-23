@@ -18,7 +18,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use core::mem::MaybeUninit;
@@ -100,8 +101,11 @@ fn select(f: Features) -> Backend {
     Backend::select_for(f, AES)
 }
 
-/// The only implementation of AES on ARMv7.
-#[cfg(target_arch = "arm")]
+/// The only implementation of AES on ARMv7 and PPC64LE.
+#[cfg(any(
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 fn select(f: Features) -> Backend {
     Backend::select(f)
 }
@@ -253,7 +257,12 @@ const ENCRYPT_AESNI_WRITTEN: usize = SCRATCH;
 type Blocks =
     unsafe extern "sysv64" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 /// The signature of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 type Blocks = unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 
 impl Drop for AesEcb {

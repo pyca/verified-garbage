@@ -82,6 +82,8 @@ mod tests {
             crate::rc4::Error::InvalidKeyLength,
             crate::x25519::Error::ZeroSharedSecret,
             crate::x25519::Error::Randomness,
+            crate::aes_ecb::Error::InvalidKeyLength,
+            crate::aes_ecb::Error::IncompleteBlock,
         );
         #[cfg(any(
             target_arch = "x86_64",
@@ -97,8 +99,6 @@ mod tests {
             crate::aes_ccm::Error::InvalidNonceLength,
             crate::aes_ccm::Error::InvalidTextLength,
             crate::aes_ccm::Error::TagMismatch,
-            crate::aes_ecb::Error::InvalidKeyLength,
-            crate::aes_ecb::Error::IncompleteBlock,
             crate::aes_gcm::Error::InvalidKeyLength,
             crate::aes_gcm::Error::InvalidNonceLength,
             crate::aes_gcm::Error::InvalidTextLength,
