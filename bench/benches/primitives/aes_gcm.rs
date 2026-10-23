@@ -533,7 +533,8 @@ fn tls_records(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub(crate) struct Offsets {
     pub(crate) input: usize,
@@ -545,7 +546,8 @@ pub(crate) struct Offsets {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl Offsets {
     /// The rows' offsets: where rustls puts a record's payload, 5 bytes (the
@@ -566,7 +568,8 @@ impl Offsets {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub(crate) struct Aligned {
     raw: Vec<u8>,
@@ -578,7 +581,8 @@ pub(crate) struct Aligned {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl Aligned {
     pub(crate) fn new(bytes: &[u8], offset: usize) -> Self {
@@ -598,7 +602,8 @@ impl Aligned {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl std::ops::Deref for Aligned {
     type Target = [u8];
@@ -611,7 +616,8 @@ impl std::ops::Deref for Aligned {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl std::ops::DerefMut for Aligned {
     fn deref_mut(&mut self) -> &mut [u8] {
@@ -623,7 +629,8 @@ impl std::ops::DerefMut for Aligned {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl AsRef<[u8]> for Aligned {
     fn as_ref(&self) -> &[u8] {
