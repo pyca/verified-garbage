@@ -14,7 +14,28 @@ pub(crate) mod chacha20;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod hmac_md5;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha224;
+
+#[rustfmt::skip]
 pub(crate) mod hmac_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha512;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha512_224;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha512_256;
 
 #[rustfmt::skip]
 pub(crate) mod md5;
