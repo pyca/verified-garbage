@@ -5067,7 +5067,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// Field elements are six 64-bit words in Montgomery form. Scalar multiplication uses a fixed 384-iteration ladder with the general complete addition formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. The inversion modulo `n` is a call of `vg_brainpoolp384r1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers, counters and public verification scalars.
+/// Field elements are six 64-bit words in Montgomery form. Public scalar multiplication uses a joint radix-four table built by a shared addition loop, with 384 shared doublings and at most 192 additions using complete general RCB formulas. The inversion modulo `n` is a call of `vg_brainpoolp384r1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers, counters and public verification scalars.
 ///
 /// # Safety
 ///
