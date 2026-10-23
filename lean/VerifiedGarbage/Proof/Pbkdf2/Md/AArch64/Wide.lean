@@ -273,9 +273,9 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
       bytesAt s'.mem (p + BitVec.ofNat 64 H.D) (H.P.B - H.D) = M.tailPad H.D →
       bytesAt s'.mem p H.D = bytesAt s.mem p H.D → WP isa (.block rest) s' Q) :
     WP isa (.block (H.padW ++ rest)) s Q := by
-  have hAD : H.D + 4 ≤ H.padA := by simp only [Hash.padA]; omega
-  have hA16 : H.padA % 16 = 0 := by simp only [Hash.padA]; omega
-  have hAD' : H.padA ≤ H.D + 16 := by simp only [Hash.padA]; omega
+  have hAD : H.D + 4 ≤ H.padA := by simp only [Hash.padA]; omega_arith
+  have hA16 : H.padA % 16 = 0 := by simp only [Hash.padA]; omega_arith
+  have hAD' : H.padA ≤ H.D + 16 := by simp only [Hash.padA]; omega_arith
   -- The head: `0x80` and zeros from `D` up to `padA`, and zero in `x10`.
   have head : ∀ (rest' : List Instr),
       (∀ s', (∀ r, r ≠ .x9 → r ≠ .x10 → s'.gpr r = s.gpr r) → s'.gpr .x10 = 0 → s'.rd = s.rd → s'.wr = s.wr →
@@ -288,11 +288,11 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
     intro rest' k'
     split
     · rename_i h16
-      have e : H.padA - H.D - 1 = 15 := by simp only [Hash.padA]; omega
+      have e : H.padA - H.D - 1 = 15 := by simp only [Hash.padA]; omega_arith
       simp only [List.cons_append, List.nil_append]
       refine wp_movz fun s₁ u₁ => wp_movz fun s₂ u₂ => ?_
-      refine wp_stpB (b := p) ⟨by omega, by omega⟩ (by rw [u₂.other _ (by decide), u₁.other _ (by decide), hbp])
-        (by rw [u₂.wr, u₁.wr]; exact hw _ _ (by omega)) (by rw [u₂.wr, u₁.wr]; exact hw _ _ (by omega))
+      refine wp_stpB (b := p) ⟨by omega_arith, by omega_arith⟩ (by rw [u₂.other _ (by decide), u₁.other _ (by decide), hbp])
+        (by rw [u₂.wr, u₁.wr]; exact hw _ _ (by omega_arith)) (by rw [u₂.wr, u₁.wr]; exact hw _ _ (by omega_arith))
         fun s₃ g₃ => k' s₃ (fun r h9 h10 => by rw [g₃.gpr, u₂.other r h10, u₁.other r h9])
           (by rw [g₃.gpr, u₂.gpr]; rfl) (by rw [g₃.rd, u₂.rd, u₁.rd]) (by rw [g₃.wr, u₂.wr, u₁.wr])
           (by rw [g₃.sp, u₂.sp, u₁.sp]) ?_
@@ -302,17 +302,17 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
       rfl
     · rename_i h16
       rw [List.append_assoc]
-      refine Pbkdf2.AArch64.padFrom_ok (a := H.D) (b := H.padA) hAD (by omega) hD4 (by omega) hbp
-        (fun j hj => hw _ _ (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+      refine Pbkdf2.AArch64.padFrom_ok (a := H.D) (b := H.padA) hAD (by omega_arith) hD4 (by omega_arith) hbp
+        (fun j hj => hw _ _ (by omega_arith)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
       simp only [List.cons_append, List.nil_append]
       refine wp_movz fun s₂ u₂ => k' s₂ (fun r h9 h10 => by rw [u₂.other r h10, g₁ r h9]) (by rw [u₂.gpr]; rfl)
         (by rw [u₂.rd, rd₁]) (by rw [u₂.wr, wr₁]) (by rw [u₂.sp, sp₁]) (by rw [u₂.mem, m₁])
   unfold Hash.padW
   simp only [List.append_assoc]
-  have c16 : H.padA + 16 * ((H.P.B - 16 - H.padA) / 16) = H.P.B - 16 := by omega
+  have c16 : H.padA + 16 * ((H.P.B - 16 - H.padA) / 16) = H.P.B - 16 := by omega_arith
   refine head _ fun s₁ g₁ x₁ rd₁ wr₁ sp₁ m₁ => ?_
-  refine zst_ok H.padA (by omega) ((H.P.B - 16 - H.padA) / 16) _ s₁ Q p (by rw [g₁ _ (by decide) (by decide), hbp])
-    x₁ (fun a h1 h2 => by rw [wr₁]; exact hw _ _ (by omega)) (by omega) fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
+  refine zst_ok H.padA (by omega_arith) ((H.P.B - 16 - H.padA) / 16) _ s₁ Q p (by rw [g₁ _ (by decide) (by decide), hbp])
+    x₁ (fun a h1 h2 => by rw [wr₁]; exact hw _ _ (by omega_arith)) (by omega_arith) fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
   -- The zeros before an 8-byte length field: the block's bytes from `D` to `B - L`.
   have mid : ∀ (rest' : List Instr),
       (∀ t, t.gpr = s₂.gpr → t.rd = s.rd → t.wr = s.wr → t.sp = s.sp →
@@ -323,22 +323,22 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
     have m₂' : s₂.mem = writeBytes s.mem (p + BitVec.ofNat 64 H.D)
         ([0x80] ++ List.replicate (H.P.B - 16 - H.D - 1) 0) := by
       rw [m₂, m₁, Pbkdf2.Memory.writeBytes_append' _ _ _ (by
-          rw [List.length_append, List.length_singleton, List.length_replicate, add_ofNat]; congr 2; omega)
-          (by simp; omega), List.append_assoc, List.replicate_append_replicate]
-      congr 3; omega
+          rw [List.length_append, List.length_singleton, List.length_replicate, add_ofNat]; congr 2; omega_arith)
+          (by simp; omega_arith), List.append_assoc, List.replicate_append_replicate]
+      congr 3; omega_arith
     split
     · rename_i h8
       simp only [List.cons_append, List.nil_append]
-      refine wp_str (a := p + BitVec.ofNat 64 (H.P.B - 16)) ⟨by omega, by omega⟩
-        (by rw [g₂, g₁ _ (by decide) (by decide), hbp]) (by rw [wr₂, wr₁]; exact hw _ _ (by omega)) fun t g => ?_
+      refine wp_str (a := p + BitVec.ofNat 64 (H.P.B - 16)) ⟨by omega_arith, by omega_arith⟩
+        (by rw [g₂, g₁ _ (by decide) (by decide), hbp]) (by rw [wr₂, wr₁]; exact hw _ _ (by omega_arith)) fun t g => ?_
       refine k' t (by rw [g.gpr]) (by rw [g.rd, rd₂, rd₁]) (by rw [g.wr, wr₂, wr₁]) (by rw [g.sp, sp₂, sp₁]) ?_
       rw [g.mem, g₂, x₁, m₂', writeW_zero8, Pbkdf2.Memory.writeBytes_append' _ _ _ (by
-          rw [List.length_append, List.length_singleton, List.length_replicate, add_ofNat]; congr 2; omega)
-          (by simp; omega), List.append_assoc, List.replicate_append_replicate]
-      congr 3; omega
+          rw [List.length_append, List.length_singleton, List.length_replicate, add_ofNat]; congr 2; omega_arith)
+          (by simp; omega_arith), List.append_assoc, List.replicate_append_replicate]
+      congr 3; omega_arith
     · rename_i h8
       exact k' s₂ rfl (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) (by rw [sp₂, sp₁])
-        (by rw [m₂', show H.P.L = 16 by omega])
+        (by rw [m₂', show H.P.L = 16 by omega_arith])
   refine mid _ fun t gt rdt wrt spt mt => ?_
   refine wp_movz fun s₃ u₃ => ?_
   change WP isa (.block (H.P.len ++ rest)) s₃ Q
@@ -346,36 +346,36 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
   have g₃ : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x22 → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [u₃.other r h3, gt, g₂, g₁ r h1 h2]
   refine WP.mono (hs.len s₃ ?_) fun s₄ ⟨g₄, rd₄, wr₄, sp₄, m₄⟩ => ?_
-  · rw [g₃ _ (by decide) (by decide) (by decide), hbx, u₃.wr, wrt]; exact hw _ _ (by omega)
+  · rw [g₃ _ (by decide) (by decide) (by decide), hbx, u₃.wr, wrt]; exact hw _ _ (by omega_arith)
   have zx : (BitVec.ofNat 16 (H.P.B + H.D)).setWidth 64 = BitVec.ofNat 64 (H.P.B + H.D) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [g₃ _ (by decide) (by decide) (by decide), hbx, u₃.gpr, zx, M.lenOf_eq _ hok, u₃.mem, mt] at m₄
   have lpz : ([0x80] ++ List.replicate (H.P.B - H.P.L - H.D - 1) 0 : List Byte).length = H.P.B - H.P.L - H.D := by
-    simp; omega
+    simp; omega_arith
   have S1 : Mem.Sep p H.D (p + BitVec.ofNat 64 H.D) (H.P.B - H.P.L - H.D) := by
     have := Offset.sep p (d := 0) (n := H.D) (e := H.D) (k := H.P.B - H.P.L - H.D) (.inl (Nat.le_of_eq (Nat.zero_add _)))
-      (by omega) (by omega)
+      (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   have S2 : ∀ {a n : Nat}, a + n ≤ H.P.B - H.P.L →
       Mem.Sep (p + BitVec.ofNat 64 a) n (p + BitVec.ofNat 64 (H.P.B - H.P.L)) H.P.L :=
-    fun h' => Offset.sep _ (.inl h') (by omega) (by omega)
+    fun h' => Offset.sep _ (.inl h') (by omega_arith) (by omega_arith)
   refine k s₄ (fun r h1 h2 h3 h4 => by rw [g₄ r h1 h3, g₃ r h1 h2 h4]) (by rw [rd₄, u₃.rd, rdt])
     (by rw [wr₄, u₃.wr, wrt]) (by rw [sp₄, u₃.sp, spt]) ?_ ?_ ?_
   · rw [m₄]
     refine (writeBytes_frame _ _ _ ?_).trans (writeBytes_frame _ _ _ ?_)
-    · rw [lpz]; exact Offset.contains_base _ (by omega) (by omega)
-    · rw [M.lenBytes_length]; exact Offset.contains_base _ (by omega) (by omega)
-  · rw [show H.P.B - H.D = (H.P.B - H.P.L - H.D) + H.P.L by omega, bytesAt_add, add_ofNat p,
-      show H.D + (H.P.B - H.P.L - H.D) = H.P.B - H.P.L by omega, m₄,
-      bytesAt_writeBytes_self' (M.lenBytes_length _) (by omega),
-      bytesAt_writeBytes_sep _ _ (by rw [M.lenBytes_length]; exact S2 (by omega)) (by omega),
-      bytesAt_writeBytes_self' lpz (by omega), Md.tailPad,
-      show H.P.B - H.P.L - 1 - H.D = H.P.B - H.P.L - H.D - 1 by omega]
+    · rw [lpz]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    · rw [M.lenBytes_length]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  · rw [show H.P.B - H.D = (H.P.B - H.P.L - H.D) + H.P.L by omega_arith, bytesAt_add, add_ofNat p,
+      show H.D + (H.P.B - H.P.L - H.D) = H.P.B - H.P.L by omega_arith, m₄,
+      bytesAt_writeBytes_self' (M.lenBytes_length _) (by omega_arith),
+      bytesAt_writeBytes_sep _ _ (by rw [M.lenBytes_length]; exact S2 (by omega_arith)) (by omega_arith),
+      bytesAt_writeBytes_self' lpz (by omega_arith), Md.tailPad,
+      show H.P.B - H.P.L - 1 - H.D = H.P.B - H.P.L - H.D - 1 by omega_arith]
   · rw [m₄, bytesAt_writeBytes_sep _ _ (by
-        rw [M.lenBytes_length]; have := S2 (a := 0) (n := H.D) (by omega); rwa [BitVec.add_zero] at this) (by omega),
-      bytesAt_writeBytes_sep _ _ (by rw [lpz]; exact S1) (by omega)]
+        rw [M.lenBytes_length]; have := S2 (a := 0) (n := H.D) (by omega_arith); rwa [BitVec.add_zero] at this) (by omega_arith),
+      bytesAt_writeBytes_sep _ _ (by rw [lpz]; exact S1) (by omega_arith)]
 
 /-- `padSel`: `padW` or `padLen`, which write the same. -/
 theorem padSel_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.lenOk (H.P.B + H.D))
