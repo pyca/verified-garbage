@@ -35,7 +35,7 @@ theorem montCallFios_law
     intro base len w o a b ho ha hb fit s t tr1 tr2 u v h e1 e2
     exact MontPipeline.fnBody_ct FiosFast.round law ctLaw ho ha hb fit
       s t tr1 tr2 u v ⟨h.1.input,h.2.1.input⟩ e1 e2
-  stack := rfl
+  stack := by decide +kernel
 
 def montCallFios_backend
     (law : MontPipeline.RoundLaw FiosFast.round)

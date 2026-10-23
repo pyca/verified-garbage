@@ -27882,6 +27882,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2290f
+cmp lr, #32
+beq 2292f
+cmp lr, #48
+beq 2294f
+cmp lr, #64
+beq 2296f
+cmp lr, #128
+beq 2298f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -27901,7 +27911,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2290:
+2300:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -27918,7 +27928,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2290b
+bne 2300b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -27928,6 +27938,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2299f
+2298:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2299:
+b 2297f
+2296:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2297:
+b 2295f
+2294:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2295:
+b 2293f
+2292:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2293:
+b 2291f
+2290:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2291:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -27944,7 +29797,7 @@ ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2291:
+2301:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -27958,7 +29811,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2291b
+bne 2301b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -27973,7 +29826,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2292:
+2302:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -27984,7 +29837,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2292b
+bne 2302b
 ldr r0, [sp, #0]
 mov r2, #5
 mov r3, #1
@@ -28013,13 +29866,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2293:
+2303:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2293b
+bne 2303b
 mov r0, r5
-2294:
+2304:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -28029,6 +29882,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2305f
+cmp lr, #32
+beq 2307f
+cmp lr, #48
+beq 2309f
+cmp lr, #64
+beq 2311f
+cmp lr, #128
+beq 2313f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -28048,7 +29911,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2295:
+2315:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -28065,7 +29928,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2295b
+bne 2315b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -28075,6 +29938,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2314f
+2313:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2314:
+b 2312f
+2311:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2312:
+b 2310f
+2309:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2310:
+b 2308f
+2307:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2308:
+b 2306f
+2305:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2306:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -28084,14 +31790,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2294b
+bne 2304b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2296:
+2316:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -28105,7 +31811,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2296b
+bne 2316b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -28120,7 +31826,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2297:
+2317:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -28131,7 +31837,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2297b
+bne 2317b
 ldr r0, [sp, #0]
 ldr r12, [r0, #120]
 ldr r1, [r0, #48]
@@ -28147,449 +31853,6 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 ldr r0, [r0, #220]
 mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-2298:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2298b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-2299:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2299b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-2300:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2300b
-ldr r0, [sp, #0]
-2301:
-mov r2, #1
-mov r3, #1
-mov r12, #5
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-2302:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2302b
-mov r0, r5
-2303:
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r4, [r0, #8]
-ldr r2, [r0, #12]
-ldr r0, [r0, #28]
-mov r7, #0
-mov r8, #0
-ldr r3, [r12, #0]
-ldr r5, [r4, #0]
-ldr r6, [r0, #0]
-umaal r6, r7, r3, r1
-mul r2, r2, r6
-umaal r6, r8, r5, r2
-add r12, r12, #4
-add r4, r4, #4
-subs lr, lr, #1
-ldr r3, [r12, #0]
-ldr r5, [r4, #0]
-ldr r6, [r0, #4]
-umaal r6, r7, r3, r1
-umaal r6, r8, r5, r2
-str r6, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-add r4, r4, #4
-subs lr, lr, #1
-2304:
-ldr r3, [r12, #0]
-ldr r6, [r0, #4]
-umaal r6, r7, r3, r1
-ldr r3, [r12, #4]
-ldr r10, [r0, #8]
-umaal r10, r7, r3, r1
-ldr r5, [r4, #0]
-umaal r6, r8, r5, r2
-str r6, [r0, #0]
-ldr r5, [r4, #4]
-umaal r10, r8, r5, r2
-str r10, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-add r4, r4, #8
-subs lr, lr, #2
-bne 2304b
-ldr r3, [r0, #4]
-ldr r4, [r0, #8]
-adds r3, r3, r7
-adc r4, r4, #0
-adds r3, r3, r8
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #8
-mov r3, #0
-str r3, [r0, #0]
-add r0, r0, #12
-ldr r4, [r0, #16]
-add r4, r4, #4
-str r4, [r0, #16]
-ldr lr, [r0, #20]
-subs lr, lr, #1
-str lr, [r0, #20]
-bne 2303b
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-2305:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2305b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2306:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2306b
-ldr r0, [sp, #0]
-mov r11, #1
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-2307:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2307b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 2301b
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-2308:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-2309:
-mov r2, #6
-mov r3, #6
-mov r12, #6
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-2310:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2310b
-mov r0, r5
-2311:
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r4, [r0, #8]
-ldr r2, [r0, #12]
-ldr r0, [r0, #28]
-mov r7, #0
-mov r8, #0
-ldr r3, [r12, #0]
-ldr r5, [r4, #0]
-ldr r6, [r0, #0]
-umaal r6, r7, r3, r1
-mul r2, r2, r6
-umaal r6, r8, r5, r2
-add r12, r12, #4
-add r4, r4, #4
-subs lr, lr, #1
-ldr r3, [r12, #0]
-ldr r5, [r4, #0]
-ldr r6, [r0, #4]
-umaal r6, r7, r3, r1
-umaal r6, r8, r5, r2
-str r6, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-add r4, r4, #4
-subs lr, lr, #1
-2312:
-ldr r3, [r12, #0]
-ldr r6, [r0, #4]
-umaal r6, r7, r3, r1
-ldr r3, [r12, #4]
-ldr r10, [r0, #8]
-umaal r10, r7, r3, r1
-ldr r5, [r4, #0]
-umaal r6, r8, r5, r2
-str r6, [r0, #0]
-ldr r5, [r4, #4]
-umaal r10, r8, r5, r2
-str r10, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-add r4, r4, #8
-subs lr, lr, #2
-bne 2312b
-ldr r3, [r0, #4]
-ldr r4, [r0, #8]
-adds r3, r3, r7
-adc r4, r4, #0
-adds r3, r3, r8
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #8
-mov r3, #0
-str r3, [r0, #0]
-add r0, r0, #12
-ldr r4, [r0, #16]
-add r4, r4, #4
-str r4, [r0, #16]
-ldr lr, [r0, #20]
-subs lr, lr, #1
-str lr, [r0, #20]
-bne 2311b
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-2313:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2313b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2314:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2314b
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-lsr r1, r1, #7
-and r1, r1, #1
-ldr r2, [r0, #196]
-add r2, r1, r2, lsl #1
-str r2, [r0, #196]
-ldr r1, [r0, #204]
-add r1, r1, #1
-str r1, [r0, #204]
-cmp r1, #3
-beq 2315f
-b 2316f
-2315:
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-2317:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
 mov r4, #0
 sub r4, r4, r11
 2318:
@@ -28614,10 +31877,61 @@ ldr r1, [r0, #228]
 add r1, r1, #1
 str r1, [r0, #228]
 cmp r1, #8
-bne 2317b
-mov r2, #6
-mov r3, #6
-mov r12, #1
+mov r11, #1
+ldr r12, [r0, #104]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #220]
+mov r10, r0
+mov r4, #0
+sub r4, r4, r11
+2319:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2319b
+ldr r0, [sp, #0]
+ldr r1, [r0, #220]
+ldr r2, [r0, #48]
+add r2, r2, #2
+add r1, r1, r2, lsl #3
+str r1, [r0, #220]
+ldr r1, [r0, #228]
+add r1, r1, #1
+str r1, [r0, #228]
+cmp r1, #8
+mov r11, #1
+ldr r10, [r0, #72]
+ldr r12, [r0, #104]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #72]
+mov r4, #0
+sub r4, r4, r11
+2320:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2320b
+ldr r0, [sp, #0]
+2321:
+mov r2, #1
+mov r3, #1
+mov r12, #5
 add r2, r0, r2, lsl #3
 ldr r10, [r2, #64]
 add r3, r0, r3, lsl #3
@@ -28642,13 +31956,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2319:
+2322:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2319b
+bne 2322b
 mov r0, r5
-2320:
+2323:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -28658,6 +31972,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2324f
+cmp lr, #32
+beq 2326f
+cmp lr, #48
+beq 2328f
+cmp lr, #64
+beq 2330f
+cmp lr, #128
+beq 2332f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -28677,7 +32001,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2321:
+2334:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -28694,7 +32018,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2321b
+bne 2334b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -28704,6 +32028,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2333f
+2332:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2333:
+b 2331f
+2330:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2331:
+b 2329f
+2328:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2329:
+b 2327f
+2326:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2327:
+b 2325f
+2324:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2325:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -28713,14 +33880,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2320b
+bne 2323b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2322:
+2335:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -28734,7 +33901,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2322b
+bne 2335b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -28749,7 +33916,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2323:
+2336:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -28760,26 +33927,2062 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2323b
+bne 2336b
 ldr r0, [sp, #0]
+mov r11, #1
+ldr r12, [r0, #72]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #220]
+mov r10, r0
+mov r4, #0
+sub r4, r4, r11
+2337:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2337b
+ldr r0, [sp, #0]
+ldr r1, [r0, #220]
+ldr r2, [r0, #48]
+add r2, r2, #2
+add r1, r1, r2, lsl #3
+str r1, [r0, #220]
+ldr r1, [r0, #228]
+add r1, r1, #1
+str r1, [r0, #228]
+cmp r1, #8
+bne 2321b
 mov r1, #0
 str r1, [r0, #196]
 str r1, [r0, #204]
-2316:
-ldr r1, [r0, #200]
-add r1, r1, r1
+2338:
+ldr r2, [r0, #128]
+ldrb r1, [r2, #0]
 str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
+mov r1, #8
 str r1, [r0, #192]
-bne 2309b
-ldr r1, [r0, #128]
+2339:
+mov r2, #6
+mov r3, #6
+mov r12, #6
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r5, #0]
+str r9, [r5, #4]
+str r11, [r5, #8]
+str r12, [r5, #12]
+str r8, [r5, #16]
+str r7, [r5, #20]
+str r10, [r5, #24]
+str r6, [r5, #28]
+mov r0, r6
+mov lr, r7
+add lr, lr, #2
+mov r3, #0
+2340:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2340b
+mov r0, r5
+2341:
+ldr r1, [r0, #16]
+ldr r1, [r1, #0]
+ldr lr, [r0, #0]
+ldr r12, [r0, #4]
+ldr r4, [r0, #8]
+ldr r2, [r0, #12]
+ldr r0, [r0, #28]
+mov r7, #0
+mov r8, #0
+cmp lr, #16
+beq 2342f
+cmp lr, #32
+beq 2344f
+cmp lr, #48
+beq 2346f
+cmp lr, #64
+beq 2348f
+cmp lr, #128
+beq 2350f
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+2352:
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+add r4, r4, #8
+subs lr, lr, #2
+bne 2352b
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+b 2351f
+2350:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2351:
+b 2349f
+2348:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2349:
+b 2347f
+2346:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2347:
+b 2345f
+2344:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2345:
+b 2343f
+2342:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2343:
+mov r3, #0
+str r3, [r0, #0]
+add r0, r0, #12
+ldr r4, [r0, #16]
+add r4, r4, #4
+str r4, [r0, #16]
+ldr lr, [r0, #20]
+subs lr, lr, #1
+str lr, [r0, #20]
+bne 2341b
+ldr r7, [r0, #0]
+ldr r9, [r0, #24]
+ldr r10, [r0, #28]
+ldr r12, [r0, #8]
+mov lr, r7
+mov r11, #0
+2353:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2353b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2354:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2354b
+ldr r0, [sp, #0]
+ldr r1, [r0, #200]
+lsr r1, r1, #7
+and r1, r1, #1
+ldr r2, [r0, #196]
+add r2, r1, r2, lsl #1
+str r2, [r0, #196]
+ldr r1, [r0, #204]
 add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 2308b
+str r1, [r0, #204]
+cmp r1, #3
+beq 2355f
+b 2356f
+2355:
 ldr r12, [r0, #120]
 ldr r1, [r0, #48]
 add r1, r1, #2
@@ -28788,7 +35991,7 @@ add r12, r12, r1
 str r12, [r0, #220]
 mov r1, #0
 str r1, [r0, #228]
-2324:
+2357:
 ldr r1, [r0, #196]
 ldr r2, [r0, #228]
 eor r11, r1, r2
@@ -28801,7 +36004,7 @@ add lr, lr, lr
 ldr r0, [r0, #72]
 mov r4, #0
 sub r4, r4, r11
-2325:
+2358:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -28812,7 +36015,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2325b
+bne 2358b
 ldr r0, [sp, #0]
 ldr r1, [r0, #220]
 ldr r2, [r0, #48]
@@ -28823,7 +36026,7 @@ ldr r1, [r0, #228]
 add r1, r1, #1
 str r1, [r0, #228]
 cmp r1, #8
-bne 2324b
+bne 2357b
 mov r2, #6
 mov r3, #6
 mov r12, #1
@@ -28851,13 +36054,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2326:
+2359:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2326b
+bne 2359b
 mov r0, r5
-2327:
+2360:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -28867,6 +36070,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2361f
+cmp lr, #32
+beq 2363f
+cmp lr, #48
+beq 2365f
+cmp lr, #64
+beq 2367f
+cmp lr, #128
+beq 2369f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -28886,7 +36099,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2328:
+2371:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -28903,7 +36116,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2328b
+bne 2371b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -28913,6 +36126,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2370f
+2369:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2370:
+b 2368f
+2367:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2368:
+b 2366f
+2365:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2366:
+b 2364f
+2363:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2364:
+b 2362f
+2361:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2362:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -28922,14 +37978,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2327b
+bne 2360b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2329:
+2372:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -28943,7 +37999,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2329b
+bne 2372b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -28958,7 +38014,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2330:
+2373:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -28969,7 +38025,2069 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2330b
+bne 2373b
+ldr r0, [sp, #0]
+mov r1, #0
+str r1, [r0, #196]
+str r1, [r0, #204]
+2356:
+ldr r1, [r0, #200]
+add r1, r1, r1
+str r1, [r0, #200]
+ldr r1, [r0, #192]
+subs r1, r1, #1
+str r1, [r0, #192]
+bne 2339b
+ldr r1, [r0, #128]
+add r1, r1, #1
+str r1, [r0, #128]
+ldr r1, [r0, #132]
+subs r1, r1, #1
+str r1, [r0, #132]
+bne 2338b
+ldr r12, [r0, #120]
+ldr r1, [r0, #48]
+add r1, r1, #2
+lsl r1, r1, #3
+add r12, r12, r1
+str r12, [r0, #220]
+mov r1, #0
+str r1, [r0, #228]
+2374:
+ldr r1, [r0, #196]
+ldr r2, [r0, #228]
+eor r11, r1, r2
+sub r11, r11, #1
+lsr r11, r11, #31
+ldr r10, [r0, #72]
+ldr r12, [r0, #220]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #72]
+mov r4, #0
+sub r4, r4, r11
+2375:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2375b
+ldr r0, [sp, #0]
+ldr r1, [r0, #220]
+ldr r2, [r0, #48]
+add r2, r2, #2
+add r1, r1, r2, lsl #3
+str r1, [r0, #220]
+ldr r1, [r0, #228]
+add r1, r1, #1
+str r1, [r0, #228]
+cmp r1, #8
+bne 2374b
+mov r2, #6
+mov r3, #6
+mov r12, #1
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r5, #0]
+str r9, [r5, #4]
+str r11, [r5, #8]
+str r12, [r5, #12]
+str r8, [r5, #16]
+str r7, [r5, #20]
+str r10, [r5, #24]
+str r6, [r5, #28]
+mov r0, r6
+mov lr, r7
+add lr, lr, #2
+mov r3, #0
+2376:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2376b
+mov r0, r5
+2377:
+ldr r1, [r0, #16]
+ldr r1, [r1, #0]
+ldr lr, [r0, #0]
+ldr r12, [r0, #4]
+ldr r4, [r0, #8]
+ldr r2, [r0, #12]
+ldr r0, [r0, #28]
+mov r7, #0
+mov r8, #0
+cmp lr, #16
+beq 2378f
+cmp lr, #32
+beq 2380f
+cmp lr, #48
+beq 2382f
+cmp lr, #64
+beq 2384f
+cmp lr, #128
+beq 2386f
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+2388:
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+add r4, r4, #8
+subs lr, lr, #2
+bne 2388b
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+b 2387f
+2386:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2387:
+b 2385f
+2384:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2385:
+b 2383f
+2382:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2383:
+b 2381f
+2380:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2381:
+b 2379f
+2378:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2379:
+mov r3, #0
+str r3, [r0, #0]
+add r0, r0, #12
+ldr r4, [r0, #16]
+add r4, r4, #4
+str r4, [r0, #16]
+ldr lr, [r0, #20]
+subs lr, lr, #1
+str lr, [r0, #20]
+bne 2377b
+ldr r7, [r0, #0]
+ldr r9, [r0, #24]
+ldr r10, [r0, #28]
+ldr r12, [r0, #8]
+mov lr, r7
+mov r11, #0
+2389:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2389b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2390:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2390b
 ldr r0, [sp, #0]
 mov r1, #0
 str r1, [r0, #196]
@@ -29001,13 +40119,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2331:
+2391:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2331b
+bne 2391b
 mov r0, r5
-2332:
+2392:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -29017,6 +40135,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2393f
+cmp lr, #32
+beq 2395f
+cmp lr, #48
+beq 2397f
+cmp lr, #64
+beq 2399f
+cmp lr, #128
+beq 2401f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -29036,7 +40164,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2333:
+2403:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -29053,7 +40181,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2333b
+bne 2403b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -29063,6 +40191,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2402f
+2401:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2402:
+b 2400f
+2399:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2400:
+b 2398f
+2397:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2398:
+b 2396f
+2395:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2396:
+b 2394f
+2393:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2394:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -29072,14 +42043,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2332b
+bne 2392b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2334:
+2404:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -29093,7 +42064,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2334b
+bne 2404b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -29108,7 +42079,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2335:
+2405:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -29119,7 +42090,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2335b
+bne 2405b
 ldr r0, [sp, #0]
 mov r1, r0
 ldr r0, [sp, #8]
@@ -29135,13 +42106,13 @@ mov r5, r0
 ldr lr, [r0, #48]
 lsl lr, lr, #3
 mov r0, r4
-2336:
+2406:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 2336b
+bne 2406b
 mov r0, r5
 ldr r0, [sp, #0]
 ldr r0, [sp, #8]
@@ -29161,11 +42132,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2337:
+2407:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2337b
+bne 2407b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r11, [r0, #212]
@@ -29176,7 +42147,7 @@ add lr, lr, lr
 ldr r0, [r0, #64]
 mov r4, #0
 sub r4, r4, r11
-2338:
+2408:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -29187,7 +42158,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2338b
+bne 2408b
 ldr r0, [sp, #0]
 mov r12, r0
 ldr r0, [r0, #64]
@@ -29476,11 +42447,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2339:
+2409:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2339b
+bne 2409b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 mov r2, #7
@@ -29491,17 +42462,17 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2340:
+2410:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2340b
+bne 2410b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r1, [r0, #48]
 add r1, r1, r1, lsl #6
 str r1, [r0, #208]
-2341:
+2411:
 mov r2, #4
 mov r3, #7
 mov r12, #4
@@ -29529,11 +42500,11 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2342:
+2412:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2342b
+bne 2412b
 mov r0, r5
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
@@ -29546,9 +42517,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2343f
-b 2344f
-2343:
+bne 2413f
+b 2414f
+2413:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -29569,13 +42540,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2344:
+2414:
 cmp lr, #0
-bne 2345f
-b 2346f
-2345:
+bne 2415f
+b 2416f
+2415:
 orr r9, r1, r10, lsl #16
-2347:
+2417:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -29588,7 +42559,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2347b
+bne 2417b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -29596,7 +42567,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2346:
+2416:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -29611,7 +42582,7 @@ ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2348:
+2418:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -29625,7 +42596,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2348b
+bne 2418b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -29640,7 +42611,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2349:
+2419:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -29651,12 +42622,12 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2349b
+bne 2419b
 ldr r0, [sp, #0]
 ldr r1, [r0, #208]
 subs r1, r1, #1
 str r1, [r0, #208]
-bne 2341b
+bne 2411b
 mov r2, #4
 mov r3, #4
 mov r12, #4
@@ -29684,1303 +42655,59 @@ add r0, r6, #24
 lsl lr, r7, #1
 add lr, lr, #2
 mov r3, #0
-2350:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2350b
-2351:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2352f
-b 2353f
-2352:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2353:
-cmp lr, #0
-bne 2354f
-b 2355f
-2354:
-orr r9, r1, r10, lsl #16
-2356:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2356b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2355:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2351b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2357:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2357b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2358:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2358b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2359:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2360f
-b 2361f
-2360:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2361:
-cmp lr, #0
-bne 2362f
-b 2363f
-2362:
-orr r9, r1, r10, lsl #16
-2364:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2364b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2363:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2359b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2365:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2365b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2366:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2366b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2367:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2367b
-2368:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2369f
-b 2370f
-2369:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2370:
-cmp lr, #0
-bne 2371f
-b 2372f
-2371:
-orr r9, r1, r10, lsl #16
-2373:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2373b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2372:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2368b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2374:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2374b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2375:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2375b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2376:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2377f
-b 2378f
-2377:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2378:
-cmp lr, #0
-bne 2379f
-b 2380f
-2379:
-orr r9, r1, r10, lsl #16
-2381:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2381b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2380:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2376b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2382:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2382b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2383:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2383b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2384:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2384b
-2385:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2386f
-b 2387f
-2386:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2387:
-cmp lr, #0
-bne 2388f
-b 2389f
-2388:
-orr r9, r1, r10, lsl #16
-2390:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2390b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2389:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2385b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2391:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2391b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2392:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2392b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2393:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2394f
-b 2395f
-2394:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2395:
-cmp lr, #0
-bne 2396f
-b 2397f
-2396:
-orr r9, r1, r10, lsl #16
-2398:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2398b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2397:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2393b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2399:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2399b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2400:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2400b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2401:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2401b
-2402:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2403f
-b 2404f
-2403:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2404:
-cmp lr, #0
-bne 2405f
-b 2406f
-2405:
-orr r9, r1, r10, lsl #16
-2407:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2407b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2406:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2402b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2408:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2408b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2409:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2409b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2410:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2411f
-b 2412f
-2411:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2412:
-cmp lr, #0
-bne 2413f
-b 2414f
-2413:
-orr r9, r1, r10, lsl #16
-2415:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2415b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2414:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2410b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2416:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2416b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2417:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2417b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2418:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2418b
-2419:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2420f
-b 2421f
 2420:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
 str r3, [r0, #0]
 add r0, r0, #4
-add r12, r12, #4
 subs lr, lr, #1
+bne 2420b
 2421:
-cmp lr, #0
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
 bne 2422f
 b 2423f
 2422:
-orr r9, r1, r10, lsl #16
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2423:
+cmp lr, #0
+bne 2424f
+b 2425f
 2424:
+orr r9, r1, r10, lsl #16
+2426:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -30993,7 +42720,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2424b
+bne 2426b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31001,7 +42728,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2423:
+2425:
 orr r1, r1, r10, lsl #16
 str r11, [r0, #0]
 ldr r0, [sp, #0]
@@ -31009,28 +42736,28 @@ ldr r0, [r0, #80]
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2419b
+bne 2421b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr lr, [r0, #0]
 lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
-2425:
+2427:
 ldr r4, [r0, #0]
 orr r3, r11, r4, lsl #1
 lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2425b
+bne 2427b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r12, [r0, #8]
 ldr lr, [r0, #0]
 add r0, r0, #24
 mov r11, #0
-2426:
+2428:
 ldr r1, [r12, #0]
 mov r2, r1
 ldr r10, [r0, #0]
@@ -31063,7 +42790,7 @@ str r4, [r0, #4]
 add r0, r0, #8
 add r12, r12, #4
 subs lr, lr, #1
-bne 2426b
+bne 2428b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r1, [r0, #0]
@@ -31072,7 +42799,7 @@ add r1, r0, #24
 str r1, [r0, #20]
 mov r1, #0
 str r1, [r0, #12]
-2427:
+2429:
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r1, [r0, #56]
@@ -31090,9 +42817,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2428f
-b 2429f
-2428:
+bne 2430f
+b 2431f
+2430:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -31113,13 +42840,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2429:
+2431:
 cmp lr, #0
-bne 2430f
-b 2431f
-2430:
-orr r9, r1, r10, lsl #16
+bne 2432f
+b 2433f
 2432:
+orr r9, r1, r10, lsl #16
+2434:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -31132,7 +42859,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2432b
+bne 2434b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31140,7 +42867,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2431:
+2433:
 orr r1, r1, r10, lsl #16
 ldr r2, [sp, #0]
 ldr r2, [r2, #80]
@@ -31157,7 +42884,7 @@ mov r0, r2
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2427b
+bne 2429b
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r0, [r0, #80]
@@ -31170,7 +42897,7 @@ add r10, r0, r7, lsl #2
 add r10, r10, #24
 mov lr, r7
 mov r11, #0
-2433:
+2435:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -31184,7 +42911,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2433b
+bne 2435b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -31199,7 +42926,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2434:
+2436:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -31210,7 +42937,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2434b
+bne 2436b
 ldr r0, [sp, #0]
 mov r2, #4
 mov r3, #4
@@ -31239,12 +42966,12 @@ add r0, r6, #24
 lsl lr, r7, #1
 add lr, lr, #2
 mov r3, #0
-2435:
+2437:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2435b
-2436:
+bne 2437b
+2438:
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r2, [r0, #12]
@@ -31262,9 +42989,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2437f
-b 2438f
-2437:
+bne 2439f
+b 2440f
+2439:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -31285,13 +43012,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2438:
+2440:
 cmp lr, #0
-bne 2439f
-b 2440f
-2439:
-orr r9, r1, r10, lsl #16
+bne 2441f
+b 2442f
 2441:
+orr r9, r1, r10, lsl #16
+2443:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -31304,7 +43031,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2441b
+bne 2443b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31312,7 +43039,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2440:
+2442:
 orr r1, r1, r10, lsl #16
 str r11, [r0, #0]
 ldr r0, [sp, #0]
@@ -31320,28 +43047,28 @@ ldr r0, [r0, #80]
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2436b
+bne 2438b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr lr, [r0, #0]
 lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
-2442:
+2444:
 ldr r4, [r0, #0]
 orr r3, r11, r4, lsl #1
 lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2442b
+bne 2444b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r12, [r0, #8]
 ldr lr, [r0, #0]
 add r0, r0, #24
 mov r11, #0
-2443:
+2445:
 ldr r1, [r12, #0]
 mov r2, r1
 ldr r10, [r0, #0]
@@ -31374,7 +43101,7 @@ str r4, [r0, #4]
 add r0, r0, #8
 add r12, r12, #4
 subs lr, lr, #1
-bne 2443b
+bne 2445b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r1, [r0, #0]
@@ -31383,7 +43110,7 @@ add r1, r0, #24
 str r1, [r0, #20]
 mov r1, #0
 str r1, [r0, #12]
-2444:
+2446:
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r1, [r0, #56]
@@ -31401,9 +43128,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2445f
-b 2446f
-2445:
+bne 2447f
+b 2448f
+2447:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -31424,13 +43151,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2446:
+2448:
 cmp lr, #0
-bne 2447f
-b 2448f
-2447:
-orr r9, r1, r10, lsl #16
+bne 2449f
+b 2450f
 2449:
+orr r9, r1, r10, lsl #16
+2451:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -31443,7 +43170,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2449b
+bne 2451b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31451,7 +43178,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2448:
+2450:
 orr r1, r1, r10, lsl #16
 ldr r2, [sp, #0]
 ldr r2, [r2, #80]
@@ -31468,7 +43195,7 @@ mov r0, r2
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2444b
+bne 2446b
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r0, [r0, #80]
@@ -31481,7 +43208,7 @@ add r10, r0, r7, lsl #2
 add r10, r10, #24
 mov lr, r7
 mov r11, #0
-2450:
+2452:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -31495,7 +43222,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2450b
+bne 2452b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -31510,7 +43237,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2451:
+2453:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -31521,7 +43248,1251 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2451b
+bne 2453b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2454:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2454b
+2455:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2456f
+b 2457f
+2456:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2457:
+cmp lr, #0
+bne 2458f
+b 2459f
+2458:
+orr r9, r1, r10, lsl #16
+2460:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2460b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2459:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2455b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2461:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2461b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2462:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2462b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2463:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2464f
+b 2465f
+2464:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2465:
+cmp lr, #0
+bne 2466f
+b 2467f
+2466:
+orr r9, r1, r10, lsl #16
+2468:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2468b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2467:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2463b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2469:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2469b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2470:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2470b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2471:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2471b
+2472:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2473f
+b 2474f
+2473:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2474:
+cmp lr, #0
+bne 2475f
+b 2476f
+2475:
+orr r9, r1, r10, lsl #16
+2477:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2477b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2476:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2472b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2478:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2478b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2479:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2479b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2480:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2481f
+b 2482f
+2481:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2482:
+cmp lr, #0
+bne 2483f
+b 2484f
+2483:
+orr r9, r1, r10, lsl #16
+2485:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2485b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2484:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2480b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2486:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2486b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2487:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2487b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2488:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2488b
+2489:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2490f
+b 2491f
+2490:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2491:
+cmp lr, #0
+bne 2492f
+b 2493f
+2492:
+orr r9, r1, r10, lsl #16
+2494:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2494b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2493:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2489b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2495:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2495b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2496:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2496b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2497:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2498f
+b 2499f
+2498:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2499:
+cmp lr, #0
+bne 2500f
+b 2501f
+2500:
+orr r9, r1, r10, lsl #16
+2502:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2502b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2501:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2497b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2503:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2503b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2504:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2504b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2505:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2505b
+2506:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2507f
+b 2508f
+2507:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2508:
+cmp lr, #0
+bne 2509f
+b 2510f
+2509:
+orr r9, r1, r10, lsl #16
+2511:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2511b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2510:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2506b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2512:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2512b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2513:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2513b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2514:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2515f
+b 2516f
+2515:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2516:
+cmp lr, #0
+bne 2517f
+b 2518f
+2517:
+orr r9, r1, r10, lsl #16
+2519:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2519b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2518:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2514b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2520:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2520b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2521:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2521b
 ldr r0, [sp, #0]
 ldr r4, [sp, #56]
 ldr r6, [sp, #12]
@@ -31532,22 +44503,22 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r5
-2452:
+2522:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2452b
+bne 2522b
 mov r0, r5
 add r1, r4, r6
 sub r1, r1, #1
 mov lr, r6
-2453:
+2523:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 2453b
+bne 2523b
 ldr r0, [sp, #0]
 mov r2, #7
 mov r5, #1
@@ -31557,11 +44528,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2454:
+2524:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2454b
+bne 2524b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 mov r2, #1
@@ -31591,13 +44562,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2455:
+2525:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2455b
+bne 2525b
 mov r0, r5
-2456:
+2526:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -31609,9 +44580,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2457f
-b 2458f
-2457:
+bne 2527f
+b 2528f
+2527:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -31632,13 +44603,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2458:
+2528:
 cmp lr, #0
-bne 2459f
-b 2460f
-2459:
+bne 2529f
+b 2530f
+2529:
 orr r9, r1, r10, lsl #16
-2461:
+2531:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -31651,7 +44622,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2461b
+bne 2531b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31659,7 +44630,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2460:
+2530:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -31703,7 +44674,7 @@ movw r9, #65535
 lsr r10, r1, #16
 and r1, r1, r9
 orr r9, r1, r10, lsl #16
-2462:
+2532:
 ldr r2, [r12, #0]
 ldr r3, [r0, #4]
 mov r5, r3
@@ -31712,7 +44683,7 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2462b
+bne 2532b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31737,14 +44708,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2456b
+bne 2526b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2463:
+2533:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -31758,7 +44729,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2463b
+bne 2533b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -31773,7 +44744,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2464:
+2534:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -31784,7 +44755,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2464b
+bne 2534b
 ldr r0, [sp, #0]
 mov r2, #1
 mov r3, #1
@@ -31813,13 +44784,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2465:
+2535:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2465b
+bne 2535b
 mov r0, r5
-2466:
+2536:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -31831,9 +44802,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2467f
-b 2468f
-2467:
+bne 2537f
+b 2538f
+2537:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -31854,13 +44825,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2468:
+2538:
 cmp lr, #0
-bne 2469f
-b 2470f
-2469:
+bne 2539f
+b 2540f
+2539:
 orr r9, r1, r10, lsl #16
-2471:
+2541:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -31873,7 +44844,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2471b
+bne 2541b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31881,7 +44852,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2470:
+2540:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -31925,7 +44896,7 @@ movw r9, #65535
 lsr r10, r1, #16
 and r1, r1, r9
 orr r9, r1, r10, lsl #16
-2472:
+2542:
 ldr r2, [r12, #0]
 ldr r3, [r0, #4]
 mov r5, r3
@@ -31934,7 +44905,7 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2472b
+bne 2542b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -31959,14 +44930,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2466b
+bne 2536b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2473:
+2543:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -31980,7 +44951,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2473b
+bne 2543b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -31995,7 +44966,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2474:
+2544:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -32006,18 +44977,18 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2474b
+bne 2544b
 ldr r0, [sp, #0]
 ldr lr, [r0, #48]
 lsl lr, lr, #1
 add lr, lr, #2
 mov r3, #0
 ldr r0, [r0, #112]
-2475:
+2545:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2475b
+bne 2545b
 ldr r0, [sp, #0]
 ldr r1, [sp, #8]
 ldr r0, [r1, #240]
@@ -32040,13 +45011,13 @@ lsl r5, r5, #3
 add r4, r0, #256
 add r0, r0, #64
 mov lr, #8
-2476:
+2546:
 str r4, [r0, #0]
 str r3, [r0, #4]
 add r0, r0, #8
 add r4, r4, r5
 subs lr, lr, #1
-bne 2476b
+bne 2546b
 mov r0, r8
 add r12, sp, #0
 str r0, [r12, #0]
@@ -32059,22 +45030,22 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r5
-2477:
+2547:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2477b
+bne 2547b
 mov r0, r5
 add r1, r4, r6
 sub r1, r1, #1
 mov lr, r6
-2478:
+2548:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 2478b
+bne 2548b
 ldr r0, [sp, #0]
 add r12, sp, #48
 ldr r11, [r12, #0]
@@ -32087,11 +45058,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2479:
+2549:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2479b
+bne 2549b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r11, [r0, #212]
@@ -32102,7 +45073,7 @@ add lr, lr, lr
 ldr r0, [r0, #64]
 mov r4, #0
 sub r4, r4, r11
-2480:
+2550:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -32113,7 +45084,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2480b
+bne 2550b
 ldr r0, [sp, #0]
 mov r12, r0
 ldr r0, [r0, #64]
@@ -32402,11 +45373,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2481:
+2551:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2481b
+bne 2551b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 mov r2, #7
@@ -32417,17 +45388,17 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2482:
+2552:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2482b
+bne 2552b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r1, [r0, #48]
 add r1, r1, r1, lsl #6
 str r1, [r0, #208]
-2483:
+2553:
 mov r2, #4
 mov r3, #7
 mov r12, #4
@@ -32455,11 +45426,11 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2484:
+2554:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2484b
+bne 2554b
 mov r0, r5
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
@@ -32472,9 +45443,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2485f
-b 2486f
-2485:
+bne 2555f
+b 2556f
+2555:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -32495,13 +45466,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2486:
+2556:
 cmp lr, #0
-bne 2487f
-b 2488f
-2487:
+bne 2557f
+b 2558f
+2557:
 orr r9, r1, r10, lsl #16
-2489:
+2559:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -32514,7 +45485,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2489b
+bne 2559b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -32522,7 +45493,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2488:
+2558:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -32537,7 +45508,7 @@ ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2490:
+2560:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -32551,7 +45522,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2490b
+bne 2560b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -32566,7 +45537,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2491:
+2561:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -32577,12 +45548,12 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2491b
+bne 2561b
 ldr r0, [sp, #0]
 ldr r1, [r0, #208]
 subs r1, r1, #1
 str r1, [r0, #208]
-bne 2483b
+bne 2553b
 mov r2, #4
 mov r3, #4
 mov r12, #4
@@ -32610,1303 +45581,59 @@ add r0, r6, #24
 lsl lr, r7, #1
 add lr, lr, #2
 mov r3, #0
-2492:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2492b
-2493:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2494f
-b 2495f
-2494:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2495:
-cmp lr, #0
-bne 2496f
-b 2497f
-2496:
-orr r9, r1, r10, lsl #16
-2498:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2498b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2497:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2493b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2499:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2499b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2500:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2500b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2501:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2502f
-b 2503f
-2502:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2503:
-cmp lr, #0
-bne 2504f
-b 2505f
-2504:
-orr r9, r1, r10, lsl #16
-2506:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2506b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2505:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2501b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2507:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2507b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2508:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2508b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2509:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2509b
-2510:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2511f
-b 2512f
-2511:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2512:
-cmp lr, #0
-bne 2513f
-b 2514f
-2513:
-orr r9, r1, r10, lsl #16
-2515:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2515b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2514:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2510b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2516:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2516b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2517:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2517b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2518:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2519f
-b 2520f
-2519:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2520:
-cmp lr, #0
-bne 2521f
-b 2522f
-2521:
-orr r9, r1, r10, lsl #16
-2523:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2523b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2522:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2518b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2524:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2524b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2525:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2525b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2526:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2526b
-2527:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2528f
-b 2529f
-2528:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2529:
-cmp lr, #0
-bne 2530f
-b 2531f
-2530:
-orr r9, r1, r10, lsl #16
-2532:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2532b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2531:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2527b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2533:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2533b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2534:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2534b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2535:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2536f
-b 2537f
-2536:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2537:
-cmp lr, #0
-bne 2538f
-b 2539f
-2538:
-orr r9, r1, r10, lsl #16
-2540:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2540b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2539:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2535b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2541:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2541b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2542:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2542b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2543:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2543b
-2544:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2545f
-b 2546f
-2545:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2546:
-cmp lr, #0
-bne 2547f
-b 2548f
-2547:
-orr r9, r1, r10, lsl #16
-2549:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2549b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2548:
-orr r1, r1, r10, lsl #16
-str r11, [r0, #0]
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2544b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-lsl lr, lr, #1
-add r0, r0, #24
-mov r11, #0
-2550:
-ldr r4, [r0, #0]
-orr r3, r11, r4, lsl #1
-lsr r11, r4, #31
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2550b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r12, [r0, #8]
-ldr lr, [r0, #0]
-add r0, r0, #24
-mov r11, #0
-2551:
-ldr r1, [r12, #0]
-mov r2, r1
-ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-ldr r10, [r0, #4]
-adds r4, r4, r10
-mov r11, #0
-adc r11, r11, #0
-str r4, [r0, #4]
-add r0, r0, #8
-add r12, r12, #4
-subs lr, lr, #1
-bne 2551b
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r1, [r0, #0]
-str r1, [r0, #16]
-add r1, r0, #24
-str r1, [r0, #20]
-mov r1, #0
-str r1, [r0, #12]
-2552:
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r1, [r0, #56]
-ldr r0, [r0, #80]
-ldr lr, [r0, #0]
-ldr r2, [r0, #20]
-add r3, r2, #4
-str r3, [r0, #20]
-mov r0, r2
-ldr r2, [r0, #0]
-mul r1, r1, r2
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2553f
-b 2554f
-2553:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-2554:
-cmp lr, #0
-bne 2555f
-b 2556f
-2555:
-orr r9, r1, r10, lsl #16
-2557:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 2557b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-2556:
-orr r1, r1, r10, lsl #16
-ldr r2, [sp, #0]
-ldr r2, [r2, #80]
-ldr r3, [r0, #0]
-ldr r4, [r2, #12]
-adds r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-adds r3, r3, r4
-adc r5, r5, #0
-str r3, [r0, #0]
-str r5, [r2, #12]
-mov r0, r2
-ldr lr, [r0, #16]
-subs lr, lr, #1
-str lr, [r0, #16]
-bne 2552b
-ldr r0, [sp, #0]
-ldr r12, [r0, #64]
-ldr r0, [r0, #80]
-ldr r7, [r0, #0]
-ldr r9, [r0, #4]
-ldr r3, [r0, #12]
-add r10, r0, r7, lsl #3
-str r3, [r10, #24]
-add r10, r0, r7, lsl #2
-add r10, r10, #24
-mov lr, r7
-mov r11, #0
-2558:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2558b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-2559:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 2559b
-ldr r0, [sp, #0]
-mov r2, #4
-mov r3, #4
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r6, #0]
-str r10, [r6, #4]
-str r8, [r6, #8]
-str r8, [r6, #12]
-sub r1, r7, #1
-str r1, [r6, #16]
-add r1, r6, #28
-str r1, [r6, #20]
-add r0, r6, #24
-lsl lr, r7, #1
-add lr, lr, #2
-mov r3, #0
-2560:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 2560b
-2561:
-ldr r0, [sp, #0]
-ldr r0, [r0, #80]
-ldr r2, [r0, #12]
-ldr lr, [r0, #16]
-ldr r3, [r0, #20]
-add r4, r3, #8
-str r4, [r0, #20]
-add r12, r2, #4
-str r12, [r0, #12]
-mov r0, r3
-mov r11, #0
-ldr r1, [r2, #0]
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 2562f
-b 2563f
 2562:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
 str r3, [r0, #0]
 add r0, r0, #4
-add r12, r12, #4
 subs lr, lr, #1
+bne 2562b
 2563:
-cmp lr, #0
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
 bne 2564f
 b 2565f
 2564:
-orr r9, r1, r10, lsl #16
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2565:
+cmp lr, #0
+bne 2566f
+b 2567f
 2566:
+orr r9, r1, r10, lsl #16
+2568:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -33919,7 +45646,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2566b
+bne 2568b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -33927,7 +45654,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2565:
+2567:
 orr r1, r1, r10, lsl #16
 str r11, [r0, #0]
 ldr r0, [sp, #0]
@@ -33935,28 +45662,28 @@ ldr r0, [r0, #80]
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2561b
+bne 2563b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr lr, [r0, #0]
 lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
-2567:
+2569:
 ldr r4, [r0, #0]
 orr r3, r11, r4, lsl #1
 lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2567b
+bne 2569b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r12, [r0, #8]
 ldr lr, [r0, #0]
 add r0, r0, #24
 mov r11, #0
-2568:
+2570:
 ldr r1, [r12, #0]
 mov r2, r1
 ldr r10, [r0, #0]
@@ -33989,7 +45716,7 @@ str r4, [r0, #4]
 add r0, r0, #8
 add r12, r12, #4
 subs lr, lr, #1
-bne 2568b
+bne 2570b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r1, [r0, #0]
@@ -33998,7 +45725,7 @@ add r1, r0, #24
 str r1, [r0, #20]
 mov r1, #0
 str r1, [r0, #12]
-2569:
+2571:
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r1, [r0, #56]
@@ -34016,9 +45743,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2570f
-b 2571f
-2570:
+bne 2572f
+b 2573f
+2572:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -34039,13 +45766,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2571:
+2573:
 cmp lr, #0
-bne 2572f
-b 2573f
-2572:
-orr r9, r1, r10, lsl #16
+bne 2574f
+b 2575f
 2574:
+orr r9, r1, r10, lsl #16
+2576:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -34058,7 +45785,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2574b
+bne 2576b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -34066,7 +45793,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2573:
+2575:
 orr r1, r1, r10, lsl #16
 ldr r2, [sp, #0]
 ldr r2, [r2, #80]
@@ -34083,7 +45810,7 @@ mov r0, r2
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2569b
+bne 2571b
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r0, [r0, #80]
@@ -34096,7 +45823,7 @@ add r10, r0, r7, lsl #2
 add r10, r10, #24
 mov lr, r7
 mov r11, #0
-2575:
+2577:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -34110,7 +45837,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2575b
+bne 2577b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -34125,7 +45852,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2576:
+2578:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34136,7 +45863,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2576b
+bne 2578b
 ldr r0, [sp, #0]
 mov r2, #4
 mov r3, #4
@@ -34165,12 +45892,12 @@ add r0, r6, #24
 lsl lr, r7, #1
 add lr, lr, #2
 mov r3, #0
-2577:
+2579:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2577b
-2578:
+bne 2579b
+2580:
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r2, [r0, #12]
@@ -34188,9 +45915,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2579f
-b 2580f
-2579:
+bne 2581f
+b 2582f
+2581:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -34211,13 +45938,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2580:
+2582:
 cmp lr, #0
-bne 2581f
-b 2582f
-2581:
-orr r9, r1, r10, lsl #16
+bne 2583f
+b 2584f
 2583:
+orr r9, r1, r10, lsl #16
+2585:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -34230,7 +45957,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2583b
+bne 2585b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -34238,7 +45965,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2582:
+2584:
 orr r1, r1, r10, lsl #16
 str r11, [r0, #0]
 ldr r0, [sp, #0]
@@ -34246,28 +45973,28 @@ ldr r0, [r0, #80]
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2578b
+bne 2580b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr lr, [r0, #0]
 lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
-2584:
+2586:
 ldr r4, [r0, #0]
 orr r3, r11, r4, lsl #1
 lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2584b
+bne 2586b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r12, [r0, #8]
 ldr lr, [r0, #0]
 add r0, r0, #24
 mov r11, #0
-2585:
+2587:
 ldr r1, [r12, #0]
 mov r2, r1
 ldr r10, [r0, #0]
@@ -34300,7 +46027,7 @@ str r4, [r0, #4]
 add r0, r0, #8
 add r12, r12, #4
 subs lr, lr, #1
-bne 2585b
+bne 2587b
 ldr r0, [sp, #0]
 ldr r0, [r0, #80]
 ldr r1, [r0, #0]
@@ -34309,7 +46036,7 @@ add r1, r0, #24
 str r1, [r0, #20]
 mov r1, #0
 str r1, [r0, #12]
-2586:
+2588:
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r1, [r0, #56]
@@ -34327,9 +46054,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2587f
-b 2588f
-2587:
+bne 2589f
+b 2590f
+2589:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -34350,13 +46077,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2588:
+2590:
 cmp lr, #0
-bne 2589f
-b 2590f
-2589:
-orr r9, r1, r10, lsl #16
+bne 2591f
+b 2592f
 2591:
+orr r9, r1, r10, lsl #16
+2593:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -34369,7 +46096,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2591b
+bne 2593b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -34377,7 +46104,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2590:
+2592:
 orr r1, r1, r10, lsl #16
 ldr r2, [sp, #0]
 ldr r2, [r2, #80]
@@ -34394,7 +46121,7 @@ mov r0, r2
 ldr lr, [r0, #16]
 subs lr, lr, #1
 str lr, [r0, #16]
-bne 2586b
+bne 2588b
 ldr r0, [sp, #0]
 ldr r12, [r0, #64]
 ldr r0, [r0, #80]
@@ -34407,7 +46134,7 @@ add r10, r0, r7, lsl #2
 add r10, r10, #24
 mov lr, r7
 mov r11, #0
-2592:
+2594:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -34421,7 +46148,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2592b
+bne 2594b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -34436,7 +46163,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2593:
+2595:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34447,7 +46174,1251 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2593b
+bne 2595b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2596:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2596b
+2597:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2598f
+b 2599f
+2598:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2599:
+cmp lr, #0
+bne 2600f
+b 2601f
+2600:
+orr r9, r1, r10, lsl #16
+2602:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2602b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2601:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2597b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2603:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2603b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2604:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2604b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2605:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2606f
+b 2607f
+2606:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2607:
+cmp lr, #0
+bne 2608f
+b 2609f
+2608:
+orr r9, r1, r10, lsl #16
+2610:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2610b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2609:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2605b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2611:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2611b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2612:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2612b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2613:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2613b
+2614:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2615f
+b 2616f
+2615:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2616:
+cmp lr, #0
+bne 2617f
+b 2618f
+2617:
+orr r9, r1, r10, lsl #16
+2619:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2619b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2618:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2614b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2620:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2620b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2621:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2621b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2622:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2623f
+b 2624f
+2623:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2624:
+cmp lr, #0
+bne 2625f
+b 2626f
+2625:
+orr r9, r1, r10, lsl #16
+2627:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2627b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2626:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2622b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2628:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2628b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2629:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2629b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2630:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2630b
+2631:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2632f
+b 2633f
+2632:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2633:
+cmp lr, #0
+bne 2634f
+b 2635f
+2634:
+orr r9, r1, r10, lsl #16
+2636:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2636b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2635:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2631b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2637:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2637b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2638:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2638b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2639:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2640f
+b 2641f
+2640:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2641:
+cmp lr, #0
+bne 2642f
+b 2643f
+2642:
+orr r9, r1, r10, lsl #16
+2644:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2644b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2643:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2639b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2645:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2645b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2646:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2646b
+ldr r0, [sp, #0]
+mov r2, #4
+mov r3, #4
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r6, #0]
+str r10, [r6, #4]
+str r8, [r6, #8]
+str r8, [r6, #12]
+sub r1, r7, #1
+str r1, [r6, #16]
+add r1, r6, #28
+str r1, [r6, #20]
+add r0, r6, #24
+lsl lr, r7, #1
+add lr, lr, #2
+mov r3, #0
+2647:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2647b
+2648:
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r2, [r0, #12]
+ldr lr, [r0, #16]
+ldr r3, [r0, #20]
+add r4, r3, #8
+str r4, [r0, #20]
+add r12, r2, #4
+str r12, [r0, #12]
+mov r0, r3
+mov r11, #0
+ldr r1, [r2, #0]
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2649f
+b 2650f
+2649:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2650:
+cmp lr, #0
+bne 2651f
+b 2652f
+2651:
+orr r9, r1, r10, lsl #16
+2653:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2653b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2652:
+orr r1, r1, r10, lsl #16
+str r11, [r0, #0]
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2648b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+lsl lr, lr, #1
+add r0, r0, #24
+mov r11, #0
+2654:
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 2654b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r12, [r0, #8]
+ldr lr, [r0, #0]
+add r0, r0, #24
+mov r11, #0
+2655:
+ldr r1, [r12, #0]
+mov r2, r1
+ldr r10, [r0, #0]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+adds r3, r3, r10
+adc r4, r4, #0
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+ldr r10, [r0, #4]
+adds r4, r4, r10
+mov r11, #0
+adc r11, r11, #0
+str r4, [r0, #4]
+add r0, r0, #8
+add r12, r12, #4
+subs lr, lr, #1
+bne 2655b
+ldr r0, [sp, #0]
+ldr r0, [r0, #80]
+ldr r1, [r0, #0]
+str r1, [r0, #16]
+add r1, r0, #24
+str r1, [r0, #20]
+mov r1, #0
+str r1, [r0, #12]
+2656:
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r1, [r0, #56]
+ldr r0, [r0, #80]
+ldr lr, [r0, #0]
+ldr r2, [r0, #20]
+add r3, r2, #4
+str r3, [r0, #20]
+mov r0, r2
+ldr r2, [r0, #0]
+mul r1, r1, r2
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 2657f
+b 2658f
+2657:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+2658:
+cmp lr, #0
+bne 2659f
+b 2660f
+2659:
+orr r9, r1, r10, lsl #16
+2661:
+ldr r2, [r12, #0]
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 2661b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+2660:
+orr r1, r1, r10, lsl #16
+ldr r2, [sp, #0]
+ldr r2, [r2, #80]
+ldr r3, [r0, #0]
+ldr r4, [r2, #12]
+adds r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+adds r3, r3, r4
+adc r5, r5, #0
+str r3, [r0, #0]
+str r5, [r2, #12]
+mov r0, r2
+ldr lr, [r0, #16]
+subs lr, lr, #1
+str lr, [r0, #16]
+bne 2656b
+ldr r0, [sp, #0]
+ldr r12, [r0, #64]
+ldr r0, [r0, #80]
+ldr r7, [r0, #0]
+ldr r9, [r0, #4]
+ldr r3, [r0, #12]
+add r10, r0, r7, lsl #3
+str r3, [r10, #24]
+add r10, r0, r7, lsl #2
+add r10, r10, #24
+mov lr, r7
+mov r11, #0
+2662:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #1
+adc r4, r4, #0
+subs r3, r3, r11
+adc r4, r4, #0
+eor r11, r4, #3
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2662b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+2663:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 2663b
 ldr r0, [sp, #0]
 ldr r1, [sp, #8]
 ldr r1, [r1, #228]
@@ -34457,13 +47428,13 @@ ldr lr, [r0, #48]
 lsl lr, lr, #3
 mov r5, r0
 mov r0, r4
-2594:
+2664:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 2594b
+bne 2664b
 mov r0, r5
 ldr r1, [sp, #88]
 ldr r2, [sp, #92]
@@ -34477,11 +47448,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-2595:
+2665:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2595b
+bne 2665b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 mov r2, #6
@@ -34511,13 +47482,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2596:
+2666:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2596b
+bne 2666b
 mov r0, r5
-2597:
+2667:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -34527,6 +47498,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2668f
+cmp lr, #32
+beq 2670f
+cmp lr, #48
+beq 2672f
+cmp lr, #64
+beq 2674f
+cmp lr, #128
+beq 2676f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -34546,7 +47527,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2598:
+2678:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -34563,7 +47544,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2598b
+bne 2678b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -34573,6 +47554,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2677f
+2676:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2677:
+b 2675f
+2674:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2675:
+b 2673f
+2672:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2673:
+b 2671f
+2670:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2671:
+b 2669f
+2668:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2669:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -34582,14 +49406,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2597b
+bne 2667b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2599:
+2679:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -34603,7 +49427,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2599b
+bne 2679b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -34618,7 +49442,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2600:
+2680:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34629,7 +49453,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2600b
+bne 2680b
 ldr r0, [sp, #0]
 mov r2, #5
 mov r3, #1
@@ -34658,13 +49482,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2601:
+2681:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2601b
+bne 2681b
 mov r0, r5
-2602:
+2682:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -34674,6 +49498,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2683f
+cmp lr, #32
+beq 2685f
+cmp lr, #48
+beq 2687f
+cmp lr, #64
+beq 2689f
+cmp lr, #128
+beq 2691f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -34693,7 +49527,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2603:
+2693:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -34710,7 +49544,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2603b
+bne 2693b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -34720,6 +49554,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2692f
+2691:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2692:
+b 2690f
+2689:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2690:
+b 2688f
+2687:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2688:
+b 2686f
+2685:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2686:
+b 2684f
+2683:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2684:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -34729,14 +51406,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2602b
+bne 2682b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2604:
+2694:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -34750,7 +51427,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2604b
+bne 2694b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -34765,7 +51442,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2605:
+2695:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34776,7 +51453,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2605b
+bne 2695b
 ldr r0, [sp, #0]
 ldr r12, [r0, #120]
 ldr r1, [r0, #48]
@@ -34794,7 +51471,7 @@ ldr r0, [r0, #220]
 mov r10, r0
 mov r4, #0
 sub r4, r4, r11
-2606:
+2696:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34805,7 +51482,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2606b
+bne 2696b
 ldr r0, [sp, #0]
 ldr r1, [r0, #220]
 ldr r2, [r0, #48]
@@ -34824,7 +51501,7 @@ ldr r0, [r0, #220]
 mov r10, r0
 mov r4, #0
 sub r4, r4, r11
-2607:
+2697:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34835,7 +51512,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2607b
+bne 2697b
 ldr r0, [sp, #0]
 ldr r1, [r0, #220]
 ldr r2, [r0, #48]
@@ -34854,7 +51531,7 @@ add lr, lr, lr
 ldr r0, [r0, #72]
 mov r4, #0
 sub r4, r4, r11
-2608:
+2698:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -34865,9 +51542,9 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2608b
+bne 2698b
 ldr r0, [sp, #0]
-2609:
+2699:
 mov r2, #1
 mov r3, #1
 mov r12, #5
@@ -34895,13 +51572,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2610:
+2700:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2610b
+bne 2700b
 mov r0, r5
-2611:
+2701:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -34911,6 +51588,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2702f
+cmp lr, #32
+beq 2704f
+cmp lr, #48
+beq 2706f
+cmp lr, #64
+beq 2708f
+cmp lr, #128
+beq 2710f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -34930,7 +51617,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2612:
+2712:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -34947,7 +51634,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2612b
+bne 2712b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -34957,6 +51644,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2711f
+2710:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2711:
+b 2709f
+2708:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2709:
+b 2707f
+2706:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2707:
+b 2705f
+2704:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2705:
+b 2703f
+2702:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2703:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -34966,14 +53496,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2611b
+bne 2701b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2613:
+2713:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -34987,7 +53517,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2613b
+bne 2713b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -35002,7 +53532,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2614:
+2714:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35013,7 +53543,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2614b
+bne 2714b
 ldr r0, [sp, #0]
 mov r11, #1
 ldr r12, [r0, #72]
@@ -35023,7 +53553,7 @@ ldr r0, [r0, #220]
 mov r10, r0
 mov r4, #0
 sub r4, r4, r11
-2615:
+2715:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35034,7 +53564,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2615b
+bne 2715b
 ldr r0, [sp, #0]
 ldr r1, [r0, #220]
 ldr r2, [r0, #48]
@@ -35045,17 +53575,17 @@ ldr r1, [r0, #228]
 add r1, r1, #1
 str r1, [r0, #228]
 cmp r1, #8
-bne 2609b
+bne 2699b
 mov r1, #0
 str r1, [r0, #196]
 str r1, [r0, #204]
-2616:
+2716:
 ldr r2, [r0, #128]
 ldrb r1, [r2, #0]
 str r1, [r0, #200]
 mov r1, #8
 str r1, [r0, #192]
-2617:
+2717:
 mov r2, #6
 mov r3, #6
 mov r12, #6
@@ -35083,13 +53613,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2618:
+2718:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2618b
+bne 2718b
 mov r0, r5
-2619:
+2719:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -35099,6 +53629,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2720f
+cmp lr, #32
+beq 2722f
+cmp lr, #48
+beq 2724f
+cmp lr, #64
+beq 2726f
+cmp lr, #128
+beq 2728f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -35118,7 +53658,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2620:
+2730:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -35135,7 +53675,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2620b
+bne 2730b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -35145,6 +53685,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2729f
+2728:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2729:
+b 2727f
+2726:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2727:
+b 2725f
+2724:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2725:
+b 2723f
+2722:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2723:
+b 2721f
+2720:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2721:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -35154,14 +55537,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2619b
+bne 2719b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2621:
+2731:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -35175,7 +55558,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2621b
+bne 2731b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -35190,7 +55573,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2622:
+2732:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35201,7 +55584,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2622b
+bne 2732b
 ldr r0, [sp, #0]
 ldr r1, [r0, #200]
 lsr r1, r1, #7
@@ -35213,9 +55596,9 @@ ldr r1, [r0, #204]
 add r1, r1, #1
 str r1, [r0, #204]
 cmp r1, #3
-beq 2623f
-b 2624f
-2623:
+beq 2733f
+b 2734f
+2733:
 ldr r12, [r0, #120]
 ldr r1, [r0, #48]
 add r1, r1, #2
@@ -35224,7 +55607,7 @@ add r12, r12, r1
 str r12, [r0, #220]
 mov r1, #0
 str r1, [r0, #228]
-2625:
+2735:
 ldr r1, [r0, #196]
 ldr r2, [r0, #228]
 eor r11, r1, r2
@@ -35237,7 +55620,7 @@ add lr, lr, lr
 ldr r0, [r0, #72]
 mov r4, #0
 sub r4, r4, r11
-2626:
+2736:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35248,7 +55631,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2626b
+bne 2736b
 ldr r0, [sp, #0]
 ldr r1, [r0, #220]
 ldr r2, [r0, #48]
@@ -35259,7 +55642,7 @@ ldr r1, [r0, #228]
 add r1, r1, #1
 str r1, [r0, #228]
 cmp r1, #8
-bne 2625b
+bne 2735b
 mov r2, #6
 mov r3, #6
 mov r12, #1
@@ -35287,13 +55670,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2627:
+2737:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2627b
+bne 2737b
 mov r0, r5
-2628:
+2738:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -35303,6 +55686,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2739f
+cmp lr, #32
+beq 2741f
+cmp lr, #48
+beq 2743f
+cmp lr, #64
+beq 2745f
+cmp lr, #128
+beq 2747f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -35322,7 +55715,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2629:
+2749:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -35339,7 +55732,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2629b
+bne 2749b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -35349,6 +55742,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2748f
+2747:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2748:
+b 2746f
+2745:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2746:
+b 2744f
+2743:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2744:
+b 2742f
+2741:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2742:
+b 2740f
+2739:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2740:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -35358,14 +57594,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2628b
+bne 2738b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2630:
+2750:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -35379,7 +57615,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2630b
+bne 2750b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -35394,7 +57630,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2631:
+2751:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35405,26 +57641,26 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2631b
+bne 2751b
 ldr r0, [sp, #0]
 mov r1, #0
 str r1, [r0, #196]
 str r1, [r0, #204]
-2624:
+2734:
 ldr r1, [r0, #200]
 add r1, r1, r1
 str r1, [r0, #200]
 ldr r1, [r0, #192]
 subs r1, r1, #1
 str r1, [r0, #192]
-bne 2617b
+bne 2717b
 ldr r1, [r0, #128]
 add r1, r1, #1
 str r1, [r0, #128]
 ldr r1, [r0, #132]
 subs r1, r1, #1
 str r1, [r0, #132]
-bne 2616b
+bne 2716b
 ldr r12, [r0, #120]
 ldr r1, [r0, #48]
 add r1, r1, #2
@@ -35433,7 +57669,7 @@ add r12, r12, r1
 str r12, [r0, #220]
 mov r1, #0
 str r1, [r0, #228]
-2632:
+2752:
 ldr r1, [r0, #196]
 ldr r2, [r0, #228]
 eor r11, r1, r2
@@ -35446,7 +57682,7 @@ add lr, lr, lr
 ldr r0, [r0, #72]
 mov r4, #0
 sub r4, r4, r11
-2633:
+2753:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35457,7 +57693,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2633b
+bne 2753b
 ldr r0, [sp, #0]
 ldr r1, [r0, #220]
 ldr r2, [r0, #48]
@@ -35468,7 +57704,7 @@ ldr r1, [r0, #228]
 add r1, r1, #1
 str r1, [r0, #228]
 cmp r1, #8
-bne 2632b
+bne 2752b
 mov r2, #6
 mov r3, #6
 mov r12, #1
@@ -35496,13 +57732,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2634:
+2754:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2634b
+bne 2754b
 mov r0, r5
-2635:
+2755:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -35512,6 +57748,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2756f
+cmp lr, #32
+beq 2758f
+cmp lr, #48
+beq 2760f
+cmp lr, #64
+beq 2762f
+cmp lr, #128
+beq 2764f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -35531,7 +57777,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2636:
+2766:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -35548,7 +57794,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2636b
+bne 2766b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -35558,6 +57804,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2765f
+2764:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2765:
+b 2763f
+2762:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2763:
+b 2761f
+2760:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2761:
+b 2759f
+2758:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2759:
+b 2757f
+2756:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2757:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -35567,14 +59656,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2635b
+bne 2755b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2637:
+2767:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -35588,7 +59677,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2637b
+bne 2767b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -35603,7 +59692,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2638:
+2768:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35614,7 +59703,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2638b
+bne 2768b
 ldr r0, [sp, #0]
 mov r1, #0
 str r1, [r0, #196]
@@ -35646,13 +59735,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2639:
+2769:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2639b
+bne 2769b
 mov r0, r5
-2640:
+2770:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -35662,6 +59751,16 @@ ldr r2, [r0, #12]
 ldr r0, [r0, #28]
 mov r7, #0
 mov r8, #0
+cmp lr, #16
+beq 2771f
+cmp lr, #32
+beq 2773f
+cmp lr, #48
+beq 2775f
+cmp lr, #64
+beq 2777f
+cmp lr, #128
+beq 2779f
 ldr r3, [r12, #0]
 ldr r5, [r4, #0]
 ldr r6, [r0, #0]
@@ -35681,7 +59780,7 @@ add r0, r0, #4
 add r12, r12, #4
 add r4, r4, #4
 subs lr, lr, #1
-2641:
+2781:
 ldr r3, [r12, #0]
 ldr r6, [r0, #4]
 umaal r6, r7, r3, r1
@@ -35698,7 +59797,7 @@ add r0, r0, #8
 add r12, r12, #8
 add r4, r4, #8
 subs lr, lr, #2
-bne 2641b
+bne 2781b
 ldr r3, [r0, #4]
 ldr r4, [r0, #8]
 adds r3, r3, r7
@@ -35708,6 +59807,1849 @@ adc r4, r4, #0
 str r3, [r0, #0]
 str r4, [r0, #4]
 add r0, r0, #8
+b 2780f
+2779:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r3, [r12, #248]
+ldr r6, [r0, #252]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+ldr r3, [r12, #252]
+ldr r10, [r0, #256]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #248]
+umaal r6, r8, r5, r2
+str r6, [r0, #248]
+ldr r3, [r12, #256]
+ldr r6, [r0, #260]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #252]
+umaal r10, r8, r5, r2
+str r10, [r0, #252]
+ldr r3, [r12, #260]
+ldr r10, [r0, #264]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #256]
+umaal r6, r8, r5, r2
+str r6, [r0, #256]
+ldr r3, [r12, #264]
+ldr r6, [r0, #268]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #260]
+umaal r10, r8, r5, r2
+str r10, [r0, #260]
+ldr r3, [r12, #268]
+ldr r10, [r0, #272]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #264]
+umaal r6, r8, r5, r2
+str r6, [r0, #264]
+ldr r3, [r12, #272]
+ldr r6, [r0, #276]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #268]
+umaal r10, r8, r5, r2
+str r10, [r0, #268]
+ldr r3, [r12, #276]
+ldr r10, [r0, #280]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #272]
+umaal r6, r8, r5, r2
+str r6, [r0, #272]
+ldr r3, [r12, #280]
+ldr r6, [r0, #284]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #276]
+umaal r10, r8, r5, r2
+str r10, [r0, #276]
+ldr r3, [r12, #284]
+ldr r10, [r0, #288]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #280]
+umaal r6, r8, r5, r2
+str r6, [r0, #280]
+ldr r3, [r12, #288]
+ldr r6, [r0, #292]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #284]
+umaal r10, r8, r5, r2
+str r10, [r0, #284]
+ldr r3, [r12, #292]
+ldr r10, [r0, #296]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #288]
+umaal r6, r8, r5, r2
+str r6, [r0, #288]
+ldr r3, [r12, #296]
+ldr r6, [r0, #300]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #292]
+umaal r10, r8, r5, r2
+str r10, [r0, #292]
+ldr r3, [r12, #300]
+ldr r10, [r0, #304]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #296]
+umaal r6, r8, r5, r2
+str r6, [r0, #296]
+ldr r3, [r12, #304]
+ldr r6, [r0, #308]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #300]
+umaal r10, r8, r5, r2
+str r10, [r0, #300]
+ldr r3, [r12, #308]
+ldr r10, [r0, #312]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #304]
+umaal r6, r8, r5, r2
+str r6, [r0, #304]
+ldr r3, [r12, #312]
+ldr r6, [r0, #316]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #308]
+umaal r10, r8, r5, r2
+str r10, [r0, #308]
+ldr r3, [r12, #316]
+ldr r10, [r0, #320]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #312]
+umaal r6, r8, r5, r2
+str r6, [r0, #312]
+ldr r3, [r12, #320]
+ldr r6, [r0, #324]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #316]
+umaal r10, r8, r5, r2
+str r10, [r0, #316]
+ldr r3, [r12, #324]
+ldr r10, [r0, #328]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #320]
+umaal r6, r8, r5, r2
+str r6, [r0, #320]
+ldr r3, [r12, #328]
+ldr r6, [r0, #332]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #324]
+umaal r10, r8, r5, r2
+str r10, [r0, #324]
+ldr r3, [r12, #332]
+ldr r10, [r0, #336]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #328]
+umaal r6, r8, r5, r2
+str r6, [r0, #328]
+ldr r3, [r12, #336]
+ldr r6, [r0, #340]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #332]
+umaal r10, r8, r5, r2
+str r10, [r0, #332]
+ldr r3, [r12, #340]
+ldr r10, [r0, #344]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #336]
+umaal r6, r8, r5, r2
+str r6, [r0, #336]
+ldr r3, [r12, #344]
+ldr r6, [r0, #348]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #340]
+umaal r10, r8, r5, r2
+str r10, [r0, #340]
+ldr r3, [r12, #348]
+ldr r10, [r0, #352]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #344]
+umaal r6, r8, r5, r2
+str r6, [r0, #344]
+ldr r3, [r12, #352]
+ldr r6, [r0, #356]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #348]
+umaal r10, r8, r5, r2
+str r10, [r0, #348]
+ldr r3, [r12, #356]
+ldr r10, [r0, #360]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #352]
+umaal r6, r8, r5, r2
+str r6, [r0, #352]
+ldr r3, [r12, #360]
+ldr r6, [r0, #364]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #356]
+umaal r10, r8, r5, r2
+str r10, [r0, #356]
+ldr r3, [r12, #364]
+ldr r10, [r0, #368]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #360]
+umaal r6, r8, r5, r2
+str r6, [r0, #360]
+ldr r3, [r12, #368]
+ldr r6, [r0, #372]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #364]
+umaal r10, r8, r5, r2
+str r10, [r0, #364]
+ldr r3, [r12, #372]
+ldr r10, [r0, #376]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #368]
+umaal r6, r8, r5, r2
+str r6, [r0, #368]
+ldr r3, [r12, #376]
+ldr r6, [r0, #380]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #372]
+umaal r10, r8, r5, r2
+str r10, [r0, #372]
+ldr r3, [r12, #380]
+ldr r10, [r0, #384]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #376]
+umaal r6, r8, r5, r2
+str r6, [r0, #376]
+ldr r3, [r12, #384]
+ldr r6, [r0, #388]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #380]
+umaal r10, r8, r5, r2
+str r10, [r0, #380]
+ldr r3, [r12, #388]
+ldr r10, [r0, #392]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #384]
+umaal r6, r8, r5, r2
+str r6, [r0, #384]
+ldr r3, [r12, #392]
+ldr r6, [r0, #396]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #388]
+umaal r10, r8, r5, r2
+str r10, [r0, #388]
+ldr r3, [r12, #396]
+ldr r10, [r0, #400]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #392]
+umaal r6, r8, r5, r2
+str r6, [r0, #392]
+ldr r3, [r12, #400]
+ldr r6, [r0, #404]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #396]
+umaal r10, r8, r5, r2
+str r10, [r0, #396]
+ldr r3, [r12, #404]
+ldr r10, [r0, #408]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #400]
+umaal r6, r8, r5, r2
+str r6, [r0, #400]
+ldr r3, [r12, #408]
+ldr r6, [r0, #412]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #404]
+umaal r10, r8, r5, r2
+str r10, [r0, #404]
+ldr r3, [r12, #412]
+ldr r10, [r0, #416]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #408]
+umaal r6, r8, r5, r2
+str r6, [r0, #408]
+ldr r3, [r12, #416]
+ldr r6, [r0, #420]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #412]
+umaal r10, r8, r5, r2
+str r10, [r0, #412]
+ldr r3, [r12, #420]
+ldr r10, [r0, #424]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #416]
+umaal r6, r8, r5, r2
+str r6, [r0, #416]
+ldr r3, [r12, #424]
+ldr r6, [r0, #428]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #420]
+umaal r10, r8, r5, r2
+str r10, [r0, #420]
+ldr r3, [r12, #428]
+ldr r10, [r0, #432]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #424]
+umaal r6, r8, r5, r2
+str r6, [r0, #424]
+ldr r3, [r12, #432]
+ldr r6, [r0, #436]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #428]
+umaal r10, r8, r5, r2
+str r10, [r0, #428]
+ldr r3, [r12, #436]
+ldr r10, [r0, #440]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #432]
+umaal r6, r8, r5, r2
+str r6, [r0, #432]
+ldr r3, [r12, #440]
+ldr r6, [r0, #444]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #436]
+umaal r10, r8, r5, r2
+str r10, [r0, #436]
+ldr r3, [r12, #444]
+ldr r10, [r0, #448]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #440]
+umaal r6, r8, r5, r2
+str r6, [r0, #440]
+ldr r3, [r12, #448]
+ldr r6, [r0, #452]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #444]
+umaal r10, r8, r5, r2
+str r10, [r0, #444]
+ldr r3, [r12, #452]
+ldr r10, [r0, #456]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #448]
+umaal r6, r8, r5, r2
+str r6, [r0, #448]
+ldr r3, [r12, #456]
+ldr r6, [r0, #460]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #452]
+umaal r10, r8, r5, r2
+str r10, [r0, #452]
+ldr r3, [r12, #460]
+ldr r10, [r0, #464]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #456]
+umaal r6, r8, r5, r2
+str r6, [r0, #456]
+ldr r3, [r12, #464]
+ldr r6, [r0, #468]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #460]
+umaal r10, r8, r5, r2
+str r10, [r0, #460]
+ldr r3, [r12, #468]
+ldr r10, [r0, #472]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #464]
+umaal r6, r8, r5, r2
+str r6, [r0, #464]
+ldr r3, [r12, #472]
+ldr r6, [r0, #476]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #468]
+umaal r10, r8, r5, r2
+str r10, [r0, #468]
+ldr r3, [r12, #476]
+ldr r10, [r0, #480]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #472]
+umaal r6, r8, r5, r2
+str r6, [r0, #472]
+ldr r3, [r12, #480]
+ldr r6, [r0, #484]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #476]
+umaal r10, r8, r5, r2
+str r10, [r0, #476]
+ldr r3, [r12, #484]
+ldr r10, [r0, #488]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #480]
+umaal r6, r8, r5, r2
+str r6, [r0, #480]
+ldr r3, [r12, #488]
+ldr r6, [r0, #492]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #484]
+umaal r10, r8, r5, r2
+str r10, [r0, #484]
+ldr r3, [r12, #492]
+ldr r10, [r0, #496]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #488]
+umaal r6, r8, r5, r2
+str r6, [r0, #488]
+ldr r3, [r12, #496]
+ldr r6, [r0, #500]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #492]
+umaal r10, r8, r5, r2
+str r10, [r0, #492]
+ldr r3, [r12, #500]
+ldr r10, [r0, #504]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #496]
+umaal r6, r8, r5, r2
+str r6, [r0, #496]
+ldr r5, [r4, #500]
+umaal r10, r8, r5, r2
+str r10, [r0, #500]
+add r0, r0, #504
+add r12, r12, #504
+add r4, r4, #504
+subs lr, lr, #126
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2780:
+b 2778f
+2777:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r3, [r12, #184]
+ldr r6, [r0, #188]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+ldr r3, [r12, #188]
+ldr r10, [r0, #192]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #184]
+umaal r6, r8, r5, r2
+str r6, [r0, #184]
+ldr r3, [r12, #192]
+ldr r6, [r0, #196]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #188]
+umaal r10, r8, r5, r2
+str r10, [r0, #188]
+ldr r3, [r12, #196]
+ldr r10, [r0, #200]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #192]
+umaal r6, r8, r5, r2
+str r6, [r0, #192]
+ldr r3, [r12, #200]
+ldr r6, [r0, #204]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #196]
+umaal r10, r8, r5, r2
+str r10, [r0, #196]
+ldr r3, [r12, #204]
+ldr r10, [r0, #208]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #200]
+umaal r6, r8, r5, r2
+str r6, [r0, #200]
+ldr r3, [r12, #208]
+ldr r6, [r0, #212]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #204]
+umaal r10, r8, r5, r2
+str r10, [r0, #204]
+ldr r3, [r12, #212]
+ldr r10, [r0, #216]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #208]
+umaal r6, r8, r5, r2
+str r6, [r0, #208]
+ldr r3, [r12, #216]
+ldr r6, [r0, #220]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #212]
+umaal r10, r8, r5, r2
+str r10, [r0, #212]
+ldr r3, [r12, #220]
+ldr r10, [r0, #224]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #216]
+umaal r6, r8, r5, r2
+str r6, [r0, #216]
+ldr r3, [r12, #224]
+ldr r6, [r0, #228]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #220]
+umaal r10, r8, r5, r2
+str r10, [r0, #220]
+ldr r3, [r12, #228]
+ldr r10, [r0, #232]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #224]
+umaal r6, r8, r5, r2
+str r6, [r0, #224]
+ldr r3, [r12, #232]
+ldr r6, [r0, #236]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #228]
+umaal r10, r8, r5, r2
+str r10, [r0, #228]
+ldr r3, [r12, #236]
+ldr r10, [r0, #240]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #232]
+umaal r6, r8, r5, r2
+str r6, [r0, #232]
+ldr r3, [r12, #240]
+ldr r6, [r0, #244]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #236]
+umaal r10, r8, r5, r2
+str r10, [r0, #236]
+ldr r3, [r12, #244]
+ldr r10, [r0, #248]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #240]
+umaal r6, r8, r5, r2
+str r6, [r0, #240]
+ldr r5, [r4, #244]
+umaal r10, r8, r5, r2
+str r10, [r0, #244]
+add r0, r0, #248
+add r12, r12, #248
+add r4, r4, #248
+subs lr, lr, #62
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2778:
+b 2776f
+2775:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r3, [r12, #120]
+ldr r6, [r0, #124]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+ldr r3, [r12, #124]
+ldr r10, [r0, #128]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #120]
+umaal r6, r8, r5, r2
+str r6, [r0, #120]
+ldr r3, [r12, #128]
+ldr r6, [r0, #132]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #124]
+umaal r10, r8, r5, r2
+str r10, [r0, #124]
+ldr r3, [r12, #132]
+ldr r10, [r0, #136]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #128]
+umaal r6, r8, r5, r2
+str r6, [r0, #128]
+ldr r3, [r12, #136]
+ldr r6, [r0, #140]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #132]
+umaal r10, r8, r5, r2
+str r10, [r0, #132]
+ldr r3, [r12, #140]
+ldr r10, [r0, #144]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #136]
+umaal r6, r8, r5, r2
+str r6, [r0, #136]
+ldr r3, [r12, #144]
+ldr r6, [r0, #148]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #140]
+umaal r10, r8, r5, r2
+str r10, [r0, #140]
+ldr r3, [r12, #148]
+ldr r10, [r0, #152]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #144]
+umaal r6, r8, r5, r2
+str r6, [r0, #144]
+ldr r3, [r12, #152]
+ldr r6, [r0, #156]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #148]
+umaal r10, r8, r5, r2
+str r10, [r0, #148]
+ldr r3, [r12, #156]
+ldr r10, [r0, #160]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #152]
+umaal r6, r8, r5, r2
+str r6, [r0, #152]
+ldr r3, [r12, #160]
+ldr r6, [r0, #164]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #156]
+umaal r10, r8, r5, r2
+str r10, [r0, #156]
+ldr r3, [r12, #164]
+ldr r10, [r0, #168]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #160]
+umaal r6, r8, r5, r2
+str r6, [r0, #160]
+ldr r3, [r12, #168]
+ldr r6, [r0, #172]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #164]
+umaal r10, r8, r5, r2
+str r10, [r0, #164]
+ldr r3, [r12, #172]
+ldr r10, [r0, #176]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #168]
+umaal r6, r8, r5, r2
+str r6, [r0, #168]
+ldr r3, [r12, #176]
+ldr r6, [r0, #180]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #172]
+umaal r10, r8, r5, r2
+str r10, [r0, #172]
+ldr r3, [r12, #180]
+ldr r10, [r0, #184]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #176]
+umaal r6, r8, r5, r2
+str r6, [r0, #176]
+ldr r5, [r4, #180]
+umaal r10, r8, r5, r2
+str r10, [r0, #180]
+add r0, r0, #184
+add r12, r12, #184
+add r4, r4, #184
+subs lr, lr, #46
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2776:
+b 2774f
+2773:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r3, [r12, #56]
+ldr r6, [r0, #60]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+ldr r3, [r12, #60]
+ldr r10, [r0, #64]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #56]
+umaal r6, r8, r5, r2
+str r6, [r0, #56]
+ldr r3, [r12, #64]
+ldr r6, [r0, #68]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #60]
+umaal r10, r8, r5, r2
+str r10, [r0, #60]
+ldr r3, [r12, #68]
+ldr r10, [r0, #72]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #64]
+umaal r6, r8, r5, r2
+str r6, [r0, #64]
+ldr r3, [r12, #72]
+ldr r6, [r0, #76]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #68]
+umaal r10, r8, r5, r2
+str r10, [r0, #68]
+ldr r3, [r12, #76]
+ldr r10, [r0, #80]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #72]
+umaal r6, r8, r5, r2
+str r6, [r0, #72]
+ldr r3, [r12, #80]
+ldr r6, [r0, #84]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #76]
+umaal r10, r8, r5, r2
+str r10, [r0, #76]
+ldr r3, [r12, #84]
+ldr r10, [r0, #88]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #80]
+umaal r6, r8, r5, r2
+str r6, [r0, #80]
+ldr r3, [r12, #88]
+ldr r6, [r0, #92]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #84]
+umaal r10, r8, r5, r2
+str r10, [r0, #84]
+ldr r3, [r12, #92]
+ldr r10, [r0, #96]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #88]
+umaal r6, r8, r5, r2
+str r6, [r0, #88]
+ldr r3, [r12, #96]
+ldr r6, [r0, #100]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #92]
+umaal r10, r8, r5, r2
+str r10, [r0, #92]
+ldr r3, [r12, #100]
+ldr r10, [r0, #104]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #96]
+umaal r6, r8, r5, r2
+str r6, [r0, #96]
+ldr r3, [r12, #104]
+ldr r6, [r0, #108]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #100]
+umaal r10, r8, r5, r2
+str r10, [r0, #100]
+ldr r3, [r12, #108]
+ldr r10, [r0, #112]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #104]
+umaal r6, r8, r5, r2
+str r6, [r0, #104]
+ldr r3, [r12, #112]
+ldr r6, [r0, #116]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #108]
+umaal r10, r8, r5, r2
+str r10, [r0, #108]
+ldr r3, [r12, #116]
+ldr r10, [r0, #120]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #112]
+umaal r6, r8, r5, r2
+str r6, [r0, #112]
+ldr r5, [r4, #116]
+umaal r10, r8, r5, r2
+str r10, [r0, #116]
+add r0, r0, #120
+add r12, r12, #120
+add r4, r4, #120
+subs lr, lr, #30
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2774:
+b 2772f
+2771:
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #0]
+umaal r6, r7, r3, r1
+mul r2, r2, r6
+umaal r6, r8, r5, r2
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r5, [r4, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+add r4, r4, #4
+subs lr, lr, #1
+ldr r3, [r12, #0]
+ldr r6, [r0, #4]
+umaal r6, r7, r3, r1
+ldr r3, [r12, #4]
+ldr r10, [r0, #8]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #0]
+umaal r6, r8, r5, r2
+str r6, [r0, #0]
+ldr r3, [r12, #8]
+ldr r6, [r0, #12]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #4]
+umaal r10, r8, r5, r2
+str r10, [r0, #4]
+ldr r3, [r12, #12]
+ldr r10, [r0, #16]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #8]
+umaal r6, r8, r5, r2
+str r6, [r0, #8]
+ldr r3, [r12, #16]
+ldr r6, [r0, #20]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #12]
+umaal r10, r8, r5, r2
+str r10, [r0, #12]
+ldr r3, [r12, #20]
+ldr r10, [r0, #24]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #16]
+umaal r6, r8, r5, r2
+str r6, [r0, #16]
+ldr r3, [r12, #24]
+ldr r6, [r0, #28]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #20]
+umaal r10, r8, r5, r2
+str r10, [r0, #20]
+ldr r3, [r12, #28]
+ldr r10, [r0, #32]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #24]
+umaal r6, r8, r5, r2
+str r6, [r0, #24]
+ldr r3, [r12, #32]
+ldr r6, [r0, #36]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #28]
+umaal r10, r8, r5, r2
+str r10, [r0, #28]
+ldr r3, [r12, #36]
+ldr r10, [r0, #40]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #32]
+umaal r6, r8, r5, r2
+str r6, [r0, #32]
+ldr r3, [r12, #40]
+ldr r6, [r0, #44]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #36]
+umaal r10, r8, r5, r2
+str r10, [r0, #36]
+ldr r3, [r12, #44]
+ldr r10, [r0, #48]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #40]
+umaal r6, r8, r5, r2
+str r6, [r0, #40]
+ldr r3, [r12, #48]
+ldr r6, [r0, #52]
+umaal r6, r7, r3, r1
+ldr r5, [r4, #44]
+umaal r10, r8, r5, r2
+str r10, [r0, #44]
+ldr r3, [r12, #52]
+ldr r10, [r0, #56]
+umaal r10, r7, r3, r1
+ldr r5, [r4, #48]
+umaal r6, r8, r5, r2
+str r6, [r0, #48]
+ldr r5, [r4, #52]
+umaal r10, r8, r5, r2
+str r10, [r0, #52]
+add r0, r0, #56
+add r12, r12, #56
+add r4, r4, #56
+subs lr, lr, #14
+ldr r3, [r0, #4]
+ldr r4, [r0, #8]
+adds r3, r3, r7
+adc r4, r4, #0
+adds r3, r3, r8
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #8
+2772:
 mov r3, #0
 str r3, [r0, #0]
 add r0, r0, #12
@@ -35717,14 +61659,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2640b
+bne 2770b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2642:
+2782:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -35738,7 +61680,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2642b
+bne 2782b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -35753,7 +61695,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2643:
+2783:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -35764,7 +61706,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2643b
+bne 2783b
 ldr r0, [sp, #0]
 mov r1, r0
 ldr r0, [sp, #8]
@@ -35780,13 +61722,13 @@ mov r5, r0
 ldr lr, [r0, #48]
 lsl lr, lr, #3
 mov r0, r4
-2644:
+2784:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 2644b
+bne 2784b
 mov r0, r5
 ldr r0, [sp, #0]
 ldr r0, [sp, #8]
@@ -35806,13 +61748,13 @@ mov r5, r0
 ldr lr, [r0, #48]
 lsl lr, lr, #3
 mov r0, r4
-2645:
+2785:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 2645b
+bne 2785b
 mov r0, r5
 ldr r0, [sp, #0]
 mov r2, #1
@@ -35842,13 +61784,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2646:
+2786:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2646b
+bne 2786b
 mov r0, r5
-2647:
+2787:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -35860,9 +61802,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2648f
-b 2649f
-2648:
+bne 2788f
+b 2789f
+2788:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -35883,13 +61825,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2649:
+2789:
 cmp lr, #0
-bne 2650f
-b 2651f
-2650:
+bne 2790f
+b 2791f
+2790:
 orr r9, r1, r10, lsl #16
-2652:
+2792:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -35902,7 +61844,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2652b
+bne 2792b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -35910,7 +61852,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2651:
+2791:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -35954,7 +61896,7 @@ movw r9, #65535
 lsr r10, r1, #16
 and r1, r1, r9
 orr r9, r1, r10, lsl #16
-2653:
+2793:
 ldr r2, [r12, #0]
 ldr r3, [r0, #4]
 mov r5, r3
@@ -35963,7 +61905,7 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2653b
+bne 2793b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -35988,14 +61930,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2647b
+bne 2787b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2654:
+2794:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -36009,7 +61951,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2654b
+bne 2794b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -36024,7 +61966,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2655:
+2795:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -36035,7 +61977,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2655b
+bne 2795b
 ldr r0, [sp, #0]
 mov r2, #1
 mov r3, #1
@@ -36064,13 +62006,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2656:
+2796:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2656b
+bne 2796b
 mov r0, r5
-2657:
+2797:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -36082,9 +62024,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2658f
-b 2659f
-2658:
+bne 2798f
+b 2799f
+2798:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -36105,13 +62047,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2659:
+2799:
 cmp lr, #0
-bne 2660f
-b 2661f
-2660:
+bne 2800f
+b 2801f
+2800:
 orr r9, r1, r10, lsl #16
-2662:
+2802:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -36124,7 +62066,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2662b
+bne 2802b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36132,7 +62074,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2661:
+2801:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -36176,7 +62118,7 @@ movw r9, #65535
 lsr r10, r1, #16
 and r1, r1, r9
 orr r9, r1, r10, lsl #16
-2663:
+2803:
 ldr r2, [r12, #0]
 ldr r3, [r0, #4]
 mov r5, r3
@@ -36185,7 +62127,7 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2663b
+bne 2803b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36210,14 +62152,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2657b
+bne 2797b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2664:
+2804:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -36231,7 +62173,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2664b
+bne 2804b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -36246,7 +62188,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2665:
+2805:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -36257,18 +62199,18 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2665b
+bne 2805b
 ldr r0, [sp, #0]
 ldr lr, [r0, #48]
 lsl lr, lr, #1
 add lr, lr, #2
 mov r3, #0
 ldr r0, [r0, #104]
-2666:
+2806:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2666b
+bne 2806b
 ldr r0, [sp, #0]
 ldr r9, [r0, #64]
 ldr r10, [r0, #112]
@@ -36279,7 +62221,7 @@ ldr r0, [r0, #104]
 mov r7, r0
 mov r8, lr
 mov r11, #0
-2667:
+2807:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -36293,7 +62235,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2667b
+bne 2807b
 mov r1, r11
 mov r0, r7
 mov r12, r9
@@ -36304,9 +62246,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2668f
-b 2669f
-2668:
+bne 2808f
+b 2809f
+2808:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -36327,13 +62269,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2669:
+2809:
 cmp lr, #0
-bne 2670f
-b 2671f
-2670:
+bne 2810f
+b 2811f
+2810:
 orr r9, r1, r10, lsl #16
-2672:
+2812:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -36346,7 +62288,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2672b
+bne 2812b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36354,7 +62296,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2671:
+2811:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -36372,22 +62314,22 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r5
-2673:
+2813:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2673b
+bne 2813b
 mov r0, r5
 add r1, r4, r6
 sub r1, r1, #1
 mov lr, r6
-2674:
+2814:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 2674b
+bne 2814b
 ldr r0, [sp, #0]
 mov r2, #1
 mov r3, #1
@@ -36416,13 +62358,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2675:
+2815:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2675b
+bne 2815b
 mov r0, r5
-2676:
+2816:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -36434,9 +62376,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2677f
-b 2678f
-2677:
+bne 2817f
+b 2818f
+2817:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -36457,13 +62399,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2678:
+2818:
 cmp lr, #0
-bne 2679f
-b 2680f
-2679:
+bne 2819f
+b 2820f
+2819:
 orr r9, r1, r10, lsl #16
-2681:
+2821:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -36476,7 +62418,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2681b
+bne 2821b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36484,7 +62426,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2680:
+2820:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -36528,7 +62470,7 @@ movw r9, #65535
 lsr r10, r1, #16
 and r1, r1, r9
 orr r9, r1, r10, lsl #16
-2682:
+2822:
 ldr r2, [r12, #0]
 ldr r3, [r0, #4]
 mov r5, r3
@@ -36537,7 +62479,7 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2682b
+bne 2822b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36562,14 +62504,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2676b
+bne 2816b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2683:
+2823:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -36583,7 +62525,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2683b
+bne 2823b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -36598,7 +62540,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2684:
+2824:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -36609,7 +62551,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2684b
+bne 2824b
 ldr r0, [sp, #0]
 mov r2, #5
 mov r3, #5
@@ -36638,13 +62580,13 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-2685:
+2825:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2685b
+bne 2825b
 mov r0, r5
-2686:
+2826:
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
 ldr lr, [r0, #0]
@@ -36656,9 +62598,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2687f
-b 2688f
-2687:
+bne 2827f
+b 2828f
+2827:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -36679,13 +62621,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2688:
+2828:
 cmp lr, #0
-bne 2689f
-b 2690f
-2689:
+bne 2829f
+b 2830f
+2829:
 orr r9, r1, r10, lsl #16
-2691:
+2831:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -36698,7 +62640,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2691b
+bne 2831b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36706,7 +62648,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2690:
+2830:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -36750,7 +62692,7 @@ movw r9, #65535
 lsr r10, r1, #16
 and r1, r1, r9
 orr r9, r1, r10, lsl #16
-2692:
+2832:
 ldr r2, [r12, #0]
 ldr r3, [r0, #4]
 mov r5, r3
@@ -36759,7 +62701,7 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2692b
+bne 2832b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36784,14 +62726,14 @@ str r4, [r0, #16]
 ldr lr, [r0, #20]
 subs lr, lr, #1
 str lr, [r0, #20]
-bne 2686b
+bne 2826b
 ldr r7, [r0, #0]
 ldr r9, [r0, #24]
 ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-2693:
+2833:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -36805,7 +62747,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2693b
+bne 2833b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -36820,7 +62762,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-2694:
+2834:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -36831,7 +62773,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 2694b
+bne 2834b
 ldr r0, [sp, #0]
 ldr r0, [sp, #8]
 add r12, sp, #0
@@ -36847,13 +62789,13 @@ mov r5, r0
 ldr lr, [r0, #48]
 lsl lr, lr, #3
 mov r0, r4
-2695:
+2835:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 2695b
+bne 2835b
 mov r0, r5
 ldr r0, [sp, #0]
 ldr lr, [r0, #48]
@@ -36861,11 +62803,11 @@ lsl lr, lr, #2
 add lr, lr, #2
 mov r3, #0
 ldr r0, [r0, #232]
-2696:
+2836:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2696b
+bne 2836b
 ldr r0, [sp, #0]
 ldr r1, [r0, #224]
 ldr r1, [r1, #104]
@@ -36879,7 +62821,7 @@ ldr r1, [r0, #48]
 add r1, r1, r1
 str r1, [r0, #140]
 str r1, [r0, #144]
-2697:
+2837:
 ldr r12, [r0, #132]
 ldr lr, [r0, #144]
 ldr r1, [r0, #128]
@@ -36891,9 +62833,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2698f
-b 2699f
-2698:
+bne 2838f
+b 2839f
+2838:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -36914,13 +62856,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2699:
+2839:
 cmp lr, #0
-bne 2700f
-b 2701f
-2700:
+bne 2840f
+b 2841f
+2840:
 orr r9, r1, r10, lsl #16
-2702:
+2842:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -36933,7 +62875,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2702b
+bne 2842b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -36941,7 +62883,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2701:
+2841:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -36959,17 +62901,17 @@ str r1, [r0, #136]
 ldr r1, [r0, #140]
 subs r1, r1, #1
 str r1, [r0, #140]
-bne 2697b
+bne 2837b
 ldr lr, [r0, #48]
 lsl lr, lr, #2
 add lr, lr, #2
 mov r3, #0
 ldr r0, [r0, #240]
-2703:
+2843:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 2703b
+bne 2843b
 ldr r0, [sp, #0]
 ldr r4, [r0, #240]
 mov r2, #1
@@ -36979,13 +62921,13 @@ mov r5, r0
 ldr lr, [r0, #48]
 lsl lr, lr, #3
 mov r0, r4
-2704:
+2844:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 2704b
+bne 2844b
 mov r0, r5
 ldr r12, [r0, #240]
 ldr lr, [r0, #48]
@@ -37001,9 +62943,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 2705f
-b 2706f
-2705:
+bne 2845f
+b 2846f
+2845:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -37024,13 +62966,13 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-2706:
+2846:
 cmp lr, #0
-bne 2707f
-b 2708f
-2707:
+bne 2847f
+b 2848f
+2847:
 orr r9, r1, r10, lsl #16
-2709:
+2849:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
 umaal r3, r11, r2, r9
@@ -37043,7 +62985,7 @@ str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 2709b
+bne 2849b
 mov r6, r5
 mov r4, #0
 umaal r6, r4, r2, r9
@@ -37051,7 +62993,7 @@ lsr r6, r2, #16
 movw r9, #65535
 and r2, r2, r9
 mul r7, r1, r6
-2708:
+2848:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -37068,25 +63010,25 @@ mov lr, r6
 add r1, r1, r6
 sub r1, r1, #1
 mov r0, r4
-2710:
+2850:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 2710b
+bne 2850b
 mov r0, r4
 mov lr, r6
 ldr r4, [sp, #48]
 mov r2, #0
 sub r2, r2, r4
-2711:
+2851:
 ldrb r1, [r0, #0]
 and r1, r1, r2
 strb r1, [r0, #0]
 add r0, r0, #1
 subs lr, lr, #1
-bne 2711b
+bne 2851b
 mov r0, r4
 21:
 ldr r4, [sp, #16]

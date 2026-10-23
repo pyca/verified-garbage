@@ -28,12 +28,10 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   have small : n<2^32 := by have := ctx.workspace.nowrap;have := ctx.accFits;omega
   have ws (u : State) (r : Rest [] s u) : Fios.Ctx u base size acc b mod n :=
     ⟨ctx.workspace.congr r.wr,ctx.accFits,ctx.bFits,ctx.mFits,ctx.accB,ctx.accM⟩
-  have fixed (u : State) (r : Rest [] s u) (mem : u.mem=s.mem) (special : n=16 ∨ n=32) :
+  have fixed (u : State) (r : Rest [] s u) (mem : u.mem=s.mem) (bound : n≤1000)
+      (h4 : encodable (BitVec.ofNat 32 (4*(n-2)))=true) (h1 : encodable (BitVec.ofNat 32 (n-2))=true) :
       WP isa (VG.Impl.Bignum.Arm.FiosPipelined.code n) u (Post s base acc b mod n) := by
-    refine WP.mono (FiosPipelined.code_ok u (ws u r) positive even
-      (by rcases special with rfl|rfl <;> decide)
-      (by rcases special with rfl|rfl <;> decide)
-      (by rcases special with rfl|rfl <;> decide)
+    refine WP.mono (FiosPipelined.code_ok u (ws u r) positive even bound h4 h1
       (by rw [r.gpr .r0 (by simp)];exact ptr)
       (by rw [r.gpr .r12 (by simp)];exact source)
       (by rw [r.gpr .r4 (by simp)];exact modulus)
@@ -55,25 +53,27 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
       (by rw [mem,r.gpr .r2 (by simp)];exact inverse)
       (by intro q hq;rw [mem,r.gpr .r1 (by simp)];exact capacity q hq)) ?_
     exact fun _ h => Post.prefix h mem r
-  rw [VG.Impl.Bignum.Arm.FiosFast.code,WP.seq_iff]
-  refine WP.mono (choose_ok s n 16 small (by decide) (by decide) count) ?_
-  rintro u ⟨z1,m1,r1⟩
-  refine WP.ite u.z rfl ?_ ?_
-  · intro selected
-    have eq : n=16 := of_decide_eq_true (z1.symm.trans selected)
-    subst n
-    exact fixed u r1 m1 (Or.inl rfl)
-  · intro _
-    rw [WP.seq_iff]
-    refine WP.mono (choose_ok u n 32 small (by decide) (by decide)
-      (by rw [r1.gpr .lr (by simp)];exact count)) ?_
-    rintro v ⟨z2,m2,r2⟩
-    refine WP.ite v.z rfl ?_ ?_
-    · intro selected
-      have eq : n=32 := of_decide_eq_true (z2.symm.trans selected)
-      subst n
-      exact fixed v (r1.trans r2) (m2.trans m1) (Or.inr rfl)
-    · intro _
-      exact general v (r1.trans r2) (m2.trans m1)
+  -- Each width with a fixed scan: its comparison, offsets and counts encodable.
+  have select (ks : List Nat) (good : ∀ k ∈ ks, k≤1000 ∧ encodable (BitVec.ofNat 32 k)=true ∧
+      encodable (BitVec.ofNat 32 (4*(k-2)))=true ∧ encodable (BitVec.ofNat 32 (k-2))=true) :
+      ∀ u, Rest [] s u → u.mem=s.mem →
+        WP isa (VG.Impl.Bignum.Arm.FiosFast.select ks) u (Post s base acc b mod n) := by
+    induction ks with
+    | nil => exact general
+    | cons k ks ih =>
+      intro u r m
+      obtain ⟨bk,ek,h4k,h1k⟩ := good k List.mem_cons_self
+      rw [VG.Impl.Bignum.Arm.FiosFast.select,WP.seq_iff]
+      refine WP.mono (choose_ok u n k small (by omega) ek
+        (by rw [r.gpr .lr (by simp)];exact count)) ?_
+      rintro v ⟨z,mv,rv⟩
+      refine WP.ite v.z rfl ?_ ?_
+      · intro selected
+        have eq : n=k := of_decide_eq_true (z.symm.trans selected)
+        rw [← eq] at bk h4k h1k ⊢
+        exact fixed v (r.trans rv) (mv.trans m) bk h4k h1k
+      · intro _
+        exact ih (fun j hj => good j (List.mem_cons_of_mem _ hj)) v (r.trans rv) (mv.trans m)
+  exact select _ (by decide) s (Rest.refl [] s) rfl
 
 end VG.Proof.Bignum.Arm.FiosFast
