@@ -1,0 +1,237 @@
+module
+
+public import VerifiedGarbage.Impl.Aes.PPC64LE.ExpandKey
+public import VerifiedGarbage.Impl.Aes.PPC64LE.Ctr32
+public import VerifiedGarbage.Impl.Gcm.PPC64LE
+
+/-!
+# AES-GCM: PPC64LE implementation
+
+The AES-GCM key setup and the start of a streaming encryption or decryption
+(`init`, `stream_init`, `stream_aad`, `Spec/Gcm/Contract.lean`), composed of
+calls of the verified `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and
+`vg_ghash`, as on ARMv7 (`Impl/AesGcm/ARM.lean`). A call (`bl`) stores
+nothing in memory and the callees use no stack, so the functions use none
+but the frame holding their working space.
+
+## The working space
+
+Every function has a buffer `W` of 2560 bytes (`scratch`):
+
+* `[96, 112)`: a block `T`: a partial block padded with zeros, or the
+  lengths block (or `init`'s zero counter block);
+* `[128, 240)`: our caller's `r18`–`r31`, and `[240, 248)` our return
+  address (a call replaces the link register);
+* `[512, 2560)`: the working space of the functions called.
+
+## Registers
+
+`r31` holds `W`, `r30` the streaming state and `r29` the key context
+throughout, and `init` keeps the number of rounds in `r28`; the functions
+called preserve them (they are nonvolatile). The pieces below (`absorb`,
+`flush`, `lens`) take their arguments in `r24` (a pointer), `r25` (a length)
+and `r26` (an offset), which the callees also preserve, and `lens` the two
+lengths in `r24` and `r26`. `j0` reads the nonce's length from `r18`, which
+`stream_init` sets on entry. `r0` and `r3`–`r12` are temporaries.
+
+## The pieces
+
+* `absorb yo`: GHASH, with the accumulator at `r30 + yo` and the partial
+  block at `r30 + 32` holding `r26` bytes, absorbs the `r25` bytes at `r24`:
+  the partial block filled first (and absorbed if full), then whole blocks,
+  then the last bytes buffered.
+* `flush yo`: the `r26` buffered bytes padded with zeros, and absorbed.
+* `lens yo`: the lengths block of `r24` bytes of additional data and `r26`
+  bytes of text, absorbed.
+* `j0`: `J₀` for the `r25`-byte nonce at `r24` (GHASH'd with `absorb`,
+  `flush` and `lens` unless it is 12 bytes), and the state's accumulator and
+  first counter block `inc₃₂(J₀)` (`initState`).
+
+The model has no indexed byte access and branches only on whether a register
+is zero: the bytes are copied through advancing pointers, counting down to
+zero, and `min (16 - r26, r25)` shifts a difference of small numbers right.
+Only the pointers and the lengths can affect timing: the branches are on
+those.
+-/
+
+@[expose] public section
+
+namespace VG.Impl.AesGcm.PPC64LE
+
+open VG.PPC64LE
+
+/-- `mr d, n` (`or d, n, n`). -/
+def mov (d n : Reg) : Instr := .logic .or d n n
+
+/-! ## The working space -/
+
+def tO : Nat := 96
+def scrO : Nat := 512
+def lrO : Nat := 240
+
+/-- Our caller's registers, and where we save them. -/
+def saved : List (Reg × Nat) :=
+  [(.r18, 128), (.r19, 136), (.r20, 144), (.r21, 152), (.r22, 160), (.r23, 168), (.r24, 176),
+   (.r25, 184), (.r26, 192), (.r27, 200), (.r28, 208), (.r29, 216), (.r30, 224), (.r31, 232)]
+
+/-- Saves them and the return address at `b`, and keeps `b` in `r31`. -/
+def save (b : Reg) : List Instr :=
+  saved.map (fun (r, d) => .store .d r b d) ++
+    ([.mflr .r0, .store .d .r0 b lrO, mov .r31 b] : List Instr)
+
+/-- Restores the return address and the registers, through `r12` (a copy of
+`W`, as `r31` is restored too). -/
+def restore : List Instr :=
+  ([mov .r12 .r31, .load .d .r0 .r12 lrO, .mtlr .r0] : List Instr) ++
+    saved.map fun (r, d) => .load .d r .r12 d
+
+/-! ## The calls -/
+
+def ctrCall : Prog isa := .call "vg_aes_ctr32" Impl.Aes.PPC64LE.ctr32
+
+def ghCall : Prog isa := .call "vg_ghash" Impl.Gcm.PPC64LE.ghash
+
+def keyCall : Prog isa := .call "vg_aes_expand_key_scratch" Impl.Aes.PPC64LE.expandKey
+
+/-! ## Loops -/
+
+/-- Copies the `r5` (at least 1) bytes at `r3` to `r4`, advancing both. -/
+def copyLoop : Prog isa :=
+  .loop (.block [.lbz .r0 .r3 0, .stb .r0 .r4 0, .addi .r3 .r3 1, .addi .r4 .r4 1, .subi .r5 .r5 1])
+    (.nonzero .d .r5)
+
+/-- `r5 := min (16 - r26, r25)`: `16 - r26` if `r25 ≥ 16`, and otherwise
+whichever the sign of their difference (both being small) says. -/
+def minLen : Prog isa :=
+  .seq (.block [.li .r5 16, .sub .r5 .r5 .r26, .lsr .d .r6 .r25 4])
+    (.ite (.nonzero .d .r6) (.block [])
+      (.seq (.block [.sub .r6 .r25 .r5, .lsr .d .r6 .r6 63])
+        (.ite (.nonzero .d .r6) (.block [mov .r5 .r25]) (.block []))))
+
+/-! ## GHASH -/
+
+/-- `vg_ghash` of the block at `b + o` into the accumulator at `r30 + yo`. -/
+def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
+  .seq (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r5 b o, .li .r6 1, .addi .r7 .r31 scrO])
+    ghCall
+
+/-- Before the buffer is absorbed: the buffer filled from `r24` (`r5`
+bytes), the arguments advanced, and `r6` zero if the buffer is full. -/
+def headPre : Prog isa :=
+  .seq minLen
+  (.seq (.block [.addi .r4 .r30 32, .add .r4 .r4 .r26, mov .r3 .r24, .add .r24 .r24 .r5,
+      .sub .r25 .r25 .r5, .add .r26 .r26 .r5])
+  (.seq copyLoop (.block [.subi .r6 .r26 16])))
+
+/-- The buffer filled from `r24`, and absorbed if full. -/
+def absorbHead (yo : Nat) : Prog isa :=
+  .seq headPre (.ite (.zero .d .r6) (ghash1 yo .r30 32) (.block []))
+
+/-- The whole blocks at `r24` split off: their address in `r5` and number in
+`r6`, `r24` and `r25` the rest. -/
+def splitWhole : List Instr :=
+  [mov .r5 .r24, .lsr .d .r6 .r25 4, .li .r0 15, .logic .and .r8 .r25 .r0, .sub .r9 .r25 .r8,
+   .add .r24 .r24 .r9, mov .r25 .r8]
+
+/-- The whole blocks at `r24` absorbed. -/
+def absorbWhole (yo : Nat) : Prog isa :=
+  .seq (.block splitWhole)
+    (.ite (.zero .d .r6) (.block [])
+      (.seq (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r7 .r31 scrO]) ghCall))
+
+/-- The last `r25` bytes at `r24` buffered. -/
+def absorbTail : Prog isa :=
+  .ite (.zero .d .r25) (.block [])
+    (.seq (.block [mov .r3 .r24, .addi .r4 .r30 32, mov .r5 .r25]) copyLoop)
+
+/-- The buffer filled first, if it holds bytes. -/
+def absorbFill (yo : Nat) : Prog isa :=
+  .ite (.zero .d .r26) (.block []) (absorbHead yo)
+
+def absorb (yo : Nat) : Prog isa :=
+  .ite (.zero .d .r25) (.block []) (.seq (absorbFill yo) (.seq (absorbWhole yo) absorbTail))
+
+/-- `T` zeroed, and the arguments of the copy of the `r26` buffered bytes to it. -/
+def flushPre : List Instr :=
+  [.li .r0 0, .store .d .r0 .r31 tO, .store .d .r0 .r31 (tO + 8), .addi .r3 .r30 32,
+   .addi .r4 .r31 tO, mov .r5 .r26]
+
+/-- The `r26` buffered bytes, padded with zeros in `T`, absorbed. -/
+def flush (yo : Nat) : Prog isa :=
+  .ite (.zero .d .r26) (.block []) (.seq (.seq (.block flushPre) copyLoop) (ghash1 yo .r31 tO))
+
+/-- The lengths block of `r24` and `r26` bytes (in bits, big-endian), in `T`. -/
+def lensBlock : List Instr :=
+  [.lsl .r3 .r24 3, .lsl .r4 .r26 3, .addi .r5 .r31 tO, .li .r6 0, .storeRev .d .r3 .r5 .r6,
+   .li .r6 8, .storeRev .d .r4 .r5 .r6]
+
+/-- The lengths block of `r24` and `r26` bytes, absorbed. -/
+def lens (yo : Nat) : Prog isa :=
+  .seq (.block lensBlock) (ghash1 yo .r31 tO)
+
+/-! ## `J₀` -/
+
+/-- The accumulator copied to `W + o`, and the arguments of `vg_aes_ctr32` on
+it with the counter block `J₀`. -/
+def j012 : List Instr :=
+  [.load .w .r3 .r24 0, .load .w .r4 .r24 4, .load .w .r5 .r24 8, .lis .r6 0x0100,
+   .store .w .r3 .r30 0, .store .w .r4 .r30 4, .store .w .r5 .r30 8, .store .w .r6 .r30 12]
+
+/-- `J₀` of any other nonce: GHASH of the nonce padded, then of the lengths
+block of no additional data and the nonce, from a zero block at the state. -/
+def j0hash : Prog isa :=
+  .seq (.block [.li .r0 0, .store .d .r0 .r30 0, .store .d .r0 .r30 8, .li .r26 0])
+  (.seq (absorb 0)
+  (.seq (.block [.li .r0 15, .logic .and .r26 .r18 .r0])
+  (.seq (flush 0)
+  (.seq (.block [.li .r24 0, mov .r26 .r18])
+    (lens 0)))))
+
+/-- The first counter block `inc₃₂(J₀)`, and the accumulator zeroed. -/
+def initState : List Instr :=
+  [.load .w .r3 .r30 0, .load .w .r4 .r30 4, .load .w .r5 .r30 8, .addi .r7 .r30 12, .li .r8 0,
+   .loadRev .w .r6 .r7 .r8, .addi .r6 .r6 1, .store .w .r3 .r30 48, .store .w .r4 .r30 52,
+   .store .w .r5 .r30 56, .addi .r7 .r30 60, .storeRev .w .r6 .r7 .r8, .store .d .r8 .r30 16,
+   .store .d .r8 .r30 24]
+
+/-- The streaming state for the `r25`-byte nonce at `r24`. -/
+def j0 : Prog isa :=
+  .seq (.block [.subi .r6 .r25 12]) (.seq (.ite (.zero .d .r6) (.block j012) j0hash) (.block initState))
+
+/-! ## The functions -/
+
+/-- `vg_aes_gcm_init(key = r3, key_len = r4, ctx = r5, scratch = r6)`. -/
+def initPre : List Instr :=
+  save .r6 ++ ([mov .r29 .r5, .lsr .d .r28 .r4 2, .addi .r28 .r28 6, .addi .r6 .r31 scrO] :
+    List Instr)
+
+/-- The hash subkey's block and `T` zeroed, and the arguments of
+`vg_aes_ctr32` on them. -/
+def initArgs : List Instr :=
+  [.li .r0 0, .store .d .r0 .r29 240, .store .d .r0 .r29 248, .store .d .r0 .r31 tO,
+   .store .d .r0 .r31 (tO + 8), mov .r3 .r29, mov .r4 .r28, .addi .r5 .r31 tO, .addi .r6 .r29 240,
+   .li .r7 1, .addi .r8 .r31 scrO]
+
+def init : Prog isa :=
+  .seq (.block initPre)
+  (.seq keyCall
+  (.seq (.block initArgs) (.seq ctrCall (.block restore))))
+
+/-- `vg_aes_gcm_stream_init(ctx = r3, nonce = r4, nonce_len = r5, state = r6, scratch = r7)`. -/
+def streamInitPre : List Instr :=
+  save .r7 ++ ([mov .r30 .r6, mov .r29 .r3, mov .r24 .r4, mov .r25 .r5, mov .r18 .r5] : List Instr)
+
+def streamInit : Prog isa :=
+  .seq (.block streamInitPre) (.seq j0 (.block restore))
+
+/-- `vg_aes_gcm_stream_aad(ctx = r3, state = r4, aad_len = r5, data = r6, len = r7,
+scratch = r8)`. -/
+def streamAadPre : List Instr :=
+  save .r8 ++ ([mov .r30 .r4, mov .r29 .r3, mov .r24 .r6, mov .r25 .r7, .li .r0 15,
+    .logic .and .r26 .r5 .r0] : List Instr)
+
+def streamAad : Prog isa :=
+  .seq (.block streamAadPre) (.seq (absorb 16) (.block restore))
+
+
+end VG.Impl.AesGcm.PPC64LE

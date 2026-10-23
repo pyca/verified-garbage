@@ -2,6 +2,453 @@
 //! Verified `gcm` functions for `powerpc64le`.
 #![allow(dead_code)]
 
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// This implementation calls `vg_aes_expand_key_scratch` for the key schedule and `vg_aes_ctr32` to encrypt the zero block into the hash subkey.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r6, %r1, 32
+std %r18, 128(%r6)
+std %r19, 136(%r6)
+std %r20, 144(%r6)
+std %r21, 152(%r6)
+std %r22, 160(%r6)
+std %r23, 168(%r6)
+std %r24, 176(%r6)
+std %r25, 184(%r6)
+std %r26, 192(%r6)
+std %r27, 200(%r6)
+std %r28, 208(%r6)
+std %r29, 216(%r6)
+std %r30, 224(%r6)
+std %r31, 232(%r6)
+mflr %r0
+std %r0, 240(%r6)
+or %r31, %r6, %r6
+or %r29, %r5, %r5
+rldicl %r28, %r4, 62, 2
+addi %r28, %r28, 6
+addi %r6, %r31, 512
+bl {vg_aes_expand_key_scratch}
+li %r0, 0
+std %r0, 240(%r29)
+std %r0, 248(%r29)
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+addi %r5, %r31, 96
+addi %r6, %r29, 240
+li %r7, 1
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// This implementation calls `vg_ghash` for GHASH.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r7, %r1, 32
+std %r18, 128(%r7)
+std %r19, 136(%r7)
+std %r20, 144(%r7)
+std %r21, 152(%r7)
+std %r22, 160(%r7)
+std %r23, 168(%r7)
+std %r24, 176(%r7)
+std %r25, 184(%r7)
+std %r26, 192(%r7)
+std %r27, 200(%r7)
+std %r28, 208(%r7)
+std %r29, 216(%r7)
+std %r30, 224(%r7)
+std %r31, 232(%r7)
+mflr %r0
+std %r0, 240(%r7)
+or %r31, %r7, %r7
+or %r30, %r6, %r6
+or %r29, %r3, %r3
+or %r24, %r4, %r4
+or %r25, %r5, %r5
+or %r18, %r5, %r5
+addi %r6, %r25, -12
+cmpldi %cr0, %r6, 0
+beq %cr0, 20f
+li %r0, 0
+std %r0, 0(%r30)
+std %r0, 8(%r30)
+li %r26, 0
+cmpldi %cr0, %r25, 0
+beq %cr0, 22f
+cmpldi %cr0, %r26, 0
+beq %cr0, 24f
+li %r5, 16
+subf %r5, %r26, %r5
+rldicl %r6, %r25, 60, 4
+cmpldi %cr0, %r6, 0
+bne %cr0, 26f
+subf %r6, %r5, %r25
+rldicl %r6, %r6, 1, 63
+cmpldi %cr0, %r6, 0
+bne %cr0, 28f
+b 29f
+28:
+or %r5, %r25, %r25
+29:
+b 27f
+26:
+27:
+addi %r4, %r30, 32
+add %r4, %r4, %r26
+or %r3, %r24, %r24
+add %r24, %r24, %r5
+subf %r25, %r5, %r25
+add %r26, %r26, %r5
+210:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 210b
+addi %r6, %r26, -16
+cmpldi %cr0, %r6, 0
+beq %cr0, 211f
+b 212f
+211:
+addi %r3, %r29, 240
+addi %r4, %r30, 0
+addi %r5, %r30, 32
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+212:
+b 25f
+24:
+25:
+or %r5, %r24, %r24
+rldicl %r6, %r25, 60, 4
+li %r0, 15
+and %r8, %r25, %r0
+subf %r9, %r8, %r25
+add %r24, %r24, %r9
+or %r25, %r8, %r8
+cmpldi %cr0, %r6, 0
+beq %cr0, 213f
+addi %r3, %r29, 240
+addi %r4, %r30, 0
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 214f
+213:
+214:
+cmpldi %cr0, %r25, 0
+beq %cr0, 215f
+or %r3, %r24, %r24
+addi %r4, %r30, 32
+or %r5, %r25, %r25
+217:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 217b
+b 216f
+215:
+216:
+b 23f
+22:
+23:
+li %r0, 15
+and %r26, %r18, %r0
+cmpldi %cr0, %r26, 0
+beq %cr0, 218f
+li %r0, 0
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+addi %r3, %r30, 32
+addi %r4, %r31, 96
+or %r5, %r26, %r26
+220:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 220b
+addi %r3, %r29, 240
+addi %r4, %r30, 0
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 219f
+218:
+219:
+li %r24, 0
+or %r26, %r18, %r18
+rldicr %r3, %r24, 3, 60
+rldicr %r4, %r26, 3, 60
+addi %r5, %r31, 96
+li %r6, 0
+stdbrx %r3, %r5, %r6
+li %r6, 8
+stdbrx %r4, %r5, %r6
+addi %r3, %r29, 240
+addi %r4, %r30, 0
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 21f
+20:
+lwz %r3, 0(%r24)
+lwz %r4, 4(%r24)
+lwz %r5, 8(%r24)
+lis %r6, 256
+stw %r3, 0(%r30)
+stw %r4, 4(%r30)
+stw %r5, 8(%r30)
+stw %r6, 12(%r30)
+21:
+lwz %r3, 0(%r30)
+lwz %r4, 4(%r30)
+lwz %r5, 8(%r30)
+addi %r7, %r30, 12
+li %r8, 0
+lwbrx %r6, %r7, %r8
+addi %r6, %r6, 1
+stw %r3, 48(%r30)
+stw %r4, 52(%r30)
+stw %r5, 56(%r30)
+addi %r7, %r30, 60
+stwbrx %r6, %r7, %r8
+std %r8, 16(%r30)
+std %r8, 24(%r30)
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// This implementation calls `vg_ghash` for GHASH.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r8, %r1, 32
+std %r18, 128(%r8)
+std %r19, 136(%r8)
+std %r20, 144(%r8)
+std %r21, 152(%r8)
+std %r22, 160(%r8)
+std %r23, 168(%r8)
+std %r24, 176(%r8)
+std %r25, 184(%r8)
+std %r26, 192(%r8)
+std %r27, 200(%r8)
+std %r28, 208(%r8)
+std %r29, 216(%r8)
+std %r30, 224(%r8)
+std %r31, 232(%r8)
+mflr %r0
+std %r0, 240(%r8)
+or %r31, %r8, %r8
+or %r30, %r4, %r4
+or %r29, %r3, %r3
+or %r24, %r6, %r6
+or %r25, %r7, %r7
+li %r0, 15
+and %r26, %r5, %r0
+cmpldi %cr0, %r25, 0
+beq %cr0, 20f
+cmpldi %cr0, %r26, 0
+beq %cr0, 22f
+li %r5, 16
+subf %r5, %r26, %r5
+rldicl %r6, %r25, 60, 4
+cmpldi %cr0, %r6, 0
+bne %cr0, 24f
+subf %r6, %r5, %r25
+rldicl %r6, %r6, 1, 63
+cmpldi %cr0, %r6, 0
+bne %cr0, 26f
+b 27f
+26:
+or %r5, %r25, %r25
+27:
+b 25f
+24:
+25:
+addi %r4, %r30, 32
+add %r4, %r4, %r26
+or %r3, %r24, %r24
+add %r24, %r24, %r5
+subf %r25, %r5, %r25
+add %r26, %r26, %r5
+28:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 28b
+addi %r6, %r26, -16
+cmpldi %cr0, %r6, 0
+beq %cr0, 29f
+b 210f
+29:
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r30, 32
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+210:
+b 23f
+22:
+23:
+or %r5, %r24, %r24
+rldicl %r6, %r25, 60, 4
+li %r0, 15
+and %r8, %r25, %r0
+subf %r9, %r8, %r25
+add %r24, %r24, %r9
+or %r25, %r8, %r8
+cmpldi %cr0, %r6, 0
+beq %cr0, 211f
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 212f
+211:
+212:
+cmpldi %cr0, %r25, 0
+beq %cr0, 213f
+or %r3, %r24, %r24
+addi %r4, %r30, 32
+or %r5, %r25, %r25
+215:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 215b
+b 214f
+213:
+214:
+b 21f
+20:
+21:
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
