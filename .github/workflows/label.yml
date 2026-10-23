@@ -14,16 +14,20 @@ name: Label
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  # TEST ONLY: `pull_request` runs this branch's copy (on ubuntu-slim) next
+  # to `pull_request_target`'s run of main's copy (on ubuntu-latest).
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   untrusted-only:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
       # `issues: write` lets the first run create the label.
