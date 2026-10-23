@@ -15,10 +15,10 @@ so a pull request's coverage is checked for those it tests. The merge queue
 does the same with the paths its group changes from the group's base (main,
 or the group ahead of it), which passed: an architecture none of them reaches
 builds and runs exactly what passed there. What that leaves out, which
-changes outside the repository (runners, Rust's releases), is tested by
-the full runs that the Full CI workflow starts on main every few hours, when
-main has moved, and by any run started by hand (`workflow_dispatch`): every
-job. Every architecture whose tests a run leaves out is built and linted
+changes outside the repository (runners, Rust's releases, Wycheproof's
+vectors), is tested by the full runs that the Full CI workflow starts on main
+every few hours, when main has moved, and by any run started by hand
+(`workflow_dispatch`): every job. Every architecture whose tests a run leaves out is built and linted
 without running anything (`check`). A push to main builds without tests, for
 main's caches: every job of `rust` and `thumb`, and of `cpu`, whose jobs all
 build the same tests into one cache per platform, the first entry of each

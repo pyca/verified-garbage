@@ -414,9 +414,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
-          # Pinned, so that new vectors (or vectors gone, and the lines only
-          # they covered) fail the pull request that bumps it.
-          ref: 7a325932231bd7a724c791c8b0d65ea4d6d2f435
           path: wycheproof
           persist-credentials: false
 
@@ -565,9 +562,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
-          # Pinned, so that new vectors (or vectors gone, and the lines only
-          # they covered) fail the pull request that bumps it.
-          ref: 7a325932231bd7a724c791c8b0d65ea4d6d2f435
           path: wycheproof
           persist-credentials: false
 
@@ -681,9 +675,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
-          # Pinned, so that new vectors (or vectors gone, and the lines only
-          # they covered) fail the pull request that bumps it.
-          ref: 7a325932231bd7a724c791c8b0d65ea4d6d2f435
           path: wycheproof
           persist-credentials: false
       - name: This runner's CPU
@@ -1145,5 +1136,5 @@ jobs:
           else
             gh issue create --title "$TITLE" --body "$BODY
 
-          Merge queue runs test only the architectures their changes reach (ci/rust_arches.py), so main can fail here alone: through a change outside the repository (a runner, a new Rust release), or a change that reached an architecture ci/rust_arches.py did not count it as reaching."
+          Merge queue runs test only the architectures their changes reach (ci/rust_arches.py), so main can fail here alone: through a change outside the repository (a runner, a new Rust release, new Wycheproof vectors), or a change that reached an architecture ci/rust_arches.py did not count it as reaching."
           fi

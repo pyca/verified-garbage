@@ -4,7 +4,7 @@ name: Full CI
 # whatever changed) every six hours, when main has moved since the last one.
 # The merge queue tests only the architectures each group's changes reach
 # (ci/rust_arches.py); these runs test what that leaves out, which changes
-# outside the repository (runners, Rust's releases). A failure opens
+# outside the repository (runners, Rust's releases, Wycheproof). A failure opens
 # an issue (ci.yml's `full-run-failed`).
 #
 # "Moved" is main's tip being a commit no full run has started on, not a
