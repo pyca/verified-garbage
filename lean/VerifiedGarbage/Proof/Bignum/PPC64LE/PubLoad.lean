@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -173,5 +174,54 @@ theorem loadX_ok {s : State} {B X : Addr} {Z w k : Nat} (hs : Scr s B Z) (h23 : 
   · rw [tm]
     exact (out₃.mono (Nat.le_refl _) (by omega)).trans
       ((writeW_outside s₃.mem B (d := slot w 4 + 8 * w) 0 (by omega)).mono (by omega) (by omega))
+
+/-- `checkX`, the input in array 4 with its digit `2 w` zero and `n` in array
+0: `r26 &=` all ones if the input is below `n`, else 0. -/
+theorem checkX_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (htop : word s.mem B (slot w 4 + 8 * w) = 0) :
+    WP isa checkX s fun t =>
+      (t.gpr .r26 = s.gpr .r26 &&& (BitVec.ofNat 64 0 - BitVec.ofNat 64
+          (if Mont.val32 s.mem B (slot w 4) (2 * w) < Mont.val32 s.mem B (slot w 0) (2 * w) then 1 else 0)) ∧
+        Mont.Outside B (slot w 3) (8 * w) s.mem t.mem) ∧
+      Keep [.r0, .r3, .r8, .r9, .r14, .r15, .r16, .r17, .r20, .r26] s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e3 := e 3; have e4 := e 4; have e8 := e 8
+  unfold checkX
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok (rd := .r8) (by decide) (by decide) h10 h29 4) fun s₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
+  refine WP.mono (base_ok (rd := .r9) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h10)
+    ((k1.gpr _ (by decide)).trans h29) 3) fun s₂ ⟨⟨a9, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 4) (dT := slot w 3) (dM := slot w 0)
+    (hs.congr k12.wr) ((k2.gpr _ (by decide)).trans a8) a9 ((k12.gpr _ (by decide)).trans h10)
+    ((k12.gpr _ (by decide)).trans h11) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by omega)) fun s₃ ⟨⟨c, hc, hD, h20⟩, out, k3⟩ => ?_)
+  have k13 := k12.trans k3
+  refine WP.mono (WP.keep [.r26] (Q := fun t => t.gpr .r26 = s₃.gpr .r26 &&& s₃.gpr .r20 ∧ t.mem = s₃.mem)
+    (by prun) (by decide)) fun t ⟨⟨t26, tm⟩, k4⟩ => ⟨⟨?_, by rw [m2, m1] at out; rw [tm]; exact out.mono (Nat.le_refl _) (by omega)⟩, (k13.trans k4).mono⟩
+  rw [t26, k3.gpr .r26 (by decide), k12.gpr .r26 (by decide), h20, m2, m1]
+  rw [m2, m1] at hD
+  -- The top digit is 0, so the mask is the borrow: whether the input is below `n`.
+  have h0 : Mont.w32 s.mem B (slot w 4 + 4 * (2 * w)) = 0 := by
+    have := Mont.word_eq_w32 s.mem B (slot w 4 + 8 * w)
+    rw [show Mont.word s.mem B (slot w 4 + 8 * w) = 0 from htop, show (0 : BitVec 64).toNat = 0 from rfl, show slot w 4 + 8 * w = slot w 4 + 4 * (2 * w) by omega]
+      at this
+    omega
+  rw [h0]
+  have hDl' := Mont.val32_lt s₃.mem B (slot w 3) (2 * w)
+  have hAl := Mont.val32_lt s.mem B (slot w 4) (2 * w)
+  have hMl := Mont.val32_lt s.mem B (slot w 0) (2 * w)
+  congr 2
+  rcases (show c = 0 ∨ c = 1 by omega) with rfl | rfl
+  · simp only [Nat.lt_irrefl, ite_false]
+    have h : ¬ Mont.val32 s.mem B (slot w 4) (2 * w) < Mont.val32 s.mem B (slot w 0) (2 * w) := by omega
+    simp only [h, ite_false]
+  · simp only [Nat.zero_lt_one, ite_true]
+    have h : Mont.val32 s.mem B (slot w 4) (2 * w) < Mont.val32 s.mem B (slot w 0) (2 * w) := by omega
+    simp only [h, ite_true]
 
 end VG.Proof.Bignum.PPC64LE.Pub
