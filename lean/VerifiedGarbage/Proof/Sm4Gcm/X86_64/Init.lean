@@ -139,7 +139,7 @@ theorem init_wp {s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s) :
         · exact dK0
         · exact (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide)))
         (by show 128 ≤ 2 ^ 64; omega) hi, g.out, hm₂]
-    congr 1
+    apply congrArg Spec.Sm4.expandKey
     apply Vector.ext
     intro i hi
     simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
