@@ -17,8 +17,7 @@ use verified_garbage::blowfish_ofb::{BlowfishOfb, InvalidKeyLength};
 use super::unhex;
 
 /// OFB from ECB: the output and the last output block used.
-fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> (Vec<u8>, [u8; 8]) {
-    let mut ecb = BlowfishEcbEncryptor::new(key).unwrap();
+fn reference(ecb: &mut BlowfishEcbEncryptor, iv: [u8; 8], data: &[u8]) -> (Vec<u8>, [u8; 8]) {
     let mut o = iv;
     let mut out = Vec::new();
     for block in data.chunks(8) {
@@ -26,7 +25,6 @@ fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> (Vec<u8>, [u8; 8]) {
         assert_eq!(ecb.update(&prev, &mut o).unwrap(), 8);
         out.extend(block.iter().zip(&o).map(|(x, y)| x ^ y));
     }
-    ecb.finalize().unwrap();
     (out, o)
 }
 
@@ -56,8 +54,10 @@ fn pyca_vectors() {
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
+        let mut ecb = BlowfishEcbEncryptor::new(&key).unwrap();
         // The last output block, which the vector gives only in part.
-        let (expected, after) = reference(&key, iv, &plaintext);
+        let (expected, after) = reference(&mut ecb, iv, &plaintext);
+        ecb.finalize().unwrap();
         assert_eq!(expected, ciphertext);
         let ctx = BlowfishOfb::new(&key).unwrap();
         check(&ctx, iv, &plaintext, &ciphertext, after);
@@ -73,11 +73,13 @@ fn from_ecb() {
     let iv: [u8; 8] = core::array::from_fn(|i| (i * 11 + 5) as u8);
     for key_len in [4, 16, 56] {
         let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let mut ecb = BlowfishEcbEncryptor::new(&key).unwrap();
         let ctx = BlowfishOfb::new(&key).unwrap();
         for len in 0..=data.len() {
-            let (output, after) = reference(&key, iv, &data[..len]);
+            let (output, after) = reference(&mut ecb, iv, &data[..len]);
             check(&ctx, iv, &data[..len], &output, after);
         }
+        ecb.finalize().unwrap();
     }
 }
 
