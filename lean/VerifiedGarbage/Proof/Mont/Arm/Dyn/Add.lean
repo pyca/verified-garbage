@@ -102,21 +102,21 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
       Digs t.mem base acc (digits M + 1) ∧ Outside base acc (4 * (digits M + 1)) s.mem t.mem ∧ Rest dclob s t := by
   have hnw := hs.nowrap
   obtain ⟨W, hW⟩ : ∃ W, words M = W := ⟨_, rfl⟩
-  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega
+  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega_arith
   rw [hD] at hacc h16 hsa hsb ⊢
   rw [hW] at ha hb h16a hsa hsb ⊢
-  have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega
+  have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega_arith
   unfold addDigits
   rw [hW]
   refine WP.seq (wp_movw fun s₁ u₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ =>
-    wp_ptr (d := .r10) (by decide) (by omega) fun s₃ u₃ => wp_ptr (d := .r0) (by decide) (by omega) fun s₄ u₄ =>
-    wp_ptr (d := .r8) (by decide) (by omega) fun s₅ u₅ => wp_ptr (d := .r9) (by decide) (by omega) fun t u₆ =>
+    wp_ptr (d := .r10) (by decide) (by omega_arith) fun s₃ u₃ => wp_ptr (d := .r0) (by decide) (by omega_arith) fun s₄ u₄ =>
+    wp_ptr (d := .r8) (by decide) (by omega_arith) fun s₅ u₅ => wp_ptr (d := .r9) (by decide) (by omega_arith) fun t u₆ =>
     WP.block_nil ?_)
   have R : Rest dclob s t := ((((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans
     ((u₃.rest (by decide)).trans (u₄.rest (by decide)))).trans (u₅.rest (by decide))).trans (u₆.rest (by decide))
   have mt : t.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have I0 : AddInv s base size acc a b 0 t := by
-    refine ⟨hs.of_rest R (by decide), R, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega), ?_⟩
+    refine ⟨hs.of_rest R (by decide), R, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega_arith), ?_⟩
     · simp only [u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
     · simp only [u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, reduceCtorEq, ↓reduceIte]; decide
     · simp only [u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
@@ -131,19 +131,19 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
     simp only [u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, Offset.add_add]
   clear u₁ u₂ u₃ u₄ u₅ u₆ mt R
   refine WP.seq (ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 a) (step := 4) (k := W)
-    (AddInv s base size acc a b) (by decide) hW0 (by omega) (fun _ _ _ h f => h.fupd f) I0 p10 p9 ?_
+    (AddInv s base size acc a b) (by decide) hW0 (by omega_arith) (fun _ _ _ h f => h.fupd f) I0 p10 p9 ?_
     fun u I _ => ?_)
   · -- An iteration.
     intro j hj u I pu p9u
     simp only [List.cons_append, List.append_assoc, List.nil_append]
     have e12 : u.gpr .r12 = s.gpr .r12 := I.rest.gpr _ (by decide)
-    have xa : w32 u.mem base (a + 4 * j + 0) = w32 s.mem base (a + 4 * j) := I.out.w32 (by omega) (by omega)
-    have xb : w32 u.mem base (b + 4 * j + 0) = w32 s.mem base (b + 4 * j) := I.out.w32 (by omega) (by omega)
-    refine wp_ldr (by decide) (I.ws.ea (K := a + 4 * j) (at_ptr pu e12) (by omega))
-      (I.ws.read (d := a + 4 * j + 0) (n := 4) (by omega)) fun u₁ v₁ => ?_
+    have xa : w32 u.mem base (a + 4 * j + 0) = w32 s.mem base (a + 4 * j) := I.out.w32 (by omega_arith) (by omega_arith)
+    have xb : w32 u.mem base (b + 4 * j + 0) = w32 s.mem base (b + 4 * j) := I.out.w32 (by omega_arith) (by omega_arith)
+    refine wp_ldr (by decide) (I.ws.ea (K := a + 4 * j) (at_ptr pu e12) (by omega_arith))
+      (I.ws.read (d := a + 4 * j + 0) (n := 4) (by omega_arith)) fun u₁ v₁ => ?_
     have w₁ := I.ws.of_upd v₁ (by decide)
     refine wp_ldr (by decide) (w₁.ea (K := b + 4 * j) (at_ptr (by rw [v₁.other .r0 (by decide)]; exact I.r0)
-      (by rw [v₁.other .r12 (by decide)]; exact e12)) (by omega)) (w₁.read (d := b + 4 * j + 0) (n := 4) (by omega))
+      (by rw [v₁.other .r12 (by decide)]; exact e12)) (by omega_arith)) (w₁.read (d := b + 4 * j + 0) (n := 4) (by omega_arith))
       fun u₂ v₂ => ?_
     have w₂ := w₁.of_upd v₂ (by decide)
     have g6 : u₂.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
@@ -155,7 +155,7 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
       simp only [v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact xa
     have g2 : (u₂.gpr .r2).toNat = w32 s.mem base (b + 4 * j) := by
       simp only [v₂.get, ↓reduceIte, v₁.mem]; exact xb
-    refine VG.Proof.X25519.Arm.WP.append (addDigitD_ok w₂ (h := 0) (by decide) g6 g8 (by omega) (by rw [g3]; exact I.r3))
+    refine VG.Proof.X25519.Arm.WP.append (addDigitD_ok w₂ (h := 0) (by decide) g6 g8 (by omega_arith) (by rw [g3]; exact I.r3))
       fun u₃ ⟨M₃, C₃, R₃⟩ => ?_
     have w₃ := w₂.of_rest R₃ (by decide)
     have := hdig_lt (u₂.gpr .r7).toNat 0
@@ -163,7 +163,7 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
     have := I.r3
     refine VG.Proof.X25519.Arm.WP.append (addDigitD_ok w₃ (P := acc + 8 * j) (h := 1) (by decide)
       (by rw [R₃.gpr _ (by decide)]; exact g6) (by rw [R₃.gpr _ (by decide), R₃.gpr _ (by decide)]; exact g8)
-      (by omega) (by rw [C₃, g3]; omega)) fun u₄ ⟨M₄, C₄, R₄⟩ => ?_
+      (by omega_arith) (by rw [C₃, g3]; omega_arith)) fun u₄ ⟨M₄, C₄, R₄⟩ => ?_
     refine wp_bump (by decide) fun u₅ v₅ => wp_bump (by decide) fun u₆ v₆ => wp_bump (by decide) fun u₇ v₇ =>
       WP.block_nil ?_
     rw [R₃.gpr .r7 (by decide), R₃.gpr .r2 (by decide), C₃, g7, g2] at M₄ C₄
@@ -174,7 +174,7 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
     have R₇ : Rest dclob s u₇ := I.rest.trans ((((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans
       ((R₃.mono (by decide)).trans (R₄.mono (by decide)))).trans
       (((v₅.rest (by decide)).trans (v₆.rest (by decide))).trans (v₇.rest (by decide))))
-    obtain ⟨d0, d1, O⟩ := pair_writes (m := u₂.mem) (base := base) (Q := acc + 8 * j) (by omega)
+    obtain ⟨d0, d1, O⟩ := pair_writes (m := u₂.mem) (base := base) (Q := acc + 8 * j) (by omega_arith)
       (BitVec.ofNat 32 ((hdig (w32 s.mem base (a + 4 * j)) 0 + hdig (w32 s.mem base (b + 4 * j)) 0 +
         (u.gpr .r3).toNat) % 2 ^ 16))
       (BitVec.ofNat 32 ((hdig (w32 s.mem base (a + 4 * j)) 1 + hdig (w32 s.mem base (b + 4 * j)) 1 +
@@ -195,20 +195,20 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
       R₇, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
     · simp only [v₇.get, v₆.get, v₅.get, reduceCtorEq, ↓reduceIte]
       rw [R₄.gpr _ (by decide), R₃.gpr _ (by decide)]; exact g6
-    · rw [c₇, C₄]; omega
+    · rw [c₇, C₄]; omega_arith
     · simp only [v₇.get, v₆.get, v₅.get, reduceCtorEq, ↓reduceIte]
       rw [R₄.gpr _ (by decide), R₃.gpr _ (by decide), v₂.other .r0 (by decide), v₁.other .r0 (by decide)]
       exact ptr_step I.r0
     · simp only [v₇.get, v₆.get, v₅.get, reduceCtorEq, ↓reduceIte]
       rw [R₄.gpr _ (by decide), R₃.gpr _ (by decide), v₂.other .r8 (by decide), v₁.other .r8 (by decide), I.r8,
-        Offset.add_add, Offset.add_add, Offset.add_add, show 8 * (j + 1) = 8 * j + 8 by omega]
-    · rw [m₇, c₇, C₄, show 2 * (j + 1) = 2 * j + 2 by omega, dval_two, d0, d1, O.dval (by omega) (by omega),
-        show 32 * (j + 1) = 32 + 32 * j by omega, Nat.pow_add, val32_succ, val32_succ]
+        Offset.add_add, Offset.add_add, Offset.add_add, show 8 * (j + 1) = 8 * j + 8 by omega_arith]
+    · rw [m₇, c₇, C₄, show 2 * (j + 1) = 2 * j + 2 by omega_arith, dval_two, d0, d1, O.dval (by omega_arith) (by omega_arith),
+        show 32 * (j + 1) = 32 + 32 * j by omega_arith, Nat.pow_add, val32_succ, val32_succ]
       exact add_step I.val hx hy
-    · rw [m₇, show 2 * (j + 1) = 2 * j + 2 by omega]
-      exact digs_two (by omega) O I.digs (by rw [d0]; omega) (by rw [d1]; omega)
+    · rw [m₇, show 2 * (j + 1) = 2 * j + 2 by omega_arith]
+      exact digs_two (by omega_arith) O I.digs (by rw [d0]; omega_arith) (by rw [d1]; omega_arith)
     · rw [m₇]
-      exact (I.out.mono (by omega) (by omega)).trans (O.mono (by omega) (by omega))
+      exact (I.out.mono (by omega_arith) (by omega_arith)).trans (O.mono (by omega_arith) (by omega_arith))
     · simp only [v₇.get, v₆.get, v₅.get, reduceCtorEq, ↓reduceIte]
       rw [R₄.gpr _ (by decide), R₃.gpr _ (by decide), v₂.other .r10 (by decide), v₁.other .r10 (by decide)]
       exact ptr_step pu
@@ -217,19 +217,19 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
       exact p9u
   · -- The last digit.
     have e12 : u.gpr .r12 = s.gpr .r12 := I.rest.gpr _ (by decide)
-    refine wp_str (by decide) (I.ws.ea (K := acc + 8 * W) (d := 0) (at_ptr I.r8 e12) (by omega))
-      (I.ws.write (d := acc + 8 * W + 0) (n := 4) (by omega)) fun t m => WP.block_nil ⟨I.ws.of_mupd m, ?_, ?_, ?_,
+    refine wp_str (by decide) (I.ws.ea (K := acc + 8 * W) (d := 0) (at_ptr I.r8 e12) (by omega_arith))
+      (I.ws.write (d := acc + 8 * W + 0) (n := 4) (by omega_arith)) fun t m => WP.block_nil ⟨I.ws.of_mupd m, ?_, ?_, ?_,
         I.rest.trans (m.rest _)⟩
-    · rw [dval, m.mem, Nat.add_zero, show acc + 4 * (2 * W) = acc + 8 * W by omega, w32_write_self,
-        Outside.dval (writeW32_outside _ _ _ (by omega)) (by omega) (by omega), ← I.val,
-        show 16 * (2 * W) = 32 * W by omega]
+    · rw [dval, m.mem, Nat.add_zero, show acc + 4 * (2 * W) = acc + 8 * W by omega_arith, w32_write_self,
+        Outside.dval (writeW32_outside _ _ _ (by omega_arith)) (by omega_arith) (by omega_arith), ← I.val,
+        show 16 * (2 * W) = 32 * W by omega_arith]
     · rw [m.mem, Nat.add_zero]
       intro i hi
       rcases Nat.lt_or_ge i (2 * W) with h | h
-      · rw [w32_write_lt (by omega) (by omega)]; exact I.digs i h
+      · rw [w32_write_lt (by omega_arith) (by omega_arith)]; exact I.digs i h
       · have := I.r3
-        rw [show i = 2 * W by omega, show acc + 4 * (2 * W) = acc + 8 * W by omega, w32_write_self]; omega
+        rw [show i = 2 * W by omega_arith, show acc + 4 * (2 * W) = acc + 8 * W by omega_arith, w32_write_self]; omega_arith
     · rw [m.mem, Nat.add_zero]
-      exact (I.out.mono (by omega) (by omega)).trans ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+      exact (I.out.mono (by omega_arith) (by omega_arith)).trans ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Mont.Arm.Dyn

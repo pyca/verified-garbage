@@ -57,7 +57,7 @@ theorem montC_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} (keepHalves
     VP (fun σ s => E σ ∧ R01 P σ s keepHalves ∧ MR P s ∧ numAt s.mem (State.addr P.M0) P.w6 0 = P.n ∧
         numAt s.mem (State.addr P.M0) P.w6 4 = R2v P) montC
       (fun σ s => E σ ∧ KM P σ (AWh P σ P.c) (montWide keepHalves) (Vh P σ P.c) (montSlots keepHalves) s) := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   simp only [montC, seqs]
   let L1 := mR2 :: live01
   let A1 := fun σ => upd (A01 P σ) mR2 (R2v P)
@@ -91,11 +91,11 @@ theorem montC_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} (keepHalves
     have sz := h.sizes
     have hf := h.bs.pre.fS
     rw [← List.append_nil (clrTop mR2)]
-    refine clrTop_ok hw (j := mR2) (by decide) (by decide) (by show 2 ≤ 2 * P.w6 + 2; omega)
+    refine clrTop_ok hw (j := mR2) (by decide) (by decide) (by show 2 ≤ 2 * P.w6 + 2; omega_arith)
       fun t ht k v r => WP.block_nil ⟨e, h.write_w k (by decide) (by simp) (h.r8_of r) r.sp r.rd r.wr ?_
         (by cases keepHalves <;> decide) (by simp),
         hm.of_keep1 h.bs k (by decide) (by decide) (by simp) r.sp r.rd r.wr, ht⟩
-    rw [v, show P.w - 2 = 2 * P.w6 by simp only [RP.w]; omega, ← r2, numAt_val32 sz hf]; rfl
+    rw [v, show P.w - 2 = 2 * P.w6 by simp only [RP.w]; omega_arith, ← r2, numAt_val32 sz hf]; rfl
   -- `[mXm] := 1`.
   · refine VP.ctx xmOne_taint (fun σ s h => h.2.2.2) fun σ s ⟨e, h, hm, hw⟩ => ?_
     refine WP.mono (h.copy_m hm hw (o := mXm) (a := aOne) (by decide) (by decide) (by simp [L1]) (by decide)
@@ -111,8 +111,8 @@ theorem montC_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} (keepHalves
     have e1 : upd (A1 σ) mXm 1 (mBase + iXm) = 1 := by simp [upd, mXm, mBase, iXm]
     have e2 : upd (A1 σ) mXm 1 (mBase + iR2) = R2v P := by simp [A1, upd, mXm, mBase, iR2, mR2]
     rw [e1, e2]
-    refine ⟨by omega, Nat.mod_lt _ hn0, Nat.mod_lt _ hn0, ?_⟩
-    rw [Nat.one_mul, Nat.mod_mod, Nat.mod_mul_mod, ← Nat.pow_add, show 64 * P.w6 + 64 * P.w6 = 128 * P.w6 by omega]
+    refine ⟨by omega_arith, Nat.mod_lt _ hn0, Nat.mod_lt _ hn0, ?_⟩
+    rw [Nat.one_mul, Nat.mod_mod, Nat.mod_mul_mod, ← Nat.pow_add, show 64 * P.w6 + 64 * P.w6 = 128 * P.w6 by omega_arith]
   -- `[aO] := R mod n`.
   · refine VP.ctx oXm_taint (fun σ s h => h.2.2.2) fun σ s ⟨e, h, hm, hw⟩ => ?_
     refine WP.mono (h.copy_m hm hw (o := aO) (a := mXm) (by decide) (by decide) (by simp) (by decide)
@@ -134,12 +134,12 @@ theorem montC_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} (keepHalves
     have hO : Ov P < P.n := Nat.mod_lt _ hn0
     have nl := n_lt pre
     have hXv : X = P.n - Ov P := by
-      rcases (by omega : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1) with h0 | h1
-      · rw [h0] at hx; omega
-      · rw [h1] at hx; omega
+      rcases (by omega_arith : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1) with h0 | h1
+      · rw [h0] at hx; omega_arith
+      · rw [h1] at hx; omega_arith
     rw [hXv] at ht
     refine ht.mono (fun j hj => ⟨?_, ?_⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
-    · simp only [liveM, L1, live01, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega
+    · simp only [liveM, L1, live01, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega_arith
     · simp only [liveM, List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp [AM, A1, A01, Aload, upd, aO, aN, aNg, mBase, iXm, mXm, mR2, aOne, aZ, wE, wD]

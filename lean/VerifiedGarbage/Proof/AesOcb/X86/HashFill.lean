@@ -97,7 +97,7 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {A : BitVec 
     (hA : ABuf p t (A + BitVec.ofNat 32 (16 * (j + i))) 16) :
     WP isa hashFill t (FillPost p A l j i c t) := by
   unfold hashFill
-  refine WP.seq (WP.mono (lNtz_ok L E (by omega) (by omega) hdi hl0) fun t₁ P₁ => ?_)
+  refine WP.seq (WP.mono (lNtz_ok L E (by omega_arith) (by omega_arith) hdi hl0) fun t₁ P₁ => ?_)
   have E₁ := P₁.env L E
   obtain ⟨t₂, run₂, m₂, g₂, rd₂, wr₂⟩ := xor16W_ok L E₁ (s := lO) (d := ohO) (by decide) (by decide) (.inl (by decide))
   have E₂ : Env p t₂ := E₁.mut L (by rw [g₂ _ (by decide), E₁.ebp]) (by rw [g₂ _ (by decide), E₁.esp]) rd₂ wr₂
@@ -138,7 +138,7 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {A : BitVec 
   have wr₂' : t₂.wr = t.wr := by rw [wr₂, P₁.wr]
   generalize hA' : A + BitVec.ofNat 32 (16 * (j + i)) = A' at si₂ hA ⊢
   have aA : ∀ {k : Nat}, k < 16 → w64 (A' + BitVec.ofNat 32 k) = w64 A' + BitVec.ofNat 64 k := fun hk =>
-    w64_add (by have := hA.fit; omega)
+    w64_add (by have := hA.fit; omega_arith)
   have aA0 : w64 (A' + BitVec.ofNat 32 0) = w64 A' := by rw [aA (by decide)]; exact BitVec.add_zero _
   have rA : ∀ {k : Nat}, k + 4 ≤ 16 → InRegions (t₂.rd ++ t₂.wr) (w64 A' + BitVec.ofNat 64 k) 4 := fun hk => by
     rw [rd₂', wr₂']; exact in_off hA.rd hk (by decide)
@@ -146,7 +146,7 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {A : BitVec 
   have hAk : (w64 A').toNat + 16 ≤ 2 ^ 32 := by rw [toNat_w64]; exact hA.fit
   have aQ : ∀ {k : Nat}, k < 16 → w64 (p.W + BitVec.ofNat 32 (bufO + 16 * i) + BitVec.ofNat 32 k) =
       w64 p.W + BitVec.ofNat 64 (bufO + 16 * i + k) := fun hk => by
-    rw [add_ofNat_assoc32]; exact L.aW (by simp only [bufO]; omega)
+    rw [add_ofNat_assoc32]; exact L.aW (by simp only [bufO]; omega_arith)
   have aQ0 : w64 (p.W + BitVec.ofNat 32 (bufO + 16 * i) + BitVec.ofNat 32 0) = w64 p.W + BitVec.ofNat 64 (bufO + 16 * i) := by
     rw [aQ (by decide)]; rfl
   obtain ⟨t₃, run₃, m₃, si₃, di₃, bx₃, zf₃, g₃, rd₃, wr₃⟩ : ∃ t₃, runBlock isa ([.mov .edx (slot fpO)] ++
@@ -177,7 +177,7 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {A : BitVec 
     fun M v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have dQ : ∀ {d k : Nat}, d + k ≤ bufO → (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint
       ⟨w64 p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩ := fun h => by
-    simp only [bufO] at h ⊢; exact Lay.w_w (.inl (by omega)) (by omega) (by omega)
+    simp only [bufO] at h ⊢; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   have dF : ∀ {d k : Nat}, d + k ≤ fpO ∨ fpO + 4 ≤ d → d + k ≤ 2560 →
       (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 fpO, 4⟩ :=
     fun h h' => Lay.w_w h h' (by decide)
@@ -190,16 +190,16 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {A : BitVec 
       Proof.Ocb.blockAtMem_frame (fQ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dQ (by decide)), oh₂]
   · rw [m₃, Proof.Ocb.blockAtMem_frame (fF _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dF (.inr (by simp only [fpO, bufO]; omega)) (by simp only [bufO]; omega)),
+      simp only [List.mem_singleton] at hr; subst hr; exact dF (.inr (by simp only [fpO, bufO]; omega_arith)) (by simp only [bufO]; omega_arith)),
       xor2Mem_block, oh₂, Proof.Ocb.blockAtMem_frame f₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hA.w.sub_right (Lay.wSub (by decide))), hA']
-  · rw [slotv_eq, m₃, Mem.readW_writeW_self32, add_ofNat_assoc32, show bufO + 16 * i + 16 = bufO + 16 * (i + 1) by omega]
-  · rw [si₃, ← hA', add_ofNat_assoc32, show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega]
+  · rw [slotv_eq, m₃, Mem.readW_writeW_self32, add_ofNat_assoc32, show bufO + 16 * i + 16 = bufO + 16 * (i + 1) by omega_arith]
+  · rw [si₃, ← hA', add_ofNat_assoc32, show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega_arith]
   · rw [di₃, ← BitVec.ofNat_add]
-  · rw [bx₃, sub1_32 (by omega) (by omega), show c - i - 1 = c - (i + 1) by omega]
-  · rw [zf₃, sub1_32 (by omega) (by omega), beq_zero32 (by omega)]; congr 2; exact propext ⟨fun h => by omega,
-      fun h => by omega⟩
+  · rw [bx₃, sub1_32 (by omega_arith) (by omega_arith), show c - i - 1 = c - (i + 1) by omega_arith]
+  · rw [zf₃, sub1_32 (by omega_arith) (by omega_arith), beq_zero32 (by omega_arith)]; congr 2; exact propext ⟨fun h => by omega_arith,
+      fun h => by omega_arith⟩
   · rw [g₃ r h₁ h₂ h₄ h₅ h₆, g₂' r h₁ h₃ h₄]
 
 end VG.Proof.AesOcb.X86
