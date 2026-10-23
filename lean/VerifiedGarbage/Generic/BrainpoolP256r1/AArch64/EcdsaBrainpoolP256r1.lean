@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Verified
+
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Verified
@@ -72,11 +74,11 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP256r1.curv
     verified := Proof.Ecdsa.AArch64.BrainpoolP256r1.sign_verified h.law h.inv },
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. \
+      Public scalar multiplication uses a joint radix-four table built by a shared addition loop, \
+      with 256 shared doublings and at most 128 additions using complete general RCB formulas. \
       The inversion modulo `n` is a call of `vg_brainpoolp256r1_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
-    code := Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.verify
-    verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.verify_verified h.law h.inv }]
+      Branches and memory addresses depend only on pointers, counters and public verification scalars."]
+    code := Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify
+    verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify_verified h.law h.inv }]
 
 end VG.Generic.BrainpoolP256r1.AArch64.EcdsaBrainpoolP256r1
