@@ -116,6 +116,9 @@ pub(crate) mod p521_mont;
 pub(crate) mod poly1305;
 
 #[rustfmt::skip]
+pub(crate) mod rc2;
+
+#[rustfmt::skip]
 pub(crate) mod rc4;
 
 #[rustfmt::skip]
