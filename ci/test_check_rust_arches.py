@@ -127,6 +127,33 @@ class Output(unittest.TestCase):
         self.assertNotIn("x86_64-unknown-linux-gnu", targets)
         self.assertNotIn("armv7-unknown-linux-gnueabihf", targets)
 
+    def test_benchmarks_alone(self):
+        out = run("pull_request", "bench/benches/primitives/md5.rs\nlean/A.lean\n")
+        self.assertEqual((out["arches"], out["all"]), ([], False))
+        self.assertEqual((out["thumb"], out["cpu"]), ([], []))
+        # The stable Linux entries of every architecture, linting only.
+        self.assertEqual([e["name"] for e in out["rust"]],
+                         ["Linux, x86-64", "Linux, x86", "Linux, AArch64", "Linux, ARMv7"])
+        for e in out["rust"]:
+            self.assertEqual((e["rust"], e["tests"], e["bench_only"]), ("stable", False, True))
+        self.assertEqual({e["arch"] for e in out["rust"]}, set(ALL))
+
+    def test_benchmarks_and_one_architecture(self):
+        out = run("pull_request", "bench/Cargo.lock\nsrc/asm/arm/md5.rs\n")
+        self.assertEqual(out["arches"], ["arm"])
+        tested = [e for e in out["rust"] if e["tests"]]
+        linted = [e for e in out["rust"] if not e["tests"]]
+        self.assertEqual([e["name"] for e in tested], ["Linux, ARMv7"])
+        self.assertTrue(all("bench_only" not in e for e in tested))
+        # ARMv7's own entry lints the benchmarks already.
+        self.assertEqual(sorted(e["arch"] for e in linted), ["aarch64", "x86", "x86_64"])
+        self.assertTrue(all(e["bench_only"] for e in linted))
+
+    def test_benchmarks_with_every_architecture(self):
+        out = run("pull_request", "bench/Cargo.lock\nsrc/lib.rs\n")
+        self.assertEqual(out, run("workflow_dispatch"))
+        self.assertTrue(all("bench_only" not in e for e in out["rust"]))
+
     def test_every_job(self):
         full = run("workflow_dispatch")
         self.assertEqual(full, run("pull_request", "src/lib.rs\n"))
@@ -201,6 +228,17 @@ class Workflow(unittest.TestCase):
         for name in ("rust", "rust-thumb"):
             with self.subTest(job=name):
                 self.assertLessEqual(check, lints(job(name)))
+
+    def test_bench_only_lints_the_benchmarks_alone(self):
+        text = job("rust")
+        # rust_arches.is_bench_lint picks the entries this step runs on.
+        self.assertIn("- name: Lint the benchmarks\n        if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' }}", text)
+        # Every architecture has one such entry.
+        self.assertEqual(sorted(e["arch"] for e in MATRIX["rust"] if rust_arches.is_bench_lint(e)), ALL)
+        # Every other step that builds or runs anything is off for it.
+        self.assertIn("- name: Lint\n        if: ${{ matrix.rust == 'stable' && !matrix.bench_only }}", text)
+        self.assertIn("- shell: bash\n        if: ${{ !matrix.bench_only }}\n        run: |\n          source ci/rust_test_timing.sh", text)
+        self.assertNotIn("bench_only", job("rust-thumb") + job("rust-cpu-features"))
 
     def test_all_green_needs_every_rust_job(self):
         text = job("all-green")

@@ -374,7 +374,7 @@ jobs:
   # Every test, with coverage, on each platform of ci/rust_matrix.toml's
   # `rust`, and the lints.
   rust:
-    name: Rust (${{ matrix.name }}, ${{ matrix.rust }})
+    name: Rust (${{ matrix.name }}, ${{ matrix.rust }}${{ matrix.bench_only && ', benchmarks' || '' }})
     needs: rust-arches
     if: ${{ needs.rust-arches.outputs.rust != '[]' }}
     strategy:
@@ -411,7 +411,10 @@ jobs:
             !/src/asm/*/
             /src/asm/${{ matrix.arch }}/
       - uses: ./.github/actions/runner-info
+      # An entry with `bench_only` (`rust-arches`: a change to the benchmarks
+      # alone) only lints the benchmarks.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ !matrix.bench_only }}
         with:
           repository: C2SP/wycheproof
           path: wycheproof
@@ -434,7 +437,7 @@ jobs:
             bench -> target
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Lint
-        if: ${{ matrix.rust == 'stable' }}
+        if: ${{ matrix.rust == 'stable' && !matrix.bench_only }}
         run: |
           cargo fmt --check
           cargo clippy --all-targets --locked
@@ -489,6 +492,7 @@ jobs:
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
       - shell: bash
+        if: ${{ !matrix.bench_only }}
         run: |
           source ci/rust_test_timing.sh
           cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'

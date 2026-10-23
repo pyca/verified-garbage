@@ -9,7 +9,11 @@ the emitter writes). So a pull request runs the Rust jobs of an
 architecture only when it changes that architecture's files or anything else
 that can change what the tests do (the shared Rust code, the tests, their
 vectors, Cargo's files, the Rust jobs' workflow, matrices and scripts):
-every path but those of one architecture and those in `NOT_RUST`. Each
+every path but those of one architecture and those in `NOT_RUST`. The
+benchmarks, a crate of their own that no test reads, are linted by the
+`rust` job's stable Linux entries: a change to them alone (`bench/`) starts
+those entries of every architecture with `bench_only`, which lint the
+benchmarks and nothing else. Each
 architecture's jobs cover every line it builds (ci/merge_rust_coverage.py),
 so a pull request's coverage is checked for those it tests. The merge queue
 does the same with the paths its group changes from the group's base (main,
@@ -35,7 +39,8 @@ build the same tests into one cache per platform, the first entry of each
 It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 `all=true` or `all=false` (whether that is every architecture), and each
 job's matrix (`rust=`, `thumb=`, `cpu=`, `check=`): the JSON list of its
-entries, each with `tests`, and each CPU with shards as one entry per shard.
+entries, each with `tests` (and `bench_only` for a `rust` entry that only
+lints the benchmarks), and each CPU with shards as one entry per shard.
 `check` has one entry, with the space-separated `targets` of every
 architecture not tested, or none.
 """
@@ -60,8 +65,8 @@ ARCHES = {
 
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
 # `src/asm/`), the benchmarks (a crate of their own, which the `rust` job
-# lints whatever the architectures), documentation, and the workflows and
-# actions of the Lean build and the benchmarks.
+# lints: see `BENCH`), documentation, and the workflows and actions of the
+# Lean build and the benchmarks.
 NOT_RUST_PREFIXES = (
     "lean/",
     "bench/",
@@ -116,11 +121,22 @@ def arches_of(path):
     return set(ARCHES.values())
 
 
+# The benchmark crate, which the `rust` job's stable Linux entries lint for
+# their architectures (see `is_bench_lint`).
+BENCH = "bench/"
+
+
 def arches(paths):
     out = set()
     for path in paths:
         out |= arches_of(path)
     return sorted(out)
+
+
+def is_bench_lint(entry):
+    """Whether a `rust` entry lints the benchmarks (its "Lint the benchmarks"
+    step): stable Rust, on Linux."""
+    return entry.get("rust") == "stable" and entry["os"].startswith("ubuntu")
 
 
 def entries(matrix, job):
@@ -151,9 +167,10 @@ def cache_of(entry):
     return (runner.endswith("-arm"), json.dumps(entry.get("container"), sort_keys=True))
 
 
-def output(matrix, selected, tests=True):
+def output(matrix, selected, tests=True, bench=False):
     """The outputs of a run testing the architectures `selected` (or, without
-    `tests`, building one job per cache)."""
+    `tests`, building one job per cache), and with `bench`, linting the
+    benchmarks on every architecture."""
     everything = sorted(set(ARCHES.values()))
     lines = [
         f"arches={json.dumps(selected if tests else [])}",
@@ -162,6 +179,9 @@ def output(matrix, selected, tests=True):
     for job in JOBS:
         keep = [dict(e, tests=tests) for e in entries(matrix, job)
                 if not tests or arch_of(e) in selected]
+        if job == "rust" and bench and tests:
+            keep += [dict(e, tests=False, bench_only=True) for e in entries(matrix, job)
+                     if arch_of(e) not in selected and is_bench_lint(e)]
         if not tests and job == "cpu":
             first = {}
             for e in keep:
@@ -179,7 +199,8 @@ def main(argv):
     matrix = tomllib.loads(MATRIX.read_text())
     everything = sorted(set(ARCHES.values()))
     if len(argv) == 1 and argv[0] in EVENTS:
-        out = output(matrix, arches(line.strip() for line in sys.stdin if line.strip()))
+        paths = [line.strip() for line in sys.stdin if line.strip()]
+        out = output(matrix, arches(paths), bench=any(p.startswith(BENCH) for p in paths))
     elif argv == ["workflow_dispatch"]:
         out = output(matrix, everything)
     elif argv == ["push"]:
