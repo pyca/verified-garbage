@@ -27,25 +27,25 @@ theorem selectBody_ok {s0 s : State} {base : BitVec 32} {size o a b n i : Nat}
   have addr {r : Reg} {d : Nat} (hp : s.gpr r = base + BitVec.ofNat 32 d) (hd : d < size) :
       State.addr (s.gpr r + BitVec.ofNat 32 0) = off (State.addr base) d := by
     rw [hp, Offset.add_add, Nat.add_zero]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_arith)
   have writable (d : Nat) (hd : d + 4 ≤ size) : InRegions s.wr (off (State.addr base) d) 4 := by
     rw [inv.rest.wr]
-    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega)⟩
+    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega_arith)⟩
   have readable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 := by
     obtain ⟨R, hR, hsub⟩ := writable d hd
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   rw [selectBody, WP.seq_iff]
-  refine WP.mono (selectStep_ok s _ _ _ (addr inv.outPtr (by omega)) (addr inv.aPtr (by omega))
-    (addr inv.bPtr (by omega)) (writable _ (by omega)) (readable _ (by omega))
-    (readable _ (by omega)) (by rw [inv.rest.gpr .r11 (by simp [selectLoopClobbers])]; exact hc) inv.mask) ?_
+  refine WP.mono (selectStep_ok s _ _ _ (addr inv.outPtr (by omega_arith)) (addr inv.aPtr (by omega_arith))
+    (addr inv.bPtr (by omega_arith)) (writable _ (by omega_arith)) (readable _ (by omega_arith))
+    (readable _ (by omega_arith)) (by rw [inv.rest.gpr .r11 (by simp [selectLoopClobbers])]; exact hc) inv.mask) ?_
   rintro u ⟨mem, keep⟩
   obtain ⟨outside, prefixValue⟩ := select_value_step ctx inv hi mem
   refine WP.mono (subAdvance_ok u) ?_
   rintro t ⟨p0, p10, p12, count, zero, mem2, keep2⟩
   have uc : u.gpr .lr = BitVec.ofNat 32 (n - i) :=
     (keep.gpr .lr (by simp [selectClobbers])).trans inv.count
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [p0, keep.gpr .r0 (by simp [selectClobbers]), inv.outPtr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
@@ -60,7 +60,7 @@ theorem selectBody_ok {s0 s : State} {base : BitVec 32} {size o a b n i : Nat}
     congr 1
   · rw [count, uc]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
     congr 1
   · rw [mem2]; exact outside
   · rw [mem2]; exact prefixValue
@@ -71,7 +71,7 @@ theorem selectBody_ok {s0 s : State} {base : BitVec 32} {size o a b n i : Nat}
     all_goals intro r hr; cases r <;> simp_all [selectClobbers, selectLoopClobbers]
   · rw [zero, uc]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_arith]
 
 end VG.Proof.Bignum.Arm
