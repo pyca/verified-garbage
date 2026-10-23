@@ -182,7 +182,8 @@ theorem rowProduct_ok (s : State) (x : BitVec 32)
     omega
   · refine (frame1.macFrame.mono ?_).trans ((frame2.macFrame.mono ?_).trans
       ((frame3.mono ?_).trans (frame4.mono ?_)))
-    all_goals intro r hr; cases r <;> simp_all
+    all_goals intro r hr; cases r <;>
+      simp_all only [List.mem_cons, List.not_mem_nil, reduceCtorEq, or_false, false_or]
 
 abbrev rowClobbers : List Reg := [.r2, .r3, .r4, .r5, .r6, .r7, .r8, .r11]
 

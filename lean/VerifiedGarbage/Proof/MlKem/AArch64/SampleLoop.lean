@@ -400,7 +400,7 @@ theorem fix_ok {aP : Addr} {s₀ : State} (hina : ∀ i < 256, InRegions s₀.wr
   refine WP.ite (u.gpr .x4 == 0) (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · rw [eq_zero_iff, decide_eq_true_eq, h.x4] at hz
     have hc := h.coeffs.full (by omega)
-    exact wp_nil ⟨Keep.refl _ _, h.frame, reduced_of_coeffs hc, fun _ => hc⟩
+    exact wp_nil ⟨Keep.refl _ _, h.frame, reduced_of_coeffs (w16 := false) hc, fun _ => hc⟩
   · rw [eq_zero_iff, decide_eq_false_iff_not, h.x4] at hz
     have hlt : L.length < 256 := by omega
     refine wp_movz fun u₁ h₁ e₁ => wp_strw (a := cAddr false aP L.length) (by decide)
@@ -413,7 +413,7 @@ theorem fix_ok {aP : Addr} {s₀ : State} (hina : ∀ i < 256, InRegions s₀.wr
     · rw [m₂]
       exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 false _ hlt)
     · rw [m₂]
-      exact reduced_of_coeffs (h.coeffs.zero hlt)
+      exact reduced_of_coeffs (w16 := false) (h.coeffs.zero hlt)
 
 theorem loop_ok {B : List Byte} {bP aP : Addr} {s₀ : State} (hp : LPre 280 B bP aP s₀) :
     WP isa sampleLoop s₀ fun u => Keep (.x0 :: lRegs) s₀ u ∧ Frame [polyRegion aP] s₀.mem u.mem ∧
