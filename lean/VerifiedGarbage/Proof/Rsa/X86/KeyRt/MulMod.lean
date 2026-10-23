@@ -232,27 +232,27 @@ theorem mulModBody_ok {s0 u : State} {z y x a m t k i : Nat}
   have h := inv.ws
   have hi' := hi
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi'
-  have fz := h.ws.fit64 (j := z) (by omega)
-  have fm := h.ws.fit64 (j := m) (by omega)
-  have zk : num u.mem B (kw len) z = num s0.mem B (kw len) z := inv.keep.num (by simp; omega) (by decide) fz
-  have mk : num u.mem B (kw len) m = num s0.mem B (kw len) m := inv.keep.num (by simp; omega) (by decide) fm
+  have fz := h.ws.fit64 (j := z) (by omega_arith)
+  have fm := h.ws.fit64 (j := m) (by omega_arith)
+  have zk : num u.mem B (kw len) z = num s0.mem B (kw len) z := inv.keep.num (by simp; omega_arith) (by decide) fz
+  have mk : num u.mem B (kw len) m = num s0.mem B (kw len) m := inv.keep.num (by simp; omega_arith) (by decide) fm
   refine WP.mono (mulModStep_ok h hi) fun u' ⟨h', k', r', c', z', y', v'⟩ => ?_
   have cnt : u.gpr .esi - 1 = BitVec.ofNat 32 (k - (i + 1)) := by
     rw [inv.count]
     change BitVec.ofNat 32 (k - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
     congr 1
   refine ⟨⟨h', inv.keep.trans k', inv.rest.trans r', by rw [c', cnt], ?_, fun hZ hA hX hM => ?_⟩, ?_⟩
   · rw [y', inv.yv, Nat.div_div_eq_div_mul, Nat.pow_succ]
   · obtain ⟨va, vx⟩ := inv.value hZ hA hX hM
-    have M0 : 0 < num s0.mem B (kw len) m := by omega
+    have M0 : 0 < num s0.mem B (kw len) m := by omega_arith
     have aLt : num u.mem B (kw len) a < num u.mem B (kw len) m := by rw [va, mk]; exact Nat.mod_lt _ M0
     have xLt : num u.mem B (kw len) x < num u.mem B (kw len) m := by rw [vx, mk]; exact Nat.mod_lt _ M0
     obtain ⟨va', vx'⟩ := v' (by rw [zk, hZ]) aLt xLt (by rw [mk]; exact hM)
     rw [va', vx', va, vx, inv.yv, mk]
     exact ⟨VG.Proof.Rsa.mulMod_arith, VG.Proof.Rsa.double_arith⟩
-  · rw [z', cnt, ofNat_beq_zero (by omega)]
-    simp only [show k - (i + 1) = 0 ↔ i + 1 = k by omega]
+  · rw [z', cnt, ofNat_beq_zero (by omega_arith)]
+    simp only [show k - (i + 1) = 0 ↔ i + 1 = k by omega_arith]
 
 /-- `mulMod z y x a m t` with `esi = k > 0`. -/
 theorem mulMod_ok {s : State} (h : RtWs L s B Z len N) {z y x a m t k : Nat}

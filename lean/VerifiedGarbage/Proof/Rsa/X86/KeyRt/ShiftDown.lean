@@ -62,7 +62,7 @@ theorem shiftDownLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Rt.Ws t₀ W 
   have word : (s₆.gpr .ecx).toNat = w32 t.mem W (x + 4 * j) / 2 + 2 ^ 31 * (w32 t.mem W (x + 4 * (j + 1)) % 2) := by
     rw [u₆.gpr, u₅.gpr, u₅.other .eax (by decide), u₄.gpr, u₄.other .eax (by decide),
       u₃.gpr, u₂.gpr, u₁.gpr, ite_eq_left rfl, u₃.mem, u₂.mem, u₁.mem, VG.Proof.Mont.X86.Dynamic.shifted_word, Nat.add_zero,
-      show x + 4 * j + 4 = x + 4 * (j + 1) by omega]
+      show x + 4 * j + 4 = x + 4 * (j + 1) by omega_arith]
   refine ⟨⟨Kt.trans ((((K₆.mono (by decide)).widen (m₇.keeps [])).widen u₈.keeps).widen u₉.keeps), ?_,
     by rw [u₉.gpr, edx₈]; exact c₁, ?_, ?_⟩, by rw [z₉, edx₈, c₂]⟩
   · rw [PtrAt, u₉.other _ (by decide), u₈.gpr, m₇.gpr, K₆.1 _ (by decide)]; exact ptr4 ebp
@@ -72,10 +72,10 @@ theorem shiftDownLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Rt.Ws t₀ W 
   · intro i hi
     rw [u₉.mem, u₈.mem, m₇.mem, mem₆, Nat.add_zero]
     by_cases hij : i < j
-    · rw [(writeW32_outside t.mem W (d := x + 4 * j) _ (by omega)).w32 (by omega) (by omega)]
+    · rw [(writeW32_outside t.mem W (d := x + 4 * j) _ (by omega_arith)).w32 (by omega_arith) (by omega_arith)]
       exact V i hij
-    · obtain rfl : i = j := by omega
-      rw [w32_write_self, word, O.w32 (d := x + 4 * i) (by omega) (by omega),
-        O.w32 (d := x + 4 * (i + 1)) (by omega) (by omega)]
+    · obtain rfl : i = j := by omega_arith
+      rw [w32_write_self, word, O.w32 (d := x + 4 * i) (by omega_arith) (by omega_arith),
+        O.w32 (d := x + 4 * (i + 1)) (by omega_arith) (by omega_arith)]
 
 end VG.Proof.Rsa.X86.KeyRt
