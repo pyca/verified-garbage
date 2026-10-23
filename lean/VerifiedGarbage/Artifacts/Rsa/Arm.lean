@@ -49,8 +49,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.privateCrtApi.artifact Arm.target {
     suffix := "_umaal"
     notes := ["The shared UMAAL integrated Montgomery scan supplies the private exponentiation's \
-        products and squares through the same window and CRT proofs. Other arithmetic rows use \
-        the shared exact UMAAL row transformation."]
+        products and squares through the same window and CRT proofs, fully unrolled for primes \
+        of 16 and 32 limbs of 32 bits (the public width selects the scan). Other arithmetic rows \
+        use the shared exact UMAAL row transformation."]
     code := Impl.Bignum.Arm.CrtFios.code
     stack := 56
     verified := Proof.Bignum.Arm.crtUmaal_verified
