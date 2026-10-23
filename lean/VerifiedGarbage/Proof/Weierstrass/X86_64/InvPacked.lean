@@ -53,7 +53,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
     (hg : g = .r13 ∧ t = .rax ∨ g = .rax ∧ t = .r13) :
     WP isa (.block (pstepCode j g t)) s fun s' =>
       (s'.gpr .rbx, s'.gpr .r8, s'.gpr t) = pstep j (s.gpr .rbx, s.gpr .r8, s.gpr g) ∧ Keeps pRegs s s' := by
-  have h63 : 1 ≤ 63 - j ∧ 63 - j ≤ 63 := ⟨by omega, by omega⟩
+  have h63 : 1 ≤ 63 - j ∧ 63 - j ≤ 63 := ⟨by omega_arith, by omega_arith⟩
   obtain ⟨E, hE⟩ : ∃ E, s.gpr .rbx = E := ⟨_, rfl⟩
   obtain ⟨F, hF⟩ : ∃ F, s.gpr .r8 = F := ⟨_, rfl⟩
   obtain ⟨G, hG⟩ : ∃ G, s.gpr g = G := ⟨_, rfl⟩
@@ -62,7 +62,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
   simp only
   by_cases hsw : 2 ^ 64 ≤ (G <<< (63 - j)).toNat + E.toNat
   · have hz : (G <<< (63 - j) == 0) = false := by
-      rw [beq_eq_false_iff_ne]; intro h; rw [h] at hsw; have := E.isLt; simp at hsw; omega
+      rw [beq_eq_false_iff_ne]; intro h; rw [h] at hsw; have := E.isLt; simp at hsw; omega_arith
     rw [ite_t hsw]
     rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
@@ -98,8 +98,8 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
 theorem gReg_cases (j : Nat) : gReg j = .r13 ∧ gReg (j + 1) = .rax ∨ gReg j = .rax ∧ gReg (j + 1) = .r13 := by
   unfold gReg
   rcases Nat.mod_two_eq_zero_or_one j with h | h
-  · left; exact ⟨ite_t h, ite_f (by omega)⟩
-  · right; exact ⟨ite_f (by omega), ite_t (by omega)⟩
+  · left; exact ⟨ite_t h, ite_f (by omega_arith)⟩
+  · right; exact ⟨ite_f (by omega_arith), ite_t (by omega_arith)⟩
 
 /-- Steps `0 … n - 1`, the `g` row in `gReg n`. -/
 theorem pstepsList_ok (s : State) : ∀ n ≤ 63,
@@ -109,8 +109,8 @@ theorem pstepsList_ok (s : State) : ∀ n ≤ 63,
   | 0, _ => WP.block_nil_iff.mpr ⟨rfl, fun _ _ => rfl, rfl, rfl, rfl⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (pstepsList_ok s n (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
-    refine WP.mono (pstepCode_ok s₁ (j := n) (by omega) (gReg_cases n)) fun s₂ ⟨e₂, k₂⟩ => ⟨?_, k₁.trans k₂⟩
+    refine WP.mono (pstepsList_ok s n (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (pstepCode_ok s₁ (j := n) (by omega_arith) (gReg_cases n)) fun s₂ ⟨e₂, k₂⟩ => ⟨?_, k₁.trans k₂⟩
     rw [e₂, Divstep.psteps, ← e₁]
 
 /-- A chunk's `n ≤ 15` steps, the `g` row back in `r13`. -/
@@ -119,14 +119,14 @@ theorem pstepsCode_ok (s : State) {n : Nat} (hn : n ≤ 15) :
       (s'.gpr .rbx, s'.gpr .r8, s'.gpr .r13) = Divstep.psteps n (s.gpr .rbx, s.gpr .r8, s.gpr .r13) ∧
         Keeps pRegs s s' := by
   rw [pstepsCode, WP.block_append_iff]
-  refine WP.mono (pstepsList_ok s n (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (pstepsList_ok s n (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
   rcases Nat.mod_two_eq_zero_or_one n with h | h
-  · rw [ite_f (by omega)]
+  · rw [ite_f (by omega_arith)]
     have hg : gReg n = .r13 := ite_t h
     rw [hg] at e₁
     exact WP.block_nil_iff.mpr ⟨e₁, k₁⟩
   · rw [ite_t h]
-    have hg : gReg n = .rax := ite_f (by omega)
+    have hg : gReg n = .rax := ite_f (by omega_arith)
     rw [hg] at e₁
     irun
     refine ⟨e₁, k₁.trans ?_⟩
@@ -154,8 +154,8 @@ theorem pset_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t
       s'.gpr .r8 = (word s.mem base t &&& 0x7fff) + 2 ^ 31 ∧
       s'.gpr .r13 = (word s.mem base (t + 8) &&& 0x7fff) + 2 ^ 47 ∧ Keeps [.rax, .r8, .r13] s s' := by
   rw [pset, WP.block_append_iff]
-  refine WP.mono (psetRow_ok hs (t := t) (by omega) .r8 (by decide) _) fun s₁ ⟨e₁, k₁⟩ => ?_
-  refine WP.mono (psetRow_ok (hs.of_keeps k₁ (by decide)) (t := t + 8) (by omega) .r13 (by decide) _)
+  refine WP.mono (psetRow_ok hs (t := t) (by omega_arith) .r8 (by decide) _) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (psetRow_ok (hs.of_keeps k₁ (by decide)) (t := t + 8) (by omega_arith) .r13 (by decide) _)
     fun s₂ ⟨e₂, k₂⟩ => ⟨?_, by rw [e₂, k₁.2.1], (k₁.mono (by decide)).trans (k₂.mono (by decide))⟩
   rw [k₂.1 _ (by decide), e₁]
 
@@ -224,65 +224,65 @@ theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
   have hN := hs.nowrap
   simp only [plow, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ldMul_ok hs (d := t) (by omega) .r8 (by decide)) fun s₁ ⟨a₁, k₁⟩ => ?_
+  refine WP.mono (ldMul_ok hs (d := t) (by omega_arith) .r8 (by decide)) fun s₁ ⟨a₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (storeReg_ok hs₁ .rax (d := t + 16) (by omega)) fun s₂ ⟨m₂, g₂, _, k₂⟩ => ?_
+  refine WP.mono (storeReg_ok hs₁ .rax (d := t + 16) (by omega_arith)) fun s₂ ⟨m₂, g₂, _, k₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ldMul_ok hs₂ (d := t + 8) (by omega) .rcx (by decide)) fun s₃ ⟨a₃, k₃⟩ => ?_
+  refine WP.mono (ldMul_ok hs₂ (d := t + 8) (by omega_arith) .rcx (by decide)) fun s₃ ⟨a₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (addShrSt_ok hs₃ (d := t + 16) (e := t + 16) (by omega) (by omega) hn) fun s₄ ⟨m₄, k₄⟩ => ?_
+  refine WP.mono (addShrSt_ok hs₃ (d := t + 16) (e := t + 16) (by omega_arith) (by omega_arith) hn) fun s₄ ⟨m₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ldMul_ok hs₄ (d := t) (by omega) .r13 (by decide)) fun s₅ ⟨a₅, k₅⟩ => ?_
+  refine WP.mono (ldMul_ok hs₄ (d := t) (by omega_arith) .r13 (by decide)) fun s₅ ⟨a₅, k₅⟩ => ?_
   have hs₅ := hs₄.of_keeps k₅ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (storeReg_ok hs₅ .rax (d := t) (by omega)) fun s₆ ⟨m₆, g₆, _, k₆⟩ => ?_
+  refine WP.mono (storeReg_ok hs₅ .rax (d := t) (by omega_arith)) fun s₆ ⟨m₆, g₆, _, k₆⟩ => ?_
   have hs₆ := hs₅.of_keepRegs k₆ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ldMul_ok hs₆ (d := t + 8) (by omega) .rbp (by decide)) fun s₇ ⟨a₇, k₇⟩ => ?_
+  refine WP.mono (ldMul_ok hs₆ (d := t + 8) (by omega_arith) .rbp (by decide)) fun s₇ ⟨a₇, k₇⟩ => ?_
   have hs₇ := hs₆.of_keeps k₇ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (addShrSt_ok hs₇ (d := t) (e := t + 8) (by omega) (by omega) hn) fun s₈ ⟨m₈, k₈⟩ => ?_
+  refine WP.mono (addShrSt_ok hs₇ (d := t) (e := t + 8) (by omega_arith) (by omega_arith) hn) fun s₈ ⟨m₈, k₈⟩ => ?_
   have hs₈ := hs₇.of_keepRegs k₈ (by decide)
   rw [show [Instr.mov .rax (.mem (sc (t + 16))), .store (sc t) .rax] =
     [Instr.mov .rax (.mem (sc (t + 16)))] ++ [.store (sc t) .rax] from rfl, WP.block_append_iff]
-  refine WP.mono (movMem_ok hs₈ .rax (d := t + 16) (by omega)) fun s₉ ⟨a₉, _, k₉⟩ => ?_
-  refine WP.mono (storeReg_ok (hs₈.of_keeps k₉ (by decide)) .rax (d := t) (by omega)) fun u ⟨mu, _, _, ku⟩ => ?_
+  refine WP.mono (movMem_ok hs₈ .rax (d := t + 16) (by omega_arith)) fun s₉ ⟨a₉, _, k₉⟩ => ?_
+  refine WP.mono (storeReg_ok (hs₈.of_keeps k₉ (by decide)) .rax (d := t) (by omega_arith)) fun u ⟨mu, _, _, ku⟩ => ?_
   have R2 : ∀ r ∉ [Reg.rax, .rdx], s₂.gpr r = s.gpr r := fun r hr => by rw [g₂, k₁.1 r hr]
   have R4 : ∀ r ∉ [Reg.rax, .rdx], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr r (fun h => hr (by simp only [List.mem_singleton] at h; simp [h])), k₃.1 r hr, R2 r hr]
   have R6 : ∀ r ∉ [Reg.rax, .rdx], s₆.gpr r = s.gpr r := fun r hr => by rw [g₆, k₅.1 r hr, R4 r hr]
   have ap : ∀ (m : Mem) (d e : Nat) (v : BitVec 64), d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ size → e + 8 ≤ size →
       word (m.writeW (off base e) v) base d = word m base d := fun m d e v h hd he =>
-    word_apart m base v h (by omega) (by omega)
+    word_apart m base v h (by omega_arith) (by omega_arith)
   have ou : ∀ (m : Mem) (e : Nat) (v : BitVec 64), t ≤ e → e + 8 ≤ t + 24 →
       Outside base t 24 m (m.writeW (off base e) v) := fun m e v h1 h2 =>
-    (writeW_outside m base v (by omega)).mono h1 h2
+    (writeW_outside m base v (by omega_arith)).mono h1 h2
   -- The words after each store.
-  have w2_0 : word s₂.mem base t = word s.mem base t := by rw [m₂, ap _ _ _ _ (by omega) (by omega) (by omega), k₁.2.1]
+  have w2_0 : word s₂.mem base t = word s.mem base t := by rw [m₂, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₁.2.1]
   have w2_8 : word s₂.mem base (t + 8) = word s.mem base (t + 8) := by
-    rw [m₂, ap _ _ _ _ (by omega) (by omega) (by omega), k₁.2.1]
+    rw [m₂, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₁.2.1]
   have w2_16 : word s₂.mem base (t + 16) = word s.mem base t * s.gpr .r8 := by rw [m₂, word_writeW_self, a₁]
   have hF : (s₃.gpr .rax + word s₃.mem base (t + 16)) >>> n =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
     rw [a₃, k₃.2.1, w2_8, w2_16, R2 .rcx (by decide)]
   have w4_0 : word s₄.mem base t = word s.mem base t := by
-    rw [m₄, ap _ _ _ _ (by omega) (by omega) (by omega), k₃.2.1, w2_0]
+    rw [m₄, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₃.2.1, w2_0]
   have w4_8 : word s₄.mem base (t + 8) = word s.mem base (t + 8) := by
-    rw [m₄, ap _ _ _ _ (by omega) (by omega) (by omega), k₃.2.1, w2_8]
+    rw [m₄, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₃.2.1, w2_8]
   have w4_16 : word s₄.mem base (t + 16) =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
     rw [m₄, word_writeW_self, hF]
   have w6_0 : word s₆.mem base t = word s.mem base t * s.gpr .r13 := by
     rw [m₆, word_writeW_self, a₅, w4_0, R4 .r13 (by decide)]
   have w6_8 : word s₆.mem base (t + 8) = word s.mem base (t + 8) := by
-    rw [m₆, ap _ _ _ _ (by omega) (by omega) (by omega), k₅.2.1, w4_8]
+    rw [m₆, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₅.2.1, w4_8]
   have w6_16 : word s₆.mem base (t + 16) =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
-    rw [m₆, ap _ _ _ _ (by omega) (by omega) (by omega), k₅.2.1, w4_16]
+    rw [m₆, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₅.2.1, w4_16]
   have hG : (s₇.gpr .rax + word s₇.mem base t) >>> n =
       (word s.mem base (t + 8) * s.gpr .rbp + word s.mem base t * s.gpr .r13) >>> n := by
     rw [a₇, k₇.2.1, w6_8, w6_0, R6 .rbp (by decide)]
@@ -291,17 +291,17 @@ theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
     rw [m₈, word_writeW_self, hG]
   have w8_16 : word s₈.mem base (t + 16) =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
-    rw [m₈, ap _ _ _ _ (by omega) (by omega) (by omega), k₇.2.1, w6_16]
+    rw [m₈, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₇.2.1, w6_16]
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [mu, word_writeW_self, a₉, w8_16]
-  · rw [mu, ap _ _ _ _ (by omega) (by omega) (by omega), k₉.2.1, w8_8]
+  · rw [mu, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₉.2.1, w8_8]
   · exact ((((((((((Keeps.regs k₁).trans (k₂.mono (by regions_sub))).trans (Keeps.regs k₃)).trans
       (k₄.mono (by regions_sub))).trans (Keeps.regs k₅)).trans (k₆.mono (by regions_sub))).trans (Keeps.regs k₇)).trans
       (k₈.mono (by regions_sub))).trans ((Keeps.regs k₉).mono (by regions_sub))).trans (ku.mono (by regions_sub)))
   · rw [mu, k₉.2.1, m₈, k₇.2.1, m₆, k₅.2.1, m₄, k₃.2.1, m₂, k₁.2.1]
-    exact (((((ou _ (t + 16) _ (by omega) (by omega)).trans (ou _ (t + 16) _ (by omega) (by omega))).trans
-      (ou _ t _ (by omega) (by omega))).trans (ou _ (t + 8) _ (by omega) (by omega))).trans
-      (ou _ t _ (by omega) (by omega)))
+    exact (((((ou _ (t + 16) _ (by omega_arith) (by omega_arith)).trans (ou _ (t + 16) _ (by omega_arith) (by omega_arith))).trans
+      (ou _ t _ (by omega_arith) (by omega_arith))).trans (ou _ (t + 8) _ (by omega_arith) (by omega_arith))).trans
+      (ou _ t _ (by omega_arith) (by omega_arith)))
 
 
 /-- The first chunk's matrix into `r9`–`r12`. -/
@@ -369,7 +369,7 @@ theorem pcol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t
       k₃.1 r (by simp [hr.1, hr.2.1, hr.2.2.1]), R r (by simp [hr.1, hr.2.1])]
   · exact k₃.2.2.1.trans (k₂.rd.trans k₁.2.2.1)
   · exact k₃.2.2.2.trans (k₂.wr.trans k₁.2.2.2)
-  · rw [k₃.2.1, m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega)
+  · rw [k₃.2.1, m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega_arith)
 
 /-- The batch's matrix times the chunk's. -/
 theorem pcomp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t : Nat} (ht : t + 8 ≤ size) :
@@ -416,7 +416,7 @@ theorem prow_mod {w : BitVec 64} {F : Int} {K n k : Nat} (hn : n ≤ 15) (hK : n
     (h : (w.toNat : Int) % 2 ^ K = F % 2 ^ K) :
     (((w.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ k) % 2 ^ n = F % 2 ^ n := by
   have d1 : (2 : Int) ^ n ∣ 2 ^ 15 := pow_dvd_pow 2 hn
-  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega)
+  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega_arith)
   have d3 : (2 : Int) ^ n ∣ 2 ^ K := pow_dvd_pow 2 hK
   rw [Int.natCast_mod, Nat.cast_pow, Nat.cast_ofNat, Int.add_emod, Int.emod_eq_zero_of_dvd d2, add_zero,
     Int.emod_emod_of_dvd _ d1, Int.emod_emod, ← Int.emod_emod_of_dvd _ d3, h, Int.emod_emod_of_dvd _ d3]
@@ -438,14 +438,14 @@ theorem pchunk_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have lo := Divstep.msteps_lo T.d T.f T.g n
   have hrel := Divstep.psteps_rel (d := T.d) (f := T.f) (g := T.g)
     (P := (((word s.mem base t).toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 31)
-    (Q := (((word s.mem base (t + 8)).toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47) (n := n) (by omega) hf hd
+    (Q := (((word s.mem base (t + 8)).toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47) (n := n) (by omega_arith) hf hd
     (prow_mod hn.2 hK.1 (by norm_num) hI.f) (prow_mod hn.2 hK.1 (by norm_num) hI.g) n le_rfl
   rw [Divstep.msteps_gen n T]
   simp only
   set m := msteps n (MSt.init T.d T.f T.g) with hm
   simp only [pchunk, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (pset_ok hs (t := t) (by omega)) fun s₁ ⟨r8₁, r13₁, k₁⟩ => ?_
+  refine WP.mono (pset_ok hs (t := t) (by omega_arith)) fun s₁ ⟨r8₁, r13₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (pstepsCode_ok s₁ hn.2) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [r8₁, r13₁, pset_int _ _ c31, pset_int _ _ c47, k₁.1 _ (by decide), hI.d, hrel] at e₂
@@ -481,7 +481,7 @@ theorem pchunk_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     cases last
     · simp only [Bool.false_eq_true, ↓reduceIte]
       have kr : ∀ r ∈ [Reg.rbx, .r8, .rcx, .r13, .rbp, .r9, .r10, .r11, .r12], r ∉ [Reg.rax, .rdx] := by decide
-      refine WP.mono (plow_ok hs₃ ⟨hn.1, by omega⟩ ht) fun s₄ ⟨w0, w1, k₄, o₄⟩ =>
+      refine WP.mono (plow_ok hs₃ ⟨hn.1, by omega_arith⟩ ht) fun s₄ ⟨w0, w1, k₄, o₄⟩ =>
         ⟨fun r hr => k₄.gpr r (kr r hr), fun _ => ⟨?_, ?_⟩, k₄, o₄⟩
       · rw [w0, mem₃, u₃, v₃, add_comm]
         exact Divstep.low_upd hK.2 hK.1 hI.f hI.g hmat.1
@@ -497,7 +497,7 @@ theorem pchunk_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   cases first
   · simp only [Bool.false_eq_true, ↓reduceIte]
     obtain ⟨m9, m10, m11, m12⟩ := hI.mat rfl
-    refine WP.mono (pcomp_ok hs₄ (t := t + 16) (by omega)) fun s₅ ⟨x9, x11, x10, x12, k₅, o₅⟩ =>
+    refine WP.mono (pcomp_ok hs₄ (t := t + 16) (by omega_arith)) fun s₅ ⟨x9, x11, x10, x12, k₅, o₅⟩ =>
       ⟨?_, ?_, ?_, ?_, ?_, fun h => ?_, k34.trans (k₅.mono (by decide)), ?_⟩
     · rw [k₅.gpr _ (by decide), R₄ _ (by simp), rbx₃]
     · rw [x9, R₄ .r8 (by simp), R₄ .rcx (by simp), R₄ .r9 (by simp), R₄ .r11 (by simp), u₃, v₃,
@@ -512,8 +512,8 @@ theorem pchunk_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     · rw [x12, R₄ .rbp (by simp), R₄ .r13 (by simp), R₄ .r10 (by simp), R₄ .r12 (by simp), q₃, r₃,
         keep₃ .r10 (by simp), keep₃ .r12 (by simp), m10, m12, ← BitVec.ofInt_mul, ← BitVec.ofInt_mul,
         ← BitVec.ofInt_add, add_comm]
-    · rw [o₅.word (d := t) (by omega) (by omega), o₅.word (d := t + 8) (by omega) (by omega)]; exact w₄ h
-    · rw [← mem₃]; exact o₄.trans (o₅.mono (by omega) (by omega))
+    · rw [o₅.word (d := t) (by omega_arith) (by omega_arith), o₅.word (d := t + 8) (by omega_arith) (by omega_arith)]; exact w₄ h
+    · rw [← mem₃]; exact o₄.trans (o₅.mono (by omega_arith) (by omega_arith))
   · simp only [↓reduceIte]
     obtain ⟨i1, i2, i3, i4⟩ := hI.id rfl
     refine WP.mono (pfirst_ok s₄) fun s₅ ⟨x9, x10, x11, x12, k₅⟩ =>

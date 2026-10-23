@@ -219,16 +219,16 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
   have hhi := E.hi
   have hn := E.ws.nowrap
   have hs16 : (s.gpr .esp - 16).toNat = (s.gpr .esp).toNat - 16 := by
-    rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega
+    rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega_arith
   unfold body
   refine WP.frame (rs := rs4) (r := .ebx) (by decide) (by decide) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega) hns ?_
+    (by simp only [List.length_cons, List.length_nil]; omega_arith) hns ?_
   simp only [seqs]
   refine WP.seq (WP.mono hp fun t1 ⟨PV, esp1, m1, rd1, wr1⟩ => ?_)
   have hn7 : 4 * rs7.length ≤ (t1.gpr .esp).toNat := by
-    rw [esp1, hs16]; simp only [List.length_cons, List.length_nil]; omega
+    rw [esp1, hs16]; simp only [List.length_cons, List.length_nil]; omega_arith
   refine WP.seq (WP.frame (rs := rs7) (r := .eax) (by decide) (by decide) (by decide) hn7 kernel_noSp ?_)
-  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   have F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
   rw [show 4 * rs4.length = 16 from rfl, ← m1] at F1
   have F2 := pushed_frame (rs := rs7) (s := t1) (by decide) hn7
@@ -240,14 +240,14 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
     refine (frame_ws E (c := 0) (n := 16) (by decide) (by decide) (by simpa using F1)).trans
       (frame_ws E (c := 16) (n := 28) (by decide) (by decide) (by rw [esp1] at F2; exact F2))
   have ws2 : ∀ {d k : Nat}, d + 4 * k ≤ L → val32 (pushed rs7 t1).mem W d k = val32 s.mem W d k := fun hd =>
-    O2.val32 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+    O2.val32 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
   have w2 : ∀ {d : Nat}, d + 4 ≤ L → w32 (pushed rs7 t1).mem W d = w32 s.mem W d := fun {d} hd => by
-    have := ws2 (d := d) (k := 1) (by omega)
+    have := ws2 (d := d) (k := 1) (by omega_arith)
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
   have hw2 : Ws (pushed rs7 t1) W L :=
     ⟨by rw [pushed_wr, wr1, pushed_wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ E.ws.wr), hn⟩
   have hs44 : (s.gpr .esp - 44).toNat = (s.gpr .esp).toNat - 44 := by
-    rw [BitVec.toNat_sub, show (44 : BitVec 32).toNat = 44 from rfl]; omega
+    rw [BitVec.toNat_sub, show (44 : BitVec 32).toNat = 44 from rfl]; omega_arith
   have hm2 : ∀ j < 8, (pushed rs7 t1).gpr .esp - 12 = s.gpr .esp - BitVec.ofNat 32 56 + BitVec.ofNat 32 0 := by
     intro _ _; rw [esp2, BitVec.sub_sub, BitVec.add_zero]; rfl
   refine WP.mono (kernel_ok (kernel_ready E Ly hinv hB ⟨PV, esp1, m1, rd1, wr1⟩))
@@ -261,7 +261,7 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [show (44 : BitVec 32).toNat = 44 from rfl, show (16 : BitVec 32).toNat = 16 from rfl]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   have wrw : (popped .eax 7 v).wr = below (s.gpr .esp) 16 :: s.wr := by
     rw [popped_wr, Kv.2.2, pushed_wr, wr1, pushed_wr]; rfl
   have rdw : (popped .eax 7 v).rd = s.rd := by rw [popped_rd, Kv.2.1, pushed_rd, rd1]
@@ -269,41 +269,41 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
   have mw : ∀ d, 40 ≤ d → d < 60 → (popped .eax 7 v).mem (stk (s.gpr .esp) d) = (pushed rs4 s).mem (stk (s.gpr .esp) d) := by
     intro d hd1 hd2
     rw [popped_mem, mv _ (fun j hj h => by
-        rw [hm2 j hj, stack_addr hlo hhi (c := 56) (k := 0) (by decide) (by omega), add_ofNat64] at h
-        have := stk_inj (sp := s.gpr .esp) (by omega) (by omega) h
-        omega)
+        rw [hm2 j hj, stack_addr hlo hhi (c := 56) (k := 0) (by decide) (by omega_arith), add_ofNat64] at h
+        have := stk_inj (sp := s.gpr .esp) (by omega_arith) (by omega_arith) h
+        omega_arith)
       (fun r hr => by
         have hf : L ≤ ofs W (stk (s.gpr .esp) d) := E.far d hd2
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         have := Ly.s_le
         have := Ly.o_le
-        rcases hr with rfl | rfl <;> simp only <;> omega),
+        rcases hr with rfl | rfl <;> simp only <;> omega_arith),
       F2 _ (fun r hr h => by
         simp only [List.mem_singleton] at hr; subst hr
-        rw [below_contains hlo hhi (c := 16) (n := 28) esp1 (by decide) (by omega)] at h
-        omega), m1]
+        rw [below_contains hlo hhi (c := 16) (n := 28) esp1 (by decide) (by omega_arith)] at h
+        omega_arith), m1]
   have saved : ∀ i < 4, readSrc (popped .eax 7 v) (.mem (at_ .esp (4 * i))) = some (s.gpr rs4[rs4.length - 1 - i]) := by
     intro i hi
     have ea : (popped .eax 7 v).ea (at_ .esp (4 * i)) = stk (s.gpr .esp) (40 + 4 * i) := by
       simp only [State.ea, at_, espw]
-      rw [show s.gpr .esp - 16 = s.gpr .esp - BitVec.ofNat 32 16 from rfl, stack_addr hlo hhi (by decide) (by omega)]
+      rw [show s.gpr .esp - 16 = s.gpr .esp - BitVec.ofNat 32 16 from rfl, stack_addr hlo hhi (by decide) (by omega_arith)]
     show (popped .eax 7 v).load32 _ = _
     rw [ea, State.load32, ite_eq_left_iff.mpr fun h => absurd ?_ h]
     · have w := pushed_word (rs := rs4) (s := s) (by decide) h16 (i := i) hi
       rw [pushed_esp, show 4 * rs4.length = 16 from rfl] at w
       rw [show ((s.gpr .esp - BitVec.ofNat 32 16 + BitVec.ofNat 32 (4 * i)).setWidth 64 : Addr) =
-        stk (s.gpr .esp) (40 + 4 * i) from stack_addr hlo hhi (by decide) (by omega)] at w
+        stk (s.gpr .esp) (40 + 4 * i) from stack_addr hlo hhi (by decide) (by omega_arith)] at w
       rw [← w, Mem.readW_congr fun j hj => ?_]
       rw [show stk (s.gpr .esp) (40 + 4 * i) + BitVec.ofNat 64 j = stk (s.gpr .esp) (40 + 4 * i + j) from
         add_ofNat64 _ _ _]
-      exact mw _ (by omega) (by omega)
+      exact mw _ (by omega_arith) (by omega_arith)
     · rw [rdw, wrw]
       refine ⟨_, List.mem_append_right _ (List.mem_cons_self ..), ?_⟩
       have := (s.gpr .esp).isLt
       simp only [Region.Contains, stk, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth,
         BitVec.toNat_ofNat]
       rw [show (56 : BitVec 64).toNat = 56 from rfl]
-      omega
+      omega_arith
   -- The callee-saved registers back.
   unfold restoreRegs
   refine wp_movS (saved 0 (by decide)) fun z1 y1 _ =>
@@ -331,9 +331,9 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
   · rw [mu, ← ws2 Ly.mo_le, ← ws2 Ly.a_le, ← ws2 Ly.b_le]; exact cong
   · intro x hr hb
     rw [mu, mv x (fun j hj h => hb (by
-        rw [h, hm2 j hj, stack_addr hlo hhi (c := 56) (k := 0) (by decide) (by omega), add_ofNat64]
-        rw [below_contains hlo hhi (c := 0) (n := 56) (by simp) (by decide) (by omega)]
-        omega)) hr,
+        rw [h, hm2 j hj, stack_addr hlo hhi (c := 56) (k := 0) (by decide) (by omega_arith), add_ofNat64]
+        rw [below_contains hlo hhi (c := 0) (n := 56) (by simp) (by decide) (by omega_arith)]
+        omega_arith)) hr,
       F2 x (fun r h h' => by
         simp only [List.mem_singleton] at h; subst h
         exact hb (below_sub hlo (c := 16) (n := 28) esp1 (by decide) h')),

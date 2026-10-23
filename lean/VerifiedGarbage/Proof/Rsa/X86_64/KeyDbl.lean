@@ -98,9 +98,9 @@ theorem dblIn_ok {s : State} {B : Addr} {Z w eo em eA eT : Nat} {c₀ : Bool} (h
       DblInInv s B Z eA eo c₀ 0 t := fun t h14 hm k _ =>
     ⟨hs.congr k.2.2, k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _,
       ⟨c₀, (k.gpr (by decide)).trans hbp, by rw [hm]; simp [wv]⟩⟩
-  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw'
+  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_arith) hw'
     (DblInInv s B Z eA eo c₀) h0
-    (fun j _ hj t hI => dblInStep_ok h8 hbx h12 (by omega) (by omega) ho (by omega) hj hI)) fun s₂ hI => ?_)
+    (fun j _ hj t hI => dblInStep_ok h8 hbx h12 (by omega_arith) (by omega_arith) ho (by omega_arith) hj hI)) fun s₂ hI => ?_)
   obtain ⟨c, hc, hval⟩ := hI.val
   have s₂8 : s₂.gpr .r8 = off B eA := (hI.keep.gpr (by decide)).trans h8
   have s₂12 : s₂.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans h12
@@ -110,7 +110,7 @@ theorem dblIn_ok {s : State} {B : Addr} {Z w eo em eA eT : Nat} {c₀ : Bool} (h
     (by
       unfold cfFromRbp
       xrun [State.ea, ix, s₂si, addr0 s₂8 s₂12, hc, cf_mask,
-        hI.scr.st (show eA + 8 * w + 8 ≤ Z by omega), sx0]
+        hI.scr.st (show eA + 8 * w + 8 ≤ Z by omega_arith), sx0]
       refine ⟨_, ?_, rfl⟩
       cases c <;> rfl) rfl) fun s₃ ⟨⟨hsi₃, v, hv, hm₃⟩, k₃⟩ => ?_)
   have hs₃ := hI.scr.congr k₃.2.2
@@ -118,33 +118,33 @@ theorem dblIn_ok {s : State} {B : Addr} {Z w eo em eA eT : Nat} {c₀ : Bool} (h
   have o3 : Outside B eA (8 * (w + 1)) s.mem s₃.mem := by
     rw [hm₃]
     intro x hx
-    rw [writeW_outside s₂.mem B v (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  have fN : wv s₃.mem B em w = wv s.mem B em w := o3.wv (by omega) (by omega)
+    rw [writeW_outside s₂.mem B v (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  have fN : wv s₃.mem B em w = wv s.mem B em w := o3.wv (by omega_arith) (by omega_arith)
   have hTl : wv s₃.mem B eA w = wv s₂.mem B eA w := by
-    rw [hm₃]; exact (writeW_outside s₂.mem B v (by omega)).wv (Or.inl (by omega)) (by omega)
+    rw [hm₃]; exact (writeW_outside s₂.mem B v (by omega_arith)).wv (Or.inl (by omega_arith)) (by omega_arith)
   have hTw : (word s₃.mem B (eA + 8 * w)).toNat = c.toNat := by
     rw [hm₃, word_writeW_self, hv]
   refine WP.seq (WP.mono (subMod_ok hs₃ ((k13.gpr (by decide)).trans h8) ((k13.gpr (by decide)).trans h10)
-    hsi₃ ((k13.gpr (by decide)).trans h12) (by omega) hw' hA hm hT sAT sTm)
+    hsi₃ ((k13.gpr (by decide)).trans h12) (by omega_arith) hw' hA hm hT sAT sTm)
     fun s₄ ⟨c', lt, hbp', hlt, hD, ho₄, k₄⟩ => ?_)
   have hs₄ := hs₃.congr k₄.2.2
   have k14 := k13.trans k₄
   refine WP.mono (selectAcc_ok hs₄ ((k14.gpr (by decide)).trans h8) ((k₄.gpr (by decide)).trans hsi₃)
-    ((k14.gpr (by decide)).trans hbx) ((k14.gpr (by decide)).trans h12) hbp' (by omega) hw'
-    (by omega) hT ho (by omega) sTo) fun t ⟨hv', hot, k₅⟩ => ?_
-  have hacc₄ : wv s₄.mem B eA w = wv s₃.mem B eA w := ho₄.wv (by omega) (by omega)
+    ((k14.gpr (by decide)).trans hbx) ((k14.gpr (by decide)).trans h12) hbp' (by omega_arith) hw'
+    (by omega_arith) hT ho (by omega_arith) sTo) fun t ⟨hv', hot, k₅⟩ => ?_
+  have hacc₄ : wv s₄.mem B eA w = wv s₃.mem B eA w := ho₄.wv (by omega_arith) (by omega_arith)
   rw [fN] at hD
-  have hO₃ : wv s₂.mem B eo w = wv s.mem B eo w := hI.out.wv (by omega) (by omega)
+  have hO₃ : wv s₂.mem B eo w = wv s.mem B eo w := hI.out.wv (by omega_arith) (by omega_arith)
   refine ⟨fun hlt' => ?_, ?_, (k14.trans k₅).mono (by decide)⟩
-  · have hN0 : 0 < wv s.mem B em w := by omega
+  · have hN0 : 0 < wv s.mem B em w := by omega_arith
     rw [hv', hacc₄, hlt, hTw]
     have h2 : 2 * wv s.mem B eo w + c₀.toNat < 2 * wv s.mem B em w := by
-      have := Bool.toNat_le c₀; omega
+      have := Bool.toNat_le c₀; omega_arith
     have := VG.Proof.Bignum.csub_result (Tl := wv s₃.mem B eA w) (Tw := c.toNat) (Tw1 := 0)
       (D := wv s₄.mem B eT w) (m := wv s.mem B em w) (R := 2 ^ (64 * w))
-      (c := c'.toNat) (by have := wv_lt s.mem B em w; omega) (wv_lt _ _ _ _) (Bool.toNat_le c')
-      (wv_lt _ _ _ _) (by rw [hTl, Nat.mul_zero, Nat.add_zero]; omega) hD
+      (c := c'.toNat) (by have := wv_lt s.mem B em w; omega_arith) (wv_lt _ _ _ _) (Bool.toNat_le c')
+      (wv_lt _ _ _ _) (by rw [hTl, Nat.mul_zero, Nat.add_zero]; omega_arith) hD
     rw [Nat.mul_zero, Nat.add_zero, hTl, hval] at this
     rw [← this]
     by_cases h : c.toNat < c'.toNat <;> simp [h, hTl]

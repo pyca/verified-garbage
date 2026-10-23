@@ -55,7 +55,7 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
       (fun σ t => St G { c with cl := cl' } X σ t ∧
         (t.mem.read (G.sa (sA + resS n)) (8 * n)).toNat = hv ^ ev % pv) := by
   subst hL
-  have w8 : wa G.pLen / 8 * 8 = wa G.pLen := by simp only [wa]; omega
+  have w8 : wa G.pLen / 8 * 8 = wa G.pLen := by simp only [wa]; omega_arith
   refine VP.seq (G := fun σ s => (St G c X σ s ∧ PowIn G n e pv hv ev s.mem) ∧
       s.gpr .r0 = G.scr + BitVec.ofNat 32 sA ∧ s.gpr .r1 = BitVec.ofNat 32 (wa G.pLen / 8))
     (VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
@@ -64,13 +64,13 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
       fun σ s ⟨⟨h, x⟩, pin⟩ => ?_) ?_
   · have big := h.gi.scrBig
     have l := h.lens
-    refine scr_ok (d := .r0) (o := sA) h.r8 rfl l (by simp only [sK]; omega) fun s₁ v₁ R₁ M₁ =>
+    refine scr_ok (d := .r0) (o := sA) h.r8 rfl l (by simp only [sK]; omega_arith) fun s₁ v₁ R₁ M₁ =>
       wp_movw fun s₂ u₂ => WP.block_nil ⟨⟨⟨h.of_rest ((R₁.mono (by simp)).trans (u₂.rest (by simp)) :
         Rest [.r12, .r0, .r1] s s₂) (by rw [u₂.mem, M₁]), x⟩, by rw [u₂.mem, M₁]; exact pin⟩,
         by rw [u₂.other _ (by decide), v₁], ?_⟩
     rw [u₂.gpr]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    have : wa G.pLen / 8 < 2 ^ 16 := by simp only [wa]; omega
-    omega
+    have : wa G.pLen / 8 < 2 ^ 16 := by simp only [wa]; omega_arith
+    omega_arith
   -- The call, from the working space and its length.
   have facts : ∀ σ s, (St G c X σ s ∧ PowIn G n e pv hv ev s.mem) ∧ s.gpr .r0 = G.scr + BitVec.ofNat 32 sA ∧
       s.gpr .r1 = BitVec.ofNat 32 (wa G.pLen / 8) →
@@ -80,17 +80,17 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
     have gi := h.gi
     have big := gi.scrBig
     have fit := gi.scrFit
-    have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+    have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
     have l := h.lens
     have aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen)
-      (by simp only [sK] at big ⊢; omega) (by simp only [wa]; omega)
+      (by simp only [sK] at big ⊢; omega_arith) (by simp only [wa]; omega_arith)
     have r1n : (s.gpr .r1).toNat = wa G.pLen / 8 := by
-      rw [r1, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [wa]; omega)
+      rw [r1, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [wa]; omega_arith)
     have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
     have cov : Covers [G.rPow] s.wr := (Covers.of_sub (rs' := [G.rScr]) fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
       exact ⟨G.rScr, List.mem_singleton_self _, sA, rfl, show sA + wa G.pLen / 8 * 8 ≤ G.scrLen * 8 by
-        simp only [sK] at big; omega⟩).trans
+        simp only [sK] at big; omega_arith⟩).trans
       (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact inS)
     have e0 : ∀ o, State.addr (s.gpr .r0) + BitVec.ofNat 64 o = G.sa (sA + o) := fun o => by
       rw [r0, aS]; simp only [GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -98,14 +98,14 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
     · show [G.rPow] = [⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat * 8⟩]
       rw [r0, aS, r1n]
     · show (s.gpr .r0).toNat + (s.gpr .r1).toNat * 8 ≤ 2 ^ 32
-      rw [r1n, r0, h.toNat (by simp only [sK]; omega)]; simp only [sK] at big; omega
+      rw [r1n, r0, h.toNat (by simp only [sK]; omega_arith)]; simp only [sK] at big; omega_arith
     · show contextBytes n ≤ 8 * (s.gpr .r1).toNat
-      rw [r1n]; omega
+      rw [r1n]; omega_arith
     · show Spec.Dsa.ModPow.numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n) % 2 = 1
       rw [Spec.Dsa.ModPow.numAt, e0, pin.1]; exact hodd
     · show 1 < Spec.Dsa.ModPow.numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n)
       rw [Spec.Dsa.ModPow.numAt, e0, pin.1]; exact hgt
-    · rw [gi.sp]; have := gi.sp176; have := ok.stack; omega
+    · rw [gi.sp]; have := gi.sp176; have := ok.stack; omega_arith
   refine VP.of_ct (fun σ₁ σ₂ => RelCT.call ok.correct ok.ct [] [G.rPow] fun s₁ s₂ ⟨h₁, h₂⟩ => ?_)
     fun σ s hs => ?_
   · obtain ⟨p₁, c₁, w₁, -, -, -⟩ := facts _ _ h₁
@@ -128,13 +128,13 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
   have bl : Region.Sub (belowA s.sp (armStack code)) G.rBelow := by
     have := gi.sp176; have := ok.stack
     refine fun a ha => ?_
-    have hs' := FrameStack.belowA_sub (sp := s.sp) (a := armStack code) (b := 176) (by omega)
-      (by rw [gi.sp]; omega) a ha
+    have hs' := FrameStack.belowA_sub (sp := s.sp) (a := armStack code) (b := 176) (by omega_arith)
+      (by rw [gi.sp]; omega_arith) a ha
     rw [gi.sp] at hs'
     show Region.Contains ⟨State.addr G.sp - 176#64, 176⟩ a 1
-    have e : State.addr (G.sp - BitVec.ofNat 32 176) = State.addr G.sp - 176#64 := FrameStack.addr_sub' (by omega)
+    have e : State.addr (G.sp - BitVec.ofNat 32 176) = State.addr G.sp - 176#64 := FrameStack.addr_sub' (by omega_arith)
     simpa only [FrameStack.belowA, e] using hs'
-  refine ⟨⟨h.of_scr R (o := sA) (n := wa G.pLen) (by simp only [sK]; omega)
+  refine ⟨⟨h.of_scr R (o := sA) (n := wa G.pLen) (by simp only [sK]; omega_arith)
     (f.sub fun r hr => ?_) fun y hy => .inl (hcl y hy), x⟩, ?_⟩
   · simp only [List.mem_append, List.mem_singleton] at hr
     rcases hr with rfl | rfl

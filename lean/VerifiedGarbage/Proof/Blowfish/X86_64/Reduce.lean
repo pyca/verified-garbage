@@ -60,28 +60,28 @@ theorem reduce_scan (p : Nat → Byte) {x : Nat} (hx : x < 256) :
     dword (reduceV (scanAcc p x 16)) 0 = (p x).setWidth 32 := by
   have hw : ∀ w < 8, word (scanAcc p x 16) w = if x % 16 / 2 = w then (p x).setWidth 16 else 0 := by
     intro w hw; rw [scanAcc, word_ofWords _ hw]
-    simp only [show x / 16 < 16 by omega, true_and]
+    simp only [show x / 16 < 16 by omega_arith, true_and]
   rw [reduceV_dword, dword_words, dword_words, dword_words, dword_words]
   simp only [Nat.mul_zero, Nat.zero_add, show 2 * 2 = 4 by rfl, show 2 * 3 = 6 by rfl,
     show 2 * 2 + 1 = 5 by rfl, show 2 * 3 + 1 = 7 by rfl, show 2 * 1 + 1 = 3 by rfl, show 2 * 1 = 2 by rfl,
     hw _ (by decide : 0 < 8), hw _ (by decide : 1 < 8), hw _ (by decide : 2 < 8), hw _ (by decide : 3 < 8),
     hw _ (by decide : 4 < 8), hw _ (by decide : 5 < 8), hw _ (by decide : 6 < 8), hw _ (by decide : 7 < 8)]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  have h8 : x % 16 / 2 < 8 := by omega
+  have h8 : x % 16 / 2 < 8 := by omega_arith
   generalize x % 16 / 2 = w at h8
-  rcases (by omega : w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 ∨ w = 4 ∨ w = 5 ∨ w = 6 ∨ w = 7) with
+  rcases (by omega_arith : w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 ∨ w = 4 ∨ w = 5 ∨ w = 6 ∨ w = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  · simp (disch := omega) only [reduceCtorEq, ite_true, ite_false, show ¬ (0 = 1) by decide]
+  · simp (disch := omega_arith) only [reduceCtorEq, ite_true, ite_false, show ¬ (0 = 1) by decide]
     by_cases h : i < 16
-    · have h' : 16 + i < 32 := by omega
-      have h'' : ¬ 16 + i < 16 := by omega
+    · have h' : 16 + i < 32 := by omega_arith
+      have h'' : ¬ 16 + i < 16 := by omega_arith
       simp only [h, h', h'', BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or,
         BitVec.getLsbD_append, hi, BitVec.getLsbD_setWidth, decide_true, decide_false, Bool.not_false,
         Bool.true_and, ite_true, ite_false,
-        show 16 + i - 16 = i by omega]
+        show 16 + i - 16 = i by omega_arith]
       by_cases h8 : i < 8 <;> simp [h8]
-    · have h' : ¬ 16 + i < 32 := by omega
+    · have h' : ¬ 16 + i < 32 := by omega_arith
       simp [h', BitVec.getLsbD_shiftLeft, hi]
-      exact BitVec.getLsbD_of_ge (p x) i (by omega)
+      exact BitVec.getLsbD_of_ge (p x) i (by omega_arith)
 
 end VG.Proof.Blowfish.X86_64

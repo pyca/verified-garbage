@@ -125,12 +125,12 @@ theorem verify_constantTime : ConstantTime isa verifyArm.pre verifyArm.pub (Entr
   obtain ⟨_, _, wr₂, _, _, _, dSA₂, _, _, _, _, _, _, _, _⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have hb₂ : State.addr (arg s₂ 4) = State.addr (arg s₁ 4) := by rw [a4]
   have hz₂ : (arg s₂ 5).toNat * 8 = (arg s₁ 5).toNat * 8 := by rw [a5]
   simp only [Entry.operation, Core.sequence, List.foldr, Bool.false_eq_true, ↓reduceIte]
-  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 24 _ rfl) (agree_args (n := 6) hsp (by omega) ha
+  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 24 _ rfl) (agree_args (n := 6) hsp (by omega_arith) ha
       (fun r hr => by
         rw [wr₁] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -139,19 +139,19 @@ theorem verify_constantTime : ConstantTime isa verifyArm.pre verifyArm.pub (Entr
         rw [wr₂] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact dSA₂.symm)))
-    (WP.mono (verifyEntry_ok h₁) fun u I => Env.of_installed I (by omega))
+    (WP.mono (verifyEntry_ok h₁) fun u I => Env.of_installed I (by omega_arith))
     (WP.mono (verifyEntry_ok h₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega)
+      have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine widthDispatch_trace false _ E₁.ws E₂.ws (by omega) (by omega) (widths_mem hv) (by decide)
+  refine widthDispatch_trace false _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (widths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)]) (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
     (by rw [E₂.field (d := 104) (v := s₂.gpr .r3) (by simp), hr3])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 5).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s₁ 5).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := verifyKeyIn h₁ rfl rfl F₁
   obtain ⟨Ip₂, Iq₂, -, -⟩ := verifyKeyIn h₂ hb₂ hz₂ F₂
   have Rp₂ : Ready t₂ (State.addr (arg s₁ 4)) (.input .p) (s₁.gpr .r2).toNat := by rw [hr2]; exact Ip₂.toReady
@@ -166,8 +166,8 @@ theorem verify_constantTime : ConstantTime isa verifyArm.pre verifyArm.pub (Entr
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [verifyPtr, hr0, hr2, hr3, a0, a2]
   have key := fun {o l : Nat} (h : o + l ≤ 3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) =>
     verify_keyBytes h₁ hl hr0 hr1 hr2 hr3 (o := o) (l := l) h
-  have kp := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega)
-  have kq := key (o := (s₁.gpr .r2).toNat) (l := (s₁.gpr .r3).toNat) (by omega)
+  have kp := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega_arith)
+  have kq := key (o := (s₁.gpr .r2).toNat) (l := (s₁.gpr .r3).toNat) (by omega_arith)
   rw [BitVec.add_zero] at kp
   have Pe : operand (State.addr (arg s₁ 4)) t₁ (.input .p) (s₁.gpr .r2).toNat =
       operand (State.addr (arg s₁ 4)) t₂ (.input .p) (s₁.gpr .r2).toNat := by
@@ -188,11 +188,11 @@ theorem verify_constantTime : ConstantTime isa verifyArm.pre verifyArm.pub (Entr
   have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 5).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
   have G₁ := F₁.keep (verifyFields_ok s₁) S₁ (by decide) O₁ kee
   have G₂ := F₂.keep (verifyFields_ok s₂) S₂ (by decide) O₂ kee
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)
-  · exact failure_trace false G₁.ws G₂.ws (by omega) (by omega) (fun h => nomatch h) (fun h => nomatch h)
+  · exact failure_trace false G₁.ws G₂.ws (by omega_arith) (by omega_arith) (fun h => nomatch h) (fun h => nomatch h)
   · have valid : shapeValid (operand (State.addr (arg s₁ 4)) t₁ (.input .p) (s₁.gpr .r2).toNat)
         (operand (State.addr (arg s₁ 4)) t₁ (.input .q) (s₁.gpr .r3).toNat) := by
       rw [eval_eq, Z₁] at hf

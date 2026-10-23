@@ -130,7 +130,7 @@ theorem jnegO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   have hbits := F₂.bitsO hL hF
   generalize hk' : OddWin.oq K.J k = k' at hbits T₂
   generalize ha : magO (Window5.nib k' j) = a at T₂
-  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega
+  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega_arith
   obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
   have hneg : K.neg ∈ jwSlots K := by jw_mem
@@ -152,31 +152,31 @@ theorem jnegO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
         rcases hw with rfl | rfl
         · exact mem_jwW_ws (other_ws (by jw_mem))
         · exact mem_jwW_tmp
-      have := hL.bits_w w hw'; omega) (by omega)]
+      have := hL.bits_w w hw'; omega_arith) (by omega_arith)]
     exact hbits t ht
   rw [WP.block_append_iff]
   refine WP.mono (signMask_ok K.tc hs₃ (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
-    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega)
+    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_arith)
     (by rw [k₃.gpr _ (rbx_not_clob _), hb]) hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   have hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
   rw [hwin] at x₄
   refine WP.mono (sel_ok (decide (Window5.nib k' j < 2 ^ (K.tc.w - 1))) K.M.n hs₄ x₄ (o := K.E.y)
     (a := K.E.y) (b := K.neg) (hL.le my) (hL.le my) (hL.le hneg) (Or.inl (Nat.le_refl _))
-    (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+    (by omega_arith)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
+  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
   -- `T`'s words: as at `s₂` but `Y`.
   have keepT : ∀ c < 5, c ≠ 1 → wordsVal s₅.mem base (TS K c) K.M.n = wordsVal s₂.mem base (TS K c) K.M.n := by
     intro c hc h1
     have hy : TS K c + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ TS K c := by
-      rw [hL.Ty]; exact jg_sep K (by omega)
-    rw [O₅.wordsVal hy (b64 _ (jg_mem (by omega))), m₄, k₃.unch.wordsVal (fun w hw => by
+      rw [hL.Ty]; exact jg_sep K (by omega_arith)
+    rw [O₅.wordsVal hy (b64 _ (jg_mem (by omega_arith))), m₄, k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · exact (hL.jg_apart (x := K.neg) (by jw_mem) (i := 80 + c) (by omega)).symm
-      · exact hL.lay.tmp _ (jg_mem (by omega))) (b64 _ (jg_mem (by omega)))]
+      · exact (hL.jg_apart (x := K.neg) (by jw_mem) (i := 80 + c) (by omega_arith)).symm
+      · exact hL.lay.tmp _ (jg_mem (by omega_arith))) (b64 _ (jg_mem (by omega_arith)))]
   have y₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -226,12 +226,12 @@ theorem jnegO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   rw [ha] at ha16
   by_cases hng : Window5.nib k' j < 16
   · have ha' : a = 16 - Window5.nib k' j := by
-      rw [← ha, magO, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
-    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), show 31 - 2 * Window5.nib k' j = 2 * a - 1 by omega]
+      rw [← ha, magO, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), show 31 - 2 * Window5.nib k' j = 2 * a - 1 by omega_arith]
     simp only [decide_eq_true hng, ↓reduceIte] at keepY
     have hy : tmv C K.M.n base s₅ (TS K 1) = -tmv C K.M.n base s₂ (TS K 1) := by
       show toM _ _ _ = -toM _ _ _
-      rw [keepY, toM_sub (by omega), toM_zero, ty]
+      rw [keepY, toM_sub (by omega_arith), toM_zero, ty]
       grind
     refine ⟨fun c hc => ?_, ?_, ?_, ?_, ?_⟩
     · by_cases h1 : c = 1
@@ -243,8 +243,8 @@ theorem jnegO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
     · rw [tz' 4 (by decide) (by decide), tz' 3 (by decide) (by decide), tz' 2 (by decide) (by decide)]
       exact T₂.z3
   · have ha' : a = Window5.nib k' j - 15 := by
-      rw [← ha, magO, ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
-    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), show 2 * Window5.nib k' j - 31 = 2 * a - 1 by omega]
+      rw [← ha, magO, ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), show 2 * Window5.nib k' j - 31 = 2 * a - 1 by omega_arith]
     simp only [decide_eq_false hng, Bool.false_eq_true, ↓reduceIte] at keepY
     rw [← ty] at keepY
     exact T₂.congr fun c hc => by

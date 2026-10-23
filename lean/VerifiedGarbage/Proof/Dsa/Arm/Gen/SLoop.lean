@@ -173,8 +173,8 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
       (fun σ s => isa.eval .eq s = some (decide (0 < r)) ∧ (r = 0 → St G (sFin G (sSpec G u0 0)) X σ s) ∧
         (0 < r → sInv G HO u0 N X r σ s)) := by
   refine VG.Proof.Dsa.Arm.Gen.VP.intro fun ⟨hr, hi, hc, hR, hu⟩ => ?_
-  have hq0 : 0 < G.qLen := by have := O.hlq; omega
-  have hq32 : G.qLen ≤ 32 := by have := O.hlq; omega
+  have hq0 : 0 < G.qLen := by have := O.hlq; omega_arith
+  have hq32 : G.qLen ≤ 32 := by have := O.hlq; omega_arith
   have s32 := O.s32
   generalize hMM : G.seedsLen / G.qLen = M at hi hc
   generalize hii : N - (r + 1) = i at hi hc hR hu
@@ -191,8 +191,8 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
     have hi1 : i * G.qLen + G.qLen ≤ G.seedsLen := by have := kL (i + 1) hiM; rwa [Nat.succ_mul] at this
     have e0 : (BitVec.ofNat 32 (G.seedsLen - i * G.qLen) == BitVec.ofNat 32 0) = false := by
       refine beq_false_of_ne fun e => ?_
-      have := congrArg BitVec.toNat e; simp only [BitVec.toNat_ofNat] at this; omega
-    obtain ⟨m, hm⟩ : ∃ m, M - i = m + 1 := ⟨M - i - 1, by omega⟩
+      have := congrArg BitVec.toNat e; simp only [BitVec.toNat_ofNat] at this; omega_arith
+    obtain ⟨m, hm⟩ : ∃ m, M - i = m + 1 := ⟨M - i - 1, by omega_arith⟩
     rw [hm] at hc
     have step := sSpec_step (u0 := u0) hq0 O.hsb hi1
     have eH : G.seeds + BitVec.ofNat 32 (i * G.qLen) + BitVec.ofNat 32 G.qLen =
@@ -201,13 +201,13 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
     have eL : BitVec.ofNat 32 (G.seedsLen - i * G.qLen) - BitVec.ofNat 32 G.qLen =
         BitVec.ofNat 32 (G.seedsLen - (i + 1) * G.qLen) := by
       apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.succ_mul]; omega
+      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.succ_mul]; omega_arith
     have attempt := O.attempt_vp (X := X) (k := i * G.qLen) (u := sU G u0 i) hi1 hu
     rcases hRi : VG.Proof.Dsa.Generation.seedResult (8 * G.pLen) (8 * G.qLen) (seedAt G (i * G.qLen)) (hsL G)
       (G.witB.drop (sU G u0 i)) with _ | ⟨_ | a, rest⟩ <;> rw [hRi] at attempt <;> simp only [sR, hRi] at step <;>
       simp only [sCount, sR, hRi] at hc
     · -- A tape ran out: `fStatus` = 2.
-      have r0 : r = 0 := by omega
+      have r0 : r = 0 := by omega_arith
       subst r0
       refine VP.seq (G := St G ((((aBase G HO (i * G.qLen)).setV fStatus 2).setV fSeed
           (G.seeds + BitVec.ofNat 32 (i * G.qLen) + BitVec.ofNat 32 G.qLen)).setV fSeedLeft
@@ -215,7 +215,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
         (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
           (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e, e0] at z; simp at z)
           (VP.seq (attempt.mono (fun σ s h => h.1.1) fun _ _ h => h)
-            ((sAdv_vp (by omega) (by simp [aOut]) (by simp [aOut])).mono (fun _ _ h => h) fun σ s h => by
+            ((sAdv_vp (by omega_arith) (by simp [aOut]) (by simp [aOut])).mono (fun _ _ h => h) fun σ s h => by
               simpa [aOut, upd, fSeed, fStatus, fSeedLeft, fUsed] using h))) ?_
       refine cmpF_vp (x := BitVec.ofNat 32 2) (fun σ s h => h.1) (by decide) (by decide) (by decide)
         (fun σ s h => (h.1.slotV (by simp)).trans (by simp [upd, fSeed, fStatus, fSeedLeft]))
@@ -228,8 +228,8 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
       exact ⟨by simp, by simp [sFin, upd, fSeed, fStatus, fSeedLeft]⟩
     · -- The next seed.
       have hgt := sCount_gt G u0 m (i + 1)
-      have rpos : 0 < r := by omega
-      have hNr : N - r = i + 1 := by omega
+      have rpos : 0 < r := by omega_arith
+      have hNr : N - r = i + 1 := by omega_arith
       have hsuf : G.witB.drop (G.witLen - rest.length) = rest := by
         rw [← O.hwl]
         exact VG.Proof.Dsa.Generation.suffix_drop_length
@@ -241,14 +241,14 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
         (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
           (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e, e0] at z; simp at z)
           (VP.seq (attempt.mono (fun σ s h => h.1.1) fun _ _ h => h)
-            ((sAdv_vp (by omega) (by simp [aOut]) (by simp [aOut])).mono (fun _ _ h => h) fun σ s h => by
+            ((sAdv_vp (by omega_arith) (by simp [aOut]) (by simp [aOut])).mono (fun _ _ h => h) fun σ s h => by
               simpa [aOut, upd, fSeed, fUsed, fSeedLeft, fStatus] using h))) ?_
       refine cmpF_vp (x := BitVec.ofNat 32 0) (fun σ s h => h.1) (by decide) (by decide) (by decide)
         (fun σ s h => (h.1.slotV (by simp)).trans (by simp [upd, fSeed, fStatus, fSeedLeft, fUsed]))
-        fun σ s t ⟨h, x⟩ R mm e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega), fun _ => ?_⟩
+        fun σ s t ⟨h, x⟩ R mm e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega_arith), fun _ => ?_⟩
       simp only [sInv, hNr, hu1]
-      refine ⟨⟨by omega, by omega, by rw [hMM, show M - (i + 1) = m by omega]; exact hc,
-        by rw [← hR, step, sSpec, hu1, hsuf], by omega⟩, ?_, x⟩
+      refine ⟨⟨by omega_arith, by omega_arith, by rw [hMM, show M - (i + 1) = m by omega_arith]; exact hc,
+        by rw [← hR, step, sSpec, hu1, hsuf], by omega_arith⟩, ?_, x⟩
       refine (h.of_rest R mm).mono (fun o ho => ?_) (fun y hy => hy) (fun _ h' => absurd h' (by simp))
         (fun _ h' => absurd h' (by simp))
       change o ∈ fUsed :: fStatus :: fSeedLeft :: fSeed :: [] at ho
@@ -259,7 +259,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
       · exact ⟨by simp, by simp [upd, fSeedLeft, fUsed, fStatus, eL]⟩
       · exact ⟨by simp, by simp [upd, fSeed, fSeedLeft, fUsed, fStatus, eH]⟩
     · -- A domain: `fStatus` = 1.
-      have r0 : r = 0 := by omega
+      have r0 : r = 0 := by omega_arith
       subst r0
       refine VP.seq (G := St G ((({ aBase G HO (i * G.qLen) with
           cl := [(sPacked, Spec.Dsa.encodeParams G.pLen G.qLen a)] }.setV fStatus 1).setV fSeed
@@ -268,7 +268,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
         (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
           (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e, e0] at z; simp at z)
           (VP.seq (attempt.mono (fun σ s h => h.1.1) fun _ _ h => h)
-            ((sAdv_vp (by omega) (by simp [aOut]) (by simp [aOut])).mono (fun _ _ h => h) fun σ s h => by
+            ((sAdv_vp (by omega_arith) (by simp [aOut]) (by simp [aOut])).mono (fun _ _ h => h) fun σ s h => by
               simpa [aOut, upd, fSeed, fStatus, fSeedLeft, fUsed] using h))) ?_
       refine cmpF_vp (x := BitVec.ofNat 32 1) (fun σ s h => h.1) (by decide) (by decide) (by decide)
         (fun σ s h => (h.1.slotV (by simp)).trans (by simp [upd, fSeed, fStatus, fSeedLeft]))
@@ -280,14 +280,14 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {u0 
       rw [List.mem_singleton] at ho; subst ho
       exact ⟨by simp, by simp [sFin, upd, fSeed, fStatus, fSeedLeft]⟩
   · -- No seed left: `fStatus` := 2.
-    have hiM' : i = M := by omega
+    have hiM' : i = M := by omega_arith
     subst hiM'
-    have r0 : r = 0 := by simp only [Nat.sub_self, sCount] at hc; omega
+    have r0 : r = 0 := by simp only [Nat.sub_self, sCount] at hc; omega_arith
     subst r0
     have hz : G.seedsLen - i * G.qLen = 0 := by
-      have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero O.smod); rw [hMM] at this; omega
+      have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero O.smod); rw [hMM] at this; omega_arith
     have none0 : sSpec G u0 0 = none := by
-      rw [← hR, sSpec, VG.Proof.Dsa.Generation.generationChunks_done (by simp only [List.length_drop, O.hsb]; omega)]
+      rw [← hR, sSpec, VG.Proof.Dsa.Generation.generationChunks_done (by simp only [List.length_drop, O.hsb]; omega_arith)]
       rfl
     refine VP.seq (G := St G (((aBase G HO (i * G.qLen)).setV fUsed (BitVec.ofNat 32 (sU G u0 i))).setV fStatus
         (BitVec.ofNat 32 2)) X) (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])

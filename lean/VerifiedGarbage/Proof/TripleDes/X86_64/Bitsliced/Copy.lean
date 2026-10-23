@@ -70,7 +70,7 @@ theorem copy_ok {src dst : Reg} (hsd : (src = .rsi ∧ dst = .rdi) ∨ (src = .r
     (hs : CopyInv src dst A B n s₀ i s) :
     WP isa (.loop (.block (copyBody src dst)) .ne) s (CopyPost src dst A B n s₀) := by
   refine WP.loop (M := isa) (fun m s => CopyInv src dst A B n s₀ (n - m) s ∧ m ≤ n) ?_ (n - i) s
-    ⟨by rw [show n - (n - i) = i by have := hs.le; omega]; exact hs, by omega⟩
+    ⟨by rw [show n - (n - i) = i by have := hs.le; omega_arith]; exact hs, by omega_arith⟩
   intro m s ⟨inv, hm⟩
   let j := n - m
   have hj : j < n := inv.le
@@ -152,27 +152,27 @@ theorem copy_ok {src dst : Reg} (hsd : (src = .rsi ∧ dst = .rdi) ∨ (src = .r
     have fit := hpre.fitA
     by_cases he : x = j
     · subst he; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide)]
-      exact inv.copied x (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep B (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+      exact inv.copied x (by omega_arith)
   have frame₅ : Frame [⟨B, 8 * n⟩] s₀.mem s₅.mem := by
     rw [mem₅]; exact inv.frame.writeW List.mem_cons_self _ (wAt_in hj hpre.fitA)
   have regs₅ : ∀ x, x ≠ .rax → x ≠ .rsi → x ≠ .rdi → x ≠ .rdx → s₅.gpr x = s₀.gpr x :=
     fun x h1 h2 h3 h4 => (g₅ x h2 h3 h4 h1).trans (inv.regs x h1 h2 h3 h4)
   have cntv : s.gpr .rdx - 1 = BitVec.ofNat 64 (m - 1) := by
-    rw [inv.cnt, show n - j = m by omega]
-    exact cnt_sub m (by omega)
+    rw [inv.cnt, show n - j = m by omega_arith]
+    exact cnt_sub m (by omega_arith)
   by_cases h1 : m = 1
   · left
     refine ⟨?_, ?_⟩
     · show s₅.zf.map (!·) = some false
       rw [zf₅, cntv, h1]; rfl
     · refine ⟨?_, ?_, ?_, frame₅, regs₅, rd₅.trans inv.rd, wr₅.trans inv.wr⟩
-      · rw [src₅]; congr 1; omega
-      · rw [dst₅]; congr 1; omega
-      · intro x hx; exact copied₅ x (by omega)
+      · rw [src₅]; congr 1; omega_arith
+      · rw [dst₅]; congr 1; omega_arith
+      · intro x hx; exact copied₅ x (by omega_arith)
   · right
-    refine ⟨?_, m - 1, by omega, ⟨?_, ?_, ?_, ?_, ?_, frame₅, regs₅, rd₅.trans inv.rd,
-      wr₅.trans inv.wr⟩, by omega⟩
+    refine ⟨?_, m - 1, by omega_arith, ⟨?_, ?_, ?_, ?_, ?_, frame₅, regs₅, rd₅.trans inv.rd,
+      wr₅.trans inv.wr⟩, by omega_arith⟩
     · show s₅.zf.map (!·) = some true
       rw [zf₅, cntv]
       have : (BitVec.ofNat 64 (m - 1) == 0) = false := by
@@ -181,13 +181,13 @@ theorem copy_ok {src dst : Reg} (hsd : (src = .rsi ∧ dst = .rdi) ∨ (src = .r
         have := congrArg BitVec.toNat h0
         have z : (0 : BitVec 64).toNat = 0 := rfl
         simp only [BitVec.toNat_ofNat] at this
-        rw [z, Nat.mod_eq_of_lt (by have := hpre.fitA; omega)] at this
-        omega
+        rw [z, Nat.mod_eq_of_lt (by have := hpre.fitA; omega_arith)] at this
+        omega_arith
       rw [this]; rfl
-    · omega
-    · rw [src₅]; congr 1; omega
-    · rw [dst₅]; congr 1; omega
-    · rw [rdx₅, cntv]; congr 1; omega
-    · intro x hx; exact copied₅ x (by omega)
+    · omega_arith
+    · rw [src₅]; congr 1; omega_arith
+    · rw [dst₅]; congr 1; omega_arith
+    · rw [rdx₅, cntv]; congr 1; omega_arith
+    · intro x hx; exact copied₅ x (by omega_arith)
 
 end VG.Proof.TripleDes.X86_64.Bitsliced

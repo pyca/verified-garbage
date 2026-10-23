@@ -93,33 +93,33 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
   have hs := hp.s_fit
   have ha := hp.a_fit
   have hle := emOk_le hc
-  have hkk : c * k / 8 ≤ c * 3 / 8 := Nat.div_le_div_right (Nat.mul_le_mul_left c (by omega))
-  have hg' : c / 2 * g ≤ c / 2 * 63 := Nat.mul_le_mul_left _ (by omega)
-  have hc' : c ≤ 20 := by rcases hc with rfl | rfl <;> omega
-  have hsh : c * k % 8 + c ≤ 24 := by rcases hc with rfl | rfl <;> omega
+  have hkk : c * k / 8 ≤ c * 3 / 8 := Nat.div_le_div_right (Nat.mul_le_mul_left c (by omega_arith))
+  have hg' : c / 2 * g ≤ c / 2 * 63 := Nat.mul_le_mul_left _ (by omega_arith)
+  have hc' : c ≤ 20 := by rcases hc with rfl | rfl <;> omega_arith
+  have hsh : c * k % 8 + c ≤ 24 := by rcases hc with rfl | rfl <;> omega_arith
   -- the word read
   have eld : (L.sP s₀ + BitVec.ofNat 32 (840 + c / 2 * g) + BitVec.ofNat 32 (c * k / 8)).setWidth 64 =
       L.sA s₀ + BitVec.ofNat 64 (840 + (c / 2 * g + c * k / 8)) := by
-    rw [ea_add (by simp only [L] at hs ⊢; omega), Nat.add_assoc]
-  have ild := hp.inS' h.wr (o := 840 + (c / 2 * g + c * k / 8)) (n := 4) (by omega)
+    rw [ea_add (by simp only [L] at hs ⊢; omega_arith), Nat.add_assoc]
+  have ild := hp.inS' h.wr (o := 840 + (c / 2 * g + c * k / 8)) (n := 4) (by omega_arith)
   -- the coefficient stored
   have est : (L.aP s₀ + BitVec.ofNat 32 (16 * g) + BitVec.ofNat 32 (4 * k)).setWidth 64 =
       coeffAddr (L.aA s₀) (4 * g + k) := by
-    rw [ea_add (by simp only [L] at ha ⊢; omega)]; congr 2; omega
-  have ist : InRegions s.wr (coeffAddr (L.aA s₀) (4 * g + k)) 4 := hp.inA h.wr (by omega)
+    rw [ea_add (by simp only [L] at ha ⊢; omega_arith)]; congr 2; omega_arith
+  have ist : InRegions s.wr (coeffAddr (L.aA s₀) (4 * g + k)) 4 := hp.inA h.wr (by omega_arith)
   -- its value
   generalize hw : s.mem.readW (L.sA s₀ + BitVec.ofNat 64 (840 + (c / 2 * g + c * k / 8))) 32 = w
   have hx : (w >>> (c * k % 8) &&& BitVec.ofNat 32 (2 ^ c - 1)).toNat =
       leNat (X s₀) / 2 ^ ((4 * g + k) * c) % 2 ^ c := by
     rw [BitVec.toNat_and, toNat_shr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 ^ c - 1) (by
-      have : 2 ^ c ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hc'; omega), Nat.and_two_pow_sub_one_eq_mod,
+      have : 2 ^ c ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hc'; omega_arith), Nat.and_two_pow_sub_one_eq_mod,
       ← hw, wordBits s.mem _ (X s₀) (o := c / 2 * g + c * k / 8) hsh fun b hb => by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc]
-        exact h.out (c / 2 * g + c * k / 8 + b) (by omega),
-      show 8 * (c / 2 * g + c * k / 8) + c * k % 8 = (4 * g + k) * c by rcases hc with rfl | rfl <;> omega]
+        exact h.out (c / 2 * g + c * k / 8 + b) (by omega_arith),
+      show 8 * (c / 2 * g + c * k / 8) + c * k % 8 = (4 * g + k) * c by rcases hc with rfl | rfl <;> omega_arith]
   have e2 : (BitVec.ofNat 32 (2 ^ (c - 1))).toNat = 2 ^ (c - 1) := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-      have : 2 ^ (c - 1) ≤ 2 ^ 19 := Nat.pow_le_pow_right (by decide) (by omega); omega)]
+      have : 2 ^ (c - 1) ≤ 2 ^ 19 := Nat.pow_le_pow_right (by decide) (by omega_arith); omega_arith)]
   have hv : BitVec.ofNat 32 (2 ^ (c - 1)) - (w >>> (c * k % 8) &&& BitVec.ofNat 32 (2 ^ c - 1)) +
       ((w >>> (c * k % 8) &&& BitVec.ofNat 32 (2 ^ c - 1)) - (w >>> (c * k % 8) &&& BitVec.ofNat 32 (2 ^ c - 1)) -
         (BitVec.ofBool (decide ((BitVec.ofNat 32 (2 ^ (c - 1))).toNat <
@@ -129,10 +129,10 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
       rw [hx, e2]; have := Nat.mod_lt (leNat (X s₀) / 2 ^ ((4 * g + k) * c)) (Nat.two_pow_pos c)
       have : 2 ^ (c - 1) < q := by rcases hc with rfl | rfl <;> decide
       have : 2 ^ c = 2 * 2 ^ (c - 1) := by rcases hc with rfl | rfl <;> rfl
-      omega)).trans ?_
+      omega_arith)).trans ?_
     rw [hx, e2]
   have fa : ∀ v : BitVec 32, Frame [L.aR s₀] s.mem (s.mem.writeW (coeffAddr (L.aA s₀) (4 * g + k)) v) :=
-    fun v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ (by omega))
+    fun v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ (by omega_arith))
   have fin : ∀ s' : State, s'.gpr .esp = s.gpr .esp → s'.gpr .esi = s.gpr .esi → s'.gpr .edi = s.gpr .edi →
       s'.gpr .ecx = s.gpr .ecx → s'.rd = s.rd → s'.wr = s.wr →
       s'.mem = s.mem.writeW (coeffAddr (L.aA s₀) (4 * g + k)) (emV (X s₀) c (4 * g + k)) →
@@ -140,15 +140,15 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
     intro s' e1 e2 e3 e4 e5 e6 e7
     refine ⟨⟨by rw [e1, h.esp], by rw [e5, h.rd], by rw [e6, h.wr], ?_⟩, fun p hp' => ?_, by rw [e2, h.esi],
       by rw [e3, h.edi], by rw [e4, h.ecx], fun i hi => ?_, h.cγ⟩
-    · rw [e7]; exact h.frame.writeW (r := L.aR s₀) (by simp) _ (coeff_contains _ (by omega))
+    · rw [e7]; exact h.frame.writeW (r := L.aR s₀) (by simp) _ (coeff_contains _ (by omega_arith))
     · rw [e7]
       refine ((fa _) _ fun r hr hc => ?_).trans (h.out p hp')
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.a_s _ hc ((hp.sub_s (o := 840 + p) (n := 1) (by omega)) _ (Region.contains_self _ _))
-    · rw [e7, coeffAt_writeW _ _ (by omega) (by omega)]
+      exact hp.a_s _ hc ((hp.sub_s (o := 840 + p) (n := 1) (by omega_arith)) _ (Region.contains_self _ _))
+    · rw [e7, coeffAt_writeW _ _ (by omega_arith) (by omega_arith)]
       by_cases e : 4 * g + k = i
       · rw [ifT e, ← e]
-      · rw [ifF e]; exact h.coef i (by omega)
+      · rw [ifF e]; exact h.coef i (by omega_arith)
   apply WP.of_runBlock
   by_cases hs0 : c * k % 8 = 0
   · rw [hs0, BitVec.ushiftRight_zero] at hv
@@ -157,8 +157,8 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
       State.store32, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, h.esi, h.edi,
       eld, ild, est, ist, hw, hv, Option.some.injEq, exists_eq_left']
     exact fin _ (by simp) (by simp) (by simp) (by simp) rfl rfl rfl
-  · have h1 : 1 ≤ c * k % 8 := by omega
-    have h2 : c * k % 8 ≤ 31 := by omega
+  · have h1 : 1 ≤ c * k % 8 := by omega_arith
+    have h2 : c * k % 8 ≤ 31 := by omega_arith
     simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, emCoef, hs0, List.nil_append, List.cons_append,
       at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc, State.ea, State.load32,
       State.store32, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, h.esi, h.edi,

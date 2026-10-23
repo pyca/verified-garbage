@@ -83,7 +83,7 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
     rw [show Spec.Weierstrass.add P P = Spec.Weierstrass.add (mul 1 P) (mul 1 P) by rw [mul_one_pt],
       hC.add_mul_mul hP]] at J2
   have hz : r 10 ≠ 0 := fun h =>
-    Window5.mul_ne_infinity hO hP hP0 (m := 2) (by decide) (by omega) ((J2.z_zero_iff hC).mp h)
+    Window5.mul_ne_infinity hO hP hP0 (m := 2) (by decide) (by omega_arith) ((J2.z_zero_iff hC).mp h)
   have JD : InvJ C (r 5) (r 4) (r 10) P := JP.rescale hC hz hC.one_ne_zero h5 h4 (by grind)
   -- The values at `s₁`.
   have v4 := val (i := 4) (by decide); have v5 := val (i := 5) (by decide)
@@ -121,7 +121,7 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
     hs₅ k₅.regs (k₅.loopW hL.T_lw.2.1) (jwLoopW_sub K)
   -- The slots apart.
   have gx : ∀ x ∈ jwOther K, ∀ c < 5, jg K (80 + c) ≠ x := fun x hx c hc e =>
-    hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega) e.symm
+    hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega_arith) e.symm
   have dxEx : K.D.x ≠ K.E.x := by rw [hL.Tx]; exact (gx _ (by jw_mem) 0 (by decide)).symm
   have dxEy : K.D.x ≠ K.E.y := by rw [hL.Ty]; exact (gx _ (by jw_mem) 1 (by decide)).symm
   have dyEx : K.D.y ≠ K.E.x := by rw [hL.Tx]; exact (gx _ (by jw_mem) 0 (by decide)).symm
@@ -136,10 +136,10 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
   have t2dy : K.S.t2 ≠ K.D.y := o 9 4 (by decide) (by decide) (by decide)
   have ExEy : K.E.x ≠ K.E.y := (jw_T_ne hL).1
   have jne : ∀ {i j : Nat}, i ≠ j → jg K i ≠ jg K j := fun h e => by
-    have := jg_apart K h; rw [e] at this; have := hL.n0; omega
+    have := jg_apart K h; rw [e] at this; have := hL.n0; omega_arith
   have hT4 : ∀ c, 2 ≤ c → c < 5 → TS K c ≠ K.D.x ∧ TS K c ≠ K.D.y ∧ TS K c ≠ K.E.x ∧ TS K c ≠ K.E.y :=
     fun c h2 hc => ⟨gx _ (by jw_mem) c hc, gx _ (by jw_mem) c hc,
-      by rw [hL.Tx]; exact jne (by omega), by rw [hL.Ty]; exact jne (by omega)⟩
+      by rw [hL.Tx]; exact jne (by omega_arith), by rw [hL.Ty]; exact jne (by omega_arith)⟩
   -- The values at `s₅`.
   have val₅ := fun x (hx : x ∈ K.E.y :: K.E.x :: K.D.y :: K.D.x :: [K.S.t2, K.S.t3, K.E.x, K.E.y, K.E.z,
       K.z2, K.z2 + 8 * K.M.n]) =>
@@ -160,7 +160,7 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
       wordsVal s₅.mem base (TS K c) K.M.n < C.p := fun c h2 hc => by
     have hx : TS K c ∈ K.E.y :: K.E.x :: K.D.y :: K.D.x :: [K.S.t2, K.S.t3, K.E.x, K.E.y, K.E.z,
         K.z2, K.z2 + 8 * K.M.n] := by
-      have : c = 2 ∨ c = 3 ∨ c = 4 := by omega
+      have : c = 2 ∨ c = 3 ∨ c = 4 := by omega_arith
       rcases this with rfl | rfl | rfl
       · rw [tz]; simp
       · rw [t2]; simp
@@ -176,7 +176,7 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
   have J₅ : JPt C K.M.n base s₅ (TS K) (mul (2 * 1 - 1) P) := by
     rw [show 2 * 1 - 1 = 1 from rfl, mul_one_pt]
     refine ⟨fun c hc => ?_, ?_, ?_, ?_, ?_⟩
-    · have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 := by omega
+    · have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 := by omega_arith
       rcases this with rfl | rfl | rfl | rfl | rfl
       · rw [tx]; exact ex₅.2
       · rw [ty]; exact ey₅.2
@@ -194,7 +194,7 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
         ((k₄.loopW hL.T_lw.1).trans (k₅.loopW hL.T_lw.2.1))).mono fun w hw => by
           simp only [List.mem_append] at hw; rcases hw with ((h | h) | (h | h)) <;> exact h
     intro m h1 hm
-    obtain rfl : m = 1 := by omega
+    obtain rfl : m = 1 := by omega_arith
     exact ((T₁.loopW hL U hn (by decide)) 1 (Nat.le_refl _) (Nat.le_refl _))
   have hb : s₅.gpr .rbx = BitVec.ofNat 64 1 := by
     rw [k₅.gpr _ (rbx_not_clob _), k₄.gpr _ (rbx_not_clob _), k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (rbx_not_clob _),

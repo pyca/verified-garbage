@@ -55,25 +55,25 @@ theorem unchainBlocks_wp {B T A H : Addr} {nb : Nat} {s₀ : State} (hbw : 0 < c
     (dTH : Region.Disjoint ⟨T, 8 * c.bw * nb⟩ ⟨H, 8 * c.bw⟩) (dAH : Region.Disjoint ⟨A, 8 * c.bw * nb⟩ ⟨H, 8 * c.bw⟩)
     (ha : s₀.gpr .rax = T) (hb : s₀.gpr .rbx = A) (hc : s₀.gpr .rcx = BitVec.ofNat 64 nb) :
     WP isa c.unchainBlocks s₀ fun s => UInv c T A H nb s₀ nb s ∧ s.gpr .rbx = A + BitVec.ofNat 64 (8 * c.bw * nb) := by
-  have hn64 : nb ≤ 8 * c.bw * nb := Nat.le_mul_of_pos_left nb (by omega)
+  have hn64 : nb ≤ 8 * c.bw * nb := Nat.le_mul_of_pos_left nb (by omega_arith)
   have hLn : 8 * c.bw ≤ 8 * c.bw * nb := Nat.le_mul_of_pos_right _ hn
   unfold Core.unchainBlocks
-  refine WP.mono (blockLoop_wp (c := c) _ (UInv c T A H nb s₀) hL hn (by omega)
+  refine WP.mono (blockLoop_wp (c := c) _ (UInv c T A H nb s₀) hL hn (by omega_arith)
     (fun j s s' h hm hrd hwr hg => ⟨fun t ht => by rw [hm]; exact h.out t ht,
       fun t h1 h2 => by rw [hm]; exact h.rest t h1 h2, fun t h1 h2 => by rw [hm]; exact h.bufRest t h1 h2,
       fun u hu => by rw [hm]; exact h.chain u hu, by rw [hm]; exact h.frame,
       fun r h1 h2 h3 h4 => by rw [hg r h1 h2 h3, h.regs r h1 h2 h3 h4], by rw [hrd, h.rd], by rw [hwr, h.wr]⟩)
     (fun j hj s hi hax hbx => ?_)
-    ⟨fun t ht => by omega, fun _ _ _ => rfl, fun _ _ _ => rfl, fun _ _ => by rw [ite_eq_left rfl], Frame.refl _ _,
+    ⟨fun t ht => by omega_arith, fun _ _ _ => rfl, fun _ _ _ => rfl, fun _ _ => by rw [ite_eq_left rfl], Frame.refl _ _,
       fun _ _ _ _ _ => rfl, rfl, rfl⟩ ha hb hc) fun _ h => ⟨h.1, h.2.2⟩
   have hlt := idx_lt (L := 8 * c.bw) hj
   have hj1 : 8 * c.bw * (j + 1) = 8 * c.bw * j + 8 * c.bw := Nat.mul_succ _ _
   have hw : ∀ w, 8 * c.bw * j + 8 * w = 8 * (c.bw * j + w) := fun w => by rw [Nat.mul_add, Nat.mul_assoc]
-  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * nb := fun w hw' => by have := idx_lt (L := c.bw) hj; omega
+  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * nb := fun w hw' => by have := idx_lt (L := c.bw) hj; omega_arith
   let Tj := T + BitVec.ofNat 64 (8 * c.bw * j)
   let Aj := A + BitVec.ofNat 64 (8 * c.bw * j)
-  have subT : Region.Sub ⟨Tj, 8 * c.bw⟩ ⟨T, 8 * c.bw * nb⟩ := VG.Offset.sub_base T (by omega)
-  have subA : Region.Sub ⟨Aj, 8 * c.bw⟩ ⟨A, 8 * c.bw * nb⟩ := VG.Offset.sub_base A (by omega)
+  have subT : Region.Sub ⟨Tj, 8 * c.bw⟩ ⟨T, 8 * c.bw * nb⟩ := VG.Offset.sub_base T (by omega_arith)
+  have subA : Region.Sub ⟨Aj, 8 * c.bw⟩ ⟨A, 8 * c.bw * nb⟩ := VG.Offset.sub_base A (by omega_arith)
   have wT : ∀ w < c.bw, InRegions s.wr (Tj + BitVec.ofNat 64 (8 * w)) 8 := fun w hw' => by
     rw [hi.wr, addr_add, hw w]; exact inT _ (hbj w hw')
   have wA : ∀ w < c.bw, InRegions s.wr (Aj + BitVec.ofNat 64 (8 * w)) 8 := fun w hw' => by
@@ -87,20 +87,20 @@ theorem unchainBlocks_wp {B T A H : Addr} {nb : Nat} {s₀ : State} (hbw : 0 < c
   have dAjTj : Region.Disjoint ⟨Aj, 8 * c.bw⟩ ⟨Tj, 8 * c.bw⟩ := (dTA.symm.sub_left subA).sub_right subT
   refine WP.block_append (WP.block_append (WP.mono (xorN_wp (k := c.bw) (P := Tj) (Q := H)
     ⟨by rw [hax, p0], by rw [base, hH], by decide, by decide, wT, fun w hw' => inRd (wH w hw'),
-      dTjH, by omega⟩) fun s₁ h₁ => ?_))
+      dTjH, by omega_arith⟩) fun s₁ h₁ => ?_))
   have base₁ : s₁.gpr sb = B := by rw [h₁.regs _ (by decide), base]
   have ax₁ : s₁.gpr .rax = Tj := by rw [h₁.regs _ (by decide), hax]
   have bx₁ : s₁.gpr .rbx = Aj := by rw [h₁.regs _ (by decide), hbx]
   refine WP.mono (copyN_wp (k := c.bw) (P := H) (Q := Aj)
     ⟨by rw [base₁, hH], by rw [bx₁, p0], by decide, by decide, fun w hw' => by rw [h₁.wr]; exact wH w hw',
-      fun w hw' => by rw [h₁.rd, h₁.wr]; exact inRd (wA w hw'), dHAj, by omega⟩) fun s₂ h₂ => ?_
+      fun w hw' => by rw [h₁.rd, h₁.wr]; exact inRd (wA w hw'), dHAj, by omega_arith⟩) fun s₂ h₂ => ?_
   have ax₂ : s₂.gpr .rax = Tj := by rw [h₂.regs _ (by decide), ax₁]
   have bx₂ : s₂.gpr .rbx = Aj := by rw [h₂.regs _ (by decide), bx₁]
   refine WP.mono (copyN_wp (k := c.bw) (P := Aj) (Q := Tj)
     ⟨by rw [bx₂, p0], by rw [ax₂, p0], by decide, by decide, fun w hw' => by rw [h₂.wr, h₁.wr]; exact wA w hw',
-      fun w hw' => by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact inRd (wT w hw'), dAjTj, by omega⟩) fun s₃ h₃ => ?_
+      fun w hw' => by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact inRd (wT w hw'), dAjTj, by omega_arith⟩) fun s₃ h₃ => ?_
   -- Where each step leaves the bytes of the three regions.
-  have hN : 8 * c.bw * nb ≤ 2 ^ 64 := by omega
+  have hN : 8 * c.bw * nb ≤ 2 ^ 64 := by omega_arith
   have dHT : Region.Disjoint ⟨H, 8 * c.bw⟩ ⟨T, 8 * c.bw * nb⟩ := dTH.symm
   have dHA : Region.Disjoint ⟨H, 8 * c.bw⟩ ⟨A, 8 * c.bw * nb⟩ := dAH.symm
   have A₁ : ∀ t < 8 * c.bw * nb, s₁.mem (A + BitVec.ofNat 64 t) = s.mem (A + BitVec.ofNat 64 t) := fun t ht => by
@@ -110,7 +110,7 @@ theorem unchainBlocks_wp {B T A H : Addr} {nb : Nat} {s₀ : State} (hbw : 0 < c
   have T₂ : ∀ t < 8 * c.bw * nb, s₂.mem (T + BitVec.ofNat 64 t) = if 8 * c.bw * j ≤ t ∧ t < 8 * c.bw * j + 8 * c.bw
       then s.mem (T + BitVec.ofNat 64 t) ^^^ s.mem (H + BitVec.ofNat 64 (t - 8 * c.bw * j))
       else s.mem (T + BitVec.ofNat 64 t) := fun t ht => by
-    rw [h₂.mem, over_sep dHT ht hN, h₁.mem, over_off _ _ _ (by omega) (by omega) (by omega)]
+    rw [h₂.mem, over_sep dHT ht hN, h₁.mem, over_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     split
     · rename_i h; rw [addr_add, Nat.add_sub_cancel' h.1]
     · rfl
@@ -118,7 +118,7 @@ theorem unchainBlocks_wp {B T A H : Addr} {nb : Nat} {s₀ : State} (hbw : 0 < c
     rw [h₃.mem]; exact over_sep (dTA.symm.sub_left subA) ht hN
   have A₃ : ∀ t < 8 * c.bw * nb, s₃.mem (A + BitVec.ofNat 64 t) = if 8 * c.bw * j ≤ t ∧ t < 8 * c.bw * j + 8 * c.bw
       then s₂.mem (T + BitVec.ofNat 64 t) else s.mem (A + BitVec.ofNat 64 t) := fun t ht => by
-    rw [h₃.mem, over_off _ _ _ (by omega) (by omega) (by omega)]
+    rw [h₃.mem, over_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     split
     · rename_i h; rw [addr_add, Nat.add_sub_cancel' h.1]
     · exact A₂ t ht
@@ -128,25 +128,25 @@ theorem unchainBlocks_wp {B T A H : Addr} {nb : Nat} {s₀ : State} (hbw : 0 < c
   refine ⟨⟨fun t ht => ?_, fun t h1 h2 => ?_, fun t h1 h2 => ?_, fun u hu => ?_, hi.frame.trans fun x hx => ?_,
     fun r h1 h2 h3 h4 => by rw [h₃.regs r h4, h₂.regs r h4, h₁.regs r h4, hi.regs r h1 h2 h3 h4],
     by rw [h₃.rd, h₂.rd, h₁.rd, hi.rd], by rw [h₃.wr, h₂.wr, h₁.wr, hi.wr]⟩, rax₃, rbx₃, rcx₃⟩
-  · rw [A₃ t (by omega)]
+  · rw [A₃ t (by omega_arith)]
     split
     · rename_i h
-      rw [T₂ t (by omega), ite_eq_left h, hi.bufRest t h.1 (by omega), hi.chain _ (by omega)]
+      rw [T₂ t (by omega_arith), ite_eq_left h, hi.bufRest t h.1 (by omega_arith), hi.chain _ (by omega_arith)]
       by_cases hj0 : j = 0
       · subst hj0
-        rw [ite_eq_left rfl, ite_eq_left (by omega), Nat.mul_zero, Nat.sub_zero]
+        rw [ite_eq_left rfl, ite_eq_left (by omega_arith), Nat.mul_zero, Nat.sub_zero]
       · have : 8 * c.bw * (j - 1) = 8 * c.bw * j - 8 * c.bw := Nat.mul_sub_one _ _
-        have : 8 * c.bw ≤ 8 * c.bw * j := Nat.le_mul_of_pos_right _ (by omega)
-        rw [ite_eq_right hj0, ite_eq_right (by omega),
-          show 8 * c.bw * (j - 1) + (t - 8 * c.bw * j) = t - 8 * c.bw by omega]
-    · exact hi.out t (by omega)
-  · rw [A₃ t h2, ite_eq_right (by omega)]; exact hi.rest t (by omega) h2
-  · rw [T₃ t h2, T₂ t h2, ite_eq_right (by omega)]; exact hi.bufRest t (by omega) h2
-  · rw [h₃.mem, over_sep dHAj.symm hu (by omega), h₂.mem, over_at hu (by omega), addr_add, A₁ _ (by omega),
-      hi.rest _ (by omega) (by omega), ite_eq_right (by omega), Nat.add_sub_cancel]
+        have : 8 * c.bw ≤ 8 * c.bw * j := Nat.le_mul_of_pos_right _ (by omega_arith)
+        rw [ite_eq_right hj0, ite_eq_right (by omega_arith),
+          show 8 * c.bw * (j - 1) + (t - 8 * c.bw * j) = t - 8 * c.bw by omega_arith]
+    · exact hi.out t (by omega_arith)
+  · rw [A₃ t h2, ite_eq_right (by omega_arith)]; exact hi.rest t (by omega_arith) h2
+  · rw [T₃ t h2, T₂ t h2, ite_eq_right (by omega_arith)]; exact hi.bufRest t (by omega_arith) h2
+  · rw [h₃.mem, over_sep dHAj.symm hu (by omega_arith), h₂.mem, over_at hu (by omega_arith), addr_add, A₁ _ (by omega_arith),
+      hi.rest _ (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), Nat.add_sub_cancel]
   · have hx' : ∀ {R : Region}, R ∈ [(⟨T, 8 * c.bw * nb⟩ : Region), ⟨A, 8 * c.bw * nb⟩, ⟨H, 8 * c.bw⟩] →
         ∀ {P : Addr}, Region.Sub ⟨P, 8 * c.bw⟩ R → ¬ (x - P).toNat < 8 * c.bw := fun hR P hs h =>
-      hx _ hR (hs x (by simp only [Region.Contains]; omega))
+      hx _ hR (hs x (by simp only [Region.Contains]; omega_arith))
     rw [h₃.mem, over_out (hx' (by simp) subA), h₂.mem, over_out (hx' (by simp) (fun _ h => h)), h₁.mem,
       over_out (hx' (by simp) subT)]
 

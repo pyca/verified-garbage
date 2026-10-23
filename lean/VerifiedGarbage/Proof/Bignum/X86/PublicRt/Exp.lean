@@ -93,31 +93,31 @@ theorem sparseRound_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have hM := E.pos
   have f5 := (h.fits (j := 5) (by decide)).2
   have f1 := (h.fits (j := 1) (by decide)).1
-  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega
-  have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega
-  have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
-  have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
+  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega_arith
   unfold sparseRound
   refine WP.seq (WP.mono (product_ok E hbytes hY hX) fun u₁ ⟨E₁, C₁, Y₁, X₁, W₁, K₁, O₁⟩ => ?_)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   -- Shift first: the last round has no use for another square.
-  refine WP.seq (WP.block_append (WP.mono (shiftExponent_ok E₁.pi.scratch 2 128 (by omega))
+  refine WP.seq (WP.block_append (WP.mono (shiftExponent_ok E₁.pi.scratch 2 128 (by omega_arith))
     fun u₂ ⟨O₂, V₂, K₂⟩ => ?_))
   have E₂ := E₁.keep K₂ (by decide) (by decide) (Outside.chg O₂ (.inl ⟨by decide, by decide⟩))
-  refine WP.mono (PublicContext.exponentLeft_ok E₂.pi.scratch (by omega)) fun u₃ ⟨M₃, K₃, Z₃⟩ => ?_
+  refine WP.mono (PublicContext.exponentLeft_ok E₂.pi.scratch (by omega_arith)) fun u₃ ⟨M₃, K₃, Z₃⟩ => ?_
   have E₃ := E₂.keep K₃ (by decide) (by decide) (by rw [M₃]; exact Frame.refl _ _)
   have W₃ : val32 u₃.mem base 128 2 = val32 s.mem base 128 2 / 2 := by rw [M₃, V₂, W₁]
   have X₃ : val32 u₃.mem base (numAt len 1) (nw len) = b * 2 ^ (32 * nw len) % M := by
-    rw [M₃, O₂.val32 (.inr (by omega)) (by omega), X₁, hX]
+    rw [M₃, O₂.val32 (.inr (by omega_arith)) (by omega_arith), X₁, hX]
   have Y₃ : val32 u₃.mem base (numAt len 2) (nw len) =
       (if val32 s.mem base 128 2 % 2 = 1 then y * b else y) * 2 ^ (32 * nw len) % M := by
-    rw [M₃, O₂.val32 (.inr (by omega)) (by omega), Y₁]
+    rw [M₃, O₂.val32 (.inr (by omega_arith)) (by omega_arith), Y₁]
   have C₃ : Frame (Chg base len bytes (s.gpr .esp)) s.mem u₃.mem := by
     refine C₁.trans ?_
     rw [M₃]
     exact Outside.chg O₂ (.inl ⟨by decide, by decide⟩)
   have O₃ : val32 u₃.mem base (numAt len 3) (nw len) = val32 s.mem base (numAt len 3) (nw len) := by
-    rw [M₃, O₂.val32 (.inr (by omega)) (by omega), O₁]
+    rw [M₃, O₂.val32 (.inr (by omega_arith)) (by omega_arith), O₁]
   have K₃' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₃ :=
     ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))
   have sp₃ : u₃.gpr .esp = s.gpr .esp := K₃'.1 _ (by decide)
@@ -131,12 +131,12 @@ theorem sparseRound_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
       (by decide) (x := b) (y := b) (by rw [X₃, Nat.mod_mod]) (by rw [X₃, Nat.mod_mod])
       (by rw [X₃]; exact Nat.mod_lt _ hM)) fun u₄ ⟨E₄, C₄, cs₄, F₄, X₄⟩ => ?_)
     have Y₄ := mulFrame_val32 E₃.room nw' F₄ (d := numAt len 2)
-      (.inr (by omega)) (by omega) (by omega) f1 f5
+      (.inr (by omega_arith)) (by omega_arith) (by omega_arith) f1 f5
     have O₄ := mulFrame_val32 E₃.room nw' F₄ (d := numAt len 3)
-      (.inr (by omega)) (by omega) (by omega) f1 f5
+      (.inr (by omega_arith)) (by omega_arith) (by omega_arith) f1 f5
     have W₄ : val32 u₄.mem base 128 2 = val32 u₃.mem base 128 2 := by
-      rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₃.room nw' F₄ (by decide) (by omega) f1 f5]
-    refine WP.mono (PublicContext.exponentLeft_ok E₄.pi.scratch (by omega)) fun t ⟨M₅, K₅, Z₅⟩ => ?_
+      rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₃.room nw' F₄ (by decide) (by omega_arith) f1 f5]
+    refine WP.mono (PublicContext.exponentLeft_ok E₄.pi.scratch (by omega_arith)) fun t ⟨M₅, K₅, Z₅⟩ => ?_
     refine ⟨E₄.keep K₅ (by decide) (by decide) (by rw [M₅]; exact Frame.refl _ _), ?_,
       by rw [Z₅, W₄, W₃], by rw [M₅, Y₄]; exact Y₃,
       by rw [M₅, ite_eq_right done]; exact X₄, by rw [M₅, W₄, W₃],

@@ -67,29 +67,29 @@ theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : 
     (hsep : Region.Disjoint ⟨A, 16 * c⟩ ⟨B, 16 * c⟩) (hs : XorInv A B c s₀ 0 s₀) :
     WP isa Core.xorBlocks s₀ (XorInv A B c s₀ c) := by
   refine WP.loop (M := isa) (fun n s => ∃ j, n = c - j ∧ j < c ∧ XorInv A B c s₀ j s)
-    (fun n s hs => ?_) c s₀ ⟨0, by omega, hc, hs⟩
+    (fun n s hs => ?_) c s₀ ⟨0, by omega_arith, hc, hs⟩
   obtain ⟨j, rfl, hj, hi⟩ := hs
-  have hA0 := hA (2 * j) (by omega)
-  have hA1 := hA (2 * j + 1) (by omega)
-  have hB0 := hB (2 * j) (by omega)
-  have hB1 := hB (2 * j + 1) (by omega)
-  have hn : 16 * c < 2 ^ 64 := by omega
+  have hA0 := hA (2 * j) (by omega_arith)
+  have hA1 := hA (2 * j + 1) (by omega_arith)
+  have hB0 := hB (2 * j) (by omega_arith)
+  have hB1 := hB (2 * j + 1) (by omega_arith)
+  have hn : 16 * c < 2 ^ 64 := by omega_arith
   have hAs : ∀ t < 16 * c, s.mem (A + BitVec.ofNat 64 t) = s₀.mem (A + BitVec.ofNat 64 t) := fun t ht =>
     hi.frame.bytes (R := ⟨A, 16 * c⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
-      (by simp only; omega) ht
+      (by simp only; omega_arith) ht
   have rB : ∀ (st : State), st.rd = s₀.rd → st.wr = s₀.wr → ∀ e, e < 2 * c →
       InRegions (st.rd ++ st.wr) (B + BitVec.ofNat 64 (8 * e)) 8 := fun st h1 h2 e he => by
     rw [h1, h2]; exact (let ⟨r, hr, hc⟩ := hB e he; ⟨r, List.mem_append_right _ hr, hc⟩)
   obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := xorWord_ok s 0
-    (by rw [hi.rd, hi.wr, hi.rax, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega]; exact hA0)
-    (by rw [hi.rbx, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega]; exact rB s hi.rd hi.wr _ (by omega))
-    (by rw [hi.wr, hi.rbx, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega]; exact hB0)
+    (by rw [hi.rd, hi.wr, hi.rax, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega_arith]; exact hA0)
+    (by rw [hi.rbx, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega_arith]; exact rB s hi.rd hi.wr _ (by omega_arith))
+    (by rw [hi.wr, hi.rbx, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega_arith]; exact hB0)
   obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := xorWord_ok s₁ 8
     (by rw [rd₁, wr₁, hi.rd, hi.wr, g₁ _ (by decide), hi.rax, addr_add,
-      show 16 * j + 8 = 8 * (2 * j + 1) by omega]; exact hA1)
-    (by rw [g₁ _ (by decide), hi.rbx, addr_add, show 16 * j + 8 = 8 * (2 * j + 1) by omega]
-        exact rB s₁ (rd₁.trans hi.rd) (wr₁.trans hi.wr) _ (by omega))
-    (by rw [wr₁, hi.wr, g₁ _ (by decide), hi.rbx, addr_add, show 16 * j + 8 = 8 * (2 * j + 1) by omega]; exact hB1)
+      show 16 * j + 8 = 8 * (2 * j + 1) by omega_arith]; exact hA1)
+    (by rw [g₁ _ (by decide), hi.rbx, addr_add, show 16 * j + 8 = 8 * (2 * j + 1) by omega_arith]
+        exact rB s₁ (rd₁.trans hi.rd) (wr₁.trans hi.wr) _ (by omega_arith))
+    (by rw [wr₁, hi.wr, g₁ _ (by decide), hi.rbx, addr_add, show 16 * j + 8 = 8 * (2 * j + 1) by omega_arith]; exact hB1)
   obtain ⟨s₃, e₃, a₃, o₃, m₃, rd₃, wr₃⟩ := addImm_ok s₂ .rax 16
   obtain ⟨s₄, e₄, a₄, o₄, m₄, rd₄, wr₄⟩ := addImm_ok s₃ .rbx 16
   obtain ⟨s₅, e₅, c₅, z₅, o₅, m₅, rd₅, wr₅⟩ := subImm_ok s₄ .rcx 1
@@ -112,48 +112,48 @@ theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : 
     rw [m₁, hi.rbx, hi.rax, addr_add, addr_add, Nat.add_zero]
   -- `s₁` and `s` agree on `A`'s area, and on `B`'s beyond the first word.
   have hA₁ : ∀ t < 16 * c, s₁.mem (A + BitVec.ofNat 64 t) = s.mem (A + BitVec.ofNat 64 t) := fun t ht => by
-    rw [hm₁, writeW_xor_apply, ite_eq_right (not_in_of_disjoint hsep ht (by omega) hn)]
+    rw [hm₁, writeW_xor_apply, ite_eq_right (not_in_of_disjoint hsep ht (by omega_arith) hn)]
   have hB₁ : ∀ t, 16 * j + 8 ≤ t → t < 16 * c → s₁.mem (B + BitVec.ofNat 64 t) = s.mem (B + BitVec.ofNat 64 t) :=
     fun t h1 h2 => by
-      rw [hm₁, writeW_xor_apply, ite_eq_right (off_sub_not B (Or.inr (by omega)) (by omega) (by omega) (by omega))]
+      rw [hm₁, writeW_xor_apply, ite_eq_right (off_sub_not B (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith))]
   have hinv : XorInv A B c s₀ (j + 1) s₅ := by
     refine ⟨?_, ?_, ?_, fun t ht => ?_, fun t h1 h2 => ?_, hi.frame.trans fun x hx => ?_, fun r h1 h2 h3 h4 => ?_,
       by rw [rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩
     · rw [o₅ _ (by decide), o₄ _ (by decide), a₃, g₂ _ (by decide), a1,
         show (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 from rfl, addr_add,
-        show 16 * j + 16 = 16 * (j + 1) by omega]
+        show 16 * j + 16 = 16 * (j + 1) by omega_arith]
     · rw [o₅ _ (by decide), a₄, o₃ _ (by decide), g₂ _ (by decide), r1,
         show (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 from rfl, addr_add,
-        show 16 * j + 16 = 16 * (j + 1) by omega]
+        show 16 * j + 16 = 16 * (j + 1) by omega_arith]
     · rw [c₅, o₄ _ (by decide), o₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), hi.rcx,
-        show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega),
-        show c - j - 1 = c - (j + 1) by omega]
+        show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith),
+        show c - j - 1 = c - (j + 1) by omega_arith]
     · rw [hm, writeW_xor_apply]
       by_cases h8 : 16 * j + 8 ≤ t
-      · rw [ite_eq_left (by rw [off_sub_toNat B h8 (by omega)]; omega), off_sub_toNat B h8 (by omega), addr_add,
-          addr_add, show 16 * j + 8 + (t - (16 * j + 8)) = t by omega, hA₁ t (by omega), hB₁ t h8 (by omega),
-          hAs t (by omega), hi.rest t (by omega) (by omega)]
-      · rw [ite_eq_right (off_sub_not B (Or.inl (by omega)) (by omega) (by omega) (by omega)), hm₁,
+      · rw [ite_eq_left (by rw [off_sub_toNat B h8 (by omega_arith)]; omega_arith), off_sub_toNat B h8 (by omega_arith), addr_add,
+          addr_add, show 16 * j + 8 + (t - (16 * j + 8)) = t by omega_arith, hA₁ t (by omega_arith), hB₁ t h8 (by omega_arith),
+          hAs t (by omega_arith), hi.rest t (by omega_arith) (by omega_arith)]
+      · rw [ite_eq_right (off_sub_not B (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith)), hm₁,
           writeW_xor_apply]
         by_cases h0 : 16 * j ≤ t
-        · rw [ite_eq_left (by rw [off_sub_toNat B h0 (by omega)]; omega), off_sub_toNat B h0 (by omega), addr_add,
-            addr_add, show 16 * j + (t - 16 * j) = t by omega, hAs t (by omega), hi.rest t h0 (by omega)]
-        · rw [ite_eq_right (off_sub_not B (Or.inl (by omega)) (by omega) (by omega) (by omega))]
-          exact hi.xored t (by omega)
-    · rw [hm, writeW_xor_apply, ite_eq_right (off_sub_not B (Or.inr (by omega)) (by omega) (by omega) (by omega)),
-        hB₁ t (by omega) h2, hi.rest t (by omega) h2]
+        · rw [ite_eq_left (by rw [off_sub_toNat B h0 (by omega_arith)]; omega_arith), off_sub_toNat B h0 (by omega_arith), addr_add,
+            addr_add, show 16 * j + (t - 16 * j) = t by omega_arith, hAs t (by omega_arith), hi.rest t h0 (by omega_arith)]
+        · rw [ite_eq_right (off_sub_not B (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith))]
+          exact hi.xored t (by omega_arith)
+    · rw [hm, writeW_xor_apply, ite_eq_right (off_sub_not B (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith)),
+        hB₁ t (by omega_arith) h2, hi.rest t (by omega_arith) h2]
     · have hout : ∀ e, e + 8 ≤ 16 * c → ¬ (x - (B + BitVec.ofNat 64 e)).toNat < 8 := fun e he h =>
-        hx _ (List.mem_singleton_self _) (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega))
-      rw [hm, writeW_xor_apply, ite_eq_right (hout _ (by omega)), hm₁, writeW_xor_apply,
-        ite_eq_right (hout _ (by omega))]
+        hx _ (List.mem_singleton_self _) (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega_arith))
+      rw [hm, writeW_xor_apply, ite_eq_right (hout _ (by omega_arith)), hm₁, writeW_xor_apply,
+        ite_eq_right (hout _ (by omega_arith))]
     · rw [o₅ r h3, o₄ r h2, o₃ r h1, g₂ r h4, g₁ r h4, hi.regs r h1 h2 h3 h4]
   have hz : s₅.zf = some (decide (c - (j + 1) = 0)) := by
     rw [z₅, o₄ _ (by decide), o₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), hi.rcx,
       show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl,
-      VG.Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
-    simp only [Option.some.injEq, decide_eq_decide]; omega
+      VG.Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
+    simp only [Option.some.injEq, decide_eq_decide]; omega_arith
   by_cases hl : j + 1 = c
   · refine .inl ⟨by simp [X86_64.eval, hz, hl], by rw [show j + 1 = c from hl] at hinv; exact hinv⟩
-  · exact .inr ⟨by simp [X86_64.eval, hz]; omega, c - (j + 1), by omega, j + 1, rfl, by omega, hinv⟩
+  · exact .inr ⟨by simp [X86_64.eval, hz]; omega_arith, c - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hinv⟩
 
 end VG.Proof.Modes.X86_64

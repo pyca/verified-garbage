@@ -125,7 +125,7 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
   have fDD := fit aDD (by decide)
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
   have top3 : w32 t3.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0 := by
-    rw [k3.word (by omega) (by simp) (by decide) fDD, k2.word (by omega) (by simp) (by decide) fDD, top1,
+    rw [k3.word (by omega_arith) (by simp) (by decide) fDD, k2.word (by omega_arith) (by simp) (by decide) fDD, top1,
       top_of_full (h.zeros aDD (by decide))]
   refine ⟨divGeom_ctx h3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) d3, ?_⟩
@@ -138,12 +138,12 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
       val32 t.mem (State.addr (cvB s0)) (arr (cvW s0) j) (cvW s0 + 2) =
         val32 s.mem (State.addr (cvB s0)) (arr (cvW s0) j) (cvW s0 + 2) := by
     intro j h1 h2 h3 h4 hj
-    rw [k.full (by simp; omega) (by simp) (fit j hj), k3.full (by simp) (by decide) (fit j hj),
+    rw [k.full (by simp; omega_arith) (by simp) (fit j hj), k3.full (by simp) (by decide) (fit j hj),
       k2.full (by simp) (by decide) (fit j hj), k1.full (by simpa using fun e => h1 e.symm) (by simp) (fit j hj)]
   have trn : ∀ j, j ≠ aDD → j ≠ aDQ → j ≠ aDR → j ≠ aDT → j < nArr →
       num t.mem (cvB s0) (cvW s0) j = num s.mem (cvB s0) (cvW s0) j := by
     intro j h1 h2 h3 h4 hj
-    rw [k.num (by simp; omega) (by simp) (fit j hj), k3.num (by simp) (by decide) (fit j hj),
+    rw [k.num (by simp; omega_arith) (by simp) (fit j hj), k3.num (by simp) (by decide) (fit j hj),
       k2.num (by simp) (by decide) (fit j hj), k1.num (by simpa using fun e => h1 e.symm) (by simp) (fit j hj)]
   have p1 : num t1.mem (cvB s0) (cvW s0) aP = Spec.Rsa.os2ip (pBytes s0) := by
     rw [k1.num (by decide) (by simp) (fit _ (by decide)), h.p]
@@ -156,7 +156,7 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
   · rw [trn _ (by decide) (by decide) (by decide) (by decide) (by decide), h.p]
   · rw [trn _ (by decide) (by decide) (by decide) (by decide) (by decide), h.q]
   · rw [trn _ (by decide) (by decide) (by decide) (by decide) (by decide), h.d]
-  · rw [k.word (by omega) (by decide) (by simp) fDD, top3]
+  · rw [k.word (by omega_arith) (by decide) (by simp) fDD, top3]
   · intro pos
     have dd : num t3.mem (cvB s0) (cvW s0) aDD = Spec.Rsa.os2ip (pBytes s0) := by
       rw [k3.num (by simp) (by decide) fDD, k2.num (by simp) (by decide) fDD, e1, h.p]
@@ -167,9 +167,9 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
     rw [dd, dq] at vr vq
     exact ⟨vq, vr⟩
   · simp only [zeroC, List.mem_cons, List.not_mem_nil, or_false] at hj
-    rw [tr j (by simp only [aDD]; omega) (by simp only [aDQ]; omega) (by simp only [aDR]; omega)
-      (by simp only [aDT]; omega) (by simp only [nArr]; omega)]
-    exact h.zeros j (by simp only [zeroArrs, List.mem_cons, List.not_mem_nil, or_false]; omega)
+    rw [tr j (by simp only [aDD]; omega_arith) (by simp only [aDQ]; omega_arith) (by simp only [aDR]; omega_arith)
+      (by simp only [aDT]; omega_arith) (by simp only [nArr]; omega_arith)]
+    exact h.zeros j (by simp only [zeroArrs, List.mem_cons, List.not_mem_nil, or_false]; omega_arith)
 
 theorem divN_ok {s0 s : State} (h : StA s0 s) :
     WP isa (.seq (seqs divN) VG.Impl.Rsa.Arm.Div.code) s (StC s0) :=

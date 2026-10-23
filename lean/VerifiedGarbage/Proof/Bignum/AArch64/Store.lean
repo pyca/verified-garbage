@@ -56,7 +56,7 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
   refine WP.seq (WP.mono (WP.keep [.x5] (Q := fun t₁ => t₁.gpr .x5 = BitVec.ofNat 64 p &&& 7#64 ∧ t₁.mem = t.mem)
     (by brun [hI.x2, hI.x6]) (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨h5₁, hm₁⟩, k₁⟩ => ?_)
   have hz5 : (t₁.gpr .x5 == 0) = decide (p % 8 = 0) := by
-    rw [eq_zero_iff, h5₁, and7_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p < 2 ^ 64 by omega)]
+    rw [eq_zero_iff, h5₁, and7_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p < 2 ^ 64 by omega_arith)]
   -- After the optional load: `x3` holds bytes `p, …` of `Y_m` up to the word's end.
   have hload : WP isa (.ite (.zero .x .x5) (.block [.add .x .x5 .x8 .x2, ld .x3 .x5,
       .logic .and .x .x3 .x3 .x15]) (.block [])) t₁ fun t₂ =>
@@ -67,24 +67,24 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
       have t₁2 : t₁.gpr .x2 = BitVec.ofNat 64 p := (k₁.gpr .x2 (by decide)).trans hI.x2
       have t₁8 : t₁.gpr .x8 = off B ed := (k₁.gpr .x8 (by decide)).trans t8
       have t₁15 : t₁.gpr .x15 = mask c := (k₁.gpr .x15 (by decide)).trans t15
-      have hq : p / 8 < w := by omega
+      have hq : p / 8 < w := by omega_arith
       have hwd : word t₁.mem B (ed + 8 * (p / 8)) = word s.mem B (ed + 8 * (p / 8)) := by
         rw [hm₁]
         exact Mem.readW_congr fun i hi => (hI.frame _ fun j hj => by
           intro he
-          have h1 := hsep (k - 1 - j) (by omega)
-          rw [← he, ofs_off B (by omega)] at h1
-          omega).symm |>.symm
-      have hp8 : ed + p = ed + 8 * (p / 8) := by omega
+          have h1 := hsep (k - 1 - j) (by omega_arith)
+          rw [← he, ofs_off B (by omega_arith)] at h1
+          omega_arith).symm |>.symm
+      have hp8 : ed + p = ed + 8 * (p / 8) := by omega_arith
       refine WP.mono (WP.keep [.x3, .x5] (Q := fun t₂ =>
           t₂.gpr .x3 = word s.mem B (ed + 8 * (p / 8)) &&& mask c ∧ t₂.mem = t₁.mem) (by
         brun [t₁2, t₁8, t₁15, off_add, hp8,
-          (by rw [k₁.rd, k₁.wr, hI.rd, hI.wr]; exact hs.ld (show ed + 8 * (p / 8) + 8 ≤ Z by omega) :
+          (by rw [k₁.rd, k₁.wr, hI.rd, hI.wr]; exact hs.ld (show ed + 8 * (p / 8) + 8 ≤ Z by omega_arith) :
             InRegions (t₁.rd ++ t₁.wr) (off B (ed + 8 * (p / 8))) 8)]
         exact congrArg (· &&& mask c) hwd) (by decide) (by decide) (by decide +kernel))
         fun t₂ ⟨⟨hax, hm₂⟩, k₂⟩ => ⟨?_, hm₂.trans hm₁, k₂⟩
-      rw [hax, and_mask_toNat, word_of_wv _ _ _ _ hq, show 8 - p % 8 = 8 by omega, VG.Proof.Bignum.pow256_8,
-        show 64 * (p / 8) = 8 * p by omega, show (256 : Nat) ^ p = 2 ^ (8 * p) by
+      rw [hax, and_mask_toNat, word_of_wv _ _ _ _ hq, show 8 - p % 8 = 8 by omega_arith, VG.Proof.Bignum.pow256_8,
+        show 64 * (p / 8) = 8 * p by omega_arith, show (256 : Nat) ^ p = 2 ^ (8 * p) by
           rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]]
       cases c <;> simp
     · refine WP.ite false (by rw [eval_zero, hz5, decide_eq_false hz]) (by simp) (fun _ => WP.block_nil ?_)
@@ -94,9 +94,9 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
   have t₂1 : t₂.gpr .x1 = out + BitVec.ofNat 64 (k - p) := (k12.gpr .x1 (by decide)).trans hI.x1
   have t₂2 : t₂.gpr .x2 = BitVec.ofNat 64 p := (k12.gpr .x2 (by decide)).trans hI.x2
   have e1 : out + BitVec.ofNat 64 (k - p) - BitVec.ofNat 64 1 = out + BitVec.ofNat 64 (k - 1 - p) := by
-    rw [Offset.add_ofNat_sub out (by omega), show k - p - 1 = k - 1 - p by omega]
+    rw [Offset.add_ofNat_sub out (by omega_arith), show k - p - 1 = k - 1 - p by omega_arith]
   have hst : InRegions t₂.wr (out + BitVec.ofNat 64 (k - 1 - p)) 1 := by
-    rw [k12.wr, hI.wr]; exact hout _ (by omega)
+    rw [k12.wr, hI.wr]; exact hout _ (by omega_arith)
   refine WP.mono (WP.keep [.x1, .x2, .x3, .x9] (Q := fun t' =>
       t'.mem = t₂.mem.write (out + BitVec.ofNat 64 (k - 1 - p)) 1 ((t₂.gpr .x3).setWidth 8) ∧
       t'.gpr .x3 = t₂.gpr .x3 >>> 8 ∧ t'.gpr .x2 = BitVec.ofNat 64 p + BitVec.ofNat 64 1 ∧
@@ -107,23 +107,23 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
     rw [← BitVec.ofNat_toNat, hax₂]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ ⟨256 ^ (8 - p % 8 - 1), by
-      rw [Nat.mul_comm, ← Nat.pow_succ]; congr 1; omega⟩]
+      rw [Nat.mul_comm, ← Nat.pow_succ]; congr 1; omega_arith⟩]
   have hw8 : ∀ (m : Mem) (a : Addr) (v : BitVec 8), m.write a 1 v = m.writeW a v := fun _ _ _ => rfl
   refine ⟨k'.wr.trans (k12.wr.trans hI.wr), k'.rd.trans (k12.rd.trans hI.rd),
     ((hI.keep.trans k12).trans k').mono (by decide), by rw [hdx', ← BitVec.ofNat_add],
-    by rw [h1']; congr 2; omega, by rw [k'.gpr .x6 (by decide), k12.gpr .x6 (by decide), hI.x6], ?_, ?_, ?_⟩
+    by rw [h1']; congr 2; omega_arith, by rw [k'.gpr .x6 (by decide), k12.gpr .x6 (by decide), hI.x6], ?_, ?_, ?_⟩
   · intro hz
-    rw [hax', shr8_toNat, hax₂, show 8 - p % 8 = 1 + (8 - (p + 1) % 8) by omega, Nat.pow_add,
+    rw [hax', shr8_toNat, hax₂, show 8 - p % 8 = 1 + (8 - (p + 1) % 8) by omega_arith, Nat.pow_add,
       Nat.pow_one, Nat.mod_mul_right_div_self, Nat.div_div_eq_div_mul, ← Nat.pow_succ]
   · intro j hj
     rw [hm', hm₂, hw8, writeW8_apply]
     by_cases hjp : j = p
     · subst hjp; simp [hbyte]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) (by omega)))]
-      exact hI.bytes j (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_arith) (by omega_arith) (by omega_arith)))]
+      exact hI.bytes j (by omega_arith)
   · intro x hx
-    rw [hm', hm₂, hw8, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx p (by omega)))]
-    exact hI.frame x fun j hj => hx j (by omega)
+    rw [hm', hm₂, hw8, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx p (by omega_arith)))]
+    exact hI.frame x fun j hj => hx j (by omega_arith)
 
 /-- `storeBE`: the number at `x8` (`w` words), masked by `x15 = mask c`, as
 `k` bytes ending at `x1`, most significant first: I2OSP of it, or of 0. -/
