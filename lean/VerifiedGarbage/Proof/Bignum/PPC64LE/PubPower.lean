@@ -40,7 +40,7 @@ theorem top_bit (x : BitVec 64) :
 `r24` shifted, and the bases of arrays 1, 4 and 5. -/
 theorem selBlock_ok {t : State} {B : Addr} {w : Nat} (h10 : t.gpr .r10 = off B (slot w 0))
     (h29 : t.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) :
-    WP isa (.block ([.lsr .d .r0 .r24 63, .li .r3 0, .sub .r20 .r3 .r0, .lsl .r24 .r24 1] ++
+    WP isa (.block (([.lsr .d .r0 .r24 63, .li .r3 0, .sub .r20 .r3 .r0, .lsl .r24 .r24 1] : List Instr) ++
         base .r8 1 ++ base .r9 4 ++ base .r5 5)) t fun t' =>
       (t'.gpr .r20 = BitVec.ofNat 64 0 -
           BitVec.ofNat 64 (if decide (2 ^ 63 ≤ (t.gpr .r24).toNat) then 1 else 0) ∧
@@ -235,18 +235,19 @@ theorem r24_step (x : BitVec 64) :
   split <;> simp_all <;> omega
 
 /-- `power`: `x^(E mod 2^33) mod n` into array 4, for the input `x` in array 4,
-`R² mod n` in array 1 and `E 2^31` in `r24`. -/
+`E 2^31` in `r24` and something below `n` in array 1: if it is `R² mod n`. -/
 theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
     (hZ : slot w 8 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (h12 : (s.gpr .r12).toNat < 2 ^ 32)
     (hinv : (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
     (hN : 2 ≤ val32 s.mem B (slot w 0) (2 * w)) (hodd : val32 s.mem B (slot w 0) (2 * w) % 2 = 1)
-    (hRR : val32 s.mem B (slot w 1) (2 * w) = 2 ^ (64 * w) * 2 ^ (64 * w) % val32 s.mem B (slot w 0) (2 * w))
+    (hRRlt : val32 s.mem B (slot w 1) (2 * w) < val32 s.mem B (slot w 0) (2 * w))
     (h24 : s.gpr .r24 = BitVec.ofNat 64 E <<< 31) :
     WP isa power s fun t =>
-      (val32 t.mem B (slot w 4) (2 * w) =
-          val32 s.mem B (slot w 4) (2 * w) ^ (E % 2 ^ 33) % val32 s.mem B (slot w 0) (2 * w) ∧
+      ((val32 s.mem B (slot w 1) (2 * w) = 2 ^ (64 * w) * 2 ^ (64 * w) % val32 s.mem B (slot w 0) (2 * w) →
+          val32 t.mem B (slot w 4) (2 * w) =
+            val32 s.mem B (slot w 4) (2 * w) ^ (E % 2 ^ 33) % val32 s.mem B (slot w 0) (2 * w)) ∧
         Outs B (powRs w) s.mem t.mem) ∧ Keep powRegs s t := by
   have hnw := hs.nowrap
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
@@ -264,8 +265,9 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
   have w0 : ∀ {m : Mem}, Outs B (powRs w) s.mem m → w32 m B (slot w 0) = w32 s.mem B (slot w 0) := fun h =>
     Outs.w32 h (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega)
       (by have := sl 0 (by decide); omega)
-  generalize hNd : val32 s.mem B (slot w 0) (2 * w) = N at hN hodd hRR v0
-  generalize hR : 2 ^ (64 * w) = R at hRR
+  generalize hNd : val32 s.mem B (slot w 0) (2 * w) = N at hN hodd hRRlt v0 ⊢
+  generalize hR : 2 ^ (64 * w) = R
+  generalize hRRd : val32 s.mem B (slot w 1) (2 * w) = RRv at hRRlt ⊢
   have hcop : Nat.Coprime R N := by rw [← hR]; exact VG.Proof.Bignum.coprime_pow2 hodd _
   generalize hXd : val32 s.mem B (slot w 4) (2 * w) = X
   have hN0 : 0 < N := by omega
@@ -284,9 +286,9 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
   have o1 : Outs B ([7].map fun k => (slot w k, 8 * (w + 2))) s.mem s₁.mem :=
     Outs.of_outside (o := slot w 7) (n := 8 * (w + 2)) (out1.mono (Nat.le_refl _) (by omega)) (by simp)
   have N1 : val32 s₁.mem B (slot w 0) (2 * w) = N := (vj (by decide) (by decide) o1).trans hNd
-  have R1 : val32 s₁.mem B (slot w 1) (2 * w) = R * R % N := by rw [vj (by decide) (by decide) o1, hRR]
+  have R1 : val32 s₁.mem B (slot w 1) (2 * w) = RRv := by rw [vj (by decide) (by decide) o1, hRRd]
   have X1 : val32 s₁.mem B (slot w 4) (2 * w) = X := (vj (by decide) (by decide) o1).trans hXd
-  have hRRN : R * R % N < N := Nat.mod_lt _ hN0
+  have hRRN : RRv < N := hRRlt
   -- `a := R mod n` into array 5.
   refine WP.seq (WP.mono (montOp_ok (o := 5) (a := 1) (b := 7) (hs.congr k1.wr) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' hZ ((k1.gpr _ (by decide)).trans h10)
@@ -297,9 +299,9 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
   rw [N1] at hA0
   have o2' : Outs B ([2, 3, 5].map fun k => (slot w k, 8 * (w + 2))) s₁.mem s₂.mem := o2
   have k12 := k1.trans k2
-  have A0 : val32 s₂.mem B (slot w 5) (2 * w) % N = X ^ 0 * R % N := by
+  have A0 : RRv = R * R % N → val32 s₂.mem B (slot w 5) (2 * w) % N = X ^ 0 * R % N := fun hE => by
     refine VG.Proof.Bignum.mont_cancel hcop ?_
-    rw [eA0, Nat.pow_zero, Nat.one_mul, Nat.mul_one, Nat.mod_mod]
+    rw [eA0, hE, Nat.pow_zero, Nat.one_mul, Nat.mul_one, Nat.mod_mod]
   -- `x R mod n` into array 6.
   have O12 : Outs B (powRs w) s.mem s₂.mem := (outs_of (by decide) o1).trans (outs_of (by decide) o2')
   refine WP.seq (WP.mono (montOp_ok (o := 6) (a := 4) (b := 1) (hs.congr k12.wr) (by decide) (by decide)
@@ -313,9 +315,9 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
   have o3' : Outs B ([2, 3, 6].map fun k => (slot w k, 8 * (w + 2))) s₂.mem s₃.mem := o3
   have k13 := k12.trans k3
   have O13 : Outs B (powRs w) s.mem s₃.mem := O12.trans (outs_of (by decide) o3')
-  have XM : val32 s₃.mem B (slot w 6) (2 * w) % N = X * R % N := by
+  have XM : RRv = R * R % N → val32 s₃.mem B (slot w 6) (2 * w) % N = X * R % N := fun hE => by
     refine VG.Proof.Bignum.mont_cancel hcop ?_
-    rw [eXM, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
+    rw [eXM, hE, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
   generalize hXMd : val32 s₃.mem B (slot w 6) (2 * w) = XMv at hXM XM
   have A3 : val32 s₃.mem B (slot w 5) (2 * w) = val32 s₂.mem B (slot w 5) (2 * w) :=
     vj (by decide) (by decide) o3'
@@ -330,11 +332,11 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
     Keep powRegs s t ∧ Outs B (powRs w) s.mem t.mem ∧ val32 t.mem B (slot w 6) (2 * w) = XMv ∧
       val32 t.mem B (slot w 7) (2 * w) = 1 ∧ val32 t.mem B (slot w 5) (2 * w) < N ∧
       ∃ c, c * 2 ^ 64 + (t.gpr .r24).toNat = E % 2 ^ 33 * 2 ^ 31 * 2 ^ i ∧
-        val32 t.mem B (slot w 5) (2 * w) % N = X ^ c * R % N
+        (RRv = R * R % N → val32 t.mem B (slot w 5) (2 * w) % N = X ^ c * R % N)
   refine WP.seq (WP.mono (wp_countdown (cnt := .r25) (N := 33) (by decide) (by decide) Inv
     (fun i _ t ⟨kt, ot, t6, t7, tA, c, hc, hcA⟩ _ => ?_)
     ⟨k14.mono, by rw [m4]; exact O13, by rw [m4, hXMd], by rw [m4, S7], by rw [m4, A3]; exact hA0,
-      0, ?_, by rw [m4, A3]; exact A0⟩ h25) fun t hI => ?_)
+      0, ?_, fun hE => by rw [m4, A3]; exact A0 hE⟩ h25) fun t hI => ?_)
   · -- A step.
     refine WP.seq (WP.mono (step_ok (hs.congr kt.wr) hw2 hw' hZ ((kt.gpr _ (by decide)).trans h10)
       ((kt.gpr _ (by decide)).trans h29) ((kt.gpr _ (by decide)).trans h11)
@@ -346,14 +348,12 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
     refine WP.mono (subi_ok t₁ .r25 (by decide)) fun t₂ e => ?_
     subst e
     have os' : Outs B ([2, 3, 4, 1, 5].map fun k => (slot w k, 8 * (w + 2))) t.mem t₁.mem := os
-    have hS := sq_step hcop hcA (by rw [← hR]; exact eS)
-    have hP := mul_step hcop hS XM (by rw [← hR]; exact eP)
     refine ⟨⟨((kt.trans k').trans (Keep.write _ _ _)).mono, ot.trans (outs_of (by decide) os'), ?_, ?_, ?_,
       2 * c + (if decide (2 ^ 63 ≤ (t.gpr .r24).toNat) then 1 else 0), ?_, ?_⟩,
       by gsimp; rw [k'.gpr .r25 (by decide)]⟩
     · rw [mem_write, vj (by decide) (by decide) os', t6]
     · rw [mem_write, vj (by decide) (by decide) os', t7]
-    · rw [mem_write, hv]; split <;> assumption
+    · rw [mem_write, hv]; split <;> with_reducible assumption
     · simp only [gpr_write, reduceCtorEq, ↓reduceIte]
       rw [h24', r24_step, show (2 : Nat) ^ (i + 1) = 2 ^ i * 2 from Nat.pow_succ 2 i, ← Nat.mul_assoc]
       have hlt := (t.gpr .r24).isLt
@@ -363,7 +363,10 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
       · rename_i hb; simp only [decide_eq_true_eq] at hb
         omega_using [hc, hlt, hb]
       · omega_using [hc, hlt]
-    · rw [mem_write, hv]
+    · intro hE
+      have hS := sq_step hcop (hcA hE) (by rw [← hR]; exact eS)
+      have hP := mul_step hcop hS (XM hE) (by rw [← hR]; exact eP)
+      rw [mem_write, hv]
       split
       · exact hP
       · rw [Nat.add_zero]; exact hS
@@ -384,10 +387,11 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
       (by rw [kt.gpr .r12 (by decide)]; exact h12) (by rw [w0 ot, kt.gpr .r12 (by decide)]; exact hinv)
       (by rw [t7, v0 ot]; omega)) fun u ⟨⟨hU, eU, o5⟩, k5⟩ =>
       ⟨⟨?_, ot.trans (outs_of (js := [2, 3, 4]) (by decide) o5)⟩, (kt.trans k5).mono⟩
-    · rw [v0 ot] at hU eU
+    · intro hE
+      rw [v0 ot] at hU eU
       rw [t7, hR, Nat.mul_one] at eU
       have : val32 u.mem B (slot w 4) (2 * w) % N = X ^ (E % 2 ^ 33) % N :=
-        VG.Proof.Bignum.mont_cancel hcop (by rw [eU, hcA])
+        VG.Proof.Bignum.mont_cancel hcop (by rw [eU, hcA hE])
       rw [← Nat.mod_eq_of_lt hU, this]
 
 end VG.Proof.Bignum.PPC64LE.Pub

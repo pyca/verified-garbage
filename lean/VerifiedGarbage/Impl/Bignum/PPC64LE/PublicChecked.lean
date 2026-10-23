@@ -24,6 +24,10 @@ in array 4, the power in array 5, `x R mod n` in array 6, 1 in array 7; the
 product in array 1 once `R² mod n` is no longer needed). The
 result is written with a mask of whether `e` and the input are valid.
 
+`pre` may hold anything, so before the multiplications `n` is made odd and
+at least 2 and `R² mod n` below it (`sanitize`), which changes nothing in the
+values of a valid modulus.
+
 Registers kept throughout: `r23` the working space, `r24` the exponent's
 bits, `r25` the bits left, `r26` the validity mask, `r27` `out`, `r28` `k`,
 `r29` an array's size in bytes, `r10` array 0's base, `r11` `2 w`, `r12`
@@ -95,6 +99,27 @@ def loadX : Prog isa :=
     (.block [.add .r14 .r10 .r29, .subi .r14 .r14 16, .li .r0 0, .store .d .r0 .r14 0,
       .addi .r10 .r23 hdrBytes]))
 
+/-- `n` (array 0) made odd (`n₀ |= 1`) and its top word not zero (`|= 1` if
+it is), and word `w` of array 1 zeroed: whatever `pre` held, the Montgomery
+multiplications can take it. A valid modulus is unchanged. -/
+def fixN : List Instr :=
+  [.load .d .r0 .r10 0, .li .r3 1, .logic .or .r0 .r0 .r3, .store .d .r0 .r10 0,
+    .lsl .r14 .r11 2, .add .r14 .r14 .r10, .subi .r14 .r14 8, .load .d .r0 .r14 0,
+    .lsr .d .r3 .r0 1, .li .r4 1, .logic .and .r4 .r0 .r4, .logic .or .r3 .r3 .r4, .subi .r3 .r3 1,
+    .lsr .d .r3 .r3 63, .logic .or .r0 .r0 .r3, .store .d .r0 .r14 0,
+    .add .r14 .r10 .r29, .lsl .r3 .r11 2, .add .r3 .r14 .r3, .li .r0 0, .store .d .r0 .r3 0]
+
+/-- Array 1's `w` words `&= r20`. -/
+def maskRR : Prog isa :=
+  .seq (.block (base .r14 1 ++ [.lsr .d .r17 .r11 1]))
+    (Precompute.countLoop .r17 [.load .d .r0 .r14 0, .logic .and .r0 .r0 .r20, .store .d .r0 .r14 0,
+      .addi .r14 .r14 8])
+
+/-- `fixN`, then array 1 zeroed unless `R² mod n` is below `n` (the mask of
+`subMod`, into array 3). -/
+def sanitize : Prog isa :=
+  .seq (.block (fixN ++ base .r8 1 ++ base .r9 3)) (.seq subMod maskRR)
+
 /-- `r12 := -n⁻¹ mod 2³²`, from `n`'s low word, by Newton's iteration
 `x := x (2 - n x)` from `x = n`. -/
 def minv : List Instr :=
@@ -142,7 +167,7 @@ def output : Prog isa :=
 
 /-- `vg_rsa_public_precomputed_checked`. -/
 def publicChecked : Prog isa :=
-  .seq (.block (save ++ setup)) (.seq readE (.seq (.block checkE) (.seq copyPre (.seq loadX
-    (.seq (.block minv) (.seq checkX (.seq power (.seq output (.block restore)))))))))
+  .seq (.block (save ++ setup)) (.seq readE (.seq (.block checkE) (.seq copyPre (.seq loadX (.seq sanitize
+    (.seq (.block minv) (.seq checkX (.seq power (.seq output (.block restore))))))))))
 
 end VG.Impl.Bignum.PPC64LE.PublicChecked
