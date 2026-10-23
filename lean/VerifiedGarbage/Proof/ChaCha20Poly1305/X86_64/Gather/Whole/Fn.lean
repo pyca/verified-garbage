@@ -24,13 +24,13 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the function
 
 Untrusted: everything here is checked by Lean. With `B` the base of the
-1808 bytes of stack below the stack pointer (`rsp = B + 1808`),
+1816 bytes of stack below the stack pointer (`rsp = B + 1816`),
 `vg_chacha20_poly1305_seal_gather` pushes the six argument registers in its
-frame at `B + 1760` (`pushed`), puts `src` in `r11` and `dst` in `rdi`
+frame at `B + 1768` (`pushed`), puts `src` in `r11` and `dst` in `rdi`
 (`entered_wp`), gathers the slices to `dst` (`gathered_wp`, `gather_wp`),
 loads the call's arguments from the frame and the stack arguments
 (`ready_wp`), and calls `vg_chacha20_poly1305_seal` on them in place with
-`tag` pushed at `B + 1752` (`called_wp`, by its shared contract); the call
+`tag` pushed at `B + 1760` (`called_wp`, by its shared contract); the call
 keeps our frame and the return address above it.
 -/
 
@@ -92,11 +92,11 @@ theorem callArgs_ok (a : State) {P : Addr} (hsp : a.gpr .rsp = P)
 section
 variable (s : State)
 
-/-- The base of the 1808 bytes of stack below the stack pointer. -/
-abbrev Bs : Addr := s.gpr .rsp - BitVec.ofNat 64 1808
+/-- The base of the 1816 bytes of stack below the stack pointer. -/
+abbrev Bs : Addr := s.gpr .rsp - BitVec.ofNat 64 1816
 
 /-- Our frame. -/
-abbrev FR : Region := ⟨Bs s + BitVec.ofNat 64 1760, 48⟩
+abbrev FR : Region := ⟨Bs s + BitVec.ofNat 64 1768, 48⟩
 
 /-- The memory after the push of our frame. -/
 abbrev eM : Mem := (pushed saved s).mem
@@ -106,7 +106,7 @@ abbrev gM : Mem := writeBytes (eM s) (Dst s) (pt s (Cnt s))
 
 /-- The regions the call of `vg_chacha20_poly1305_seal` reads (with `tag`
 pushed for it) and writes. -/
-abbrev rdC : List Region := [kR s, nR s, aR s, ⟨Bs s + BitVec.ofNat 64 1752, 8⟩]
+abbrev rdC : List Region := [kR s, nR s, aR s, ⟨Bs s + BitVec.ofNat 64 1760, 8⟩]
 abbrev wrC : List Region := [dR s, tgR s]
 
 end
@@ -118,18 +118,18 @@ theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
 /-- What `gatherPre` gives, with the stack below the stack pointer at `Bs s`. -/
 structure Lay (s : State) : Prop where
   pre : gatherPre s
-  hB : s.gpr .rsp = Bs s + BitVec.ofNat 64 1808
-  hBn : (Bs s).toNat + 1840 ≤ 2 ^ 64
-  hBv : (Bs s).toNat = (s.gpr .rsp).toNat - 1808
+  hB : s.gpr .rsp = Bs s + BitVec.ofNat 64 1816
+  hBn : (Bs s).toNat + 1848 ≤ 2 ^ 64
+  hBv : (Bs s).toNat = (s.gpr .rsp).toNat - 1816
 
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
-  have w₁ : 1808 ≤ (s.gpr .rsp).toNat := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have w₁ : 1816 ≤ (s.gpr .rsp).toNat := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have w₂ : (s.gpr .rsp).toNat + 32 ≤ 2 ^ 64 := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hBv : (Bs s).toNat = (s.gpr .rsp).toNat - 1808 := toNat_sub_ofNat w₁
+  have hBv : (Bs s).toNat = (s.gpr .rsp).toNat - 1816 := toNat_sub_ofNat w₁
   exact ⟨hs, (BitVec.sub_add_cancel _ _).symm, by omega, hBv⟩
 
 /-- Parts of the stack below the stack pointer. -/
-theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 1808) :
+theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 1816) :
     (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub (stkR s) :=
   Offset.sub_base _ h'
 
@@ -137,43 +137,43 @@ theorem covers_of_mem' {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [
   intro a n ⟨x, hx, hc⟩
   simp only [List.mem_singleton] at hx; subst hx; exact ⟨x, h, hc⟩
 
-theorem hP (s : State) : (pushed saved s).gpr .rsp = Bs s + BitVec.ofNat 64 1760 := by
-  rw [pushed_rsp, Offset.sub_ofNat_eq _ (show 8 * saved.length ≤ 1808 by decide)]; rfl
+theorem hP (s : State) : (pushed saved s).gpr .rsp = Bs s + BitVec.ofNat 64 1768 := by
+  rw [pushed_rsp, Offset.sub_ofNat_eq _ (show 8 * saved.length ≤ 1816 by decide)]; rfl
 
 theorem hPwr (s : State) : (pushed saved s).wr = FR s :: s.wr := by
-  rw [pushed_wr, Offset.sub_ofNat_eq _ (show 8 * saved.length ≤ 1808 by decide)]; rfl
+  rw [pushed_wr, Offset.sub_ofNat_eq _ (show 8 * saved.length ≤ 1816 by decide)]; rfl
 
-theorem fr_sub (s : State) : (FR s).Sub (stkR s) := stk_sub s 1760 48 (by decide)
+theorem fr_sub (s : State) : (FR s).Sub (stkR s) := stk_sub s 1768 48 (by decide)
 
 namespace Lay
 
 variable {s : State} (h : Lay s)
 include h
 
-theorem w₁ : 1808 ≤ (s.gpr .rsp).toNat := h.pre.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+theorem w₁ : 1816 ≤ (s.gpr .rsp).toNat := h.pre.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- The stack arguments. -/
-theorem argAddr (i : Nat) : stackArgAddr s i = Bs s + BitVec.ofNat 64 (1816 + 8 * i) := by
+theorem argAddr (i : Nat) : stackArgAddr s i = Bs s + BitVec.ofNat 64 (1824 + 8 * i) := by
   show s.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1)) = _
   rw [h.hB, Offset.add_ofNat_add_ofNat]; congr 2; omega
 
-theorem hargR : argR s = ⟨Bs s + BitVec.ofNat 64 1816, 24⟩ := by
+theorem hargR : argR s = ⟨Bs s + BitVec.ofNat 64 1824, 24⟩ := by
   show (⟨stackArgAddr s 0, 24⟩ : Region) = _
   rw [h.argAddr]
 
 theorem pushes : Frame [FR s] s.mem (eM s) ∧
     ∀ j (hj : j < saved.length), (eM s).readW (s.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 64 = s.gpr saved[j] := by
   have := pushRegs_mem s saved (by decide) (by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega)
-  rw [Offset.sub_ofNat_eq _ (show 8 * saved.length ≤ 1808 by decide)] at this
+  rw [Offset.sub_ofNat_eq _ (show 8 * saved.length ≤ 1816 by decide)] at this
   exact this
 
 theorem frame_eM : Frame [FR s] s.mem (eM s) := h.pushes.1
 
 /-- The words of our frame: the argument registers. -/
-theorem pushedW (j : Nat) (hj : j < 6) (d : Nat) (hd : d + 8 * (j + 1) = 1808) :
+theorem pushedW (j : Nat) (hj : j < 6) (d : Nat) (hd : d + 8 * (j + 1) = 1816) :
     (eM s).readW (Bs s + BitVec.ofNat 64 d) 64 = s.gpr (saved[j]'hj) := by
   have := h.pushes.2 j hj
-  rw [Offset.sub_ofNat_eq _ (show 8 * (j + 1) ≤ 1808 by omega), show 1808 - 8 * (j + 1) = d by omega] at this
+  rw [Offset.sub_ofNat_eq _ (show 8 * (j + 1) ≤ 1816 by omega), show 1816 - 8 * (j + 1) = d by omega] at this
   exact this
 
 /-- The memory the push left outside the frame. -/
@@ -202,7 +202,7 @@ theorem frame_gM : Frame [dR s] (eM s) (gM s) := by
   simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add, h.hlen, Nat.le_refl]
 
 /-- A word of the stack, once the slices are gathered. -/
-theorem gFrame (d : Nat) (hd : d + 8 ≤ 1808) :
+theorem gFrame (d : Nat) (hd : d + 8 ≤ 1816) :
     (gM s).readW (Bs s + BitVec.ofNat 64 d) 64 = (eM s).readW (Bs s + BitVec.ofNat 64 d) 64 := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bd, -⟩ := h.pre
   refine Frame.readW h.frame_gM (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -211,10 +211,10 @@ theorem gFrame (d : Nat) (hd : d + 8 ≤ 1808) :
 
 /-- A stack argument, once the slices are gathered. -/
 theorem gArg (i : Nat) (hi : i < 3) :
-    (gM s).readW (Bs s + BitVec.ofNat 64 (1816 + 8 * i)) 64 = stackArg s i := by
+    (gM s).readW (Bs s + BitVec.ofNat 64 (1824 + 8 * i)) 64 = stackArg s i := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, darg, -⟩ := h.pre
   have hBn := h.hBn
-  have hs : Region.Sub ⟨Bs s + BitVec.ofNat 64 (1816 + 8 * i), 8⟩ (argR s) := by
+  have hs : Region.Sub ⟨Bs s + BitVec.ofNat 64 (1824 + 8 * i), 8⟩ (argR s) := by
     rw [h.hargR]; exact Offset.sub _ (by omega) (by omega)
   rw [Frame.readW h.frame_gM (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact darg.symm.sub_left hs) (by decide)]
@@ -233,7 +233,7 @@ structure Entered (s e : State) : Prop where
   r11 : e.gpr .r11 = Src s
   rdi : e.gpr .rdi = Dst s
   gpr : ∀ r, r ≠ .r11 → r ≠ .rdi → r ≠ .rsp → e.gpr r = s.gpr r
-  rsp : e.gpr .rsp = Bs s + BitVec.ofNat 64 1760
+  rsp : e.gpr .rsp = Bs s + BitVec.ofNat 64 1768
   rd : e.rd = s.rd
   wr : e.wr = FR s :: s.wr
   mx : e.mxcsr = s.mxcsr
@@ -241,7 +241,7 @@ structure Entered (s e : State) : Prop where
 theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (pushed saved s) (Entered s) := by
   have hBn := h.hBn
   have r₅₆ : InRegions ((pushed saved s).rd ++ (pushed saved s).wr)
-      (Bs s + BitVec.ofNat 64 1760 + BitVec.ofNat 64 56) 8 := by
+      (Bs s + BitVec.ofNat 64 1768 + BitVec.ofNat 64 56) 8 := by
     rw [pushed_rd, Offset.add_ofNat_add_ofNat]
     refine ⟨argR s, List.mem_append_left _ (by rw [h.pre.1]; simp), ?_⟩
     rw [h.hargR]; exact Offset.contains _ (by omega) (by omega) (by omega)
@@ -282,7 +282,7 @@ theorem gatherPre_of {s e : State} (h : Lay s) (he : Entered s e) : GatherPre e 
 structure Gathered (s g : State) : Prop where
   mem : g.mem = gM s
   gpr : ∀ r, r ∉ gatherRegs → r ≠ .rsp → g.gpr r = s.gpr r
-  rsp : g.gpr .rsp = Bs s + BitVec.ofNat 64 1760
+  rsp : g.gpr .rsp = Bs s + BitVec.ofNat 64 1768
   rd : g.rd = s.rd
   wr : g.wr = FR s :: s.wr
   mx : g.mxcsr = s.mxcsr
@@ -305,7 +305,7 @@ structure Ready (s c : State) : Prop where
   r9 : c.gpr .r9 = stackArg s 1
   rax : c.gpr .rax = Tg s
   cs : ∀ r ∈ calleeSaved, r ≠ .rsp → c.gpr r = s.gpr r
-  rsp : c.gpr .rsp = Bs s + BitVec.ofNat 64 1760
+  rsp : c.gpr .rsp = Bs s + BitVec.ofNat 64 1768
   rd : c.rd = s.rd
   wr : c.wr = FR s :: s.wr
   mx : c.mxcsr = s.mxcsr
@@ -313,11 +313,11 @@ structure Ready (s c : State) : Prop where
 theorem ready_wp {s g : State} (h : Lay s) (hg : Gathered s g) : WP isa (.block callArgsWhole) g (Ready s) := by
   have hBn := h.hBn
   have inFr (d : Nat) (hd : d + 8 ≤ 48) :
-      InRegions (g.rd ++ g.wr) (Bs s + BitVec.ofNat 64 1760 + BitVec.ofNat 64 d) 8 := by
+      InRegions (g.rd ++ g.wr) (Bs s + BitVec.ofNat 64 1768 + BitVec.ofNat 64 d) 8 := by
     rw [hg.wr, Offset.add_ofNat_add_ofNat]
     exact ⟨FR s, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains _ (by omega) (by omega) (by omega)⟩
   have inArg (d : Nat) (h₁ : 56 ≤ d) (hd : d + 8 ≤ 80) :
-      InRegions (g.rd ++ g.wr) (Bs s + BitVec.ofNat 64 1760 + BitVec.ofNat 64 d) 8 := by
+      InRegions (g.rd ++ g.wr) (Bs s + BitVec.ofNat 64 1768 + BitVec.ofNat 64 d) 8 := by
     rw [hg.rd, Offset.add_ofNat_add_ofNat]
     refine ⟨argR s, List.mem_append_left _ (by rw [h.pre.1]; simp), ?_⟩
     rw [h.hargR]; exact Offset.contains _ (by omega) (by omega) (by omega)
@@ -332,10 +332,10 @@ theorem ready_wp {s g : State} (h : Lay s) (hg : Gathered s g) : WP isa (.block 
   simp only [Nat.reduceMul, Nat.reduceAdd] at g56 g64 g72
   refine ⟨mc.trans hg.mem, ?_, ?_, ?_, ?_, r8c.trans g56, r9c.trans g64, raxc.trans g72, fun r hr hsp => ?_,
     (csc _ (by decide)).trans hg.rsp, rdc.trans hg.rd, wrc.trans hg.wr, mxc.trans hg.mx⟩
-  · rw [rdic, h.gFrame 1800 (by decide)]; exact h.pushedW 0 (by decide) 1800 rfl
-  · rw [rsic, h.gFrame 1792 (by decide)]; exact h.pushedW 1 (by decide) 1792 rfl
-  · rw [rdxc, h.gFrame 1784 (by decide)]; exact h.pushedW 2 (by decide) 1784 rfl
-  · rw [rcxc, h.gFrame 1776 (by decide)]; exact h.pushedW 3 (by decide) 1776 rfl
+  · rw [rdic, h.gFrame 1808 (by decide)]; exact h.pushedW 0 (by decide) 1808 rfl
+  · rw [rsic, h.gFrame 1800 (by decide)]; exact h.pushedW 1 (by decide) 1800 rfl
+  · rw [rdxc, h.gFrame 1792 (by decide)]; exact h.pushedW 2 (by decide) 1792 rfl
+  · rw [rcxc, h.gFrame 1784 (by decide)]; exact h.pushedW 3 (by decide) 1784 rfl
   · rw [csc r hr]
     refine hg.gpr r (fun hm => ?_) hsp
     simp only [calleeSaved, gatherRegs, List.mem_cons, List.not_mem_nil, or_false] at hr hm
@@ -362,11 +362,11 @@ variable {s c : State} (h : Lay s) (hc : Ready s c)
 include h hc
 
 omit h in
-theorem Ready.qsp : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1752 := by
+theorem Ready.qsp : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1760 := by
   rw [pushed_rsp, hc.rsp, show 8 * [Reg.rax].length = 8 from rfl, add_ofNat_sub_ofNat _ (by decide)]
 
 omit h in
-theorem Ready.qwr : (qS c).wr = ⟨Bs s + BitVec.ofNat 64 1752, 8⟩ :: FR s :: s.wr := by
+theorem Ready.qwr : (qS c).wr = ⟨Bs s + BitVec.ofNat 64 1760, 8⟩ :: FR s :: s.wr := by
   rw [pushed_wr, hc.rsp, hc.wr, show 8 * [Reg.rax].length = 8 from rfl, add_ofNat_sub_ofNat _ (by decide)]
 
 omit h in
@@ -374,13 +374,13 @@ theorem Ready.qrd : (qS c).rd = s.rd := by rw [pushed_rd, hc.rd]
 
 theorem Ready.hn : 8 * [Reg.rax].length ≤ (c.gpr .rsp).toNat := by
   have := h.hBn
-  rw [hc.rsp, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 1760) (by decide),
+  rw [hc.rsp, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 1768) (by decide),
     Nat.mod_eq_of_lt (by omega)]
   simp only [List.length_cons, List.length_nil]; omega
 
 /-- The push of `tag`. -/
-theorem Ready.qmem : Frame [⟨Bs s + BitVec.ofNat 64 1752, 8⟩] c.mem (qS c).mem ∧
-    (qS c).mem.readW (Bs s + BitVec.ofNat 64 1752) 64 = Tg s := by
+theorem Ready.qmem : Frame [⟨Bs s + BitVec.ofNat 64 1760, 8⟩] c.mem (qS c).mem ∧
+    (qS c).mem.readW (Bs s + BitVec.ofNat 64 1760) 64 = Tg s := by
   have := pushRegs_mem c [.rax] (by decide) (hc.hn h)
   have h₁ := this.1
   have h₂ := this.2 0 (by decide)
@@ -389,20 +389,20 @@ theorem Ready.qmem : Frame [⟨Bs s + BitVec.ofNat 64 1752, 8⟩] c.mem (qS c).m
   exact ⟨h₁, h₂.trans hc.rax⟩
 
 omit h in
-theorem Ready.xsp : (xS s c).gpr .rsp = Bs s + BitVec.ofNat 64 1744 := by
+theorem Ready.xsp : (xS s c).gpr .rsp = Bs s + BitVec.ofNat 64 1752 := by
   rw [State.withRegions_gpr, State.callEntry_rsp, hc.qsp, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,
     add_ofNat_sub_ofNat _ (by decide)]
 
 
 omit h in
 /-- The return address of the call. -/
-theorem Ready.xmem : Frame [⟨Bs s + BitVec.ofNat 64 1744, 8⟩] (qS c).mem (xS s c).mem := by
+theorem Ready.xmem : Frame [⟨Bs s + BitVec.ofNat 64 1752, 8⟩] (qS c).mem (xS s c).mem := by
   rw [State.withRegions_mem, State.callEntry_mem, hc.qsp, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,
     add_ofNat_sub_ofNat _ (by decide)]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
 
 omit h in
-theorem Ready.xarg : stackArgAddr (xS s c) 0 = Bs s + BitVec.ofNat 64 1752 := by
+theorem Ready.xarg : stackArgAddr (xS s c) 0 = Bs s + BitVec.ofNat 64 1760 := by
   show (xS s c).gpr .rsp + BitVec.ofNat 64 (8 * (0 + 1)) = _
   rw [hc.xsp, Offset.add_ofNat_add_ofNat]
 
@@ -421,24 +421,24 @@ theorem Ready.call : callPre (xS s c) ∧ Covers (rdC s ++ wrC s) ((qS c).rd ++ 
     -⟩ := h.pre
   have hBn := h.hBn
   have hx (r : Reg) (hr : r ≠ .rsp) : (xS s c).gpr r = c.gpr r := xgpr_eq hr
-  have hstk : below (Bs s + BitVec.ofNat 64 1744) 1744 = ⟨Bs s, 1744⟩ := by
-    simp only [below, add_ofNat_sub_ofNat _ (show 1744 ≤ 1744 by decide), Nat.sub_self, BitVec.add_zero]
-  have hxsp : (Bs s + BitVec.ofNat 64 1744).toNat = (Bs s).toNat + 1744 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 1744) (by decide),
+  have hstk : below (Bs s + BitVec.ofNat 64 1752) 1752 = ⟨Bs s, 1752⟩ := by
+    simp only [below, add_ofNat_sub_ofNat _ (show 1752 ≤ 1752 by decide), Nat.sub_self, BitVec.add_zero]
+  have hxsp : (Bs s + BitVec.ofNat 64 1752).toNat = (Bs s).toNat + 1752 := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 1752) (by decide),
       Nat.mod_eq_of_lt (by omega)]
-  have sb (d n : Nat) (hd : d + n ≤ 1808) {r : Region} (hr : (stkR s).Disjoint r) :
+  have sb (d n : Nat) (hd : d + n ≤ 1816) {r : Region} (hr : (stkR s).Disjoint r) :
       (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := hr.sub_left (stk_sub s d n hd)
-  have s0 (n : Nat) (hd : n ≤ 1808) {r : Region} (hr : (stkR s).Disjoint r) :
+  have s0 (n : Nat) (hd : n ≤ 1816) {r : Region} (hr : (stkR s).Disjoint r) :
       (⟨Bs s, n⟩ : Region).Disjoint r := hr.sub_left (Region.sub_prefix hd)
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, hx .rdi (by decide), hx .rsi (by decide),
       hx .rdx (by decide), hx .rcx (by decide), hx .r8 (by decide), hx .r9 (by decide), hc.rdi, hc.rsi, hc.rdx,
       hc.rcx, hc.r8, hc.r9, hc.xtag h, hc.xarg, hc.xsp, hstk]
-    exact ⟨by omega, by omega, trivial, trivial, kd, kt, nd, nt, ad, at_, dt, (sb 1752 8 (by decide) bd).symm,
-      (sb 1752 8 (by decide) bt).symm, sb 1744 8 (by decide) bk, sb 1744 8 (by decide) bn,
-      sb 1744 8 (by decide) ba, sb 1744 8 (by decide) bd, sb 1744 8 (by decide) bt,
-      Offset.disjoint _ (.inl (by omega)) (by omega) (by omega), s0 1744 (by decide) bk, s0 1744 (by decide) bn,
-      s0 1744 (by decide) ba, s0 1744 (by decide) bd, s0 1744 (by decide) bt,
+    exact ⟨by omega, by omega, trivial, trivial, kd, kt, nd, nt, ad, at_, dt, (sb 1760 8 (by decide) bd).symm,
+      (sb 1760 8 (by decide) bt).symm, sb 1752 8 (by decide) bk, sb 1752 8 (by decide) bn,
+      sb 1752 8 (by decide) ba, sb 1752 8 (by decide) bd, sb 1752 8 (by decide) bt,
+      Offset.disjoint _ (.inl (by omega)) (by omega) (by omega), s0 1752 (by decide) bk, s0 1752 (by decide) bn,
+      s0 1752 (by decide) ba, s0 1752 (by decide) bd, s0 1752 (by decide) bt,
       Offset.base_disjoint _ (by decide) (by omega), ok, on, oa, od, ot⟩
   · rw [hc.qrd, hc.qwr, rd, wr]
     intro a n ⟨r, hr, hcn⟩
@@ -464,7 +464,7 @@ structure Called (s z : State) : Prop where
   out : gatherPost s z
   ret : z.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
   cs : ∀ r ∈ calleeSaved, r ≠ .rsp → z.gpr r = s.gpr r
-  rsp : z.gpr .rsp = Bs s + BitVec.ofNat 64 1760
+  rsp : z.gpr .rsp = Bs s + BitVec.ofNat 64 1768
   rd : z.rd = s.rd
   wr : z.wr = FR s :: s.wr
   mx : z.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
@@ -484,17 +484,17 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   simp only [hx .rdi (by decide), hx .rsi (by decide), hx .rdx (by decide), hx .rcx (by decide),
     hx .r8 (by decide), hx .r9 (by decide), hc.rdi, hc.rsi, hc.rdx, hc.rcx, hc.r8, hc.r9, hc.xtag h, m₂] at hpost
   -- The callee's memory on entry: ours, with `tag` and its return address pushed below our frame.
-  have fx : Frame [⟨Bs s + BitVec.ofNat 64 1752, 8⟩, ⟨Bs s + BitVec.ofNat 64 1744, 8⟩] (gM s) (xS s c).mem := by
+  have fx : Frame [⟨Bs s + BitVec.ofNat 64 1760, 8⟩, ⟨Bs s + BitVec.ofNat 64 1752, 8⟩] (gM s) (xS s c).mem := by
     rw [← hc.mem]
     exact ((hc.qmem h).1.mono (fun r hr => by simp at hr ⊢; exact Or.inl hr)).trans
       ((hc.xmem).mono (fun r hr => by simp at hr ⊢; exact Or.inr hr))
   have apart {r : Region} (hr : (stkR s).Disjoint r) :
-      ∀ r' ∈ [(⟨Bs s + BitVec.ofNat 64 1752, 8⟩ : Region), ⟨Bs s + BitVec.ofNat 64 1744, 8⟩], r.Disjoint r' := by
+      ∀ r' ∈ [(⟨Bs s + BitVec.ofNat 64 1760, 8⟩ : Region), ⟨Bs s + BitVec.ofNat 64 1752, 8⟩], r.Disjoint r' := by
     intro r' hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl
+    · exact (hr.sub_left (stk_sub s 1760 8 (by decide))).symm
     · exact (hr.sub_left (stk_sub s 1752 8 (by decide))).symm
-    · exact (hr.sub_left (stk_sub s 1744 8 (by decide))).symm
   rw [bytesAt_frame fx (apart bk) (by omega), bytesAt_frame fx (apart bn) (by omega),
     bytesAt_frame fx (apart ba) (by omega), bytesAt_frame fx (apart bd) (by omega)] at hpost
   -- The key, the nonce and the additional data are what they were; the data is the slices gathered.
@@ -516,28 +516,28 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   rw [hd] at hpost
   refine ⟨by simp only [gatherPost, popped_mem]; exact hpost, ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_⟩
   · -- The return address: neither the push, nor the copy, nor the call wrote it.
-    have hsp' : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1752 := hc.qsp
+    have hsp' : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1760 := hc.qsp
     have hbelow : below ((qS c).gpr .rsp) (F.code.x86_64Depth + 8) =
-        ⟨Bs s + BitVec.ofNat 64 (1744 - F.code.x86_64Depth), F.code.x86_64Depth + 8⟩ := by
+        ⟨Bs s + BitVec.ofNat 64 (1752 - F.code.x86_64Depth), F.code.x86_64Depth + 8⟩ := by
       rw [hsp']; simp only [below]
-      rw [add_ofNat_sub_ofNat _ (by omega), show 1752 - (F.code.x86_64Depth + 8) = 1744 - F.code.x86_64Depth by omega]
-    have e : s.gpr .rsp = Bs s + BitVec.ofNat 64 1808 := h.hB
+      rw [add_ofNat_sub_ofNat _ (by omega), show 1760 - (F.code.x86_64Depth + 8) = 1752 - F.code.x86_64Depth by omega]
+    have e : s.gpr .rsp = Bs s + BitVec.ofNat 64 1816 := h.hB
     rw [popped_mem, e]
-    have r₁ : s'.mem.readW (Bs s + BitVec.ofNat 64 1808) 64 = (qS c).mem.readW (Bs s + BitVec.ofNat 64 1808) 64 := by
+    have r₁ : s'.mem.readW (Bs s + BitVec.ofNat 64 1816) 64 = (qS c).mem.readW (Bs s + BitVec.ofNat 64 1816) 64 := by
       refine Frame.readW fr' (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, hbelow] at hr
       rcases hr with (rfl | rfl) | rfl
       · rw [← e]; exact rdd
       · rw [← e]; exact rt
       · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-    have r₂ : (qS c).mem.readW (Bs s + BitVec.ofNat 64 1808) 64 = c.mem.readW (Bs s + BitVec.ofNat 64 1808) 64 :=
+    have r₂ : (qS c).mem.readW (Bs s + BitVec.ofNat 64 1816) 64 = c.mem.readW (Bs s + BitVec.ofNat 64 1816) 64 :=
       Frame.readW (hc.qmem h).1 (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by decide)
-    have r₃ : (gM s).readW (Bs s + BitVec.ofNat 64 1808) 64 = (eM s).readW (Bs s + BitVec.ofNat 64 1808) 64 :=
+    have r₃ : (gM s).readW (Bs s + BitVec.ofNat 64 1816) 64 = (eM s).readW (Bs s + BitVec.ofNat 64 1816) 64 :=
       Frame.readW h.frame_gM (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [← e]; exact rdd) (by decide)
-    have r₄ : (eM s).readW (Bs s + BitVec.ofNat 64 1808) 64 = s.mem.readW (Bs s + BitVec.ofNat 64 1808) 64 :=
+    have r₄ : (eM s).readW (Bs s + BitVec.ofNat 64 1816) 64 = s.mem.readW (Bs s + BitVec.ofNat 64 1816) 64 :=
       Frame.readW h.frame_eM (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by decide)
