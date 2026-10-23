@@ -1305,7 +1305,9 @@ impl AesGcm {
             #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
             powers: Powers::new(backend),
         };
-        let init = k.fns.init;
+        // Chosen from `backend` rather than read from `k.fns`: the load
+        // before the call made `new` 1–4% slower on Neoverse N2.
+        let init = backend.plain_fns().init;
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
