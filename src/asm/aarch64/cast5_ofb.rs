@@ -405,21 +405,15 @@ ldr x25, [x5, #56]
 ldr x26, [x5, #64]
 ldr x27, [x5, #72]
 ldr x28, [x5, #80]
-add x16, sp, #0
 movz x17, #0, lsl #0
-str x17, [x16, #0]
-str x17, [x16, #8]
-str x17, [x16, #16]
-str x17, [x16, #24]
-str x17, [x16, #32]
-str x17, [x16, #40]
-str x17, [x16, #48]
-str x17, [x16, #56]
-str x17, [x16, #64]
-str x17, [x16, #72]
-str x17, [x16, #80]
-str x17, [x16, #88]
-str x17, [x16, #96]
+add x16, sp, #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+str x17, [sp, #96]
 add sp, sp, #112
 ret
 .p2align 6",
