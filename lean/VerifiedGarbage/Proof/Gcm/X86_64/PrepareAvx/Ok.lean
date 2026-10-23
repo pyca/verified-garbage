@@ -54,14 +54,14 @@ theorem lane0_prepare16 :
   decide +kernel
 
 /-- Each step's operands hold powers adding up to its own, which is one of
-the first 48, and no step writes or reads a scratch register. -/
+the first 16, and no step writes or reads a scratch register. -/
 def valid : List (XReg × Nat) → List Step → Bool
   | _, [] => true
   | env, (d, a, b, n) :: ps =>
     !scratch.contains d && !scratch.contains a && !scratch.contains b &&
     (match env.lookup a, env.lookup b with
      | some ea, some eb => ea + eb == n
-     | _, _ => false) && 1 ≤ n && n ≤ 48 && valid ((d, n) :: env) ps
+     | _, _ => false) && 1 ≤ n && n ≤ 16 && valid ((d, n) :: env) ps
 
 /-- The registers' powers after the steps. -/
 def envAfter : List (XReg × Nat) → List Step → List (XReg × Nat)
@@ -78,15 +78,15 @@ the powers `S` are in their places. -/
 structure Inv (H : Block) (C : Addr) (m₀ : Mem) (env : List (XReg × Nat)) (S : List Nat) (t : State) : Prop where
   h1 : t.xmm .xmm1 = poly
   pw : ∀ r e, env.lookup r = some e → r ∉ scratch ∧ x * φ (t.xmm r) = φ H ^ e
-  st : ∀ n ∈ S, 1 ≤ n ∧ n ≤ 48 ∧
+  st : ∀ n ∈ S, 1 ≤ n ∧ n ≤ 16 ∧
     t.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n)
-  fr : Frame [⟨C + BitVec.ofNat 64 256, 768⟩] m₀ t.mem
+  fr : Frame [⟨C + BitVec.ofNat 64 256, 256⟩] m₀ t.mem
   rdi : t.gpr .rdi = C
   wr : InRegions t.wr C 1024
 
 /-! ## The places of the powers -/
 
-theorem prepOff_bound {n : Nat} (h1 : 1 ≤ n) (h48 : n ≤ 48) : 256 ≤ prepOff n ∧ prepOff n + 16 ≤ 1024 := by
+theorem prepOff_bound {n : Nat} (h1 : 1 ≤ n) (h48 : n ≤ 16) : 256 ≤ prepOff n ∧ prepOff n + 16 ≤ 512 := by
   simp only [prepOff]; split <;> omega
 
 theorem prepOff_sep {n n' : Nat} (h : n ≠ n') : prepOff n + 16 ≤ prepOff n' ∨ prepOff n' + 16 ≤ prepOff n := by
@@ -95,8 +95,8 @@ theorem prepOff_sep {n n' : Nat} (h : n ≠ n') : prepOff n + 16 ≤ prepOff n' 
 theorem prepOff_pair {k l : Nat} (hl : l < 2) : prepOff (2 * k + 2 - l) = 256 + 32 * k + 16 * l := by
   simp only [prepOff]; split <;> omega
 
-theorem readW_sep {m : Mem} {C : Addr} {n n' : Nat} {v : BitVec 128} (h1 : 1 ≤ n) (h48 : n ≤ 48)
-    (h1' : 1 ≤ n') (h48' : n' ≤ 48) (h : n ≠ n') :
+theorem readW_sep {m : Mem} {C : Addr} {n n' : Nat} {v : BitVec 128} (h1 : 1 ≤ n) (h48 : n ≤ 16)
+    (h1' : 1 ≤ n') (h48' : n' ≤ 16) (h : n ≠ n') :
     (m.writeW (C + BitVec.ofNat 64 (prepOff n')) v).readW (C + BitVec.ofNat 64 (prepOff n)) 128 =
       m.readW (C + BitVec.ofNat 64 (prepOff n)) 128 := by
   have b := prepOff_bound h1 h48
@@ -116,7 +116,7 @@ theorem st_ok (r : XReg) (d : Nat) (t : State)
 
 /-- Storing `H'ⁿ` from `r` at its place. -/
 theorem store_ok {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} {S : List Nat} {r : XReg} {n : Nat}
-    (t : State) (hi : Inv H C m₀ env S t) (hr : x * φ (t.xmm r) = φ H ^ n) (h1 : 1 ≤ n) (h48 : n ≤ 48) :
+    (t : State) (hi : Inv H C m₀ env S t) (hr : x * φ (t.xmm r) = φ H ^ n) (h1 : 1 ≤ n) (h48 : n ≤ 16) :
     WP isa (.block [.movdquStore (at_ .rdi (prepOff n)) r]) t fun t' =>
       Inv H C m₀ env (n :: S) t' ∧ t'.gpr = t.gpr ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have b := prepOff_bound h1 h48
@@ -256,8 +256,9 @@ theorem plan_stored : ∀ k < 8, ∀ l < 2, 2 * k + 2 - l ∈ storedAfter [1] pl
 /-- `prepare16`: the first 16 prepared powers of the hash subkey at `C + 240`
 into pairs 0–7 of the context at `C`, nothing outside bytes 256–1023 of it
 written. -/
-theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
-    WP isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s₀ (Prepare16.PrepOk16W s₀) := by
+theorem prepare16_ok' {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
+    WP isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s₀ fun s =>
+      Prepare16.PrepOk16W s₀ s ∧ Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 256⟩] s₀.mem s.mem := by
   have hS : WP isa (.block (setupS ++ plan.flatMap stepS)) (s₀.proj 0) fun t' =>
       Inv (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (s₀.gpr .rdi) s₀.mem (envAfter [(.xmm3, 1)] plan)
         (storedAfter [1] plan) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = s₀.gpr q) ∧ t'.rd = s₀.rd ∧ t'.wr = s₀.wr := by
@@ -269,14 +270,28 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
       ⟨hi', fun q hq => by rw [g' q hq, g₁ q hq, State.proj_gpr], by rw [rd', rd₁, State.proj_rd],
         by rw [wr', wr₁, State.proj_wr]⟩
   refine WP.mono (WP.lane0 lane0_prepare16 hS) fun s ⟨⟨hi, g, rd, wr⟩, _, _⟩ =>
-    ⟨fun k hk l hl => ?_, ?_, fun r hr => ?_, ?_, ?_⟩
+    ⟨⟨fun k hk l hl => ?_, ?_, fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · have := (hi.st _ (plan_stored k hk l hl)).2.2
     rw [prepOff_pair hl, State.proj_mem] at this
     exact this
-  · have := hi.fr; rw [State.proj_mem] at this; exact this
+  · have := hi.fr; rw [State.proj_mem] at this
+    exact this.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      obtain rfl := List.mem_singleton.mp hr; exact Offset.sub _ (Nat.le_refl _) (by omega)⟩
   · rw [← State.proj_gpr s 0, g r hr]
   · rw [← State.proj_rd s 0, rd]
   · rw [← State.proj_wr s 0, wr]
+  · have := hi.fr; rw [State.proj_mem] at this; exact this
+
+theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
+    WP isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s₀ (Prepare16.PrepOk16W s₀) :=
+  WP.mono (prepare16_ok' hw) fun _ h => h.1
+
+/-- It writes none of the context from byte 512 on. -/
+theorem prepare16_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s)
+    (he : Exec isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' :=
+  Prepare16.written16 (fun _ hw _ => WP.mono (prepare16_ok' hw) fun _ h => h.2) s t s' hs he
 
 theorem prepare16_verified :
     Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=

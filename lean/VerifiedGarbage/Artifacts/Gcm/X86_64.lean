@@ -57,8 +57,10 @@ def artifacts : List Artifact := [
         each 256-bit register, each pair stored as it is computed; the powers each round \
         multiplies by, in both lanes, are squares of the one before, of two carry-less products \
         each rather than four. No calls and no stack."]
+    written := [("ctx", 512)]
     code := Impl.Gcm.X86_64.Prepare16.prepare16
     verified := Proof.Gcm.X86_64.Prepare16.prepare16_verified
+    writtenOk := Proof.Gcm.X86_64.Prepare16.prepare16_written
     features := ["avx", "avx2", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_pclmul_avx"
@@ -66,8 +68,10 @@ def artifacts : List Artifact := [
         `H'²`–`H'¹⁶` in four rounds of independent products, each stored as it is computed: the \
         even powers squares, of two carry-less products each rather than four, and the odd ones \
         summed straight into their accumulators. No calls and no stack."]
+    written := [("ctx", 512)]
     code := Impl.Gcm.X86_64.PrepareAvx.prepare16
     verified := Proof.Gcm.X86_64.PrepareAvx.prepare16_verified
+    writtenOk := Proof.Gcm.X86_64.PrepareAvx.prepare16_written
     features := ["avx", "pclmulqdq"] }]
 
 end VG.Artifacts.Gcm.X86_64
