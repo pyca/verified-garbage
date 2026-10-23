@@ -124,11 +124,11 @@
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    VG_AES_GCM_PREPARE_VPCLMUL_FEATURES, VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
+    VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES, VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
     VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_open_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_prepared16_vaes_vpclmul,
-    vg_aes_gcm_prepare_vpclmul, vg_aes_gcm_prepare16_pclmul_avx, vg_aes_gcm_prepare16_vpclmul,
-    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_prepare_vpclmul_avx512, vg_aes_gcm_prepare16_pclmul_avx,
+    vg_aes_gcm_prepare16_vpclmul, vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
     vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_seal_prepared16_aesni_pclmul_avx, vg_aes_gcm_seal_prepared16_vaes_vpclmul,
@@ -589,13 +589,13 @@ type StreamPrepared =
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
-    features: VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
+    features: VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
     seal: vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
     open: vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
-    prepare: vg_aes_gcm_prepare_vpclmul,
+    prepare: vg_aes_gcm_prepare_vpclmul_avx512,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -2190,7 +2190,7 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
+                        VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
@@ -2536,19 +2536,22 @@ mod tests {
     }
 
     /// `vg_aes_gcm_prepare16`, on 128-bit and on 256-bit registers, makes the
-    /// first 16 powers of `vg_aes_gcm_prepare`'s context, leaving the rest of
-    /// the context as it was.
+    /// first 16 powers of the context `vg_aes_gcm_prepare` makes (on 512-bit
+    /// registers), leaving the rest of the context as it was.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     #[test]
     fn prepare() {
         use super::{
-            Ctx, PREPARED_AESNI_PCLMUL_AVX, PREPARED_VAES_VPCLMUL,
-            VG_AES_GCM_PREPARE_VPCLMUL_FEATURES, vg_aes_gcm_prepare_vpclmul,
+            Ctx, PREPARED_AESNI_PCLMUL_AVX, PREPARED_VAES_VPCLMUL, PREPARED_VAES_VPCLMUL_AVX512,
         };
-        let (narrow, sixteen) = (&PREPARED_AESNI_PCLMUL_AVX, &PREPARED_VAES_VPCLMUL);
+        let (narrow, sixteen, wide) = (
+            &PREPARED_AESNI_PCLMUL_AVX,
+            &PREPARED_VAES_VPCLMUL,
+            &PREPARED_VAES_VPCLMUL_AVX512,
+        );
         if !detected().contains(narrow.features)
             || !detected().contains(sixteen.features)
-            || !detected().contains(VG_AES_GCM_PREPARE_VPCLMUL_FEATURES)
+            || !detected().contains(wide.features)
         {
             return;
         }
@@ -2562,7 +2565,7 @@ mod tests {
             // `vg_aes_gcm_init`; they overlap nothing. The CPU has the
             // features of all three.
             unsafe {
-                vg_aes_gcm_prepare_vpclmul(&mut want);
+                (wide.prepare)(&mut want);
                 (narrow.prepare)(&mut got);
                 (sixteen.prepare)(&mut first);
             }
