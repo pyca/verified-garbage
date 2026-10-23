@@ -56,18 +56,18 @@ theorem keyCopyParts_ok (parts : List (Pointer × Nat)) {s : State} {base : Addr
     obtain ⟨input, len⟩ := part
     have total : keyPartsSize ((input, len) :: rest) = len + keyPartsSize rest := rfl
     have H := R (input, len) List.mem_cons_self
-    have lenBound : len ≤ keyPartsSize ((input, len) :: rest) := by rw [total]; omega
+    have lenBound : len ≤ keyPartsSize ((input, len) :: rest) := by rw [total]; omega_arith
     have firstSub : Region.Sub ⟨out.setWidth 64, len⟩
         ⟨out.setWidth 64, keyPartsSize ((input, len) :: rest)⟩ := by
-      simpa only [BitVec.add_zero] using Offset.sub_base (out.setWidth 64) (d := 0) (by omega : 0 + len ≤ _)
+      simpa only [BitVec.add_zero] using Offset.sub_base (out.setWidth 64) (d := 0) (by omega_arith : 0 + len ≤ _)
     have H1 : KeyPartReady s base (out.setWidth 64) len (input, len) :=
       ⟨H.positive, H.fits, H.read, H.apart.sub_right firstSub⟩
     unfold Generate.copyParts
     refine WP.seq (WP.mono (keyCopyPart_ok hs hz H1
-      (by omega)
-      (by omega) hd hm (fun i hi => write i (by omega))) fun u ⟨V1, D1, M1, O1, K1⟩ => ?_)
+      (by omega_arith)
+      (by omega_arith) hd hm (fun i hi => write i (by omega_arith))) fun u ⟨V1, D1, M1, O1, K1⟩ => ?_)
     have O1' : Outside (out.setWidth 64) 0 (keyPartsSize ((input, len) :: rest)) s.mem u.mem :=
-      O1.mono (Nat.le_refl _) (by omega)
+      O1.mono (Nat.le_refl _) (by omega_arith)
     have Rrest (part : Pointer × Nat) (member : part ∈ rest) :=
       R part (List.mem_cons_of_mem _ member)
     cases rest with
@@ -82,17 +82,17 @@ theorem keyCopyParts_ok (parts : List (Pointer × Nat)) {s : State} {base : Addr
       have positive : 0 < keyPartsSize rest := by
         have H := (Rrest next List.mem_cons_self).positive
         change 0 < next.2 + keyPartsSize remaining
-        omega
+        omega_arith
       let nextOut := out + BitVec.ofNat 32 len
       have nextAddr : nextOut.setWidth 64 = off (out.setWidth 64) len :=
-        addr_eq (by rw [total] at ho; change out.toNat + (len + keyPartsSize rest) ≤ _ at ho; omega)
+        addr_eq (by rw [total] at ho; change out.toNat + (len + keyPartsSize rest) ≤ _ at ho; omega_arith)
       have nextNat : nextOut.toNat = out.toNat + len := by
         have B : out.toNat + len < 2 ^ 32 := by
           rw [total] at ho
           change out.toNat + (len + keyPartsSize rest) ≤ _ at ho
-          omega
+          omega_arith
         simp only [nextOut, BitVec.toNat_add, BitVec.toNat_ofNat,
-          Nat.mod_eq_of_lt (by omega : len < 2 ^ 32), Nat.mod_eq_of_lt B]
+          Nat.mod_eq_of_lt (by omega_arith : len < 2 ^ 32), Nat.mod_eq_of_lt B]
       have tailSub : Region.Sub ⟨nextOut.setWidth 64, keyPartsSize rest⟩
           ⟨out.setWidth 64, keyPartsSize ((input, len) :: rest)⟩ := by
         rw [nextAddr]
@@ -102,18 +102,18 @@ theorem keyCopyParts_ok (parts : List (Pointer × Nat)) {s : State} {base : Addr
         have B := (Rrest part member).keep hs hz O1' A K1
         exact ⟨B.positive, B.fits, B.read, B.apart.sub_right tailSub⟩
       refine WP.mono (ih (hs.of_keeps K1 (by decide)) Rt
-        (by rw [nextNat]; rw [total] at ho; omega) (by rw [total] at small; omega) (A.sub_right tailSub) D1 M1
+        (by rw [nextNat]; rw [total] at ho; omega_arith) (by rw [total] at small; omega_arith) (A.sub_right tailSub) D1 M1
         (by
           intro i hi
           rw [K1.2.2, nextAddr, off, off, Offset.add_add]
-          exact write (len + i) (by rw [total]; omega))) fun t ⟨V2, D2, M2, O2, K2⟩ => ?_
+          exact write (len + i) (by rw [total]; omega_arith))) fun t ⟨V2, D2, M2, O2, K2⟩ => ?_
       have B : keyPartsBytes u base rest = keyPartsBytes s base rest :=
         keyPartsBytes_keep Rrest hs hz O1' A K1
       have O2a : Outside (off (out.setWidth 64) len) 0 (keyPartsSize rest) u.mem t.mem := by
         simpa only [nextAddr] using O2
       have first : Spec.Rsa.bytesAt t.mem (out.setWidth 64) len =
           Spec.Rsa.bytesAt u.mem (out.setWidth 64) len :=
-        external_bytes O2a (Offset.base_disjoint _ (by omega) (by omega)) (by omega)
+        external_bytes O2a (Offset.base_disjoint _ (by omega_arith) (by omega_arith)) (by omega_arith)
       refine ⟨?_, ?_, M2, ?_, K1.trans K2⟩
       · rw [total, bytesAt_split, first, V1]
         change _ ++ Spec.Rsa.bytesAt t.mem (off (out.setWidth 64) len) (keyPartsSize rest) = _
@@ -125,10 +125,10 @@ theorem keyCopyParts_ok (parts : List (Pointer × Nat)) {s : State} {base : Addr
           fun a _ h => O1 a (.inr (by simpa using h))
         have F2 : OutputFrame base (off (out.setWidth 64) len) 0 (keyPartsSize rest) u.mem t.mem :=
           fun a _ h => O2a a (.inr (by simpa using h))
-        have F := F1.join F2 (by rw [total] at ho; omega)
+        have F := F1.join F2 (by rw [total] at ho; omega_arith)
         intro a ha
         rcases ha with ha | ha
-        · omega
+        · omega_arith
         · exact F a (Nat.zero_le _) (by rw [total] at ha; simpa only [Nat.zero_add, restEq] using ha)
 
 end VG.Proof.Dsa.X86

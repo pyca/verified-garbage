@@ -63,27 +63,27 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   let tt := Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) uu L.modulus
   let tt2 := Spec.Dsa.powMod (Spec.Dsa.decodeBE data.publicValue) vv L.modulus
   let prod := tt * tt2 % L.modulus
-  have hki : ki < L.subgroup := VG.Proof.Dsa.powMod_lt _ _ (by omega)
-  have hzz : zz < L.subgroup := Nat.mod_lt _ (by omega)
-  have huu : uu < L.subgroup := Nat.mod_lt _ (by omega)
-  have hvv : vv < L.subgroup := Nat.mod_lt _ (by omega)
-  have hprod : prod < L.modulus := Nat.mod_lt _ (by omega)
-  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega
-  have hi : inverse + L.qLen ≤ usedBytes := by unfold inverse usedBytes; omega
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
-  have hz' : z + L.qLen ≤ usedBytes := by unfold z usedBytes; omega
-  have hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega
+  have hki : ki < L.subgroup := VG.Proof.Dsa.powMod_lt _ _ (by omega_arith)
+  have hzz : zz < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have huu : uu < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have hvv : vv < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have hprod : prod < L.modulus := Nat.mod_lt _ (by omega_arith)
+  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_arith
+  have hi : inverse + L.qLen ≤ usedBytes := by unfold inverse usedBytes; omega_arith
+  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_arith
+  have hz' : z + L.qLen ≤ usedBytes := by unfold z usedBytes; omega_arith
+  have hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega_arith
   have hqmLen := encodeBE_length L.qLen (L.subgroup - 2)
   unfold Core.verify
-  have step1 := readyPow_ok M h0 .q (by change 1 < L.subgroup; omega) hoq
+  have step1 := readyPow_ok M h0 .q (by change 1 < L.subgroup; omega_arith) hoq
     Core.signatureS (Core.scalar qMinusTwo) (by trivial) (by change qMinusTwo < 2 ^ 16; decide)
-    hs.active hqm (by rw [hsl]; omega)
+    hs.active hqm (by rw [hsl]; omega_arith)
     (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by rw [hqmLen]; omega) (by rw [hqmLen]; omega) inverse (by decide) hi
+    (by rw [hqmLen]; omega_arith) (by rw [hqmLen]; omega_arith) inverse (by decide) hi
   have step1' : WP isa (Core.pow M.mm qWorkspace Core.signatureS (Core.scalar qMinusTwo) (Core.scalar inverse)) s0
       (CallResult L .q inverse ki s0) := by
     simpa only [ki, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value,
-      fitq (L.subgroup - 2) (by omega)] using step1
+      fitq (L.subgroup - 2) (by omega_arith)] using step1
   refine WP.seq (WP.mono step1' fun s1 h1 => ?_)
   have hg1 := h1.external (by decide) hi hg
   have hy1 := h1.external (by decide) hi hy
@@ -95,13 +95,13 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hr2 := h2.external (by decide) hz' hr1
   have hi2 := h2.local (by decide) hz' (h1.output (by decide) hi)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse z; omega))
-  have step3 := readyProduct_ok M h2.ready .q (by change 1 < L.subgroup; omega) hoq
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse z; omega_arith))
+  have step3 := readyProduct_ok M h2.ready .q (by change 1 < L.subgroup; omega_arith) hoq
     (Core.scalar z) (Core.scalar inverse) (by change z < 2 ^ 16; decide) (by change inverse < 2 ^ 16; decide)
     (h2.output (by decide) hz') hi2
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith)
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith)
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) u (by decide) hu
   have step3' : WP isa (Core.product M.mm qWorkspace (Core.scalar z) (Core.scalar inverse) (Core.scalar u)) s2
       (CallResult L .q u uu s2) := by
@@ -113,11 +113,11 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hr3 := h3.external (by decide) hu hr2
   have hi3 := h3.local (by decide) hu hi2
     (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse u; omega))
-  have step4 := readyProduct_ok M h3.ready .q (by change 1 < L.subgroup; omega) hoq
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse u; omega_arith))
+  have step4 := readyProduct_ok M h3.ready .q (by change 1 < L.subgroup; omega_arith) hoq
     Core.signatureR (Core.scalar inverse) (by trivial) (by change inverse < 2 ^ 16; decide) hr3.active hi3
-    (by rw [hrl]; omega) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
+    (by rw [hrl]; omega_arith) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith)
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) v (by decide) hv
   have step4' : WP isa (Core.product M.mm qWorkspace Core.signatureR (Core.scalar inverse) (Core.scalar v)) s3
       (CallResult L .q v vv s3) := by
@@ -128,11 +128,11 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hy4 := h4.external (by decide) hv hy3
   have hu4 := h4.local (by decide) hv (h3.output (by decide) hu)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hu)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u v; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u v; omega_arith))
   have step5 := readyJoint_ok M h4.ready hp hop Core.generator Core.publicValue
     (by trivial) (by trivial) hg4.active hy4.active
-    (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by rw [hyl]; omega) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hgl]; omega_arith) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hyl]; omega_arith) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     hu4 (h4.output (by decide) hv) (encodeBE_length _ _) (encodeBE_length _ _) t (by decide) ht
   have step5' : WP isa (Core.joint M.mm pWorkspace Core.generator Core.publicValue (Core.element t)) s4
       (CallResult L .p t prod s4) := by
@@ -140,7 +140,7 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
       fitq _ huu, fitq _ hvv, prod, tt, tt2] using step5
   refine WP.seq (WP.mono step5' fun s7 h7 => ?_)
   have step8 := readyReduce_ok M h7.ready hq hoq (Core.element t) (by change t < 2 ^ 16; decide)
-    (h7.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega) u (by decide) hu
+    (h7.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) u (by decide) hu
   have step8' : WP isa (Core.reduce M.mm (Core.element t) (Core.scalar u)) s7
       (CallResult L .q u (data.value L) s7) := by
     simpa only [ModulusSide.length, fitp _ hprod, prod, tt, tt2, uu, vv, zz, ki, VerifyValues.value] using step8

@@ -97,9 +97,11 @@ theorem entryRestore_ok {s t : State}
     State.setV]
   refine ⟨?_, ?_, rfl, sp.symm, rfl, rfl, rfl⟩
   · intro r hr
-    cases r <;> simp_all [preserved]
+    simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
   · intro r hr
-    cases r <;> simp_all [preservedV]
+    simp only [preservedV, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
     all_goals exact extract_setLane64 _ _ (i := 0) (j := 0) (by decide) (by decide)
 
 end VG.Proof.Dsa.AArch64.Generation

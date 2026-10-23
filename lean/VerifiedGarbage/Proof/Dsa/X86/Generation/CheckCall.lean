@@ -96,14 +96,14 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   have spLt := E.sp.isLt
   have nw := v.scratchFit
   have room := v.room
-  have fit : 4 * chkRegs.length + 4 ≤ (s.gpr .esp).toNat := by rw [spU]; simp only [List.length_cons, List.length_nil]; omega
+  have fit : 4 * chkRegs.length + 4 ≤ (s.gpr .esp).toNat := by rw [spU]; simp only [List.length_cons, List.length_nil]; omega_arith
   have hrs : Reg.esp ∉ chkRegs := by decide
   have uesp : (chkEntry E s).gpr .esp = s.gpr .esp - 28#32 := by
     change (pushed chkRegs s).callEntry.gpr .esp = _
     exact callEntry_esp' chkRegs s
   have uarg0 : argAddr (chkEntry E s) 0 = (s.gpr .esp - 24#32).setWidth 64 := by
     rw [chkEntry, argAddr_withRegions]; exact callEntry_argAddr0 chkRegs s
-  obtain ⟨a0, a1, a2, a3, a4, a5⟩ := chkEntry_arg (E := E) (s := s) (by rw [spU]; omega)
+  obtain ⟨a0, a1, a2, a3, a4, a5⟩ := chkEntry_arg (E := E) (s := s) (by rw [spU]; omega_arith)
   rw [A.eax] at a0; rw [A.ecx] at a1; rw [A.edx] at a2; rw [A.ebx] at a3; rw [A.esi] at a4; rw [A.ebp] at a5
   have urd : (chkEntry E s).rd = chkRd E := rfl
   have uwr : (chkEntry E s).wr = chkWr E s := rfl
@@ -115,49 +115,49 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   have hs := B.scr
   have sz := v.size_ge
   have bd := G.bounds
-  have pW := Scr.wide hs (d := sPk) (by simp only [sPk]; omega)
-  have cW := Scr.wide hs (d := sChk) (by simp only [sChk]; omega)
-  have pN := Scr.toNat_add hs (d := sPk) (by simp only [sPk]; omega)
-  have cN := Scr.toNat_add hs (d := sChk) (by simp only [sChk]; omega)
+  have pW := Scr.wide hs (d := sPk) (by simp only [sPk]; omega_arith)
+  have cW := Scr.wide hs (d := sChk) (by simp only [sChk]; omega_arith)
+  have pN := Scr.toNat_add hs (d := sPk) (by simp only [sPk]; omega_arith)
+  have cN := Scr.toNat_add hs (d := sChk) (by simp only [sChk]; omega_arith)
   have l1 : (BitVec.ofNat 32 (2 * g.pLen + g.qLen)).toNat = 2 * g.pLen + g.qLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have l2 : (BitVec.ofNat 32 g.pLen).toNat = g.pLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have l3 : (BitVec.ofNat 32 g.qLen).toNat = g.qLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  have l2 : (BitVec.ofNat 32 g.pLen).toNat = g.pLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  have l3 : (BitVec.ofNat 32 g.qLen).toNat = g.qLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have l5 : (BitVec.ofNat 32 (16 * g.pLen)).toNat = 16 * g.pLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have nat28 : (s.gpr .esp - 28#32).toNat = E.sp.toNat - 28 := by rw [spU]; exact sub_toNat (by omega)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  have nat28 : (s.gpr .esp - 28#32).toNat = E.sp.toNat - 28 := by rw [spU]; exact sub_toNat (by omega_arith)
   have callee : (s.gpr .esp - 28#32).setWidth 64 - 32#64 = (s.gpr .esp - 60#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [nat28]; omega : 32 ≤ (s.gpr .esp - 28#32).toNat), BitVec.sub_sub]; rfl
+    rw [← Taint.sub_setWidth (by rw [nat28]; omega_arith : 32 ≤ (s.gpr .esp - 28#32).toNat), BitVec.sub_sub]; rfl
   have oL : E.outLen = 2 * g.pLen + g.qLen := by simp only [Env.outLen, hp, hq]
   simp only [a0, a1, a2, a3, a4, a5, uesp, uarg0, urd, uwr, chkRd, chkWr, pW, cW, pN, cN, l1, l2, l3, l5, callee,
     oL, hp]
   have ss := v.scratchStack
   have subP : Region.Sub ⟨off E.base sPk, 2 * g.pLen + g.qLen⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [sPk]; omega)
+    Offset.sub_base _ (by simp only [sPk]; omega_arith)
   have subC : Region.Sub ⟨off E.base sChk, 16 * g.pLen * 8⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [sChk]; omega)
+    Offset.sub_base _ (by simp only [sChk]; omega_arith)
   have subArgs : Region.Sub ⟨(s.gpr .esp - 24#32).setWidth 64, 24⟩ E.stackRegion := by
-    rw [spU]; exact below_sub (by decide) (by omega)
+    rw [spU]; exact below_sub (by decide) (by omega_arith)
   have subRet : Region.Sub ⟨(s.gpr .esp - 28#32).setWidth 64, 4⟩ E.stackRegion :=
-    sub_of_contains (by rw [spU]; exact below_top (k := 28) (by decide) (by omega) (by decide))
+    sub_of_contains (by rw [spU]; exact below_top (k := 28) (by decide) (by omega_arith) (by decide))
   have subCal : Region.Sub ⟨(s.gpr .esp - 60#32).setWidth 64, 32⟩ E.stackRegion :=
-    sub_of_contains (by rw [spU]; exact below_top (k := 60) (by decide) (by omega) (by decide))
-  refine ⟨by rw [nat28]; omega, by rw [nat28]; omega, trivial, trivial,
-    Offset.disjoint E.base (by simp only [sPk, sChk]; omega) (by simp only [sPk]; omega) (by simp only [sChk]; omega),
+    sub_of_contains (by rw [spU]; exact below_top (k := 60) (by decide) (by omega_arith) (by decide))
+  refine ⟨by rw [nat28]; omega_arith, by rw [nat28]; omega_arith, trivial, trivial,
+    Offset.disjoint E.base (by simp only [sPk, sChk]; omega_arith) (by simp only [sPk]; omega_arith) (by simp only [sChk]; omega_arith),
     (ss.sub_left subP).sub_right subArgs, (ss.sub_left subC).sub_right subArgs,
     (ss.symm.sub_left subRet).sub_right subP, (ss.symm.sub_left subRet).sub_right subC, ?_,
     (ss.symm.sub_left subCal).sub_right subP, (ss.symm.sub_left subCal).sub_right subC, ?_,
-    by simp only [sPk]; omega, by simp only [sChk]; omega, ?_, trivial, by simp only [Spec.Dsa.scratchWords]; omega⟩
+    by simp only [sPk]; omega_arith, by simp only [sChk]; omega_arith, ?_, trivial, by simp only [Spec.Dsa.scratchWords]; omega_arith⟩
   · have nat24 : ((s.gpr .esp - 24#32).setWidth 64).toNat = E.sp.toNat - 24 := by
-      rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega)]; exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
     have nat28' : ((s.gpr .esp - 28#32).setWidth 64).toNat = E.sp.toNat - 28 := by
-      rw [BitVec.toNat_setWidth, nat28]; exact Nat.mod_eq_of_lt (by omega)
-    exact Offset.disjoint_of_le (by simp only [nat28', nat24]; omega) (by simp only [nat24]; omega)
+      rw [BitVec.toNat_setWidth, nat28]; exact Nat.mod_eq_of_lt (by omega_arith)
+    exact Offset.disjoint_of_le (by simp only [nat28', nat24]; omega_arith) (by simp only [nat24]; omega_arith)
   · have nat24 : ((s.gpr .esp - 24#32).setWidth 64).toNat = E.sp.toNat - 24 := by
-      rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega)]; exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
     have nat60 : ((s.gpr .esp - 60#32).setWidth 64).toNat = E.sp.toNat - 60 := by
-      rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega)]; exact Nat.mod_eq_of_lt (by omega)
-    exact Offset.disjoint_of_le (by simp only [nat60, nat24]; omega) (by simp only [nat24]; omega)
+      rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
+    exact Offset.disjoint_of_le (by simp only [nat60, nat24]; omega_arith) (by simp only [nat24]; omega_arith)
   · rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
 
 /-- What the check's call needs. -/

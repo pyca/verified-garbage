@@ -32,7 +32,7 @@ theorem primeConstants_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
   have hZ := h.hZ
   have hZ16 : 256 + 16 * (8 * (w + 2)) ≤ Z := by simpa only [slot, hdrBytes] using hZ
   have hZ8 := h.good.2
-  have hw' : w < 2 ^ 31 := by have := h.w2; omega
+  have hw' : w < 2 ^ 31 := by have := h.w2; omega_arith
   have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
   have hNlt : N < 2 ^ (64 * w) := hn ▸ wv_lt _ _ _ _
   unfold Impl.Dsa.AArch64.Generation.primeConstants
@@ -53,7 +53,7 @@ theorem primeConstants_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
     fun v ⟨hv, ov, _, _, kv⟩ => ?_
   rw [hY] at hv
   have fv : Frm B (mpTail w) u.mem v.mem :=
-    Frm.of_outside (ov.mono (o' := slot w aR1) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega))
+    Frm.of_outside (ov.mono (o' := slot w aR1) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith))
       (by simp [mpTail])
   have Fv := fu.trans fv
   have huv : Ws v B Z w := h.congr' Fv (mpTail_kmut w) (ku.trans kv) (by decide)
@@ -64,32 +64,32 @@ theorem primeConstants_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
   rw [hv, hnv] at ht
   have hRm : wv t.mem B (slot w aRm1) w = N - 2 ^ (64 * w) % N := by
     have hx := wv_lt t.mem B (slot w aRm1) w
-    have hm := Nat.mod_lt (2 ^ (64 * w)) (show 0 < N by omega)
+    have hm := Nat.mod_lt (2 ^ (64 * w)) (show 0 < N by omega_arith)
     cases hc : (!t.c) <;> rw [hc] at ht <;>
-      simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at ht <;> omega
+      simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at ht <;> omega_arith
   have ft : Frm B (mpTail w) v.mem t.mem :=
-    Frm.of_outside (ot.mono (o' := slot w aRm1) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega))
+    Frm.of_outside (ot.mono (o' := slot w aRm1) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith))
       (by simp [mpTail])
   have F := Fv.trans ft
   have k := (ku.trans kv).trans kt
   have fixed (a : Nat) (ha8 : a < 8) (haN : a ∉ [aAcc, aTmp, aY])
       (har1 : a ≠ aR1) (harm : a ≠ aRm1) :
       wv t.mem B (slot w a) w = wv s.mem B (slot w a) w := by
-    have hbound := h.sl (show a < 16 by omega)
+    have hbound := h.sl (show a < 16 by omega_arith)
     have disj (b : Nat) (hne : a ≠ b) :
         slot w a + 8 * w ≤ slot w b ∨ slot w b + 8 * (w + 2) ≤ slot w a := by
       rcases Nat.lt_or_gt_of_ne hne with hab | hba
       · have := VG.Proof.Rsa.slot_lt (w := w) hab
-        left; omega
+        left; omega_arith
       · exact Or.inr (VG.Proof.Rsa.slot_lt hba)
-    rw [ot.wv (by have := disj aRm1 harm; omega) (by omega),
-      ov.wv (by have := disj aR1 har1; omega) (by omega)]
-    exact ha.wv_of_not_mem ha8 haN (by omega)
+    rw [ot.wv (by have := disj aRm1 harm; omega_arith) (by omega_arith),
+      ov.wv (by have := disj aR1 har1; omega_arith) (by omega_arith)]
+    exact ha.wv_of_not_mem ha8 haN (by omega_arith)
   refine ⟨h.congr' F (mpTail_kmut w) k (by decide), ?_, hRm,
     (fixed aOne (by decide) (by decide) (by decide) (by decide)).trans hone,
     (fixed aR2 (by decide) (by decide) (by decide) (by decide)).trans hr2, F, k.mono (by decide)⟩
-  rw [ot.wv (by simp only [slot, hdrBytes, aRm1, aR1]; omega)
-    (by simp only [slot, hdrBytes, aR1]; omega)]
+  rw [ot.wv (by simp only [slot, hdrBytes, aRm1, aR1]; omega_arith)
+    (by simp only [slot, hdrBytes, aR1]; omega_arith)]
   exact hv
 
 end VG.Proof.Dsa.AArch64.Generation
