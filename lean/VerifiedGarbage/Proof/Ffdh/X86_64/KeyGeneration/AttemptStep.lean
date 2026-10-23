@@ -76,7 +76,9 @@ theorem key_attempt_run (v : RoundImpl) {p : KeyPublic} {original s : State} {us
       · subst he
         rw [freed_rsp, htsp, k.gpr (by decide), allocated_rsp]
         exact BitVec.sub_add_cancel _ _
-      · rw [freed_reg _ _ _ he, hcs r hr, k.gpr (by cases r <;> simp_all [calleeSaved]),
+      · rw [freed_reg _ _ _ he, hcs r hr, k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
           allocated_reg _ _ _ he]
     · exact attempt_frame h hm hu hd hfr
   · -- The attempt's status and outputs.
