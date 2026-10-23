@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.Proof.Framework.Block
@@ -10,16 +11,20 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # PPC64LE: straight-line bitwise code, by evaluation
 
-As on x86-64 (`Proof/Framework/X86_64/Straight.lean`): a block of `ld`,
-`std`, `and`, `or`, `xor`, `rotrdi`, `srdi` and `mr` (`addi d, n, 0`)
-instructions on 64-bit registers and on two memory areas (read-write
-*slots* `8k(base)`, `k < slots`, and read-only *external words* `8k(ext)`,
-`k < exts`) is evaluated over an abstract domain (`VG.Bitslice.Dom`) by
-`eval`. `run` says that the machine then runs the block without faulting,
-and that its registers and memory words are related to the abstract result
-as they were to the abstract initial values. The concrete block is never
-symbolically executed: a `decide` on `eval` over a domain whose values the
-kernel evaluates quickly proves what it computes.
+As `Framework/X86_64/Straight.lean` and `Framework/Arm/Straight.lean`, for
+PPC64LE: a block of `and`, `or`, `xor`, `rotrdi`, `srdi` instructions on
+registers, the constants `li`, `lis`, `ori`, `oris` and `sldi` build, and
+`ld`/`std` of two memory areas (read-write *slots* `8k(base)`, `k < slots`,
+and read-only *external words* `8k(ext)`, `k < exts`) is evaluated over an
+abstract domain (`VG.Bitslice.Dom`) by `eval`. `run` says that the machine
+then runs the block without faulting, and that its registers and memory
+words are related to the abstract result as they were to the abstract
+initial values.
+
+Constants are built with `li`, `lis`, then `ori`, `oris` and `sldi` of a
+known constant, so the evaluator also tracks the registers whose concrete
+value it knows (`Env.cst`); such a register's abstract value is the
+domain's constant, if the domain has one.
 
 The evaluator rejects (`none`) any other instruction, any other memory
 operand, any write of the two base registers and any use of an unknown
@@ -33,8 +38,7 @@ namespace VG.PPC64LE.Straight
 open VG.Bitslice
 
 /-- The two memory areas: slots `8k(base)` for `k < slots` (read and
-written), and external words `8k(ext)` for `k < exts` (only read). The
-base registers are not `r0`, which a displacement form reads as 0. -/
+written), and external words `8k(ext)` for `k < exts` (only read). -/
 structure Cfg where
   base : Reg
   slots : Nat
@@ -42,15 +46,19 @@ structure Cfg where
   exts : Nat
   deriving DecidableEq, Repr
 
-/-- The abstract values of the registers and slots; `none` if unknown. -/
+/-- The abstract values of the registers and slots (`none` if unknown), and
+the registers whose concrete value is known. -/
 structure Env (α : Type) where
   reg : Reg → Option α
   slot : Nat → Option α
+  cst : Reg → Option (BitVec 64) := fun _ => none
 
 variable {α : Type}
 
-def Env.setReg (e : Env α) (d : Reg) (v : α) : Env α :=
-  { e with reg := fun r => if r = d then some v else e.reg r }
+/-- Set register `d` to the abstract value `a` and the known value `c`. -/
+def Env.set (e : Env α) (d : Reg) (a : Option α) (c : Option (BitVec 64)) : Env α :=
+  { e with reg := fun r => if r = d then a else e.reg r,
+           cst := fun r => if r = d then c else e.cst r }
 
 def Env.setSlot (e : Env α) (k : Nat) (v : α) : Env α :=
   { e with slot := fun j => if j = k then some v else e.slot j }
@@ -61,11 +69,11 @@ inductive Where
   | ext (k : Nat)
   deriving DecidableEq
 
-/-- The slot or external word that `off(b)` addresses, if any. -/
-def Cfg.loc (c : Cfg) (b : Reg) (off : Nat) : Option Where :=
-  if b ≠ .r0 ∧ off < 2 ^ 15 ∧ off % 8 = 0 then
-    if b = c.base ∧ off / 8 < c.slots then some (.slot (off / 8))
-    else if b = c.ext ∧ off / 8 < c.exts then some (.ext (off / 8))
+/-- The slot or external word that `off(n)` addresses, if any. -/
+def Cfg.loc (c : Cfg) (n : Reg) (off : Nat) : Option Where :=
+  if n ≠ .r0 ∧ off % 8 = 0 ∧ off < 2 ^ 15 then
+    if n = c.base ∧ off / 8 < c.slots then some (.slot (off / 8))
+    else if n = c.ext ∧ off / 8 < c.exts then some (.ext (off / 8))
     else none
   else none
 
@@ -77,34 +85,47 @@ def binop : LogicOp → α → α → Option α
   | .and => D.and
   | .or => D.or
 
+/-- A known constant. -/
+def constant (e : Env α) (d : Reg) (v : BitVec 64) : Env α := e.set d (D.const v) (some v)
+
 /-- The instruction's effect on the abstract values. -/
 def step (e : Env α) : Instr → Option (Env α)
-  | .load .d d b off =>
-    if d = c.base ∨ d = c.ext then none else
-    match c.loc b off with
-    | some (.slot k) => (e.slot k).map (e.setReg d)
-    | some (.ext k) => (ext k).map (e.setReg d)
-    | none => none
-  | .store .d r b off => match c.loc b off with
-    | some (.slot k) => (e.reg r).map (e.setSlot k)
-    | _ => none
   | .logic op d n m =>
     if d = c.base ∨ d = c.ext then none else
     match e.reg n, e.reg m with
-    | some a, some b => (binop D op a b).map (e.setReg d)
+    | some a, some b => (binop D op a b).map fun r => e.set d (some r) none
     | _, _ => none
   | .rotr .d d n sh =>
     if d = c.base ∨ d = c.ext ∨ ¬(1 ≤ sh ∧ sh ≤ 63) then none else
-    match e.reg n with
-    | some a => (D.ror sh a).map (e.setReg d)
-    | none => none
+    ((e.reg n).bind (D.ror sh)).map fun r => e.set d (some r) none
   | .lsr .d d n sh =>
     if d = c.base ∨ d = c.ext ∨ ¬(1 ≤ sh ∧ sh ≤ 63) then none else
-    match e.reg n with
-    | some a => (D.shr sh a).map (e.setReg d)
+    ((e.reg n).bind (D.shr sh)).map fun r => e.set d (some r) none
+  | .lsl d n sh =>
+    if d = c.base ∨ d = c.ext ∨ ¬sh < 64 then none else
+    (e.cst n).map fun (x : BitVec 64) => constant D e d (x <<< sh)
+  | .li d imm =>
+    if d = c.base ∨ d = c.ext ∨ ¬imm < 2 ^ 15 then none else
+    some (constant D e d (BitVec.ofNat 64 imm))
+  | .lis d imm =>
+    if d = c.base ∨ d = c.ext then none else
+    some (constant D e d ((imm ++ (0 : BitVec 16)).signExtend 64))
+  | .ori d n imm =>
+    if d = c.base ∨ d = c.ext then none else
+    (e.cst n).map fun x => constant D e d (x ||| imm.setWidth 64)
+  | .oris d n imm =>
+    if d = c.base ∨ d = c.ext then none else
+    (e.cst n).map fun x => constant D e d (x ||| imm.setWidth 64 <<< 16)
+  | .load .d t n off =>
+    if t = c.base ∨ t = c.ext then none else
+    match c.loc n off with
+    | some (.slot k) => (e.slot k).map fun a => e.set t (some a) none
+    | some (.ext k) => (ext k).map fun a => e.set t (some a) none
     | none => none
-  | .addi d n 0 =>
-    if d = c.base ∨ d = c.ext ∨ n = .r0 then none else (e.reg n).map (e.setReg d)
+  | .store .d t n off =>
+    match c.loc n off with
+    | some (.slot k) => (e.reg t).map (e.setSlot k)
+    | _ => none
   | _ => none
 
 /-- The block's effect on the abstract values. -/
@@ -133,13 +154,15 @@ end
 abbrev wordAddr (b : Addr) (k : Nat) : Addr := b + BitVec.ofNat 64 (8 * k)
 
 /-- The machine state's registers, slots and external words are related by
-`R` to the abstract ones that are known. -/
+`R` to the abstract ones that are known, and the known constants are the
+registers' values. -/
 structure Rel (R : α → BitVec 64 → Prop) (c : Cfg) (ext : Nat → Option α) (e : Env α)
     (s : State) : Prop where
   reg : ∀ r a, e.reg r = some a → R a (s.gpr r)
   slot : ∀ k a, k < c.slots → e.slot k = some a →
     R a (s.mem.readW (wordAddr (s.gpr c.base) k) 64)
   ext : ∀ k a, k < c.exts → ext k = some a → R a (s.mem.readW (wordAddr (s.gpr c.ext) k) 64)
+  cst : ∀ r v, e.cst r = some v → s.gpr r = v
 
 /-- What the machine needs for the memory areas: they are accessible, the
 slots do not wrap around, and the external words do not overlap the slots. -/
@@ -173,20 +196,20 @@ theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 8 * n < 2 ^ 64) 
   rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   omega
 
-theorem loc_some_slot {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some (.slot k)) :
-    b = c.base ∧ b ≠ .r0 ∧ off = 8 * k ∧ off < 2 ^ 15 ∧ k < c.slots := by
+theorem loc_some_slot {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some (.slot k)) :
+    n = c.base ∧ n ≠ .r0 ∧ off = 8 * k ∧ k < c.slots ∧ off < 2 ^ 15 := by
   unfold Cfg.loc at h
   split at h
   · rename_i h1
     split at h
     · rename_i h2
       cases h
-      exact ⟨h2.1, h1.1, by omega, h1.2.1, h2.2⟩
+      exact ⟨h2.1, h1.1, by omega, h2.2, h1.2.2⟩
     · split at h <;> cases h
   · cases h
 
-theorem loc_some_ext {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some (.ext k)) :
-    b = c.ext ∧ b ≠ .r0 ∧ off = 8 * k ∧ off < 2 ^ 15 ∧ k < c.exts := by
+theorem loc_some_ext {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some (.ext k)) :
+    n = c.ext ∧ n ≠ .r0 ∧ off = 8 * k ∧ k < c.exts ∧ off < 2 ^ 15 := by
   unfold Cfg.loc at h
   split at h
   · rename_i h1
@@ -195,7 +218,7 @@ theorem loc_some_ext {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some (
     · split at h
       · rename_i h2
         cases h
-        exact ⟨h2.1, h1.1, by omega, h1.2.1, h2.2⟩
+        exact ⟨h2.1, h1.1, by omega, h2.2, h1.2.2⟩
       · cases h
   · cases h
 
@@ -210,7 +233,6 @@ structure Post (R : α → BitVec 64 → Prop) (c : Cfg) (ext : Nat → Option �
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
-  lr : s'.lr = s.lr
   base : s'.gpr c.base = s.gpr c.base
   ext : s'.gpr c.ext = s.gpr c.ext
   other : ∀ r, ¬ writes r → s'.gpr r = s.gpr r
@@ -220,156 +242,210 @@ theorem Post.writes {e' : Env α} {s s' : State} {W W' : Reg → Prop}
     (p : Post R c ext e' s s' W) (h : ∀ r, W r → W' r) : Post R c ext e' s s' W' :=
   { p with other := fun r hr => p.other r fun hw => hr (h r hw) }
 
-theorem post_write {e : Env α} {s : State} (hok : Ok c s) (hrel : Rel R c ext e s) {d : Reg}
-    {a : α} {v : BitVec 64} (hv : R a v) (hb : d ≠ c.base) (he : d ≠ c.ext) :
-    Post R c ext (e.setReg d a) s (s.write d v) (· = d) := by
-  have hbase : (s.write d v).gpr c.base = s.gpr c.base := by
-    simp [State.write, Ne.symm hb]
-  have hext : (s.write d v).gpr c.ext = s.gpr c.ext := by
-    simp [State.write, Ne.symm he]
-  refine ⟨⟨fun r b h => ?_, fun k b hk h => ?_, fun k b hk h => ?_⟩,
-    hok.congr hbase hext rfl rfl, rfl, rfl, rfl, rfl, hbase, hext, fun r hr => ?_, Frame.refl _ _⟩
-  · simp only [Env.setReg, State.write] at h ⊢
-    split at h
-    · cases h; simp_all
-    · simp_all [hrel.reg r b h]
-  · rw [hbase]; exact hrel.slot k b hk h
-  · rw [hext]; exact hrel.ext k b hk h
-  · simp [State.write, hr]
+theorem write_gpr (s : State) (d : Reg) (v : BitVec 64) (r : Reg) :
+    (s.write d v).gpr r = if r = d then v else s.gpr r := rfl
 
-/-- The `Instr.dst` of the instructions `eval` accepts. -/
-def dst : Instr → Option Reg
-  | .load _ d _ _ => some d
-  | .logic _ d _ _ => some d
-  | .rotr _ d _ _ => some d
-  | .lsr _ d _ _ => some d
-  | .addi d _ _ => some d
-  | _ => none
+/-- Writing register `d` with a value related to `a` (if known) and equal to `cv` (if known). -/
+theorem post_set {e : Env α} {s : State} (hok : Ok c s) (hrel : Rel R c ext e s) {d : Reg}
+    {a : Option α} {cv : Option (BitVec 64)} {v : BitVec 64} (hv : ∀ x, a = some x → R x v)
+    (hc : ∀ x, cv = some x → v = x) (hb : d ≠ c.base) (he : d ≠ c.ext) :
+    Post R c ext (e.set d a cv) s (s.write d v) (· = d) := by
+  have hbase : (s.write d v).gpr c.base = s.gpr c.base := by
+    rw [write_gpr, ite_eq_right_iff.mpr (fun h => absurd h.symm hb)]
+  have hext : (s.write d v).gpr c.ext = s.gpr c.ext := by
+    rw [write_gpr, ite_eq_right_iff.mpr (fun h => absurd h.symm he)]
+  refine ⟨⟨fun r x h => ?_, fun k x hk h => ?_, fun k x hk h => ?_, fun r x h => ?_⟩,
+    hok.congr hbase hext rfl rfl, rfl, rfl, rfl, hbase, hext, fun r hr => ?_, Frame.refl _ _⟩
+  · simp only [Env.set] at h
+    rw [write_gpr]
+    split at h
+    · rename_i hrd; rw [ite_eq_left hrd]; exact hv x h
+    · rename_i hrd; rw [ite_eq_right hrd]; exact hrel.reg r x h
+  · rw [hbase]; exact hrel.slot k x hk h
+  · rw [hext]; exact hrel.ext k x hk h
+  · simp only [Env.set] at h
+    rw [write_gpr]
+    split at h
+    · rename_i hrd; rw [ite_eq_left hrd]; exact hc x h
+    · rename_i hrd; rw [ite_eq_right hrd]; exact hrel.cst r x h
+  · rw [write_gpr, ite_eq_right hr]
+
+theorem const_ok {e : Env α} {s : State} (hD : D.Sound R) (hok : Ok c s) (hrel : Rel R c ext e s)
+    {d : Reg} {v : BitVec 64} (hb : d ≠ c.base) (he : d ≠ c.ext) :
+    Post R c ext (constant D e d v) s (s.write d v) (· = d) :=
+  post_set hok hrel (fun _ h => hD.const h) (fun _ h => Option.some.inj h) hb he
+
+theorem dst_writes {i : Instr} {d : Reg} (h : dstOf i = some d) :
+    ∀ r, r = d → dstOf i = some r := fun _ hr => hr ▸ h
 
 theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
     (hrel : Rel R c ext e s) {i : Instr} (h : step D c ext e i = some e') :
-    ∃ s', exec i s = some s' ∧ Post R c ext e' s s' (fun r => dst i = some r) := by
+    ∃ s', exec i s = some s' ∧ Post R c ext e' s s' (fun r => dstOf i = some r) := by
   cases i with
-  | load sz d b off =>
-    cases sz
-    · simp [step] at h
-    simp only [step] at h
-    split at h
-    · cases h
-    · rename_i hd
-      simp only [not_or] at hd
-      split at h
-      · rename_i k hk
-        obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
-        obtain ⟨hb, hb0, hoff, ho, hlt⟩ := loc_some_slot hk
-        subst hb hoff
-        obtain ⟨r, hr, hc⟩ := hok.slotIn k hlt
-        have hin : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr c.base) k) 8 :=
-          ⟨r, List.mem_append_right _ hr, hc⟩
-        refine ⟨_, exec_load_d hb0 ⟨ho, by omega⟩ hin, ?_⟩
-        exact (post_write hok hrel (hrel.slot k a hlt ha) hd.1 hd.2).writes fun r h => by simp [dst, h]
-      · rename_i k hk
-        obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
-        obtain ⟨hb, hb0, hoff, ho, hlt⟩ := loc_some_ext hk
-        subst hb hoff
-        refine ⟨_, exec_load_d hb0 ⟨ho, by omega⟩ (hok.extIn k hlt), ?_⟩
-        exact (post_write hok hrel (hrel.ext k a hlt ha) hd.1 hd.2).writes fun r h => by simp [dst, h]
-      · cases h
-  | store sz r b off =>
-    cases sz
-    · simp [step] at h
-    simp only [step] at h
-    split at h
-    · rename_i k hk
-      obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
-      obtain ⟨hb, hb0, hoff, ho, hlt⟩ := loc_some_slot hk
-      subst hb hoff
-      have hin := hok.slotIn k hlt
-      refine ⟨_, exec_store_d hb0 ⟨ho, by omega⟩ hin, ?_⟩
-      have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (64 / 8)
-          (wordAddr (s.gpr c.base) k) (64 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
-      refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_⟩,
-        hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
-      · simp only [Env.setSlot] at hjb
-        split at hjb
-        · rename_i hjk
-          subst hjk
-          rw [← Option.some.inj hjb]
-          simpa [Mem.readW_writeW_self64] using hrel.reg r a ha
-        · rename_i hjk
-          rw [Mem.readW_writeW_sep (hsep j hj hjk) (by decide)]
-          exact hrel.slot j b hj hjb
-      · have hs : Mem.Sep (wordAddr (s.gpr c.ext) j) (64 / 8) (wordAddr (s.gpr c.base) k) (64 / 8) :=
-          fun x h₁ h₂ => hok.sep k hlt j hj x h₂ h₁
-        rw [Mem.readW_writeW_sep hs (by decide)]
-        exact hrel.ext j b hj hjb
-      · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-          (slot_contains _ hlt hok.slots)
-    · cases h
   | logic op d n m =>
     simp only [step] at h
     split at h
     · cases h
-    · rename_i hd
-      simp only [not_or] at hd
-      split at h
-      · rename_i a b ha hb
-        obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
-        have hRa := hrel.reg n a ha
-        have hRb := hrel.reg m b hb
-        refine ⟨_, exec_logic, ?_⟩
-        cases op <;> simp only [binop] at hr
-        · exact (post_write hok hrel (hD.and hRa hRb hr) hd.1 hd.2).writes fun r h => by simp [dst, h]
-        · exact (post_write hok hrel (hD.or hRa hRb hr) hd.1 hd.2).writes fun r h => by simp [dst, h]
-        · exact (post_write hok hrel (hD.xor hRa hRb hr) hd.1 hd.2).writes fun r h => by simp [dst, h]
-      · cases h
+    rename_i hd
+    simp only [not_or] at hd
+    split at h
+    · rename_i a b ha hb
+      obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
+      have hRa := hrel.reg n a ha
+      have hRb := hrel.reg m b hb
+      refine ⟨_, exec_logic, ?_⟩
+      refine (post_set hok hrel (a := some r) (cv := none) (fun x hx => ?_) (fun _ h => by cases h)
+        hd.1 hd.2).writes (dst_writes rfl)
+      cases hx
+      cases op
+      · exact hD.and hRa hRb hr
+      · exact hD.or hRa hRb hr
+      · exact hD.xor hRa hRb hr
+    · cases h
   | rotr sz d n sh =>
-    cases sz
-    · simp [step] at h
-    simp only [step] at h
-    split at h
-    · cases h
-    · rename_i hd
-      simp only [not_or, Classical.not_not] at hd
-      obtain ⟨hdb, hde, hn⟩ := hd
-      split at h
-      · rename_i a ha
-        obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
-        refine ⟨_, exec_rotr_d (by omega), ?_⟩
-        exact (post_write hok hrel (hD.ror (hrel.reg n a ha) hr) hdb hde).writes
-          fun r h => by simp [dst, h]
-      · cases h
-  | lsr sz d n sh =>
-    cases sz
-    · simp [step] at h
-    simp only [step] at h
-    split at h
-    · cases h
-    · rename_i hd
-      simp only [not_or, Classical.not_not] at hd
-      obtain ⟨hdb, hde, hn⟩ := hd
-      split at h
-      · rename_i a ha
-        obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
-        refine ⟨_, exec_lsr_d (by omega), ?_⟩
-        exact (post_write hok hrel (hD.shr (hrel.reg n a ha) hr) hdb hde).writes
-          fun r h => by simp [dst, h]
-      · cases h
-  | addi d n imm =>
-    cases imm with
-    | succ _ => simp [step] at h
-    | zero =>
+    cases sz with
+    | w => simp [step] at h
+    | d =>
       simp only [step] at h
       split at h
       · cases h
-      · rename_i hd
-        simp only [not_or] at hd
-        obtain ⟨hdb, hde, hn⟩ := hd
+      rename_i hd
+      simp only [not_or, Classical.not_not] at hd
+      obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
+      obtain ⟨a, ha, hr⟩ := Option.bind_eq_some_iff.mp hr
+      refine ⟨_, exec_rotr_d (by omega), ?_⟩
+      exact (post_set hok hrel (a := some r) (cv := none)
+        (fun x hx => by cases hx; exact hD.ror (hrel.reg n a ha) hr) (fun _ h => by cases h)
+        hd.1 hd.2.1).writes (dst_writes rfl)
+  | lsr sz d n sh =>
+    cases sz with
+    | w => simp [step] at h
+    | d =>
+      simp only [step] at h
+      split at h
+      · cases h
+      rename_i hd
+      simp only [not_or, Classical.not_not] at hd
+      obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
+      obtain ⟨a, ha, hr⟩ := Option.bind_eq_some_iff.mp hr
+      refine ⟨_, exec_lsr_d (by omega), ?_⟩
+      exact (post_set hok hrel (a := some r) (cv := none)
+        (fun x hx => by cases hx; exact hD.shr (hrel.reg n a ha) hr) (fun _ h => by cases h)
+        hd.1 hd.2.1).writes (dst_writes rfl)
+  | lsl d n sh =>
+    simp only [step] at h
+    split at h
+    · cases h
+    rename_i hd
+    simp only [not_or, Classical.not_not] at hd
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.mp h
+    refine ⟨_, exec_lsl hd.2.2, ?_⟩
+    rw [hrel.cst n x hx]
+    exact (const_ok hD hok hrel hd.1 hd.2.1).writes (dst_writes rfl)
+  | li d imm =>
+    simp only [step] at h
+    split at h
+    · cases h
+    rename_i hd
+    simp only [not_or, Classical.not_not] at hd
+    cases h
+    exact ⟨_, exec_li hd.2.2, (const_ok hD hok hrel hd.1 hd.2.1).writes (dst_writes rfl)⟩
+  | lis d imm =>
+    simp only [step] at h
+    split at h
+    · cases h
+    rename_i hd
+    simp only [not_or] at hd
+    cases h
+    exact ⟨_, exec_lis, (const_ok hD hok hrel hd.1 hd.2).writes (dst_writes rfl)⟩
+  | ori d n imm =>
+    simp only [step] at h
+    split at h
+    · cases h
+    rename_i hd
+    simp only [not_or] at hd
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.mp h
+    refine ⟨_, exec_ori, ?_⟩
+    rw [hrel.cst n x hx]
+    exact (const_ok hD hok hrel hd.1 hd.2).writes (dst_writes rfl)
+  | oris d n imm =>
+    simp only [step] at h
+    split at h
+    · cases h
+    rename_i hd
+    simp only [not_or] at hd
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.mp h
+    refine ⟨_, exec_oris, ?_⟩
+    rw [hrel.cst n x hx]
+    exact (const_ok hD hok hrel hd.1 hd.2).writes (dst_writes rfl)
+  | load sz t n off =>
+    cases sz with
+    | w => simp [step] at h
+    | d =>
+      simp only [step] at h
+      split at h
+      · cases h
+      rename_i hd
+      simp only [not_or] at hd
+      split at h
+      · rename_i k hk
         obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
-        refine ⟨_, exec_addi hn (by decide), ?_⟩
-        rw [BitVec.add_zero]
-        exact (post_write hok hrel (hrel.reg n a ha) hdb hde).writes fun r h => by simp [dst, h]
+        obtain ⟨hb, hn0, hoff, hlt, h15⟩ := loc_some_slot hk
+        subst hb hoff
+        obtain ⟨r, hr, hc⟩ := hok.slotIn k hlt
+        have hin : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr c.base) k) 8 :=
+          ⟨r, List.mem_append_right _ hr, hc⟩
+        refine ⟨_, exec_load_d hn0 ⟨h15, by omega⟩ hin, ?_⟩
+        exact (post_set hok hrel (a := some a) (cv := none)
+          (fun x hx => by cases hx; exact hrel.slot k a hlt ha) (fun _ h => by cases h)
+          hd.1 hd.2).writes (dst_writes rfl)
+      · rename_i k hk
+        obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
+        obtain ⟨hb, hn0, hoff, hlt, h15⟩ := loc_some_ext hk
+        subst hb hoff
+        refine ⟨_, exec_load_d hn0 ⟨h15, by omega⟩ (hok.extIn k hlt), ?_⟩
+        exact (post_set hok hrel (a := some a) (cv := none)
+          (fun x hx => by cases hx; exact hrel.ext k a hlt ha) (fun _ h => by cases h)
+          hd.1 hd.2).writes (dst_writes rfl)
+      · cases h
+  | store sz t n off =>
+    cases sz with
+    | w => simp [step] at h
+    | d =>
+      simp only [step] at h
+      split at h
+      · rename_i k hk
+        obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
+        obtain ⟨hb, hn0, hoff, hlt, h15⟩ := loc_some_slot hk
+        subst hb hoff
+        have hin := hok.slotIn k hlt
+        refine ⟨_, exec_store_d hn0 ⟨h15, by omega⟩ hin, ?_⟩
+        have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (64 / 8)
+            (wordAddr (s.gpr c.base) k) (64 / 8) := fun j hj hjk =>
+          slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_,
+            fun r v h => hrel.cst r v h⟩,
+          hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
+        · simp only [Env.setSlot] at hjb
+          split at hjb
+          · rename_i hjk
+            subst hjk
+            rw [← Option.some.inj hjb]
+            show R a ((s.mem.writeW (wordAddr (s.gpr c.base) j) (s.gpr t)).readW _ 64)
+            rw [Mem.readW_writeW_self64]
+            exact hrel.reg t a ha
+          · rename_i hjk
+            show R b ((s.mem.writeW (wordAddr (s.gpr c.base) k) (s.gpr t)).readW _ 64)
+            rw [Mem.readW_writeW_sep (hsep j hj hjk) (by decide)]
+            exact hrel.slot j b hj hjb
+        · have hs : Mem.Sep (wordAddr (s.gpr c.ext) j) (64 / 8) (wordAddr (s.gpr c.base) k) (64 / 8) :=
+            fun x h₁ h₂ => hok.sep k hlt j hj x h₂ h₁
+          show R b ((s.mem.writeW (wordAddr (s.gpr c.base) k) (s.gpr t)).readW _ 64)
+          rw [Mem.readW_writeW_sep hs (by decide)]
+          exact hrel.ext j b hj hjb
+        · exact (Frame.refl [slotRegion c s] s.mem).writeW (List.mem_singleton_self _) (s.gpr t)
+            (slot_contains _ hlt hok.slots)
+      all_goals cases h
   | _ => simp [step] at h
 
 /-- Running a block that the abstract evaluator accepts: it does not fault,
@@ -377,19 +453,19 @@ and the machine state is related to the abstract result. -/
 theorem run (hD : D.Sound R) {is : List Instr} {e e' : Env α} {s : State} (hok : Ok c s)
     (hrel : Rel R c ext e s) (h : eval D c ext is e = some e') :
     ∃ s', runBlock isa is s = some s' ∧
-      Post R c ext e' s s' (fun r => (is.all fun i => dst i != some r) = false) := by
+      Post R c ext e' s s' (fun r => (is.all fun i => dstOf i != some r) = false) := by
   induction is generalizing e s with
   | nil =>
     cases h
-    exact ⟨s, runBlock_nil, hrel, hok, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
+    exact ⟨s, runBlock_nil, hrel, hok, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
   | cons i is ih =>
     simp only [eval, Option.bind_eq_some_iff] at h
     obtain ⟨e₁, h₁, h₂⟩ := h
     obtain ⟨s₁, hs₁, p₁⟩ := step_ok hD hok hrel h₁
     obtain ⟨s', hs', p⟩ := ih p₁.ok p₁.rel h₂
     refine ⟨s', by rw [runBlock_cons, hs₁, runStep_some]; exact hs', p.rel, p.ok,
-      p.rd.trans p₁.rd, p.wr.trans p₁.wr, p.sp.trans p₁.sp, p.lr.trans p₁.lr,
-      p.base.trans p₁.base, p.ext.trans p₁.ext, fun r hr => ?_, ?_⟩
+      p.rd.trans p₁.rd, p.wr.trans p₁.wr, p.sp.trans p₁.sp, p.base.trans p₁.base,
+      p.ext.trans p₁.ext, fun r hr => ?_, ?_⟩
     · simp only [List.all_cons, Bool.and_eq_false_iff, bne_eq_false_iff_eq, not_or] at hr
       exact (p.other r hr.2).trans (p₁.other r hr.1)
     · refine p₁.frame.trans ?_
@@ -399,17 +475,39 @@ theorem run (hD : D.Sound R) {is : List Instr} {e e' : Env α} {s : State} (hok 
 
 end
 
-/-- `Ok` for slots at the start of a writable region `r` of `s.wr` and no
-external words. -/
-theorem Ok.of_region {c : Cfg} {s : State} {r : Region} (hr : r ∈ s.wr)
-    (hb : r.base = s.gpr c.base) (hlen : 8 * c.slots ≤ r.len) (hn : 8 * c.slots < 2 ^ 64)
-    (he : c.exts = 0) : Ok c s where
-  slotIn k hk := ⟨r, hr, by
-    have := slot_contains (s.gpr c.base) hk hn
-    simp only [Region.Contains] at this ⊢
-    rw [hb]; omega⟩
+/-- The machine runs a block that the abstract evaluator accepts, and the
+result is the same whatever the domain: facts about it can be gathered
+from several domains and relations. -/
+theorem run_unique {s s₁ s₂ : State} {is : List Instr} (h₁ : runBlock isa is s = some s₁)
+    (h₂ : runBlock isa is s = some s₂) : s₁ = s₂ := by
+  rw [h₁] at h₂; exact Option.some.inj h₂
+
+/-! ## Memory areas in regions -/
+
+theorem contains_word {r : Region} {a : Addr} {off k n : Nat} (ha : a = r.base + BitVec.ofNat 64 off)
+    (hk : off + 8 * k + 8 ≤ n) (hn : n ≤ r.len) (hlen : r.len < 2 ^ 64) :
+    r.Contains (wordAddr a k) 8 := by
+  simp only [Region.Contains, wordAddr, ha]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- `Ok` for slots at offset `off` of a writable region, and no external words. -/
+theorem Ok.of_off {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.wr)
+    (hb : s.gpr c.base = r.base + BitVec.ofNat 64 off) (hlen : off + 8 * c.slots ≤ r.len)
+    (hn : r.len < 2 ^ 64) (he : c.exts = 0) : Ok c s where
+  slotIn k hk := ⟨r, hr, contains_word hb (by omega) (Nat.le_refl _) hn⟩
   extIn k hk := by omega
-  slots := hn
+  slots := by omega
   sep k _ j hj := by omega
+
+/-- `Ok` for external words at offset `off` of a readable region, and no slots. -/
+theorem Ok.of_ext {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.rd ++ s.wr)
+    (hb : s.gpr c.ext = r.base + BitVec.ofNat 64 off) (hlen : off + 8 * c.exts ≤ r.len)
+    (hn : r.len < 2 ^ 64) (hs : c.slots = 0) : Ok c s where
+  slotIn k hk := by omega
+  extIn k hk := ⟨r, hr, contains_word hb (by omega) (Nat.le_refl _) hn⟩
+  slots := by omega
+  sep k hk := by omega
 
 end VG.PPC64LE.Straight

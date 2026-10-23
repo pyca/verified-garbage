@@ -79,6 +79,8 @@ mod tests {
         }
         check!(
             crate::hmac::InvalidMac,
+            crate::idea_ecb::Error::InvalidKeyLength,
+            crate::idea_ecb::Error::IncompleteBlock,
             crate::rc4::Error::InvalidKeyLength,
             crate::x25519::Error::ZeroSharedSecret,
             crate::x25519::Error::Randomness,
@@ -141,8 +143,6 @@ mod tests {
             crate::ed448::Error::ContextTooLong,
             crate::idea_cbc::Error::InvalidKeyLength,
             crate::idea_cbc::Error::IncompleteBlock,
-            crate::idea_ecb::Error::InvalidKeyLength,
-            crate::idea_ecb::Error::IncompleteBlock,
             crate::mldsa44::Error::LoopBound,
             crate::mldsa44::Error::ContextTooLong,
             crate::mldsa44::Error::InvalidSignature,
