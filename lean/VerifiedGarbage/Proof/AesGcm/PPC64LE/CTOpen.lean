@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_open` is constant time
