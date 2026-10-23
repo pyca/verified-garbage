@@ -7,7 +7,9 @@ meta import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-! # The taint checks of the key checks at a run-time width -/
 
@@ -22,18 +24,18 @@ def argSpan (full : Bool) : Nat := 4 * (VG.Impl.Rsa.X86.KeyCheck.scratchArg full
 def τV (full : Bool) : VG.X86.Taint.T := { regs := .ofList [.edi, .esp], flags := false, argLen := argSpan full }
 
 theorem sizedCheckFull :
-    (VG.Taint.check taint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true)
-      (VG.Taint.hintOf taint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true))).isSome = true := by
+    (VG.Taint.check sseTaint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true)
+      (VG.Taint.hintOf sseTaint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true))).isSome = true := by
   taint_decide
 
 theorem sizedCheckCrt :
-    (VG.Taint.check taint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false)
-      (VG.Taint.hintOf taint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false))).isSome = true := by
+    (VG.Taint.check sseTaint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false)
+      (VG.Taint.hintOf sseTaint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false))).isSome = true := by
   taint_decide
 
 theorem sizedCheck (full : Bool) :
-    (VG.Taint.check taint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full)
-      (VG.Taint.hintOf taint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full))).isSome = true := by
+    (VG.Taint.check sseTaint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full)
+      (VG.Taint.hintOf sseTaint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full))).isSome = true := by
   cases full
   · exact sizedCheckCrt
   · exact sizedCheckFull

@@ -25,7 +25,6 @@ structure Bounds (g : Geo) (k : Nat) (v : Vals) : Prop where
   qShort : v.q < 256 ^ (k - 1)
   pDouble : 2 * v.p ≤ 2 ^ (32 * g.w)
   qDouble : 2 * v.q ≤ 2 ^ (32 * g.w)
-  qFits : v.q < 2 ^ (32 * g.w)
 
 theorem ProdsOk.exact {g : Geo} {v : Vals} {k R₁ R₂ R₃ : Nat}
     (h : ProdsOk g v R₁ R₂ R₃) (b : Bounds g k v) (he : Spec.Rsa.exponentValid v.e = true) :
@@ -38,7 +37,7 @@ theorem ProdsOk.exact {g : Geo} {v : Vals} {k R₁ R₂ R₃ : Nat}
   refine ⟨fun hp => ?_, fun hq => ?_, fun hq => ?_⟩
   · rw [h.1 hp (by have := b.pDouble; omega), Nat.mod_eq_of_lt eBound]
   · rw [h.2.1 hq (by have := b.qDouble; omega), Nat.mod_eq_of_lt eBound]
-  · rw [h.2.2 hq b.pDouble, Nat.mod_eq_of_lt b.qFits]
+  · exact h.2.2 hq b.pDouble
 
 theorem checks_ok {g : Geo} {v : Vals} {s : State} {k : Nat} (h : BodyIn g v s)
     (b : Bounds g k v) (hm : Spec.Rsa.modulusValid v.n k = true)

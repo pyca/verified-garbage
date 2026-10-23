@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 meta import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import Init.Data.Option.Basic
 meta import Init.Data.Option.Basic
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
@@ -16,7 +18,7 @@ meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 namespace VG.Proof.Rsa.X86.InvTiming
 open VG VG.X86
  theorem fallback_check :
-    (VG.Taint.check taint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay)
-      (VG.Taint.hintOf taint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay))).isSome=true := by
+    (VG.Taint.check sseTaint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay)
+      (VG.Taint.hintOf sseTaint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay))).isSome=true := by
   taint_decide
 end VG.Proof.Rsa.X86.InvTiming

@@ -9,10 +9,11 @@ public import VerifiedGarbage.Impl.Rsa.X86.Chain
 `KeyWs`'s arrays without a copy of the code per width: array `j` is at
 `edi + hdr + j (B + 8)`, `B = 8 ⌈len / 8⌉` the bytes of a number of `w = B / 4`
 words, with `len` the modulus's length, an argument (`Lay.len`). Every
-operation computes its arrays' addresses from it and runs one of `CrtRt`'s
-loops, which count a register down by four bytes: `chainLoop` for sums and
-differences (and, on one array, for a shift up by a bit), `selectLoop` for
-copies and masked selections, `zeroLoop`, and `shiftDownLoop` for halving.
+operation computes its arrays' addresses from it and runs one of its loops,
+which count a register down by bytes: `chainLoop` for sums and differences
+(and, on one array, for a shift up by a bit), `selectLoopX` and `select3LoopX`
+(sixteen bytes at a time with SSE2) for copies and masked selections,
+`zeroLoop`, and `shiftDownLoop` for halving.
 The loops move `edi`, which is set back from the working space's argument
 (`Lay.ws`) after them. A bit an operation leaves for a later one is in `ebx`,
 as in `KeyWs`, or, across a loop, in a header word.
@@ -82,6 +83,29 @@ def select3Loop : Prog isa :=
     .alu .xor .eax (.mem (at_ .ebp 0)), .store (at_ .edi 0) .eax, .alu .add .ebp (.imm 4),
     .alu .add .ebx (.imm 4), .alu .add .edi (.imm 4), .alu .sub .edx (.imm 4)]) .ne
 
+/-- `CrtRt.selectLoop` sixteen bytes at a time with SSE2, for any positive count: the mask
+`ecx` in every doubleword of `xmm7`, `edi / 16` blocks (if any) counted in `eax`, then the
+last `edi mod 16` bytes by `CrtRt.selectLoop`. -/
+def selectLoopX : Prog isa :=
+  .seq (.block [.mov .eax (.reg .edi), .shift .shr .eax 4, .xop (.movd .xmm7 .ecx),
+    .xop (.pshufd .xmm7 .xmm7 0)]) <|
+  .seq (.ite .ne (.loop (.block [.movdquLoad .xmm0 (at_ .ebx 0), .movdquLoad .xmm1 (at_ .ebp 0),
+    .xop (.bin .pxor .xmm1 .xmm0), .xop (.bin .pand .xmm1 .xmm7), .xop (.bin .pxor .xmm0 .xmm1),
+    .movdquStore (at_ .ebx 0) .xmm0, .alu .add .ebp (.imm 16), .alu .add .ebx (.imm 16),
+    .alu .sub .eax (.imm 1)]) .ne) (.block [])) <|
+  .seq (.block [.alu .and .edi (.imm 15)]) (.ite .ne CrtRt.selectLoop (.block []))
+
+/-- `select3Loop` sixteen bytes at a time with SSE2, for any positive count: `edx / 16`
+blocks (if any) counted in `eax`, then the last `edx mod 16` bytes by `select3Loop`. -/
+def select3LoopX : Prog isa :=
+  .seq (.block [.mov .eax (.reg .edx), .shift .shr .eax 4, .xop (.movd .xmm7 .ecx),
+    .xop (.pshufd .xmm7 .xmm7 0)]) <|
+  .seq (.ite .ne (.loop (.block [.movdquLoad .xmm0 (at_ .ebp 0), .movdquLoad .xmm1 (at_ .ebx 0),
+    .xop (.bin .pxor .xmm1 .xmm0), .xop (.bin .pand .xmm1 .xmm7), .xop (.bin .pxor .xmm0 .xmm1),
+    .movdquStore (at_ .edi 0) .xmm0, .alu .add .ebp (.imm 16), .alu .add .ebx (.imm 16),
+    .alu .add .edi (.imm 16), .alu .sub .eax (.imm 1)]) .ne) (.block [])) <|
+  .seq (.block [.alu .and .edx (.imm 15)]) (.ite .ne select3Loop (.block []))
+
 /-! ## Operations -/
 
 /-- `[o] = [a] op [b]` (`adc` or `sbb`), `w` words or `w + 1` with `extra`, the carry (or
@@ -98,7 +122,7 @@ def sub3 (o a b : Nat) : Prog isa :=
 /-- `[o] = [a]` where the mask `ecx` is all ones, else kept; `w` words, or `w + 1` with `extra`. -/
 def selectIn (o a : Nat) (extra : Bool) : Prog isa :=
   .seq (.block (arrPtr L .ebp a .edx ++ arrPtr L .ebx o .edx ++ count L .edi extra))
-    (.seq CrtRt.selectLoop (.block (restoreEdi L)))
+    (.seq selectLoopX (.block (restoreEdi L)))
 
 /-- `[o] = [a]`, `w` words. -/
 def copy (o a : Nat) : Prog isa :=
@@ -107,7 +131,7 @@ def copy (o a : Nat) : Prog isa :=
 /-- `[o] = [b]` where the mask `ecx` is all ones, else `[a]`, `w` words. -/
 def select3 (o a b : Nat) : Prog isa :=
   .seq (.block (arrPtr L .ebp a .edx ++ arrPtr L .ebx b .edx ++ arrPtr L .edi o .edx ++ count L .edx false))
-    (.seq select3Loop (.block (restoreEdi L)))
+    (.seq select3LoopX (.block (restoreEdi L)))
 
 /-- `[o] = [b]` if the header word `sl` is one, else `[a]`, for `sl` zero or one. -/
 def sel (o a b sl : Nat) : Prog isa :=

@@ -21,6 +21,9 @@ structure BodyIn (g : Geo) (v : Vals) (s : State) : Prop where
   ws : VG.Proof.Rsa.X86.KeyRt.RtWs g.L s g.B g.Z g.len nArr
   arrs : Arrs s.mem g.B g.w (vals v) (List.range nArr)
   vdTop : w32 s.mem g.B (arr g.w aVD + 4 * g.w) = 0
+  /-- `q`'s length argument, whose bytes bound `q`. -/
+  qLen : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.q < 2 ^ (8 * a) ∧
+    VG.Proof.Bignum.X86.CallArgument s g.B g.Z (qLenArg g.full) (BitVec.ofNat 32 a)
 
 abbrev live0 : List Nat := [aZ, aOne, aN, aE, aP, aQ, aDP, aDQ, aQI, aD]
 
