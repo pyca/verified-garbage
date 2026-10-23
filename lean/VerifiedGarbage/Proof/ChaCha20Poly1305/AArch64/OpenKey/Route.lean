@@ -79,7 +79,7 @@ theorem routeKey_ok (sve enc : Bool) (s₀ : State) :
     have x10₁₀ : s₁₀.gpr .x10 = keyVal (keyLo sve enc) (s₀.gpr .x5) := by
       rw [u₁₀.gpr, u₉.gpr, u₈.gpr, u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), x5,
         u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.gpr, x5]
-    show WP isa (.block (List.take 4 (route sve false))) s₁₀ _
+    show WP isa (.block (List.take 4 (route sve enc))) s₁₀ _
     rw [show (route sve enc).take 4 = [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55,
         .subImm .x .x9 .x9 (wideLo sve enc), .lsr .x .x9 .x9 (wideSh sve enc)] by simp [route]]
     refine wp_lsl (by decide) fun t₁ v₁ => wp_lsr (by decide) fun t₂ v₂ =>
