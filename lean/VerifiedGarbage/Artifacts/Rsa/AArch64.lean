@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
+public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -85,12 +86,13 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
     notes := ["Baseline AArch64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
         of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by \
-        Montgomery multiplication over all the bits of `r`, a square and a multiplication by `g` or \
+        Montgomery multiplication (eight-limb product tiles and RSA's shared scheduled square for \
+        widths of at least sixteen limbs divisible by eight) over all the bits of `r`, a square and a multiplication by `g` or \
         1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
         candidates stop at the first that finds the factors, which is the only branch on the key. \
         `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \
         `64 w` steps of bit-serial division."]
-    code := Impl.Rsa.AArch64.Recover.code Proof.Bignum.AArch64.Mont.base.mm
+    code := Impl.Rsa.AArch64.Recover.code Proof.Bignum.AArch64.Mont.calledProductEight.mm
     verified := Proof.Rsa.AArch64.rp_verified _ },
   Spec.Rsa.checkKeyApi.artifact AArch64.target {
     notes := ["Baseline AArch64: `e` is checked as `vg_rsa_public_precomputed_checked` checks it and \
