@@ -13,7 +13,7 @@ namespace VG.Proof.Dsa.X86.Generation
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Impl.Dsa.X86.Generation
 open VG.Impl.Mont.X86 (sc)
-open VG.Impl.Mont.X86.Dynamic (chainW selectsW slot)
+open VG.Impl.Mont.X86.Dynamic (chainW selectsW slot stride contextBytes)
 
 /-- `h` number `j` as a number. -/
 abbrev hVal (E : Env) (j : Nat) : Nat := Spec.Dsa.decodeBE (hChunk E j)
@@ -72,6 +72,25 @@ theorem gSel_ct {g : Geo} (G : GeoOk g) {α : Type} {Φ : α → State → Prop}
   unfold Geo.n64 Geo.n32
   rcases G.lengths with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> rw [h₁, h₂] <;> exact tcheck _ _ (by decide +kernel)
 
+/-- What the exponentiation's timing needs of a run after the selections. -/
+private theorem gPowCall_in {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} {p h x F : Nat}
+    (hp1 : 1 < p) (hodd : p % 2 = 1) {s₆ : State} (S : SelPost E g p h x F s s₆) :
+    VG.Proof.Dsa.X86.Pow.CallIn g.n64 s₆ := by
+  have sz := v.size_ge
+  have bd := G.bounds
+  have n64 : g.n64 = g.pLen / 8 := rfl
+  have cb : contextBytes g.n64 ≤ 7048 := by
+    simp only [contextBytes, slot, stride]; omega
+  have low := v.low
+  have ss := v.stackScratch
+  refine ⟨E.base, E.size, S.scr, ?_, by omega, S.modv ▸ hp1, S.modv ▸ hodd⟩
+  rw [S.sp]; exact ⟨by omega, ss.elim (fun h => .inl h) (fun h => .inr (by omega))⟩
+
+theorem gPow_dims {g : Geo} (G : GeoOk g) :
+    2 ≤ g.n64 ∧ g.n64 ≤ 48 ∧ 1 < g.e ∧ g.e ≤ 2 * g.n64 := by
+  rw [G.e]; unfold Geo.n64
+  rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
+
 /-- `g` and the check `g > 1`. -/
 theorem gCall_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
     RelCT isa (Both fun (a : Nat × Nat × Nat × Nat) t => ∃ s, Base E s ∧ SelPost E g a.2.1 (hVal E a.1) a.2.2.1 a.2.2.2 s t ∧
@@ -90,16 +109,17 @@ theorem gCall_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
     · rw [S.keeps.1 _ (by decide)]; exact B.edi
   let Pin : State → Prop := fun t => ∀ r ∈ [Reg.esp, .edi], t.gpr r = baseVal E r
   refine RelCT.seq (R := fun t₁ t₂ => Pin t₁ ∧ Pin t₂) ?_ ?_
-  · have call := (VG.Proof.Dsa.X86.Pow.call_relCT g.n64 g.e).mono (P' := Both fun (a : Nat × Nat × Nat × Nat) t =>
+  · have D := gPow_dims G
+    have call := (VG.Proof.Dsa.X86.Pow.call_relCT g.n64 g.e D.1 D.2.1 D.2.2.1 D.2.2.2).mono (P' := Both fun (a : Nat × Nat × Nat × Nat) t =>
         ∃ s, Base E s ∧ SelPost E g a.2.1 (hVal E a.1) a.2.2.1 a.2.2.2 s t ∧ 1 < a.2.1 ∧ a.2.1 % 2 = 1)
       (fun s t h => by
         obtain ⟨a, h₁, h₂⟩ := h
         have p₁ := pinsOf a s h₁
         have p₂ := pinsOf a t h₂
         refine ⟨(p₁ _ (by simp)).trans (p₂ _ (by simp)).symm, (p₁ _ (by simp)).trans (p₂ _ (by simp)).symm, ?_⟩
-        rw [p₁ _ (by simp)]
-        show 12 ≤ E.sp.toNat
-        omega) (fun _ _ h => h)
+        obtain ⟨s₀, _, S₁, hp1, hodd⟩ := h₁
+        obtain ⟨t₀, _, S₂, _⟩ := h₂
+        exact ⟨gPowCall_in G v hp1 hodd S₁, gPowCall_in G v hp1 hodd S₂⟩) (fun _ _ h => h)
     refine (call.wp (F₁ := Pin) (F₂ := Pin) fun s t h => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
     obtain ⟨a, ⟨s₀, _, S₁, hp1, hodd⟩, ⟨t₀, _, S₂, _⟩⟩ := h
     have p₁ := pinsOf a s ⟨s₀, ‹_›, S₁, hp1, hodd⟩
