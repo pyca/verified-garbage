@@ -118,72 +118,72 @@ theorem gPowSel_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (
     rw [G.e, n64, n32]
     rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
   have slots : ∀ i, i ≤ 9 → slot g.n64 i ≤ 7048 := fun i hi => by
-    simp only [slot, stride]; have := Nat.mul_le_mul hi (show 16 * g.n64 + 8 ≤ 776 by omega); omega
+    simp only [slot, stride]; have := Nat.mul_le_mul hi (show 16 * g.n64 + 8 ≤ 776 by omega_arith); omega_arith
   have cb : contextBytes g.n64 ≤ 7048 := slots 9 (Nat.le_refl _)
   have sl : ∀ i, slot g.n64 i + 8 * g.n64 ≤ slot g.n64 (i + 1) := fun i => by
-    simp only [slot, stride, Nat.succ_mul]; omega
+    simp only [slot, stride, Nat.succ_mul]; omega_arith
   have mod : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).modulus = slot g.n64 0 := rfl
   have bas : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).base = slot g.n64 5 := rfl
   have exn : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).exponent = slot g.n64 8 := rfl
   have res : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).result = slot g.n64 6 := rfl
   rw [mod, bas, exn]
-  have s0 := slots 0 (by omega); have s5 := slots 5 (by omega); have s6 := slots 6 (by omega)
-  have s8 := slots 8 (by omega); have s9 := slots 9 (by omega); have s1 := slots 1 (by omega)
+  have s0 := slots 0 (by omega_arith); have s5 := slots 5 (by omega_arith); have s6 := slots 6 (by omega_arith)
+  have s8 := slots 8 (by omega_arith); have s9 := slots 9 (by omega_arith); have s1 := slots 1 (by omega_arith)
   have l0 : slot g.n64 0 + 8 * g.n64 ≤ slot g.n64 1 := sl 0
   have l5 : slot g.n64 5 + 8 * g.n64 ≤ slot g.n64 6 := sl 5
   have l6 : slot g.n64 6 + 8 * g.n64 ≤ slot g.n64 7 := sl 6
   have l8 : slot g.n64 8 + 8 * g.n64 ≤ slot g.n64 9 := sl 8
-  have s7 := slots 7 (by omega)
-  have o15 : slot g.n64 1 ≤ slot g.n64 5 := by simp only [slot]; omega
-  have o18 : slot g.n64 1 ≤ slot g.n64 8 := by simp only [slot]; omega
-  have o68 : slot g.n64 6 ≤ slot g.n64 8 := by simp only [slot]; omega
-  have o56 : slot g.n64 5 ≤ slot g.n64 6 := by simp only [slot]; omega
-  have s00 : 64 ≤ slot g.n64 0 := by simp only [slot]; omega
+  have s7 := slots 7 (by omega_arith)
+  have o15 : slot g.n64 1 ≤ slot g.n64 5 := by simp only [slot]; omega_arith
+  have o18 : slot g.n64 1 ≤ slot g.n64 8 := by simp only [slot]; omega_arith
+  have o68 : slot g.n64 6 ≤ slot g.n64 8 := by simp only [slot]; omega_arith
+  have o56 : slot g.n64 5 ≤ slot g.n64 6 := by simp only [slot]; omega_arith
+  have s00 : 64 ≤ slot g.n64 0 := by simp only [slot]; omega_arith
   simp only [Prog.chain]
   -- p, h and `(p − 1)/q` into the exponentiation's arrays.
   refine WP.seq (wp_movi fun s₁ u₁ => WP.block_nil ?_)
   have hs₁ : Scr s₁ E.base E.size := Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr
   refine WP.seq (VG.X86.WP.mono_syms (selectsW_ok hs₁ (src := aP) (tmp := aP) (o := slot g.n64 0) (n := g.n32) false
-    (by rw [u₁.gpr]; rfl) (by omega) (by simp only [aP, arr]; omega) (by simp only [aP, arr]; omega) (by omega)
-    (by right; left; simp only [aP, arr]; omega) (by right; left; simp only [aP, arr]; omega))
+    (by rw [u₁.gpr]; rfl) (by omega_arith) (by simp only [aP, arr]; omega_arith) (by simp only [aP, arr]; omega_arith) (by omega_arith)
+    (by right; left; simp only [aP, arr]; omega_arith) (by right; left; simp only [aP, arr]; omega_arith))
     fun s₂ ⟨O₂, V₂, K₂⟩ sy₂ => ?_)
   simp only [Bool.false_eq_true, ↓reduceIte] at V₂
   rw [u₁.mem, hP] at V₂
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have far : ∀ {m m' : Mem} {o k d n : Nat}, Outside E.base o k m m' → o + k ≤ 7168 → 9728 ≤ d →
       d + 4 * n ≤ E.size → val32 m' E.base d n = val32 m E.base d n := fun O h₁ h₂ h₃ =>
-    O.val32 (by right; omega) (by omega)
+    O.val32 (by right; omega_arith) (by omega_arith)
   refine WP.seq (wp_movi fun s₃ u₃ => WP.block_nil ?_)
   have hs₃ : Scr s₃ E.base E.size := Scr.of_eq hs₂ (u₃.other _ (by decide)) (u₃.other _ (by decide)) u₃.wr
   refine WP.seq (VG.X86.WP.mono_syms (selectsW_ok hs₃ (src := aH) (tmp := aH) (o := slot g.n64 5) (n := g.n32) false
-    (by rw [u₃.gpr]; rfl) (by omega) (by simp only [aH, arr]; omega) (by simp only [aH, arr]; omega) (by omega)
-    (by right; left; simp only [aH, arr]; omega) (by right; left; simp only [aH, arr]; omega))
+    (by rw [u₃.gpr]; rfl) (by omega_arith) (by simp only [aH, arr]; omega_arith) (by simp only [aH, arr]; omega_arith) (by omega_arith)
+    (by right; left; simp only [aH, arr]; omega_arith) (by right; left; simp only [aH, arr]; omega_arith))
     fun s₄ ⟨O₄, V₄, K₄⟩ sy₄ => ?_)
   simp only [Bool.false_eq_true, ↓reduceIte] at V₄
-  rw [u₃.mem, far O₂ (by omega) (by simp only [aH, arr]; omega) (by simp only [aH, arr]; omega), u₁.mem, hH] at V₄
+  rw [u₃.mem, far O₂ (by omega_arith) (by simp only [aH, arr]; omega_arith) (by simp only [aH, arr]; omega_arith), u₁.mem, hH] at V₄
   have hs₄ := hs₃.of_keeps K₄ (by decide)
   refine WP.seq (wp_movi fun s₅ u₅ => WP.block_nil ?_)
   have hs₅ : Scr s₅ E.base E.size := Scr.of_eq hs₄ (u₅.other _ (by decide)) (u₅.other _ (by decide)) u₅.wr
   refine WP.seq (VG.X86.WP.mono_syms (selectsW_ok hs₅ (src := aE) (tmp := aE) (o := slot g.n64 8) (n := g.e) false
-    (by rw [u₅.gpr]; rfl) (by omega) (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega) (by omega)
-    (by right; left; simp only [aE, arr]; omega) (by right; left; simp only [aE, arr]; omega))
+    (by rw [u₅.gpr]; rfl) (by omega_arith) (by simp only [aE, arr]; omega_arith) (by simp only [aE, arr]; omega_arith) (by omega_arith)
+    (by right; left; simp only [aE, arr]; omega_arith) (by right; left; simp only [aE, arr]; omega_arith))
     fun s₆ ⟨O₆, V₆, K₆⟩ sy₆ => ?_)
   simp only [Bool.false_eq_true, ↓reduceIte] at V₆
   have xE : val32 s.mem E.base aE g.e = x :=
     val32_prefix (k := g.e) (r := g.n32 - g.e) (by rw [Nat.add_sub_cancel' he.2.2]; exact hE) hx
-  rw [u₅.mem, far O₄ (by omega) (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega), u₃.mem,
-    far O₂ (by omega) (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega), u₁.mem, xE] at V₆
+  rw [u₅.mem, far O₄ (by omega_arith) (by simp only [aE, arr]; omega_arith) (by simp only [aE, arr]; omega_arith), u₃.mem,
+    far O₂ (by omega_arith) (by simp only [aE, arr]; omega_arith) (by simp only [aE, arr]; omega_arith), u₁.mem, xE] at V₆
   have hs₆ := hs₅.of_keeps K₆ (by decide)
   have sp₆ : s₆.gpr .esp = E.sp := by
     rw [K₆.1 _ (by decide), u₅.other _ (by decide), K₄.1 _ (by decide), u₃.other _ (by decide), K₂.1 _ (by decide),
       u₁.other _ (by decide), B.sp]
   have hv : wordsVal s₆.mem E.base (slot g.n64 0) g.n64 = p := by
-    rw [wordsVal_eq_val32, h2, O₆.val32 (by left; omega) (by omega), u₅.mem, O₄.val32 (by left; omega) (by omega),
+    rw [wordsVal_eq_val32, h2, O₆.val32 (by left; omega_arith) (by omega_arith), u₅.mem, O₄.val32 (by left; omega_arith) (by omega_arith),
       u₃.mem, V₂]
   have w0 : (0, 7168) ∈ [(0, 7168), (aTmp, 400)] := by simp
-  have C₂ := Env.Chg.of_outside v O₂ w0 (Nat.zero_le _) (by omega) (by omega)
-  have C₄ := Env.Chg.of_outside v O₄ w0 (Nat.zero_le _) (by omega) (by omega)
-  have C₆ := Env.Chg.of_outside v O₆ w0 (Nat.zero_le _) (by omega) (by omega)
+  have C₂ := Env.Chg.of_outside v O₂ w0 (Nat.zero_le _) (by omega_arith) (by omega_arith)
+  have C₄ := Env.Chg.of_outside v O₄ w0 (Nat.zero_le _) (by omega_arith) (by omega_arith)
+  have C₆ := Env.Chg.of_outside v O₆ w0 (Nat.zero_le _) (by omega_arith) (by omega_arith)
   have C₆' : E.Chg [(0, 7168), (aTmp, 400)] s.mem s₆.mem :=
     (by rw [← u₁.mem]; exact C₂ : E.Chg [(0, 7168), (aTmp, 400)] s.mem s₂.mem).trans
       ((by rw [← u₃.mem]; exact C₄ : E.Chg [(0, 7168), (aTmp, 400)] s₂.mem s₄.mem).trans
@@ -195,13 +195,13 @@ theorem gPowSel_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (
   have k₅ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s₄ s₅ :=
     ⟨fun r hr => u₅.other r (fun e => hr (e ▸ by simp)), u₅.rd, u₅.wr⟩
   refine k s₆ ⟨hs₆, sp₆, hv, ?_, V₆, ?_, ?_, C₆', ?_, ?_⟩
-  · rw [O₆.val32 (by left; omega) (by omega), u₅.mem, V₄]
-  · rw [far O₆ (by omega) (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega), u₅.mem,
-      far O₄ (by omega) (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega), u₃.mem,
-      far O₂ (by omega) (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega), u₁.mem, hone]
-  · rw [Env.Chg.word v C₆' (by simp only [fG, hdr]; omega) (fun o ho => by
+  · rw [O₆.val32 (by left; omega_arith) (by omega_arith), u₅.mem, V₄]
+  · rw [far O₆ (by omega_arith) (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith), u₅.mem,
+      far O₄ (by omega_arith) (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith), u₃.mem,
+      far O₂ (by omega_arith) (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith), u₁.mem, hone]
+  · rw [Env.Chg.word v C₆' (by simp only [fG, hdr]; omega_arith) (fun o ho => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl <;> simp only [aTmp, arr, fG, hdr] <;> omega), hF]
+      rcases ho with rfl | rfl <;> simp only [aTmp, arr, fG, hdr] <;> omega_arith), hF]
   · exact k₁.trans ((K₂.mono (by decide)).trans (k₃.trans ((K₄.mono (by decide)).trans (k₅.trans
       (K₆.mono (by decide))))))
   · rw [sy₆, u₅.syms, sy₄, u₃.syms, sy₂, u₁.syms]
