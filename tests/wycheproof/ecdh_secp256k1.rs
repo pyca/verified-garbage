@@ -5,7 +5,8 @@
     target_arch = "x86_64",
     target_arch = "x86",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use serde::Deserialize;
@@ -102,4 +103,15 @@ fn ecdh_secp256k1_webcrypto_test() {
         }
     });
     assert!(checked.get() > 0 && refused.get() > 0);
+}
+
+/// 0 and 2²⁵⁶ − 1 (above n) are not in [1, n − 1].
+#[test]
+fn secp256k1_private_keys_out_of_range() {
+    for d in [[0; 32], [0xff; 32]] {
+        assert_eq!(
+            PrivateKey::<Secp256k1>::from_bytes(&d).public_key(),
+            Err(Error::InvalidKey)
+        );
+    }
 }

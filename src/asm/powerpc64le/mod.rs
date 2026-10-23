@@ -50,13 +50,67 @@ pub(crate) mod chacha20poly1305;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p192;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p224;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ec_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p192;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p224;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p256;
 
 #[rustfmt::skip]
+pub(crate) mod ecdh_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p192;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p224;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_secp256k1;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519;

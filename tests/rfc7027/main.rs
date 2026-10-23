@@ -6,11 +6,14 @@
     target_arch = "x86_64",
     target_arch = "x86",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 mod brainpoolp256r1;
+mod brainpoolp256r1_ecdsa;
 mod brainpoolp384r1;
+mod brainpoolp384r1_ecdsa;
 mod brainpoolp512r1;
 mod brainpoolp512r1_ecdsa;
 
