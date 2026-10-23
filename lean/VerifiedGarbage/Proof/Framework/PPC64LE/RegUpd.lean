@@ -21,6 +21,9 @@ namespace VG.PPC64LE.RegUpd
 
 variable (s : State)
 
+theorem gpr_write (r : Reg) (v : BitVec 64) (r' : Reg) :
+    (s.write r v).gpr r' = if r' = r then v else s.gpr r' := rfl
+
 theorem gpr_write_self (r : Reg) (v : BitVec 64) : (s.write r v).gpr r = v := by
   simp [State.write]
 

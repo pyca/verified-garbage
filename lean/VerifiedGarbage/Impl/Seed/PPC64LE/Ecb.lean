@@ -16,8 +16,9 @@ the block (`L0`, `L1`, `R0`, `R1`: `arrSlot 0 … arrSlot 3`), the
 intermediate arrays `a`, `c` and `d` of the round function, and the
 callee-saved registers `r14`–`r31`, which `g16` uses.
 
-* A batch copies its blocks' words, byte-reversed (`lwbrx`, `stwbrx`,
-  indexed by `r0`) to the big-endian words of RFC 4269, into the arrays;
+* A batch copies its blocks' words, byte-reversed (`lwbrx`, indexed by the
+  register it loads, `r9`) to the big-endian words of RFC 4269, into the
+  arrays, and back the same way;
   lanes past the batch hold whatever they held, and their results are not
   stored.
 * A round computes, lane by lane, `a = R0 ⊕ K0` and `a ⊕ R1 ⊕ K1`; `c = G`
@@ -134,13 +135,13 @@ def batchSize : Prog isa :=
 byte-reversed; move on to the next. -/
 def copyInBody : List Instr :=
   ((List.range 4).flatMap fun w =>
-    [.li .r0 (4 * w), .loadRev .w .r9 .r6 .r0, .store .w .r9 .r7 (8 * arrSlot w)]) ++
+    [.li .r9 (4 * w), .loadRev .w .r9 .r6 .r9, .store .w .r9 .r7 (8 * arrSlot w)]) ++
   ([.addi .r6 .r6 16, .addi .r7 .r7 4, .subi .r10 .r10 1] : List Instr)
 
 /-- Copy a lane out to one block, `R` first (see the rounds). -/
 def copyOutBody : List Instr :=
   ((List.range 4).flatMap fun w =>
-    [.load .w .r9 .r7 (8 * arrSlot ((w + 2) % 4)), .li .r0 (4 * w), .storeRev .w .r9 .r6 .r0]) ++
+    [.li .r9 (8 * arrSlot ((w + 2) % 4)), .loadRev .w .r9 .r7 .r9, .store .w .r9 .r6 (4 * w)]) ++
   ([.addi .r6 .r6 16, .addi .r7 .r7 4, .subi .r10 .r10 1] : List Instr)
 
 def copyStart : List Instr := [movR .r6 .r4, movR .r7 sb]

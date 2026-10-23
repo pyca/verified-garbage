@@ -18,10 +18,10 @@ scratch buffer is laid out as ECB's (`Ecb.lean`).
 
 `Key0 || Key1` is kept in `r6` and `Key2 || Key3` in `r7`, as 64-bit words,
 so that the rotations by eight bits are `rotldi`s; the key's big-endian
-words are loaded with `lwbrx`, indexed by `r0`. The sums and differences
-are 64-bit, of which `stw` keeps the low 32 bits, and `KCi` is built in the
-low 32 bits of `r11` with `lis` and `ori`. Nothing depends on the key but
-the data: only the count decides the branches.
+words are loaded with `lwbrx`, indexed by the register each loads. The
+sums and differences are 64-bit, of which `stw` keeps the low 32 bits, and
+`KCi` is built in the low 32 bits of `r11` with `lis` and `ori`. Nothing
+depends on the key but the data: only the count decides the branches.
 -/
 
 @[expose] public section
@@ -54,8 +54,8 @@ def keyRound (j : Nat) : List Instr :=
 
 /-- The key's big-endian words `k` and `k + 4` into `d = Key_k || Key_k+1`. -/
 def keyLoad2 (d : Reg) (k : Nat) : List Instr :=
-  [.li .r0 k, .loadRev .w .r9 .r3 .r0, .lsl .r9 .r9 32,
-   .li .r0 (k + 4), .loadRev .w d .r3 .r0, .logic .or d d .r9]
+  [.li .r9 k, .loadRev .w .r9 .r3 .r9, .lsl .r9 .r9 32,
+   .li d (k + 4), .loadRev .w d .r3 d, .logic .or d d .r9]
 
 /-- The key's big-endian words into `r6 = Key0 || Key1` and `r7 = Key2 || Key3`. -/
 def keyLoad : List Instr := keyLoad2 .r6 0 ++ keyLoad2 .r7 8
