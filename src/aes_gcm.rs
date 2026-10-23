@@ -1259,8 +1259,12 @@ macro_rules! assert_tag_length {
 // On x86-64 the key context, with the powers, is the first field, aligned
 // to a cache line: the `_prepared` instances load its round keys and powers
 // 16 bytes at a time, and at 8 bytes' alignment some of those loads would
-// cross cache lines.
+// cross cache lines. Elsewhere it is the first field too: after the
+// pointer `fns`, on x86 its offset in a 4-byte-aligned value left the
+// compiler unable to clear it with aligned 16-byte stores in `new`, and it
+// called `memset` instead (4–5% slower `new` on Zen 3).
 #[cfg_attr(all(target_arch = "x86_64", feature = "alloc"), repr(C, align(64)))]
+#[cfg_attr(not(all(target_arch = "x86_64", feature = "alloc")), repr(C))]
 pub struct AesGcm {
     /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`),
     /// with the powers of the hash subkey after it on x86-64 (`KeyCtx`).
@@ -1443,7 +1447,7 @@ impl AesGcm {
         // On x86-64, through `open_with`: on Emerald Rapids, an inline call
         // as in `encrypt_in_place` made every open about 5 ns slower.
         #[cfg(target_arch = "x86_64")]
-        return self.open_with(nonce, aad, data, tag);
+        return self.open_with(data, tag, nonce, aad);
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
         if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
@@ -1479,19 +1483,22 @@ impl AesGcm {
         }
     }
 
-    /// On x86-64, `open`'s call. It reads `self.fns` itself: taking the
-    /// function as a fifth argument put a fourth on the stack, which the
-    /// compiler copied 16 bytes at a time, and the loads of those copies
-    /// were not forwarded from the stores before them (4–6 ns an open on
-    /// Zen 4 and Zen 5).
+    /// On x86-64, `open`'s call. Its arguments come in the order that puts
+    /// on its stack (`nonce.len()`, `aad`) only what `open` takes in
+    /// registers, so each is loaded into a register by itself: passed as
+    /// `open` takes them, the three on its stack were what `open` takes on
+    /// its own, and the compiler copied two of them with one 16-byte load,
+    /// which was not forwarded from the caller's two 8-byte stores (5–11%
+    /// slower opens of up to 255 bytes on Zen 3, 4 and 5). It reads
+    /// `self.fns` itself for the same reason.
     #[cfg(target_arch = "x86_64")]
     #[inline(never)]
     fn open_with(
         &self,
-        nonce: &[u8],
-        aad: &[u8],
         data: &mut [u8],
         tag: &[u8],
+        nonce: &[u8],
+        aad: &[u8],
     ) -> Result<(), Error> {
         let open = self.fns.open;
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
