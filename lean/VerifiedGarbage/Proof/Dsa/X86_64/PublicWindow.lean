@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+public import VerifiedGarbage.Proof.Dsa.X86_64.PublicSquares
 
 /-! # Correctness of public windows and zero-digit skipping -/
 
@@ -84,17 +85,10 @@ theorem crtWin_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {wx : Nat} {min
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   unfold window
   simp only [seqs]
-  -- Four squarings.
-  refine WP.seq (WP.mono (crtSqS_ok Sq hc hw hw' hR hY hYv) fun t₁ ⟨hc₁, hY₁, hYv₁, hh₁, f₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (crtSqS_ok Sq hc₁ hw hw' hR hY₁ hYv₁) fun t₂ ⟨hc₂, hY₂, hYv₂, hh₂, f₂, k₂⟩ => ?_)
-  refine WP.seq (WP.mono (crtSqS_ok Sq hc₂ hw hw' hR hY₂ hYv₂) fun t₃ ⟨hc₃, hY₃, hYv₃, hh₃, f₃, k₃⟩ => ?_)
-  refine WP.seq (WP.mono (crtSqS_ok Sq hc₃ hw hw' hR hY₃ hYv₃) fun t₄ ⟨hc₄, hY₄, hYv₄, hh₄, f₄, k₄⟩ => ?_)
-  have hh04 : ∀ k < 32, word t₄.mem P (8 * k) = word t.mem P (8 * k) := fun k hk =>
-    (hh₄ k hk).trans ((hh₃ k hk).trans ((hh₂ k hk).trans (hh₁ k hk)))
-  have f04 : Frm P (crtWinRanges wx) t.mem t₄.mem := ((f₁.trans f₂).trans f₃).trans f₄
-  have k04 : Keep mmRegs t t₄ := (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
+  refine WP.seq (WP.mono (squares_ok Sq hc hw hw' hR hY hYv)
+    fun t₄ ⟨hc₄, hY₄, hYv₄, hh04, f04, k04⟩ => ?_)
   -- The window, and `sV` up.
-  refine WP.seq (WP.mono (winMid_ok (V := V) hc₄ (by rw [hh04 _ (by decide)]; exact hV) (by omega_arith)) fun t₅ ⟨hm₅, k₅⟩ => ?_)
+  refine WP.seq (WP.mono (winMid_ok (V := V) hc₄ (by rw [hh04 _ (by decide) (by decide)]; exact hV) (by omega_arith)) fun t₅ ⟨hm₅, k₅⟩ => ?_)
   have o1 := writeW_outside t₄.mem P (d := 8 * Crt.sV) (BitVec.ofNat 64 (16 * V)) (by decide)
   have o2 := writeW_outside (t₄.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (16 * V))) P (d := 8 * Crt.sNib)
     (BitVec.ofNat 64 (V / 16 % 16)) (by decide)
@@ -109,11 +103,11 @@ theorem crtWin_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {wx : Nat} {min
   have hh₅ : ∀ k < 32, k ≠ Crt.sV → k ≠ Crt.sNib → word t₅.mem P (8 * k) = word t.mem P (8 * k) :=
     fun k hk h1 h2 => by
       rw [hm₅, hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h2), hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h1),
-        hh04 k hk]
+        hh04 k hk h2]
   have hv16 : V / 16 % 16 < 16 := Nat.mod_lt _ (by decide)
   refine WP.seq (WP.mono (applyWindow_ok M Sq (E := 16 * E) hc₅ htab₅ hw hw' hv16 hR
     (hY₅ ▸ hY₄)
-    (fun hq => by rw [hY₅, hYv₄ hq, show 2 * (2 * (2 * (2 * E))) = 16 * E by omega])
+    (fun hq => by rw [hY₅, hYv₄ hq])
     (by rw [hm₅, word_writeW_self])) fun t₇ ⟨hc₇, hY₇, hYv₇, hh₇, f₇, k₇⟩ => ?_)
   -- The count.
   refine WP.mono (crtBitEnd_ok hc₇ (by

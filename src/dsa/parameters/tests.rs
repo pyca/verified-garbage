@@ -130,7 +130,7 @@ fn empty_tapes_zero_output() {
         // empty tapes satisfy the whole-chunk conditions. Selection uses
         // only features detected on this CPU.
         let status = unsafe {
-            select(detected())(
+            select(detected(), p_len)(
                 out.as_mut_ptr(),
                 out.len(),
                 p_len,
@@ -165,100 +165,110 @@ fn generated_parameters_with_os_randomness() {
 #[cfg(target_arch = "x86_64")]
 fn backend_combinations() {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    // The mixed SHA pairs cannot be selected by a real CPU today because
-    // the hash instructions share feature requirements. Check the complete
-    // dispatch table, including those pairs, against emitted feature sets.
-    let cases: &[(H1, H256, bool, Generate, Features)] = &[
+    let sha1_cases: &[(H1, bool, Generate, Features)] = &[
         (
             H1::Scalar,
-            H256::Scalar,
             false,
-            vg_dsa_generate_parameters,
+            vg_dsa_generate_parameters_1024,
             Features(0),
         ),
         (
             H1::Scalar,
-            H256::Scalar,
             true,
-            vg_dsa_generate_parameters_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_MR_ADX_FEATURES,
+            vg_dsa_generate_parameters_1024_mr_adx,
+            VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES,
         ),
         (
-            H1::Scalar,
-            H256::Avx2,
+            H1::ShaNi,
             false,
-            vg_dsa_generate_parameters_sha256_avx2,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_FEATURES,
+            vg_dsa_generate_parameters_1024_sha1_shani,
+            VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES,
         ),
         (
-            H1::Scalar,
-            H256::Avx2,
+            H1::ShaNi,
             true,
-            vg_dsa_generate_parameters_sha256_avx2_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_MR_ADX_FEATURES,
-        ),
-        (
-            H1::Scalar,
-            H256::ShaNi,
-            false,
-            vg_dsa_generate_parameters_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES,
-        ),
-        (
-            H1::Scalar,
-            H256::ShaNi,
-            true,
-            vg_dsa_generate_parameters_sha256_shani_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_MR_ADX_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Scalar,
-            false,
-            vg_dsa_generate_parameters_sha1_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Scalar,
-            true,
-            vg_dsa_generate_parameters_sha1_shani_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_MR_ADX_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Avx2,
-            false,
-            vg_dsa_generate_parameters_sha1_shani_sha256_avx2,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Avx2,
-            true,
-            vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_MR_ADX_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::ShaNi,
-            false,
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::ShaNi,
-            true,
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES,
+            vg_dsa_generate_parameters_1024_sha1_shani_mr_adx,
+            VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES,
         ),
     ];
-    for &(h1, h256, adx, expected, required) in cases {
-        let selected = select_backends(h1, h256, adx);
-        assert!(core::ptr::fn_addr_eq(selected, expected));
+    for &(h1, adx, expected, required) in sha1_cases {
+        for h256 in [H256::Scalar, H256::Avx2, H256::ShaNi] {
+            assert!(core::ptr::fn_addr_eq(
+                select_backends(h1, h256, adx, 128),
+                expected
+            ));
+        }
         if detected().contains(required) {
-            check_empty_tapes(selected);
+            check_empty_tapes(expected, 128);
+        }
+    }
+    let sha256_cases: &[(H256, bool, [Generate; 2], Features)] = &[
+        (
+            H256::Scalar,
+            false,
+            [
+                vg_dsa_generate_parameters_2048,
+                vg_dsa_generate_parameters_3072,
+            ],
+            Features(0),
+        ),
+        (
+            H256::Scalar,
+            true,
+            [
+                vg_dsa_generate_parameters_2048_mr_adx,
+                vg_dsa_generate_parameters_3072_mr_adx,
+            ],
+            VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES,
+        ),
+        (
+            H256::Avx2,
+            false,
+            [
+                vg_dsa_generate_parameters_2048_sha256_avx2,
+                vg_dsa_generate_parameters_3072_sha256_avx2,
+            ],
+            VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES,
+        ),
+        (
+            H256::Avx2,
+            true,
+            [
+                vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx,
+                vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx,
+            ],
+            VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES,
+        ),
+        (
+            H256::ShaNi,
+            false,
+            [
+                vg_dsa_generate_parameters_2048_sha256_shani,
+                vg_dsa_generate_parameters_3072_sha256_shani,
+            ],
+            VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES,
+        ),
+        (
+            H256::ShaNi,
+            true,
+            [
+                vg_dsa_generate_parameters_2048_sha256_shani_mr_adx,
+                vg_dsa_generate_parameters_3072_sha256_shani_mr_adx,
+            ],
+            VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES,
+        ),
+    ];
+    for &(h256, adx, expected, required) in sha256_cases {
+        for (&p_len, expected) in [256, 384].iter().zip(expected) {
+            for h1 in [H1::Scalar, H1::ShaNi] {
+                assert!(core::ptr::fn_addr_eq(
+                    select_backends(h1, h256, adx, p_len),
+                    expected
+                ));
+            }
+            if detected().contains(required) {
+                check_empty_tapes(expected, p_len);
+            }
         }
     }
 }
@@ -300,7 +310,7 @@ fn backend_combinations() {
         let selected = select_backends(h1, h256);
         assert!(core::ptr::fn_addr_eq(selected, expected));
         if detected().contains(required) {
-            check_empty_tapes(selected);
+            check_empty_tapes(selected, 128);
         }
     }
 }
@@ -320,19 +330,20 @@ fn backend_combinations() {
         )
     )
 ))]
-fn check_empty_tapes(selected: Generate) {
-    let mut out = [0xa5; 276];
-    let mut scratch = vec![0u64; 9216];
+fn check_empty_tapes(selected: Generate, p_len: usize) {
+    let q_len = if p_len == 128 { 20 } else { 32 };
+    let mut out = vec![0xa5; 2 * p_len + q_len];
+    let mut scratch = vec![0u64; 64 * p_len + 1024];
     let empty: &[u8] = &[];
-    // SAFETY: supported 1024/160 dimensions, valid disjoint buffers,
+    // SAFETY: the selected helper matches the supported public width; disjoint buffers,
     // whole empty tapes, and all emitted CPU requirements checked.
     assert_eq!(
         unsafe {
             selected(
                 out.as_mut_ptr(),
                 out.len(),
-                128,
-                20,
+                p_len,
+                q_len,
                 empty.as_ptr(),
                 0,
                 empty.as_ptr(),
@@ -345,7 +356,7 @@ fn check_empty_tapes(selected: Generate) {
         },
         0
     );
-    assert_eq!(out, [0; 276]);
+    assert!(out.iter().all(|&byte| byte == 0));
 }
 
 #[test]
@@ -368,7 +379,7 @@ fn exhausted_tapes_after_prime_search_zero_output() {
         // output size, sufficient scratch, and disjoint owned buffers.
         // The selected implementation requires only detected CPU features.
         let status = unsafe {
-            select(detected())(
+            select(detected(), v.p.len())(
                 out.as_mut_ptr(),
                 out.len(),
                 v.p.len(),
@@ -472,9 +483,9 @@ fn backend_combinations() {
     for &(umaal, expected, required) in cases {
         let selected = select_backends(umaal);
         assert!(core::ptr::fn_addr_eq(selected, expected));
-        assert!(core::ptr::fn_addr_eq(select(required), expected));
+        assert!(core::ptr::fn_addr_eq(select(required, 128), expected));
         if detected().contains(required) {
-            check_empty_tapes(selected);
+            check_empty_tapes(selected, 128);
         }
     }
 }

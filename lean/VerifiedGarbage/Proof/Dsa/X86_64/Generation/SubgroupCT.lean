@@ -22,11 +22,13 @@ def SubgroupWorkspace (len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
   WorkspaceBefore p.call s ∧ p.plan.prime.len = len
 
 theorem subgroupCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
-    RelCT isa (Two (SubgroupSized n len)) (qCandidate H.sha1 H.sha256) (Two (SubgroupWorkspace len)) := by
+    RelCT isa (Two (SubgroupSized n len)) (qCandidate H.sha1 H.sha256 len) (Two (SubgroupWorkspace len)) := by
   refine two_post (two_map SubgroupPublic.hash (fun _ _ h => subgroup_hash h.1)
-    (qCandidate_ct H n hn)) ?_
+    (qCandidate_ct H n hn len)) ?_
   intro p s h
-  exact WP.mono (subgroup_candidate_ready H h.1) fun _ ht => ⟨ht, h.2⟩
+  have step := subgroup_candidate_ready H h.1
+  rw [h.2] at step
+  exact WP.mono step fun _ ht => ⟨ht, h.2⟩
 
 theorem subgroupWorkspace_ct (len : Nat) :
     RelCT isa (Two (SubgroupWorkspace len)) (.block workspaceBase)

@@ -40,14 +40,14 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (hout : ∀ i < len, InRegions s.wr (off op i) 1)
     (hsep : ∀ i < len, ∀ j < len, off (off S oDig) i ≠ off op j)
     (hbuf : HashBufferSeparate F S op len) :
-    WP isa (Impl.Dsa.X86_64.Generation.qCandidate G1 G256) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.qCandidate G1 G256 len) s fun t =>
       Spec.Rsa.bytesAt t.mem op len =
         Spec.Dsa.encodeBE len (Spec.Dsa.qCandidate (8 * len) (Spec.Rsa.bytesAt s.mem rp len)) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
       Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem t.mem ∧
       Lay t F S ∧ ∃ V', Rep t.mem F S V' W := by
   unfold Impl.Dsa.X86_64.Generation.qCandidate
-  refine WP.seq (WP.mono (seedHash_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
+  refine WP.seq (WP.mono (seedHashAt_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
     fun u ⟨Lu, rdu, wru, csu, hfu, V', Ru, _, hb⟩ => ?_)
   refine WP.seq (WP.mono (qArgs_ok Lu Ru hop A.hll) fun v ⟨hdi, hsi, hcx, hdx, hm, hk⟩ => ?_)
   let seed := Spec.Rsa.bytesAt s.mem rp len

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnSpecialized
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
 public import VerifiedGarbage.Proof.Bignum.X86_64.Template
 
@@ -21,6 +22,21 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
 def variant : RoundImpl where
   mont := Mont.fnAdx
+  inlineMont := Mont.fnAdxSpecialized
+  inlineDepth := by
+    intro o a b
+    unfold Mont.fnAdxSpecialized
+    change (Impl.Bignum.X86_64.MontFnSpecialized.mm o a b).x86_64Depth = 0
+    unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
+      Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
+    split <;> rfl
+  inlineSafe := by
+    intro o a b
+    change (Impl.Bignum.X86_64.MontFnSpecialized.mm o a b).allInstrs
+      (fun i => !loadsMxcsr i && !isa.writesSp i) = true
+    unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
+      Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
+    split <;> rfl
   mm := Impl.Bignum.X86_64.MontFn.call "vg_rsa_mont_mul_adx" Impl.Bignum.X86_64.MontFn.mulAdx
   mmOk := call_inlineOk (by decide +kernel)
   mmInline _ _ _ := rfl

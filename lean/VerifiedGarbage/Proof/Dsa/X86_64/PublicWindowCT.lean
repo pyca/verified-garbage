@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicSquares
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -103,14 +104,83 @@ theorem mid_post {bd : Nat → Nat → Nat} {p : XPub × Nat} {s : State} (h : W
   exact ⟨minv, X, Xc, hc.of_win hf hk.2.2 (hk.gpr (by decide)), hw, hw', Nat.mod_lt _ (by decide),
     (ht.of_win hf hc.scrT.nowrap).tab, by rw [hm, word_writeW_self]⟩
 
+private theorem count_window {p : XPub × Nat} {s t : State} {v : Nat} {bd : Nat → Nat → Nat}
+    (h : WindowPre bd p s)
+    (hm : t.mem = s.mem.writeW (off (off p.1.B p.1.o) (8 * Crt.sNib)) (BitVec.ofNat 64 v))
+    (hk : Keep [.rax] s t) : WindowPre bd p t := by
+  obtain ⟨mi, X, Xc, hc, ht, hy, hv, hv', hw, hw', hR⟩ := h
+  obtain ⟨hc', _, hy', hh, hf⟩ := squareCounter_change hc hm hk
+  exact ⟨mi, X, Xc, hc', ht.of_win hf hc.scrT.nowrap, hy' ▸ hy,
+    (hh _ (by decide) (by decide)).trans hv, hv', hw, hw', hR⟩
+
+private def CountPre (bd : Nat → Nat → Nat) (p : (XPub × Nat) × Nat) (s : State) : Prop :=
+  WindowPre bd p.1 s ∧ word s.mem (off p.1.1.B p.1.1.o) (8 * Crt.sNib) = BitVec.ofNat 64 p.2
+
+private theorem square_count_post (Sq : MontS) {p : (XPub × Nat) × Nat} {s : State}
+    (h : CountPre Sq.bd p s) : WP isa Sq.mm s (CountPre Sq.bd p) := by
+  obtain ⟨⟨mi, X, Xc, hc, ht, hy, hv, hv', hw, hw', hR⟩, hn⟩ := h
+  exact WP.mono (crtSqS_ok Sq (Q := False) (x := 0) (E := 0) hc hw hw' hR hy False.elim)
+    fun t ⟨hc', hy', _, hh, hf, _⟩ =>
+      ⟨⟨mi, X, Xc, hc', ht.of_win hf hc.scrT.nowrap, hy',
+        (hh _ (by decide)).trans hv, hv', hw, hw', hR⟩, (hh _ (by decide)).trans hn⟩
+
+private theorem count_next_post (Sq : MontS) {p : (XPub × Nat) × Nat} {s : State}
+    (h : CountPre Sq.bd p s) (h1 : 1 ≤ p.2) (h4 : p.2 ≤ 4) :
+    WP isa (.block squaresNext) s fun t =>
+      CountPre Sq.bd (p.1, p.2 - 1) t ∧ t.zf = some (decide (p.2 - 1 = 0)) := by
+  obtain ⟨mi, X, Xc, hc, _⟩ := h.1
+  refine WP.mono (squaresNext_ok hc h.2 h1 h4) fun t ⟨hm, hz, hk⟩ => ?_
+  exact ⟨⟨count_window h.1 hm hk, by rw [hm, word_writeW_self]⟩, hz⟩
+
+private theorem squares_ct (Sq : MontS) :
+    RelCT isa (Two (WindowPre Sq.bd)) (squares Sq.mm) (Two (WindowPre Sq.bd)) := by
+  have pin : ∀ p s, WindowPre Sq.bd p s → s.gpr .rdi = off p.1.B p.1.o := by
+    intro p s ⟨_, _, _, hc, _⟩
+    exact hc.good.rdi
+  have sq : RelCT isa (Two (CountPre Sq.bd)) Sq.mm (Two (CountPre Sq.bd)) :=
+    two_post (two_map (fun p : (XPub × Nat) × Nat => p.1.1.ws)
+      (fun _ _ ⟨⟨mi, _, _, hc, _⟩, _⟩ => ⟨mi, hc.good, Nat.le_refl _⟩) Sq.ct)
+      (fun _ _ h => square_count_post Sq h)
+  unfold squares
+  refine RelCT.seq (two_piece (Ψ := fun p s => CountPre Sq.bd (p, 4) s)
+    [.rdi] (fun p s t hs ht r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact (pin p s hs).trans (pin p t ht).symm) (by taint_decide) ?_) ?_
+  · intro p s h
+    have h0 := h
+    obtain ⟨mi, X, Xc, hc, _⟩ := h
+    refine WP.mono (squaresInit_ok hc) fun t ⟨hm, hk⟩ => ?_
+    exact ⟨count_window h0 hm hk, by rw [hm, word_writeW_self]⟩
+  · have loop := two_loop (body := .seq Sq.mm (.block squaresNext)) (cond := .ne) (Φ := fun (p : XPub × Nat) j s => CountPre Sq.bd (p, 4 - j) s)
+      (Ψ := WindowPre Sq.bd) (fun _ => 4) ?_ ?_
+    exact loop.mono (by
+      rintro s t ⟨p, hs, ht⟩
+      exact ⟨p, ⟨by decide, hs⟩, ⟨by decide, ht⟩⟩) (fun _ _ h => h)
+    · refine RelCT.seq (two_post (Ψ := fun (p : (XPub × Nat) × Nat) s =>
+        p.2 < 4 ∧ CountPre Sq.bd (p.1, 4 - p.2) s)
+        (two_map (fun p : (XPub × Nat) × Nat => (p.1, 4 - p.2))
+        (fun _ _ h => h.2) (sq.mono (fun _ _ h => h) (fun _ _ _ => True.intro))) ?_) ?_
+      · intro p s ⟨hj, h⟩
+        exact WP.mono (square_count_post Sq h) fun t ht => ⟨hj, ht⟩
+      · exact two_taint [.rdi] (fun p s t hs ht r hr => by
+          obtain rfl := List.mem_singleton.mp hr
+          exact (pin p.1 s hs.2.1).trans (pin p.1 t ht.2.1).symm) (by taint_decide)
+    · intro p j s hj h
+      refine WP.seq (WP.mono (square_count_post Sq h) fun t ht => ?_)
+      refine WP.mono (count_next_post Sq ht (by omega) (by omega)) fun u ⟨hu, hz⟩ => ?_
+      refine ⟨?_, ?_, fun _ => hu.1⟩
+      · by_cases hn : j + 1 < 4
+        · have hn' : 4 - j - 1 ≠ 0 := by omega
+          simp [eval, hz, hn, hn']
+        · have hn' : 4 - j - 1 = 0 := by omega
+          simp [eval, hz, hn, hn']
+      · intro hj'
+        simpa only [Nat.sub_sub, Nat.add_comm j 1] using hu
+
 theorem window_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two (WindowPre Sq.bd)) (seqs (window Sq.mm M.mm)) (fun _ _ => True) := by
-  have sq : RelCT isa (Two (WindowPre Sq.bd)) Sq.mm (Two (WindowPre Sq.bd)) :=
-    two_post (two_map (fun p : XPub × Nat => p.1.ws)
-      (fun _ _ ⟨minv, _, _, hc, _⟩ => ⟨minv, hc.good, Nat.le_refl _⟩)
-      Sq.ct) (fun _ _ h => square_post Sq h)
   unfold window seqs
-  refine RelCT.seq sq (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq ?_)))
+  refine RelCT.seq (squares_ct Sq) ?_
   refine RelCT.seq (two_piece (Ψ := fun p s => SelectPre (p.1, p.2 / 16 % 16) s ∧
       ∃ minv X Xc, CExpCtx s (off p.1.B p.1.o) p.1.wx minv X Xc ∧
         CTab s.mem (off p.1.B p.1.o) p.1.wx X False 0)
