@@ -239,14 +239,27 @@ const DETECTED_INIT: u32 = 1 << 30;
 /// The features of this CPU, restricted by `VG_CPU_FEATURES` (see the
 /// module's documentation). (Detection is idempotent, so threads racing to
 /// do it store the same value, and `Relaxed` is enough.)
+///
+/// Inlined, it is a load and a test once detection has run; the detection
+/// itself is out of line (`detect`), so callers keep no registers for it.
+#[inline]
 pub(crate) fn detected() -> Features {
     let mut f = DETECTED.load(Ordering::Relaxed);
     if f & DETECTED_INIT == 0 {
-        let runtime = runtime();
-        f = (runtime & allowed(runtime)) | DETECTED_INIT;
-        DETECTED.store(f, Ordering::Relaxed);
+        f = detect();
     }
     Features(f & !DETECTED_INIT)
+}
+
+/// Detects the features, records them for `detected` and returns them, with
+/// `DETECTED_INIT` set.
+#[cold]
+#[inline(never)]
+fn detect() -> u32 {
+    let runtime = runtime();
+    let f = (runtime & allowed(runtime)) | DETECTED_INIT;
+    DETECTED.store(f, Ordering::Relaxed);
+    f
 }
 
 /// The features `VG_CPU_FEATURES` allows on a CPU with the features
