@@ -9,7 +9,8 @@ As on 32-bit ARM (`Impl/MlKem/Arm/Poly.lean`), but with the bytes built in
 registers: with 64-bit registers and more of them, each group of fields
 (one byte for `d = 1` and `d = 4`, five bytes for `d = 10`) is assembled in
 `r8` and stored a byte at a time, or loaded into `r8` and taken apart. Both
-functions branch on the low word of `d` (public), and loop with `r11`
+functions zero-extend `d` (a `u32`, public in its low word only) first,
+branch on it, and loop with `r11`
 counting down; they use only volatile registers and no stack.
 
 * `vg_mlkem_compress_encode(f = r3, d = r4, out = r5, len = r6)`:
@@ -63,14 +64,14 @@ def ce10Body : List Instr :=
    .addi .r3 .r3 16, .addi .r5 .r5 5, .subi .r11 .r11 1]
 
 def compressEncode : Prog isa :=
-  .seq (.block [.subi .r7 .r4 1])
+  .seq (.block [.rotr .w .r4 .r4 0]) (.seq (.block [.subi .r7 .r4 1])
     (.ite (.zero .w .r7)
       (.seq (.block (biasConst ++ [.li .r9 315, .li .r11 32])) (.loop (.block ce1Body) (.nonzero .d .r11)))
       (.seq (.block [.subi .r7 .r4 4])
         (.ite (.zero .w .r7)
           (.seq (.block (biasConst ++ [.li .r9 2520, .li .r11 128])) (.loop (.block ce4Body) (.nonzero .d .r11)))
           (.seq (.block (biasConst ++ [.lis .r9 0x2, .ori .r9 .r9 0x75F7, .li .r11 64]))
-            (.loop (.block ce10Body) (.nonzero .d .r11))))))
+            (.loop (.block ce10Body) (.nonzero .d .r11)))))))
 
 /-! ## `Decompress_d ∘ ByteDecode_d` -/
 
@@ -101,12 +102,12 @@ def dd10Body : List Instr :=
   [.addi .r3 .r3 5, .addi .r6 .r6 16, .subi .r11 .r11 1]
 
 def decodeDecompress : Prog isa :=
-  .seq (.block [.li .r9 3329, .subi .r7 .r5 1])
+  .seq (.block [.rotr .w .r5 .r5 0]) (.seq (.block [.li .r9 3329, .subi .r7 .r5 1])
     (.ite (.zero .w .r7)
       (.seq (.block [.li .r11 32]) (.loop (.block dd1Body) (.nonzero .d .r11)))
       (.seq (.block [.subi .r7 .r5 4])
         (.ite (.zero .w .r7)
           (.seq (.block [.li .r11 128]) (.loop (.block dd4Body) (.nonzero .d .r11)))
-          (.seq (.block [.li .r11 64]) (.loop (.block dd10Body) (.nonzero .d .r11))))))
+          (.seq (.block [.li .r11 64]) (.loop (.block dd10Body) (.nonzero .d .r11)))))))
 
 end VG.Impl.MlKem.PPC64LE
