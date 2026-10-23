@@ -36,6 +36,11 @@ open VG.Impl.MdStream.PPC64LE (mov)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Impl.Hmac.Stream.PPC64LE.Hash (cp32)
 
+/-- Word `k` at `o(src)` exclusive-ored into the one at `4 k(dst)`. -/
+def xor32 (src dst : Reg) (o k : Nat) : List Instr :=
+  [.load .w .r8 dst (4 * k), .load .w .r9 src (o + 4 * k), .logic .xor .r8 .r8 .r9,
+    .store .w .r8 dst (4 * k)]
+
 namespace Iter
 
 variable (H : Hash)
@@ -61,13 +66,8 @@ def copyKey : List Instr := (List.range (H.S / 4)).flatMap (cp32 .r20 .r21 0 (st
 /-- The outer key state's hash value copied over `st`'s. -/
 def copyHV : List Instr := (List.range (H.N / 4)).flatMap (cp32 .r20 .r21 H.S (st H))
 
-/-- Word `k` of `ub` exclusive-ored into `t`. -/
-def xor32 (k : Nat) : List Instr :=
-  [.load .w .r8 .r23 (4 * k), .load .w .r9 .r21 (ub H + 4 * k), .logic .xor .r8 .r8 .r9,
-    .store .w .r8 .r23 (4 * k)]
-
 /-- `T ← T ⊕ U`. -/
-def xorT : List Instr := (List.range (H.D / 4)).flatMap (xor32 H)
+def xorT : List Instr := (List.range (H.D / 4)).flatMap (xor32 .r21 .r23 (ub H))
 
 /-- `update` of `st` from a `count` of `B`, with the `D` bytes at `src`. -/
 def updD (src : Nat) : List Instr :=
