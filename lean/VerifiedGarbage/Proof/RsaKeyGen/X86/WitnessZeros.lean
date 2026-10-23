@@ -27,20 +27,20 @@ theorem zeros_ok {s : State} {base : Addr} {size : Nat} (scratch : Scr s base si
   | 0, _ => WP.block_nil ⟨rfl, Outside.refl _ _ _ _, Keeps.refl _ _⟩
   | n + 1, fit => by
     rw [zeros_succ]
-    refine WP.block_append (WP.mono (zeros_ok scratch o n (by omega)) fun a ⟨Va, Oa, Ka⟩ => ?_)
+    refine WP.block_append (WP.mono (zeros_ok scratch o n (by omega_arith)) fun a ⟨Va, Oa, Ka⟩ => ?_)
     have Sa := scratch.of_keeps Ka (by decide)
     refine wp_movS rfl fun b B _ => ?_
     have Sb := scratch.of_keeps (Ka.widen B.keeps) (by decide)
-    refine wp_storeS (Sb.ea (d := o + 4 * n) (by omega)) (Sb.write (d := o + 4 * n) (n := 4) (by omega))
+    refine wp_storeS (Sb.ea (d := o + 4 * n) (by omega_arith)) (Sb.write (d := o + 4 * n) (n := 4) (by omega_arith))
       fun t T => WP.block_nil ?_
     have Ot : Outside base (o + 4 * n) 4 a.mem t.mem := by
       rw [T.mem, B.mem]
-      exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega)
-    refine ⟨?_, (Oa.mono (by omega) (by omega)).trans (Ot.mono (by omega) (by omega)),
+      exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_arith)
+    refine ⟨?_, (Oa.mono (by omega_arith) (by omega_arith)).trans (Ot.mono (by omega_arith) (by omega_arith)),
       (Ka.widen B.keeps).widen (T.keeps [])⟩
     have top : w32 t.mem base (o + 4 * n) = 0 := by
       rw [T.mem]
       exact (w32_write_self _ _ _ _).trans (by rw [B.gpr]; rfl)
-    rw [val32_succ, Ot.val32 (by omega) (by have := scratch.nowrap; omega), Va, top, Nat.mul_zero]
+    rw [val32_succ, Ot.val32 (by omega_arith) (by have := scratch.nowrap; omega_arith), Va, top, Nat.mul_zero]
 
 end VG.Proof.RsaKeyGen.X86.WitnessLoad
