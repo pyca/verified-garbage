@@ -1397,9 +1397,22 @@ impl AesGcm {
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(target_arch = "aarch64")]
         if out.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
+            && let Some(_p) = self.fns.powers
         {
-            return Ok(self.seal_gather_prepared(p, nonce, aad, src, plaintext.len(), out));
+            let _ = src;
+            let mut rest = &mut *out;
+            for piece in plaintext {
+                let (dst, tail) = rest.split_at_mut(piece.len());
+                dst.copy_from_slice(piece);
+                rest = tail;
+            }
+            let seal = self.fns.seal;
+            let mut tag: Block = [0; 16];
+            unsafe {
+                seal(&self.ctx, self.rounds, nonce.as_ptr(), nonce.len(), aad.as_ptr(), aad.len(),
+                    out.as_mut_ptr(), out.len(), &mut tag)
+            };
+            return Ok(tag);
         }
         // The gathering seals every shape (on x86-64, a `_prepared` one a
         // TLS record's by `vg_aes_gcm_seal_split_prepared` from the first
@@ -1521,6 +1534,7 @@ impl AesGcm {
 
     /// `encrypt` with the `_with_powers` instances `p`: its descriptors
     /// `src` of `count` pieces, as `encrypt` writes them.
+    #[allow(dead_code)]
     #[inline(never)]
     fn seal_gather_prepared(
         &self,
