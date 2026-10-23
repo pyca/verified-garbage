@@ -206,6 +206,10 @@ pub struct ChaCha20 {
     nonce: [u8; 16],
     /// Whether `init` has yet to run: `state` holds nothing.
     pending: bool,
+    /// Whether `apply` has run on 64 bytes or more, and so may have written
+    /// any of `state`; shorter calls write only `state[0, 256)` and
+    /// `state[576, 616)`.
+    bulk: bool,
     backend: Backend,
 }
 
@@ -214,11 +218,23 @@ impl Drop for ChaCha20 {
     /// (all of it, as the contract lets the functions write any of it), and
     /// the key.
     fn drop(&mut self) {
-        // SAFETY: `self` is valid for writes of its size; it is a distinct
-        // object, so it does not overlap the callee's stack frame or wrap
-        // around the end of the address space. It is not used after the
-        // drop, so its fields need not stay valid.
-        unsafe { zeroize_raw((self as *mut Self).cast::<u8>(), size_of::<Self>()) };
+        if self.bulk {
+            // SAFETY: `self` is valid for writes of its size; it is a distinct
+            // object, so it does not overlap the callee's stack frame or wrap
+            // around the end of the address space. It is not used after the
+            // drop, so its fields need not stay valid.
+            unsafe { zeroize_raw((self as *mut Self).cast::<u8>(), size_of::<Self>()) };
+            return;
+        }
+        let state = self.state.as_mut_ptr().cast::<u8>();
+        // SAFETY: as above, for the parts of `state` that calls of `apply`
+        // on fewer than 64 bytes write, and for the key and the nonce.
+        unsafe {
+            zeroize_raw(state, 256);
+            zeroize_raw(state.add(576), 40);
+            zeroize_raw(self.key.as_mut_ptr(), 32);
+            zeroize_raw(self.nonce.as_mut_ptr(), 16);
+        }
     }
 }
 
@@ -236,6 +252,7 @@ impl ChaCha20 {
             key: *key,
             nonce: *nonce,
             pending: true,
+            bulk: false,
             backend: Backend::select(detected()),
         }
     }
@@ -275,6 +292,7 @@ impl ChaCha20 {
         if self.pending {
             self.start();
         }
+        self.bulk |= data.len() >= 64;
         let f = match self.backend {
             Backend::Scalar => vg_chacha20_apply,
             #[cfg(target_arch = "aarch64")]
