@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gather.PPC64LE.Loop
-public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -12,6 +12,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # Gathering a list of slices, PPC64LE: constant time

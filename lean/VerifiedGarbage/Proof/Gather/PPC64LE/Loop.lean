@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
