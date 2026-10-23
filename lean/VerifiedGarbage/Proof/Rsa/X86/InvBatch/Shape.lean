@@ -20,6 +20,24 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
     Impl.Rsa.X86.InvBatch.twice, Impl.Rsa.X86.InvBatch.finish,
     Impl.Rsa.X86.InvBatch.absolute, List.all_append]
   decide +kernel
- theorem body96_noSp : (Impl.Rsa.X86.InvBatch.body 96 48).allInstrs noSp=true := by rsa_stack_shape
- theorem body128_noSp : (Impl.Rsa.X86.InvBatch.body 128 64).allInstrs noSp=true := by rsa_stack_shape
+ theorem body96_noSp : (Impl.Rsa.X86.InvBatch.body 96 48).allInstrs noSp=true := by
+  rw [Code.allInstrs_eq]
+  simp only [Impl.Rsa.X86.InvBatch.body, Impl.Rsa.X86.InvBatch.seqs,
+    Impl.Rsa.X86.Keys.seqs, instrs,
+    Impl.Rsa.X86.InvBatch.init, Impl.Rsa.X86.InvBatch.operands,
+    Impl.Rsa.X86.InvBatch.coefficients, Impl.Rsa.X86.InvBatch.inverseSetup,
+    Impl.Rsa.X86.InvBatch.update, Impl.Rsa.X86.InvBatch.normalize,
+    Impl.Rsa.X86.InvBatch.twice, Impl.Rsa.X86.InvBatch.finish,
+    Impl.Rsa.X86.InvBatch.absolute, List.all_append]
+  decide +kernel
+ theorem body128_noSp : (Impl.Rsa.X86.InvBatch.body 128 64).allInstrs noSp=true := by
+  rw [Code.allInstrs_eq]
+  simp only [Impl.Rsa.X86.InvBatch.body, Impl.Rsa.X86.InvBatch.seqs,
+    Impl.Rsa.X86.Keys.seqs, instrs,
+    Impl.Rsa.X86.InvBatch.init, Impl.Rsa.X86.InvBatch.operands,
+    Impl.Rsa.X86.InvBatch.coefficients, Impl.Rsa.X86.InvBatch.inverseSetup,
+    Impl.Rsa.X86.InvBatch.update, Impl.Rsa.X86.InvBatch.normalize,
+    Impl.Rsa.X86.InvBatch.twice, Impl.Rsa.X86.InvBatch.finish,
+    Impl.Rsa.X86.InvBatch.absolute, List.all_append]
+  decide +kernel
 end VG.Proof.Rsa.X86.InvBatch
