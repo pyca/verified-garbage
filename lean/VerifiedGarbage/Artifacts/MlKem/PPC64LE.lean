@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.Cbd2
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Encode12
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Decode12
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CheckEk
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM (FIPS 203) on PPC64LE -/
@@ -44,6 +46,12 @@ def artifacts : List Artifact := [
   Spec.MlKem.decode12Api.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.decode12
     verified := Proof.MlKem.PPC64LE.Decode12.verified },
+  Spec.MlKem.compressEncodeApi.artifact PPC64LE.target {
+    code := Impl.MlKem.PPC64LE.compressEncode
+    verified := Proof.MlKem.PPC64LE.CompressEncode.verified },
+  Spec.MlKem.decodeDecompressApi.artifact PPC64LE.target {
+    code := Impl.MlKem.PPC64LE.decodeDecompress
+    verified := Proof.MlKem.PPC64LE.DecodeDecompress.verified },
   Spec.MlKem.checkEkApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.checkEk
     verified := Proof.MlKem.PPC64LE.CheckEk.verified }]
