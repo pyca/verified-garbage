@@ -42,6 +42,21 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   r23 : s₁.gpr .r23 = s₀.gpr .r10
   r20 : s₁.gpr .r20 = T
 
+/-- The head of the entry: `W`, the stack argument at `sp + off`, into `r12`. -/
+theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off = 112)
+    (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
+    WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 off]) s₀ fun sA =>
+      sA.gpr .r12 = W ∧ (∀ r, r ≠ .r12 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
+  have ho4 : off % 4 = 0 := by omega
+  have ho15 : off < 2 ^ 15 := by omega
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
+    hWi, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hWv, Option.bind_some, Option.map_some, Option.some.injEq,
+    exists_eq_left', reduceCtorEq, ne_eq, not_false_eq_true, Nat.reduceLT, Nat.reducePow, ↓reduceIte,
+    and_self, implies_true, BitVec.setWidth_eq, BitVec.add_zero]
+  exact ⟨trivial, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+
 theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ off = 112)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
@@ -53,14 +68,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ of
   have ho15 : off < 2 ^ 15 := by omega
   simp only [oneEntry]
   refine WP.block_append (WP.block_append ?_)
-  have hA : WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 off]) s₀ fun sA =>
-      sA.gpr .r12 = W ∧ (∀ r, r ≠ .r12 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
-      hWi, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hWv, Option.bind_some, Option.map_some, Option.some.injEq,
-      exists_eq_left', reduceCtorEq, ne_eq, not_false_eq_true, Nat.reduceLT, Nat.reducePow, ↓reduceIte,
-      and_self, implies_true, BitVec.setWidth_eq, BitVec.add_zero]
-    exact ⟨trivial, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+  have hA := oneA_ok hoff hWi hWv
   refine WP.mono hA fun sA ⟨a12, gA, kA⟩ => ?_
   refine WP.mono (save_ok (b := .r12) (by decide) (by rw [a12, kA.wr]; exact hW))
     fun s₂ ⟨hg, h31, hk, hsv, hf⟩ => ?_

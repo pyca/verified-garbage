@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Verified
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
+public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM on PPC64LE, with its working space on the stack
@@ -155,5 +158,30 @@ theorem streamVerify_framed :
     (post := Spec.Gcm.streamVerifyPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamVerify_verified (by decide) (by decide)
     (Proof.AesGcm.streamVerifyPre_local _) (Proof.AesGcm.streamVerifyPost_local _) verFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_seal`'s precondition, without the working
+space: `tag` alone on the stack. -/
+def sealFrameSat : State where
+  gpr := sealSat.gpr
+  lr := 0
+  sp := 0x9000
+  mem := sealSat.mem
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 8⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩]
+
+theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract PPC64LE.abi 2672).pre s := by
+  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost, PPC64LE.abi,
+    PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+    [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
+
+/-- `seal`, whose `tag` arrives on the stack: the frame copies it, then the
+working space's address, above its stack pointer (`Verified.stackScratchArgs`). -/
+theorem seal_framed :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 «seal»)
+      (Spec.Gcm.sealContract PPC64LE.abi 2672) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.sealPre PPC64LE.abi.ptrBits) (post := Spec.Gcm.sealPost PPC64LE.abi.ptrBits)
+    (wa := true) (stack := 0) (bytes := 2672) (m := 1) seal_verified (by decide) (by decide)
+    (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _) sealFrameSat_pre
 
 end VG.Proof.AesGcm.PPC64LE
