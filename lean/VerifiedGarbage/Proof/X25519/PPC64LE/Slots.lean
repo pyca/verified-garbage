@@ -85,7 +85,7 @@ theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
     (hS : SlotsOk s.mem b qs v) :
     WP isa (mul o x y) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
-  refine WP.mono (mul_ok ho (sep1_get hq hx).2 (sep1_get hq hy).2 hc)
+  refine WP.mono (mul_ok (by decide) ho (sep1_get hq hx).2 (sep1_get hq hy).2 hc)
     fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo

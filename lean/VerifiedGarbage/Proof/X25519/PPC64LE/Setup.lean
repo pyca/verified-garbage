@@ -308,7 +308,7 @@ theorem setup_ok {s : State} (hp : XPre s) :
   have hZ3 : Z3 = 128 := rfl
   have hA : A24 = 448 := rfl
   have hws : (⟨s.gpr .r6, 4096⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hc : Ctx (s.gpr .r6) s := ⟨rfl, hws⟩
+  have hc : Ctx (s.gpr .r6) s := ⟨rfl, 4096, Nat.le_refl _, hws⟩
   unfold setup
   refine WP.append (decode_ok hc (pt := s.gpr .r5) rfl (by rw [hp.rd]; simp) hp.pt_ws)
     fun s4 ⟨hl4, hf4, hr4⟩ => ?_
