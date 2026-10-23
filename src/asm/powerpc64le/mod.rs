@@ -2,6 +2,9 @@
 //! Verified functions for `powerpc64le`.
 
 #[rustfmt::skip]
+pub(crate) mod aes;
+
+#[rustfmt::skip]
 pub(crate) mod blake2b;
 
 #[rustfmt::skip]
