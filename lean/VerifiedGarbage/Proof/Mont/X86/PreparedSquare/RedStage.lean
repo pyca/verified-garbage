@@ -41,19 +41,19 @@ theorem redStage_ok {s : State} {W : Addr} {L S m N k l h : Nat} {A : Nat → Bi
       t.mem = s.mem ∧ Keeps [.eax, .edx, .ecx, .ebp, .ebx] s t := by
   let q := k+1-N
   let K := redCount N k
-  have qp : q≤k := by dsimp [q]; omega
-  have qn : q≤N := by dsimp [q]; omega
-  have kn : k-q<N := by dsimp [q]; omega
-  have Kp : 0<K ↔ q<min k N := by dsimp [K, redCount, q]; omega
-  have qK : q+K = min k N := by dsimp [K, redCount, q]; omega
-  have Km : K≤k-q := by dsimp [K, redCount, q]; omega
+  have qp : q≤k := by dsimp [q]; omega_arith
+  have qn : q≤N := by dsimp [q]; omega_arith
+  have kn : k-q<N := by dsimp [q]; omega_arith
+  have Kp : 0<K ↔ q<min k N := by dsimp [K, redCount, q]; omega_arith
+  have qK : q+K = min k N := by dsimp [K, redCount, q]; omega_arith
+  have Km : K≤k-q := by dsimp [K, redCount, q]; omega_arith
   unfold redStage
   refine WP.seq (WP.mono (lower_ok ha (.inr rfl) hN h8 hk si) fun t1 ⟨dx1, bx1, m1, K1, x1⟩ => ?_)
   have ha1 := ha.of_keeps K1 (by decide) (by rw [m1]; exact Outs.refl _ _ _)
   have ws1 := hw.of_keeps K1
   have si1 : t1.gpr .esi = BitVec.ofNat 32 (4*k) := (K1.1 _ (by decide)).trans si
   have edi1 : PtrAt t1 W .edi S := by rw [PtrAt, K1.1 _ (by decide)]; exact edi
-  refine WP.seq (WP.mono (redPtr_ok ha1 base argMeq edi1 qp (by omega) h8 hk dx1 si1 bx1)
+  refine WP.seq (WP.mono (redPtr_ok ha1 base argMeq edi1 qp (by omega_arith) h8 hk dx1 si1 bx1)
     fun t2 ⟨left, right, cf2, m2, K2, x2⟩ => ?_)
   have ws2 := ws1.of_keeps K2
   have edi2 : PtrAt t2 W .edi S := by rw [PtrAt, K2.1 _ (by decide)]; exact edi1
@@ -71,21 +71,21 @@ theorem redStage_ok {s : State} {W : Addr} {L S m N k l h : Nat} {A : Nat → Bi
   · intro yes
     have pos : 0<K := Kp.mpr (of_decide_eq_true yes)
     have endEq : (t3.gpr .ebx).toNat = W.toNat+(S+24+4*min k N) := by
-      rw [ebx3, Nat.mod_eq_of_lt (by have := hw.nowrap; have := Nat.min_le_right k N; omega)]
+      rw [ebx3, Nat.mod_eq_of_lt (by have := hw.nowrap; have := Nat.min_le_right k N; omega_arith)]
     have cmp : ∀ j≤K, (W.toNat+(S+24+4*q)+4*j <
         if Reg.ebx = .ebp then W.toNat+(m+4*(k-q)-4*j) else (t3.gpr .ebx).toNat) ↔ j<K := by
       intro j hj
       simp only [show Reg.ebx ≠ Reg.ebp by decide, ↓reduceIte, endEq]
-      omega
+      omega_arith
     have d := dotLoop_ok (r := .ebx) (.inr rfl) ws3 left3 right3
-      (by rw [xmm]; exact low) (by rw [xmm]; exact high) pos (by omega) (by omega) (by omega) cmp
+      (by rw [xmm]; exact low) (by rw [xmm]; exact high) pos (by omega_arith) (by omega_arith) (by omega_arith) cmp
     change WP isa (.loop (.block (VG.Impl.Mont.X86.Rt.Square.prod ++ ctl .ebx)) .b) t3 _
     refine WP.mono d fun u du => ?_
     refine ⟨?_, ?_, by rw [du.c3, xmm], by rw [du.c7, xmm], du.mem.trans mem, before.trans (du.keep.mono (by decide))⟩
     · simpa only [redLow, dotProd, mem, BitVec.ofNat_add] using du.low
     · simpa only [redHigh, dotProd, mem, BitVec.ofNat_add] using du.high
   · intro no
-    have zero : K=0 := by have := of_decide_eq_false no; omega
+    have zero : K=0 := by have := of_decide_eq_false no; omega_arith
     apply WP.block_nil
     refine ⟨?_, ?_, by rw [xmm], by rw [xmm], mem, before⟩
     · rw [xmm, low]
