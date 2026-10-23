@@ -17,9 +17,10 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase
 /-!
 # ChaCha20-Poly1305 on AArch64, the rest when decrypting: the kernel
 
-`TailO.kernel`, as `Tail.kernel`: the keystream of the four blocks from the
-stream's counter in the buffer `x3[0, 256)`, and the `c` blocks from `W`
-(`x20`; `x6 = c`) absorbed into the accumulator in `x21`–`x23`.
+`TailO.kernel sve k`, as `Tail.kernel`: the keystream of the four blocks
+from the stream's counter in the buffer `x3[0, 256)`, and the `c` blocks from
+`W` (`x20`; `x6 = c`, at most `10 k`) absorbed into the accumulator in
+`x21`–`x23`.
 -/
 
 @[expose] public section
@@ -37,13 +38,13 @@ open VG.Spec.ChaCha20 (innerBlock stateAt serialize block)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
 
-theorem kernel_ok (sve : Bool) {R a : Nat} {W : Addr} {c : Nat} {s : State} (hc : c < 2 ^ 63)
+theorem kernel_ok (sve : Bool) (k : Nat) {R a : Nat} {W : Addr} {c : Nat} {s : State} (hc : c < 2 ^ 63)
     (hx20 : s.gpr .x20 = W) (hx6 : s.gpr .x6 = BitVec.ofNat 64 c)
     (hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4)
     (hw : ∀ d, d + 16 ≤ 256 → InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 d) 16)
     (hst : (⟨s.gpr .x0, 64⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩)
-    (hr : Readable W (16 * c) s) (ha : Acc R a s) (hc20 : c ≤ 20) :
-    WP isa (TailO.kernel sve) s fun u =>
+    (hr : Readable W (16 * c) s) (ha : Acc R a s) (hck : c ≤ 10 * k) :
+    WP isa (TailO.kernel sve k) s fun u =>
       (∀ k < 256, u.mem (s.gpr .x3 + BitVec.ofNat 64 k) =
         (serialize (block (ctr (stateAt s.mem (s.gpr .x0)) (k / 64)))).getD (k % 64) 0) ∧
       Frame [⟨s.gpr .x3, 256⟩] s.mem u.mem ∧
@@ -66,15 +67,15 @@ theorem kernel_ok (sve : Bool) {R a : Nat} {W : Addr} {c : Nat} {s : State} (hc 
   let s₄ := s₃.write .x .x4 ((10 : BitVec 16).setWidth 64)
   have m₃ : s₃.mem = s.mem := m₂
   let vs : Nat → CState := fun j => ctr (stateAt s.mem (s.gpr .x0)) j
-  have h₄ : TI vs R a W c s₄ s₄ 0 := by
+  have h₄ : TI vs R a W c k s₄ s₄ 0 := by
     refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl, ⟨by omega, ?_, ?_, ?_⟩, ?_⟩
     · intro k j hj
       rw [Stitch.write_v]
       exact h₂ k j hj
     · rw [Stitch.write_v, t₂]
-    · rw [RegUpd.gpr_write_of_ne s₃ .x _ (by decide), l₂.gpr _ (by decide), hx20, Nat.min_zero,
+    · rw [RegUpd.gpr_write_of_ne s₃ .x _ (by decide), l₂.gpr _ (by decide), hx20, Nat.mul_zero, Nat.min_zero,
         Nat.mul_zero, BitVec.add_zero]
-    · have e : bytesAt s₄.mem W (16 * min c (2 * 0)) = [] := by simp [bytesAt]
+    · have e : bytesAt s₄.mem W (16 * min c (k * 0)) = [] := by simp [bytesAt]
       rw [e, Poly1305.absorbAll_nil]
       refine ha.of (fun r hr => ?_) m₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -139,8 +140,8 @@ theorem kernel_ok (sve : Bool) {R a : Nat} {W : Addr} {c : Nat} {s : State} (hc 
     rw [h₅.keep _ h4 h6 hp, RegUpd.gpr_write_of_ne s₃ .x _ h4]
   have acc₅ := h₅.abs.acc
   have ptr₅ := h₅.abs.ptr
-  rw [show min c (2 * 10) = c by omega, show s₄.mem = s.mem from m₃] at acc₅
-  rw [show min c (2 * 10) = c by omega] at ptr₅
+  rw [show min c (k * 10) = c by omega, show s₄.mem = s.mem from m₃] at acc₅
+  rw [show min c (k * 10) = c by omega] at ptr₅
   have e21 : ∀ r ∈ [Reg.x21, .x22, .x23], s₉.gpr r = s₅.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

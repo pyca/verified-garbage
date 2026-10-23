@@ -44,9 +44,54 @@ open VG.Proof.Poly1305 (absorbAll)
 
 variable {e : Bool}
 
-/-- `load`: our caller's `x20` in `x8`, the rest in `x20` and `x7`, its whole
-blocks counted in `x6`, and the accumulator and the clamped key as before the
-chunks. -/
+/-- `load`: our caller's `x20` in `x8`, the data from `x22` in `x20` and `x7`,
+the whole blocks of its `n` bytes counted in `x6`, and the accumulator and
+the clamped key as before the chunks. -/
+theorem loadAt_ok {s₀ u : State} (hp : APre e s₀) {key M : List Byte} {n : Nat} (hn : n < 2 ^ 64)
+    (hx21 : u.gpr .x21 = cx s₀) (hrd : u.rd = s₀.rd) (hwr : u.wr = s₀.wr)
+    (hx0 : u.gpr .x0 = off (cx s₀) 64) (hx23 : u.gpr .x23 = BitVec.ofNat 64 n)
+    (hm : Repr u.mem (off (cx s₀) 448) key M) :
+    WP isa (.block TailO.load) u fun s₂ =>
+      Acc (Rk key) (Spec.Poly1305.accumulate (Rk key) M) s₂ ∧
+      s₂.gpr .x20 = u.gpr .x22 ∧ s₂.gpr .x8 = u.gpr .x20 ∧ s₂.gpr .x7 = u.gpr .x22 ∧
+      s₂.gpr .x6 = BitVec.ofNat 64 (n / 16) ∧
+      s₂.mem = memIn u.mem (cx s₀) (u.gpr .x27) (u.gpr .x28) ∧
+      (∀ r, r ∉ [Reg.x6, .x7, .x8, .x20, .x21, .x22, .x23, .x24, .x25] → s₂.gpr r = u.gpr r) ∧
+      s₂.v = u.v ∧ s₂.sp = u.sp ∧ s₂.rd = u.rd ∧ s₂.wr = u.wr := by
+  unfold TailO.load
+  have hv : ∀ i ∈ [mov .x8 .x20, mov .x20 .x22, mov .x7 .x22, .lsr .x .x6 .x23 4], vdstOf i = none := by
+    decide
+  refine WP.block_append ((VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors hv (Q := fun s₁ =>
+      s₁.gpr .x8 = u.gpr .x20 ∧ s₁.gpr .x20 = u.gpr .x22 ∧ s₁.gpr .x7 = u.gpr .x22 ∧
+      s₁.gpr .x6 = BitVec.ofNat 64 (n / 16) ∧
+      (∀ r, r ≠ .x8 → r ≠ .x20 → r ≠ .x7 → r ≠ .x6 → s₁.gpr r = u.gpr r) ∧ s₁.mem = u.mem)
+    (wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_lsr (by decide) fun s₄ u₄ =>
+      WP.block_nil
+      ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr],
+        by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide)],
+        by rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)],
+        by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hx23,
+          shr4_ofNat hn],
+        fun r h8 h20 h7 h6 => by rw [u₄.other _ h6, u₃.other _ h7, u₂.other _ h20, u₁.other _ h8],
+        by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]⟩)).mono
+    fun s₁ ⟨⟨x8₁, x20₁, x7₁, x6₁, g₁, m₁⟩, v₁, sp₁, rd₁, wr₁⟩ => ?_)
+  refine (polyIn_ok hp (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), hx21])
+    (by rw [rd₁, hrd]) (by rw [wr₁, hwr])).mono
+    fun s₂ ⟨⟨a21, a22, a23, m₂, g₂, _, _⟩, v₂, sp₂, rd₂, wr₂⟩ => ?_
+  have hr : Repr s₁.mem (off (cx s₀) 448) key M := by rw [m₁]; exact hm
+  have x0₂ : s₂.gpr .x0 = off (cx s₀) 64 := by
+    rw [g₂ _ (by decide), g₁ _ (by decide) (by decide) (by decide) (by decide), hx0]
+  refine ⟨acc_in hr x0₂ a21 a22 a23 m₂, by rw [g₂ _ (by decide), x20₁], by rw [g₂ _ (by decide), x8₁],
+    by rw [g₂ _ (by decide), x7₁], by rw [g₂ _ (by decide), x6₁],
+    by rw [m₂, m₁, g₁ _ (by decide) (by decide) (by decide) (by decide),
+      g₁ _ (by decide) (by decide) (by decide) (by decide)], fun r hr' => ?_, by rw [v₂, v₁],
+    by rw [sp₂, sp₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
+  obtain ⟨h6, h7, h8, h20, h21, h22, h23, h24, h25⟩ := hr'
+  rw [g₂ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact
+    ⟨h21, h22, h23, h24, h25⟩), g₁ r h8 h20 h7 h6]
+
+/-- `load`, from what `cryptStitched` leaves. -/
 theorem load_ok {s₀ s w₀ u : State} (hp : APre false s₀) {key msg : List Byte} {o T : Nat}
     (hc : Crypted false o s₀ s w₀ key msg T u) :
     WP isa (.block TailO.load) u fun s₂ =>
@@ -57,42 +102,11 @@ theorem load_ok {s₀ s w₀ u : State} (hp : APre false s₀) {key msg : List B
       s₂.mem = memIn u.mem (cx s₀) (u.gpr .x27) (u.gpr .x28) ∧
       (∀ r, r ∉ [Reg.x6, .x7, .x8, .x20, .x21, .x22, .x23, .x24, .x25] → s₂.gpr r = u.gpr r) ∧
       s₂.v = u.v ∧ s₂.sp = u.sp ∧ s₂.rd = u.rd ∧ s₂.wr = u.wr := by
-  unfold TailO.load
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-  have hv : ∀ i ∈ [mov .x8 .x20, mov .x20 .x22, mov .x7 .x22, .lsr .x .x6 .x23 4], vdstOf i = none := by
-    decide
-  refine WP.block_append ((VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors hv (Q := fun s₁ =>
-      s₁.gpr .x8 = u.gpr .x20 ∧ s₁.gpr .x20 = u.gpr .x22 ∧ s₁.gpr .x7 = u.gpr .x22 ∧
-      s₁.gpr .x6 = BitVec.ofNat 64 ((L s₀ - (o + 512 * T)) / 16) ∧
-      (∀ r, r ≠ .x8 → r ≠ .x20 → r ≠ .x7 → r ≠ .x6 → s₁.gpr r = u.gpr r) ∧ s₁.mem = u.mem)
-    (wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_lsr (by decide) fun s₄ u₄ =>
-      WP.block_nil
-      ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr],
-        by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide)],
-        by rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)],
-        by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hc.x23,
-          show pre o false T = o + 512 * T from rfl, shr4_ofNat (by omega)],
-        fun r h8 h20 h7 h6 => by rw [u₄.other _ h6, u₃.other _ h7, u₂.other _ h20, u₁.other _ h8],
-        by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]⟩)).mono
-    fun s₁ ⟨⟨x8₁, x20₁, x7₁, x6₁, g₁, m₁⟩, v₁, sp₁, rd₁, wr₁⟩ => ?_)
-  refine (polyIn_ok hp (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), hc.inv.x21])
-    (by rw [rd₁, hc.inv.rd]) (by rw [wr₁, hc.inv.wr])).mono
-    fun s₂ ⟨⟨a21, a22, a23, m₂, g₂, _, _⟩, v₂, sp₂, rd₂, wr₂⟩ => ?_
-  have hr : Repr s₁.mem (off (cx s₀) 448) key (msg ++ bytesAt s.mem (dp s₀) (o + 512 * T)) := by
-    have e := hc.mac
-    simp only [Bool.false_eq_true, ite_false] at e
-    rw [m₁]; exact e
-  have x0₂ : s₂.gpr .x0 = off (cx s₀) 64 := by
-    rw [g₂ _ (by decide), g₁ _ (by decide) (by decide) (by decide) (by decide), hc.x0]
-  refine ⟨acc_in hr x0₂ a21 a22 a23 m₂, by rw [g₂ _ (by decide), x20₁], by rw [g₂ _ (by decide), x8₁],
-    by rw [g₂ _ (by decide), x7₁], by rw [g₂ _ (by decide), x6₁],
-    by rw [m₂, m₁, g₁ _ (by decide) (by decide) (by decide) (by decide),
-      g₁ _ (by decide) (by decide) (by decide) (by decide)], fun r hr' => ?_, by rw [v₂, v₁],
-    by rw [sp₂, sp₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
-  obtain ⟨h6, h7, h8, h20, h21, h22, h23, h24, h25⟩ := hr'
-  rw [g₂ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact
-    ⟨h21, h22, h23, h24, h25⟩), g₁ r h8 h20 h7 h6]
+  have e := hc.mac
+  simp only [Bool.false_eq_true, ite_false] at e
+  exact loadAt_ok hp (by omega) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x0
+    (by rw [hc.x23, show pre o false T = o + 512 * T from rfl]) e
 
 /-- `out`: the accumulator stored, `x22` and `x23` set to what follows the
 absorbed blocks, our caller's `x20` restored, and the rest kept in `x24`,
@@ -225,7 +239,7 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre false s₀) {key
     · rw [rd₂', wr₂', x0₂, oo]; exact hp.in_ctx' (by lit_omega)
     · rw [rd₂', wr₂', x0₂, oo]; exact hp.in_ctx' (by lit_omega)
   -- The kernel.
-  refine WP.seq ((kernel_ok sve (c := r / 16) (by omega) (by rw [x20₂, x22u]) x6₂ hin hw hst hrd a₂
+  refine WP.seq ((kernel_ok sve 2 (c := r / 16) (by omega) (by rw [x20₂, x22u]) x6₂ hin hw hst hrd a₂
       (by omega)).mono fun s₃ ⟨ks₃, f₃, hv₃, h2₃, x20₃, g₃, rd₃, wr₃, sp₃⟩ => ?_)
   have g₃' (r : Reg) (h1 : r ≠ .x1) (h4 : r ≠ .x4) (h6 : r ≠ .x6) (hp' : r ∉ Poly.regs) :
       s₃.gpr r = s₂.gpr r :=
