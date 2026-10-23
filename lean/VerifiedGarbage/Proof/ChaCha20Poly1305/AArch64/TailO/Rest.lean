@@ -36,7 +36,7 @@ namespace VG.Proof.ChaCha20Poly1305.AArch64.TailO
 open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
 open VG.Proof.ChaCha20 (CState ctr)
-open VG.Proof.ChaCha20.AArch64.Xor (Upd wp_mov wp_movz wp_lsr wp_sub wp_addImm)
+open VG.Proof.ChaCha20.AArch64.Xor (Upd wp_mov wp_movz wp_lsr wp_sub wp_addImm wp_subImm)
 open VG.Proof.ChaCha20Poly1305.AArch64.Stitch (Acc Readable)
 open VG.Proof.ChaCha20Poly1305.AArch64.Tail (Rk wp_add)
 open VG.Spec.ChaCha20 (stateAt serialize block keystream)
@@ -448,5 +448,85 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre false s₀) {key
       rw [k₆, ks₃ _ (by omega), x0₂, st₂, hc.cnt,
         ks_shift _ hk (q := o / 64 + 8 * T) (by omega), hP64]
 
+
+/-- `(r - k) >> 63` is 1 iff `r < k`, for both below `2^63`. -/
+theorem sub_shr63 {r k : Nat} (hr : r < 2 ^ 63) (hk : k < 2 ^ 63) :
+    (BitVec.ofNat 64 r - BitVec.ofNat 64 k) >>> 63 = BitVec.ofNat 64 (if r < k then 1 else 0) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega : r < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega : k < 2 ^ 64)]
+  split
+  · rw [Nat.mod_eq_of_lt (by omega : 2 ^ 64 - k + r < 2 ^ 64), show (BitVec.ofNat 64 1).toNat = 1 from rfl]
+    exact Nat.div_eq_of_lt_le (by omega) (by omega)
+  · rw [show 2 ^ 64 - k + r = (r - k) + 2 ^ 64 by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega : r - k < 2 ^ 64), Nat.div_eq_of_lt (by omega)]
+    rfl
+
+/-- `TailO.test`: `x9 = 0` iff the rest is 65 to 256 bytes. -/
+theorem test_ok (w : State) {r : Nat} (hr : r < 2 ^ 63) (hx : w.gpr .x23 = BitVec.ofNat 64 r) :
+    WP isa (.block TailO.test) w fun u =>
+      isa.eval (.zero .x .x9) u = some (decide (65 ≤ r ∧ r ≤ 256)) ∧ Kept [] w u ∧
+      (∀ q, q ≠ .x9 → q ≠ .x10 → q ≠ .x11 → u.gpr q = w.gpr q) ∧
+      ∀ v ∈ preservedV, (u.v v).extractLsb' 0 64 = (w.v v).extractLsb' 0 64 := by
+  have core : WP isa (.block TailO.test) w fun u =>
+      u.gpr .x9 = BitVec.ofNat 64 (if 65 ≤ r ∧ r ≤ 256 then 0 else 1) ∧
+      (∀ q, q ≠ .x9 → q ≠ .x10 → q ≠ .x11 → u.gpr q = w.gpr q) ∧ u.mem = w.mem ∧ u.rd = w.rd ∧
+      u.wr = w.wr := by
+    unfold TailO.test
+    refine wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ =>
+      wp_subImm (by decide) fun s₃ u₃ => wp_lsr (by decide) fun s₄ u₄ => wp_sub fun s₅ u₅ =>
+      wp_addImm (by decide) fun s₆ u₆ => ?_
+    simp only [List.replicate]
+    refine wp_movz fun t₁ v₁ => wp_movz fun t₂ v₂ => wp_movz fun t₃ v₃ => wp_movz fun t₄ v₄ =>
+      wp_movz fun t₅ v₅ => wp_movz fun t₆ v₆ => wp_movz fun t₇ v₇ => wp_movz fun t₈ v₈ =>
+      wp_movz fun t₉ v₉ => WP.block_nil ⟨?_, fun q h9 h10 h11 => ?_, ?_, ?_, ?_⟩
+    · have b₁ : s₂.gpr .x9 = BitVec.ofNat 64 (if r < 257 then 1 else 0) := by
+        rw [u₂.gpr, u₁.gpr, hx, sub_shr63 hr (by decide)]
+      have b₂ : s₄.gpr .x10 = BitVec.ofNat 64 (if r < 65 then 1 else 0) := by
+        rw [u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hx, sub_shr63 hr (by decide)]
+      rw [v₉.other _ (by decide), v₈.other _ (by decide), v₇.other _ (by decide), v₆.other _ (by decide),
+        v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide),
+        v₁.other _ (by decide), u₆.gpr, u₅.gpr, b₂, u₄.other _ (by decide), u₃.other _ (by decide), b₁]
+      by_cases h₁ : r < 65
+      · simp only [h₁, show r < 257 by omega, ite_true, show ¬ (65 ≤ r ∧ r ≤ 256) by omega, ite_false]; rfl
+      · by_cases h₂ : r < 257
+        · simp only [h₁, h₂, ite_true, ite_false, show 65 ≤ r ∧ r ≤ 256 by omega]; rfl
+        · simp only [h₁, h₂, ite_false, show ¬ (65 ≤ r ∧ r ≤ 256) by omega]; rfl
+    · rw [v₉.other _ h11, v₈.other _ h11, v₇.other _ h11, v₆.other _ h11, v₅.other _ h11, v₄.other _ h11,
+        v₃.other _ h11, v₂.other _ h11, v₁.other _ h11, u₆.other _ h9, u₅.other _ h9, u₄.other _ h10,
+        u₃.other _ h10, u₂.other _ h9, u₁.other _ h9]
+    · rw [v₉.mem, v₈.mem, v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem, u₆.mem, u₅.mem, u₄.mem,
+        u₃.mem, u₂.mem, u₁.mem]
+    · rw [v₉.rd, v₈.rd, v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, u₆.rd, u₅.rd, u₄.rd,
+        u₃.rd, u₂.rd, u₁.rd]
+    · rw [v₉.wr, v₈.wr, v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr, u₆.wr, u₅.wr, u₄.wr,
+        u₃.wr, u₂.wr, u₁.wr]
+  refine WP.mono (WP.preservedV (WP.kept core (by simp [TailO.test, clobbers, dstOf, preserved]))
+    (by simp [TailO.test, Code.allInstrs, keepsV, vdstOf])) fun u ⟨⟨⟨h9, hg, hm, hrd, hwr⟩, hk, hsp⟩, hv⟩ =>
+      ⟨?_, Kept.of hk hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hg, hv⟩
+  rw [show isa.eval (.zero .x .x9) u = some (u.gpr .x9 == 0) from
+    VG.Proof.ChaCha20.AArch64.Xor.eval_zero u .x9, h9]
+  by_cases h : 65 ≤ r ∧ r ≤ 256
+  · simp only [h, and_self, ite_true, decide_true]; rfl
+  · simp only [h, ite_false, decide_false]; rfl
+
+/-- `Crypted` holds after code that writes only `x9`–`x11` (`TailO.test`). -/
+theorem Crypted.keep {enc : Bool} {o : Nat} {s₀ s w u u' : State} {key msg : List Byte} {T : Nat}
+    (hc : Crypted enc o s₀ s w key msg T u) (hk : Kept [] u u')
+    (hg : ∀ q, q ≠ .x9 → q ≠ .x10 → q ≠ .x11 → u'.gpr q = u.gpr q)
+    (hv : ∀ v ∈ preservedV, (u'.v v).extractLsb' 0 64 = (u.v v).extractLsb' 0 64) :
+    Crypted enc o s₀ s w key msg T u' := by
+  have hm : u'.mem = u.mem := by
+    funext x; exact hk.frame x fun r hr => by simp at hr
+  refine ⟨hc.inv.step hk (fun r hr => by simp at hr) (fun r hr => by simp at hr), hc.le, hc.lt,
+    by rw [hg _ (by decide) (by decide) (by decide), hc.x0],
+    by rw [hg _ (by decide) (by decide) (by decide), hc.x1],
+    by rw [hg _ (by decide) (by decide) (by decide), hc.x2],
+    by rw [hg _ (by decide) (by decide) (by decide), hc.x3],
+    by rw [hg _ (by decide) (by decide) (by decide), hc.x22],
+    by rw [hg _ (by decide) (by decide) (by decide), hc.x23],
+    by rw [hm]; exact hc.cnt, fun k hk' => by rw [hm]; exact hc.data k hk',
+    by rw [hm]; exact hc.frame, by rw [hm]; exact hc.mac, fun r hr => (hv r hr).trans (hc.vec r hr)⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.TailO
