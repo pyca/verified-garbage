@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTBody
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -17,7 +18,7 @@ namespace VG.Proof.Bignum.Arm.MontPipeline
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Spec.Rsa.Mont (arrAt Operand)
 
-theorem fnBody_ct (round : Prog isa) (law : RoundLaw round) (ctLaw : RoundCTLaw round) {base : BitVec 32} {len w o a b : Nat}
+theorem fnBody_ct (round : Prog isa) (law : LoopLaw round) (ctLaw : LoopCTLaw round) {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b) (fit : arrAt w 3 + 32 ≤ 8 * len) :
     RelCT isa (fun s t => FnBodyReady base len w o a b s ∧ FnBodyReady base len w o a b t)
       (VG.Impl.Bignum.Arm.MontPipeline.fnBody round) (fun _ _ => True) := by

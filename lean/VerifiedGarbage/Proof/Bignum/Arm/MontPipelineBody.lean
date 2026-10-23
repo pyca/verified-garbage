@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCore
 public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
 import VerifiedGarbage.Proof.Bignum.Arm.MontCore
@@ -16,7 +17,7 @@ namespace VG.Proof.Bignum.Arm.MontPipeline
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem body_ok (round : Prog isa) (law : RoundLaw round) (s : State) {base : BitVec 32} {size out tmp a b mod acc n : Nat} {inv : BitVec 32}
+theorem body_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : BitVec 32} {size out tmp a b mod acc n : Nat} {inv : BitVec 32}
     (ctx : RoundCtx s base size tmp a b mod acc n) (even : n % 2 = 0) (finish : CsubCtx s base size out acc mod tmp n)
     (regs : InitRegs s base out tmp a b mod acc n inv)
     (hB : val32 s.mem (State.addr base) b n < val32 s.mem (State.addr base) mod n)

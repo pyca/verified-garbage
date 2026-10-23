@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOp
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOpCT
@@ -18,7 +19,7 @@ namespace VG.Proof.Bignum.Arm.InlineWindow
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Spec.Rsa.Mont (arrAt)
 
-variable (round : Prog isa) (law : MontPipeline.RoundLaw round)
+variable (round : Prog isa) (law : MontPipeline.LoopLaw round)
 
 def arithmetic (base : BitVec 32) (len w : Nat) :
     TwoExp.Montgomery base len w (fun _ => True) [⟨State.addr base, 8 * len⟩] where
@@ -31,7 +32,7 @@ def arithmetic (base : BitVec 32) (len w : Nat) :
     rintro t ⟨ready, modulus, bound, value, keeps, frame, rest⟩
     exact ⟨ready, modulus, bound, value, keeps, trivial, frame, rest⟩
 
-theorem timing (ctLaw : MontPipeline.RoundCTLaw round) {base : BitVec 32} {len w : Nat}
+theorem timing (ctLaw : MontPipeline.LoopCTLaw round) {base : BitVec 32} {len w : Nat}
     (fit : arrAt w 3 + 32 ≤ 8 * len) :
     TwoExp.MontgomeryTiming (arithmetic round law base len w) where
   op_ct := by
@@ -40,7 +41,7 @@ theorem timing (ctLaw : MontPipeline.RoundCTLaw round) {base : BitVec 32} {len w
       (fun _ _ h => ⟨⟨h.1.1, h.1.2.2⟩, ⟨h.2.1.1, h.2.1.2.2⟩, h.2.2⟩)
       (fun _ _ _ => trivial)
 
-def kernel (ctLaw : MontPipeline.RoundCTLaw round) : WindowKernel where
+def kernel (ctLaw : MontPipeline.LoopCTLaw round) : WindowKernel where
   code := SharedWindow.phase (MontPipeline.op round)
   correct := by
     intro s base ep len w M x eb h fits

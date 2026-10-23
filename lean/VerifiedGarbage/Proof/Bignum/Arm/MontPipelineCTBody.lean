@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTCore
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
@@ -13,7 +14,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 namespace VG.Proof.Bignum.Arm.MontPipeline
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
-theorem body_ct (round : Prog isa) (law : RoundLaw round) (ctLaw : RoundCTLaw round) {base : BitVec 32} {size out tmp a b mod acc n : Nat} (even : n % 2 = 0) (ht : tmp + 32 ≤ size) :
+theorem body_ct (round : Prog isa) (law : LoopLaw round) (ctLaw : LoopCTLaw round) {base : BitVec 32} {size out tmp a b mod acc n : Nat} (even : n % 2 = 0) (ht : tmp + 32 ≤ size) :
     RelCT isa (fun s t => InitReady base size out tmp a b mod acc n s ∧
       InitReady base size out tmp a b mod acc n t) (VG.Impl.Bignum.Arm.MontPipeline.body round) (fun _ _ => True) := by
   let P := InitReady base size out tmp a b mod acc n

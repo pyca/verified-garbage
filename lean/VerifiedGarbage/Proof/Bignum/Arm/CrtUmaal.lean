@@ -1,4 +1,6 @@
 module
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFios
@@ -22,8 +24,9 @@ open VG.Arm VG.Impl.Bignum.Arm
 
 theorem crtUmaal_verified :
     Verified target CrtFios.code (Spec.Rsa.privateCrtContract abi 56) :=
-  umaalArithmetic_verified (crt_verified (kernel := InlineWindow.kernel Fios.round Fios.round_law (by
-    intro base size tmp a b mod acc n i _ hi
-    exact Fios.round_ct hi)))
+  umaalArithmetic_verified (crt_verified (kernel := InlineWindow.kernel Fios.round (MontPipeline.RoundLaw.loop Fios.round_law)
+    (MontPipeline.RoundCTLaw.loop Fios.round_law (by
+      intro base size tmp a b mod acc n i _ hi
+      exact Fios.round_ct hi))))
 
 end VG.Proof.Bignum.Arm

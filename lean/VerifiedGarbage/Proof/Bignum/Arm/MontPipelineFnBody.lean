@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBody
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
@@ -20,7 +21,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 
-theorem fnBody_ok (round : Prog isa) (law : RoundLaw round) (s : State) {base : BitVec 32} {len o a b : Nat}
+theorem fnBody_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : BitVec 32} {len o a b : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
     (ho : Operand o) (ha : Operand a) (hb : Operand b)
     (ptr : s.gpr .r0 = base) (po : s.gpr .r2 = BitVec.ofNat 32 o)

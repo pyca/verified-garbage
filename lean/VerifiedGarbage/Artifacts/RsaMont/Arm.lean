@@ -23,8 +23,10 @@ def artifacts : List Artifact := [
   Spec.Rsa.Mont.mulApi.artifact target {
     suffix := "_umaal"
     notes := ["One shared callable UMAAL kernel handles both Montgomery products and squares. \
-        Two-word pipelining fuses product and cancellation with independent carry chains, \
-        preserving the 40-byte frame and the baseline's arithmetic and constant-time contracts."]
+        Each pass does the rows of two words of the first operand: one scan of the accumulator \
+        loads and stores each word once for both rows, with the products and cancellations of \
+        each row on their own carry chains (four in all), preserving the 40-byte frame and the \
+        baseline's arithmetic and constant-time contracts."]
     code := Umaal.variant.mul
     stack := 40
     verified := Umaal.variant.verified

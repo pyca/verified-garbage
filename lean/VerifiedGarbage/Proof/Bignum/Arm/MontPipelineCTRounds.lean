@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Lift a scanning-round constant-time law through the public native loop. -/
@@ -73,5 +74,9 @@ theorem rounds_ct (round : Prog isa) (law : RoundLaw round) (ctLaw : RoundCTLaw 
   have count := h.1.ctx.count
   exact ⟨0, by omega, by omega, h⟩
 
+
+theorem RoundCTLaw.loop {round : Prog isa} (law : RoundLaw round) (ctLaw : RoundCTLaw round) :
+    LoopCTLaw round :=
+  fun even => rounds_ct round law ctLaw even
 
 end VG.Proof.Bignum.Arm.MontPipeline

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCallFios
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
@@ -26,14 +27,14 @@ theorem montCallFios_law
     CallArithmeticLaw MontCallFios.arithmetic where
   correct := by
     intro s base len w o a b h ho ha hb
-    have body := MontPipeline.fnBody_ok FiosFast.round law s h.input.workspace h.input.layout
+    have body := MontPipeline.fnBody_ok FiosFast.round (MontPipeline.RoundLaw.loop law) s h.input.workspace h.input.layout
       ho ha hb h.input.ptr h.input.outIndex h.input.aIndex h.input.bIndex
       (by rw [h.input.width]; exact h.input.inverse)
       (by rw [h.input.width]; exact h.input.operand)
     simpa only [MontCallFios.arithmetic,h.input.width] using body
   ct := by
     intro base len w o a b ho ha hb fit s t tr1 tr2 u v h e1 e2
-    exact MontPipeline.fnBody_ct FiosFast.round law ctLaw ho ha hb fit
+    exact MontPipeline.fnBody_ct FiosFast.round (MontPipeline.RoundLaw.loop law) (MontPipeline.RoundCTLaw.loop law ctLaw) ho ha hb fit
       s t tr1 tr2 u v ⟨h.1.input,h.2.1.input⟩ e1 e2
   stack := rfl
 

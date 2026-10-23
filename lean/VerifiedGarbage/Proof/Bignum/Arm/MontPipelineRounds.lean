@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -42,5 +43,8 @@ theorem rounds_ok (round : Prog isa) (law : RoundLaw round) (s : State) {base : 
     · rw [hzero]
       omega
 
+
+theorem RoundLaw.loop {round : Prog isa} (law : RoundLaw round) : LoopLaw round :=
+  fun s _ _ _ _ _ _ _ _ _ ctx even hdr ptr hzero hB hInv => rounds_ok round law s ctx even hdr ptr hzero hB hInv
 
 end VG.Proof.Bignum.Arm.MontPipeline
