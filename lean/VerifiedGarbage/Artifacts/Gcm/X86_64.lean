@@ -44,13 +44,12 @@ def artifacts : List Artifact := [
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul_avx512"
-    notes := ["Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute \
-        them, two in each register, already prepared, stored as the first 8 pairs; then those \
-        sixteen, four in each 512-bit register, times `H'¹⁶` and times `H'³²`, for \
-        `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
+    notes := ["Uses VPCLMULQDQ: `H'`–`H'¹⁶` as `vg_aes_gcm_prepare16_vpclmul` computes and \
+        stores them, as the first 8 pairs; then those sixteen, four in each 512-bit register, \
+        times `H'¹⁶` and times `H'³²`, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
     code := Impl.Gcm.X86_64.PrepareZ.prepare
     verified := Proof.Gcm.X86_64.PrepareZ.prepare_verified
-    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f"] },
+    features := ["avx", "avx2", "ssse3", "vpclmulqdq", "avx512f"] },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_vpclmul"
     notes := ["Uses VPCLMULQDQ: `H'` as the stitched loops compute it, then `H'²`–`H'¹⁶` two in \
