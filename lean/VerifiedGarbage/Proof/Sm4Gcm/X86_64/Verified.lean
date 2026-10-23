@@ -44,11 +44,17 @@ theorem ctrFn_mx : ctrFn.code.allInstrs (fun i => !loadsMxcsr i) = true := by li
 
 theorem keyFn_mx : keyFn.code.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
 
-theorem ctrFn_spSafe : ctrFn.code.all (fun i => !X86_64.isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+theorem ctrFn_spSafe : ctrFn.code.all (fun i => !X86_64.isa.writesSp i) = true := by
+  apply Code.all_of_allInstrs
+  rw [Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  exact congrArg Bool.not (ctr_spSafe i hi)
 
-theorem keyFn_spSafe : keyFn.code.all (fun i => !X86_64.isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+theorem keyFn_spSafe : keyFn.code.all (fun i => !X86_64.isa.writesSp i) = true := by
+  apply Code.all_of_allInstrs
+  rw [Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  exact congrArg Bool.not (key_spSafe i hi)
 
 theorem ctrFn_depth : ctrFn.code.x86_64Depth ≤ 3216 := ctr_depth
 
