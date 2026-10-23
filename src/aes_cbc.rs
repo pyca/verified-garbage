@@ -12,7 +12,8 @@
 //!
 //! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
 //! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with AES and SHA3 use seven interleaved states for decryption;
+//! AArch64, AES encryption keeps its keys and chaining state in registers;
+//! CPUs with AES and SHA3 use seven interleaved states for decryption;
 //! AES alone runs the `_aes` functions. Elsewhere, and on other CPUs, the
 //! constant-time bitsliced implementation runs.
 
@@ -33,7 +34,8 @@ use crate::arch::aes::vg_aes_expand_key_aesni;
 use crate::arch::aes_cbc::{
     VG_AES_CBC_DECRYPT_AES_FEATURES, VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES,
     VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN, VG_AES_CBC_ENCRYPT_AES_FEATURES,
-    vg_aes_cbc_decrypt_aes, vg_aes_cbc_decrypt_aes_sha3, vg_aes_cbc_encrypt_aes,
+    VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN, vg_aes_cbc_decrypt_aes, vg_aes_cbc_decrypt_aes_sha3,
+    vg_aes_cbc_encrypt_aes,
 };
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes_cbc::{
@@ -180,7 +182,14 @@ impl AesCbc {
             vg_aes_cbc_encrypt_vaes,
             vg_aes_cbc_encrypt_aes
         );
-        self.crypt(iv, buffer, f, 2176)
+        #[cfg(target_arch = "aarch64")]
+        let scratch_written = match self.backend {
+            Backend::Aes => VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN,
+            Backend::Scalar => 2176,
+        };
+        #[cfg(not(target_arch = "aarch64"))]
+        let scratch_written = 2176;
+        self.crypt(iv, buffer, f, scratch_written)
     }
 
     /// Decrypts whole 16-byte blocks in place, chained from `iv`, and
@@ -237,7 +246,7 @@ impl AesCbc {
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers. The emitted, proved write bound permits the
-        // register-only decryption path to leave this initialized buffer alone.
+        // register-only AES paths to leave this initialized buffer alone.
         if scratch_written != 0 {
             zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
         }
