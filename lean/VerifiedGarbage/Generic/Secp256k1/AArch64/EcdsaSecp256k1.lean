@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Verified
+
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Verified
@@ -72,11 +74,11 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : L
     verified := Proof.Ecdsa.AArch64.Secp256k1.sign_verified h.law h.inv },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
+      Public scalar multiplication uses a joint radix-four table of fifteen projective points, \
+      256 shared doublings and at most 128 additions with complete general RCB formulas. \
       The inversion modulo `n` is a call of `vg_secp256k1_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
-    code := Impl.Ecdsa.Verify.AArch64.Secp256k1.verify
-    verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.verify_verified h.law h.inv }]
+      Branches and memory addresses depend only on pointers, counters and the public verification scalars."]
+    code := Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify
+    verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify_verified h.law h.inv }]
 
 end VG.Generic.Secp256k1.AArch64.EcdsaSecp256k1

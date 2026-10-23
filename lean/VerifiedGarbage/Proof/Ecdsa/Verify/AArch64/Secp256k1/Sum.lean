@@ -32,11 +32,11 @@ abbrev sumSl : List Nat := sumR ++ [T0, T1, T2, T3, T4, T5, DX, DY, DZ]
 addition by a call of `padd`) includes. -/
 abbrev sumW : List Nat := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, RX, RY, RZ]
 
-theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (sum c) s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
-      ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p) ∧
+      ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p ∧ sv c base s' RY < c.C.p) ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl EXPP))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
@@ -119,12 +119,26 @@ theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base siz
       exact sl_apart c (ne i hi)
   · constructor
     · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
-    · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
+    · constructor
+      · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
+      · rw [y₄]; exact I₁.lt _ (hD DY (by simp))
   · have vx := I₁.val _ (hD DX (by simp))
     have vy := I₁.val _ (hD DY (by simp))
     have vz := I₁.val _ (hD DZ (by simp))
     show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
     rw [x₄, y₄, z₄]
     exact (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
+
+theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
+    WP isa (sum c) s fun s' =>
+      Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
+      ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p) ∧
+      (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
+        rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl EXPP))
+          (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
+          (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) := by
+  exact WP.mono (sum_full_ok hc hs hM hlt) fun t ⟨a,b,c,d,e,f,g⟩ =>
+    ⟨a,b,c,d,e,⟨f.1,f.2.1⟩,g⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64.Secp256k1
