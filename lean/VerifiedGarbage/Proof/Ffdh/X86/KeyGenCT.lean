@@ -278,10 +278,10 @@ theorem kAt_of {s f : State} (A : GenerateKeyABI s) (Bf : BodyAt (Rd s) Impl.Ffd
         [xR s, yR s]) := by
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.GenerateKey.args s, wsSize Impl.Ffdh.X86.GenerateKey.args s⟩
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
-  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ := by
+  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have rL : (arg s 8).toNat = pLenOf Impl.Ffdh.X86.GenerateKey.args s := A.randLen
   have D : domOf f.mem (synth Impl.Ffdh.X86.GenerateKey.args (arg s)) (arg s 5).toNat = entryDom s :=

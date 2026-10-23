@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 public import VerifiedGarbage.Impl.Rsa.X86.GcdDispatch
 import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 
@@ -102,7 +102,7 @@ def clrTop (j : Nat) : List Instr :=
 /-- `[o] = [a] [b] R⁻¹ mod n`, `R = 2^(8 B)`, by a call of `vg_rsa_mont_mul_at` in a frame of 36
 bytes, which keeps `ebx`, `esi`, `ebp` and `edi`; then `[o]`'s top words zeroed. -/
 def mmul (o a b : Nat) : Prog isa :=
-  .seq (.frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36))
+  .seq (.frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36))
     (.block (clrTop o))
 
 /-- `-n⁻¹ mod 2³²` from `[mBase]`'s low word. -/

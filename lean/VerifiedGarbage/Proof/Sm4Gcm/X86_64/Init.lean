@@ -73,7 +73,7 @@ theorem init_wp {s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s) :
   have rd₂ : s₂.rd = s.rd := hrd₂.trans hrd₁
   have wr₂ : s₂.wr = s.wr := hwr₂.trans hwr₁
   have kc : KeyCall s₂ K Ctx := by
-    refine ⟨hdi, hsi, by rw [hsp₂]; exact hsp, wk, by omega, d_kc.sub_right (Region.sub_prefix (by decide)),
+    refine ⟨hdi, hsi, by rw [hsp₂]; exact hsp, wk, by omega_arith, d_kc.sub_right (Region.sub_prefix (by decide)),
       by rw [hsp₂]; exact k_k, by rw [hsp₂]; exact k_c.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
     · rw [rd₂, wr₂, hrd]
       exact covers_cons (covers_of_mem (List.mem_append_left _ (List.mem_singleton_self _)))
@@ -121,7 +121,7 @@ theorem init_wp {s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s) :
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ he)
   have dK0 : (⟨Ctx, 128⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_arith)
   have f₄ : Frame [⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 96, 16⟩] s₃.mem s₄.mem := by
     rw [hm₄]
     exact ((Cmac.frame_store2 _ _ _).mono (by simp)).trans ((Cmac.frame_store2 _ _ _).mono (by simp))
@@ -138,20 +138,20 @@ theorem init_wp {s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s) :
         rcases hr with rfl | rfl
         · exact dK0
         · exact (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide)))
-        (by show 128 ≤ 2 ^ 64; omega) hi, g.out, hm₂]
-    congr 1
+        (by show 128 ≤ 2 ^ 64; omega_arith) hi, g.out, hm₂]
+    apply congrArg Spec.Sm4.expandKey
     apply Vector.ext
     intro i hi
     simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
     exact f₁.bytes (R := ⟨K, 16⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact d_ks.sub_right (Offset.sub_base _ (by decide)))
-      (by show 16 ≤ 2 ^ 64; omega) hi
+      (by show 16 ≤ 2 ^ 64; omega_arith) hi
   have pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄]; exact pC
   have pW' : Covers [⟨W, 2560⟩] s₄.wr := by rw [wr₄]; exact pW
   have cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 := by
-    refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, by rw [g4sp]; exact hsp, by omega,
-      by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega,
-      by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega,
+    refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, by rw [g4sp]; exact hsp, by omega_arith,
+      by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith,
+      by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith,
       by simpa using dCW 0 128 (by decide) 96 16 (by decide), dK0,
       (dCW 240 16 (by decide) 96 16 (by decide)).symm, ?_, ?_, ?_, ?_, ?_⟩
     · rw [g4sp]; exact k_c.sub_right (Region.sub_prefix (by decide))
@@ -220,7 +220,7 @@ theorem init_wp {s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s) :
         · exact (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
         · exact dK0
         · exact (k_c.sub_right (Region.sub_prefix (by decide))).symm)
-        (by show 128 ≤ 2 ^ 64; omega) hi, hk₄, blockAt_eq_ofFn]
+        (by show 128 ≤ 2 ^ 64; omega_arith) hi, hk₄, blockAt_eq_ofFn]
   · rw [ctxH_eq, gout.1, Spec.Sm4.gcmCipherOfKey, blockAt_eq_ofFn]
     simp
 

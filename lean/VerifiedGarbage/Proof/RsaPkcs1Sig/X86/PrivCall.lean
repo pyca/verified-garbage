@@ -35,7 +35,7 @@ variable {s : State} {out n e inp p q dp dq qinv scr : BitVec 32} {K el pl ql sl
 structure PrivArgs (s : State) (out n e inp p q dp dq qinv scr : BitVec 32) (K el pl ql sl : Nat) : Prop where
   args : ∀ i < 20, s.mem.readW (addr (s.gpr .esp) (4 * i)) 32 =
     (privArgv out n e inp p q dp dq qinv scr K el pl ql sl).getD i 0
-  sp : 3392 ≤ (s.gpr .esp).toNat
+  sp : 3448 ≤ (s.gpr .esp).toNat
   fit : (s.gpr .esp).toNat + 80 ≤ 2 ^ 32
   kv : Spec.Rsa.lenValid K
   el1 : 1 ≤ el
@@ -67,7 +67,7 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     (dW : ∀ w ∈ privWr (s.gpr .esp) out scr K sl, ∀ r ∈ privRd n e inp p q dp dq qinv K el pl ql, w.Disjoint r)
     (dWW : (privWr (s.gpr .esp) out scr K sl).Pairwise Region.Disjoint)
     (dLow : ∀ r ∈ privWr (s.gpr .esp) out scr K sl ++ privRd n e inp p q dp dq qinv K el pl ql,
-      Region.Disjoint (below (s.gpr .esp) 3392) r)
+      Region.Disjoint (below (s.gpr .esp) 3448) r)
     (fit : ∀ r ∈ privWr (s.gpr .esp) out scr K sl ++ privRd n e inp p q dp dq qinv K el pl ql,
       r.base.toNat + r.len ≤ 2 ^ 32) :
     (Spec.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pre
@@ -108,9 +108,9 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     intro x k hx
     have := fi hx
     rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega)] at this
-  have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) 3392) :=
+  have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) 3448) :=
     below_sub (by decide) h.sp
-  have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 3388, 3388⟩ (below (s.gpr .esp) 3392) := by
+  have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 3444, 3444⟩ (below (s.gpr .esp) 3448) := by
     rw [← Taint.sub_setWidth (by omega)]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
@@ -127,8 +127,8 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     (h₂ : PrivArgs s₂ out n e inp p q dp dq qinv scr K el pl ql sl) (hsp : s₁.gpr .esp = s₂.gpr .esp)
     (hn : Spec.Rsa.bytesAt s₁.mem (n.setWidth 64) K = Spec.Rsa.bytesAt s₂.mem (n.setWidth 64) K)
     (he : Spec.Rsa.bytesAt s₁.mem (e.setWidth 64) el = Spec.Rsa.bytesAt s₂.mem (e.setWidth 64) el)
-    (hdn : (below (s₁.gpr .esp) 3392).Disjoint ⟨n.setWidth 64, K⟩)
-    (hde : (below (s₁.gpr .esp) 3392).Disjoint ⟨e.setWidth 64, el⟩)
+    (hdn : (below (s₁.gpr .esp) 3448).Disjoint ⟨n.setWidth 64, K⟩)
+    (hde : (below (s₁.gpr .esp) 3448).Disjoint ⟨e.setWidth 64, el⟩)
     (rd wr : List Region) :
     (Spec.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
@@ -149,13 +149,13 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     privArgv, List.getD_cons_zero, List.getD_cons_succ, hsp, true_and, and_true]
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32,
     Nat.mod_eq_of_lt (show el < 2 ^ 32 by have := h₁.elK; omega)]
-  have ret := fun {sx : State} (hx : 3392 ≤ (sx.gpr .esp).toNat) =>
+  have ret := fun {sx : State} (hx : 3448 ≤ (sx.gpr .esp).toNat) =>
     (Frame.refl [⟨(sx.gpr .esp - 4).setWidth 64, 4⟩] sx.mem).writeW (List.mem_singleton_self _) (sx.unknowns 0)
       (Region.contains_self _ _)
   have ret₁ := ret (sx := s₁) h₁.sp
   have ret₂ := ret (sx := s₂) h₂.sp
   rw [← hsp] at ret₂ ⊢
-  have dq : ∀ {x : BitVec 32} {k : Nat}, (below (s₁.gpr .esp) 3392).Disjoint ⟨x.setWidth 64, k⟩ →
+  have dq : ∀ {x : BitVec 32} {k : Nat}, (below (s₁.gpr .esp) 3448).Disjoint ⟨x.setWidth 64, k⟩ →
       ∀ r ∈ [(⟨(s₁.gpr .esp - 4).setWidth 64, 4⟩ : Region)], (⟨x.setWidth 64, k⟩ : Region).Disjoint r := by
     intro x k hd r hr
     simp only [List.mem_singleton] at hr; subst hr

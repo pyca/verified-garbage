@@ -94,24 +94,24 @@ theorem uhV_toNat {g : Nat} (hg : IsG g) {a h : BitVec 32} (ha : a.toNat < q) :
   have hdm : dMod g = hbM g := dMod_eq hg
   generalize hF : hbF g a.toNat = F at hf hle
   have hfg : (fX g (a.setWidth 64) * BitVec.ofNat 64 (2 * g)).toNat = F * (2 * g) := by
-    rw [BitVec.toNat_mul, hf, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega)]
+    rw [BitVec.toNat_mul, hf, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega_arith)]
     exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_of_lt_succ (Nat.lt_succ_of_le
       (Nat.le_trans hle hm44))) hg2) (by decide))
   have hs := sgn_sub (x := fX g (a.setWidth 64) * BitVec.ofNat 64 (2 * g)) (y := a.setWidth 64)
-    (by rw [hfg]; have := Nat.mul_le_mul (Nat.le_trans hle hm44) hg2; omega)
-    (by rw [toNat_setWidth64]; omega)
+    (by rw [hfg]; have := Nat.mul_le_mul (Nat.le_trans hle hm44) hg2; omega_arith)
+    (by rw [toNat_setWidth64]; omega_arith)
   have hh := sgn_sub (x := 0) (y := h.setWidth 64) (by decide)
-    (by rw [toNat_setWidth64]; have := h.isLt; omega)
+    (by rw [toNat_setWidth64]; have := h.isLt; omega_arith)
   rw [hfg, toNat_setWidth64] at hs
   rw [toNat_setWidth64] at hh
   have hne : decide (h ≠ 0) = decide ((0 : BitVec 64).toNat < h.toNat) := by
     refine decide_eq_decide.mpr ⟨fun h' => ?_, fun h' e => ?_⟩
     · have : h.toNat ≠ 0 := fun e => h' (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
-      show 0 < h.toNat; omega
+      show 0 < h.toNat; omega_arith
     · rw [e] at h'; exact absurd h' (by decide)
   unfold uhV
   rw [hs, hh, ← hne]
-  have hM : (BitVec.ofNat 64 (dMod g)).toNat = hbM g := by rw [BitVec.toNat_ofNat, hdm]; omega
+  have hM : (BitVec.ofNat 64 (dMod g)).toNat = hbM g := by rw [BitVec.toNat_ofNat, hdm]; omega_arith
   -- The value before the reductions: `F + m + δ`.
   have hv : ((((bitV (decide (F * (2 * g) < a.toNat)) <<< 1) - BitVec.ofNat 64 1) * bitV (decide (h ≠ 0)) +
       fX g (a.setWidth 64) + BitVec.ofNat 64 (dMod g))).toNat =
@@ -119,42 +119,42 @@ theorem uhV_toNat {g : Nat} (hg : IsG g) {a h : BitVec 32} (ha : a.toNat < q) :
     rw [BitVec.toNat_add, BitVec.toNat_add, hf, hM]
     cases decide (h ≠ 0) <;> cases hc : decide (F * (2 * g) < a.toNat)
     · simp only [Bool.false_eq_true, ite_false]; rw [show (bitV false <<< 1 - BitVec.ofNat 64 1) * bitV false = 0
-        from by decide]; simp; omega
+        from by decide]; simp; omega_arith
     · simp only [Bool.false_eq_true, ite_false]; rw [show (bitV true <<< 1 - BitVec.ofNat 64 1) * bitV false = 0
-        from by decide]; simp; omega
+        from by decide]; simp; omega_arith
     · have : ¬ F * (2 * g) < a.toNat := by simpa using hc
       simp only [ite_true, ite_eq_right_iff.mpr (fun h => absurd h this)]
       rw [show (bitV false <<< 1 - BitVec.ofNat 64 1) * bitV true = BitVec.allOnes 64 from by decide,
         BitVec.toNat_allOnes]
-      omega
+      omega_arith
     · have : F * (2 * g) < a.toNat := by simpa using hc
       simp only [ite_true, ite_eq_left_iff.mpr (fun h => absurd this h)]
       rw [show (bitV true <<< 1 - BitVec.ofNat 64 1) * bitV true = 1 from by decide]
       rw [show (1 : BitVec 64).toNat = 1 from rfl]
-      omega
+      omega_arith
   generalize ((((bitV (decide (F * (2 * g) < a.toNat)) <<< 1) - BitVec.ofNat 64 1) * bitV (decide (h ≠ 0)) +
       fX g (a.setWidth 64) + BitVec.ofNat 64 (dMod g))) = v at hv
-  have hv3 : v.toNat < 3 * hbM g := by rw [hv]; (repeat' split) <;> omega
-  have hv1 : v.toNat + 1 ≥ hbM g := by rw [hv]; (repeat' split) <;> omega
-  have c1 := csubM_toNat (m := dMod g) (v := v) (by omega) (by omega)
-  have c2 := csubM_toNat (m := dMod g) (v := csubM (BitVec.ofNat 64 (dMod g)) v) (by omega)
-    (by rw [c1]; split <;> omega)
+  have hv3 : v.toNat < 3 * hbM g := by rw [hv]; (repeat' split) <;> omega_arith
+  have hv1 : v.toNat + 1 ≥ hbM g := by rw [hv]; (repeat' split) <;> omega_arith
+  have c1 := csubM_toNat (m := dMod g) (v := v) (by omega_arith) (by omega_arith)
+  have c2 := csubM_toNat (m := dMod g) (v := csubM (BitVec.ofNat 64 (dMod g)) v) (by omega_arith)
+    (by rw [c1]; split <;> omega_arith)
   rw [c1] at c2
   rw [BitVec.toNat_setWidth, c2, ← hv]
   generalize v.toNat = V at *
   rw [hdm]
   have e : V % hbM g = if V < hbM g then V else if V < 2 * hbM g then V - hbM g else V - 2 * hbM g := by
     rcases hg with rfl | rfl <;> simp only [show hbM g32 = 16 from rfl, show hbM g88 = 44 from rfl] at * <;>
-      (repeat' split) <;> omega
+      (repeat' split) <;> omega_arith
   rw [e]
   by_cases h1 : V < hbM g
-  · simp only [h1, ite_true]; omega
+  · simp only [h1, ite_true]; omega_arith
   · simp only [h1, ite_false]
     by_cases h2 : V - hbM g < hbM g
-    · have h2' : V < 2 * hbM g := by omega
-      simp only [h2, h2', ite_true]; omega
-    · have h2' : ¬ V < 2 * hbM g := by omega
-      simp only [h2, h2', ite_false]; omega
+    · have h2' : V < 2 * hbM g := by omega_arith
+      simp only [h2, h2', ite_true]; omega_arith
+    · have h2' : ¬ V < 2 * hbM g := by omega_arith
+      simp only [h2, h2', ite_false]; omega_arith
 
 /-! ## The function -/
 

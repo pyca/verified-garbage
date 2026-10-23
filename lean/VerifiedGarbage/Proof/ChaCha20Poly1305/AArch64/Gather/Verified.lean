@@ -138,8 +138,13 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
     simp only [Pad.sealRoute, Pad.sealMain, Pad.cryptPad, sealMainWith, prologue, macPad, absorbLengths,
       padTail, Code.noFrames, hv, hrest, Bool.and_true, Bool.true_and]
     decide +kernel
+  have hkern : (TailO.kernel c.sve 3).noFrames = true := by cases c.sve <;> decide +kernel
+  have hsk : (SealKey.sealMain c).noFrames = true := by
+    simp only [SealKey.sealMain, OpenKey.xorFirst, macPad, absorbLengths, padTail, Code.noFrames, hv, hkern,
+      hxks, Bool.and_true, Bool.true_and]
+    decide +kernel
   cases st <;>
-  simp only [sealCode, sealMainCode, sealStitched, sealWith, sealMain, sealMainWith, sealStitchedMain, sealWideMain,
+  simp only [sealCode, sealMainCode, Code.iteCold, hsk, sealStitched, sealWith, sealMain, sealMainWith, sealStitchedMain, sealWideMain,
     sealTail,
     prologue, macPad,
     cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, hrest, Bool.and_true, Bool.true_and,
@@ -149,7 +154,7 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
 open VG.Impl.ChaCha20Poly1305.AArch64 in
 /-- The frames of `vg_chacha20_poly1305_seal`, in its frame of 1280 bytes, use at most those. -/
 theorem seal_depth (v : Proof.ChaCha20.AArch64.XorImpl) :
-    16 * (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95 (sealCode v.callee v.stitched)).aarch64Depth
+    16 * (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (sealCode v.callee v.stitched)).aarch64Depth
       ≤ 1280 := by
   simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
     Code.aarch64Depth, Instr.frameUnits, depth_of_noFrames (sealCode_noFrames v)]

@@ -110,7 +110,7 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
   have hp := VPre.of lk.G h
   have hF := vfb_toNat hp
   have hk1 := hp.k1; have hk2 := hp.k2
-  refine wp_frame (by have := hp.sp1; unfold verifyStack frameBytes at *; omega) ?_
+  refine wp_frame (by have := hp.sp1; unfold verifyStack frameBytes at *; omega_arith) ?_
   rw [verifyBody]
   simp only [seqs]
   refine WP.seq ?_
@@ -132,7 +132,7 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
   -- The modulus as `n₀ ‖ rest`.
   set n₀ := s.mem (s.gpr .rdi) with hn₀
   set rest := Spec.Rsa.bytesAt s.mem (s.gpr .rdi + 1) ((s.gpr .rsi).toNat - 1) with hrest
-  have hnB : Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat = n₀ :: rest := bytesAt_cons _ _ (by omega)
+  have hnB : Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat = n₀ :: rest := bytesAt_cons _ _ (by omega_arith)
   have hrl : (n₀ :: rest).length = (s.gpr .rsi).toNat := by
     rw [← hnB]; simp [Spec.Rsa.bytesAt]
   have hout : verifyOut lk.G s = Spec.RsaPss.verify lk.G lk.G (n₀ :: rest)
@@ -158,15 +158,15 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
   have hGl : lk.G.len = H.D := lk.len
   have hEL := emLen_eq (rest := rest) h0
   rw [hrl] at hEL
-  have hlo : loV n₀.toNat ≤ 1 := by unfold loV; split <;> omega
+  have hlo : loV n₀.toNat ≤ 1 := by unfold loV; split <;> omega_arith
   -- `smear(n₀ >> 1)`.
   refine WP.seq (WP.mono (smear_ok t2 (x := n₀.toNat) n₀.isLt hb hax2) fun t3 ⟨k3, hm3, hdx3, hz3⟩ => ?_)
   have L3 : Lay t3 (fb s) (stackArg s 3) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 3) _ (vproW s) := hm3 ▸ R2
   -- `emLen`, the mask and `lo`.
   refine WP.seq (WP.mono (WP.keepIn (by safe_by [emLen]) (by exact Nat.zero_le 8)
-    (emLen_ok (H := H) (by omega) L3 R3 (x := n₀.toNat) (k := (s.gpr .rsi).toNat)
-      (by simp [vproW, upd]) (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ => ?_)
+    (emLen_ok (H := H) (by omega_arith) L3 R3 (x := n₀.toNat) (k := (s.gpr .rsi).toNat)
+      (by simp [vproW, upd]) (by omega_arith) (by omega_arith) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ => ?_)
   have hw4 : t4.wr = frR s :: s.wr := k4.2.2.trans (k3.2.2.trans hw2)
   have hM4 : Frame (vwrR s) s.mem t4.mem :=
     vframe_keep hp (k3.2.2.trans hw2) L3.rsp (hm3 ▸ hM2) f4
@@ -178,7 +178,7 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
     rw [decide_eq_true_eq] at hb4
     refine hfail L4 R4 hw4 hcs4 (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd]) ?_
     rw [hout]
-    exact RsaPss.verify_short _ _ _ _ (by rw [emLen_eq h0, hrl, hGl]; omega)
+    exact RsaPss.verify_short _ _ _ _ (by rw [emLen_eq h0, hrl, hGl]; omega_arith)
   rw [decide_eq_false_iff_not] at hb4
   -- The salt length's arguments.
   have hrd4 : t4.rd = s.rd := k4.2.1.trans (k3.2.1.trans hrd2)
@@ -204,9 +204,9 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
     apply BitVec.eq_of_toNat_eq
     have := (s.gpr .rsi).isLt
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega) rfl) fun t6 ⟨⟨hax6, hm6⟩, k6⟩ => ?_
-  refine WP.mono (saltFits_ok (H := H) (by omega) t6 (a := (s.gpr .rsi).toNat - loV n₀.toNat)
-    (b := BitVec.ofNat 64 (sLen.getD 0)) (by omega) (by omega) hax6 (by rw [k6.gpr (by decide)]; exact hdx5'))
+    omega_arith) rfl) fun t6 ⟨⟨hax6, hm6⟩, k6⟩ => ?_
+  refine WP.mono (saltFits_ok (H := H) (by omega_arith) t6 (a := (s.gpr .rsi).toNat - loV n₀.toNat)
+    (b := BitVec.ofNat 64 (sLen.getD 0)) (by omega_arith) (by omega_arith) hax6 (by rw [k6.gpr (by decide)]; exact hdx5'))
     fun t7 ⟨k7, hm7, hax7, hc7⟩ => ?_
   have hsl0 : (BitVec.ofNat 64 (sLen.getD 0)).toNat = sLen.getD 0 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
@@ -230,25 +230,25 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
     rw [decide_eq_true_eq] at hb7
     refine hfail L7 R7 hw7 hcs7 (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd]) ?_
     rw [hout]
-    exact RsaPss.verify_short _ _ _ _ (by rw [emLen_eq h0, hrl, hGl]; omega)
+    exact RsaPss.verify_short _ _ _ _ (by rw [emLen_eq h0, hrl, hGl]; omega_arith)
   rw [decide_eq_false_iff_not] at hb7
   -- The encoding.
   have hG := validG hH lk.hash lk.len
   have hlo' : (n₀ :: rest).length - Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (n₀ :: rest)) - 1) =
-      loV n₀.toNat := by rw [emLen_eq h0, hrl]; omega
+      loV n₀.toNat := by rw [emLen_eq h0, hrl]; omega_arith
   refine vmain_done hH K lk hv hspC hdC hp L7 R7 hw7 hrd7 hcs7 hM7 (lo := loV n₀.toNat)
     (z := 8 * ((s.gpr .rsi).toNat - loV n₀.toNat) - (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (n₀ :: rest)) - 1))
     (fixed := fixed)
     (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd])
     ?_ (by simp [upd]) (by simp only [upd, Nat.reduceEqDiff, ite_true, ite_false, hfixed, decide_eq_true_eq])
     (by simp [upd]) (by simp [vproW, upd]) (by simp [vproW, upd])
-    (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd]) hlo (by omega)
+    (by simp [vproW, upd]) (by simp [vproW, upd]) (by simp [vproW, upd]) hlo (by omega_arith)
     (by rw [hax7]) ?_ hsl
   · simp only [upd, Nat.reduceEqDiff, ite_true, ite_false]
     rw [maskV_eq rest h0, hEL]
   · rw [hout, RsaPss.verify_bytes lk.G hG (emBits := Spec.RsaPss.bitLength (Spec.Rsa.os2ip (n₀ :: rest)) - 1)
       (emLen := (s.gpr .rsi).toNat - loV n₀.toNat) (bytesAt_length _ _ _) (by rw [bytesAt_length, hrl]) rfl hEL
-      (by omega) hlo (by omega), vx, hnB, hrl]
+      (by omega_arith) hlo (by omega_arith), vx, hnB, hrl]
 
 include hH K in
 theorem verify_safe {pubN : String} {pubC : Prog isa} (hC : pubC.allInstrs safeI = true) :

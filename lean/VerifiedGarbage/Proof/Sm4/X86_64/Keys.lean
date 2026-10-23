@@ -48,12 +48,12 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
   have hok : Ok keyCfg s :=
     { slotIn := fun k hk => ⟨_, hscr, by
         simp only [keyCfg] at hk ⊢
-        rw [hb]; exact VG.Offset.contains_base b (by omega) (by omega)⟩
-      extIn := fun k hk => by simp only [keyCfg] at hk ⊢; obtain rfl : k = 0 := by omega
+        rw [hb]; exact VG.Offset.contains_base b (by omega_arith) (by omega_arith)⟩
+      extIn := fun k hk => by simp only [keyCfg] at hk ⊢; obtain rfl : k = 0 := by omega_arith
                               exact hrdi
       slots := by simp [keyCfg]
       sep := fun k hk j hj => by
-        simp only [keyCfg] at hk hj ⊢; obtain rfl : j = 0 := by omega
+        simp only [keyCfg] at hk hj ⊢; obtain rfl : j = 0 := by omega_arith
         rw [hb]; exact hsep k hk }
   have hchk : check (lanes 64 7) keyCfg (linExt 0) (keyLoad h) keyEnv
       (linPostG 7 (qOuts (keyBsG h)) [] keyMaskSlots keyEnv) = true := by
@@ -65,7 +65,7 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
     (fun k => s.mem.readW (wordAddr (s.gpr .rdi) k) 64)
     (fun r i hri => by simp at hri) (fun j i hji => by simp at hji)
     (fun kv hkv => ⟨by simp only [keyCfg]; exact mask_lt hkv, by simp only [keyCfg]; exact hm kv hkv⟩)
-    (fun j hj => ⟨by simp only [keyCfg] at hj; omega, by simp only [keyCfg, Nat.zero_add]⟩)
+    (fun j hj => ⟨by simp only [keyCfg] at hj; omega_arith, by simp only [keyCfg, Nat.zero_add]⟩)
   simp only [keyCfg] at hb₁ hkp₁ f₁
   have hall₁ : ∀ r, r ∉ sboxWrites → ((keyLoad h).all fun i => i.dst != some r) = true := fun r hr => by
     have : ([Reg.rdx, .rsp, .rsi, .rdi, .r8, .r9].all fun r => (keyLoad h).all fun i => i.dst != some r) =
@@ -75,21 +75,21 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
   -- The planes of the round key.
   have hQ : WordRel (Qs s₁) (fun _ => rkWord (s.mem.readW (wordAddr (s.gpr .rdi) 0) 64) h) := by
     intro b' hb' i hi j hj
-    have hp : 16 * i + b' < 64 := by omega
+    have hp : 16 * i + b' < 64 := by omega_arith
     rw [Qs, ho₁ (q j) (keyBsG h j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
       _ hp, keyBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-      show 32 * h + 8 * (3 - (16 * i + b') / 16) + j = 64 * 0 + (32 * h + 8 * (3 - i) + j) by omega,
-      bitOf_word _ _ _ (by rcases hh with rfl | rfl <;> omega), rkWord, BitVec.getLsbD_setWidth,
+      show 32 * h + 8 * (3 - (16 * i + b') / 16) + j = 64 * 0 + (32 * h + 8 * (3 - i) + j) by omega_arith,
+      bitOf_word _ _ _ (by rcases hh with rfl | rfl <;> omega_arith), rkWord, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_ushiftRight]
-    simp only [show 8 * (3 - i) + j < 32 by omega, decide_true, Bool.true_and]
-    exact congrArg (BitVec.getLsbD _) (by omega)
+    simp only [show 8 * (3 - i) + j < 32 by omega_arith, decide_true, Bool.true_and]
+    exact congrArg (BitVec.getLsbD _) (by omega_arith)
   -- The stores.
   have hrsi₁ : s₁.gpr .rsi = s.gpr .rsi := k₁ .rsi (by decide)
   have hok₂ : Ok entryCfg s₁ :=
     { slotIn := fun k hk => ⟨_, by rw [wr₁]; exact hscr, by
         simp only [entryCfg] at hk ⊢
         rw [hrsi₁, hrsi, wordAddr, addr_add, tableSlot_eq]
-        exact VG.Offset.contains_base b (by omega) (by omega)⟩
+        exact VG.Offset.contains_base b (by omega_arith) (by omega_arith)⟩
       extIn := fun k hk => by simp [entryCfg] at hk
       slots := by simp [entryCfg]
       sep := fun k _ j hj => by simp [entryCfg] at hj }
@@ -99,7 +99,7 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
-      exact ⟨by omega, rfl⟩)
+      exact ⟨by omega_arith, rfl⟩)
     (fun j i hji => by simp at hji) (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [entryCfg] at hj)
   simp only [entryCfg] at hb₂ hso₂ f₂
@@ -121,7 +121,7 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
       simp only [slotRegion, List.mem_singleton] at hr; subst hr
       rw [hrsi₁, hrsi, hb, wordAddr]
       rw [tableSlot_eq]
-      exact VG.Offset.disjoint b (Or.inl (by omega)) (by omega) (by omega)
+      exact VG.Offset.disjoint b (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     rw [k₂, hb₁, h2, hkp₁ kv.1 (List.mem_map_of_mem hkv) hk]
     exact hm kv hkv
   · refine (f₁.mono fun r hr => ?_).trans (f₂.mono fun r hr => ?_)

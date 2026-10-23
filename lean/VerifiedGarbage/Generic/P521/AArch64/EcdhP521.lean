@@ -92,11 +92,10 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : Lis
       checked without branches (its first \
       byte, both coordinates below `p`, and the curve's equation), and the scalar multiplication \
       runs on the peer's point if it is valid, else `G`, so always on a point of the curve. `[d]P` \
-      is by signed 4-bit windows: `d + 8 Σ_{j<145} 16^j` gives 145 digits in `[-8, 7]`, a table of \
-      `[1 … 8]P` is built in `scratch`, and each digit takes four doublings (in Jacobian \
-      coordinates, dbl-2001-b, with `Y = 1` where the result is the point at infinity) and the \
-      addition of its entry, every entry loaded and masked and `y` negated by a mask of the \
-      digit's sign, by the complete formula of Renes, Costello and Batina for `a = -3` \
+      is by signed 4-bit windows over a 521-bit working copy, with the original scalar retained \
+      for the final range check. The 131 digits select from eight peer multiples made affine \
+      with one shared inversion. The accumulator stays Jacobian between windows, with scheduled \
+      doublings and mixed additions, using the complete addition for the last digit \
       (Algorithm 4); `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
@@ -106,6 +105,6 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : Lis
       depend on `Z`. The result (or zeros) is selected by a mask of the checks, `d` \
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.AArch64.exchangeP521
-    verified := Proof.Ecdh.AArch64.P521.ecdh_verified h.law h.inv }]
+    verified := Proof.Ecdh.AArch64.P521.ecdh_verified h.law h.inv h.prime }]
 
 end VG.Generic.P521.AArch64.EcdhP521

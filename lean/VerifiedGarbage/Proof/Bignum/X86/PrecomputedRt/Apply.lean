@@ -41,12 +41,12 @@ theorem applyPrefix_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have wbe := wb_eq len
   have f7 := h.fits (j := 7) (by decide)
   have wl := wb_ge h.lower
-  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega
-  have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega
-  have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
-  have e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
-  have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
-  have e7 : numAt len 7 = 256 + 7 * wb len := by simp only [numAt, numOff] <;> omega
+  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega_arith
+  have e7 : numAt len 7 = 256 + 7 * wb len := by simp only [numAt, numOff] <;> omega_arith
   have n0 : numAt len 0 = numOff := by simp [numAt]
   have h256 : numOff = 256 := rfl
   have ha : PublicFn.acceptanceOffset = 144 := rfl
@@ -55,18 +55,18 @@ theorem applyPrefix_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
   refine WP.seq (WP.mono (load_ok h (j := 1) (p := 6) (l := 7) (by decide) (by decide) (by decide) h.inLen h.inFit
     h.inRead h.inApart) fun u₂ ⟨X₂, O₂, K₂⟩ => ?_)
   rw [hx] at X₂
-  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (by omega) (by omega))
+  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (by omega_arith) (by omega_arith))
   have N₂ : val32 u₂.mem base (numAt len 0) (nw len) = M := by
-    rw [O₂.val32 (d := numAt len 0) (k := nw len) (.inl (by omega)) (by omega), N]
+    rw [O₂.val32 (d := numAt len 0) (k := nw len) (.inl (by omega_arith)) (by omega_arith), N]
   refine WP.seq (WP.mono (compare_ok h₂) fun u₃ ⟨M₃, C₃, K₃⟩ => ?_)
   rw [X₂, N₂] at C₃
   have h₃ := h₂.keep K₃ (by decide) (by decide) (by rw [M₃]; exact Outside.refl _ _ _ _)
   -- The acceptance and the inverse.
   refine WP.mono (setup_ok h₃ C₃ (by rw [M₃, ← n0, N₂]; exact odd)) fun u₄ ⟨A₄, I₄, O₄, K₄⟩ => ?_
   simp only [PublicFn.acceptanceOffset] at A₄
-  have h₄ := h₃.keep K₄ (by decide) (by decide) (O₄.mono (by omega) (by omega))
+  have h₄ := h₃.keep K₄ (by decide) (by decide) (O₄.mono (by omega_arith) (by omega_arith))
   have M₄ : val32 u₄.mem base numOff (nw len) = M := by
-    rw [Outside.val32 O₄ (.inr (by omega)) (by omega), M₃, ← n0, N₂]
+    rw [Outside.val32 O₄ (.inr (by omega_arith)) (by omega_arith), M₃, ← n0, N₂]
   have K₁₄ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₄ :=
     ((K₂.mono (by decide)).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))
   have sp₄ : u₄.gpr .esp = s.gpr .esp := K₁₄.1 _ (by decide)
@@ -74,16 +74,16 @@ theorem applyPrefix_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
     by rw [M₃, ← n0, N₂] at I₄; exact I₄, by rw [sp₄]; exact top⟩
   have pv : ∀ d, d + 4 * nw len ≤ numAt len 1 ∨ numAt len 1 + wb len ≤ d → 140 + 16 ≤ d → d + 4 * nw len ≤ bytes →
       val32 u₄.mem base d (nw len) = val32 s.mem base d (nw len) := fun d hd hd' hb => by
-    rw [Outside.val32 O₄ (.inr (by omega)) (by omega), M₃, O₂.val32 hd (by omega)]
-  have T₄ := pv (numAt len 4) (.inr (by omega)) (by omega) (by omega)
-  have One₄ := pv (numAt len 3) (.inr (by omega)) (by omega) (by omega)
+    rw [Outside.val32 O₄ (.inr (by omega_arith)) (by omega_arith), M₃, O₂.val32 hd (by omega_arith)]
+  have T₄ := pv (numAt len 4) (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+  have One₄ := pv (numAt len 3) (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   have X₄ : val32 u₄.mem base (numAt len 1) (nw len) = x := by
-    rw [Outside.val32 O₄ (.inr (by omega)) (by omega), M₃, X₂]
+    rw [Outside.val32 O₄ (.inr (by omega_arith)) (by omega_arith), M₃, X₂]
   have W₄ : val32 u₄.mem base 128 2 = e := by
-    rw [Outside.val32 O₄ (.inl (by omega)) (by omega), M₃, O₂.val32 (.inl (by omega)) (by omega), exponent]
+    rw [Outside.val32 O₄ (.inl (by omega_arith)) (by omega_arith), M₃, O₂.val32 (.inl (by omega_arith)) (by omega_arith), exponent]
   have S₄ : Outside base 16 (bytes - 16) s.mem u₄.mem :=
-    ((O₂.mono (by omega) (by omega)).trans (by rw [M₃]; exact Outside.refl _ _ _ _)).trans
-      (O₄.mono (by omega) (by omega))
+    ((O₂.mono (by omega_arith) (by omega_arith)).trans (by rw [M₃]; exact Outside.refl _ _ _ _)).trans
+      (O₄.mono (by omega_arith) (by omega_arith))
   exact ⟨E₄, A₄, T₄, One₄, X₄, W₄, S₄, K₁₄⟩
 
 theorem applyInput_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -98,7 +98,7 @@ theorem applyInput_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
       (val32 s.mem base (numAt len 4) (nw len) = 2 ^ (32 * nw len) * 2 ^ (32 * nw len) % M → M < 2 ^ (8 * len) →
         Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (if x < M then x ^ e % M else 0) len) ∧
       t.gpr .eax = BitVec.ofNat 32 (decide (x < M)).toNat ∧
-      Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40] s.mem t.mem ∧
+      Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96] s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have dims := h.dimensions
   have nw' := h.scratch.nowrap
@@ -142,16 +142,16 @@ theorem applyInput_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
     rw [Ax, a₈]
     cases decide (x < M) <;> rfl
   · have G₄ := ((outside_frame S₄ (by omega)).mono (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩,
-      below (s.gpr .esp) 40]) (by simp))
-    have G₇ : Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40] u₄.mem u₇.mem := by
+      below (s.gpr .esp) 96]) (by simp))
+    have G₇ : Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96] u₄.mem u₇.mem := by
       refine F₇.sub fun r hr => ?_
       simp only [Chg, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., sub_off (by omega) (by omega)⟩
       · exact ⟨_, List.mem_cons_self .., sub_off (by omega) (by omega)⟩
-      · exact ⟨below (s.gpr .esp) 40, by simp, fun _ h => h⟩
+      · exact ⟨below (s.gpr .esp) 96, by simp, fun _ h => h⟩
     have G₈ := ((outside_frame (O₈.mono (o' := 16) (n' := bytes - 16) (by omega) (by omega)) (by omega)).mono
-      (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40]) (by simp))
+      (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96]) (by simp))
     exact ((G₄.trans G₇).trans G₈).trans (Ft.mono (by simp))
   · exact ((K₁₄.trans K₇).trans (K₈.mono (by decide))).trans (Kt.mono (by decide))
 

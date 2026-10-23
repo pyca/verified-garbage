@@ -206,7 +206,9 @@ fn limits_and_lengths() {
         assert_eq!(iv, [0x3c; 16]);
         // Every length is a prefix of the longest message's ciphertext, and
         // round-trips.
-        let message: Vec<_> = (0..16 * 5).map(|i| (7 * i + 1) as u8).collect();
+        // Cross several eight-block batches, the four-block tail, and every
+        // partial segment. Offsets exercise unaligned in-place loads/stores.
+        let message: Vec<_> = (0..16 * 34 + 16).map(|i| (7 * i + 1) as u8).collect();
         let mut ciphertext = message.clone();
         ctx.encrypt(&mut iv, &mut ciphertext);
         for n in 0..message.len() {
@@ -215,8 +217,13 @@ fn limits_and_lengths() {
             ctx.encrypt(&mut iv, &mut buffer);
             assert_eq!(buffer, ciphertext[..n]);
             let mut iv = [0x3c; 16];
-            ctx.decrypt(&mut iv, &mut buffer);
-            assert_eq!(buffer, message[..n]);
+            let offset = n % 16;
+            let mut guarded = vec![0xa5; offset + n + 16];
+            guarded[offset..offset + n].copy_from_slice(&buffer);
+            ctx.decrypt(&mut iv, &mut guarded[offset..offset + n]);
+            assert_eq!(guarded[offset..offset + n], message[..n]);
+            assert!(guarded[..offset].iter().all(|&b| b == 0xa5));
+            assert!(guarded[offset + n..].iter().all(|&b| b == 0xa5));
         }
     }
 }

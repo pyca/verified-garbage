@@ -18,24 +18,24 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 open VG.Impl.RsaKeyGen.X86.RoundCall
 
 theorem call_ok {round : Prog isa} {name : String}
-    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (noSp : NoSp round) (stack : stackUse round ≤ 56)
+    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (noSp : NoSp round) (stack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s) (A : Arguments g capacity s)
     (odd : c % 2 = 1) (large : 3 ≤ c)
     (witness : val32 s.mem g.W (g.array 5) g.words = b % c * 2 ^ (64 * g.w) % c)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     WP isa (call name round) s fun t =>
       Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Spec.MillerRabin.round c b then 1 else 0) ∧
       WorkspaceFrame g (roundWrites g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
+      Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
   let rd : List Region := [⟨argAddr (pushed args s).callEntry 0, 8⟩]
   have rdEq : rd = [below (s.gpr .esp) 8] := by
     unfold rd
     rw [callEntry_argAddr0]
     rfl
-  have cp : CallPre (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) args rd [⟨g.W, g.L⟩] s := by
+  have cp : CallPre (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96) args rd [⟨g.W, g.L⟩] s := by
     refine ⟨entry_pre v length S A odd large witness (by rw [S.ready.caller.sp]; exact fit)
       (by rw [S.ready.caller.sp]; exact far), ?_, ?_⟩
     · rw [rdEq]
@@ -58,7 +58,7 @@ theorem call_ok {round : Prog isa} {name : String}
     intro r hr
     apply saved r
     cases r <;> simp_all [calleeSaved]
-  have far12 := far.sub_right (below_sub (by decide : 12 ≤ 68) fit)
+  have far12 := far.sub_right (below_sub (by decide : 12 ≤ 108) fit)
   have F := entry_frame (by rw [S.ready.caller.sp]; omega) S.ready.scratch.nowrap
     (by rw [S.ready.caller.sp]; exact far12)
   have Mu := S.ready.modulus.keep v F (by simp) (by simp)
@@ -71,25 +71,25 @@ theorem call_ok {round : Prog isa} {name : String}
   rw [reg] at value
   have W : WorkspaceFrame g (roundWrites g) s.mem t.mem :=
     (F.mono (by simp)).trans (reviewed_frame length keeps)
-  have G : Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem t.mem := by
+  have G : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem := by
     rw [← S.ready.caller.sp]
-    exact VG.X86.Frame.below_mono frame (by change 8 + stackUse round + 4 ≤ 68; omega)
+    exact VG.X86.Frame.below_mono frame (by change 8 + stackUse round + 4 ≤ 108; omega)
       (by rw [S.ready.caller.sp]; exact fit)
   exact ⟨data_keep v S K W G lengthFar, value, W, G, K⟩
 
 theorem code_ok {round : Prog isa} {name : String}
-    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (noSp : NoSp round) (stack : stackUse round ≤ 56)
+    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (noSp : NoSp round) (stack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s)
     (odd : c % 2 = 1) (large : 3 ≤ c)
     (witness : val32 s.mem g.W (g.array 5) g.words = b % c * 2 ^ (64 * g.w) % c)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     WP isa (code name round) s fun t =>
       Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Spec.MillerRabin.round c b then 1 else 0) ∧
       WorkspaceFrame g (roundWrites g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
+      Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
   unfold code
   refine WP.seq (wp_movS S.ready.caller.readLen fun a A _ => WP.block_nil ?_)
   have Da := WitnessMont.data_outside v S

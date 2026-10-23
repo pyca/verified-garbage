@@ -121,7 +121,7 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hF : FnOk S) (ho
   have hW := enc_wIds hp.k3 hp.k6 dbl
   have hs := hp.scr
   have hn := hs.nowrap
-  have hsv : Impl.Weierstrass.X86.Point.saveAt S.k + 4 < 8192 := by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega
+  have hsv : Impl.Weierstrass.X86.Point.saveAt S.k + 4 < 8192 := by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith
   rw [Impl.Weierstrass.X86.Point.fn]
   -- `edi` saved, and `edi = ws`.
   refine WP.seq (wp_ldm (b := .esp) rfl ⟨_, List.mem_append_left _ hs.rd, by
@@ -129,19 +129,19 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hF : FnOk S) (ho
   rw [argAddr0_eq] at u₀
   have eax₀ : s₀.gpr .eax = arg s 0 := u₀.gpr
   refine wp_stm (b := .eax) eax₀ ⟨_, by rw [u₀.wr]; exact hs.wr, by
-      rw [addr_ws hs (by omega)]; exact Offset.contains_base _ (by omega) (by omega)⟩ fun s₁ u₁ =>
+      rw [addr_ws hs (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩ fun s₁ u₁ =>
     wp_mov fun s₂ u₂ => WP.block_nil ?_
-  rw [addr_ws hs (by omega)] at u₁
+  rw [addr_ws hs (by omega_arith)] at u₁
   have m₁ : s₂.mem = s.mem.writeW (off (wsOf s) (Impl.Weierstrass.X86.Point.saveAt S.k)) (s.gpr .edi) := by
     rw [u₂.mem, u₁.mem, u₀.mem, u₀.other _ (by decide)]
   have g₁ : ∀ r, r ≠ .eax → r ≠ .edi → s₂.gpr r = s.gpr r := fun r h h' => by
     rw [u₂.other _ h', u₁.gpr, u₀.other _ h]
   have edi₂ : s₂.gpr .edi = arg s 0 := by rw [u₂.gpr, u₁.gpr, eax₀]
   have O₁ : Outside (wsOf s) (Impl.Weierstrass.X86.Point.saveAt S.k) 4 s.mem s₂.mem := by
-    rw [m₁]; exact writeW32_outside _ _ _ (by omega)
+    rw [m₁]; exact writeW32_outside _ _ _ (by omega_arith)
   have F₁ : Frame [⟨wsOf s, 8192⟩, below (s.gpr .esp) 20] s.mem s₂.mem := by
     rw [m₁]
-    exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (Offset.contains_base _ (by omega) (by omega))
+    exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have esp₂ : s₂.gpr .esp = s.gpr .esp := g₁ _ (by decide) (by decide)
   have hs₁ : ScrP s₂ (wsOf s) := by
     have e : argAddr s₂ 0 = argAddr s 0 := by simp only [argAddr, esp₂]
@@ -160,8 +160,8 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hF : FnOk S) (ho
         wordsVal s.mem (wsOf s) (enc S.k dbl x) S.k := fun x hx =>
       Outs.wordsVal (Outs.of_outside O₁ (List.mem_singleton_self _)) (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
-        exact .inl (by have := hR x hx; simp only [Impl.Weierstrass.X86.Point.saveAt]; omega))
-        (by have := hR x hx; omega)
+        exact .inl (by have := hR x hx; simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith))
+        (by have := hR x hx; omega_arith)
     exact ⟨hs₁, rIds_lt, fun x hx => by rw [heq x hx]; exact hp.lt x hx,
       fun x hx => by rw [heq x hx]; rfl⟩
   refine WP.seq (WP.mono (rcbB_ok hF rfl (enc_lay hp.k3 hp.k6 dbl) (unitMod_pow_two hodd _) hI)
@@ -173,22 +173,22 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hF : FnOk S) (ho
     have h1 := congrArg BitVec.toNat hs₂.edi
     have h2 := hs.arg_toNat
     have b1 := (s₃.gpr .edi).isLt
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)] at h1
-    omega
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)] at h1
+    omega_arith
   refine wp_ldm (b := .edi) edi₃ ⟨_, List.mem_append_right _ hs₂.wr, by
-      rw [addr_ws hs (by omega)]; exact Offset.contains_base _ (by omega) (by omega)⟩ fun s₄ u₄ =>
+      rw [addr_ws hs (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩ fun s₄ u₄ =>
     WP.block_nil ?_
-  rw [addr_ws hs (by omega)] at u₄
+  rw [addr_ws hs (by omega_arith)] at u₄
   have m₄ : s₄.mem = s₃.mem := u₄.mem
   -- The saved word survives the program.
   have hsaved : s₃.mem.readW (off (wsOf s) (Impl.Weierstrass.X86.Point.saveAt S.k)) 32 = s.gpr .edi := by
     have h := outs_readW32 K.mem (d := Impl.Weierstrass.X86.Point.saveAt S.k) (fun r hr => by
       simp only [List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with ⟨x, hx, rfl⟩ | rfl | rfl
-      · rcases (hW x hx).1 with h | h <;> [exact .inr (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega);
-          exact .inl (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega)]
-      · exact .inl (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega)
-      · exact .inl (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega)) (by omega)
+      · rcases (hW x hx).1 with h | h <;> [exact .inr (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith);
+          exact .inl (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith)]
+      · exact .inl (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith)
+      · exact .inl (by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith)) (by omega_arith)
     rw [h, m₁, Mem.readW_writeW_self32]
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, fun j hj => ?_, ?_⟩
   · -- The callee-saved registers.
@@ -210,22 +210,22 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hF : FnOk S) (ho
       have hsp := hs.sp_fit
       exact Region.disjoint_of_le (.inr (by
         show (below (s.gpr .esp) 20).base.toNat + 20 ≤ ((s.gpr .esp).setWidth 64).toNat
-        rw [below_toNat _ h20, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]; omega))
-        (by show ((s.gpr .esp).setWidth 64).toNat + 4 ≤ _; rw [BitVec.toNat_setWidth]; omega)
-        (by show (below (s.gpr .esp) 20).base.toNat + 20 ≤ _; rw [below_toNat _ h20]; omega)
+        rw [below_toNat _ h20, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith))
+        (by show ((s.gpr .esp).setWidth 64).toNat + 4 ≤ _; rw [BitVec.toNat_setWidth]; omega_arith)
+        (by show (below (s.gpr .esp) 20).base.toNat + 20 ≤ _; rw [below_toNat _ h20]; omega_arith)
   · -- The memory.
     rw [m₄]
     refine (outs_sub (rs := [(Impl.Weierstrass.X86.Point.saveAt S.k, 4)]) (Outs.of_outside O₁ (List.mem_singleton_self _)) fun r hr => ?_).trans
       (outs_sub K.mem fun r hr => ?_)
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega,
-        by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega⟩
+      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith,
+        by simp only [Impl.Weierstrass.X86.Point.saveAt]; omega_arith⟩
     · simp only [List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with ⟨x, hx, rfl⟩ | rfl | rfl
       · rcases (hW x hx).2 with h | h
-        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega⟩
-        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega, by dsimp only; omega⟩
+        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
+        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Nat.le_refl _, Nat.le_refl _⟩
   · rw [m₄]; exact I₂.lt j (out_valid j hj)
   · rw [m₄, I₂.val 0 (out_valid 0 (by decide)), I₂.val 1 (out_valid 1 (by decide)),

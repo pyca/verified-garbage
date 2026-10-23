@@ -223,13 +223,13 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
   rw [WP.seq_iff]
   -- `0x00 0x01`, and `PS`'s registers.
   refine wp_mov (op2_imm (by decide)) fun t1 u1 => ?_
-  refine (h0.upd u1 (by simp)).strb hin (by omega) (by rw [u1.gpr]; rfl) (by decide)
+  refine (h0.upd u1 (by simp)).strb hin (by omega_arith) (by rw [u1.gpr]; rfl) (by decide)
     (by rw [u1.other _ (by decide), hin.r0]) fun t2 h2 g2 => ?_
   refine wp_mov (op2_imm (by decide)) fun t3 u3 => ?_
-  refine (h2.upd u3 (by simp)).strb hin (by omega) (by rw [u3.gpr]; rfl) (by decide)
+  refine (h2.upd u3 (by simp)).strb hin (by omega_arith) (by rw [u3.gpr]; rfl) (by decide)
     (by rw [u3.other _ (by decide), g2, u1.other _ (by decide), hin.r0]) fun t4 h4 g4 => ?_
   refine wp_dp (op2_imm (by decide)) fun t5 u5 => ?_
-  refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega))) fun t6 u6 => ?_
+  refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t6 u6 => ?_
   refine wp_mov (op2_imm (by decide)) fun t7 u7 => WP.block_nil ?_
   have h7 := ((h4.upd u5 (by simp)).upd u6 (by simp)).upd u7 (by simp)
   have r0_7 : t7.gpr .r0 = dst + BitVec.ofNat 32 2 := by
@@ -240,9 +240,9 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
       u1.other _ (by decide), hin.r3]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have r2_7 : t7.gpr .r2 = 0xff := u7.gpr
-  have hps : 8 ≤ k - tLen h - 3 := by omega
+  have hps : 8 ≤ k - tLen h - 3 := by omega_arith
   -- `PS`.
   have fill_ok : WP isa fill t7 fun t => Wr s0 dst src k (encList h D k) (2 + (k - tLen h - 3)) t ∧
       t.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3)) := by
@@ -250,30 +250,30 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
         Wr s0 dst src k (encList h D k) (2 + (k - tLen h - 3 - (q + 1))) t ∧
         t.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3 - (q + 1))) ∧
         t.gpr .r3 = BitVec.ofNat 32 (q + 1) ∧ t.gpr .r2 = 0xff) ?_ (k - tLen h - 3 - 1) t7
-      ⟨by omega, by rw [show k - tLen h - 3 - (k - tLen h - 3 - 1 + 1) = 0 by omega]; exact h7,
-        by rw [r0_7, show k - tLen h - 3 - (k - tLen h - 3 - 1 + 1) = 0 by omega],
-        by rw [r3_7, show k - tLen h - 3 - 1 + 1 = k - tLen h - 3 by omega], r2_7⟩
+      ⟨by omega_arith, by rw [show k - tLen h - 3 - (k - tLen h - 3 - 1 + 1) = 0 by omega_arith]; exact h7,
+        by rw [r0_7, show k - tLen h - 3 - (k - tLen h - 3 - 1 + 1) = 0 by omega_arith],
+        by rw [r3_7, show k - tLen h - 3 - 1 + 1 = k - tLen h - 3 by omega_arith], r2_7⟩
     rintro q t ⟨hq, ht, r0, r3, r2⟩
-    refine ht.strb hin (by omega) (by rw [r2, encList_ps (by omega)]; rfl) (by decide)
+    refine ht.strb hin (by omega_arith) (by rw [r2, encList_ps (by omega_arith)]; rfl) (by decide)
       (by rw [r0, BitVec.add_zero]) fun t1 h1 g1 => ?_
     refine wp_dp (op2_imm (by decide)) fun t2 u2 => ?_
     refine wp_subs (op2_imm (by decide)) fun t3 u3 z3 => WP.block_nil ?_
     have h3 := (h1.upd u2 (by simp)).upd u3 (by simp)
     have r3' : t3.gpr .r3 - 0 = BitVec.ofNat 32 q := by
-      rw [u3.gpr, u2.other _ (by decide), g1, r3, sub_one_ofNat (by omega)]; simp
+      rw [u3.gpr, u2.other _ (by decide), g1, r3, sub_one_ofNat (by omega_arith)]; simp
     have r0' : t3.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3 - (q + 1)) + 1) := by
       rw [u3.other _ (by decide), u2.gpr, dpVal, g1, r0, Offset.add_ofNat_add_one]
     have ev : isa.eval .ne t3 = some (decide (0 < q)) := by
-      rw [eval_ne, z3, u2.other _ (by decide), g1, r3, ne_counter (by omega)]
+      rw [eval_ne, z3, u2.other _ (by decide), g1, r3, ne_counter (by omega_arith)]
     rcases Nat.eq_zero_or_pos q with hq0 | hq0
     · subst hq0
       refine .inl ⟨by rw [ev]; rfl, ?_, ?_⟩
-      · rw [show 2 + (k - tLen h - 3) = 2 + (k - tLen h - 3 - (0 + 1)) + 1 by omega]; exact h3
-      · rw [r0']; congr 2; omega
-    · refine .inr ⟨by rw [ev]; simp [hq0], q - 1, by omega, by omega, ?_, ?_, ?_, ?_⟩
-      · rw [show 2 + (k - tLen h - 3 - (q - 1 + 1)) = 2 + (k - tLen h - 3 - (q + 1)) + 1 by omega]; exact h3
-      · rw [r0']; congr 2; omega
-      · rw [u3.gpr, u2.other _ (by decide), g1, r3, sub_one_ofNat (by omega), show q - 1 + 1 = q by omega]
+      · rw [show 2 + (k - tLen h - 3) = 2 + (k - tLen h - 3 - (0 + 1)) + 1 by omega_arith]; exact h3
+      · rw [r0']; congr 2; omega_arith
+    · refine .inr ⟨by rw [ev]; simp [hq0], q - 1, by omega_arith, by omega_arith, ?_, ?_, ?_, ?_⟩
+      · rw [show 2 + (k - tLen h - 3 - (q - 1 + 1)) = 2 + (k - tLen h - 3 - (q + 1)) + 1 by omega_arith]; exact h3
+      · rw [r0']; congr 2; omega_arith
+      · rw [u3.gpr, u2.other _ (by decide), g1, r3, sub_one_ofNat (by omega_arith), show q - 1 + 1 = q by omega_arith]
       · rw [u3.other _ (by decide), u2.other _ (by decide), g1, r2]
   rw [WP.seq_iff]
   refine WP.mono fill_ok fun t8 ⟨h8, r0_8⟩ => ?_
@@ -281,57 +281,57 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
   -- `0x00`, the prefix, and the hash value's registers.
   unfold mid
   refine putBytes_ok hin (L := encList h D k) (b0 := 2 + (k - tLen h - 3)) (0 :: h.prefix) 0 h8 r0_8 rfl
-    (by simp; omega) (fun i hi => encList_mid (by simpa using hi)) (by simp; omega) fun t9 h9 g9 => ?_
-  refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega))) fun t10 u10 => ?_
-  refine wp_mov (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega))) fun t11 u11 => WP.block_nil ?_
+    (by simp; omega_arith) (fun i hi => encList_mid (by simpa using hi)) (by simp; omega_arith) fun t9 h9 g9 => ?_
+  refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t10 u10 => ?_
+  refine wp_mov (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t11 u11 => WP.block_nil ?_
   have h11 := (h9.upd u10 (by simp)).upd u11 (by simp)
   have hn : 2 + (k - tLen h - 3) + (0 :: h.prefix).length = 2 + (k - tLen h - 3) + (h.prefix.length + 1) := by simp
   rw [hn] at h11
   -- The hash value.
   have dfit : (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))).toNat + h.len ≤ 2 ^ 32 := by
     have := hin.dstFit
-    rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega
-  have hk32 : k < 2 ^ 32 := by omega
+    rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith),
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
+  have hk32 : k < 2 ^ 32 := by omega_arith
   have dA : ∀ j < k, State.addr (dst + BitVec.ofNat 32 j) = State.addr dst + BitVec.ofNat 64 j := fun j hj =>
-    addr_add (by have := hin.dstFit; omega)
+    addr_add (by have := hin.dstFit; omega_arith)
   have r0_11 : t11.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1)) := by
     rw [u11.other _ (by decide), u10.gpr, dpVal, g9 _ (by decide), r0_8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have hdst' : State.addr (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))) =
-      State.addr dst + BitVec.ofNat 64 (2 + (k - tLen h - 3) + (h.prefix.length + 1)) := dA _ (by omega)
+      State.addr dst + BitVec.ofNat 64 (2 + (k - tLen h - 3) + (h.prefix.length + 1)) := dA _ (by omega_arith)
   have sub : Region.Sub ⟨State.addr (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))), h.len⟩
       ⟨State.addr dst, k⟩ := by
-    rw [hdst']; exact Offset.sub_base _ (by omega)
+    rw [hdst']; exact Offset.sub_base _ (by omega_arith)
   have ctx := Bignum.Arm.copyCtx_of_regions t11 src (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1)))
-    (n := h.len) (by omega) (by rw [← hD]; exact hin.srcFit) dfit
+    (n := h.len) (by omega_arith) (by rw [← hD]; exact hin.srcFit) dfit
     (by rw [h11.rest.rd, h11.rest.wr, ← hD]; exact hin.read)
     (by rw [h11.rest.wr, hdst']
-        exact Covers.one hin.write _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩)
+        exact Covers.one hin.write _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (by have := hin.sep; rw [hD] at this; exact this.sub_right sub)
   rw [WP.seq_iff]
   refine WP.mono (Bignum.Arm.copyBytes_ok t11 ctx hhp h11.r1 r0_11 u11.gpr) fun t12 h12 => ?_
   refine wp_mov (op2_imm (by decide)) fun t13 u13 => WP.block_nil ⟨?_, ?_, ?_, u13.gpr⟩
   · rw [u13.mem]
     refine h11.frame.trans fun x hx => h12.outside x fun j hj e => hx _ (List.mem_singleton_self _) ?_
-    rw [e, BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega)]
-    exact Offset.contains_base _ (by omega) (by omega)
+    rw [e, BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega_arith)]
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   · exact (h11.rest.trans (h12.rest.mono (by simp))).trans (u13.rest (by simp))
   · intro i hi
     rw [u13.mem]
-    rcases (by omega : i < 2 + (k - tLen h - 3) + (h.prefix.length + 1) ∨
+    rcases (by omega_arith : i < 2 + (k - tLen h - 3) + (h.prefix.length + 1) ∨
         2 + (k - tLen h - 3) + (h.prefix.length + 1) ≤ i) with hi' | hi'
     · rw [h12.outside _ fun j hj e => ?_]
       · exact h11.bytes i hi'
-      · rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega)] at e
-        exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega) e
+      · rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega_arith)] at e
+        exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith) e
     · obtain ⟨j, rfl⟩ : ∃ j, i = 2 + (k - tLen h - 3) + (h.prefix.length + 1) + j := ⟨_, (Nat.add_sub_cancel' hi').symm⟩
-      have hj : j < h.len := by omega
+      have hj : j < h.len := by omega_arith
       have e1 := h12.copied j hj
-      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega)] at e1
-      rw [e1, encList_D, ← hDdef, bytesAt_getD (by omega), addr_add (by have := hin.srcFit; omega)]
+      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega_arith)] at e1
+      rw [e1, encList_D, ← hDdef, bytesAt_getD (by omega_arith), addr_add (by have := hin.srcFit; omega_arith)]
       have sep : Region.Disjoint ⟨State.addr src + BitVec.ofNat 64 j, 1⟩ ⟨State.addr dst, k⟩ :=
-        hin.sep.sub_left (Offset.sub_base _ (by omega))
+        hin.sep.sub_left (Offset.sub_base _ (by omega_arith))
       exact h11.frame.byte1 fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sep
 
 /-- The top bit of `k - x`: 1 exactly when `k < x`. -/

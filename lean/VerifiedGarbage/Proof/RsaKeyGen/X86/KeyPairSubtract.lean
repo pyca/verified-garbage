@@ -22,24 +22,24 @@ theorem subtractPair_ok {s : State} {B : Addr} {Z out a b : Nat} (h : Scr s B Z)
         val32 s.mem B a 2 + 2 ^ 64 * borrow.toNat) ∧ Keeps [.eax, .edx] s t := by
   have hn := h.nowrap
   unfold subtractPair
-  refine wp_movS (readSrc_sc h (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h (by omega_arith)) fun u U _ => ?_
   have hu := h.of_keeps U.keeps (by decide)
-  refine wp_movS (readSrc_sc hu (by omega)) fun v V _ => ?_
+  refine wp_movS (readSrc_sc hu (by omega_arith)) fun v V _ => ?_
   have Kv : Keeps [.eax, .edx] s v := (U.keeps.mono (by decide)).widen V.keeps
   have hv := h.of_keeps Kv (by decide)
-  have loRead := readSrc_sc hv (d := b) (by omega)
+  have loRead := readSrc_sc hv (d := b) (by omega_arith)
   rw [V.mem, U.mem] at loRead
   refine wp_subS loRead fun w W cfW => ?_
   have Kw : Keeps [.eax, .edx] s w := Kv.widen W.keeps
   have hw := h.of_keeps Kw (by decide)
-  have hiRead := readSrc_sc hw (d := b + 4) (by omega)
+  have hiRead := readSrc_sc hw (d := b + 4) (by omega_arith)
   rw [W.mem, V.mem, U.mem] at hiRead
   refine wp_sbbS hiRead cfW fun x X _ => ?_
   have Kx : Keeps [.eax, .edx] s x := Kw.widen X.keeps
   have hx := h.of_keeps Kx (by decide)
-  refine wp_storeS (hx.ea (by omega)) (hx.write (by omega)) fun y Y => ?_
+  refine wp_storeS (hx.ea (by omega_arith)) (hx.write (by omega_arith)) fun y Y => ?_
   have hy := hx.of_keeps (Y.keeps []) (by decide)
-  refine wp_storeS (hy.ea (by omega)) (hy.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (hy.ea (by omega_arith)) (hy.write (by omega_arith)) fun t T => WP.block_nil ?_
   let lowBorrow := decide ((v.gpr .eax).toNat < (s.mem.readW (off B b) 32).toNat)
   let highBorrow := decide ((w.gpr .edx).toNat < (s.mem.readW (off B (b + 4)) 32).toNat + lowBorrow.toNat)
   have low : (w.gpr .eax).toNat + w32 s.mem B b = (v.gpr .eax).toNat + 2 ^ 32 * lowBorrow.toNat := by
@@ -57,18 +57,18 @@ theorem subtractPair_ok {s : State} {B : Addr} {Z out a b : Nat} (h : Scr s B Z)
   have oldMem : x.mem = s.mem := X.mem.trans (W.mem.trans (V.mem.trans U.mem))
   have Oy : Outside B out 4 s.mem y.mem := by
     rw [Y.mem, oldMem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
   have Ot : Outside B (out + 4) 4 y.mem t.mem := by
     rw [T.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
   have lowT : w32 t.mem B out = (x.gpr .eax).toNat := by
-    rw [Ot.w32 (Or.inl (Nat.le_refl _)) (by omega), Y.mem, w32_write_self]
+    rw [Ot.w32 (Or.inl (Nat.le_refl _)) (by omega_arith), Y.mem, w32_write_self]
   have highT : w32 t.mem B (out + 4) = (x.gpr .edx).toNat := by
     rw [T.mem, w32_write_self, Y.gpr]
-  refine ⟨(Oy.mono (Nat.le_refl _) (by omega)).trans (Ot.mono (by omega) (by omega)),
+  refine ⟨(Oy.mono (Nat.le_refl _) (by omega_arith)).trans (Ot.mono (by omega_arith) (by omega_arith)),
     ⟨highBorrow, ?_⟩, Kx.trans ((Y.keeps _).trans (T.keeps _))⟩
   simp only [val32, Nat.mul_zero, Nat.add_zero]
   rw [lowT, highT, X.other _ (by decide)]
-  omega
+  omega_arith
 
 end VG.Proof.RsaKeyGen.X86.Key

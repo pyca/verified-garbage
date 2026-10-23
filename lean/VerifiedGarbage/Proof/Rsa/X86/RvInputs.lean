@@ -26,7 +26,7 @@ def CallGeometry.buffer (g : CallGeometry) (i : Nat) : Region :=
 /-- What the call may write: the working space, the outputs, and the 40 bytes below `sp`, where the
 calls of `vg_rsa_mont_mul_at` put their frames. -/
 def CallGeometry.writes (g : CallGeometry) : List Region :=
-  [⟨g.B, g.Z⟩, g.buffer 0, g.buffer 2, VG.X86.below g.sp 40]
+  [⟨g.B, g.Z⟩, g.buffer 0, g.buffer 2, VG.X86.below g.sp 96]
 
 /-- The modulus's length (argument 5), of the width the arrays have, and the working space argument
 at the working space. -/

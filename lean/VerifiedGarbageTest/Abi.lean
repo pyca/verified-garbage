@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # Golden tests for signatures and calling conventions
@@ -35,7 +36,7 @@ def sample : Sig where
 #guard (sample.words 64).map (·.bits 64) == [64, 32, 64, 64, 64, 64, 64, 64, 64, 64, 64]
 #guard (sample.words 32).map (·.bits 32) == [64, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
 
-/-! ## x86-64 and AArch64: one register per argument -/
+/-! ## x86-64, AArch64 and PPC64LE: one register per argument -/
 
 def x86_64State : X86_64.State where
   gpr r := match r with
@@ -127,6 +128,39 @@ def aarch64StackWr : AArch64.State := { aarch64Stack with wr := [⟨0x100, 16⟩
 #guard (AArch64.exec (.strSp .x9 32760) { aarch64StackWr with sp := 0x100 - 32760 }).isSome
 #guard (AArch64.exec (.strSp .x9 32768) { aarch64StackWr with sp := 0x100 - 32768 }).isNone
 #guard AArch64.abi.ret aarch64State == 1
+
+def ppcState : PPC64LE.State where
+  gpr r := match r with
+    | .r3 => 1 | .r4 => 2 | .r5 => 3 | .r6 => 4 | .r7 => 5 | .r8 => 6 | .r9 => 7 | .r10 => 8
+    | _ => 0
+  lr := 0
+  sp := 0x1000
+  mem _ := 0
+  rd := []
+  wr := []
+
+#guard (PPC64LE.abi.args (List.replicate 8 64)).map (· ppcState) == some [1, 2, 3, 4, 5, 6, 7, 8]
+#guard (PPC64LE.abi.args [64, 32]).map (· ppcState) == some [1, 2]
+-- A ninth argument is in memory, in the Parameter Save Area at `sp + 32`
+-- after the eight doublewords standing for `r3`–`r10`: at `sp + 96`.
+def ppcStack : PPC64LE.State :=
+  { ppcState with mem := fun a => if a.toNat = 0x1060 then 9 else if a.toNat = 0x1068 then 10 else 0 }
+#guard PPC64LE.stackArgAddr ppcStack 0 == 0x1060
+#guard PPC64LE.stackArg ppcStack 0 == 9
+#guard PPC64LE.stackArg ppcStack 1 == 10
+#guard (PPC64LE.abi.args (List.replicate 9 64)).map (· ppcStack) == some [1, 2, 3, 4, 5, 6, 7, 8, 9]
+#guard (PPC64LE.abi.args (List.replicate 10 64)).map (· ppcStack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+-- A 32-bit argument in memory is the low half of its doubleword, which the
+-- caller sign- or zero-extends.
+#guard (PPC64LE.abi.args (List.replicate 8 64 ++ [32, 64])).map (· ppcStack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+#guard PPC64LE.abi.argArea (List.replicate 8 64 ++ [32, 64]) ppcStack == [(⟨0x1060, 16⟩, false)]
+#guard (PPC64LE.abi.args (List.replicate 8 64 ++ [128])).isNone
+#guard PPC64LE.abi.argArea (List.replicate 10 64) ppcStack == [(⟨0x1060, 16⟩, false)]
+#guard PPC64LE.abi.argArea (List.replicate 8 64) ppcStack == []
+#guard PPC64LE.abi.ret ppcState == 1
+#guard PPC64LE.abi.reserved 48 ppcState == [⟨0xfd0, 48⟩]
 
 /-! ### Public arguments are public only in the bits of their width
 

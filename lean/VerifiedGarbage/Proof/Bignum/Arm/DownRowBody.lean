@@ -23,24 +23,24 @@ theorem body_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hn := ctx.nowrap
-  have readB := writable ctx inv.rest.wr (d := b + 4 * i) (by omega)
+  have readB := writable ctx inv.rest.wr (d := b + 4 * i) (by omega_arith)
   have readB' : InRegions (s.rd ++ s.wr) (off (State.addr base) (b + 4 * i)) 4 := by
     rcases readB with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   rw [VG.Impl.Bignum.Arm.DownRow.body, WP.seq_iff]
-  have readAcc := writable ctx inv.rest.wr (d := o + 4 + 4 * i) (by omega)
+  have readAcc := writable ctx inv.rest.wr (d := o + 4 + 4 * i) (by omega_arith)
   have readAcc' : InRegions (s.rd ++ s.wr) (off (State.addr base) (o + 4 + 4 * i)) 4 := by
     rcases readAcc with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   have accAddr : State.addr (s.gpr .r0 + BitVec.ofNat 32 4) =
       off (State.addr base) (o + 4 + 4 * i) := by
     rw [inv.outPtr, Offset.add_add]
-    have := VG.Arm.addr_add (a := base) (k := o + 4 * i + 4) (by omega)
-    simpa only [show o + 4 * i + 4 = o + 4 + 4 * i by omega] using this
+    have := VG.Arm.addr_add (a := base) (k := o + 4 * i + 4) (by omega_arith)
+    simpa only [show o + 4 * i + 4 = o + 4 + 4 * i by omega_arith] using this
   refine WP.mono (step_ok s _ _ _ x (by rw [inv.rest.gpr .r1 (by simp), h1])
     (by rw [inv.rest.gpr .r10 (by simp), h10]) (by rw [inv.rest.gpr .r9 (by simp), h9])
-    (addr ctx inv.outPtr (by omega)) (addr ctx inv.inPtr (by omega))
-    accAddr readAcc' readB' (writable ctx inv.rest.wr (by omega))) ?_
+    (addr ctx inv.outPtr (by omega_arith)) (addr ctx inv.inPtr (by omega_arith))
+    accAddr readAcc' readB' (writable ctx inv.rest.wr (by omega_arith))) ?_
   rintro s1 ⟨v1, m1, k1⟩
   obtain ⟨outside, value⟩ := value_step ctx inv hi m1 v1
   refine WP.mono (rowAdvance_ok s1) ?_
@@ -50,9 +50,9 @@ theorem body_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   have count2 : s2.gpr .lr = BitVec.ofNat 32 (n - (i + 1)) := by
     rw [cnt, count1]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
     congr 1
-  refine ⟨⟨by omega, ?_, ?_, count2, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨by omega_arith, ?_, ?_, count2, ?_, ?_, ?_⟩, ?_⟩
   · rw [p0, k1.gpr .r0 (by simp [rowClobbers]), inv.outPtr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
@@ -67,7 +67,7 @@ theorem body_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
     all_goals intro r hr; cases r <;> simp_all [rowClobbers, stepClobbers]
   · rw [zero, count1]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_arith]
 
 end VG.Proof.Bignum.Arm.DownRow

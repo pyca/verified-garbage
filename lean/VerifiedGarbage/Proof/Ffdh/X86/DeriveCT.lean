@@ -66,9 +66,9 @@ structure DAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes l
     (args : Nat → BitVec 32) (sp : BitVec 32) (D : List Byte) (St : Nat) (u : State) : Prop where
   run : Run Ex base bytes len args sp u
   geo : DomGeo args base bytes len dlen u.rd u.wr
-  hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 40)
+  hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
   x : XGeo args base bytes len xl u.rd u.wr
-  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
   dom : domBytes u.mem args dlen = D
   st : Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf len D) (xv u.mem args xl) = St
 
@@ -107,10 +107,10 @@ theorem front_trace :
 /-- The tail: x's power over its `xl` bytes, then the mask, the output and the status by the taint
 analysis. -/
 theorem tail_trace {P : State → Prop}
-    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) :
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) :
     RelCT isa (Both P) Impl.Ffdh.X86.DerivePublic.tail fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
-    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ?_
     obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
@@ -125,7 +125,7 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) ∧
+    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) ∧
       Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.run.1 A.geo A.x (by rw [A.run.2.2]; exact A.hb40) (by rw [A.run.2.2]; exact A.hx40))
       fun u ⟨S, G, _⟩ => ⟨⟨⟨run_step A.run S, A.x.keep ⟨rfl, rfl⟩ S.keeps⟩, A.hx40⟩, G.congr ?_⟩
@@ -179,7 +179,7 @@ theorem dAt_of {s f : State} (A : DerivePublicABI s) (Bf : BodyAt (Rd s) Impl.Ff
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.DerivePublic.args s, wsSize Impl.Ffdh.X86.DerivePublic.args s⟩
   have Gm := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   refine ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [outR s]) fun r hr => by

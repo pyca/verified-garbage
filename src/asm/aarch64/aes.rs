@@ -1232,72 +1232,40 @@ ldr x25, [x5, #432]
 ldr x26, [x5, #440]
 ldr x27, [x5, #448]
 ldr x28, [x5, #456]
-add x16, sp, #0
 movz x17, #0, lsl #0
-str x17, [x16, #0]
-str x17, [x16, #8]
-str x17, [x16, #16]
-str x17, [x16, #24]
-str x17, [x16, #32]
-str x17, [x16, #40]
-str x17, [x16, #48]
-str x17, [x16, #56]
-str x17, [x16, #64]
-str x17, [x16, #72]
-str x17, [x16, #80]
-str x17, [x16, #88]
-str x17, [x16, #96]
-str x17, [x16, #104]
-str x17, [x16, #112]
-str x17, [x16, #120]
-str x17, [x16, #128]
-str x17, [x16, #136]
-str x17, [x16, #144]
-str x17, [x16, #152]
-str x17, [x16, #160]
-str x17, [x16, #168]
-str x17, [x16, #176]
-str x17, [x16, #184]
-str x17, [x16, #192]
-str x17, [x16, #200]
-str x17, [x16, #208]
-str x17, [x16, #216]
-str x17, [x16, #224]
-str x17, [x16, #232]
-str x17, [x16, #240]
-str x17, [x16, #248]
-str x17, [x16, #256]
-str x17, [x16, #264]
-str x17, [x16, #272]
-str x17, [x16, #280]
-str x17, [x16, #288]
-str x17, [x16, #296]
-str x17, [x16, #304]
-str x17, [x16, #312]
-str x17, [x16, #320]
-str x17, [x16, #328]
-str x17, [x16, #336]
-str x17, [x16, #344]
-str x17, [x16, #352]
-str x17, [x16, #360]
-str x17, [x16, #368]
-str x17, [x16, #376]
-str x17, [x16, #384]
-str x17, [x16, #392]
-str x17, [x16, #400]
-str x17, [x16, #408]
-str x17, [x16, #416]
-str x17, [x16, #424]
-str x17, [x16, #432]
-str x17, [x16, #440]
-str x17, [x16, #448]
-str x17, [x16, #456]
-str x17, [x16, #464]
-str x17, [x16, #472]
-str x17, [x16, #480]
-str x17, [x16, #488]
-str x17, [x16, #496]
-str x17, [x16, #504]
+add x16, sp, #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
 add sp, sp, #512
 ret
 .p2align 6",
@@ -4044,9 +4012,8 @@ str w7, [x2, #12]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #1, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #16]
 eor w5, w5, w4
@@ -4058,9 +4025,8 @@ str w7, [x2, #28]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #2, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #32]
 eor w5, w5, w4
@@ -4072,9 +4038,8 @@ str w7, [x2, #44]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #4, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #48]
 eor w5, w5, w4
@@ -4086,9 +4051,8 @@ str w7, [x2, #60]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #8, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #64]
 eor w5, w5, w4
@@ -4100,9 +4064,8 @@ str w7, [x2, #76]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #16, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #80]
 eor w5, w5, w4
@@ -4114,9 +4077,8 @@ str w7, [x2, #92]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #32, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #96]
 eor w5, w5, w4
@@ -4128,9 +4090,8 @@ str w7, [x2, #108]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #64, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #112]
 eor w5, w5, w4
@@ -4142,9 +4103,8 @@ str w7, [x2, #124]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #128, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #128]
 eor w5, w5, w4
@@ -4156,9 +4116,8 @@ str w7, [x2, #140]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #27, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #144]
 eor w5, w5, w4
@@ -4170,9 +4129,8 @@ str w7, [x2, #156]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #54, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #160]
 eor w5, w5, w4
@@ -4202,9 +4160,8 @@ str w13, [x2, #28]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #1, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #32]
 eor w5, w5, w4
@@ -4227,9 +4184,8 @@ str w13, [x2, #60]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #2, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #64]
 eor w5, w5, w4
@@ -4252,9 +4208,8 @@ str w13, [x2, #92]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #4, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #96]
 eor w5, w5, w4
@@ -4277,9 +4232,8 @@ str w13, [x2, #124]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #8, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #128]
 eor w5, w5, w4
@@ -4302,9 +4256,8 @@ str w13, [x2, #156]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #16, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #160]
 eor w5, w5, w4
@@ -4327,9 +4280,8 @@ str w13, [x2, #188]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #32, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #192]
 eor w5, w5, w4
@@ -4352,9 +4304,8 @@ str w13, [x2, #220]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #64, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #224]
 eor w5, w5, w4
@@ -4381,9 +4332,8 @@ str w11, [x2, #20]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #1, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #24]
 eor w5, w5, w4
@@ -4399,9 +4349,8 @@ str w11, [x2, #44]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #2, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #48]
 eor w5, w5, w4
@@ -4417,9 +4366,8 @@ str w11, [x2, #68]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #4, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #72]
 eor w5, w5, w4
@@ -4435,9 +4383,8 @@ str w11, [x2, #92]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #8, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #96]
 eor w5, w5, w4
@@ -4453,9 +4400,8 @@ str w11, [x2, #116]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #16, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #120]
 eor w5, w5, w4
@@ -4471,9 +4417,8 @@ str w11, [x2, #140]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #32, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #144]
 eor w5, w5, w4
@@ -4489,9 +4434,8 @@ str w11, [x2, #164]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #64, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #168]
 eor w5, w5, w4
@@ -4507,9 +4451,8 @@ str w11, [x2, #188]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #128, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #192]
 eor w5, w5, w4
@@ -4519,72 +4462,40 @@ str w6, [x2, #200]
 eor w7, w7, w6
 str w7, [x2, #204]
 21:
-add x16, sp, #0
 movz x17, #0, lsl #0
-str x17, [x16, #0]
-str x17, [x16, #8]
-str x17, [x16, #16]
-str x17, [x16, #24]
-str x17, [x16, #32]
-str x17, [x16, #40]
-str x17, [x16, #48]
-str x17, [x16, #56]
-str x17, [x16, #64]
-str x17, [x16, #72]
-str x17, [x16, #80]
-str x17, [x16, #88]
-str x17, [x16, #96]
-str x17, [x16, #104]
-str x17, [x16, #112]
-str x17, [x16, #120]
-str x17, [x16, #128]
-str x17, [x16, #136]
-str x17, [x16, #144]
-str x17, [x16, #152]
-str x17, [x16, #160]
-str x17, [x16, #168]
-str x17, [x16, #176]
-str x17, [x16, #184]
-str x17, [x16, #192]
-str x17, [x16, #200]
-str x17, [x16, #208]
-str x17, [x16, #216]
-str x17, [x16, #224]
-str x17, [x16, #232]
-str x17, [x16, #240]
-str x17, [x16, #248]
-str x17, [x16, #256]
-str x17, [x16, #264]
-str x17, [x16, #272]
-str x17, [x16, #280]
-str x17, [x16, #288]
-str x17, [x16, #296]
-str x17, [x16, #304]
-str x17, [x16, #312]
-str x17, [x16, #320]
-str x17, [x16, #328]
-str x17, [x16, #336]
-str x17, [x16, #344]
-str x17, [x16, #352]
-str x17, [x16, #360]
-str x17, [x16, #368]
-str x17, [x16, #376]
-str x17, [x16, #384]
-str x17, [x16, #392]
-str x17, [x16, #400]
-str x17, [x16, #408]
-str x17, [x16, #416]
-str x17, [x16, #424]
-str x17, [x16, #432]
-str x17, [x16, #440]
-str x17, [x16, #448]
-str x17, [x16, #456]
-str x17, [x16, #464]
-str x17, [x16, #472]
-str x17, [x16, #480]
-str x17, [x16, #488]
-str x17, [x16, #496]
-str x17, [x16, #504]
+add x16, sp, #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
 add sp, sp, #512
 ret
 .arch_extension noaes
@@ -4632,9 +4543,8 @@ str w7, [x2, #12]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #1, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #16]
 eor w5, w5, w4
@@ -4646,9 +4556,8 @@ str w7, [x2, #28]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #2, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #32]
 eor w5, w5, w4
@@ -4660,9 +4569,8 @@ str w7, [x2, #44]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #4, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #48]
 eor w5, w5, w4
@@ -4674,9 +4582,8 @@ str w7, [x2, #60]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #8, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #64]
 eor w5, w5, w4
@@ -4688,9 +4595,8 @@ str w7, [x2, #76]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #16, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #80]
 eor w5, w5, w4
@@ -4702,9 +4608,8 @@ str w7, [x2, #92]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #32, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #96]
 eor w5, w5, w4
@@ -4716,9 +4621,8 @@ str w7, [x2, #108]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #64, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #112]
 eor w5, w5, w4
@@ -4730,9 +4634,8 @@ str w7, [x2, #124]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #128, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #128]
 eor w5, w5, w4
@@ -4744,9 +4647,8 @@ str w7, [x2, #140]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #27, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #144]
 eor w5, w5, w4
@@ -4758,9 +4660,8 @@ str w7, [x2, #156]
 dup v1.4s, w7
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #54, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #160]
 eor w5, w5, w4
@@ -4790,9 +4691,8 @@ str w13, [x2, #28]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #1, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #32]
 eor w5, w5, w4
@@ -4815,9 +4715,8 @@ str w13, [x2, #60]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #2, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #64]
 eor w5, w5, w4
@@ -4840,9 +4739,8 @@ str w13, [x2, #92]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #4, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #96]
 eor w5, w5, w4
@@ -4865,9 +4763,8 @@ str w13, [x2, #124]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #8, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #128]
 eor w5, w5, w4
@@ -4890,9 +4787,8 @@ str w13, [x2, #156]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #16, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #160]
 eor w5, w5, w4
@@ -4915,9 +4811,8 @@ str w13, [x2, #188]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #32, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #192]
 eor w5, w5, w4
@@ -4940,9 +4835,8 @@ str w13, [x2, #220]
 dup v1.4s, w13
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #64, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #224]
 eor w5, w5, w4
@@ -4969,9 +4863,8 @@ str w11, [x2, #20]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #1, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #24]
 eor w5, w5, w4
@@ -4987,9 +4880,8 @@ str w11, [x2, #44]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #2, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #48]
 eor w5, w5, w4
@@ -5005,9 +4897,8 @@ str w11, [x2, #68]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #4, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #72]
 eor w5, w5, w4
@@ -5023,9 +4914,8 @@ str w11, [x2, #92]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #8, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #96]
 eor w5, w5, w4
@@ -5041,9 +4931,8 @@ str w11, [x2, #116]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #16, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #120]
 eor w5, w5, w4
@@ -5059,9 +4948,8 @@ str w11, [x2, #140]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #32, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #144]
 eor w5, w5, w4
@@ -5077,9 +4965,8 @@ str w11, [x2, #164]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #64, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #168]
 eor w5, w5, w4
@@ -5095,9 +4982,8 @@ str w11, [x2, #188]
 dup v1.4s, w11
 aese v1.16b, v0.16b
 umov w9, v1.s[0]
-ror w9, w9, #8
 movz w10, #128, lsl #0
-eor w9, w9, w10
+eor w9, w10, w9, ror #8
 eor w4, w4, w9
 str w4, [x2, #192]
 eor w5, w5, w4

@@ -116,7 +116,7 @@ theorem lab_vp (P : EP) :
       rcases hr with rfl | rfl | rfl | rfl
       · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
       · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
-      · exact Lay.fr_low (by oomega) (by show (3392 : Nat) ≤ 2 ^ 32; decide)
+      · exact Lay.fr_low (by oomega) (by show (3448 : Nat) ≤ 2 ^ 32; decide)
       · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

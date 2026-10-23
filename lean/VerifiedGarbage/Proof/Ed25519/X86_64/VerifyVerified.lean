@@ -164,7 +164,7 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
   let fA := Recode.digits 5 K (8 * c)
   let fB := Recode.digits 8 S (8 * 32)
   have hdg : Digits fA fB (8 * c + 8) :=
-    ⟨by omega, fun p => Recode.digits_le (by decide) p, fun p => Recode.digits_le (by decide) p⟩
+    ⟨by omega_arith, fun p => Recode.digits_le (by decide) p, fun p => Recode.digits_le (by decide) p⟩
   -- The digits.
   have wr (x : State) (h : SkipLoopRun R₀ base challenge sig T Aa K S c x) :
       WP isa recodeAll x (StartRun R₀ base challenge sig T Aa fA fB (8 * c + 8)) := by
@@ -174,7 +174,7 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
       fctx.kRead8 fctx.sRead8 fctx.kFar hsf) fun g ⟨gA, gB, gc, kg⟩ => ?_
     rw [hf'.kVal] at gA
     rw [hf'.sVal] at gB
-    have tf : TableFrame base 56 3160 x.mem g.mem := fun p _ hp => kg.mem p (by omega)
+    have tf : TableFrame base 56 3160 x.mem g.mem := fun p _ hp => kg.mem p (by omega_arith)
     refine ⟨g, ?_, skipAt_of_recode hf' hK hc32 hc64 kg (fun p hp => ⟨gA p hp, gB p hp⟩) gc⟩
     show tablePoint g.mem base 7552 = r
     rw [tf.point (by decide) (Or.inr (by decide)) (by decide),
@@ -196,7 +196,7 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
     obtain ⟨s₀, r₀, hx⟩ := h
     have gv := hx.value
     simp only [winVal, hiVal, Nat.sub_zero] at gv
-    rw [Recode.digits_sum (by decide) hKlt (by omega), Recode.digits_sum (by decide) hSlt (by omega),
+    rw [Recode.digits_sum (by decide) hKlt (by omega_arith), Recode.digits_sum (by decide) hSlt (by omega_arith),
       natCast_zsmul, natCast_zsmul] at gv
     refine WP.mono (negR_ok hx.ctx.scratch) fun u ⟨ku, u0, u4⟩ =>
       ⟨hx.ctx.scratch.of_keep ku, by rw [u0]; exact gv, ?_⟩
@@ -1081,7 +1081,7 @@ theorem verifyHeaders_ok {s : State} {base : Addr} (hb : s.gpr .rdx = base)
       t.mem.readW (off base 7952) 64 = s.gpr .rax ∧
       t.mem.readW (off base 7960) 64 = s.syms baseOddSym := by
   have hw' (d : Nat) (hd : d + 8 ≤ 8192) : InRegions s.wr (off base d) 8 :=
-    ⟨_, hw, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, hw, Offset.contains_base _ hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [verifyHeaders, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     State.store64, ea_at, Proof.X25519.X86_64.ea_sc, hb, hw' 7936 (by decide), hw' 7944 (by decide),
@@ -1146,7 +1146,7 @@ theorem baseTbl_of_contract {s : State} {base : Addr}
       s.mem.readW (s.syms baseOddSym + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0) :
     BaseTbl s base (s.syms baseOddSym) :=
   ⟨fun j hj => baseTbl_entry hheld j hj,
-    fun d n hdn => ⟨_, List.mem_append_left _ hrd, Offset.contains_base _ hdn (by omega)⟩,
+    fun d n hdn => ⟨_, List.mem_append_left _ hrd, Offset.contains_base _ hdn (by omega_arith)⟩,
     fun i hi => farScratch hd hi (by decide)⟩
 
 theorem verifyBytes_frame {m m' : Mem} {base p : Addr} {n : Nat}
@@ -1195,24 +1195,24 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
     · rw [cr, gb, ka.1 .rsi (by decide)]
     · rw [cc, gb, ach]
     · intro d hd
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega_arith)⟩
     · intro d hd
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show d + 8 ≤ 64 by omega) (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show d + 8 ≤ 64 by omega_arith) (by omega_arith)⟩
     · intro d hd
       rw [show off (off (s.gpr .rsi) 32) d = off (s.gpr .rsi) (32 + d) from Offset.add_add ..]
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 8 ≤ 64 by omega) (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 8 ≤ 64 by omega_arith) (by omega_arith)⟩
     · intro i hi
       rw [show off (off (s.gpr .rsi) 32) i = off (s.gpr .rsi) (32 + i) from Offset.add_add ..]
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + i + 1 ≤ 64 by omega) (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + i + 1 ≤ 64 by omega_arith) (by omega_arith)⟩
     · intro i hi
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show i + 1 ≤ 64 by omega) (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show i + 1 ≤ 64 by omega_arith) (by omega_arith)⟩
     · intro d hd
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega_arith)⟩
     · intro i hi; exact farScratch hpk hi (by decide)
-    · intro i hi; exact farScratch hsig (by omega) (by decide)
+    · intro i hi; exact farScratch hsig (by omega_arith) (by decide)
     · intro i hi
       rw [show off (off (s.gpr .rsi) 32) i = off (s.gpr .rsi) (32 + i) from Offset.add_add ..]
-      exact farScratch hsig (by omega) (by decide)
+      exact farScratch hsig (by omega_arith) (by decide)
     · intro i hi; exact farScratch hchallenge hi (by decide)
     · rw [cT, bsy, asy]
       exact hbt.of_mem rr ww fun p hp => fm p fun r hr => by
@@ -1220,7 +1220,7 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
         subst hr
         change ¬ (p - s.gpr .rcx).toNat + 1 ≤ 8192
         change 8192 ≤ (p - s.gpr .rcx).toNat at hp
-        omega
+        omega_arith
   exact ⟨hc, sv, fm, by rw [gc _ (by decide) (by decide), gb, ka.1 _ (by decide)], by rw [cT, bsy, asy]⟩
 
 theorem verify_correct {s : State} (hs : verifyLocal.pre s) :
@@ -1366,7 +1366,7 @@ theorem verifySatMem_held : ∀ i < 2048,
     verifySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0 := by
   unfold verifySatMem
   intro i hi
-  exact constMem_held _ _ (by rw [baseOddWords_length]; omega) i (by rw [baseOddWords_length]; exact hi)
+  exact constMem_held _ _ (by rw [baseOddWords_length]; omega_arith) i (by rw [baseOddWords_length]; exact hi)
 
 def verifySatState : State where
   gpr r := match r with

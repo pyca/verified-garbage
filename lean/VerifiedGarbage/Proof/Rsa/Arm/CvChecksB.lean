@@ -44,7 +44,7 @@ theorem checksB_ok {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
   unfold checksB
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (inverse_ok hw (by decide) (by decide)) fun t1 ⟨h1, k1, r1, inv⟩ => ?_
-  have I := fun (hM : 1 < cvM s0) => inv (by rw [h.m, h.nm]) h.zero (by rw [h.m]; simp only [cvM]; omega)
+  have I := fun (hM : 1 < cvM s0) => inv (by rw [h.m, h.nm]) h.zero (by rw [h.m]; simp only [cvM]; omega_arith)
     (by rw [h.m]; exact hM) (by simp only [bank]; rw [h.u, h.v, h.x₁, h.x₂, h.m])
   rw [h.m, h.u] at I
   have b1 := h.base.keep k1 (by decide) (by decide) (by decide) r1.sp r1.rd r1.wr
@@ -58,18 +58,18 @@ theorem checksB_ok {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
       slot t2.mem (cvB s0) d = slot s.mem (cvB s0) d := fun d hd h4 hn => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     simp only [sT, sE3, sOdd, sB, sC, hdr] at hn hd
-    rw [k2.slot (by simp only [hdr]; omega) (by simp only [sT, sE3]; simp; omega),
-      k1.slot (by simp only [hdr]; omega) (by simp only [invSlots, sOdd, sB, sC]; simp; omega)]
+    rw [k2.slot (by simp only [hdr]; omega_arith) (by simp only [sT, sE3]; simp; omega_arith),
+      k1.slot (by simp only [hdr]; omega_arith) (by simp only [invSlots, sOdd, sB, sC]; simp; omega_arith)]
   rw [wp_seqs_cons (List.cons_ne_nil _ _), List.append_assoc, ← List.append_nil (andS sMask sMask sE3)]
   refine andS_ok h2 (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide)
-    (by rw [sl _ (by decide) (by decide) (by decide), h.podd]; omega) (by rw [sl _ (by decide) (by decide) (by decide), h.e1]; split <;> omega)
+    (by rw [sl _ (by decide) (by decide) (by decide), h.podd]; omega_arith) (by rw [sl _ (by decide) (by decide) (by decide), h.e1]; split <;> omega_arith)
     fun t3a h3a k3a m3a r3a => ?_
   refine andS_ok h3a (d := sMask) (a := sMask) (b := sE2) (by decide) (by decide) (by decide)
-    (by rw [m3a]; split <;> omega) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide), h.e2]; split <;> omega)
+    (by rw [m3a]; split <;> omega_arith) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide), h.e2]; split <;> omega_arith)
     fun t3b h3b k3b m3b r3b => ?_
   refine andS_ok h3b (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide)
-    (by rw [m3b]; split <;> omega)
-    (by rw [k3b.slot (by decide) (by decide), k3a.slot (by decide) (by decide), e2]; split <;> omega)
+    (by rw [m3b]; split <;> omega_arith)
+    (by rw [k3b.slot (by decide) (by decide), k3a.slot (by decide) (by decide), e2]; split <;> omega_arith)
     fun t3 h3 k3 m3 r3 => WP.block_nil ?_
   have K3 : Keep (cvB s0) (cvW s0) [] [sMask] t2.mem t3.mem := k3a.trans (k3b.trans k3)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -103,9 +103,9 @@ theorem checksB_ok {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
     exact KK.slot (e := 16) (by decide) (by decide)
   · rw [tr _ (by decide) (by decide), h.q]
   · rw [tr _ (by decide) (by decide), h.d]
-  · rw [k7.word (by omega) (by simp) (by decide) fDD, top6, top5,
-      k4.word (by omega) (by decide) (by simp) fDD, K3.word (by omega) (by simp) (by decide) fDD,
-      k2.word (by omega) (by decide) (by decide) fDD, k1.word (by omega) (by decide) (by decide) fDD, h.ddTop]
+  · rw [k7.word (by omega_arith) (by simp) (by decide) fDD, top6, top5,
+      k4.word (by omega_arith) (by decide) (by simp) fDD, K3.word (by omega_arith) (by simp) (by decide) fDD,
+      k2.word (by omega_arith) (by decide) (by decide) fDD, k1.word (by omega_arith) (by decide) (by decide) fDD, h.ddTop]
   · rw [k7.num (by simp) (by decide) (fit _ (by decide)), k6.num (by decide) (by simp) (fit _ (by decide)),
       k5.num (by decide) (by simp) (fit _ (by decide)), e4, K3.num (by simp) (by decide) (fit _ (by decide)),
       k2.num (by decide) (by decide) (fit _ (by decide)), k1.num (by decide) (by decide) (fit _ (by decide)), h.d]

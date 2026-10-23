@@ -12,8 +12,8 @@ namespace VG.Proof.RsaKeyGen.X86.Prepare
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem r2_pairAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
     RelCT isa (fun s t => PreparedR2.InputPair g capacity p s t e) (VG.Impl.RsaKeyGen.X86.PreparedR2.codeAt e g.w name mont)
@@ -31,8 +31,8 @@ theorem r2_pairAt {mont : Prog isa} {name : String}
   exact ⟨trace, pair, wp_result (post H.2.1) E, wp_result (post H.2.2) G⟩
 
 theorem r2_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
     RelCT isa (PreparedR2.InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.PreparedR2.code g.w name mont)

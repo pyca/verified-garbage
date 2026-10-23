@@ -15,15 +15,15 @@ def lengthRegion (p : BitVec 32) : Region := ⟨(p + 24#32).setWidth 64, 4⟩
 
 structure Caller (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop where
   sp : s.gpr .esp = p
-  low : 40 ≤ p.toNat
-  stackFar : (⟨g.W, g.L⟩ : Region).Disjoint (below p 40)
+  low : 80 ≤ p.toNat
+  stackFar : (⟨g.W, g.L⟩ : Region).Disjoint (below p 80)
   lengthFar : (lengthRegion p).Disjoint ⟨g.W, g.L⟩
-  lengthStackFar : (lengthRegion p).Disjoint (below p 40)
+  lengthStackFar : (lengthRegion p).Disjoint (below p 80)
   readLen : readSrc s (.mem (at_ .esp 24)) = some (BitVec.ofNat 32 capacity)
 
 theorem Caller.keepFrame {g : Geometry} {capacity : Nat} {p : BitVec 32} {s t : State}
     (C : Caller g capacity p s) {rs : List Reg} (K : Keeps rs s t) (sp : .esp ∉ rs)
-    (F : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem) : Caller g capacity p t := by
+    (F : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem) : Caller g capacity p t := by
   have spT : t.gpr .esp = p := (K.1 .esp sp).trans C.sp
   refine ⟨spT, C.low, C.stackFar, C.lengthFar, C.lengthStackFar, ?_⟩
   have same : readSrc t (.mem (at_ .esp 24)) = readSrc s (.mem (at_ .esp 24)) := by

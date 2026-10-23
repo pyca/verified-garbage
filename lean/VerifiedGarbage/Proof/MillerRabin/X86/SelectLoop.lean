@@ -37,18 +37,18 @@ theorem selectLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
   rintro i t index ⟨K, bx, bp, countI, O, V⟩
   have ht := hw.of_keeps K
   unfold selectBody
-  refine wp_movS (readSrc_ptr ht bp (d := 0) (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_ptr ht bp (d := 0) (by omega_arith)) fun a A _ => ?_
   have bxA : PtrAt a W .ebx (x + 4 * i) := by rw [PtrAt, A.other .ebx (by decide)]; exact bx
-  have readA := readSrc_ptr (ht.of_keeps A.keeps) bxA (d := 0) (by omega : x + 4 * i + 0 + 4 ≤ L)
+  have readA := readSrc_ptr (ht.of_keeps A.keeps) bxA (d := 0) (by omega_arith : x + 4 * i + 0 + 4 ≤ L)
   refine wp_logicS (.inr rfl) readA fun b B => wp_logicS (.inl rfl) rfl fun c C => ?_
   have bxC : PtrAt c W .ebx (x + 4 * i) := by
     rw [PtrAt, C.other .ebx (by decide), B.other .ebx (by decide), A.other .ebx (by decide)]; exact bx
   have Kc : Keeps [.eax] t c := (A.keeps.trans B.keeps).trans C.keeps
-  refine wp_logicS (.inr rfl) (readSrc_ptr (ht.of_keeps Kc) bxC (d := 0) (by omega)) fun d D => ?_
+  refine wp_logicS (.inr rfl) (readSrc_ptr (ht.of_keeps Kc) bxC (d := 0) (by omega_arith)) fun d D => ?_
   have Kd := Kc.trans D.keeps
   have bxD : PtrAt d W .ebx (x + 4 * i) := by rw [PtrAt, Kd.1 .ebx (by decide)]; exact bx
-  refine wp_storeS (ea_ptr (ht.of_keeps Kd) bxD (d := 0) (by omega))
-    (ws_write (ht.of_keeps Kd) (y := x + 4 * i + 0) (n := 4) (by omega)) fun e E => ?_
+  refine wp_storeS (ea_ptr (ht.of_keeps Kd) bxD (d := 0) (by omega_arith))
+    (ws_write (ht.of_keeps Kd) (y := x + 4 * i + 0) (n := 4) (by omega_arith)) fun e E => ?_
   refine wp_addS rfl fun f F _ => wp_addS rfl fun h H _ => wp_subZ rfl fun u U Z => WP.block_nil ?_
   have esiH : h.gpr .esi = t.gpr .esi := by
     rw [H.other .esi (by decide), F.other .esi (by decide), E.gpr, Kd.1 .esi (by decide)]
@@ -69,14 +69,14 @@ theorem selectLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
   · rw [PtrAt, U.other .ebp (by decide), H.other .ebp (by decide), F.gpr, E.gpr, Kd.1 .ebp (by decide)]
     exact ptr4 bp
   · rw [U.mem, H.mem, F.mem, E.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero]
-    exact (O.mono (by omega) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    exact (O.mono (by omega_arith) (by omega_arith)).trans
+      ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
   · rw [U.mem, H.mem, F.mem, E.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero,
-      val32_store nowrap (by omega), V, value, val32_succ]
+      val32_store nowrap (by omega_arith), V, value, val32_succ]
     cases k <;> simp only [Bool.false_eq_true, ↓reduceIte]
     · change _ + _ * w32 t.mem W (x + 4 * i) = _
-      rw [O.w32 (by omega) (by omega)]
+      rw [O.w32 (by omega_arith) (by omega_arith)]
     · change _ + _ * w32 t.mem W (y + 4 * i) = _
-      rw [O.w32 (by omega) (by omega)]
+      rw [O.w32 (by omega_arith) (by omega_arith)]
 
 end VG.Proof.MillerRabin.X86

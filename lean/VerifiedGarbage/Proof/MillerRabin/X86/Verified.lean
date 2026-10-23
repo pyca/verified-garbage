@@ -15,7 +15,7 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86
 
 theorem verified : Verified target (VG.Impl.MillerRabin.X86.code montName montCode)
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) :=
+    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.MillerRabin.X86

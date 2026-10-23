@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 public import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
+public meta import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 public meta import VerifiedGarbage.Proof.Framework.Lit
 public meta import Lean.Elab.Tactic
 
@@ -49,8 +51,8 @@ partial def proveNode (g : MVarId) (leaves : Array Expr) : TacticM Unit := do
     evalTactic (← `(tactic| lit_decide))
     return
   let code := lhs.getAppArgs.back!
-  if code.isConstOf ``VG.Impl.Mont.X86.Rt.body then
-    evalTactic (← `(tactic| exact VG.Proof.Mont.X86.StaticSquare.body_noSp))
+  if code.isConstOf ``VG.Impl.Mont.X86.Sse2.atBody then
+    evalTactic (← `(tactic| exact VG.Proof.Mont.X86.Sse2.atBody_allNoSp))
     return
   if code.getAppFn.constName? == some ("VG.Impl.Rsa.X86.InvBatch.body".toName) then
     for leaf in leaves do
@@ -80,8 +82,8 @@ partial def proveNode (g : MVarId) (leaves : Array Expr) : TacticM Unit := do
   for child in children do proveNode child leaves
 
 partial def stackProof (code : Expr) : MetaM (Nat × Expr) := do
-  if code.isConstOf ``VG.Impl.Mont.X86.Rt.body then
-    return (0,mkConst ``VG.Proof.Mont.X86.StaticSquare.body_stack)
+  if code.isConstOf ``VG.Impl.Mont.X86.Sse2.atBody then
+    return (56,mkConst ``VG.Proof.Mont.X86.Sse2.atBody_stack)
   let node ← whnf code
   let args := node.getAppArgs
   match node.getAppFn.constName? with

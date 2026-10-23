@@ -20,8 +20,8 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem squareStep_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity c q r : Nat} {p : BitVec 32}
     {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {Ds : List Nat} {s : State}
     (S : Stage g capacity c p A Js V Ds s) (length : g.L = 8 * capacity)

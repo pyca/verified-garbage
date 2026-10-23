@@ -30,16 +30,16 @@ theorem checkPrime_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog i
     ((show generationSafe (.block (headerArguments (primeArguments candidate len draw checks))) from rfl).seq
       (primeBytes_safe mul round hm hr len draw))
 
-theorem qCandidate_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) :
-    generationSafe (qCandidate H1 H256) := by
-  exact (seedHash_safe h1 h256).seq ((show generationSafe (.block qArgs) from rfl).seq
+theorem qCandidate_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
+    generationSafe (qCandidate H1 H256 len) := by
+  exact (seedHashAt_safe h1 h256 len).seq ((show generationSafe (.block qArgs) from rfl).seq
     (show generationSafe Impl.Ffdh.X86_64.ParameterCandidate.shape from rfl))
 
 theorem subgroup_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
     (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) (len : Nat) :
     generationSafe (subgroup H1 H256 mul round len) := by
-  exact (qCandidate_safe h1 h256).seq ((show generationSafe (.block workspaceBase) from rfl).seq
+  exact (qCandidate_safe h1 h256 len).seq ((show generationSafe (.block workspaceBase) from rfl).seq
     ((checkPrime_safe mul round hm hr _ _ _ _ _).seq (show generationSafe (.block primeResult) from rfl)))
 
 theorem pConstruct_safe {H : Stream} (h : HashSafety H) (pLen qLen : Nat) :

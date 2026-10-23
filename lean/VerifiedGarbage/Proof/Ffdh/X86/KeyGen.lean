@@ -46,7 +46,7 @@ structure OutAt (args : Nat → BitVec 32) (base : Addr) (bytes len p : Nat) (sp
   wr : InRegions wr (byteAddr (args p)) len
   apart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr (args p), len⟩
   frame : Region.Disjoint ⟨sp.setWidth 64, 76⟩ ⟨byteAddr (args p), len⟩
-  below : Region.Disjoint ⟨byteAddr (args p), len⟩ (below sp 40)
+  below : Region.Disjoint ⟨byteAddr (args p), len⟩ (below sp 96)
 
 theorem OutAt.keep {p : Nat} {sp : BitVec 32} {wr : List Region} (O : OutAt args base bytes len p sp wr) {t : State}
     {rs : List Reg} (e : s.wr = wr) (K : Keeps rs s t) : OutAt args base bytes len p sp t.wr := by
@@ -357,7 +357,7 @@ theorem boundAt_eq {dlen : Nat} {rd wr : List Region} (G : DomGeo args base byte
 
 /-- The bound's octets are within the domain: q's, or p's. -/
 theorem bound_geo {dlen : Nat} {sp : BitVec 32} {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 40)) :
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)) :
     KeyScan.BGeo base bytes len (KeyScan.boundAt args) sp rd wr := by
   have dl := G.dl
   have up := G.upper
@@ -463,10 +463,10 @@ structure Pref (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
   q : ¬ dlen = 2 * len → comp u.mem args len 2 = comp s.mem args len 2
 
 theorem prefix_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
     (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 40))
+    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
     (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩) :
     WP isa (Prog.chain prefixList (.block [])) s (Pref Ex base bytes len dlen args s) := by
   have dl := G.dl
@@ -571,10 +571,10 @@ theorem prefix_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   · rw [v15, hP]
 
 theorem front_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
     (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 40))
+    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
     (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩) :
     WP isa (Prog.chain mainFront (.block [])) s (Front Ex base bytes len dlen args s) := by
   have dl := G.dl
@@ -688,10 +688,10 @@ theorem comp_lt (m : Mem) (k : Nat) : comp m args len k < 2 ^ (8 * len) := by
   exact this
 
 theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
     (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 40))
+    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
     (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩)
     (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
     (h9a : args 9 = BitVec.ofNat 32 len) (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩) :

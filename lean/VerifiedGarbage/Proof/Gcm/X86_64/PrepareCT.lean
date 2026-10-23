@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
+public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Spec.Gcm.Prepared16
@@ -11,8 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
+meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Spec.Gcm.Prepared
 meta import VerifiedGarbage.Spec.Gcm.Prepared16
@@ -27,11 +27,13 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # Preparing a key context's powers in place: the contract on the registers
 
 `prepareX86_64`, `vg_aes_gcm_prepare`'s contract on the registers; the
-constant time of its implementations (`prepare_ct`): only the context's
+constant time of its implementation (`prepareZ_ct`): only the context's
 address affects timing; and `verified_of`, which proves `Verified` for any
-code that writes the prepared powers and nothing else (`PrepOk`). The field,
-where each implementation's powers are proven, is in `Stitch/Ok.lean` and
-`StitchAvx8/Ok.lean`, so that its algebra reaches no new module.
+code that writes the prepared powers and nothing else (`PrepOk`); likewise
+for `vg_aes_gcm_prepare16` (`prepare16X86_64`, `verified_ofW`). The field,
+where each implementation's powers are proven, is in `Stitch/Ok.lean`,
+`PrepareAvx/Ok.lean` and `PrepareZ.lean`, so that its algebra reaches no new
+module.
 -/
 
 @[expose] public section
@@ -39,7 +41,6 @@ where each implementation's powers are proven, is in `Stitch/Ok.lean` and
 namespace VG.Proof.Gcm.X86_64.Prepare
 
 open VG VG.X86_64
-open VG.Impl.Gcm.X86_64.Prepare (prepare)
 
 /-- `vg_aes_gcm_prepare`'s contract, on the registers. -/
 def prepareX86_64 : Contract isa where
@@ -49,7 +50,8 @@ def prepareX86_64 : Contract isa where
     Spec.Gcm.PreparedPowersRepr s'.mem (s.gpr .rdi)
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
 
-theorem prepare_ct : ConstantTime isa prepareX86_64.pre prepareX86_64.pub prepare := by
+theorem prepareZ_ct :
+    ConstantTime isa prepareX86_64.pre prepareX86_64.pub Impl.Gcm.X86_64.PrepareZ.prepare := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ h
   refine Taint.agree_ofRegs fun r hr => ?_
@@ -58,12 +60,12 @@ theorem prepare_ct : ConstantTime isa prepareX86_64.pre prepareX86_64.pub prepar
 
 /-- What `vg_aes_gcm_prepare` does from `s₀`: the 48 prepared powers of the
 hash subkey at `C + 240` into pairs 0–23 of the context at `C`, nothing else
-written, and the registers but `rax` kept. -/
+written, and the registers but `rax` and `r11` kept. -/
 def PrepOk (s₀ s : State) : Prop :=
   (∀ k < 24, ∀ l < 2, s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
     Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (2 * k + 2 - l))) ∧
   Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 768⟩] s₀.mem s.mem ∧
-  (∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
+  (∀ r, r ≠ .rax → r ≠ .r11 → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
 
 
 theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
@@ -92,9 +94,10 @@ theorem correct {c : Prog isa}
       obtain rfl := List.mem_singleton.mp hr
       exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide)) (by decide)
         (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
-  refine ⟨⟨fun r hr => g r (by
+  refine ⟨⟨fun r hr => by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, keep, fun k hk => ?_⟩
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide), ?_⟩, keep,
+    fun k hk => ?_⟩
   · exact fr.readW (Region.contains_self _ _) (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact hret.sub_right (Offset.sub_base (s₀.gpr .rdi) (by decide))) (by decide)

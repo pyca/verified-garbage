@@ -97,9 +97,9 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     · exact .inl hW.base
   have hM : ModOkW P.M size m s.mem base :=
     ⟨hM₀.n0, hM₀.mo, hM₀.tmp, hM₀.sep,
-      by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
+      by rw [hI.unch.wordsVal hmo (by omega_arith)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
-    hI.unch.wordsVal hbw (by omega)
+    hI.unch.wordsVal hbw (by omega_arith)
   -- `r11 -= 1` and `acc = acc²`.
   rw [powBody]
   refine WP.seq (wp_decCounter hj hI.r11 fun s₁ u₁ => WP.block_nil ?_)
@@ -120,7 +120,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
         rcases hw with rfl | rfl | rfl
         · exact hmo _ (by simp [powWx, powW])
         · exact hmo _ (by simp [powWx, powW])
-        · exact hmo _ (by simp [powWx])) (by omega), hm₁]; exact hM.val, hM.inv, hM.red⟩
+        · exact hmo _ (by simp [powWx])) (by omega_arith), hm₁]; exact hM.val, hM.inv, hM.red⟩
   have v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) ^ 2 := by
     rw [toM_mul hm (e₂.trans (by rw [hm₁])), Lean.Grind.Semiring.pow_two]
@@ -130,7 +130,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
       rcases hw with rfl | rfl | rfl
       · exact hbw _ (by simp [powWx, powW])
       · exact hbw _ (by simp [powWx, powW])
-      · exact hbw _ (by simp [powWx])) (by omega), hm₁, hBs]
+      · exact hbw _ (by simp [powWx])) (by omega_arith), hm₁, hBs]
   -- `tmp = acc · base`.
   have hf₂ : Far s₂ base 8192 := hf₁.of_rest k₂.rest
   refine WP.seq (WP.mono (Mont.mulCall_ok hF.ok hs₂ hf₂ (hF.fits hW.tmp) (hF.fits hW.acc) (hF.fits hW.base)
@@ -144,7 +144,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
       rcases hw with rfl | rfl | rfl
       · exact hat
       · exact ham
-      · exact .inl hW.acc) (by omega)
+      · exact .inl hW.acc) (by omega_arith)
   have v₃ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₃.mem base P.tmp P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) *
         toM m (2 ^ (64 * P.M.n)) (wordsVal s₀.mem base P.base P.M.n) := by
@@ -158,8 +158,8 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     rw [hU₃.byte (fun w hw => by
       simp only [powWx, List.mem_append, List.mem_singleton] at hw
       rcases hw with hw | rfl
-      · have := hL.bits_w w hw; omega
-      · simp only; omega) (by omega_using [hjn, hbl]), hbits _ (by omega_using [hjn, hnb])]
+      · have := hL.bits_w w hw; omega_arith
+      · simp only; omega_arith) (by omega_using [hjn, hbl]), hbits _ (by omega_using [hjn, hnb])]
   have hesi₃ : s₃.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
     rw [k₃.rest.gpr _ r11_not_clob, k₂.rest.gpr _ r11_not_clob, b₁]
   have hk₃ : Rest powClob s₀ s₃ :=
@@ -170,7 +170,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     fun s₄ ⟨c₄, k₄, hm₄⟩ => ?_
   have hs₄ := hs₃.of_rest k₄ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (sel_ok (e.testBit (j - 1)) (2 * P.M.n) hs₄ c₄ (o := P.acc) (a := P.acc)
-    (b := P.tmp) (by omega) (by omega) (by omega) (Or.inl (Nat.le_refl _)) (by omega_using [hat]))
+    (b := P.tmp) (by omega_arith) (by omega_arith) (by omega_arith) (Or.inl (Nat.le_refl _)) (by omega_using [hat]))
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have hesi₅ : s₅.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
     rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), hesi₃]

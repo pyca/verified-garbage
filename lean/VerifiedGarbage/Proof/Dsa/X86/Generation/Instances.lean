@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.NoSp
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.StackUse
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingVerified
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
-public import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCT
@@ -62,11 +62,11 @@ def geoOk {pLen qLen : Nat} {H : Impl.Pbkdf2.Md.X86.Hash} {iv : List (BitVec 32)
   N := N
   seedHash := seedHash
   e := rfl
-  qv := ProbablePrime.verified Proof.Mont.X86.PreparedSquare.verified compact_noSp compact_stack v.verified v.noSp
+  qv := ProbablePrime.verified VG.Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack v.verified v.noSp
     v.stack (8 * qLen) qWide qNarrow qWhole
   qNoSp := ProbablePrime.code_noSp compact_noSp v.noSp _ _ _
   qStack := ProbablePrime.code_stack compact_stack v.stack _ _ _
-  pv := ProbablePrime.verified Proof.Mont.X86.PreparedSquare.verified compact_noSp compact_stack v.verified v.noSp
+  pv := ProbablePrime.verified VG.Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack v.verified v.noSp
     v.stack (8 * pLen) pWide pNarrow pWhole
   pNoSp := ProbablePrime.code_noSp compact_noSp v.noSp _ _ _
   pStack := ProbablePrime.code_stack compact_stack v.stack _ _ _

@@ -273,7 +273,7 @@ theorem r2dStepWith_ok {ab : Prog isa} (hab : AddBackSpec ab) {t : State} {B : A
   have sAM := slot_sep (w := w) (show aAcc ≠ aN by decide)
   have sAX := slot_sep (w := w) (show aAcc ≠ aR2 by decide)
   have hXw := wv_split2 t.mem B (slot w aR2) hw
-  have hMw := wv_split1 t.mem B (slot w aN) (show 1 ≤ w by omega)
+  have hMw := wv_split1 t.mem B (slot w aN) (show 1 ≤ w by omega_arith)
   have hXl := wv_lt t.mem B (slot w aR2) (w - 2)
   have hml := wv_lt t.mem B (slot w aN) (w - 1)
   rw [hM, hD] at hMw
@@ -288,14 +288,14 @@ theorem r2dStepWith_ok {ab : Prog isa} (hab : AddBackSpec ab) {t : State} {B : A
   generalize hXv : wv t.mem B (slot w aR2) w = X at hX hXw hv₄ ⊢
   simp only [seqs]
   -- `m` added back while `t` is negative.
-  refine WP.seq (WP.mono (hab hs₄ r₄.x8 r₄.x9 r₄.x12 r₄.x7 (by omega) hw' (by omega) (by omega)
-    (by omega)) fun t₅ ⟨c1, hv₅, o₅, k₅⟩ => ?_)
+  refine WP.seq (WP.mono (hab hs₄ r₄.x8 r₄.x9 r₄.x12 r₄.x7 (by omega_arith) hw' (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun t₅ ⟨c1, hv₅, o₅, k₅⟩ => ?_)
   rw [M₄] at hv₅
   have r₅ := r₄.keep k₅
   have hs₅ := hs₄.congr k₅.wr
-  have M₅ : wv t₅.mem B (slot w aN) w = M := by rw [o₅.wv (by omega) (by omega), M₄]
-  refine WP.seq (WP.mono (hab hs₅ r₅.x8 r₅.x9 r₅.x12 r₅.x7 (by omega) hw' (by omega) (by omega)
-    (by omega)) fun t₆ ⟨c2, hv₆, o₆, k₆⟩ => ?_)
+  have M₅ : wv t₅.mem B (slot w aN) w = M := by rw [o₅.wv (by omega_arith) (by omega_arith), M₄]
+  refine WP.seq (WP.mono (hab hs₅ r₅.x8 r₅.x9 r₅.x12 r₅.x7 (by omega_arith) hw' (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun t₆ ⟨c2, hv₆, o₆, k₆⟩ => ?_)
   rw [M₅] at hv₆
   have r₆ := r₅.keep k₆
   have hs₆ := hs₅.congr k₆.wr
@@ -303,7 +303,7 @@ theorem r2dStepWith_ok {ab : Prog isa} (hab : AddBackSpec ab) {t : State} {B : A
   have hT3 : wv t₆.mem B (slot w aAcc) (w + 1) = X * 2 ^ 64 % M := by
     refine WordStep.wordStep_val hw hXw hXl hMw hml hd (hD ▸ BitVec.isLt _) hX (wv_lt _ _ _ _) (Bool.toNat_lt b)
       ?_ (wv_lt _ _ _ _) (Bool.toNat_lt c1) hv₅ (wv_lt _ _ _ _) (Bool.toNat_lt c2) hv₆
-    rw [← hq]; omega
+    rw [← hq]; omega_arith
   -- `x := t`.
   unfold copyBack
   refine WP.seq (WP.mono (WP.keep [.x16, .x17] (Q := fun t₇ => t₇.gpr .x16 = off B (slot w aAcc) ∧
@@ -311,18 +311,18 @@ theorem r2dStepWith_ok {ab : Prog isa} (hab : AddBackSpec ab) {t : State} {B : A
     (by decide +kernel)) fun t₇ ⟨⟨h16, h17, hm₇⟩, k₇⟩ => ?_)
   have r₇ := r₆.keep k₇
   have hs₇ := hs₆.congr k₇.wr
-  refine WP.mono (copyWords_ok h16 h17 r₇.x12 (by omega) hw' (by omega)
-    (fun j hj => hs₇.ld (by omega)) (fun j hj => hs₇.st (by omega))
-    (fun j hj i hi => by rw [ofs_off B (by omega)]; omega)) fun t' ⟨hc, _, o', _, _, k'⟩ => ?_
-  have hMod : X * 2 ^ 64 % M < 2 ^ (64 * w) := Nat.lt_trans (Nat.mod_lt _ (by omega)) hMB
+  refine WP.mono (copyWords_ok h16 h17 r₇.x12 (by omega_arith) hw' (by omega_arith)
+    (fun j hj => hs₇.ld (by omega_arith)) (fun j hj => hs₇.st (by omega_arith))
+    (fun j hj i hi => by rw [ofs_off B (by omega_arith)]; omega_arith)) fun t' ⟨hc, _, o', _, _, k'⟩ => ?_
+  have hMod : X * 2 ^ 64 % M < 2 ^ (64 * w) := Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hMB
   have kk : Keep mmRegs t t' := ((((k₄.trans k₅).trans k₆).trans k₇).trans k').mono (by decide)
   have ha : Arrays B w [aAcc, aR2] t.mem t'.mem := by
     have mA : aAcc ∈ [aAcc, aR2] := by decide
     have mX : aR2 ∈ [aAcc, aR2] := by decide
-    refine ((a₄.trans (Arrays.of_outside mA o₅ (Nat.le_refl _) (by omega))).trans
-      (Arrays.of_outside mA o₆ (Nat.le_refl _) (by omega))).trans ?_
+    refine ((a₄.trans (Arrays.of_outside mA o₅ (Nat.le_refl _) (by omega_arith))).trans
+      (Arrays.of_outside mA o₆ (Nat.le_refl _) (by omega_arith))).trans ?_
     rw [← hm₇]
-    exact Arrays.of_outside mX o' (Nat.le_refl _) (by omega)
+    exact Arrays.of_outside mX o' (Nat.le_refl _) (by omega_arith)
   refine ⟨⟨hs₇.congr k'.wr, (kk.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, ?_, ha, kk⟩
   rw [hc, hm₇, wv_low_top t₆.mem B (slot w aAcc) w (by rw [hT3]; exact hMod), hT3]
 

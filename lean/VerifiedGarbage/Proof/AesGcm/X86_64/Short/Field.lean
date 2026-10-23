@@ -96,6 +96,8 @@ theorem shortFacts : ShortFacts :=
   ⟨powers_ok, powHead_ok, gacc_ghash, finPow_facts,
     fun H _ _ => step1' _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]),
     fun H _ _ _ => step2 _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2),
+    fun H _ _ _ _ => step3 _ _ _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2)
+      (x_φ_hInvF_hpow H 3),
     fun np hpn => VG.Proof.Gcm.X86_64.StitchR.setupFinN np hpn hpn.1, VG.Proof.Gcm.X86_64.StitchZHTo.phase1_ok⟩
 
 end VG.Proof.AesGcm.X86_64.Short

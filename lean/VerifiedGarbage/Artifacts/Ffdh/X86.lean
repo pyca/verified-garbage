@@ -30,7 +30,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.CheckDomain.code
     verified := Proof.Ffdh.X86.CheckDomain.verified
     spSafe := Proof.Ffdh.X86.Shape.checkDomain_spSafe
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.checkPublicApi.artifact X86.target {
     notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
       The subgroup check is a fixed four-bit-window power. The domain's and y's bytes choose the \
@@ -38,7 +38,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.CheckPublic.code
     verified := Proof.Ffdh.X86.CheckPublic.verified
     spSafe := Proof.Ffdh.X86.Shape.checkPublic_spSafe
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.checkPrivateApi.artifact X86.target {
     notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
       The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power \
@@ -48,7 +48,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.CheckPrivate.code
     verified := Proof.Ffdh.X86.CheckPrivate.verified
     spSafe := Proof.Ffdh.X86.Shape.checkPrivate_spSafe
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.exchangeApi.artifact X86.target {
     notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
       The power is a fixed four-bit-window power over all of p's width, scanning the whole table \
@@ -57,7 +57,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.Exchange.code
     verified := Proof.Ffdh.X86.Exchange.verified
     spSafe := Proof.Ffdh.X86.Shape.exchange_spSafe
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.derivePublicApi.artifact X86.target {
     notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
       The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power \
@@ -67,7 +67,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.DerivePublic.code
     verified := Proof.Ffdh.X86.Derive.verified
     spSafe := Proof.Ffdh.X86.Shape.derivePublic_spSafe
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.keyInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.KeyInit.code
     verified := Proof.Ffdh.X86.KeyInit.verified },
@@ -80,7 +80,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.GenerateKey.code
     verified := Proof.Ffdh.X86.KeyGen.verified
     spSafe := Proof.Ffdh.X86.Shape.generateKey_spSafe
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.keySearchApi.artifact X86.target {
     notes := ["The whole key search runs in verified code: both rejection budgets, the octets each attempt \
       consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with its eleven \
@@ -89,7 +89,7 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.KeySearch.code
     verified := Proof.Ffdh.X86.KeySearch.verified
     spSafe := Proof.Ffdh.X86.Shape.keySearch_spSafe
-    stack := 164 },
+    stack := 220 },
   Spec.Ffdh.parameterInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.ParamInit.code
     verified := Proof.Ffdh.X86.ParamInit.verified },
@@ -103,7 +103,7 @@ def artifacts : List Artifact := [
     verified := Proof.Ffdh.X86.Cand.verified
     spSafe := Proof.Ffdh.X86.Shape.candidate_spSafe
     consts := VG.Impl.RsaKeyGen.TrialTable32.consts
-    stack := 116 },
+    stack := 172 },
   Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
     notes := ["The whole parameter search runs in verified code: candidate retries, the 64-bit attempt \
       count, the octets each candidate consumes, and the next entropy request, computed without a branch. \
@@ -114,6 +114,6 @@ def artifacts : List Artifact := [
     verified := Proof.Ffdh.X86.PSearch.verified
     spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe
     consts := VG.Impl.RsaKeyGen.TrialTable32.consts
-    stack := 156 }]
+    stack := 212 }]
 
 end VG.Artifacts.Ffdh.X86

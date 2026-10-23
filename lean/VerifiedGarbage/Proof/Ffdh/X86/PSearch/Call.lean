@@ -36,7 +36,7 @@ open VG.Impl.Ffdh.X86.ParamSearch
 open VG.Proof.Ffdh.X86.KeySearch (Ctl Aligned upd bytes_frame)
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 116 := by rsa_stack_use
+theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 172 := by rsa_stack_use
 
 theorem callee_noSp : NoSp Impl.Ffdh.X86.Candidate.code := NoSp.of_all (by rsa_stack_shape)
 
@@ -110,16 +110,16 @@ theorem rand_apart {o : State} (A : PSearchABI o) : ∀ r ∈ frameR o, (rR o).D
 
 /-- The call's return address. -/
 theorem ret_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    (t.gpr .esp - 4).setWidth 64 = low o + BitVec.ofNat 64 116 := by
+    (t.gpr .esp - 4).setWidth 64 = low o + BitVec.ofNat 64 172 := by
   rw [esp_sub4 A he, sw_sub A (by decide)]
 
 /-- The stack below the call. -/
 theorem below_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o, 120⟩ := by
-  have h1 : 156 ≤ (o.gpr .esp).toNat := A.stackLow
+    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o, 176⟩ := by
+  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have hl := low_toNat A
   have := (o.gpr .esp).isLt
-  have e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (116 + 4)).setWidth 64 = low o := by
+  have e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 = low o := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, hl, argsBytes]
     omega
@@ -131,13 +131,13 @@ theorem rand_length {o : State} : (ofState o).rand.length = (arg o 6).toNat := b
 /-- The callee's tape, on its entry. -/
 theorem entry_bytes {o t : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Nat} (h : Fr o ds f t)
     (hu : used < (arg o 6).toNat) (v : BitVec 32) :
-    Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 116) v) ((arg o 5 + BitVec.ofNat 32 used).setWidth 64)
+    Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 172) v) ((arg o 5 + BitVec.ofNat 32 used).setWidth 64)
       ((arg o 6).toNat - used) = (ofState o).rand.drop used := by
   have A := h.abi
   have hrb := A.rBound
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 116, 4⟩ (lowR o) := low_sub (by decide)
+  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
   have W := win_sub A hu
-  have fe : Frame [⟨low o + BitVec.ofNat 64 116, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 116) v) :=
+  have fe : Frame [⟨low o + BitVec.ofNat 64 172, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 172) v) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   rw [bytes_frame fe (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ((A.lowRand.sub_left Rs).sub_right W).symm)
@@ -168,7 +168,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
       u.mem.readW (addr (arg o 9) candOff) 32 =
         BitVec.ofNat 32 (candUsed (ofState o).bits (ofState o).gen (ofState o).rand used) := by
   have A := h.abi
-  have h1 : 156 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 36 := by
     rw [h.esp]; exact VG.X86.sub_toNat (by unfold argsBytes; omega)
@@ -184,13 +184,13 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
     ce_arg A h.esp ha _ _ (show 6 < 9 by decide), callArg, Nat.reduceEqDiff, ↓reduceIte, ret_eq A h.esp] at hp
   have hlen : (BitVec.ofNat 32 ((arg o 6).toNat - used)).toNat = (arg o 6).toNat - used := by
     have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega
-  rw [hlen, show low o + 116#64 = low o + BitVec.ofNat 64 116 from rfl, entry_bytes h hu] at hp
+  rw [hlen, show low o + 172#64 = low o + BitVec.ofNat 64 172 from rfl, entry_bytes h hu] at hp
   obtain ⟨hr, hout, hw⟩ := hp
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
   have hS := A.sBound
   have hA : Aligned liveDs := by decide
   have Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  have Bs : Region.Sub ⟨low o, 120⟩ (lowR o) := Region.sub_prefix (by decide)
+  have Bs : Region.Sub ⟨low o, 176⟩ (lowR o) := Region.sub_prefix (by decide)
   have fr : Frame (frameR o) t.mem u.mem := hf.sub fun r hr => by
     rw [below_eq A h.esp] at hr
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -251,7 +251,7 @@ theorem attempt_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
       u.mem.readW (addr (arg o 9) candOff) 32 = BitVec.ofNat 32 (candUsed p.bits p.gen p.rand used) := by
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
-  have h1 : 156 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega) body_noSp ?_
   refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
   exact WP.mono (call_ok F hu a) fun u ⟨F', e, out, cu⟩ =>

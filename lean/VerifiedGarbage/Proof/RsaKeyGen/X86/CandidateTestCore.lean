@@ -15,10 +15,10 @@ open VG.Proof.RsaKeyGen
 def ranges (g : Geometry) : List (Nat × Nat) := Prepare.ranges g ++ MillerRabinLoop.ranges g
 
 theorem core_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State}
     (S : Prepare.Input P.g P.candidate P.capacity P.p s P.seed)
     (readable : InRegions (s.rd ++ s.wr) (P.rand.setWidth 64) P.randLen)
@@ -29,7 +29,7 @@ theorem core_ok {mont round : Prog isa} {montName roundName : String}
     WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.coreWith P.seed P.checks P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ MillerRabinLoop.Result P t ∧
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateTest.coreWith
   refine WP.seq (WP.mono (CandidatePrepare.code_ok montVerified montNoSp montStack v bound
     ⟨S, readable, entropy, randPtr, randLength, used⟩) fun a ⟨A, Wa, Fa, Ka⟩ => ?_)

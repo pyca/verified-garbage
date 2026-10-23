@@ -67,18 +67,18 @@ theorem advance_pairAt {g : Geometry} (v : g.Valid) {capacity used randLen draw 
     ⟨cu, Du, ou, lu, hu, Cu, su, du⟩, ⟨cz, Dz, oz, lz, hz, Cz, sz, dz⟩⟩
 
 theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity used randLen draw k : Nat} {p rand : BitVec 32}
     (two : 2 ≤ k) (narrow : 4 * k ≤ draw) (wide : draw ≤ 8 * g.w) (four : draw % 4 = 0)
     (length : g.L = 8 * capacity)
     (randFit : rand.toNat + randLen ≤ 2 ^ 32) (randLenFit : randLen < 2 ^ 32)
     (enough : used + draw ≤ randLen)
     (separate : (⟨rand.setWidth 64, randLen⟩ : Region).Disjoint ⟨g.W, g.L⟩)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     RelCT isa (fun s t => InitialPair g capacity p rand used randLen s t k)
       (codeAt draw k g.w montName mont roundName round) (Pair g [.edi]) := by
   have raw : RelCT isa (fun s t => InitialPair g capacity p rand used randLen s t k)
@@ -101,17 +101,17 @@ theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
   exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
 
 theorem code_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity used randLen : Nat} {p rand : BitVec 32}
     (length : g.L = 8 * capacity)
     (randFit : rand.toNat + randLen ≤ 2 ^ 32) (randLenFit : randLen < 2 ^ 32)
     (enough : used + 8 * g.w ≤ randLen)
     (separate : (⟨rand.setWidth 64, randLen⟩ : Region).Disjoint ⟨g.W, g.L⟩)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     RelCT isa (InitialPair g capacity p rand used randLen) (code g.w montName mont roundName round) (Pair g [.edi]) :=
   codeAt_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
     (by have := v.minWidth; omega) (by omega) (by omega) (by omega) length randFit randLenFit enough separate

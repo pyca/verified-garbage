@@ -76,7 +76,10 @@ theorem pSeedHash_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.st
     (fun r hr => (step.vec r hr).trans (k.vcs r hr)), hfinal.mono (by simp)⟩, hfinal, ⟨V', Rt⟩, ?_⟩
   · intro r hr h30
     rw [step.cs r hr h30]
-    exact k.gpr r (by cases r <;> simp_all [preserved])
+    exact k.gpr r (by
+        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        all_goals first | decide | exact (h30 rfl).elim)
   · rw [hb, hv]
 
 end VG.Proof.Dsa.AArch64.Generation

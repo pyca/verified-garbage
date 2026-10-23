@@ -25,12 +25,12 @@ def ranges (g : Geometry) : List (Nat × Nat) :=
   PrepareHeader.ranges ++ PreparedR2.ranges g ++ Constants.ranges g ++ Exponent.preparedRanges g
 
 theorem code_full_okAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) {e : Nat} (I : Input g c capacity p s e) (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont) s fun t =>
-      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t ∧
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps clob s t ∧
       WorkspaceFrame g (ranges g) s.mem t.mem := by
   unfold VG.Impl.RsaKeyGen.X86.Prepare.codeAt
   rw [Prepared.slot_eq, Prepared.slot_eq, Prepared.slot_eq]
@@ -65,12 +65,12 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
   have minusSaved := (Constants.preserve v Wd (j := 5) (Or.inr (Or.inl rfl))).trans minusB
   have r2D := (Constants.preserve v Wd (j := 4) (Or.inl rfl)).trans r2B
   refine WP.mono (Exponent.ready_ok v D minusSaved I.odd I.large) fun t ⟨T, exponentT, markerT, Ot, Kt⟩ => ?_
-  have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem a.mem :=
+  have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem a.mem :=
     (workspaceGlobalFrame Oa (fun r mem => by
       simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       have := v.headerFit
       rcases mem with (rfl | rfl | rfl) | rfl <;> omega)).mono (fun r mem => List.mem_append_left _ mem)
-  have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) d.mem t.mem :=
+  have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) d.mem t.mem :=
     (workspaceGlobalFrame Ot (fun r mem => by
       simp only [Exponent.preparedRanges, Exponent.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
       have srcFit := Prepared.paddedFit v (j := 0) (by decide)
@@ -100,32 +100,32 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
   · exact (((Ka.mono (by unfold clob PrepareHeader.clob; decide)).widen Kb).widen Kd).widen Kt
 
 theorem code_full_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) s fun t =>
-      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t ∧
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps clob s t ∧
       WorkspaceFrame g (ranges g) s.mem t.mem :=
   code_full_okAt verified noSp stack v bound length I
     (by have := v.minWidth; omega) (by have := v.minWidth; omega)
 
 theorem code_okAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) {e : Nat} (I : Input g c capacity p s e) (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont) s fun t =>
-      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t :=
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps clob s t :=
   WP.mono (code_full_okAt verified noSp stack v bound length I positive eLt) fun _ ⟨D, F, K, _⟩ => ⟨D, F, K⟩
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) s fun t =>
-      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t :=
+      Data g c capacity p t ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps clob s t :=
   WP.mono (code_full_ok verified noSp stack v bound length I) fun _ ⟨D, F, K, _⟩ => ⟨D, F, K⟩
 
 end VG.Proof.RsaKeyGen.X86.Prepare

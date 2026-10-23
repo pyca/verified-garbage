@@ -7,7 +7,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 // Each module's re-export has a doc of the key lengths it accepts, which
@@ -60,15 +61,36 @@ mod tests {
         }
         check!(
             super::InvalidKeyLength,
+            crate::blowfish_ecb::Error::InvalidKeyLength,
+            crate::blowfish_ecb::Error::IncompleteBlock,
+            crate::blowfish_ecb::Error::OutputTooSmall,
             crate::hmac::InvalidMac,
+            crate::idea_ecb::Error::InvalidKeyLength,
+            crate::idea_ecb::Error::IncompleteBlock,
+            crate::rc2_cbc::Error::InvalidKeyLength,
+            crate::rc2_cbc::Error::InvalidEffectiveBits,
+            crate::rc2_cbc::Error::InvalidIvLength,
+            crate::rc2_cbc::Error::IncompleteBlock,
+            crate::rc2_cbc::Error::OutputTooSmall,
+            crate::rc4::Error::InvalidKeyLength,
+            crate::x25519::Error::ZeroSharedSecret,
+            crate::x25519::Error::Randomness,
+            crate::aes_ecb::Error::InvalidKeyLength,
+            crate::aes_ecb::Error::IncompleteBlock,
             crate::aes_cbc::Error::InvalidKeyLength,
             crate::aes_cbc::Error::IncompleteBlock,
+        );
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "x86"
+        ))]
+        check!(
             crate::aes_ccm::Error::InvalidKeyLength,
             crate::aes_ccm::Error::InvalidNonceLength,
             crate::aes_ccm::Error::InvalidTextLength,
             crate::aes_ccm::Error::TagMismatch,
-            crate::aes_ecb::Error::InvalidKeyLength,
-            crate::aes_ecb::Error::IncompleteBlock,
             crate::aes_gcm::Error::InvalidKeyLength,
             crate::aes_gcm::Error::InvalidNonceLength,
             crate::aes_gcm::Error::InvalidTextLength,
@@ -93,9 +115,6 @@ mod tests {
             crate::aes_xts::Error::DataUnitTooLong,
             crate::blowfish_cbc::Error::InvalidKeyLength,
             crate::blowfish_cbc::Error::IncompleteBlock,
-            crate::blowfish_ecb::Error::InvalidKeyLength,
-            crate::blowfish_ecb::Error::IncompleteBlock,
-            crate::blowfish_ecb::Error::OutputTooSmall,
             crate::camellia_cbc::Error::InvalidKeyLength,
             crate::camellia_cbc::Error::IncompleteBlock,
             crate::camellia_ecb::Error::InvalidKeyLength,
@@ -111,8 +130,6 @@ mod tests {
             crate::ed448::Error::ContextTooLong,
             crate::idea_cbc::Error::InvalidKeyLength,
             crate::idea_cbc::Error::IncompleteBlock,
-            crate::idea_ecb::Error::InvalidKeyLength,
-            crate::idea_ecb::Error::IncompleteBlock,
             crate::mldsa44::Error::LoopBound,
             crate::mldsa44::Error::ContextTooLong,
             crate::mldsa44::Error::InvalidSignature,
@@ -128,12 +145,6 @@ mod tests {
             crate::mlkem_common::Error::SampleBound,
             crate::mlkem_common::Error::InvalidKey,
             crate::mlkem_common::Error::Randomness,
-            crate::rc2_cbc::Error::InvalidKeyLength,
-            crate::rc2_cbc::Error::InvalidEffectiveBits,
-            crate::rc2_cbc::Error::InvalidIvLength,
-            crate::rc2_cbc::Error::IncompleteBlock,
-            crate::rc2_cbc::Error::OutputTooSmall,
-            crate::rc4::Error::InvalidKeyLength,
             crate::seed_cbc::Error::InvalidKeyLength,
             crate::seed_cbc::Error::IncompleteBlock,
             crate::seed_ecb::Error::IncompleteBlock,
@@ -143,8 +154,6 @@ mod tests {
             crate::triple_des_cbc::Error::IncompleteBlock,
             crate::triple_des_ecb::Error::InvalidKeyLength,
             crate::triple_des_ecb::Error::IncompleteBlock,
-            crate::x25519::Error::ZeroSharedSecret,
-            crate::x25519::Error::Randomness,
             crate::x448::Error::ZeroSharedSecret,
             crate::x448::Error::Randomness,
         );

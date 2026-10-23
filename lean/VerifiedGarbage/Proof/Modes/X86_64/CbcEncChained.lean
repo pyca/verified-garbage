@@ -115,25 +115,25 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   have hG0 := hL.G_pos
   have hbw0 := hL.bw_pos
   have hbw2 := hL.bw_le
-  have hL0 : 0 < 8 * c.bw := by omega
+  have hL0 : 0 < 8 * c.bw := by omega_arith
   have hLG : 8 * c.bw ≤ 8 * c.bw * c.G := Nat.le_mul_of_pos_right _ hG0
   have hGb : c.bw ≤ c.bw * c.G := Nat.le_mul_of_pos_right _ hG0
-  have h8n : 8 * n ≤ 8 * c.bw * n := Nat.mul_le_mul_right n (by omega)
-  have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega
+  have h8n : 8 * n ≤ 8 * c.bw * n := Nat.mul_le_mul_right n (by omega_arith)
+  have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega_arith
   have hLn : 8 * c.bw * n = 8 * (c.bw * n) := Nat.mul_assoc _ _ _
   have hqr : ∀ {q r}, q < n → r < 8 * c.bw → 8 * c.bw * q + r < 8 * c.bw * n := fun hq hr => by
-    have := idx_lt (L := 8 * c.bw) hq; omega
-  have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
+    have := idx_lt (L := 8 * c.bw) hq; omega_arith
+  have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega_arith
   obtain ⟨hregs, hdl⟩ := regsOk_ne cs.regs_ok
   obtain ⟨da, db, -, -, -, dsb, dsp, dk⟩ := hregs c.dataReg List.mem_cons_self
   obtain ⟨la, lb, -, -, -, lsb, lsp, lk⟩ := hregs c.leftReg (List.mem_cons_of_mem _ List.mem_cons_self)
   let S : Region := ⟨B, 8 * c.ctrSlots⟩
   let T := B + BitVec.ofNat 64 (8 * c.buf)
-  have subMode : Region.Sub (modeRegion c B) S := VG.Offset.sub_base B (by simp only [Core.ctrSlots]; omega)
-  have subT : Region.Sub ⟨T, 8 * c.bw⟩ S := VG.Offset.sub_base B (by simp only [Core.ctrSlots]; omega)
+  have subMode : Region.Sub (modeRegion c B) S := VG.Offset.sub_base B (by simp only [Core.ctrSlots]; omega_arith)
+  have subT : Region.Sub ⟨T, 8 * c.bw⟩ S := VG.Offset.sub_base B (by simp only [Core.ctrSlots]; omega_arith)
   have dTP : Region.Disjoint ⟨T, 8 * c.bw⟩ ⟨P, 8 * c.bw⟩ := (sPS.sub_right subT).symm
   have inS : ∀ {d m : Nat}, d + m ≤ 8 * c.ctrSlots → InRegions s₀.wr (B + BitVec.ofNat 64 d) m := fun h =>
-    ⟨_, hs.wr, VG.Offset.contains_base B h (by omega)⟩
+    ⟨_, hs.wr, VG.Offset.contains_base B h (by omega_arith)⟩
   -- The entry, and the IV's address to `ivX`.
   obtain ⟨sE, eE, b₁, sv₁, f₁, gE, rdE, wrE⟩ := entry_ok hsm hroom s₀ hB hs
   obtain ⟨s₁, eS, xS, gS, mS, rdS, wrS⟩ := movqX_ok sE Core.ivX r.ctr
@@ -150,7 +150,7 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   have sy₁ : s₁.syms = s₀.syms := by rw [runBlock_syms eS, runBlock_syms eE]
   have mP : ∀ u < 8 * c.bw, s₁.mem (P + BitVec.ofNat 64 u) = s₀.mem (P + BitVec.ofNat 64 u) := fun u hu =>
     f₁.bytes (R := ⟨P, 8 * c.bw⟩) (fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx; exact sPS.sub_right subMode) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu
+      simp only [List.mem_singleton] at hx; subst hx; exact sPS.sub_right subMode) (show 8 * c.bw ≤ 2 ^ 64 by omega_arith) hu
   have mD : ∀ i < 8 * c.bw * n, s₁.mem (D + BitVec.ofNat 64 i) = s₀.mem (D + BitVec.ofNat 64 i) := fun i hi =>
     f₁.bytes (R := ⟨D, 8 * c.bw * n⟩) (fun x hx => by
       simp only [List.mem_singleton] at hx; subst hx; exact sDS.sub_right subMode) hn64 hi
@@ -171,19 +171,19 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     refine WP.seq (WP.of_runBlock ⟨s₂a, e₂a, WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₂])
       (fun h0 => ?_) (fun h0 => ?_)⟩)
     · exact WP.block_nil ⟨by rw [g₂a, b₁], fun x _ => by rw [g₂a], rd₂a, wr₂a, by rw [m₂a]; exact Frame.refl _ _,
-        fun q hq => by simp at h0; omega⟩
-    · have hn0 : 0 < n := by simp at h0; omega
+        fun q hq => by simp at h0; omega_arith⟩
+    · have hn0 : 0 < n := by simp at h0; omega_arith
       have sub0 : Region.Sub ⟨D + BitVec.ofNat 64 (8 * c.bw * 0), 8 * c.bw⟩ ⟨D, 8 * c.bw * n⟩ :=
         VG.Offset.sub_base D (idx_lt hn0)
       refine WP.mono (xorN_wp (k := c.bw) (P := D + BitVec.ofNat 64 (8 * c.bw * 0)) (Q := P)
         ⟨by rw [g₂a, g₁ _ hr.data.1, hD]; simp, by rw [g₂a, g₁ _ hr.ctr.1, hP]; simp, Ne.symm hr.data.2.1,
           Ne.symm hr.ctr.2.1, fun w hw' => ⟨_, by rw [wr₂a, wr₁]; exact hwD, by
             rw [addr_add]
-            exact VG.Offset.contains_base D (by have := idx_lt (L := c.bw) hn0; omega) (by omega)⟩,
+            exact VG.Offset.contains_base D (by have := idx_lt (L := c.bw) hn0; omega_arith) (by omega_arith)⟩,
           fun w hw' => by
             rw [rd₂a, wr₂a, rd₁, wr₁]
-            exact inRd ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩,
-          sPD.symm.sub_left sub0, by omega⟩) fun s₂ h₂ => ?_
+            exact inRd ⟨_, hwP, VG.Offset.contains_base P (by omega_arith) (by omega_arith)⟩,
+          sPD.symm.sub_left sub0, by omega_arith⟩) fun s₂ h₂ => ?_
       refine ⟨by rw [h₂.regs _ (by decide), g₂a, b₁], fun x hx => by rw [h₂.regs x hx, g₂a], by rw [h₂.rd, rd₂a],
         by rw [h₂.wr, wr₂a], ?_, fun q hq r hr => ?_⟩
       · rw [h₂.mem, m₂a]
@@ -247,24 +247,24 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   have hp : GPre c s₅ B D n (8 * c.bw) :=
     ⟨⟨by rw [wr₅']; exact hs.wr, hs.fit⟩, by rw [wr₅']; exact hwD, sDS, fitD, hstk.congr rsp₅ wr₅'⟩
   have dCore : ∀ x ∈ coreFrame c B (s₀.gpr .rsp), Region.Disjoint ⟨D, 8 * c.bw * n⟩ x :=
-    hstk.coreFrame_disj (sDS.sub_right (Region.sub_prefix (by simp only [Core.ctrSlots]; omega)))
+    hstk.coreFrame_disj (sDS.sub_right (Region.sub_prefix (by simp only [Core.ctrSlots]; omega_arith)))
       ⟨_, hwD, fun _ h => h⟩
   -- The IV as it was before the loop.
   have m₅P : ∀ u < 8 * c.bw, s₅.mem (P + BitVec.ofNat 64 u) = s₀.mem (P + BitVec.ofNat 64 u) := fun u hu => by
     rw [mem₅, f₄.bytes (R := ⟨P, 8 * c.bw⟩) (hstk.coreFrame_disj
-        (sPS.sub_right (Region.sub_prefix (by simp only [Core.ctrSlots]; omega))) ⟨_, hwP, fun _ h => h⟩)
-        (show 8 * c.bw ≤ 2 ^ 64 by omega) hu]
+        (sPS.sub_right (Region.sub_prefix (by simp only [Core.ctrSlots]; omega_arith))) ⟨_, hwP, fun _ h => h⟩)
+        (show 8 * c.bw ≤ 2 ^ 64 by omega_arith) hu]
     exact f₃.bytes (R := ⟨P, 8 * c.bw⟩) (fun x hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl
         · exact sPS
-        · exact sPD) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu
+        · exact sPD) (show 8 * c.bw ≤ 2 ^ 64 by omega_arith) hu
   -- The blocks, and the last back to the IV.
   refine WP.seq (WP.mono (M := isa) (Q := EDoneC cs s₅ s₀.mem B P D n k iv)
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₅]) (fun h0 => ?_) (fun h0 => ?_)) fun s₆ d₆ => ?_)
   · have hn0 : n = 0 := by simpa using h0
     subst hn0
-    refine WP.block_nil ⟨b₅, rfl, fun _ _ => rfl, fun i hi' => by rw [Nat.mul_zero] at hi'; omega,
+    refine WP.block_nil ⟨b₅, rfl, fun _ _ => rfl, fun i hi' => by rw [Nat.mul_zero] at hi'; omega_arith,
       Frame.refl _ _, ?_, rfl, rfl⟩
     rw [show blocksOf (8 * c.bw) s₀.mem D 0 = [] from rfl, show Spec.Cbc.encrypt (cs.cipher k) iv [] = [] from rfl,
       next_nil]
@@ -273,7 +273,7 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     refine WP.seq (WP.mono (WP.keepIv (keepsIv_loop (keepsIv_cbcEncBlock hsc.2)) (by rw [x₅]; exact hi_zero_append _)
       (cbcEncLoop_wp cs (m₀ := s₀.mem) hiv hp ⟨b₅, rfl, cs.ready_frame ready₄ (by rw [mem₅]; exact Frame.refl [] _)
         (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rd₅, wr₅, runBlock_syms e₅⟩ (fun r _ => by rw [g₅]),
-        fun _ _ => rfl, ?_, ?_, by omega, fun q hq r hr => ?_, Frame.refl _ _, rfl, rfl⟩))
+        fun _ _ => rfl, ?_, ?_, by omega_arith, fun q hq r hr => ?_, Frame.refl _ _, rfl, rfl⟩))
       fun s₆ ⟨d₆, x₆⟩ => ?_)
     · rw [g₅, dr₄, dr₃, g₂ _ hr.data.2.1, g₁ _ hr.data.1, hD]; simp
     · rw [left₅, Nat.sub_zero, ← hn]; simp
@@ -290,11 +290,11 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     refine WP.block_append (WP.of_runBlock ⟨s₇a, e₇a, WP.mono (copyN_wp (k := c.bw)
       (t := .rbp) (rd := .rax) (rs := sb) (od := 0) (os := 8 * c.buf) (P := P) (Q := T)
       ⟨by rw [ax₇]; simp, by rw [o₇a _ (by decide), d₆.base], by decide, by decide,
-        fun w hw => by rw [wr₇a, wr₆]; exact ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩,
+        fun w hw => by rw [wr₇a, wr₆]; exact ⟨_, hwP, VG.Offset.contains_base P (by omega_arith) (by omega_arith)⟩,
         fun w hw => by
           rw [rd₇a, wr₇a, rd₆, wr₆, addr_add]
-          exact inRd (inS (by simp only [Core.ctrSlots]; omega)),
-        dTP.symm, by omega⟩) fun s₇ h₇ => ?_⟩)
+          exact inRd (inS (by simp only [Core.ctrSlots]; omega_arith)),
+        dTP.symm, by omega_arith⟩) fun s₇ h₇ => ?_⟩)
     have mem₇ : s₇.mem = over s₆.mem P (8 * c.bw) fun i => s₆.mem (T + BitVec.ofNat 64 i) := by rw [h₇.mem, m₇a]
     have f₇ : Frame [⟨P, 8 * c.bw⟩] s₆.mem s₇.mem := by rw [mem₇]; exact over_frame _ _ _ _
     refine ⟨by rw [h₇.regs _ (by decide), o₇a _ (by decide), d₆.base],
@@ -304,7 +304,7 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
       exact f₇.readW (Region.contains_self _ _) (fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx
         exact (sPS.sub_right (VG.Offset.sub_base B (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by
-          simp only [Core.ctrSlots]; omega))).symm) (by decide)
+          simp only [Core.ctrSlots]; omega_arith))).symm) (by decide)
     · rw [f₇.bytes (R := ⟨D, 8 * c.bw * n⟩) (fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact sPD.symm) hn64 hi]
       exact d₆.data i hi
@@ -320,7 +320,7 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
           exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
     · rw [next_encrypt _ _ _ _ hn0]
       refine bytesAt_of_getD (by generalize n - 1 = t; cases t <;> exact cs.cipher_len k _) fun u hu => ?_
-      rw [mem₇, over_at hu (by omega)]
+      rw [mem₇, over_at hu (by omega_arith)]
       exact d₆.last hn0 u hu
   -- The exit.
   have hsv : ∀ i < 6, Core.savedRegs.getD i .rbx ≠ sb := by decide
@@ -328,20 +328,20 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   obtain ⟨s₈, e₈, v₈, o₈, m₈, rd₈, wr₈⟩ := loads_ok (B := B) c.slots (fun i => Core.savedRegs.getD i .rbx) 6 s₆
     d₆.base hsv hinj (fun i hi' => by
       rw [d₆.rd, d₆.wr, rd₅', wr₅']
-      exact inRd (slot_wr hs.wr hN (by simp only [Core.ctrSlots]; omega)))
+      exact inRd (slot_wr hs.wr hN (by simp only [Core.ctrSlots]; omega_arith)))
   refine WP.of_runBlock ⟨s₈, e₈, fun x hx => ?_, ?_, ?_, ?_, by rw [rd₈, d₆.rd, rd₅'], by rw [wr₈, d₆.wr, wr₅']⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hx
     have hsaved : ∀ i < 6, s₈.gpr (Core.savedRegs.getD i .rbx) = s₀.gpr (Core.savedRegs.getD i .rbx) :=
       fun i hi' => by
         rw [v₈ i hi', d₆.saved i hi', mem₅, ← sv₁ i hi']
         refine (f₄.readW (Region.contains_self _ _) (hstk.coreFrame_disj
-          (VG.Offset.disjoint_base B (by omega) (by omega)) ⟨_, hs.wr, VG.Offset.sub_base B
-            (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by simp only [Core.ctrSlots]; omega)⟩) (by decide)).trans ?_
+          (VG.Offset.disjoint_base B (by omega_arith) (by omega_arith)) ⟨_, hs.wr, VG.Offset.sub_base B
+            (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by simp only [Core.ctrSlots]; omega_arith)⟩) (by decide)).trans ?_
         rw [m₃]
         exact f₂.readW (Region.contains_self _ _) (fun x hx => by
           simp only [List.mem_singleton] at hx; subst hx
           exact (sDS.sub_right (VG.Offset.sub_base B (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by
-            simp only [Core.ctrSlots]; omega))).symm) (by decide)
+            simp only [Core.ctrSlots]; omega_arith))).symm) (by decide)
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsaved 0 (by decide)
     · exact hsaved 1 (by decide)
@@ -355,7 +355,7 @@ theorem cbcEncryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   · rw [m₈]
     refine ((((f₃.mono fun x hx => List.mem_append_left _ hx).trans
       (f₄.sub (coreFrame_sub (rs := [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩]) ⟨_, List.mem_cons_self,
-        Region.sub_prefix (by simp only [Core.ctrSlots]; omega)⟩))).mono fun x hx => by
+        Region.sub_prefix (by simp only [Core.ctrSlots]; omega_arith)⟩))).mono fun x hx => by
       rcases List.mem_append.mp hx with hx | hx
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl

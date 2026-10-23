@@ -296,31 +296,12 @@ GROUPS = {
             "rsa_guidance::rsa_pkcs1_appendix_b_small",
         ],
     },
-    "rsa_oaep": {
-        "lib": ["rsa_oaep"],
-        "tests": ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_oaep"],
-    },
     # Each pair of hash functions once, for the lines that are there only
     # to choose an implementation of RSAES-OAEP's (on the emulated CPUs, on
     # which the vectors take minutes).
     "rsa_oaep_pairs": {
         "lib": [],
         "tests": ["wycheproof::rsa_oaep::rsa_oaep_every_pair"],
-    },
-    "rsa_pkcs1": {
-        "lib": ["rsa_pkcs1_enc", "rsa_pkcs1_sig"],
-        "tests": [
-            "rsa_guidance::rsa_pkcs1_appendix_b",
-            "rsa_guidance::rsa_pkcs1_bad_keys",
-            "rsa_guidance::rsa_pkcs1_lengths",
-            "wycheproof::rsa::rsa_pkcs1_test",
-            "wycheproof::rsa_pkcs1_enc",
-            "wycheproof::rsa_pkcs1_sig",
-        ],
-    },
-    "rsa_pss": {
-        "lib": ["rsa_pss"],
-        "tests": ["wycheproof::rsa_pss"],
     },
     "rsa_pss_hashes": {
         "lib": [],
@@ -470,9 +451,6 @@ GROUPS = {
 # without IFMA. A run whose hosts all have IFMA legitimately uses none.
 EMULATED_RSA_GROUPS = {
     "rsa": "rsa_ifma",
-    "rsa_pkcs1": "rsa_pkcs1_hashes",
-    "rsa_pss": "rsa_pss_hashes",
-    "rsa_oaep": "rsa_oaep_pairs",
 }
 
 

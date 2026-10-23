@@ -14,21 +14,21 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem mulY_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     {capacity b c : Nat} (length : g.L = 8 * capacity) (M : Modulus g c s.mem)
     (right : Spec.Rsa.Mont.Operand b) (odd : c % 2 = 1)
     (rightLt : val32 s.mem g.W (g.array b) g.words < c)
     (readLen : readSrc s (.mem (at_ .esp 24)) = some (BitVec.ofNat 32 capacity))
-    (fit : 40 ≤ (s.gpr .esp).toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 40)) :
+    (fit : 80 ≤ (s.gpr .esp).toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 80)) :
     WP isa (mulY name code b) s fun t =>
       val32 t.mem g.W (g.array 6) g.words = Word32.mm c g.w
         (val32 s.mem g.W (g.array 6) g.words) (val32 s.mem g.W (g.array b) g.words) ∧
       WorkspaceFrame g (montWrites g 6) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx] s t ∧ Context g t ∧ Modulus g c t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below (s.gpr .esp) 40]) s.mem t.mem := by
+      Frame ([⟨g.W, g.L⟩] ++ [below (s.gpr .esp) 80]) s.mem t.mem := by
   unfold mulY
   refine WP.seq (WP.mono (mulSetup_ok C capacity b readLen) fun a ⟨A, M₁, K⟩ => ?_)
   have Ca := C.keepMem K (by decide) M₁

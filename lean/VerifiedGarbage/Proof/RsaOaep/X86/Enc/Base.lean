@@ -16,8 +16,8 @@ public import VerifiedGarbage.Impl.RsaPss.X86
 As on ARMv7 (`Proof/RsaOaep/Arm/EncBase.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths, and the public key's bytes
 and precomputed words), and its layout (`EP.lay`, with the seed's `D`
-bytes), with the 48 bytes below the frame that the call of
-`vg_rsa_public_precomputed_checked` (44) and the frames of the streaming
+bytes), with the 100 bytes below the frame that the call of
+`vg_rsa_public_precomputed_checked` (100) and the frames of the streaming
 functions (48) use. `In D P σ`: the state `σ` the body starts from
 (`in_of_pre`).
 -/
@@ -77,7 +77,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := P.ro D
   rw := P.rw
-  C := 48
+  C := 100
 
 end EP
 
@@ -118,14 +118,14 @@ theorem geo : Geo (P.lay D) P.scr := by
   simp only [BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega)] at hf
   exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩,
-    by show 48 ≤ 48; decide⟩
+    by show 48 ≤ 100; decide⟩
 
 end In
 
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the calls'. -/
-abbrev stackBytes : Nat := 16 + frameBytes + 48
+abbrev stackBytes : Nat := 16 + frameBytes + 100
 
 /-- The shared contract, with that stack. -/
 abbrev spec (H G : Spec.Mgf1.Hash) : Contract isa := Spec.RsaOaep.encryptPrecomputedContract H G abi stackBytes
@@ -152,7 +152,7 @@ def ep (s : State) : EP where
   pw := Spec.Rsa.wordsAt s.mem ((arg s 13).setWidth 64) (arg s 14).toNat
 
 theorem ep_lay (D : Nat) (s : State) :
-    (ep s).lay D = layOf frameBytes (ep s).argv ((ep s).ro D) (ep s).rw s 48 := rfl
+    (ep s).lay D = layOf frameBytes (ep s).argv ((ep s).ro D) (ep s).rw s 100 := rfl
 
 theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     In H.len (ep s) (entered frameBytes s) := by
@@ -166,15 +166,15 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     apply BitVec.eq_of_toNat_eq; rw [olk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (arg s 3).isLt]
   rw [olk] at hwr oN oE oL oM oS oC oP oA rO kO fO
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
-    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 208, 208⟩ := by
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 260, 260⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [Taint.sub_setWidth (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, scrK := scrK, rlK := rlK
@@ -183,15 +183,15 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
       scl32 := (arg s 12).isLt
       nB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below16).symm)
-        (by show (arg s 3).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 3).toNat ≤ 2 ^ 64; omega_arith)
       eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
-        (by show (arg s 5).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 5).toNat ≤ 2 ^ 64; omega_arith)
       pw := Proof.RsaPkcs1Sig.wordsAt_frame' hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kP.sub_left below16).symm)
-        (by show (arg s 14).toNat * 8 ≤ 2 ^ 64; have := (arg s 14).isLt; omega) }
+        (by show (arg s 14).toNat * 8 ≤ 2 ^ 64; have := (arg s 14).isLt; omega_arith) }
   rw [ep_lay]
-  refine ok_entered (S := 208) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 260) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -212,17 +212,17 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth]
     all_goals first
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 6).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 8).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 10).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 13).isLt; omega)]; omega)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 6).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 8).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 10).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 13).isLt; omega_arith)]; omega_arith)
   · intro j hj
     have : j < 15 := hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
         j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1]
 

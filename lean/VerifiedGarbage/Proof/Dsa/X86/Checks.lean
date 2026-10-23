@@ -34,14 +34,14 @@ theorem nonzero_ok (n : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   unfold nonzero
   refine WP.seq (wp_movS rfl fun s₀ u₀ _ => WP.block_nil ?_)
   refine WP.seq (wordLoop_ok (fun j t => Keeps [.ecx, .edx, .ebp] s t ∧ t.mem = s.mem ∧
-      (t.gpr .ecx = 0 ↔ val32 s.mem base a j = 0)) (by omega) (by omega)
+      (t.gpr .ecx = 0 ↔ val32 s.mem base a j = 0)) (by omega_arith) (by omega_arith)
     (fun j u u' ⟨K, m, e⟩ ⟨hm, hr, hw, hg⟩ =>
       ⟨⟨fun r h => (hg r (by simp_all) (by simp_all)).trans (K.1 r h), hr.trans K.2.1, hw.trans K.2.2⟩,
         hm.trans m, by rw [hg _ (by decide) (by decide)]; exact e⟩)
     ⟨u₀.keeps.mono (by decide), u₀.mem, by rw [u₀.gpr]; exact ⟨fun _ => rfl, fun _ => rfl⟩⟩
     (fun j hj t ⟨K, m, e⟩ ej => ?_) ?_)
   · have ht := hs.of_keeps K (by decide)
-    refine wp_orS (readSrc_at' ht ej (d := a) (by omega)) fun u uu => WP.block_nil
+    refine wp_orS (readSrc_at' ht ej (d := a) (by omega_arith)) fun u uu => WP.block_nil
       ⟨⟨K.widen uu.keeps, by rw [uu.mem, m], ?_⟩, uu.other _ (by decide), uu.other _ (by decide)⟩
     rw [uu.gpr, or_eq_zero32, e, val32_succ, m]
     have hp : 0 < 2 ^ (32 * j) := Nat.two_pow_pos _
@@ -54,8 +54,8 @@ theorem nonzero_ok (n : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
       have h₂ : w32 s.mem base (a + 4 * j) = 0 := by
         rcases Nat.eq_zero_or_pos (w32 s.mem base (a + 4 * j)) with h' | h'
         · exact h'
-        · have := Nat.mul_le_mul_left (2 ^ (32 * j)) h'; omega
-      exact ⟨by omega, h₂⟩
+        · have := Nat.mul_le_mul_left (2 ^ (32 * j)) h'; omega_arith
+      exact ⟨by omega_arith, h₂⟩
   · intro t ⟨K, m, e⟩
     refine wp_movS rfl fun s₃ u₃ _ => wp_movS rfl fun s₄ u₄ _ => wp_subS rfl fun s₅ u₅ c₅ => ?_
     refine wp_sbbS rfl c₅ fun s₆ u₆ _ => WP.block_nil ⟨?_, ?_, by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, m]⟩
@@ -75,7 +75,7 @@ theorem lessThan_ok (n : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr s
   unfold lessThan
   refine WP.seq (wp_movS rfl fun s₀ u₀ _ => WP.block_nil ?_)
   refine WP.seq (wordLoop_ok (fun j t => Keeps [.eax, .ecx, .edx, .ebp] s t ∧ t.mem = s.mem ∧
-      t.gpr .ecx = cmask (decide (val32 s.mem base a j < val32 s.mem base m j))) (by omega) (by omega)
+      t.gpr .ecx = cmask (decide (val32 s.mem base a j < val32 s.mem base m j))) (by omega_arith) (by omega_arith)
     (fun j u u' ⟨K, mm, e⟩ ⟨hm', hr, hw, hg⟩ =>
       ⟨⟨fun r h => (hg r (by simp_all) (by simp_all)).trans (K.1 r h), hr.trans K.2.1, hw.trans K.2.2⟩,
         hm'.trans mm, by rw [hg _ (by decide) (by decide)]; exact e⟩)
@@ -83,13 +83,13 @@ theorem lessThan_ok (n : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr s
     (fun j hj t ⟨K, mm, e⟩ ej => ?_) ?_)
   · have ht := hs.of_keeps K (by decide)
     simp only [List.singleton_append]
-    refine wp_movS (readSrc_at' ht ej (d := a) (by omega)) fun s₁ u₁ _ => ?_
+    refine wp_movS (readSrc_at' ht ej (d := a) (by omega_arith)) fun s₁ u₁ _ => ?_
     refine wp_restore (by rw [u₁.other _ (by decide), e]) fun s₂ u₂ c₂ => ?_
     have K₂ : Keeps [.eax, .edx] t s₂ := (u₁.keeps.mono (by decide)).widen u₂.keeps
     have hs₂ := ht.of_keeps K₂ (by decide)
     have ej₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * j) := by
       rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact ej
-    refine wp_sbbS (readSrc_at' hs₂ ej₂ (d := m) (by omega)) c₂ fun s₃ u₃ c₃ => ?_
+    refine wp_sbbS (readSrc_at' hs₂ ej₂ (d := m) (by omega_arith)) c₂ fun s₃ u₃ c₃ => ?_
     refine wp_sbb_self c₃ fun s₄ u₄ => WP.block_nil ⟨⟨K.trans (((K₂.mono (rs' := [.eax, .ecx, .edx, .ebp])
       (by decide)).widen u₃.keeps).widen u₄.keeps), by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, mm], ?_⟩,
       by rw [u₄.other _ (by decide), u₃.other _ (by decide), K₂.1 _ (by decide)],

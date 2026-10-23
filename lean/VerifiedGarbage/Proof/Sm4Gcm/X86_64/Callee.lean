@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+
 public import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Verified
 import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
@@ -54,9 +57,19 @@ abbrev ctrK : Contract isa := Spec.Sm4.ctr32Contract X86_64.abi 3216
 /-- `vg_sm4_expand_key`'s contract, for its frame. -/
 abbrev keyK : Contract isa := Spec.Sm4.expandKeyContract X86_64.abi 3144
 
-theorem ctr_spSafe : SpSafe ctrFn.code := SpSafe.of_all (Code.all_of_allInstrs (by lit_decide))
+theorem ctr_spSafe : SpSafe ctrFn.code := by
+  have hcore : (Impl.Sm4.X86_64.ctr32).all (fun i => !isa.writesSp i) = true :=
+    Code.all_of_allInstrs (by lit_decide)
+  apply SpSafe.of_all
+  refine withStackScratch_spSafe (r := .r8) (by decide) ?_
+  simp only [Code.all, hcore, wipe_spSafe, Bool.and_self]
 
-theorem key_spSafe : SpSafe keyFn.code := SpSafe.of_all (Code.all_of_allInstrs (by lit_decide))
+theorem key_spSafe : SpSafe keyFn.code := by
+  have hcore : (Impl.Sm4.X86_64.expandKey).all (fun i => !isa.writesSp i) = true :=
+    Code.all_of_allInstrs (by lit_decide)
+  apply SpSafe.of_all
+  refine withStackScratch_spSafe (r := .rdx) (by decide) ?_
+  simp only [Code.all, hcore, wipe_spSafe, Bool.and_self]
 
 theorem ctr_depth :
     (Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr32).x86_64Depth ≤ 3216 := by

@@ -117,9 +117,10 @@ theorem readW_lane (m : Mem) (q : Addr) (v : BitVec 512) {l : Nat} (hl : l < 4) 
   have e := readW_writeW_inside m q v (k := 16 * l) (n := 16) (by omega) (by decide)
   rwa [show 8 * (16 * l) = 128 * l by omega] at e
 
-/-- The first `n` loads of powers, times `zmm12`, stored at `scratch + d`. -/
-theorem powRun_ok (d : Nat) (hd : 256 ≤ d) (hdl : d + 256 ≤ 1024) :
-    ∀ n, n ≤ 4 → ∀ s, InRegions s.wr (s.gpr .r11) 1024 → (∀ l < 4, s.zlane .xmm1 l = poly) →
+/-- The first `n` loads of powers, times `zmm12`, stored at `scratch + d`,
+with `L` bytes at `scratch` writable. -/
+theorem powRun_ok (d : Nat) {L : Nat} (hd : 256 ≤ d) (hdl : d + 256 ≤ L) (hL : L ≤ 1024) :
+    ∀ n, n ≤ 4 → ∀ s, InRegions s.wr (s.gpr .r11) L → (∀ l < 4, s.zlane .xmm1 l = poly) →
       WP isa (.block ((List.range n).flatMap (powLoad d))) s fun s' =>
         s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         Frame [⟨s.gpr .r11 + BitVec.ofNat 64 d, 256⟩] s.mem s'.mem ∧
@@ -133,7 +134,7 @@ theorem powRun_ok (d : Nat) (hd : 256 ≤ d) (hdl : d + 256 ≤ 1024) :
     exact WP.block_nil ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega), fun _ _ _ _ _ _ _ _ => rfl⟩
   | n + 1, hn, s, hin, h1 => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (powRun_ok d hd hdl n (by omega) s hin h1) fun s₁ ⟨g₁, rd₁, wr₁, f₁, e₁, x₁⟩ => ?_
+    refine WP.mono (powRun_ok d hd hdl hL n (by omega) s hin h1) fun s₁ ⟨g₁, rd₁, wr₁, f₁, e₁, x₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     have p₁ : s₁.gpr .r11 = s.gpr .r11 := by rw [g₁]
     have h1₁ : ∀ l < 4, s₁.zlane .xmm1 l = poly := fun l hl => by
@@ -184,9 +185,10 @@ theorem zlane_bcast (s : State) (d : XReg) (v : BitVec 128) {l : Nat} (hl : l < 
 /-- The sixteen powers at `scratch`, as `pow48` reads them. -/
 abbrev pw16 (s : State) (k l : Nat) : BitVec 128 := s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (64 * k + 16 * l)) 128
 
-/-- A broadcast from `scratch + h` and a table of products at `scratch + d`. -/
-theorem table_ok (d h : Nat) (hd : 256 ≤ d) (hdl : d + 256 ≤ 1024) (hh : h + 16 ≤ 1024) (s : State)
-    (hin : InRegions s.wr (s.gpr .r11) 1024) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
+/-- A broadcast from `scratch + h` and a table of products at `scratch + d`,
+with `L` bytes at `scratch` writable. -/
+theorem table_ok (d h : Nat) {L : Nat} (hd : 256 ≤ d) (hdl : d + 256 ≤ L) (hh : h + 16 ≤ L) (hL : L ≤ 1024)
+    (s : State) (hin : InRegions s.wr (s.gpr .r11) L) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
     WP isa (.block (.vbroadcasti32x4 .xmm12 (at_ .r11 h) :: (List.range 4).flatMap (powLoad d))) s fun s' =>
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨s.gpr .r11 + BitVec.ofNat 64 d, 256⟩] s.mem s'.mem ∧
@@ -197,7 +199,7 @@ theorem table_ok (d h : Nat) (hd : 256 ≤ d) (hdl : d + 256 ≤ 1024) (hh : h +
   let v := s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 h) 128
   rw [WP.block_cons_iff]
   refine ⟨s.setZ .xmm12 v v v v, bcast_exec .xmm12 .r11 h s (Stitch.in_rdwr (Stitch.in_sub hin hh)), ?_⟩
-  refine WP.mono (powRun_ok d hd hdl 4 (Nat.le_refl _) (s.setZ .xmm12 v v v v)
+  refine WP.mono (powRun_ok d hd hdl hL 4 (Nat.le_refl _) (s.setZ .xmm12 v v v v)
       (by simp only [State.setZ_gpr, State.setZ_wr]; exact hin)
       (fun l hl => by rw [State.zlane_setZ_ne _ (by decide) _ _ _ _ hl]; exact h1 l hl))
     fun s' ⟨g', rd', wr', f', e', x'⟩ => ?_
@@ -228,12 +230,12 @@ theorem pow48_ok (s : State) (hin : InRegions s.wr (s.gpr .r11) 1024) (h1 : ∀ 
       (∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
         s'.zlane r l = s.zlane r l) := by
   rw [pow48, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (table_ok 256 0 (by decide) (by decide) (by decide) s hin h1) fun s₂ ⟨g₂, rd₂, wr₂, f₂, e₂, x₂⟩ => ?_
+  refine WP.mono (table_ok 256 0 (by decide) (by decide) (by decide) (Nat.le_refl _) s hin h1) fun s₂ ⟨g₂, rd₂, wr₂, f₂, e₂, x₂⟩ => ?_
   rw [show s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 0) 128 = pw16 s 0 0 from rfl] at e₂
   rw [← List.append_assoc, WP.block_append_iff]
   have x₂1 : ∀ l < 4, s₂.zlane .xmm1 l = poly := fun l hl => by
     rw [x₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl]; exact h1 l hl
-  refine WP.mono (table_ok 512 256 (by decide) (by decide) (by decide) s₂ (by rw [g₂, wr₂]; exact hin) x₂1)
+  refine WP.mono (table_ok 512 256 (by decide) (by decide) (by decide) (Nat.le_refl _) s₂ (by rw [g₂, wr₂]; exact hin) x₂1)
     fun s₄ ⟨g₄, rd₄, wr₄, f₄, e₄, x₄⟩ => ?_
   rw [g₂] at f₄ e₄
   have h16 : ∀ k < 4, ∀ l < 4, s₂.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = pw16 s k l :=

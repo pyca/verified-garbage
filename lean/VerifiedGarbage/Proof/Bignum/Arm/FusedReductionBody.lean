@@ -35,13 +35,13 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
       t.gpr .r0=base+BitVec.ofNat 32 (acc+4*(n+1)) ∧
       Outside (State.addr base) acc (4*(n+1)) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [VG.Impl.Bignum.Arm.FusedReduction.code,WP.seq_iff]
-  refine WP.mono (first_ok s ws (by omega) (by omega) (by omega) ptr source count carry cancel) ?_
+  refine WP.mono (first_ok s ws (by omega_arith) (by omega_arith) (by omega_arith) ptr source count carry cancel) ?_
   rintro u ⟨ptrU,sourceU,countU,scalarU,first,memU,restU⟩
   have ctx : DownRow.Ctx u base size acc (mod+4) (n-1) :=
-    ⟨ws.nowrap,by omega,by omega,by rcases separate with h|h <;> omega,
+    ⟨ws.nowrap,by omega_arith,by omega_arith,by rcases separate with h|h <;> omega_arith,
       by rw [restU.wr];exact ws.writable⟩
   rw [WP.seq_iff]
-  refine WP.mono (DownRow.code_ok u ctx (by omega) ptrU sourceU countU) ?_
+  refine WP.mono (DownRow.code_ok u ctx (by omega_arith) ptrU sourceU countU) ?_
   intro v row
   let P := 2^(32*(n-1))
   let H := val32 s.mem (State.addr base) (acc+4*n) 2
@@ -52,14 +52,14 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
     simpa only [memU,scalarU] using row.value
   have accSplit : val32 s.mem (State.addr base) acc (n+2)=
       w32 s.mem (State.addr base) acc+2^32*(L+P*H) := by
-    rw [show n+2=(n+1)+1 by omega,val32]
+    rw [show n+2=(n+1)+1 by omega_arith,val32]
     have split := val32_append s.mem (State.addr base) (acc+4) (n-1) 2
-    simpa only [show n-1+2=n+1 by omega,show acc+4+4*(n-1)=acc+4*n by omega] using
+    simpa only [show n-1+2=n+1 by omega_arith,show acc+4+4*(n-1)=acc+4*n by omega_arith] using
       congrArg (fun x => w32 s.mem (State.addr base) acc+2^32*x) split
   have modSplit : val32 s.mem (State.addr base) mod n=
       w32 s.mem (State.addr base) mod+2^32*val32 s.mem (State.addr base) (mod+4) (n-1) := by
     calc
-      _ = val32 s.mem (State.addr base) mod ((n-1)+1) := by congr 1;omega
+      _ = val32 s.mem (State.addr base) mod ((n-1)+1) := by congr 1;omega_arith
       _ = _ := rfl
   have total : 2^32*(val32 v.mem (State.addr base) acc (n-1)+P*(H+(v.gpr .r11).toNat))=
       val32 s.mem (State.addr base) acc (n+2)+Q*val32 s.mem (State.addr base) mod n :=
@@ -68,7 +68,7 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
     dsimp only [P]
     rw [←Nat.pow_add,←Nat.pow_add]
     congr 1
-    omega
+    omega_arith
   have topBound : H+(v.gpr .r11).toNat<2^64 := by
     have cap := capacity
     change _+Q*_< _ at cap
@@ -80,8 +80,8 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
     simpa only [memU] using row.outside
   have oldTop (j : Nat) (hj : j<2) :
       w32 v.mem (State.addr base) (acc+4*n+4*j)=w32 s.mem (State.addr base) (acc+4*n+4*j) :=
-    outside.w32 (by omega) (by have := ws.nowrap;omega)
-  have fitTop : acc+4*(n-1)+12≤size := by omega
+    outside.w32 (by omega_arith) (by have := ws.nowrap;omega_arith)
+  have fitTop : acc+4*(n-1)+12≤size := by omega_arith
   have native : Rest roundClobbers u v := (row.rest.mono (by simp [DownRow.loopClobbers,roundClobbers]))
   have rest : Rest roundClobbers s v := restU.trans native
   have workspaceV := ws.congr rest.wr
@@ -89,29 +89,29 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
   · have lo := oldTop 0 (by decide)
     have hi := oldTop 1 (by decide)
     simp only [Nat.mul_zero,Nat.add_zero,Nat.mul_one] at lo hi
-    rw [show acc+4*(n-1)+4=acc+4*n by omega,
-      show acc+4*(n-1)+8=acc+4*n+4 by omega,lo,hi]
+    rw [show acc+4*(n-1)+4=acc+4*n by omega_arith,
+      show acc+4*(n-1)+8=acc+4*n+4 by omega_arith,lo,hi]
     simpa only [H,val32,Nat.mul_zero,Nat.add_zero,Nat.add_assoc] using topBound
   · rintro t ⟨topValue,memT,ptrT,restT⟩
     have nowrap : (State.addr base).toNat+size≤2^32 := by
       simpa only [VG.Proof.X25519.Arm.addr_toNat] using ws.nowrap
     obtain ⟨outTop,whole⟩ := rowCarry_memory (base:=State.addr base) (n:=n-1)
-      nowrap (by omega) memT
+      nowrap (by omega_arith) memT
     have topEquation : (t.gpr .r3).toNat+2^32*(t.gpr .r4).toNat=H+(v.gpr .r11).toNat := by
       have lo := oldTop 0 (by decide)
       have hi := oldTop 1 (by decide)
       simp only [Nat.mul_zero,Nat.add_zero,Nat.mul_one] at lo hi
-      rw [show acc+4*(n-1)+4=acc+4*n by omega,
-        show acc+4*(n-1)+8=acc+4*n+4 by omega,lo,hi] at topValue
+      rw [show acc+4*(n-1)+4=acc+4*n by omega_arith,
+        show acc+4*(n-1)+8=acc+4*n+4 by omega_arith,lo,hi] at topValue
       simpa only [H,val32,Nat.mul_zero,Nat.add_zero,Nat.add_assoc] using topValue
     refine ⟨?_,?_,?_,?_⟩
-    · rw [show n+1=(n-1)+2 by omega,whole,topEquation]
+    · rw [show n+1=(n-1)+2 by omega_arith,whole,topEquation]
       exact total
     · rw [ptrT]
       congr 2
-      omega
-    · exact (outside.mono (Nat.le_refl _) (by omega)).trans
-        (outTop.mono (by omega) (by omega))
+      omega_arith
+    · exact (outside.mono (Nat.le_refl _) (by omega_arith)).trans
+        (outTop.mono (by omega_arith) (by omega_arith))
     · exact rest.trans (restT.mono (by simp [roundClobbers]))
 
 end VG.Proof.Bignum.Arm.FusedReduction

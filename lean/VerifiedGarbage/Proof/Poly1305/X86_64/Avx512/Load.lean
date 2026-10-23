@@ -130,8 +130,8 @@ theorem addPost_of {s s' : State} {σ : Sym} (h : SRel σ s s') (hb : ∀ k < 8,
       S2 k hk, S3 k hk, S4 k hk, envOf_v, envOf_v, envOf_v, envOf_v, envOf_v,
       Limbs26.split_or hl, hpd]
     simp only [envOf, blo, bhi] at hl hh ⊢
-    rw [or_pad (by omega)]
-    omega
+    rw [or_pad (by omega_arith)]
+    omega_arith
   refine ⟨h.eq, fun i hi k hk => ?_, fun k hk => ?_, fun k hk i hi => ?_⟩
   · rw [h.reg _ k hk, hy i hi]; simp only [Q.eval, xr_xi]
   · obtain ⟨e0, e1, e2, e3, e4⟩ := H k hk
@@ -139,18 +139,18 @@ theorem addPost_of {s s' : State} {σ : Sym} (h : SRel σ s s') (hb : ∀ k < 8,
     rw [Limbs26.split_or (envOf_m_lt s (2 * pi k))] at this
     simp only [Limbs26.val, e0, e1, e2, e3, e4]
     simp only [blo] at this ⊢
-    omega
+    omega_arith
   · obtain ⟨e0, e1, e2, e3, e4⟩ := H k hk
     have hl := envOf_m_lt s (2 * pi k)
     have hh := envOf_m_lt s (2 * pi k + 1)
     have b := hb k hk
     simp only [blo, bhi] at e0 e1 e2 e3 e4
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
-    · rw [e0]; have := b 0 (by decide); omega
-    · rw [e1]; have := b 1 (by decide); omega
-    · rw [e2]; have := b 2 (by decide); omega
-    · rw [e3]; have := b 3 (by decide); omega
-    · rw [e4]; have := b 4 (by decide); omega
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    · rw [e0]; have := b 0 (by decide); omega_arith
+    · rw [e1]; have := b 1 (by decide); omega_arith
+    · rw [e2]; have := b 2 (by decide); omega_arith
+    · rw [e3]; have := b 3 (by decide); omega_arith
+    · rw [e4]; have := b 4 (by decide); omega_arith
 
 theorem addGroup_ok {s : State} (hp : AddPre s) : WP isa (.block addGroup) s (AddPost s) :=
   WP.mono (run_ok (fun _ => hp.ctx) addS_eq) fun _ h =>

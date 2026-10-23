@@ -108,34 +108,34 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
   refine WP.seq (wp_lsl hlg fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_addImm (by decide) fun u₃ o₃ e₃ => wp_nil ?_)
   have O₃ : Only [.x1] u u₃ := (o₁.trans (o₂.trans o₃)).mono
   have x1 : u₃.gpr .x1 = off S (oY + H.P.B * b) := by
-    rw [e₃, e₂, e₁, o₁.get .x20, I.x27, I.cs .x20 (by decide), L.x20, lsl_val (by rw [hB]; omega),
+    rw [e₃, e₂, e₁, o₁.get .x20, I.x27, I.cs .x20 (by decide), L.x20, lsl_val (by rw [hB]; omega_arith),
       hB]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mul_comm b]; omega
+    rw [Nat.mul_comm b]; omega_arith
   have hcall : CallOk u₃ H.P.N H.P.B H.P.so (off S oSt) S (off S (oY + H.P.B * b)) := {
     x19 := by rw [O₃.get .x19, I.cs .x19 (by decide), h19]
     x20 := by rw [O₃.get .x20, I.cs .x20 (by decide), L.x20]
     x1 := x1
     st_scr := by
-      have := Offset.disjoint S (d := oSt) (n := H.P.N) (e := 0) (k := H.P.so) (by unfold oSt; omega)
-        (by unfold oSt; omega) (by omega)
+      have := Offset.disjoint S (d := oSt) (n := H.P.N) (e := 0) (k := H.P.so) (by unfold oSt; omega_arith)
+        (by unfold oSt; omega_arith) (by omega_arith)
       rwa [BitVec.add_zero] at this
-    src_st := Offset.disjoint S (by unfold oY oSt; omega) (by unfold oY; omega) (by unfold oSt; omega)
+    src_st := Offset.disjoint S (by unfold oY oSt; omega_arith) (by unfold oY; omega_arith) (by unfold oSt; omega_arith)
     src_scr := by
-      have := Offset.disjoint S (d := oY + H.P.B * b) (n := H.P.B) (e := 0) (k := H.P.so) (by unfold oY; omega)
-        (by unfold oY; omega) (by omega)
+      have := Offset.disjoint S (d := oY + H.P.B * b) (n := H.P.B) (e := 0) (k := H.P.so) (by unfold oY; omega_arith)
+        (by unfold oY; omega_arith) (by omega_arith)
       rwa [BitVec.add_zero] at this
     cov := by
       rw [O₃.rd, O₃.wr]
-      refine Covers.cons (Covers.one (Lu.ld (by unfold oY oRsa; omega))) (Covers.cons
-        (Covers.one (Lu.ld (by unfold oSt oRsa; omega))) (Covers.cons (Covers.one ?_) Covers.nil))
-      have := Lu.ld (o := 0) (n := H.P.so) (by unfold oRsa; omega)
+      refine Covers.cons (Covers.one (Lu.ld (by unfold oY oRsa; omega_arith))) (Covers.cons
+        (Covers.one (Lu.ld (by unfold oSt oRsa; omega_arith))) (Covers.cons (Covers.one ?_) Covers.nil))
+      have := Lu.ld (o := 0) (n := H.P.so) (by unfold oRsa; omega_arith)
       rwa [off, BitVec.add_zero] at this
     covW := by
       rw [O₃.wr]
-      refine Covers.cons (Covers.one (Lu.st (by unfold oSt oRsa; omega))) (Covers.cons (Covers.one ?_) Covers.nil)
-      have := Lu.st (o := 0) (n := H.P.so) (by unfold oRsa; omega)
+      refine Covers.cons (Covers.one (Lu.st (by unfold oSt oRsa; omega_arith))) (Covers.cons (Covers.one ?_) Covers.nil)
+      have := Lu.st (o := 0) (n := H.P.so) (by unfold oRsa; omega_arith)
       rwa [off, BitVec.add_zero] at this }
   refine WP.seq (WP.mono (WP.preservedV (compressAt_ok hH.comp hcall (Q := fun s' => s'.rd = u₃.rd ∧
       s'.wr = u₃.wr ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = u₃.gpr r) ∧ s'.sp = u₃.sp ∧
@@ -150,15 +150,15 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
     rw [vcs .x22 (by decide) (by decide), O₃.get .x22, I.cs .x22 (by decide), h22]
   have v27 : v.gpr .x27 = BitVec.ofNat 64 b := by rw [vcs .x27 (by decide) (by decide), O₃.get .x27, I.x27]
   refine WP.seq (WP.mono (select_ok H Lv (V := fun o => v.mem (off S o)) (fun _ _ => rfl) hB hlg hN0 hN hL.2 hℓ
-    (by omega) v22 v27) fun w ⟨wK, wfr, wR⟩ => ?_)
+    (by omega_arith) v22 v27) fun w ⟨wK, wfr, wR⟩ => ?_)
   rw [hfbd] at wR
   -- the frame's slot is kept
   have frS : Frame [⟨S, oRsa⟩] t.mem w.mem := by
     refine I.fr.trans ((Frame.sub (by rw [O₃.mem] at vfr; exact vfr) fun r hr => ?_).trans wfr)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by unfold oSt oRsa; omega)⟩
-    · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by unfold oRsa; omega)⟩
+    · exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by unfold oSt oRsa; omega_arith)⟩
+    · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by unfold oRsa; omega_arith)⟩
   have slot : w.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by
     rw [frS.readW (r := ⟨F, frameBytes⟩) (Offset.contains_base _ (by decide) (by decide))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact L.dFS) (by decide), hNb]
@@ -177,15 +177,15 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
       rw [vfr (off S o) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact not_in S (by omega) (by unfold oRsa at ho; omega) (by unfold oSt; omega)
-        · exact not_in0 S h' (by unfold oRsa at ho; omega) (by omega)), O₃.mem]
+        · exact not_in S (by omega_arith) (by unfold oRsa at ho; omega_arith) (by unfold oSt; omega_arith)
+        · exact not_in0 S h' (by unfold oRsa at ho; omega_arith) (by omega_arith)), O₃.mem]
   have hY : ∀ k < H.P.B, u.mem (off S (oY + H.P.B * b) + BitVec.ofNat 64 k) =
       (yList V₀ (nbm * H.P.B)).getD (H.P.B * b + k) 0 := fun k hk => by
-    rw [off_add, yList_getD (by rw [Nat.mul_comm nbm]; omega), I.keep _ (by unfold oY oRsa; omega)
-      (by unfold CompW oY oSt oSel; omega), Nat.add_assoc]
+    rw [off_add, yList_getD (by rw [Nat.mul_comm nbm]; omega_arith), I.keep _ (by unfold oY oRsa; omega_arith)
+      (by unfold CompW oY oSt oSel; omega_arith), Nat.add_assoc]
   have stw : hH.md.stateAt w.mem (off S oSt) = hH.md.compressList h₀ (yList V₀ (nbm * H.P.B)) (b + 1) := by
     rw [hH.md.stateAt_congr (mem := v.mem) fun i hi => by
-        rw [off_add]; exact wv _ (by unfold oSt oRsa; omega) (by unfold oSt oSel; omega), vst,
+        rw [off_add]; exact wv _ (by unfold oSt oRsa; omega_arith) (by unfold oSt oSel; omega_arith), vst,
       O₃.mem, I.st, hH.md.compressList_succ]
     exact congrArg _ (hH.md.parse_congr fun k hk => hY k hk)
   refine ⟨⟨?sp, ?rd, ?wr, ?cs, x27, ?vec, ?fr, ?keep, ?st, ?sel⟩, ?flag⟩
@@ -205,25 +205,25 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
   case keep =>
     intro o ho h
     unfold CompW at h
-    rw [P₃.mem, wv o ho (by omega), vu o ho (by omega) (by omega), I.keep o ho (by unfold CompW; omega)]
+    rw [P₃.mem, wv o ho (by omega_arith), vu o ho (by omega_arith) (by omega_arith), I.keep o ho (by unfold CompW; omega_arith)]
   case st => rw [P₃.mem]; exact stw
   case sel =>
     intro hfb
     rw [P₃.mem]
     by_cases e : b = fb
     · rw [hH.reloc w.mem w.mem (off S oSt) (off S oSel) fun i hi => by
-        rw [off_add, off_add, wR _ (by unfold oSel oRsa; omega)]; simp only [vSel]
-        rw [ite_eq_left ⟨e, by omega, by omega⟩, Nat.add_sub_cancel_left]
-        exact (wv _ (by unfold oSt oRsa; omega) (by unfold oSt oSel; omega)).symm, stw, e]
+        rw [off_add, off_add, wR _ (by unfold oSel oRsa; omega_arith)]; simp only [vSel]
+        rw [ite_eq_left ⟨e, by omega_arith, by omega_arith⟩, Nat.add_sub_cancel_left]
+        exact (wv _ (by unfold oSt oRsa; omega_arith) (by unfold oSt oSel; omega_arith)).symm, stw, e]
     · rw [hH.md.stateAt_congr (mem := u.mem) fun i hi => by
-        rw [off_add, wR _ (by unfold oSel oRsa; omega)]; simp only [vSel]
+        rw [off_add, wR _ (by unfold oSel oRsa; omega_arith)]; simp only [vSel]
         rw [ite_eq_right (fun h' => e h'.1)]
-        exact vu _ (by unfold oSel oRsa; omega) (by unfold oSel oSt; omega) (by unfold oSel; omega)]
-      exact I.sel (by omega)
+        exact vu _ (by unfold oSel oRsa; omega_arith) (by unfold oSel oSt; omega_arith) (by unfold oSel; omega_arith)]
+      exact I.sel (by omega_arith)
   case flag =>
     rw [f₃, f₂, p₂.get .x27, f₁, wK.get .x27, v27, BitVec.ofNat_add_ofNat, BitVec.toNat_sub, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- Every block: the hash value at `oSel` is that of the first `fb + 1`
 blocks. -/

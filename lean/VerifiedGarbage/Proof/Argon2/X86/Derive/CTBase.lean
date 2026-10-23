@@ -78,25 +78,25 @@ theorem entry_wr_cases {r : Region} (hr : r ∈ (entry s₀).wr) : r ∈ s₀.wr
   have hlo : 244 ≤ (s₀.gpr .esp).toNat := hp.esp_lo
   have hE0 : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
   have hE := E_nat hp
-  have n₁ := pushed_esp_nat (rs := [.ebp]) (s := s₀) (by simp only [List.length_singleton]; omega)
+  have n₁ := pushed_esp_nat (rs := [.ebp]) (s := s₀) (by simp only [List.length_singleton]; omega_arith)
   have n₂ := pushed_esp_nat (rs := [.edi]) (s := pushed [.ebp] s₀)
-    (by simp only [List.length_singleton] at n₁ ⊢; omega)
+    (by simp only [List.length_singleton] at n₁ ⊢; omega_arith)
   have n₃ := pushed_esp_nat (rs := [.esi]) (s := pushed [.edi] (pushed [.ebp] s₀))
-    (by simp only [List.length_singleton] at n₁ n₂ ⊢; omega)
+    (by simp only [List.length_singleton] at n₁ n₂ ⊢; omega_arith)
   have n₄ := pushed_esp_nat (rs := [.ebx]) (s := pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))
-    (by simp only [List.length_singleton] at n₁ n₂ n₃ ⊢; omega)
+    (by simp only [List.length_singleton] at n₁ n₂ n₃ ⊢; omega_arith)
   simp only [List.length_singleton, Nat.mul_one] at n₁ n₂ n₃ n₄
   have w : ∀ (x : BitVec 32) (n : Nat), n ≤ x.toNat → (E s₀).toNat ≤ x.toNat - n → x.toNat ≤ (E s₀).toNat + 160 →
       (E s₀).toNat ≤ (x - BitVec.ofNat 32 n).toNat ∧ (x - BitVec.ofNat 32 n).toNat + n ≤ (E s₀).toNat + 160 :=
-    fun x n h₁ h₂ h₃ => by rw [sub_nat h₁]; omega
+    fun x n h₁ h₂ h₃ => by rw [sub_nat h₁]; omega_arith
   simp only [entry, pushed_wr, List.mem_cons, List.length_singleton, List.length_replicate, Nat.mul_one,
     Nat.reduceMul] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | hr
-  · exact .inr ⟨_, _, rfl, w _ _ (by omega) (by omega) (by omega)⟩
-  · exact .inr ⟨_, _, rfl, w _ _ (by omega) (by omega) (by omega)⟩
-  · exact .inr ⟨_, _, rfl, w _ _ (by omega) (by omega) (by omega)⟩
-  · exact .inr ⟨_, _, rfl, w _ _ (by omega) (by omega) (by omega)⟩
-  · exact .inr ⟨_, _, rfl, w _ _ (by omega) (by omega) (by omega)⟩
+  · exact .inr ⟨_, _, rfl, w _ _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
+  · exact .inr ⟨_, _, rfl, w _ _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
+  · exact .inr ⟨_, _, rfl, w _ _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
+  · exact .inr ⟨_, _, rfl, w _ _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
+  · exact .inr ⟨_, _, rfl, w _ _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
   · exact .inl hr
 
 theorem covers_wide : Covers (entry s₀).wr (wide s₀) := by

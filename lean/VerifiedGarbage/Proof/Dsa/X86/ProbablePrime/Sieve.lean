@@ -49,7 +49,7 @@ theorem Environment.Valid.sieveCandidateSub {E : Environment} (v : E.Valid) :
   exact Offset.sub_base E.base v.candidateRoom
 
 theorem Environment.Valid.sieveStackSub {E : Environment} (v : E.Valid) :
-    E.sieveGeometry.stackRegion.Sub (below E.p 96) :=
+    E.sieveGeometry.stackRegion.Sub (below E.p 136) :=
   below_sub (by decide) v.low
 
 theorem Environment.Valid.sieve_valid {E : Environment} (v : E.Valid) : E.sieveGeometry.Valid := by
@@ -117,7 +117,7 @@ theorem sieve_context {E : Environment} (v : E.Valid) {c : Nat} {entropy : List 
 /-- A stage that writes only the stack below the saved registers keeps the
 input. -/
 theorem Loaded.keepStack {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s t : State}
-    (L : Loaded E c entropy s) (F : Frame [below E.p 96] s.mem t.mem) {regs : List Reg} (K : Keeps regs s t)
+    (L : Loaded E c entropy s) (F : Frame [below E.p 136] s.mem t.mem) {regs : List Reg} (K : Keeps regs s t)
     (edi : .edi ∉ regs) (esp : .esp ∉ regs)
     (symbol : t.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) :
     Loaded E c entropy t ∧ WorkFrame E s.mem t.mem ∧ Tail E s.mem t.mem := by
@@ -149,9 +149,9 @@ theorem sieve_ok {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
       Loaded E c entropy t ∧
       t.gpr .eax = BitVec.ofNat 32 (Spec.RsaKeyGen.obviouslyComposite (64 * E.width) c).toNat ∧
       WorkFrame E s.mem t.mem ∧ Tail E s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 96) := below_inner (by decide) v.low
-  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 96) := v.stackFar _ List.mem_cons_self
-  have tableFar : E.tableRegion.Disjoint (below E.p 96) := v.stackFar _
+  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 136) := below_inner (by decide) v.low
+  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 136) := v.stackFar _ List.mem_cons_self
+  have tableFar : E.tableRegion.Disjoint (below E.p 136) := v.stackFar _
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   have pointer : s.gpr .edi = E.workspace := by
     apply BitVec.eq_of_toNat_eq
@@ -162,7 +162,7 @@ theorem sieve_ok {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
     (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega)]; have := v.low; omega)
     ((workspaceFar.sub_left v.sieveCandidateSub).sub_right privateSub) (tableFar.sub_right privateSub)
     large) fun t ⟨result, F, K⟩ syms => ?_
-  have stackFrame : Frame [below E.p 96] s.mem t.mem := F.sub (by
+  have stackFrame : Frame [below E.p 136] s.mem t.mem := F.sub (by
     intro r mem
     simp only [Sieve.setupWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl

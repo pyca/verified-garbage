@@ -16,8 +16,8 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s)
     (odd : c % 2 = 1) (positive : 0 < c) :
@@ -25,7 +25,7 @@ theorem code_ok {mont : Prog isa} {name : String}
       Prepare.Data g c capacity p t ∧
       val32 t.mem g.W (g.array 5) g.words = val32 s.mem g.W (g.array 6) g.words * 2 ^ (64 * g.w) % c ∧
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t := by
+      Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps clob s t := by
   unfold VG.Impl.RsaKeyGen.X86.WitnessMont.code
   have A := S.ready
   refine WP.seq (WP.mono (mulY_ok verified noSp stack v A.context length A.modulus
@@ -42,7 +42,7 @@ theorem code_ok {mont : Prog isa} {name : String}
   have Wt : WorkspaceFrame g (ranges g) b.mem t.mem :=
     WorkspaceFrame.of_outs B.scratch.nowrap (Outs.of_outside Ot (by simp [ranges]))
   have W := Wb.trans Wt
-  have F : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) b.mem t.mem :=
+  have F : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) b.mem t.mem :=
     (workspaceGlobalFrame (Outs.of_outside Ot (List.mem_singleton_self _))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact v.arrayFit (by decide))).mono
       (fun r mem => List.mem_append_left _ mem)

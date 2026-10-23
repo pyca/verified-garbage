@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 
 The exponent saved (`valid_ok`) and checked (`body_ok`) around `sized`, from
 the entry, which saves the callee-saved registers in the working space, to
-their restore (`operation_ok`), with the 40 bytes of stack below `esp` that
+their restore (`operation_ok`), with the 96 bytes of stack below `esp` that
 the calls use (`TopABI`).
 -/
 
@@ -99,18 +99,18 @@ theorem body_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     rw [Ms, sp] at R
     exact ⟨R, Ks.trans T⟩
 
-/-- The contract's resources with 40 bytes of stack. -/
+/-- The contract's resources with 96 bytes of stack. -/
 structure TopABI (s : State) : Prop where
   abi : PrecomputedABI s
   room : CallRoom (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8)
   outArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 40⟩
 
-theorem topABI_of {s : State} (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 40).pre s) : TopABI s := by
+theorem topABI_of {s : State} (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre s) : TopABI s := by
   sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes, stackBelow] at h
   sig_split h
-  have low : 40 ≤ (s.gpr .esp).toNat := by with_reducible assumption
-  have bs : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 40#64, 40⟩
+  have low : 96 ≤ (s.gpr .esp).toNat := by with_reducible assumption
+  have bs : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩
       ⟨argumentPointer s 8, (arg s 9).toNat * 8⟩ := by with_reducible assumption
   refine ⟨?_, ⟨low, ?_⟩, by with_reducible assumption⟩
   · constructor <;> first
@@ -141,7 +141,7 @@ theorem operation_ok {s : State} (A : TopABI s) :
   rw [espu] at F
   have Saved := frame_saved F I.outApart low high A.room.apart S
   have Whole : Frame [⟨argumentPointer s 8, (arg s 9).toNat * 8⟩,
-      ⟨argumentPointer s 0, (arg s 1).toNat⟩, below (s.gpr .esp) 40] s.mem v.mem := by
+      ⟨argumentPointer s 0, (arg s 1).toNat⟩, below (s.gpr .esp) 96] s.mem v.mem := by
     have Start := outside_frame O (by omega)
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
@@ -177,9 +177,9 @@ theorem operation_ok {s : State} (A : TopABI s) :
   rw [EB, XB] at Result
   exact Result
 
-theorem correct (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 40).pre s) :
+theorem correct (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre s) :
     ∃ trace t, Exec isa PrecomputedRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicPrecomputedCheckedContract abi 40).post s t := by
+      (Spec.Rsa.publicPrecomputedCheckedContract abi 96).post s t := by
   obtain ⟨trace, t, E, V, A⟩ := operation_ok (topABI_of h)
   refine ⟨trace, t, E, A, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,

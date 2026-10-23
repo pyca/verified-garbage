@@ -45,18 +45,18 @@ theorem prep32_toNat (a m : BitVec 32) (hm : m.toNat = 65535) :
 theorem reduce_nat (H L : Nat) (hL : L < 65536) (hH : H < 65536) :
     ((L + 1 + (2 ^ 32 - H)) % 2 ^ 32 + (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 / 2 ^ 31) % 2 ^ 32 % 65536 =
       (65536 * H + L + 1) % 65537 % 65536 := by
-  have e₁ : 65536 * H + L + 1 = (L + 1 + 65537 - H) + 65537 * (H - 1) ∨ H = 0 := by omega
+  have e₁ : 65536 * H + L + 1 = (L + 1 + 65537 - H) + 65537 * (H - 1) ∨ H = 0 := by omega_arith
   by_cases hc : H ≤ L + 1
-  · have e : (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 = L + 1 - H := by omega
-    have e2 : 65536 * H + L + 1 = (L + 1 - H) + 65537 * H := by omega
+  · have e : (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 = L + 1 - H := by omega_arith
+    have e2 : 65536 * H + L + 1 = (L + 1 - H) + 65537 * H := by omega_arith
     have r1 : (65536 * H + L + 1) % 65537 = L + 1 - H := by
-      rw [e2, Nat.add_mul_mod_self_left]; exact Nat.mod_eq_of_lt (by omega)
-    rw [e, r1]; omega
-  · have e : (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 = 2 ^ 32 - (H - L - 1) := by omega
-    have e2 : 65536 * H + L + 1 = (65538 - (H - L)) + 65537 * (H - 1) := by omega
+      rw [e2, Nat.add_mul_mod_self_left]; exact Nat.mod_eq_of_lt (by omega_arith)
+    rw [e, r1]; omega_arith
+  · have e : (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 = 2 ^ 32 - (H - L - 1) := by omega_arith
+    have e2 : 65536 * H + L + 1 = (65538 - (H - L)) + 65537 * (H - 1) := by omega_arith
     have r1 : (65536 * H + L + 1) % 65537 = 65538 - (H - L) := by
-      rw [e2, Nat.add_mul_mod_self_left]; exact Nat.mod_eq_of_lt (by omega)
-    rw [e, r1]; omega
+      rw [e2, Nat.add_mul_mod_self_left]; exact Nat.mod_eq_of_lt (by omega_arith)
+    rw [e, r1]; omega_arith
 
 /-- The product `p` (`1 ≤ p ≤ 2³²`) modulo 2¹⁶ + 1, as the code computes it
 from `q = p - 1`, which a 32-bit register holds exactly. -/

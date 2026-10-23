@@ -10,10 +10,11 @@
 //! or decryption from the chaining value at `iv`, and the chaining value with
 //! the one to continue from (the last ciphertext block), in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
-//! Both use bitsliced SM4. On x86-64 and AArch64, decryption transforms sixteen
-//! blocks at a time, and encryption, in which each block needs the one
-//! before, one block at a time (in a batch of sixteen, so about sixteen
-//! times ECB's cost). On x86, both take one block at a time, in a batch of
+//! On AArch64, encryption uses a single-block core with the S-box held in
+//! vector registers. Decryption uses bitsliced SM4 on sixteen independent
+//! blocks. On x86-64, both directions use bitsliced SM4: decryption handles
+//! sixteen blocks at a time, while encryption follows the serial feedback
+//! chain in batches containing one block. On x86, both take one block at a time, in a batch of
 //! eight (about eight times ECB's cost). ARMv7 prepares round keys once per
 //! call. Encryption follows the serial feedback chain; decryption transforms
 //! eight independent ciphertext blocks before combining them with preceding

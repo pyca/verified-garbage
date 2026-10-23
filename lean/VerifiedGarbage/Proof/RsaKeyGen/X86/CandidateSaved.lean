@@ -12,7 +12,7 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem saved_stack_far {E : Environment} (v : E.Valid) :
-    (⟨E.p.setWidth 64, 16⟩ : Region).Disjoint (below E.p 96) := by
+    (⟨E.p.setWidth 64, 16⟩ : Region).Disjoint (below E.p 136) := by
   unfold below
   rw [Taint.sub_setWidth v.low]
   exact Offset.base_disjoint_below _ (by decide)
@@ -40,15 +40,15 @@ theorem saved_read {E : Environment} (v : E.Valid) {s t : State}
   exact same.trans word
 
 theorem return_read {E : Environment} (_v : E.Valid) {s t : State}
-    (fit : 112 ≤ (s.gpr .esp).toNat) (sp : (Compact.entered s).gpr .esp = E.p)
+    (fit : 152 ≤ (s.gpr .esp).toNat) (sp : (Compact.entered s).gpr .esp = E.p)
     (returnFar : ∀ r ∈ E.writeRegions, (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r)
     (F : MutableFrame E (Compact.entered s).mem t.mem) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-  have outside : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 112) := by
+  have outside : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 152) := by
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.base_disjoint_below _ (by decide)
-  have inner : (below E.p 96).Sub (below (s.gpr .esp) 112) := by
+  have inner : (below E.p 136).Sub (below (s.gpr .esp) 152) := by
     rw [← sp, Compact.entered, pushed_esp]
     exact below_inner (by decide) fit
   have same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4) (by

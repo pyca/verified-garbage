@@ -13,7 +13,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 /-- The regions a stage may write: the workspace and the stack below the
 saved registers. -/
-def WorkFrame (E : Environment) (m m' : Mem) : Prop := Frame [E.workspaceRegion, below E.p 96] m m'
+def WorkFrame (E : Environment) (m m' : Mem) : Prop := Frame [E.workspaceRegion, below E.p 136] m m'
 
 theorem WorkFrame.refl (E : Environment) (m : Mem) : WorkFrame E m m := fun _ _ => rfl
 
@@ -22,7 +22,7 @@ theorem WorkFrame.trans {E : Environment} {a b c : Mem} (A : WorkFrame E a b) (B
 
 /-- The regions the test may write. -/
 def MutableFrame (E : Environment) (m m' : Mem) : Prop :=
-  Frame [E.workspaceRegion, below E.p 96, E.usedRegion] m m'
+  Frame [E.workspaceRegion, below E.p 136, E.usedRegion] m m'
 
 theorem MutableFrame.trans {E : Environment} {a b c : Mem} (A : MutableFrame E a b) (B : MutableFrame E b c) :
     MutableFrame E a c := fun x out => (B x out).trans (A x out)
@@ -42,7 +42,7 @@ theorem MutableFrame.of_used {E : Environment} {m m' : Mem} (F : Frame [E.usedRe
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
 
 theorem Environment.Valid.randFar {E : Environment} (v : E.Valid) :
-    ∀ r ∈ [E.workspaceRegion, below E.p 96], E.randRegion.Disjoint r := by
+    ∀ r ∈ [E.workspaceRegion, below E.p 136], E.randRegion.Disjoint r := by
   intro r mem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl
@@ -50,7 +50,7 @@ theorem Environment.Valid.randFar {E : Environment} (v : E.Valid) :
   · exact v.stackFar _ (List.mem_cons_of_mem _ List.mem_cons_self)
 
 theorem Environment.Valid.tableFar {E : Environment} (v : E.Valid) :
-    ∀ r ∈ [E.workspaceRegion, below E.p 96], E.tableRegion.Disjoint r := by
+    ∀ r ∈ [E.workspaceRegion, below E.p 136], E.tableRegion.Disjoint r := by
   intro r mem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl

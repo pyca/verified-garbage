@@ -109,6 +109,8 @@ theorem key_finish {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeyS
   · intro reg hreg
     by_cases he : reg = .r12
     · subst he; exact hr12
-    · exact (k.gpr (by cases reg <;> simp_all [calleeSaved])).trans (h.saved reg hreg he)
+    · exact (k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hreg
+        rcases hreg with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact (he rfl).elim | decide)).trans (h.saved reg hreg he)
 
 end VG.Proof.Ffdh.X86_64.KeyGeneration

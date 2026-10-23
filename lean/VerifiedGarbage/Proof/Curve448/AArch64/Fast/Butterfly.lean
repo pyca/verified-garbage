@@ -140,25 +140,25 @@ theorem butterfly_ok {s : State} {base : Addr} (hs : Scr s base) {x2 z2 x3 z3 a 
       fun w ⟨wm, wk⟩ => ⟨fun o' ho' => ?_, fun x hx => ?_, wk⟩)
     (fun o ho => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl | rfl <;> omega) hout ts ⟨t0, t2, h6⟩
+      rcases ho with rfl | rfl | rfl | rfl <;> omega_arith) hout ts ⟨t0, t2, h6⟩
   · refine WP.mono this fun u ⟨uv, um, uk⟩ => ⟨fun o ho i hi => ?_, fun x hx => by rw [um x hx, tm],
       (tk.mono (by decide)).trans (uk.mono (by decide))⟩
     rw [uv o ho i hi]; simp only [bflyV, tm]
   · have e : ∀ q ∈ [x2, z2, x3, z3], word u.mem base (q + 8 * i) = word t.mem base (q + 8 * i) := by
       intro q hq
       have := (h q (List.mem_append_left [a, b, c, d] (by exact hq))).1
-      exact away_word hm' (by omega) (fun o ho => by have := hin o ho q hq; simp only [Dj] at this; omega)
+      exact away_word hm' (by omega_arith) (fun o ho => by have := hin o ho q hq; simp only [Dj] at this; omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho'
     rw [wm]
     rcases ho' with rfl | rfl | rfl | rfl
     all_goals
-      rw [word_w4 _ _ _ _ _ _ (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-        (by omega) (by omega)]
+      rw [word_w4 _ _ _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+        (by omega_arith) (by omega_arith)]
       simp only [bflyV, e x2 (by simp), e z2 (by simp), e x3 (by simp), e z3 (by simp)]
-    all_goals split_ifs <;> first | (exfalso; omega) | rfl
+    all_goals split_ifs <;> first | (exfalso; omega_arith) | rfl
   · rw [wm]
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-    rw [writeW_frame _ (by omega) _ x hx.2.2.2, writeW_frame _ (by omega) _ x hx.2.2.1,
-      writeW_frame _ (by omega) _ x hx.2.1, writeW_frame _ (by omega) _ x hx.1]
+    rw [writeW_frame _ (by omega_arith) _ x hx.2.2.2, writeW_frame _ (by omega_arith) _ x hx.2.2.1,
+      writeW_frame _ (by omega_arith) _ x hx.2.1, writeW_frame _ (by omega_arith) _ x hx.1]
 
 end VG.Proof.Curve448.AArch64.Fast

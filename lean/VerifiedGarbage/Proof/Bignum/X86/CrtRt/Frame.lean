@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # What a stage of private CRT at a run-time width changes
 
-`frameR base sp ws`: ranges `ws` of the working space and the 40 bytes below
+`frameR base sp ws`: ranges `ws` of the working space and the 96 bytes below
 `sp`, where the calls write their arguments and return addresses. A number
 apart from the ranges keeps its value (`frameR_val32`), and so do the inputs
 (`In.keepF`): the arguments lie above `sp`.
@@ -27,7 +27,7 @@ open VG.Proof.Dsa.X86 (stackAddress stackValue)
 
 /-- The regions a stage may change. -/
 def frameR (base : Addr) (sp : BitVec 32) (ws : List (Nat × Nat)) : List Region :=
-  below sp 40 :: ws.map fun p => ⟨off base p.1, p.2⟩
+  below sp 96 :: ws.map fun p => ⟨off base p.1, p.2⟩
 
 section
 variable {base : Addr} {sp : BitVec 32} {ws ws' : List (Nat × Nat)} {m m' : Mem}
@@ -47,7 +47,7 @@ theorem frameR_of_outside {o n : Nat} (O : Outside base o n m m') (fit : o + n �
     simp only [frameR, List.mem_cons, List.mem_map]
     exact .inr ⟨_, h, rfl⟩
 
-theorem frameR_of_mul {o n sc k : Nat} (F : Frame [⟨off base o, n⟩, ⟨off base sc, k⟩, below sp 40] m m')
+theorem frameR_of_mul {o n sc k : Nat} (F : Frame [⟨off base o, n⟩, ⟨off base sc, k⟩, below sp 96] m m')
     (ho : (o, n) ∈ ws) (hs : (sc, k) ∈ ws) : Frame (frameR base sp ws) m m' :=
   F.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -101,9 +101,9 @@ theorem In.keepF (h : In Ex base bytes len args s) {regs : List Reg} (K : Keeps 
   · have ea : (stackAddress s i).toNat = (s.gpr .esp).toNat + (4 + 4 * i) := by
       simp only [stackAddress, addr, PublicRt.setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat]
       omega
-    have eb : ((s.gpr .esp - BitVec.ofNat 32 40).setWidth 64).toNat = (s.gpr .esp).toNat - 40 := by
+    have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
       rw [PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
-    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 40) (.inl (by dsimp only; rw [eb, ea]; omega))
+    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
       (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
   · refine A.stack.apart.sub_right ?_
     have := hfit p hp

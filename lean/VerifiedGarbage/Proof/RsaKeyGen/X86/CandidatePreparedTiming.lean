@@ -18,10 +18,10 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.RsaKeyGen VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem test_status_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
     (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
@@ -42,10 +42,10 @@ theorem test_status_trace {mont round : Prog isa} {montName roundName : String}
     H.left.input.stack, H.right.input.stack]
 
 theorem prepared_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
     (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =

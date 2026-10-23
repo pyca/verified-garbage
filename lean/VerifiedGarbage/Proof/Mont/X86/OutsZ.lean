@@ -23,11 +23,18 @@ open VG VG.X86 VG.Proof.Mont
 def OutsZ (base : Addr) (sp : BitVec 32) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
   ∀ x, (∀ r ∈ rs, ofs base x < r.1 ∨ r.1 + r.2 ≤ ofs base x) → ¬ (below sp 20).Contains x 1 → m' x = m x
 
-/-- The 40 bytes below `sp`, which a call and its callee use, are apart from
+/-- The 96 bytes below `sp`, which a call and its callee use (a frame of 36
+bytes of arguments, the return address and the callee's 56), are apart from
 the working space. -/
 structure CallRoom (sp : BitVec 32) (base : Addr) (size : Nat) : Prop where
-  low : 40 ≤ sp.toNat
-  apart : Region.Disjoint (below sp 40) ⟨base, size⟩
+  low : 96 ≤ sp.toNat
+  apart : Region.Disjoint (below sp 96) ⟨base, size⟩
+
+/-- The 40 bytes of a call's frame and return address, below `sp`, are apart
+from the working space. -/
+theorem CallRoom.apart40 {sp : BitVec 32} {base : Addr} {size : Nat} (R : CallRoom sp base size) :
+    Region.Disjoint (below sp 40) ⟨base, size⟩ :=
+  R.apart.sub_left (below_sub (by decide) R.low)
 
 namespace OutsZ
 

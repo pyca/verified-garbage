@@ -115,7 +115,7 @@ theorem ekIter_ok {s₀ : State} {b S : BitVec 32} {key : Spec.Sm4.Block} (hp : 
     (by rw [c₃.wr, hi.wr]; exact hp.sch) hp.sep
     (by rw [slot_keep (lo := tableSlot) (hi := slots) hfit' (Nat.le_refl _) c₃.frame (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; rw [hi.base]
-          exact VG.Offset.disjoint_base _ (Nat.le_refl _) (by omega))
+          exact VG.Offset.disjoint_base _ (Nat.le_refl _) (by omega_arith))
         (show tableSlot ≤ nSlot by decide) (by decide), hi.ptr])
   obtain ⟨s₅, e₅, z₅, g₅, m₅, rd₅, wr₅, sp₅⟩ := endTest_ok s₄ (BitVec.ofNat 32 (4 * tableEnd)) (by decide)
   have mem₅ : s₅.mem = s₄.mem := m₅
@@ -124,25 +124,25 @@ theorem ekIter_ok {s₀ : State} {b S : BitVec 32} {key : Spec.Sm4.Block} (hp : 
   have kp₅ : AtEntry s₅ b (4 * (m + 1)) := by
     rw [AtEntry, g₅' _ (by decide) (by decide), kp₃, kp₂, k₁, show s.gpr kp = _ from hi.kp,
       show (128 : BitVec 32) = BitVec.ofNat 32 128 from rfl, add_ofNat_ofNat,
-      show 4 * tableSlot + 32 * (4 * m) + 128 = 4 * tableSlot + 32 * (4 * (m + 1)) by omega]
+      show 4 * tableSlot + 32 * (4 * m) + 128 = 4 * tableSlot + 32 * (4 * (m + 1)) by omega_arith]
   -- What the extraction keeps: everything outside the schedule's new bytes and the pointer's slot.
   have dHi : ∀ r ∈ [(⟨State.addr S + BitVec.ofNat 64 (16 * m), 16⟩ : Region), ⟨wordAddr b nSlot, 4⟩],
       (slotsRegion b 0 dSlot).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (hp.sep.sub_left (VG.Offset.sub_base _ (by omega))).sub_right
-        (VG.Offset.sub_base _ (by omega)) |>.symm
-    · rw [slot_addr (by omega)]
-      exact VG.Offset.disjoint _ (by omega) (by omega) (by omega)
+    · exact (hp.sep.sub_left (VG.Offset.sub_base _ (by omega_arith))).sub_right
+        (VG.Offset.sub_base _ (by omega_arith)) |>.symm
+    · rw [slot_addr (by omega_arith)]
+      exact VG.Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   have keep₄ : ∀ k < dSlot, s₄.mem.readW (wordAddr b k) 32 = s₃.mem.readW (wordAddr b k) 32 := fun k hk =>
     slot_keep (lo := 0) (hi := dSlot) hfit' (by decide) f₄ dHi (Nat.zero_le _) hk
   have keepT : ∀ k, tableSlot ≤ k → k < dSlot → s₃.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32 :=
     fun k h1 h2 => slot_keep (lo := tableSlot) (hi := dSlot) hfit' (by decide) c₃.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [hi.base]
-      exact VG.Offset.disjoint_base _ (Nat.le_refl _) (by omega)) h1 h2
+      exact VG.Offset.disjoint_base _ (Nat.le_refl _) (by omega_arith)) h1 h2
   have hent : ∀ e < 32, ∀ j < 8, entryW s₅.mem b e j = entryW s.mem b e j := fun e he j hj => by
     simp only [entryW]
-    rw [mem₅, keep₄ _ (by rw [tableSlot_eq, dSlot_eq]; omega), keepT _ (by omega) (by rw [tableSlot_eq, dSlot_eq]; omega)]
+    rw [mem₅, keep₄ _ (by rw [tableSlot_eq, dSlot_eq]; omega_arith), keepT _ (by omega_arith) (by rw [tableSlot_eq, dSlot_eq]; omega_arith)]
   refine ⟨s₅, ?_, ⟨base₅, by rw [mem₅]; exact n₄, kp₅,
     ⟨by rw [base₅, wr₅, wr₄, c₃.wr, hi.wr]; exact hp.scr.mem, by rw [base₅]; exact hfit',
       fun e he => by rw [base₅]; exact (hi.keys.keys e he).congr fun j hj => by rw [hi.base] at *; exact hent e he j hj⟩,
@@ -151,44 +151,44 @@ theorem ekIter_ok {s₀ : State} {b S : BitVec 32} {key : Spec.Sm4.Block} (hp : 
   · rw [keyBody, runBlock_app, runBlock_app, runBlock_app, runBlock_app, e₁, Option.bind_some,
       e₂, Option.bind_some, e₃, Option.bind_some, e₄, Option.bind_some, e₅]
   · show slotW s₅ (stateSlot w j) = slotW s₃ (stateSlot w j)
-    rw [slotW, slotW, base₅, base₃, mem₅, keep₄ _ (by simp only [stateSlot, dSlot_eq]; omega)]
+    rw [slotW, slotW, base₅, base₃, mem₅, keep₄ _ (by simp only [stateSlot, dSlot_eq]; omega_arith)]
   · by_cases hnew : 4 * m ≤ i
-    · have ht : 4 * (i - 4 * m) + c < 16 := by omega
+    · have ht : 4 * (i - 4 * m) + c < 16 := by omega_arith
       have hB := B₄ _ ht j hj
-      rw [show 16 * m + (4 * (i - 4 * m) + c) = 4 * i + c by omega] at hB
-      rw [mem₅, hB, T₃ 0 (by decide), getLsbD_outBlock _ (by omega) hj]
+      rw [show 16 * m + (4 * (i - 4 * m) + c) = 4 * i + c by omega_arith] at hB
+      rw [mem₅, hB, T₃ 0 (by decide), getLsbD_outBlock _ (by omega_arith) hj]
       simp only [rkOf]
-      rw [show i / 4 + 1 = m + 1 by omega, show 3 - (15 - (4 * (i - 4 * m) + c)) / 4 = i % 4 by omega,
-        show 8 * (3 - (15 - (4 * (i - 4 * m) + c)) % 4) + j = 8 * c + j by omega]
+      rw [show i / 4 + 1 = m + 1 by omega_arith, show 3 - (15 - (4 * (i - 4 * m) + c)) / 4 = i % 4 by omega_arith,
+        show 8 * (3 - (15 - (4 * (i - 4 * m) + c)) % 4) + j = 8 * c + j by omega_arith]
     · have hx : (⟨State.addr S, 128⟩ : Region).Contains (State.addr S + BitVec.ofNat 64 (4 * i + c)) 1 :=
-        VG.Offset.contains_base _ (by omega) (by omega)
+        VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
       rw [mem₅, f₄ _ (fun r hr => ?_), c₃.frame _ (fun r hr => ?_)]
-      · exact hi.sched i (by omega) c hc j hj
+      · exact hi.sched i (by omega_arith) c hc j hj
       · simp only [List.mem_singleton] at hr; subst hr; rw [hi.base]
         exact fun h => hp.sep _ hx (Region.sub_prefix (show 4 * tableSlot ≤ 4 * slots by
-          rw [tableSlot_eq, slots_eq]; omega) _ h)
+          rw [tableSlot_eq, slots_eq]; omega_arith) _ h)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact VG.Proof.Sm4.not_contains_off _ (Or.inl (by omega)) (by omega) (by decide) (by omega)
+        · exact VG.Proof.Sm4.not_contains_off _ (Or.inl (by omega_arith)) (by omega_arith) (by decide) (by omega_arith)
         · exact fun h => hp.sep _ hx (slot_sub hfit' (by decide) _ h)
-  · have hk : savedSlot + i < dSlot := by rw [savedSlot_eq, dSlot_eq]; omega
+  · have hk : savedSlot + i < dSlot := by rw [savedSlot_eq, dSlot_eq]; omega_arith
     show s₅.mem.readW _ 32 = _
-    rw [mem₅, keep₄ _ hk, keepT _ (by rw [savedSlot_eq, tableSlot_eq]; omega) hk]
+    rw [mem₅, keep₄ _ hk, keepT _ (by rw [savedSlot_eq, tableSlot_eq]; omega_arith) hk]
     exact hi.saved i hi'
   · rw [mem₅]
     refine hi.frame.trans ((c₃.frame.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ?_⟩).trans
       (f₄.sub fun r hr => ?_))
     · simp only [List.mem_singleton] at hr; subst hr; rw [hi.base]
-      exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega)
+      exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨⟨State.addr S, 128⟩, List.mem_cons_of_mem _ List.mem_cons_self, VG.Offset.sub_base _ (by omega)⟩
+      · exact ⟨⟨State.addr S, 128⟩, List.mem_cons_of_mem _ List.mem_cons_self, VG.Offset.sub_base _ (by omega_arith)⟩
       · exact ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, slot_sub hfit' (by decide)⟩
   · rw [z₅, o₄ _ (by decide) (by decide), o₄ _ (by decide) (by decide), base₃, kp₃, kp₂, k₁,
       show s.gpr kp = _ from hi.kp, show (128 : BitVec 32) = BitVec.ofNat 32 128 from rfl, add_ofNat_ofNat,
-      VG.Offset.add_sub_cancel_left, ofNat32_sub_beq (by rw [tableSlot_eq]; omega) (by rw [tableEnd_eq]; omega),
+      VG.Offset.add_sub_cancel_left, ofNat32_sub_beq (by rw [tableSlot_eq]; omega_arith) (by rw [tableEnd_eq]; omega_arith),
       tableSlot_eq, tableEnd_eq]
-    simp only [decide_eq_decide]; omega
+    simp only [decide_eq_decide]; omega_arith
 
 theorem ekLoop_wp {s₀ s : State} {b S : BitVec 32} {key : Spec.Sm4.Block} (hp : EkPre s₀ b S)
     (hi : EkInv s₀ b S key 0 s) :

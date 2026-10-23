@@ -4,15 +4,15 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Prepare
 
-/-! # Prepared arithmetic reserves 40 bytes below its caller -/
+/-! # Prepared arithmetic reserves 80 bytes below its caller -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.CandidateStackUse
 open VG VG.X86 VG.Impl.RsaKeyGen.X86
 
-theorem mulY {mont : Prog isa} (bound : stackUse mont ≤ 16) (name : String) (array : Nat) :
-    stackUse (VG.Impl.MillerRabin.X86.mulY name mont array) ≤ 40 := by
-  change max 0 (stackUse mont + 4 + 20) ≤ 40
+theorem mulY {mont : Prog isa} (bound : stackUse mont ≤ 56) (name : String) (array : Nat) :
+    stackUse (VG.Impl.MillerRabin.X86.mulY name mont array) ≤ 80 := by
+  change max 0 (stackUse mont + 4 + 20) ≤ 80
   omega
 
 theorem six {square : Prog isa} {limit : Nat} (bound : stackUse square ≤ limit) :
@@ -34,15 +34,15 @@ theorem fastR2 {square : Prog isa} {limit : Nat} (bound : stackUse square ≤ li
     (M : VG.Impl.Mont.Mod) (acc out : Nat) : stackUse (FastR2.code M acc out square) ≤ limit :=
   fastR2At bound M _ acc out
 
-theorem r2At {mont : Prog isa} (bound : stackUse mont ≤ 16) (e w : Nat) (name : String) :
-    stackUse (PreparedR2.codeAt e w name mont) ≤ 40 := by
+theorem r2At {mont : Prog isa} (bound : stackUse mont ≤ 56) (e w : Nat) (name : String) :
+    stackUse (PreparedR2.codeAt e w name mont) ≤ 80 := by
   have main := fastR2At (mulY bound name 6) (VG.Impl.Bignum.X86.PublicContext.modulus w) e
     (VG.Impl.Bignum.X86.PublicContext.slot w 2) (VG.Impl.Bignum.X86.PublicContext.slot w 6)
-  change max (stackUse (FastR2.codeAt _ _ _ _ _)) 0 ≤ 40
+  change max (stackUse (FastR2.codeAt _ _ _ _ _)) 0 ≤ 80
   omega
 
-theorem r2 {mont : Prog isa} (bound : stackUse mont ≤ 16) (w : Nat) (name : String) :
-    stackUse (PreparedR2.code w name mont) ≤ 40 :=
+theorem r2 {mont : Prog isa} (bound : stackUse mont ≤ 56) (w : Nat) (name : String) :
+    stackUse (PreparedR2.code w name mont) ≤ 80 :=
   r2At bound _ w name
 
 theorem lowPairs (src start count : Nat) : stackUse (LowPair.steps src start count) = 0 := by
@@ -57,25 +57,25 @@ theorem exponent (w minusOne src out : Nat) : stackUse (Exponent.code w minusOne
   simp only [stackUse, lowPairs]
   rfl
 
-theorem constants {mont : Prog isa} (bound : stackUse mont ≤ 16) (w : Nat) (name : String) :
-    stackUse (Constants.code w name mont) ≤ 40 := by
+theorem constants {mont : Prog isa} (bound : stackUse mont ≤ 56) (w : Nat) (name : String) :
+    stackUse (Constants.code w name mont) ≤ 80 := by
   have product := mulY bound name 4
-  change max 0 (max (stackUse (VG.Impl.MillerRabin.X86.mulY name mont 4)) (max 0 0)) ≤ 40
+  change max 0 (max (stackUse (VG.Impl.MillerRabin.X86.mulY name mont 4)) (max 0 0)) ≤ 80
   omega
 
-theorem prepareAt {mont : Prog isa} (bound : stackUse mont ≤ 16) (e w : Nat) (name : String) :
-    stackUse (Prepare.codeAt e w name mont) ≤ 40 := by
+theorem prepareAt {mont : Prog isa} (bound : stackUse mont ≤ 56) (e w : Nat) (name : String) :
+    stackUse (Prepare.codeAt e w name mont) ≤ 80 := by
   have r2bound := r2At bound e w name
   have constantsBound := constants bound w name
   have exponentZero := exponent w (VG.Impl.Bignum.X86.PublicContext.slot w 5)
     (VG.Impl.Bignum.X86.PublicContext.slot w 0) (VG.Impl.Bignum.X86.PublicContext.slot w 27)
   change max 0 (max (stackUse (PreparedR2.codeAt e w name mont))
-    (max (stackUse (Constants.code w name mont)) (stackUse (Exponent.code w _ _ _)))) ≤ 40
+    (max (stackUse (Constants.code w name mont)) (stackUse (Exponent.code w _ _ _)))) ≤ 80
   rw [exponentZero]
   omega
 
-theorem prepare {mont : Prog isa} (bound : stackUse mont ≤ 16) (w : Nat) (name : String) :
-    stackUse (Prepare.code w name mont) ≤ 40 :=
+theorem prepare {mont : Prog isa} (bound : stackUse mont ≤ 56) (w : Nat) (name : String) :
+    stackUse (Prepare.code w name mont) ≤ 80 :=
   prepareAt bound _ w name
 
 end VG.Proof.RsaKeyGen.X86.CandidateStackUse

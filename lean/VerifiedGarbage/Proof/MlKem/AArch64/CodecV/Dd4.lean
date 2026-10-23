@@ -66,16 +66,16 @@ theorem dd4Math_ok {s : State} (hc : DConsts 4 s) (h18 : ∀ j < 16, (vbyte (s.v
     rw [h2.v, Rc4.AArch64.vbyte_map2 _ _ _ hj, h1.get .v0 (by decide)]
     simp only [VShiftOp.eval, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hB j hj]
   have n : ∀ i < 32, (if i % 2 = 0 then B (i / 2) % 16 else B (i / 2) / 16) = nib B i := fun i hi => by
-    have := hB' (i / 2) (by omega)
-    rcases Nat.mod_two_eq_zero_or_one i with h | h <;> simp [nib, h] <;> omega
+    have := hB' (i / 2) (by omega_arith)
+    rcases Nat.mod_two_eq_zero_or_one i with h | h <;> simp [nib, h] <;> omega_arith
   have f3 : ∀ i < 16, (vbyte (a3.v .v0) i).toNat = nib B i := fun i hi => by
-    rw [h3.v, Blowfish.AArch64.vbyte_zip1 _ _ hi, h2.get .v1 (by decide), ← n i (by omega)]
-    split <;> [exact f1 _ (by omega); exact f2 _ (by omega)]
+    rw [h3.v, Blowfish.AArch64.vbyte_zip1 _ _ hi, h2.get .v1 (by decide), ← n i (by omega_arith)]
+    split <;> [exact f1 _ (by omega_arith); exact f2 _ (by omega_arith)]
   have f4 : ∀ i < 16, (vbyte (a4.v .v1) i).toNat = nib B (16 + i) := fun i hi => by
     rw [h4.v, Blowfish.AArch64.vbyte_zip2 _ _ hi, h3.get .v1 (by decide), h3.get .v2 (by decide),
       h2.get .v1 (by decide),
-      ← n (16 + i) (by omega), show (16 + i) % 2 = i % 2 by omega, show (16 + i) / 2 = 8 + i / 2 by omega]
-    split <;> [exact f1 _ (by omega); exact f2 _ (by omega)]
+      ← n (16 + i) (by omega_arith), show (16 + i) % 2 = i % 2 by omega_arith, show (16 + i) / 2 = 8 + i / 2 by omega_arith]
+    split <;> [exact f1 _ (by omega_arith); exact f2 _ (by omega_arith)]
   -- the nibbles, as halfwords
   have z : ∀ (t : State), t.v .v19 = 0 → ∀ x, VPermOp.eval .zip1 .b16 x (t.v .v19) = VPermOp.eval .zip1 .b16 x 0 ∧
       VPermOp.eval .zip2 .b16 x (t.v .v19) = VPermOp.eval .zip2 .b16 x 0 := fun t ht x => by rw [ht]; simp
@@ -84,18 +84,18 @@ theorem dd4Math_ok {s : State} (hc : DConsts 4 s) (h18 : ∀ j < 16, (vbyte (s.v
   have c4 : VChg [.v1, .v2, .v0, .v1] s a4 := ((h1.chg.trans h2.chg).trans h3.chg).trans h4.chg
   have g5 : ∀ k < 8, (vhalf (a5.v .v2) k).toNat = nib B k := fun k hk => by
     rw [h5.v, h4.get .v0 (by decide), (z a4 (k19 _ _ c4 (by decide)) _).1, (Cbd16.half_zip_zero _ hk).1,
-      f3 k (by omega)]
+      f3 k (by omega_arith)]
   have g6 : ∀ k < 8, (vhalf (a6.v .v3) k).toNat = nib B (8 + k) := fun k hk => by
     rw [h6.v, h5.get .v0 (by decide), h4.get .v0 (by decide),
-      (z a5 (k19 _ _ (c4.trans h5.chg) (by decide)) _).2, (Cbd16.half_zip_zero _ hk).2, f3 _ (by omega)]
+      (z a5 (k19 _ _ (c4.trans h5.chg) (by decide)) _).2, (Cbd16.half_zip_zero _ hk).2, f3 _ (by omega_arith)]
   have g7 : ∀ k < 8, (vhalf (a7.v .v4) k).toNat = nib B (16 + k) := fun k hk => by
     rw [h7.v, h6.get .v1 (by decide), h5.get .v1 (by decide),
       (z a6 (k19 _ _ ((c4.trans h5.chg).trans h6.chg) (by decide)) _).1, (Cbd16.half_zip_zero _ hk).1,
-      f4 _ (by omega)]
+      f4 _ (by omega_arith)]
   have g8 : ∀ k < 8, (vhalf (a8.v .v5) k).toNat = nib B (24 + k) := fun k hk => by
     rw [h8.v, h7.get .v1 (by decide), h6.get .v1 (by decide), h5.get .v1 (by decide),
       (z a7 (k19 _ _ (((c4.trans h5.chg).trans h6.chg).trans h7.chg) (by decide)) _).2,
-      (Cbd16.half_zip_zero _ hk).2, f4 _ (by omega), show 16 + (8 + k) = 24 + k by omega]
+      (Cbd16.half_zip_zero _ hk).2, f4 _ (by omega_arith), show 16 + (8 + k) = 24 + k by omega_arith]
   -- the nibbles, as words
   have c8 : VChg ([.v1, .v2, .v0, .v1] ++ [.v2] ++ [.v3] ++ [.v4] ++ [.v5]) s a8 :=
     (((c4.trans h5.chg).trans h6.chg).trans h7.chg).trans h8.chg
@@ -103,40 +103,40 @@ theorem dd4Math_ok {s : State} (hc : DConsts 4 s) (h18 : ∀ j < 16, (vbyte (s.v
     fun t rs c h e _ => by rw [k19 t rs c h]; simp [vhalf]
   have w9 : Lanes (a9.v .v0) fun k => nib B k := fun k hk => by
     rw [h9.v, (Ntt16.vword_zip_zero (hz _ _ c8 (by decide)) hk).1, h8.get .v2 (by decide),
-      h7.get .v2 (by decide), h6.get .v2 (by decide), g5 k (by omega)]
+      h7.get .v2 (by decide), h6.get .v2 (by decide), g5 k (by omega_arith)]
   have c9 := c8.trans h9.chg
   have w10 : Lanes (a10.v .v1) fun k => nib B (4 + k) := fun k hk => by
     rw [h10.v, (Ntt16.vword_zip_zero (hz _ _ c9 (by decide)) hk).2, h9.get .v2 (by decide),
-      h8.get .v2 (by decide), h7.get .v2 (by decide), h6.get .v2 (by decide), g5 _ (by omega)]
+      h8.get .v2 (by decide), h7.get .v2 (by decide), h6.get .v2 (by decide), g5 _ (by omega_arith)]
   have c10 := c9.trans h10.chg
   have w11 : Lanes (a11.v .v2) fun k => nib B (8 + k) := fun k hk => by
     rw [h11.v, (Ntt16.vword_zip_zero (hz _ _ c10 (by decide)) hk).1, h10.get .v3 (by decide),
-      h9.get .v3 (by decide), h8.get .v3 (by decide), h7.get .v3 (by decide), g6 k (by omega)]
+      h9.get .v3 (by decide), h8.get .v3 (by decide), h7.get .v3 (by decide), g6 k (by omega_arith)]
   have c11 := c10.trans h11.chg
   have w12 : Lanes (a12.v .v3) fun k => nib B (12 + k) := fun k hk => by
     rw [h12.v, (Ntt16.vword_zip_zero (hz _ _ c11 (by decide)) hk).2, h11.get .v3 (by decide),
       h10.get .v3 (by decide), h9.get .v3 (by decide), h8.get .v3 (by decide), h7.get .v3 (by decide),
-      g6 _ (by omega), show 8 + (4 + k) = 12 + k by omega]
+      g6 _ (by omega_arith), show 8 + (4 + k) = 12 + k by omega_arith]
   have c12 := c11.trans h12.chg
   have w13 : Lanes (a13.v .v6) fun k => nib B (16 + k) := fun k hk => by
     rw [h13.v, (Ntt16.vword_zip_zero (hz _ _ c12 (by decide)) hk).1, h12.get .v4 (by decide),
       h11.get .v4 (by decide), h10.get .v4 (by decide), h9.get .v4 (by decide), h8.get .v4 (by decide),
-      g7 k (by omega)]
+      g7 k (by omega_arith)]
   have c13 := c12.trans h13.chg
   have w14 : Lanes (a14.v .v7) fun k => nib B (20 + k) := fun k hk => by
     rw [h14.v, (Ntt16.vword_zip_zero (hz _ _ c13 (by decide)) hk).2, h13.get .v4 (by decide),
       h12.get .v4 (by decide), h11.get .v4 (by decide), h10.get .v4 (by decide), h9.get .v4 (by decide),
-      h8.get .v4 (by decide), g7 _ (by omega), show 16 + (4 + k) = 20 + k by omega]
+      h8.get .v4 (by decide), g7 _ (by omega_arith), show 16 + (4 + k) = 20 + k by omega_arith]
   have c14 := c13.trans h14.chg
   have w15 : Lanes (a15.v .v20) fun k => nib B (24 + k) := fun k hk => by
     rw [h15.v, (Ntt16.vword_zip_zero (hz _ _ c14 (by decide)) hk).1, h14.get .v5 (by decide),
       h13.get .v5 (by decide), h12.get .v5 (by decide), h11.get .v5 (by decide), h10.get .v5 (by decide),
-      h9.get .v5 (by decide), g8 k (by omega)]
+      h9.get .v5 (by decide), g8 k (by omega_arith)]
   have c15 := c14.trans h15.chg
   have w16 : Lanes (a16.v .v21) fun k => nib B (28 + k) := fun k hk => by
     rw [h16.v, (Ntt16.vword_zip_zero (hz _ _ c15 (by decide)) hk).2, h15.get .v5 (by decide),
       h14.get .v5 (by decide), h13.get .v5 (by decide), h12.get .v5 (by decide), h11.get .v5 (by decide),
-      h10.get .v5 (by decide), h9.get .v5 (by decide), g8 _ (by omega), show 24 + (4 + k) = 28 + k by omega]
+      h10.get .v5 (by decide), h9.get .v5 (by decide), g8 _ (by omega_arith), show 24 + (4 + k) = 28 + k by omega_arith]
   have c16 := c15.trans h16.chg
   -- the words at the end of the permutations
   have u0 : Lanes (a16.v .v0) fun k => nib B k := Lanes.chg (h10.chg.trans (h11.chg.trans (h12.chg.trans

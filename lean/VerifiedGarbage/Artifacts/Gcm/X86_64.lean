@@ -6,7 +6,9 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
+public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on x86-64 -/
@@ -41,26 +43,29 @@ def artifacts : List Artifact := [
     verified := Proof.Gcm.X86_64.Vpclmul.ghash_verified
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
-    suffix := "_vpclmul"
+    suffix := "_vpclmul_avx512"
     notes := ["Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute \
-        them, two in each register, already prepared, then each pair times `H'¹⁶` twice, eight \
-        independent multiplications at a time, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
-    code := Impl.Gcm.X86_64.Prepare.prepare
-    verified := Proof.Gcm.X86_64.Prepare.prepare_verified
-    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
+        them, two in each register, already prepared, stored as the first 8 pairs; then those \
+        sixteen, four in each 512-bit register, times `H'¹⁶` and times `H'³²`, for \
+        `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
+    code := Impl.Gcm.X86_64.PrepareZ.prepare
+    verified := Proof.Gcm.X86_64.PrepareZ.prepare_verified
+    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f"] },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_vpclmul"
-    notes := ["Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute \
-        them, two in each register, already prepared, stored as the first 8 pairs: the first pass \
-        of `vg_aes_gcm_prepare_vpclmul`. No calls and no stack."]
+    notes := ["Uses VPCLMULQDQ: `H'` as the stitched loops compute it, then `H'²`–`H'¹⁶` two in \
+        each 256-bit register, each pair stored as it is computed; the powers each round \
+        multiplies by, in both lanes, are squares of the one before, of two carry-less products \
+        each rather than four. No calls and no stack."]
     code := Impl.Gcm.X86_64.Prepare16.prepare16
     verified := Proof.Gcm.X86_64.Prepare16.prepare16_verified
-    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
+    features := ["avx", "avx2", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_pclmul_avx"
-    notes := ["Uses PCLMULQDQ on 128-bit registers: `H'`–`H'⁸` as the eight-block loops compute \
-        them, already prepared, then each times `H'⁸`, eight independent multiplications, for \
-        `H'⁹`–`H'¹⁶`, stored as the first 8 pairs. No calls and no stack."]
+    notes := ["Uses PCLMULQDQ on 128-bit registers: `H'` as the eight-block loops compute it, then \
+        `H'²`–`H'¹⁶` in four rounds of independent products, each stored as it is computed: the \
+        even powers squares, of two carry-less products each rather than four, and the odd ones \
+        summed straight into their accumulators. No calls and no stack."]
     code := Impl.Gcm.X86_64.PrepareAvx.prepare16
     verified := Proof.Gcm.X86_64.PrepareAvx.prepare16_verified
     features := ["avx", "pclmulqdq"] }]

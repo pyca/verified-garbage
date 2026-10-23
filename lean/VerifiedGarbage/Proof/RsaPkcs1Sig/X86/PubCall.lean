@@ -34,7 +34,7 @@ variable {s : State} {out pre e inp scr : BitVec 32} {K rl el sl : Nat}
 /-- The call's arguments, at `esp`. -/
 structure PubArgs (s : State) (out pre e inp scr : BitVec 32) (K rl el sl : Nat) : Prop where
   args : ∀ i < 10, s.mem.readW (addr (s.gpr .esp) (4 * i)) 32 = (pubArgv out pre e inp scr K rl el sl).getD i 0
-  sp : 44 ≤ (s.gpr .esp).toNat
+  sp : 100 ≤ (s.gpr .esp).toNat
   fit : (s.gpr .esp).toNat + 40 ≤ 2 ^ 32
   kv : Spec.Rsa.lenValid K
   rlK : rl = Spec.Rsa.precomputedWords K
@@ -64,9 +64,9 @@ theorem pub_pre (h : PubArgs s out pre e inp scr K rl el sl)
     (dW : ∀ w ∈ pubWr (s.gpr .esp) out scr K sl, ∀ r ∈ pubRd pre e inp K rl el, w.Disjoint r)
     (dWW : (pubWr (s.gpr .esp) out scr K sl).Pairwise Region.Disjoint)
     (dLow : ∀ r ∈ pubWr (s.gpr .esp) out scr K sl ++ pubRd pre e inp K rl el,
-      Region.Disjoint (below (s.gpr .esp) 44) r)
+      Region.Disjoint (below (s.gpr .esp) 100) r)
     (fit : ∀ r ∈ pubWr (s.gpr .esp) out scr K sl ++ pubRd pre e inp K rl el, r.base.toNat + r.len ≤ 2 ^ 32) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 40).pre
+    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre
       (s.callEntry.withRegions (pubRd pre e inp K rl el) (pubWr (s.gpr .esp) out scr K sl)) := by
   have k32 := h.k32
   have rl32 := h.rl32
@@ -98,9 +98,9 @@ theorem pub_pre (h : PubArgs s out pre e inp scr K rl el sl)
     intro x k hx
     have := fi hx
     rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega)] at this
-  have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) 44) :=
+  have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) 100) :=
     below_sub (by decide) h.sp
-  have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 40, 40⟩ (below (s.gpr .esp) 44) := by
+  have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 96, 96⟩ (below (s.gpr .esp) 100) := by
     rw [← Taint.sub_setWidth (by omega)]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
@@ -116,10 +116,10 @@ theorem pub_pub {s₁ s₂ : State} (h₁ : PubArgs s₁ out pre e inp scr K rl 
     (h₂ : PubArgs s₂ out pre e inp scr K rl el sl) (hsp : s₁.gpr .esp = s₂.gpr .esp)
     (hp : Spec.Rsa.wordsAt s₁.mem (pre.setWidth 64) rl = Spec.Rsa.wordsAt s₂.mem (pre.setWidth 64) rl)
     (he : Spec.Rsa.bytesAt s₁.mem (e.setWidth 64) el = Spec.Rsa.bytesAt s₂.mem (e.setWidth 64) el)
-    (hdp : (below (s₁.gpr .esp) 44).Disjoint ⟨pre.setWidth 64, rl * 8⟩)
-    (hde : (below (s₁.gpr .esp) 44).Disjoint ⟨e.setWidth 64, el⟩)
+    (hdp : (below (s₁.gpr .esp) 100).Disjoint ⟨pre.setWidth 64, rl * 8⟩)
+    (hde : (below (s₁.gpr .esp) 100).Disjoint ⟨e.setWidth 64, el⟩)
     (rd wr : List Region) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 40).pub (s₁.callEntry.withRegions rd wr)
+    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have rl32 := h₁.rl32
   have a₁ := fun {i} (hi : i < 10) => h₁.arg rd wr hi
@@ -135,13 +135,13 @@ theorem pub_pub {s₁ s₂ : State} (h₁ : PubArgs s₁ out pre e inp scr K rl 
     pubArgv, List.getD_cons_zero, List.getD_cons_succ, hsp, true_and, and_true]
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt rl32,
     Nat.mod_eq_of_lt (show el < 2 ^ 32 by have := h₁.elK; have := h₁.k32; omega)]
-  have ret := fun {sx : State} (hx : 44 ≤ (sx.gpr .esp).toNat) =>
+  have ret := fun {sx : State} (hx : 100 ≤ (sx.gpr .esp).toNat) =>
     (Frame.refl [⟨(sx.gpr .esp - 4).setWidth 64, 4⟩] sx.mem).writeW (List.mem_singleton_self _) (sx.unknowns 0)
       (Region.contains_self _ _)
   have ret₁ := ret (sx := s₁) h₁.sp
   have ret₂ := ret (sx := s₂) h₂.sp
   rw [← hsp] at ret₂ ⊢
-  have dq : ∀ {x : BitVec 32} {k : Nat}, (below (s₁.gpr .esp) 44).Disjoint ⟨x.setWidth 64, k⟩ →
+  have dq : ∀ {x : BitVec 32} {k : Nat}, (below (s₁.gpr .esp) 100).Disjoint ⟨x.setWidth 64, k⟩ →
       ∀ r ∈ [(⟨(s₁.gpr .esp - 4).setWidth 64, 4⟩ : Region)], (⟨x.setWidth 64, k⟩ : Region).Disjoint r := by
     intro x k hd r hr
     simp only [List.mem_singleton] at hr; subst hr
@@ -153,7 +153,7 @@ theorem pub_pub {s₁ s₂ : State} (h₁ : PubArgs s₁ out pre e inp scr K rl 
 
 /-- The call's result: what it writes to `out` and returns. -/
 theorem pub_post {s t : State} (h : PubArgs s out pre e inp scr K rl el sl) {rd wr : List Region}
-    (hp : (Spec.Rsa.publicPrecomputedCheckedContract abi 40).post (s.callEntry.withRegions rd wr) t) :
+    (hp : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).post (s.callEntry.withRegions rd wr) t) :
     ∀ nB : List Byte, nB.length = K →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.callEntry.mem (pre.setWidth 64) rl) →
       Spec.Rsa.written t.mem (out.setWidth 64) K (t.gpr .eax)

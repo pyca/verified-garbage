@@ -140,12 +140,12 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hK := hi₀.k1024
   by_cases hf : fits h P
   swap
   · exact VP.empty fun σ s h' => hf h'.1.2.2.1
-  have hsl : P.sl + h.D + 2 ≤ P.K := by have := hf.2; omega
+  have hsl : P.sl + h.D + 2 ≤ P.K := by have := hf.2; omega_arith
   refine VP.seq (G := fun σ s => (E0 h P σ s ∧ Y1 h P σ s.mem) ∧ s.gpr .r0 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D) ∧
       s.gpr .r1 = P.salt ∧ s.gpr .lr = BitVec.ofNat 32 P.sl ∧ s.z = decide (P.sl = 0))
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm) fun σ s ⟨⟨hc, hk⟩, hy⟩ => ?_)
@@ -169,12 +169,12 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   · by_cases h0 : P.sl = 0
     · exact VP.empty fun σ s ⟨⟨_, _, _, _, z⟩, e⟩ => by
         rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_true h0] at e; exact absurd e (by decide)
-    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.sl) (by pomega) (by omega))
+    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.sl) (by pomega) (by omega_arith))
       (salt_buf h ⟨σ₀, hi₀⟩) (by rw [hg.addr (by pomega)]; exact (hg.ro ok (by pomega) (R := P.SALT)
-        (by simp)).symm) (by omega) (f := fun σ i => (saltB P σ).getD i 0)
+        (by simp)).symm) (by omega_arith) (f := fun σ i => (saltB P σ).getD i 0)
       (Inv := fun σ m => Kp h P σ m ∧ (∀ i < 8 + h.D, m (sa P.scr (oY + i)) = (Spec.RsaPss.zeros 8 ++ digB h P σ).getD i 0) ∧
         YZ P.scr (8 + h.D + P.sl) m) fun σ m m' ⟨hk, h1, h2⟩ hf => ?_).mono
-      (fun σ s ⟨⟨⟨⟨hc, hk⟩, hy⟩, r0, r1, lr, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega), fun i hi => ?_⟩, ?_, r1, lr,
+      (fun σ s ⟨⟨⟨⟨hc, hk⟩, hy⟩, r0, r1, lr, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega_arith), fun i hi => ?_⟩, ?_, r1, lr,
         fun i hi => salt_at h hc hi⟩) fun σ s ⟨hc, ⟨hk, h1, h2⟩, hs⟩ => ⟨⟨hc, hk⟩, fun i hi => ?_⟩
     · rw [hg.addr (by pomega)] at hf
       refine ⟨hk.keep h hf fun r hr => by
@@ -182,8 +182,8 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         sbytes_keep hf (fun r hr => ?_) (by pomega) h1, sbytes_keep hf (fun r hr => ?_) (by pomega) h2⟩
       · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)
       · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)
-    · rw [show oY + (8 + h.D + P.sl) + i = oY + (8 + h.D + P.sl + i) by omega, hy _ (by omega),
-        getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length]; omega)]
+    · rw [show oY + (8 + h.D + P.sl) + i = oY + (8 + h.D + P.sl + i) by omega_arith, hy _ (by omega_arith),
+        getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length]; omega_arith)]
     · rw [r0]
     · have hl : (Spec.RsaPss.zeros 8 ++ digB h P σ).length = 8 + h.D := by
         simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length]
@@ -192,11 +192,11 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       · rw [ite_eq_left e1]; exact h1 i e1
       rw [ite_eq_right e1]
       by_cases e2 : i < 8 + h.D + P.sl
-      · rw [← hs (i - (8 + h.D)) (by omega), hg.byteAt_scr (by pomega),
-          show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega]
-      · rw [getD_ge (l := saltB P σ) (by rw [RsaPkcs1Sig.Arm.bytesAt_length]; omega),
-          show oY + i = oY + (8 + h.D + P.sl) + (i - (8 + h.D + P.sl)) by omega]
-        exact h2 _ (by omega)
+      · rw [← hs (i - (8 + h.D)) (by omega_arith), hg.byteAt_scr (by pomega),
+          show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega_arith]
+      · rw [getD_ge (l := saltB P σ) (by rw [RsaPkcs1Sig.Arm.bytesAt_length]; omega_arith),
+          show oY + i = oY + (8 + h.D + P.sl) + (i - (8 + h.D + P.sl)) by omega_arith]
+        exact h2 _ (by omega_arith)
 
 /-- `M'`'s blocks. -/
 abbrev nbS (P : EP) : Nat := (P.sl + (8 + h.D) + h.L) / h.B + 1

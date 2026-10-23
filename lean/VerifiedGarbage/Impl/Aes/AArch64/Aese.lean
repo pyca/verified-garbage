@@ -24,7 +24,8 @@ first), straight-line for each key length: word `w[i]` is in register
 `wreg Nk i` (`i mod Nk` of eight registers), where `w[i − Nk]` was, and is
 stored as soon as it is computed. `SubWord(w)` is `aese` of `w` in all four
 columns with a zero round key (`ShiftRows` then moves no byte to another
-value), and `RotWord` is a rotation right by 8.
+value), and `RotWord` is a rotation right by 8, folded into the `eor` with
+the round constant.
 
 ## Counter mode
 
@@ -149,8 +150,8 @@ def word (nk i : Nat) : List Instr :=
   let p := wreg nk (i - 1)
   (if i < nk then [.ldr .w r .x0 (4 * i)]
    else if i % nk = 0 then
-     subW p ++ ([.ror .w .x9 .x9 8, .movz .w .x10 ((rc (i / nk)).setWidth 16) 0,
-       .logic .eor .w .x9 .x9 .x10, .logic .eor .w r r .x9] : List Instr)
+     subW p ++ ([.movz .w .x10 ((rc (i / nk)).setWidth 16) 0, .logicRor .eor .w .x9 .x10 .x9 8,
+       .logic .eor .w r r .x9] : List Instr)
    else if nk > 6 ∧ i % nk = 4 then subW p ++ ([.logic .eor .w r r .x9] : List Instr)
    else [.logic .eor .w r r p]) ++ ([.str .w r .x2 (4 * i)] : List Instr)
 

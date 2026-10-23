@@ -86,7 +86,10 @@ LAKEFILE_LIMIT = re.compile(rf"^\s*{LIMITS}\s*=", re.M)
 IMPORT_ALL_CORE = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+all\s+((?:Init|Std|Lean)(?:\.\S+)?)\s*$", re.M)
 IMPORT_ALL_CORE_ALLOWED = {"Init.Data.Nat.Power2.Basic", "Init.Data.Nat.Bitwise.Basic"}
 BIG_IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(Mathlib|Mathlib\.Tactic)\s*$", re.M)
-SIMP_ARGS = re.compile(r"\bsimp(?:_all|a)?\b[^\[\n]*\[([^\]]*)\]")
+# These start with a word, not `\b` or a lookbehind, which would keep the
+# regex engine from skipping ahead to the word (20 times slower on the
+# whole library): `after_word` checks the character before it.
+SIMP_ARGS = re.compile(r"simp(?:_all|a)?\b[^\[\n]*\[([^\]]*)\]")
 UNFOLD = re.compile(r"(?<![\w.])(runBlock|runStep)(?![\w.])")
 THEOREM = re.compile(r"^(?:private |protected )?(?:theorem|lemma) ", re.M)
 DOT_LIST = re.compile(r"\[\s*\.")
@@ -99,7 +102,7 @@ META = re.compile(
 META_WORDS = ("elab", "simproc", "CoreM", "MetaM", "SimpM", "TermElabM", "TacticM", "CommandElabM")
 # `import`, and in a module `public`, `meta` and `all` imports.
 IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)", re.M)
-TAUTO = re.compile(r"(?<![\w.])tauto(?![\w.])")
+TAUTO = re.compile(r"tauto(?![\w.])")  # not after `[\w.]`
 # `set_option profiler false` on a line of its own (for the whole module).
 PROFILER_OFF = re.compile(r"^set_option profiler false[ \t]*$", re.M)
 HEAVY_MATHLIB = (
@@ -130,7 +133,7 @@ LAW_VARIANT = re.compile(r"^VerifiedGarbage\.Variants\.\w+\.\w+\.Law$")
 # an implementation proved with heavy algebra (GHASH's PMULL) pays the import
 # for itself alone, so it is not counted either.
 GENERIC_LEAF = re.compile(r"^VerifiedGarbage\.Generic\.")
-DECIDE_CONFIG = re.compile(r"\bdecide\s*:=\s*true\b")
+DECIDE_CONFIG = re.compile(r"decide\s*:=\s*true\b")  # `after_word`
 DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
 BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
 PLACEHOLDER_CHAIN = re.compile(r"\(\w+_set\w*(?:\s+_)+\)\.trans\b")
@@ -167,6 +170,22 @@ NUM_EXP = re.compile(r"\^\s*[0-9]+(?![0-9.])")
 LIB = re.compile(r"^\[\[lean_lib\]\]\n(.*?)(?=^\[\[|\Z)", re.M | re.S)
 
 
+WORD_CHAR = re.compile(r"\w")
+NAME_CHAR = re.compile(r"[\w.]")
+
+
+def after_word(pattern: re.Pattern, text: str, before: re.Pattern = WORD_CHAR):
+    """`pattern`'s matches in `text` that do not follow a character matching
+    `before`: those of `(?<!before)pattern`, as `finditer` finds them."""
+    pos = 0
+    while m := pattern.search(text, pos):
+        if m.start() and before.match(text, m.start() - 1):
+            pos = m.start() + 1
+            continue
+        yield m
+        pos = max(m.end(), m.start() + 1)
+
+
 def line_of(text: str, pos: int) -> int:
     return text.count("\n", 0, pos) + 1
 
@@ -185,7 +204,14 @@ def unascribed_lists(text: str):
             if depth == 0:
                 break
             k += 1
-        before, after = text[:i].rstrip(), text[k + 1 :].lstrip()
+        # The text around the literal, without whitespace (and without
+        # copying the whole file before and after it).
+        b, a = i, k + 1
+        while b and text[b - 1].isspace():
+            b -= 1
+        while a < len(text) and text[a].isspace():
+            a += 1
+        before, after = text[max(b - 2, 0) : b], text[a : a + 2]
         if not (before.endswith("++") or after.startswith("++")):
             continue
         if before.endswith("(") and after.startswith(":"):
@@ -359,7 +385,7 @@ def main() -> int:
         key = keys[f]
         decide_uses = []
         if "decide" in code:
-            decide_uses = list(DECIDE_CONFIG.finditer(code))
+            decide_uses = list(after_word(DECIDE_CONFIG, code))
             if "+decide" in code:
                 decide_uses += DECIDE_FLAG.finditer(code)
         assumption_uses = list(BARE_ASSUMPTION.finditer(code)) if "assumption" in code else []
@@ -406,7 +432,7 @@ def main() -> int:
                 f"{rel}: uses `#guard_msgs` with the profiler on; add `set_option profiler false` "
                 "so that its expected messages do not include the profile"
             )
-        for m in TAUTO.finditer(code):
+        for m in after_word(TAUTO, code, NAME_CHAR):
             errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
         if uncompiled_meta(module, text, globs):
             errors.append(
@@ -431,7 +457,7 @@ def main() -> int:
             continue
         if "runBlock" not in text and "runStep" not in text:
             continue
-        for m in SIMP_ARGS.finditer(text):
+        for m in after_word(SIMP_ARGS, text):
             for u in UNFOLD.finditer(m.group(1)):
                 errors.append(
                     f"{rel}:{line_of(text, m.start(1) + u.start())}: simp unfolds {u.group(1)}; "

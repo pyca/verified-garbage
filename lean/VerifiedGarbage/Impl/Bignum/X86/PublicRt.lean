@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Bignum.X86.SparseExponent
 
 /-! # Checked public RSA at a width read at run time (i686 cdecl)
@@ -133,7 +133,7 @@ def mulArgs (o a b : Nat) : List Instr :=
 `vg_rsa_mont_mul_at` with its arguments in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (o a b : Nat) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36)
+  .frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
 
 /-- A round of the exponent's public schedule: the result times the base
 where its low bit is set, the exponent shifted, and the base squared only

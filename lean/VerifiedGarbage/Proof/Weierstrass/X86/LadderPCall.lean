@@ -196,7 +196,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
   have hedi := hs.edi_toNat
   have hl := lay_nums hk3 hk6
   have hst := fn_stackUse ⟨c, w, m', k', d⟩ dbl
-  have hfit : 4 * [Reg.edi].length + 4 ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have hfit : 4 * [Reg.edi].length + 4 ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   -- The callee's view.
   let t := ((pushed [Reg.edi] s).callEntry).withRegions [below (s.gpr .esp) 4] [⟨base, 8192⟩]
   have a0 : arg t 0 = s.gpr .edi := callEntry_arg hfit (by decide) (by decide)
@@ -207,20 +207,20 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
     rw [callEntry_espNat hfit]; rfl
   have argA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 4).setWidth 64 := callEntry_argAddr0 _ _
   have argN : (argAddr t 0).toNat = (s.gpr .esp).toNat - 4 := by
-    rw [argA, BitVec.toNat_setWidth, sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [argA, BitVec.toNat_setWidth, sub_toNat (by omega_arith)]
+    exact Nat.mod_eq_of_lt (by omega_arith)
   have retN : ((t.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat - 8 := by
-    rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega_arith)
   have fr : Frame [below (s.gpr .esp) 8] s.mem t.mem := callEntry_frame hfit (rs := [Reg.edi]) (by decide)
   have hpre : PrePt k' m' dbl t := by
     refine ⟨⟨rfl, by show _ ∈ [below (s.gpr .esp) 4]; rw [argA]; exact List.mem_singleton_self _,
       by show _ ∈ [(⟨base, 8192⟩ : Region)]; rw [hws]; exact List.mem_singleton_self _,
-      by rw [hwsN]; exact hn, ⟨by rw [espT]; omega, by rw [espT, hwsN]; omega⟩, by rw [espT]; omega,
-      Region.disjoint_of_le (by simp only; rw [argN, hwsN]; omega) (by simp only; rw [argN]; omega)
-        (by simp only; rw [hwsN]; omega)⟩,
-      Region.disjoint_of_le (by simp only; rw [retN, hwsN]; omega) (by simp only; rw [retN]; omega)
-        (by simp only; rw [hwsN]; omega), hk3, hk6, fun x hx => ?_⟩
-    rw [hws, wordsVal_eq_val32, frame_val32P' hs fr h28 hz (h := by have := enc_rIds hk3 hk6 dbl x hx; omega),
+      by rw [hwsN]; exact hn, ⟨by rw [espT]; omega_arith, by rw [espT, hwsN]; omega_arith⟩, by rw [espT]; omega_arith,
+      Region.disjoint_of_le (by simp only; rw [argN, hwsN]; omega_arith) (by simp only; rw [argN]; omega_arith)
+        (by simp only; rw [hwsN]; omega_arith)⟩,
+      Region.disjoint_of_le (by simp only; rw [retN, hwsN]; omega_arith) (by simp only; rw [retN]; omega_arith)
+        (by simp only; rw [hwsN]; omega_arith), hk3, hk6, fun x hx => ?_⟩
+    rw [hws, wordsVal_eq_val32, frame_val32P' hs fr h28 hz (h := by have := enc_rIds hk3 hk6 dbl x hx; omega_arith),
       ← wordsVal_eq_val32]
     exact hlt x hx
   let K : Contract isa :=
@@ -239,7 +239,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
   refine WP.seq (WP.callWith (k := K) (fun u ⟨h1, _, _⟩ => by
       obtain ⟨tr, u', he, A, O, L, E⟩ := fn_ok (S := ⟨c, w, m', k', d⟩) hF hodd h1
       exact ⟨tr, u', he, A, O, L, E⟩) (fn_noSp hF dbl) (by decide) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega) (rd := [below (s.gpr .esp) 4])
+    (by simp only [List.length_cons, List.length_nil]; omega_arith) (rd := [below (s.gpr .esp) 4])
     (wr := [⟨base, 8192⟩]) ⟨⟨hpre, hws, fr⟩, ?_, ?_⟩ ?_)
   · refine Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.of_mem fun r hr => ?_)
     · rw [List.mem_singleton.mp hr]; simp
@@ -249,7 +249,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
   have P₂' : K.post t s₂ := P₂
   obtain ⟨O₂, L₂, E₂⟩ := P₂'
   have F₂ : Frame [⟨base, 8192⟩, below (s.gpr .esp) 28] s.mem s'.mem := by
-    have := Frame.below_mono F' (b := 28) (by simp only [List.length_cons, List.length_nil]; omega) h28
+    have := Frame.below_mono F' (b := 28) (by simp only [List.length_cons, List.length_nil]; omega_arith) h28
     exact this.mono fun r hr => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       exact hr
@@ -268,7 +268,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
   -- The callee's view of memory: the push and the return address, then the call.
   have mt : (pushed [Reg.edi] s).callEntry.mem = t.mem := rfl
   have vt : ∀ x, x + 8 * k' ≤ 8192 → wordsVal t.mem base x k' = wordsVal s.mem base x k' := fun x hx => by
-    rw [wordsVal_eq_val32, wordsVal_eq_val32, frame_val32P' hs fr h28 hz (h := by omega)]
+    rw [wordsVal_eq_val32, wordsVal_eq_val32, frame_val32P' hs fr h28 hz (h := by omega_arith)]
   refine ⟨⟨fun r hr => ?_, by rw [u₃.rd, rd'], by rw [u₃.wr, wr']⟩, ?_, ?_, fun j hj => ?_, ?_⟩
   · by_cases h : r = .edi
     · subst h; rw [u₃.gpr, hv]
@@ -281,11 +281,11 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
     · exact fr x fun r hr hc => by
         rw [List.mem_singleton.mp hr] at hc
         have := zone8 hs h28 hz hc
-        omega
+        omega_arith
     · have h2 := hx outW (by simp)
       have h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
-      omega
+      omega_arith
   · rw [m₃]; exact F₂
   · rw [m₃]; exact L₂ j hj
   · simp only [Eb]
@@ -295,7 +295,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
           toM m' (2 ^ (64 * k')) (wordsVal s.mem base (enc k' dbl x) k') := fun x hx => by
       have := enc_rIds hk3 hk6 dbl x hx
       have hl := lay_nums hk3 hk6
-      rw [vt _ (by omega)]
+      rw [vt _ (by omega_arith)]
     rw [e 9 (by decide), e 10 (by decide), e 3 (by decide), e 4 (by decide), e 5 (by decide), e 6 (by decide),
       e 7 (by decide), e 8 (by decide)] at E₂
     exact E₂

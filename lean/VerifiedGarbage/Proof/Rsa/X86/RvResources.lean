@@ -40,7 +40,7 @@ theorem ABI.stackArgument {s : State} (a : ABI s) {i : Nat} (hi : i < 12) :
   · exact a.argsApart _ (by simp)
 
 theorem ABI.stack {s : State} (a : ABI s) : StkOk (s.gpr .esp) (caller s).B (caller s).Z := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 40) a.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) a.stackLow
   · have h := a.scratchBound
     simpa only [caller, argumentPointer, BitVec.toNat_setWidth,
       Nat.mod_eq_of_lt (Nat.lt_trans (arg s 10).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using h

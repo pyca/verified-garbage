@@ -215,7 +215,10 @@ theorem numericRecognize_spec (a : Spec.Ffdh.Parameters) :
     simp only [numericRecognize, VG.Impl.Ffdh.Arm.VettedGroups.groups, NumericMatch,
       good.1, good.2, and_self, and_true, Bool.or_eq_true, beq_iff_eq]
     simp only [ite_or]
-    split_ifs <;> rfl
+    have getD_ite (p : Prop) [Decidable p] (x y : Option Nat) :
+        (if p then x else y).getD 0 = if p then x.getD 0 else y.getD 0 := by
+      by_cases hp : p <;> simp only [hp, ite_true, ite_false]
+    simp only [getD_ite, Option.getD_some, Option.getD_none]
   · have flag : (a.g != 2 || (a.q.isSome && a.q != some ((a.p - 1) / 2))) = true := by
       cases h : (a.g != 2 || (a.q.isSome && a.q != some ((a.p - 1) / 2)))
       · exact False.elim (good (guard.mp h))

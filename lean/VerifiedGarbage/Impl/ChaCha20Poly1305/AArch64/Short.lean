@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Fused
 
 /-!
 # ChaCha20-Poly1305: AArch64, up to 256 bytes
@@ -107,21 +108,18 @@ def xorKsFrom (k : Nat) : Prog isa :=
 /-- The data XORed with its keystream, at `ctx + 128`. -/
 def xorKs : Prog isa := xorKsFrom 128
 
-/-- `seal` but for the tag, after the prologue. -/
+/-- `seal` but for the tag, after the prologue: the data encrypted, then
+the MAC's input absorbed in one pass (`Fused.macAll`). -/
 def sealAfter : Prog isa :=
-  .seq (macPad .x24 .x25)
-  (.seq (.block lengths)
+  .seq (.block lengths)
   (.seq xorKs
-  (.seq (macPad .x22 .x23)
-    absorbLengths)))
+    Fused.macAll)
 
 /-- `open` up to the tag computed, after the prologue. -/
 def openAfter : Prog isa :=
-  .seq (macPad .x24 .x25)
-  (.seq (macPad .x22 .x23)
-  (.seq (.block lengths)
-  (.seq absorbLengths
+  .seq (.block lengths)
+  (.seq Fused.macAll
   (.seq xorKs
-    (finalizeTo 48)))))
+    (finalizeTo 48)))
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Short

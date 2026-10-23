@@ -37,13 +37,26 @@ on the stack, at `sp`. -/
 def withStackScratch (bytes : Nat) (r : Reg) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block [.addSp r 0]) c) (.free bytes)
 
-/-- `str x17, [x16, #8k]` for each `k < words`. -/
-def wipeStores (words : Nat) : List Instr :=
-  (List.range words).map fun k => .str .x .x17 .x16 (8 * k)
+/-- `stp x17, x17, [x16, #16k]` for each `k < pairs`. -/
+def wipePairStores (pairs : Nat) : List Instr :=
+  (List.range pairs).map fun k => .stp .x17 .x17 .x16 (16 * k)
 
-/-- Zeroes the `words` doublewords at `sp`, through `x16` (their address) and
-`x17` (zero). -/
-def wipe (words : Nat) : List Instr := .addSp .x16 0 :: .movz .x .x17 0 0 :: wipeStores words
+/-- Chunk `j` of the pairs: `x16` set to `sp + 512 j`, then `pairs` pairs (at
+most 32) from there. -/
+def wipePairChunk (j pairs : Nat) : List Instr := .addSp .x16 (512 * j) :: wipePairStores pairs
+
+/-- The chunks of `pairs` pairs: `pairs / 32` of 32, then the rest if any.
+`stp` takes offsets up to 504, so each chunk has its own base. -/
+def wipePairChunks (pairs : Nat) : List Instr :=
+  (List.range (pairs / 32)).flatMap (fun j => wipePairChunk j 32) ++
+    if pairs % 32 = 0 then [] else wipePairChunk (pairs / 32) (pairs % 32)
+
+/-- Zeroes the `words` doublewords at `sp`, two per store (`stp`, half as many
+store instructions as `str` for the same bytes) through `x16` (their address)
+and `x17` (zero), and the last with `str` if `words` is odd. -/
+def wipe (words : Nat) : List Instr :=
+  .movz .x .x17 0 0 :: (wipePairChunks (words / 2) ++
+    if words % 2 = 0 then [] else [.strSp .x17 (8 * (words - 1))])
 
 /-- `withStackScratch`, zeroing the first `words` doublewords of the buffer
 after the code. -/

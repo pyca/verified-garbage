@@ -32,7 +32,7 @@ theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     rfl rfl rfl) fun u ⟨⟨hu12, hu16, hum⟩, hku⟩ => ?_)
   refine WP.seq (WP.mono (WP.keep [.x15, .x3] (Q := fun v =>
     v.gpr .x15 = word u.mem B (slot w aX) ^^^ (1#64) ∧ v.mem = u.mem)
-    (by brun [hu16, (hg.scr.congr hku.wr).ld (show slot w aX + 8 ≤ Z by omega)]; rfl)
+    (by brun [hu16, (hg.scr.congr hku.wr).ld (show slot w aX + 8 ≤ Z by omega_arith)]; rfl)
     rfl rfl rfl) fun v ⟨⟨hv15, hvm⟩, hkv⟩ => ?_)
   have hv12 := (hkv.gpr .x12 (by decide)).trans hu12
   have hv16 := (hkv.gpr .x16 (by decide)).trans hu16
@@ -40,7 +40,7 @@ theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     simp only [Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide)]
-    omega
+    omega_arith
   refine WP.seq (WP.mono (WP.keep [.x16, .x14] (Q := fun z =>
     z.gpr .x16 = off B (slot w aX + 8) ∧ z.gpr .x14 = BitVec.ofNat 64 (w - 1) ∧ z.mem = v.mem)
     (by brun [hv16, hv12, hsub]) rfl rfl rfl) fun z ⟨⟨hz16, hz14, hzm⟩, hkz⟩ => ?_)
@@ -48,7 +48,7 @@ theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have hz15 : z.gpr .x15 = 0 ↔ (word s.mem B (slot w aX) ^^^ 1) = 0 := by
     rw [hkz.gpr .x15 (by decide), hv15, hum]
     rfl
-  refine WP.mono (orWords_ok (hg.scr.congr hk.wr) hz16 hz14 hz15 (by omega) (by omega) (by omega))
+  refine WP.mono (orWords_ok (hg.scr.congr hk.wr) hz16 hz14 hz15 (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨ht, htm, hkt⟩ => ?_
   have hm : z.mem = s.mem := hzm.trans (hvm.trans hum)
   rw [hm] at ht
@@ -56,12 +56,12 @@ theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       ∀ i, 1 ≤ i → i < w → word s.mem B (slot w aX + 8 * i) = 0 := by
     constructor
     · intro h i hi hiw
-      have hh := h (i - 1) (by omega)
-      convert hh using 2 <;> omega
+      have hh := h (i - 1) (by omega_arith)
+      convert hh using 2 <;> omega_arith
     · intro h i hi
-      have hh := h (i + 1) (by omega) (by omega)
-      convert hh using 2 <;> omega
-  rw [he, VG.Proof.Dsa.words_eq_one (by omega)] at ht
+      have hh := h (i + 1) (by omega_arith) (by omega_arith)
+      convert hh using 2 <;> omega_arith
+  rw [he, VG.Proof.Dsa.words_eq_one (by omega_arith)] at ht
   exact ⟨ht, htm.trans hm, (hk.trans hkt).mono (by decide)⟩
 
 end VG.Proof.Dsa.AArch64

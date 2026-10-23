@@ -27,16 +27,16 @@ theorem checkPrime_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog 
     ((show generationDepth (.block (headerArguments (primeArguments candidate len draw checks))) by exact (show 0 ≤ 128 by decide)).seq
       (primeBytes_depth mul round hm hr len draw))
 
-theorem qCandidate_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) :
-    generationDepth (qCandidate H1 H256) := by
-  exact (seedHash_depth h1 h256).seq ((show generationDepth (.block qArgs) by exact (show 0 ≤ 128 by decide)).seq
+theorem qCandidate_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
+    generationDepth (qCandidate H1 H256 len) := by
+  exact (seedHashAt_depth h1 h256 len).seq ((show generationDepth (.block qArgs) by exact (show 0 ≤ 128 by decide)).seq
     (show generationDepth Impl.Ffdh.X86_64.ParameterCandidate.shape by exact (show 0 ≤ 128 by decide)))
 
 theorem subgroup_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
     (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (len : Nat) :
     generationDepth (subgroup H1 H256 mul round len) := by
-  exact (qCandidate_depth h1 h256).seq ((show generationDepth (.block workspaceBase) by exact (show 0 ≤ 128 by decide)).seq
+  exact (qCandidate_depth h1 h256 len).seq ((show generationDepth (.block workspaceBase) by exact (show 0 ≤ 128 by decide)).seq
     ((checkPrime_depth mul round hm hr _ _ _ _ _).seq (show generationDepth (.block primeResult) by exact (show 0 ≤ 128 by decide))))
 
 theorem pConstruct_depth {H : Stream} (h : HashDepth H) (pLen qLen : Nat) :

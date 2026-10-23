@@ -272,20 +272,20 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
       by simp [hval, h0]⟩
   | n + 1, hn18 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (fCols_ok hs hn hw htmp hmo ha hb hsep haT hbT hinv h0 n (by omega))
+    refine WP.mono (fCols_ok hs hn hw htmp hmo ha hb hsep haT hbT hinv h0 n (by omega_arith))
       fun s ⟨k, O, hacc, l, hl64, hlm, e⟩ => ?_
     have hnw := hs.nowrap
     have hsS : Scr s base size := hs.of_keepRegs k (by decide)
     have hA : ∀ i < w, (word s.mem base (a + 8 * i)).toNat = (word s₀.mem base (a + 8 * i)).toNat :=
-      fun i hi => by rw [O.word (by omega) (by omega)]
+      fun i hi => by rw [O.word (by omega_arith) (by omega_arith)]
     have hB : ∀ j < w, (word s.mem base (b + 8 * j)).toNat = (word s₀.mem base (b + 8 * j)).toNat :=
-      fun j hj => by rw [O.word (by omega) (by omega)]
+      fun j hj => by rw [O.word (by omega_arith) (by omega_arith)]
     have hM : ∀ j < w, (word s.mem base (M.mo + 8 * j)).toNat = (word s₀.mem base (M.mo + 8 * j)).toNat :=
-      fun j hj => by rw [O.word (by omega) (by omega)]
+      fun j hj => by rw [O.word (by omega_arith) (by omega_arith)]
     have hL : ∀ k < w, k < n → n - k < w → (word s.mem base (M.tmp + 8 * k)).toNat = l k :=
       fun k h9 hk hk' => by
-      have := hlm k hk (by omega)
-      rwa [Nat.mod_eq_of_lt (show k < w by omega)] at this
+      have := hlm k hk (by omega_arith)
+      rwa [Nat.mod_eq_of_lt (show k < w by omega_arith)] at this
     have hsum := pSum_fTerms (M := M) (c := n) hn hA hB hM hL
     have hpl := pSum_le s.mem base (fTerms M a b n) (fTerms_some M a b n)
     have hlen := fTerms_length M a b n
@@ -296,47 +296,47 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
       simp only [fTerms, hn, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
         decide_eq_true_eq] at ht
       rcases ht with ⟨i, ⟨hi, -, hj⟩, rfl⟩ | ⟨i, ⟨hi, -, hj⟩, rfl⟩
-      · exact ⟨by omega, fun d hd => by simp only [Option.some.injEq] at hd; omega⟩
-      · exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega⟩
+      · exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega_arith⟩
+      · exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega_arith⟩
     have hinv' : ((word s.mem base M.mo).toNat * M.minv.toNat + 1) % 2 ^ 64 = 0 := by
-      rw [O.word (by omega) (by omega)]; exact hinv
-    have hn9 := Nat.mod_lt n (show 0 < w by omega)
-    refine WP.mono (fCol_ok hsS hn hw.1 (by omega) htmp hmo hsep hinv' hin (by omega))
+      rw [O.word (by omega_arith) (by omega_arith)]; exact hinv
+    have hn9 := Nat.mod_lt n (show 0 < w by omega_arith)
+    refine WP.mono (fCol_ok hsS hn hw.1 (by omega_arith) htmp hmo hsep hinv' hin (by omega_arith))
         fun s' ⟨e', k', O'⟩ => ?_
     have hm0 := hM 0 hw.1
     simp only [Nat.mul_zero, Nat.add_zero] at hm0
     rw [hm0] at e'
     have hword := (word s'.mem base (M.tmp + 8 * (n % w))).isLt
     have hm64 := (word s₀.mem base M.mo).isLt
-    refine ⟨k.trans k', O.trans (O'.mono (by omega) (by omega)), ?_,
+    refine ⟨k.trans k', O.trans (O'.mono (by omega_arith) (by omega_arith)), ?_,
       fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % w))).toNat else l c, ?_, ?_, ?_⟩
     · have hp : (word s'.mem base (M.tmp + 8 * (n % w))).toNat * (word s₀.mem base M.mo).toNat ≤
-          (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+          (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
       rw [show n + 1 + w = n + 1 + w from rfl]
-      split at e' <;> omega
+      split at e' <;> omega_arith
     · intro c hc
       by_cases h : c = n
       · simp only [h, ite_true]; exact hword
-      · simp only [h, ite_false]; exact hl64 c (by omega)
+      · simp only [h, ite_false]; exact hl64 c (by omega_arith)
     · intro c hc hc9
       by_cases h : c = n
       · subst h; simp
       · simp only [h, ite_false]
-        have hc9' := Nat.mod_lt c (show 0 < w by omega)
+        have hc9' := Nat.mod_lt c (show 0 < w by omega_arith)
         have hne : c % w ≠ n % w := by
-          rw [mod_two_pass (by omega), mod_two_pass (by omega)]
+          rw [mod_two_pass (by omega_arith), mod_two_pass (by omega_arith)]
           by_cases hcW : c < w <;> by_cases hnW : n < w <;>
-            simp only [hcW, hnW, ite_true, ite_false] <;> omega
-        rw [O'.word (by omega) (by omega)]
-        exact hlm c (by omega) (by omega)
+            simp only [hcW, hnW, ite_true, ite_false] <;> omega_arith
+        rw [O'.word (by omega_arith) (by omega_arith)]
+        exact hlm c (by omega_arith) (by omega_arith)
     · rw [hval_succ_last, hval_succ_last, Nat.zero_add]
       rw [hval_congr (g := fColSum w (fun i => (word s₀.mem base (a + 8 * i)).toNat)
           (fun j => (word s₀.mem base (b + 8 * j)).toNat) (fun j => (word s₀.mem base (M.mo + 8 * j)).toNat) l)
-          (fun c _ hc => fColSum_congr fun k hk => ite_eq_right_iff.mpr fun h => absurd h (by omega)),
+          (fun c _ hc => fColSum_congr fun k hk => ite_eq_right_iff.mpr fun h => absurd h (by omega_arith)),
         hval_congr (f := fun c => if c < w then 0 else
             (fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % w))).toNat else l c) c)
           (g := fun c => if c < w then 0 else l c)
-          (fun c _ hc => by simp only [show c ≠ n by omega, ite_false]),
+          (fun c _ hc => by simp only [show c ≠ n by omega_arith, ite_false]),
         e]
       have hcol : fColSum w (fun i => (word s₀.mem base (a + 8 * i)).toNat)
           (fun j => (word s₀.mem base (b + 8 * j)).toNat) (fun j => (word s₀.mem base (M.mo + 8 * j)).toNat)
@@ -352,7 +352,7 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
           unfold redCol
           refine congrArg List.sum (List.map_congr_left fun k hk => ?_)
           simp only [List.mem_filter, List.mem_range, decide_eq_true_eq] at hk
-          simp only [show k ≠ n by omega, ite_false]]
+          simp only [show k ≠ n by omega_arith, ite_false]]
         split <;> simp only [ite_true, Nat.mul_zero, Nat.add_zero, Nat.add_assoc]
       rw [hcol, pow64_succ', Nat.mul_comm (2 ^ 64) ((2 ^ 64) ^ n), Nat.mul_assoc]
       generalize (2 ^ 64) ^ n = Q

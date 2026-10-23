@@ -11,7 +11,7 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86
 
 def contract : Contract isa := Spec.RsaKeyGen.candidateContract
-  (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 112
+  (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
 
 def callEnvironment (s : State) : Environment where
   workspace := arg s 9
@@ -47,7 +47,7 @@ theorem call_sizes {s : State} (h : contract.pre s) : CallSizes s := by
     | (constructor <;> with_reducible assumption)
 
 structure CallLayout (s : State) : Prop where
-  low : 112 ≤ (s.gpr .esp).toNat
+  low : 152 ≤ (s.gpr .esp).toNat
   argsFit : (s.gpr .esp).toNat + 48 ≤ 2 ^ 32
   outFit : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   usedFit : (arg s 2).toNat + 8 ≤ 2 ^ 32

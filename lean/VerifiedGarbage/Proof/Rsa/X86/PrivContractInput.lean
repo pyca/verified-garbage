@@ -33,30 +33,30 @@ theorem private_contract_pre (s : State) (h : (Spec.Rsa.privateCheckedContract a
     at wr outWs nWs eWs iWs pWs qWs dpWs dqWs qiWs wsArgs stackWs wsFit retWs
   have sourceFit : ∀ i, ((privateGeometry s).sources i).toNat + (privateGeometry s).sourceLength i ≤ 2 ^ 32 := by
     intro i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit]
   have geometry : (privateGeometry s).Valid := by
     refine ⟨valid.1, valid.2, ePositive, eFits, pPositive, pShort, qPositive, qShort, space,
       ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [privateGeometry_stackNat s stackFit]
-      simp only [stackBytes] at stackFit ⊢; omega
+      simp only [stackBytes] at stackFit ⊢; omega_arith
     · rw [privateGeometry_stackNat s stackFit]
-      simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at stackFit ⊢; omega
+      simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at stackFit ⊢; omega_arith
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [outN, outE, outI, outP, outQ, outDP, outDQ, outQI]
     · rw [privateGeometry_arguments s stackFit argFit]; exact outArgs
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs]
     · rw [privateGeometry_arguments s stackFit argFit]; exact wsArgs
     · rw [privateGeometry_wholeStack s stackFit]; exact stackOut
     · intro i
       rw [privateGeometry_wholeStack s stackFit]
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI]
     · rw [privateGeometry_wholeStack s stackFit]; exact stackWs
@@ -67,7 +67,7 @@ theorem private_contract_pre (s : State) (h : (Spec.Rsa.privateCheckedContract a
     refine ⟨sourceFit i, ?_, rfl⟩
     refine ⟨(privateGeometry s).sourceRegion i, List.mem_append_left _ ?_, Region.contains_self _ _⟩
     rw [rd]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact List.mem_cons_self
     · exact List.mem_cons_of_mem _ (List.mem_cons_self)
@@ -89,8 +89,8 @@ theorem private_contract_pre (s : State) (h : (Spec.Rsa.privateCheckedContract a
       change (privateGeometry s).argumentsRegion.base + BitVec.ofNat 64 (4 * j) = _
       rw [privateGeometry_arguments s stackFit argFit]
       simp only [argAddr, Nat.mul_zero, Nat.add_zero]
-      have first := byteAddr_add (by omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
-      have last := byteAddr_add (by omega : (s.gpr .esp).toNat + (4 + 4 * j) < 2 ^ 32)
+      have first := byteAddr_add (by omega_arith : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+      have last := byteAddr_add (by omega_arith : (s.gpr .esp).toNat + (4 + 4 * j) < 2 ^ 32)
       change byteAddr (s.gpr .esp + BitVec.ofNat 32 4) + BitVec.ofNat 64 (4 * j) = byteAddr (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * j))
       rw [first, last, Offset.add_add]
     rw [address]
@@ -102,7 +102,7 @@ theorem private_contract_pre (s : State) (h : (Spec.Rsa.privateCheckedContract a
     have dqe : arg s 15 = arg s 11 := BitVec.eq_of_toNat_eq dqLen
     rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨
         j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨
-        j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 by omega) with
+        j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp [privateGeometry, PrivGeometry.argument, oe, ie, de, qe, dqe]
     all_goals rfl

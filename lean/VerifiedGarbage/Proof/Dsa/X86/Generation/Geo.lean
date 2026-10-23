@@ -23,10 +23,10 @@ structure GeoOk (g : Geo) where
   e : g.e = (8 * g.pLen - 8 * g.qLen) / 32 + 1
   qv : Verified target g.qCode (ppContract (8 * g.qLen))
   qNoSp : NoSp g.qCode
-  qStack : stackUse g.qCode ≤ 112
+  qStack : stackUse g.qCode ≤ 152
   pv : Verified target g.pCode (ppContract (8 * g.pLen))
   pNoSp : NoSp g.pCode
-  pStack : stackUse g.pCode ≤ 112
+  pStack : stackUse g.pCode ≤ 152
   cv : Verified target g.checkCode (Spec.Dsa.checkParametersContract abi 32)
   cNoSp : NoSp g.checkCode
   cStack : stackUse g.checkCode ≤ 32

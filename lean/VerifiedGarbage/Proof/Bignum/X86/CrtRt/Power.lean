@@ -129,8 +129,8 @@ theorem doubleStep_ok (h : In Ex base bytes len args s) (c : Ctx)
     rw [m₅]; exact ((O₁.mono (Nat.zero_le _) (by omega_arith)).trans (W₇.mono (Nat.zero_le _) (by omega_arith))).trans
       (O₈.mono (Nat.zero_le _) (by omega_arith)))
   -- The sum back where it is below `M`.
-  refine WP.seq (WP.mono (select_ok (x := .slot c 1) (d := .slot c 4) h₅ N1 (by simp only [cb1]; omega_arith)
-    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) ecx₅) fun u₉ ⟨O₉, V₉, K₉⟩ => ?_)
+  refine WP.seq (WP.mono (selectX_ok (x := .slot c 1) (d := .slot c 4) h₅ N1 (by simp only [cb1]; omega_arith)
+    (by simp only [cb1]; omega_arith) (by simp only [cb1]; omega_arith) (by simp only [cw1]; omega_arith) ecx₅) fun u₉ ⟨O₉, V₉, K₉⟩ => ?_)
   simp only [cb1, cw1] at O₉ V₉
   refine wp_subZ rfl fun u₁₀ e₁₀ z₁₀ => WP.block_nil ?_
   have esi₉ : u₉.gpr .esi = s.gpr .esi := by rw [K₉.1 _ (by decide), K₅'.1 _ (by decide)]

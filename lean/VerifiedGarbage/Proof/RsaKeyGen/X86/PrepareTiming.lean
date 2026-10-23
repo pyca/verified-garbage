@@ -16,8 +16,8 @@ namespace VG.Proof.RsaKeyGen.X86.Prepare
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem code_rawAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
     RelCT isa (fun s t => InitialPair g capacity p s t e) (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont)
@@ -30,8 +30,8 @@ theorem code_rawAt {mont : Prog isa} {name : String}
     (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
     RelCT isa (InitialPair g capacity p) (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont)
@@ -40,8 +40,8 @@ theorem code_raw {mont : Prog isa} {name : String}
     (by have := v.minWidth; omega) (by have := v.minWidth; omega)
 
 theorem code_traceAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
     RelCT isa (fun s t => InitialPair g capacity p s t e) (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont)
@@ -55,8 +55,8 @@ theorem code_traceAt {mont : Prog isa} {name : String}
   exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
 
 theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
     RelCT isa (InitialPair g capacity p) (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) (Pair g [.edi]) :=

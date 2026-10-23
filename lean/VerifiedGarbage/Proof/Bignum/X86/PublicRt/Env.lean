@@ -24,7 +24,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
 /-- The regions the exponentiation changes. -/
 def Chg (base : Addr) (len bytes : Nat) (sp : BitVec 32) : List Region :=
-  [⟨off base 128, 12⟩, ⟨off base (numAt len 1), bytes - numAt len 1⟩, below sp 40]
+  [⟨off base 128, 12⟩, ⟨off base (numAt len 1), bytes - numAt len 1⟩, below sp 96]
 
 structure Env (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (M : Nat) (s : State) : Prop where
   pi : RtIn base bytes len args s
@@ -80,15 +80,15 @@ theorem Env.keep {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M :
       have := Offset.sub base (d := numAt len 1) (n := bytes - numAt len 1) (e := 0) (k := bytes) (Nat.zero_le _)
         (by omega)
       simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
-    · -- The argument is above `esp`, the 40 bytes below it.
+    · -- The argument is above `esp`, the 96 bytes below it.
       have low := E.room.low
       have top := E.top
       have ea : (VG.Proof.Dsa.X86.stackAddress s i).toNat = (s.gpr .esp).toNat + (4 + 4 * i) := by
         simp only [VG.Proof.Dsa.X86.stackAddress, addr, setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat]
         omega
-      have eb : ((s.gpr .esp - BitVec.ofNat 32 40).setWidth 64).toNat = (s.gpr .esp).toNat - 40 := by
+      have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
         rw [setWidth_toNat, sub_toNat (by omega)]
-      exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 40) (.inl (by dsimp only; rw [eb, ea]; omega))
+      exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
         (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
   · rw [← E.mod, ← read_eq_val32, ← read_eq_val32,
       frame_read F E.room nw' (by rw [e01]; omega) (by rw [← wb_eq]; omega) (.inr ⟨by simp [numOff], by rw [← wb_eq]; omega⟩)]

@@ -79,7 +79,7 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     · rw [u4.mem, u3.mem, u2.mem, u1.mem]; exact hs
     · rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, u1.gpr, hc.ebp]
     · rw [u4.other _ (by decide), u3.gpr]
-  refine VP.seq (VP.mono (zero_vp (hg.wbuf (o := oLen) (n := h.B) (by pomega) (by omega)) (by omega) hI₁)
+  refine VP.seq (VP.mono (zero_vp (hg.wbuf (o := oLen) (n := h.B) (by pomega) (by omega_arith)) (by omega_arith) hI₁)
     (fun _ _ h => h) fun _ _ h => h) ?_
   -- The length field and the last block.
   refine VP.taint [.esp, .ebp] h.certs.lenSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, ⟨hi, hs⟩, hz⟩ => ?_
@@ -99,9 +99,9 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
   have e8 : (t4.gpr .ebx).setWidth 64 + BitVec.ofNat 64 (h.H.B - 8) = sa scr (oLen + (h.B - 8)) := by
     rw [bx4, hg.scrA (by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have hw1 : InRegions t4.wr (VG.X86.addr (t4.gpr .ebx) (h.H.B - 8)) 4 := by
-    rw [addr_eq (by omega), e8]; exact hg.wr c4.st (by pomega)
+    rw [addr_eq (by omega_arith), e8]; exact hg.wr c4.st (by pomega)
   have hw2 : InRegions t4.wr (VG.X86.addr (t4.gpr .ebx) (h.H.B - 8 + 4)) 4 := by
-    rw [addr_eq (by omega), bx4, hg.scrA (by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    rw [addr_eq (by omega_arith), bx4, hg.scrA (by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact hg.wr c4.st (by pomega)
   refine WP.block_append ((Proof.MdStream.X86.len64Of_ok hfit ax4 u4.gpr hw1 hw2).mono fun t5 ⟨g5, rd5, wr5, m5⟩ => ?_)
   have hl8 := Proof.MdStream.bytes64_length h.H.be (BitVec.ofNat 64 (8 * ((0 : BitVec 32) ++ BitVec.ofNat 32 (ℓ σ)).toNat))
@@ -111,7 +111,7 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
       (Proof.MdStream.bytes64 h.H.be (BitVec.ofNat 64 (8 * ((0 : BitVec 32) ++ BitVec.ofNat 32 (ℓ σ)).toNat)))
       (R := sR scr (oLen + (h.B - 8)) 8) (by rw [hl8]; exact Region.contains_self _ _)
     exact this
-  have sub8 : Region.Sub (sR scr (oLen + (h.B - 8)) 8) (sR scr oLen h.B) := Offset.sub _ (by omega) (by omega)
+  have sub8 : Region.Sub (sR scr (oLen + (h.B - 8)) 8) (sR scr oLen h.B) := Offset.sub _ (by omega_arith) (by omega_arith)
   have c5 : Ctx L scr σ t5 := c4.write fr5 (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by pomega))
     rd5 wr5 (g5 _ (by decide) (by decide) (by decide)) (g5 _ (by decide) (by decide) (by decide))
@@ -124,7 +124,7 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
   have c8 := (c6.upd u7 (by decide) (by decide)).upd u8 (by decide) (by decide)
   refine c8.wp_st hg (d := sLb) (by decide) fun t9 c9 m9 => WP.block_nil ?_
   have ax8 : t8.gpr .eax = BitVec.ofNat 32 ((ℓ σ + h.L) / h.B) := by
-    rw [u8.gpr, u7.gpr, u6.gpr, sl5, BitVec.ofNat_add_ofNat, ofNat_shr (by have := hℓ σ; omega), h.pow_lg]
+    rw [u8.gpr, u7.gpr, u6.gpr, sl5, BitVec.ofNat_add_ofNat, ofNat_shr (by have := hℓ σ; omega_arith), h.pow_lg]
   have m8 : t8.mem = t5.mem := by rw [u8.mem, u7.mem, u6.mem]
   have fr9 : Frame [slotR L sLb] t5.mem t9.mem := by rw [m9.mem, m8]; exact slot_frame L _ _ _
   refine ⟨c9, hI σ _ _ hi ?_, fun j hj => ?_, ?_, ?_⟩
@@ -146,16 +146,16 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
       pomega
     rw [e, BitVec.toNat_ofNat]
     by_cases hj' : j < h.B - 8
-    · rw [ite_eq_right (by omega), hz' j hj]
+    · rw [ite_eq_right (by omega_arith), hz' j hj]
       by_cases hj'' : j < h.B - h.L
       · rw [ite_eq_left hj'']
-      · rw [ite_eq_right hj'', Proof.RsaPkcs1Sig.getD_append_left _ _ _ (by simp; omega),
-          List.getD_eq_getElem?_getD, List.getElem?_replicate, ite_eq_left (by omega)]
+      · rw [ite_eq_right hj'', Proof.RsaPkcs1Sig.getD_append_left _ _ _ (by simp; omega_arith),
+          List.getD_eq_getElem?_getD, List.getElem?_replicate, ite_eq_left (by omega_arith)]
         rfl
-    · rw [ite_eq_left (by omega), ite_eq_right (by omega),
-        Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp; omega), List.length_replicate,
-        count0 (show ℓ σ < 2 ^ 32 by have := hℓ σ; omega)]
-      congr 1; omega
+    · rw [ite_eq_left (by omega_arith), ite_eq_right (by omega_arith),
+        Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp; omega_arith), List.length_replicate,
+        count0 (show ℓ σ < 2 ^ 32 by have := hℓ σ; omega_arith)]
+      congr 1; omega_arith
   · rw [fr9.readW (r := slotR L sL) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Lay.fr_sep (by left; decide) (by decide) (by decide)) (by decide)]

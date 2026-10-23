@@ -130,7 +130,7 @@ include hp
 theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block (add16Body ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 16 * i + 16 ≤ 256 := by omega
+  have j0 : 16 * i + 16 ≤ 256 := by omega_arith
   have hw : pR (s₀.gpr .rdi) ∈ s.wr := by rw [hI.wr, hp.2.1]; simp
   have hr : (⟨s₀.gpr .rsi, 512⟩ : Region) ∈ s.rd ++ s.wr := by rw [hI.rd, hp.1]; simp
   -- `g` is where it was
@@ -140,7 +140,7 @@ theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
   rw [add16Body, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff,
     show ∀ a b : Instr, [a, b] = [a] ++ [b] from fun _ _ => rfl, WP.block_append_iff]
   refine WP.mono (yld_ok (p := .rsi) (off := 0) (d := .xmm2) (by
-    rw [add_ofNat_zero, hI.rsi]; exact ⟨_, hr, Offset.contains_base _ (by omega) (by omega)⟩)) fun s1 ⟨L1, o1⟩ => ?_
+    rw [add_ofNat_zero, hI.rsi]; exact ⟨_, hr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)) fun s1 ⟨L1, o1⟩ => ?_
   refine WP.mono (ypermq_ok (d := .xmm2) (r := .xmm2) s1) fun s2 ⟨P2a, P2b, o2⟩ => ?_
   have o12 := o1.trans o2
   -- the words of `g` in `ymm2`
@@ -150,19 +150,19 @@ theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
         rcases lane01 hl with rfl | rfl
         · rw [P2a, L1 0 (by decide), L1 1 (by decide)]; rfl
         · rw [P2b, L1 0 (by decide), L1 1 (by decide)]; rfl),
-      ← hg _ (by omega), coeffAtW16_eq, add_ofNat_zero, hI.rsi, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fun x => s.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 x) 16) (by omega)
+      ← hg _ (by omega_arith), coeffAtW16_eq, add_ofNat_zero, hI.rsi, BitVec.add_assoc, ← BitVec.ofNat_add]
+    exact congrArg (fun x => s.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 x) 16) (by omega_arith)
   have g2r : s2.gpr .rdi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rdi) (16 * i) := by
     rw [add_ofNat_zero, o12.gpr, hI.rdi]
   rw [WP.block_append_iff]
   refine WP.mono (half_ok lane_unpackLo (o := 0) (by
-      rw [o12.wr, g2r]; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩)
+      rw [o12.wr, g2r]; exact ⟨_, hw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (fun l hl => by rw [o12.lane _ (by decide) l hl]; exact hI.q l hl)) fun s3 ⟨m3, H3, g3, r3, w3, l3⟩ => ?_
   have g3r : s3.gpr .rdi + BitVec.ofNat 64 32 = coeffAddr (s₀.gpr .rdi) (16 * i + 8) := by
     rw [g3, o12.gpr, hI.rdi, show (32 : Nat) = 4 * 8 from rfl, coeffAddr_off]
   rw [WP.block_append_iff]
   refine WP.mono (half_ok lane_unpackHi (o := 32) (by
-      rw [w3, o12.wr, g3r]; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩)
+      rw [w3, o12.wr, g3r]; exact ⟨_, hw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (fun l hl => by rw [l3 _ (by decide) l hl, o12.lane _ (by decide) l hl]; exact hI.q l hl))
     fun s4 ⟨m4, H4, g4, r4, w4, l4⟩ => ?_
   have ga : ∀ r, s4.gpr r = s.gpr r := fun r => by rw [g4, g3, o12.gpr]
@@ -171,14 +171,14 @@ theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
   have z2 : ∀ l < 2, s2.lane .xmm14 l = 0 := fun l hl => by rw [o12.lane _ (by decide) l hl]; exact hI.z l hl
   -- what each half stored
   have A3 : ∀ l < 2, ∀ e < 4, dword (s3.lane .xmm0 l) e = V s₀ (16 * i + 4 * l + e) := fun l hl e he => by
-    rw [H3 l hl e he, z2 l hl, Cbd.dword_punpcklwd0' _ he, W l hl e (by omega), Nat.div_eq_of_lt he,
+    rw [H3 l hl e he, z2 l hl, Cbd.dword_punpcklwd0' _ he, W l hl e (by omega_arith), Nat.div_eq_of_lt he,
       Nat.mod_eq_of_lt he, Nat.mul_zero, Nat.add_zero, o12.mem, g2r, YAddSub.lane_coeff _ _ _ _ _ he,
-      hI.coeff _ (by omega), ifn (by omega), V]
+      hI.coeff _ (by omega_arith), ifn (by omega_arith), V]
   have A4 : ∀ l < 2, ∀ e < 4, dword (s4.lane .xmm0 l) e = V s₀ (16 * i + 8 + 4 * l + e) := fun l hl e he => by
-    rw [H4 l hl e he, z3 l hl, l3 _ (by decide) l hl, Cbd.dword_punpckhwd0' _ he, W l hl (4 + e) (by omega),
-      show (4 + e) / 4 = 1 by omega, show (4 + e) % 4 = e by omega, Nat.mul_one, g3r, YAddSub.lane_coeff _ _ _ _ _ he, m3,
-      g2r, o12.mem, coeffAt_write256 _ _ (by omega) _ (by omega), ifn (by omega),
-      hI.coeff _ (by omega), ifn (by omega), V]
+    rw [H4 l hl e he, z3 l hl, l3 _ (by decide) l hl, Cbd.dword_punpckhwd0' _ he, W l hl (4 + e) (by omega_arith),
+      show (4 + e) / 4 = 1 by omega_arith, show (4 + e) % 4 = e by omega_arith, Nat.mul_one, g3r, YAddSub.lane_coeff _ _ _ _ _ he, m3,
+      g2r, o12.mem, coeffAt_write256 _ _ (by omega_arith) _ (by omega_arith), ifn (by omega_arith),
+      hI.coeff _ (by omega_arith), ifn (by omega_arith), V]
   have m4' : s4.mem = (s.mem.writeW (coeffAddr (s₀.gpr .rdi) (16 * i)) (s3.ymm .xmm0)).writeW
       (coeffAddr (s₀.gpr .rdi) (16 * i + 8)) (s4.ymm .xmm0) := by
     rw [m4, g3r, m3, g2r, o12.mem]
@@ -196,27 +196,27 @@ theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
   · simp only [lane_setReg, lane_setFlags]; rw [l4 _ (by decide) l hl]; exact z3 l hl
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
     rw [m4']
-    exact (hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact (hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    rw [m4', coeffAt_write256 _ _ (by omega) _ hk, coeffAt_write256 _ _ (by omega) _ hk]
+    rw [m4', coeffAt_write256 _ _ (by omega_arith) _ hk, coeffAt_write256 _ _ (by omega_arith) _ hk]
     by_cases h2 : 16 * i + 8 ≤ k ∧ k < 16 * i + 8 + 8
-    · rw [ifp h2, ifp (by omega)]
+    · rw [ifp h2, ifp (by omega_arith)]
       obtain ⟨l, e, hl, he, rfl⟩ : ∃ l e, l < 2 ∧ e < 4 ∧ k = 16 * i + 8 + 4 * l + e :=
-        ⟨(k - 16 * i - 8) / 4, (k - 16 * i - 8) % 4, by omega, by omega, by omega⟩
-      rw [show 8 * (4 * (16 * i + 8 + 4 * l + e - (16 * i + 8))) = 8 * (16 * l + 4 * e) by omega,
+        ⟨(k - 16 * i - 8) / 4, (k - 16 * i - 8) % 4, by omega_arith, by omega_arith, by omega_arith⟩
+      rw [show 8 * (4 * (16 * i + 8 + 4 * l + e - (16 * i + 8))) = 8 * (16 * l + 4 * e) by omega_arith,
         extract_ymm _ _ hl he, A4 l hl e he]
     · rw [ifn h2]
       by_cases h1 : 16 * i ≤ k ∧ k < 16 * i + 8
-      · rw [ifp h1, ifp (by omega)]
+      · rw [ifp h1, ifp (by omega_arith)]
         obtain ⟨l, e, hl, he, rfl⟩ : ∃ l e, l < 2 ∧ e < 4 ∧ k = 16 * i + 4 * l + e :=
-          ⟨(k - 16 * i) / 4, (k - 16 * i) % 4, by omega, by omega, by omega⟩
-        rw [show 8 * (4 * (16 * i + 4 * l + e - 16 * i)) = 8 * (16 * l + 4 * e) by omega,
+          ⟨(k - 16 * i) / 4, (k - 16 * i) % 4, by omega_arith, by omega_arith, by omega_arith⟩
+        rw [show 8 * (4 * (16 * i + 4 * l + e - 16 * i)) = 8 * (16 * l + 4 * e) by omega_arith,
           extract_ymm _ _ hl he, A3 l hl e he]
       · rw [ifn h1, hI.coeff k hk]
         by_cases h' : k < 16 * i
-        · rw [ifp h', ifp (by omega)]
-        · rw [ifn h', ifn (by omega)]
+        · rw [ifp h', ifp (by omega_arith)]
+        · rw [ifn h', ifn (by omega_arith)]
   · rw [ga]
   · rw [ga]
 

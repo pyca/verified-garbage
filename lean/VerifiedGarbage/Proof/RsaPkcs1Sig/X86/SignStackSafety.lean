@@ -33,7 +33,7 @@ theorem code_stack (v : CrtImpl) : stackUse (code (privName v) (privCode v)) ≤
   have priv := VG.Proof.Rsa.X86.PrivChecked.code_stack v
   simp only [VG.Proof.Rsa.X86.PrivChecked.stackBytes] at priv
   have enc : stackUse VG.Impl.RsaPkcs1Sig.X86.encode = 0 := by decide +kernel
-  have bound : stackUse (body (privName v) (privCode v)) ≤ 3392 := by
+  have bound : stackUse (body (privName v) (privCode v)) ≤ 3448 := by
     simp only [body, afterEnc, zeroOut, wipe, stackUse, enc, Nat.max_le]
     repeat apply And.intro
     all_goals omega

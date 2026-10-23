@@ -69,7 +69,7 @@ private theorem disjoint_bounds {a b : Addr} {n k : Nat}
       omega
 
 theorem CallFacts.reserved {bits : Nat} {s : State} (F : CallFacts bits s) :
-    reservedRegion s = below (s.gpr .esp) 112 := by
+    reservedRegion s = below (s.gpr .esp) 152 := by
   unfold reservedRegion below
   rw [Taint.sub_setWidth F.low]
 
@@ -87,7 +87,7 @@ theorem CallFacts.savedSub {bits : Nat} {s : State} (F : CallFacts bits s) :
   exact below_sub (by decide) F.low
 
 theorem CallFacts.bodyStackSub {bits : Nat} {s : State} (F : CallFacts bits s) :
-    (below (callEnvironment bits s).p 96).Sub (reservedRegion s) := by
+    (below (callEnvironment bits s).p 136).Sub (reservedRegion s) := by
   rw [F.reserved]
   exact below_inner (by decide) F.low
 
@@ -134,19 +134,19 @@ theorem CallFacts.valid {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
       unfold scratchBytes VG.Impl.Bignum.X86.PublicContext.slot VG.Impl.Bignum.hdrBytes at this
       omega
     have far := F.stackAll _ List.mem_cons_self
-    have rn : (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 112 := by
+    have rn : (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 152 := by
       rw [F.reserved]
-      change ((s.gpr .esp - BitVec.ofNat 32 112).setWidth 64).toNat = _
+      change ((s.gpr .esp - BitVec.ofNat 32 152).setWidth 64).toNat = _
       rw [BitVec.toNat_setWidth, sub_toNat low, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
     have bounds := disjoint_bounds (a := (callEnvironment bits s).base) (n := (callEnvironment bits s).size)
-      (b := (reservedRegion s).base) (k := 112)
+      (b := (reservedRegion s).base) (k := 152)
       (by rw [workspaceNat]; change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ 2 ^ 64; omega)
       (by rw [rn]; have := (s.gpr .esp).isLt; omega) nonempty (by decide) far
     rw [rn, workspaceNat] at bounds
     rw [pNat, workspaceNat]
-    change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ (s.gpr .esp).toNat - 112 ∨
-      (s.gpr .esp).toNat - 112 + 112 ≤ (arg s 0).toNat at bounds
-    change (s.gpr .esp).toNat - 16 ≤ (arg s 0).toNat ∨ (arg s 0).toNat + 8 * (arg s 1).toNat + 96 ≤
+    change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ (s.gpr .esp).toNat - 152 ∨
+      (s.gpr .esp).toNat - 152 + 152 ≤ (arg s 0).toNat at bounds
+    change (s.gpr .esp).toNat - 16 ≤ (arg s 0).toNat ∨ (arg s 0).toNat + 8 * (arg s 1).toNat + 136 ≤
       (s.gpr .esp).toNat - 16
     omega
   · rw [call_args_address, F.workspaceRegion]; exact F.wsArgs.symm

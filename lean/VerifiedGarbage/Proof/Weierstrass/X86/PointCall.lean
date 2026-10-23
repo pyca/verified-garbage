@@ -132,21 +132,21 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
   have ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 (enc a) := by rw [u₃.other _ (by decide), u₂.gpr]
   have edx₃ : s₃.gpr .edx = BitVec.ofNat 32 (enc o) := u₃.gpr
   have hfit : 4 * [Reg.eax, .ecx, .edx, .edi].length + 4 ≤ (s₃.gpr .esp).toNat := by
-    rw [esp₃]; simp only [List.length_cons, List.length_nil]; omega
+    rw [esp₃]; simp only [List.length_cons, List.length_nil]; omega_arith
   -- The callee's view.
   let t := ((pushed [Reg.eax, .ecx, .edx, .edi] s₃).callEntry).withRegions
     [below (s₃.gpr .esp) 16] [⟨base, 8192⟩]
-  have targ : ∀ i (hi : i < 4), arg t i = s₃.gpr ([Reg.eax, .ecx, .edx, .edi][3 - i]'(by simp; omega)) :=
+  have targ : ∀ i (hi : i < 4), arg t i = s₃.gpr ([Reg.eax, .ecx, .edx, .edi][3 - i]'(by simp; omega_arith)) :=
     fun i hi => callEntry_arg hfit (by decide) (by simpa using hi)
   have a0 : arg t 0 = s.gpr .edi := by rw [targ 0 (by decide)]; exact edi₃
   have hlt : ∀ x, x < 4096 → (BitVec.ofNat 32 x).toNat = x := fun x hx => by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_arith
   have a1 : (arg t 1).toNat = enc o := by
-    rw [targ 1 (by decide)]; show (s₃.gpr .edx).toNat = enc o; rw [edx₃, hlt _ (by omega)]
+    rw [targ 1 (by decide)]; show (s₃.gpr .edx).toNat = enc o; rw [edx₃, hlt _ (by omega_arith)]
   have a2 : (arg t 2).toNat = enc a := by
-    rw [targ 2 (by decide)]; show (s₃.gpr .ecx).toNat = enc a; rw [ecx₃, hlt _ (by omega)]
+    rw [targ 2 (by decide)]; show (s₃.gpr .ecx).toNat = enc a; rw [ecx₃, hlt _ (by omega_arith)]
   have a3 : (arg t 3).toNat = enc b := by
-    rw [targ 3 (by decide)]; show (s₃.gpr .eax).toNat = enc b; rw [eax₃, hlt _ (by omega)]
+    rw [targ 3 (by decide)]; show (s₃.gpr .eax).toNat = enc b; rw [eax₃, hlt _ (by omega_arith)]
   have hws : wsOf t = base := by show (arg t 0).setWidth 64 = base; rw [a0]; exact hs.edi
   have hwsN : (arg t 0).toNat = base.toNat := by
     rw [a0, ← hs.edi, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (s.gpr .edi).isLt
@@ -156,10 +156,10 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
     rw [callEntry_espNat hfit, esp₃]; rfl
   have argA : argAddr t 0 = (s₃.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := callEntry_argAddr0 _ _
   have argN : (argAddr t 0).toNat = (s.gpr .esp).toNat - 16 := by
-    rw [argA, esp₃, BitVec.toNat_setWidth, sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [argA, esp₃, BitVec.toNat_setWidth, sub_toNat (by omega_arith)]
+    exact Nat.mod_eq_of_lt (by omega_arith)
   have retN : ((t.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
-    rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega_arith)
   have fr : Frame [below (s.gpr .esp) 20] s.mem t.mem := by
     have := callEntry_frame hfit (rs := [Reg.eax, .ecx, .edx, .edi]) (by decide)
     rw [m₃, esp₃] at this
@@ -167,11 +167,11 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
   have hpre : Pre k t := by
     have hwsT : (wsOf t).toNat = base.toNat := by rw [hws]
     refine ⟨by show [below (s₃.gpr .esp) 16] = [(⟨argAddr t 0, 16⟩ : Region)]; rw [argA],
-      by show [(⟨base, 8192⟩ : Region)] = _; rw [hws], by rw [hwsN]; exact hn, by rw [espT]; omega,
-      Region.disjoint_of_le (by simp only; rw [argN, hwsT]; omega) (by simp only; rw [argN]; omega)
-        (by simp only; rw [hwsT]; omega),
-      Region.disjoint_of_le (by simp only; rw [retN, hwsT]; omega) (by simp only; rw [retN]; omega)
-        (by simp only; rw [hwsT]; omega),
+      by show [(⟨base, 8192⟩ : Region)] = _; rw [hws], by rw [hwsN]; exact hn, by rw [espT]; omega_arith,
+      Region.disjoint_of_le (by simp only; rw [argN, hwsT]; omega_arith) (by simp only; rw [argN]; omega_arith)
+        (by simp only; rw [hwsT]; omega_arith),
+      Region.disjoint_of_le (by simp only; rw [retN, hwsT]; omega_arith) (by simp only; rw [retN]; omega_arith)
+        (by simp only; rw [hwsT]; omega_arith),
       hk0, hk9, by rw [a1]; exact ho, by rw [a2]; exact ha, by rw [a3]; exact hb⟩
   let K : Contract isa :=
     { pre := fun u => Pre k u ∧ wsOf u = base ∧ (arg u 1).toNat = enc o ∧ (arg u 2).toNat = enc a ∧
@@ -204,13 +204,13 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
         simp only [ofs]
         have e : ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
           rw [BitVec.toNat_setWidth, sub_toNat h20]
-          exact Nat.mod_eq_of_lt (by omega)
+          exact Nat.mod_eq_of_lt (by omega_arith)
         generalize ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64) = z at hzx e
         bv_omega
       have h2 := hx outW (by simp)
       have h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
-      omega
+      omega_arith
     · rw [← m₂, O₂ x fun r hr => ?_]
       · exact fr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hzx
       simp only [outs, List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -108,7 +108,7 @@ abbrev callRdK (p : PPub) (used : Nat) : List Region :=
     ⟨p.T.setWidth 64, 8192⟩]
 abbrev callWrK (p : PPub) : List Region :=
   [⟨p.op.setWidth 64, p.len⟩, ⟨(p.S + BitVec.ofNat 32 candOff).setWidth 64, 8⟩, ⟨p.B.setWidth 64, p.slen * 8⟩,
-    ⟨p.sp.setWidth 64 - 156#64 + BitVec.ofNat 64 120, 36⟩]
+    ⟨p.sp.setWidth 64 - 212#64 + BitVec.ofNat 64 176, 36⟩]
 
 theorem call_ct (q : Lp) :
     RelCT isa (fun t₁ t₂ => CallAt q t₁ ∧ CallAt q t₂)

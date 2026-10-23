@@ -78,9 +78,9 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         t.gpr .lr = BitVec.ofNat 32 P.slt ∧ t.z = decide (P.slt = 0) := by
       prun [fxSalt, atS, atDb, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a7, r7, v7, arg_lt,
         hk.2.2.1.2.1, hk.2.2.1.2.2.1,
-        movw_val (show oY + 8 + dig h.H < 2 ^ 16 by show oY + 8 + h.D < 2 ^ 16; omega),
+        movw_val (show oY + 8 + dig h.H < 2 ^ 16 by show oY + 8 + h.D < 2 ^ 16; omega_arith),
         movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat, hz0,
-        add_ofNat_sub (x := P.scr) (a := oEm + lo P + dbN h P) (b := P.slt) (by omega),
+        add_ofNat_sub (x := P.scr) (a := oEm + lo P + dbN h P) (b := P.slt) (by omega_arith),
         VG.Proof.X25519.Arm.ofNat_beq_zero hsl]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, z⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ ⟨hk, ha'⟩, m ▸ hy⟩, r0, r1, lr, z⟩
   · have h0 : P.slt = 0 := by
@@ -90,25 +90,25 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   · by_cases h0 : P.slt = 0
     · exact VP.empty fun σ s ⟨⟨_, _, _, _, z⟩, e⟩ => by
         rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_true h0] at e; exact absurd e (by decide)
-    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.slt) (by omega) (by omega))
-      (hg.rbuf (o := oEm + lo P + dbN h P - P.slt) (n := P.slt) (by omega) (by omega))
-      (by rw [hg.addr (by omega), hg.addr (by omega)]; exact Geo.sep (by omega) (by omega) (by omega)) (by omega)
+    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.slt) (by omega_arith) (by omega_arith))
+      (hg.rbuf (o := oEm + lo P + dbN h P - P.slt) (n := P.slt) (by omega_arith) (by omega_arith))
+      (by rw [hg.addr (by omega_arith), hg.addr (by omega_arith)]; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
       (f := fun τ i => dbF h P τ (dbN h P - P.slt + i))
       (Inv := fun τ m => (K2 h P τ m ∧ P.any = 0) ∧
         (∀ i < 8 + h.D, m (sa P.scr (oY + i)) = (Spec.RsaPss.zeros 8 ++ digB h P τ).getD i 0) ∧
         YZ P.scr (8 + h.D + P.slt) m) fun τ m m' ⟨⟨hk, ha'⟩, h1, h2⟩ hf' => ?_).mono
-      (fun τ s ⟨⟨⟨hc, hk, hy⟩, r0, r1, lr, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega), fun i hi => ?_⟩, r0, r1, lr,
+      (fun τ s ⟨⟨⟨hc, hk, hy⟩, r0, r1, lr, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega_arith), fun i hi => ?_⟩, r0, r1, lr,
         fun i hi => ?_⟩) fun τ s ⟨hc, ⟨hk, h1, h2⟩, hs⟩ => ⟨hc, hk, fun i hi => ?_⟩
-    · rw [hg.addr (by omega)] at hf'
+    · rw [hg.addr (by omega_arith)] at hf'
       refine ⟨⟨K2.keep h hk hf' fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega) (by omega), ha'⟩,
-        sbytes_keep hf' (fun r hr => ?_) (by omega) h1, sbytes_keep hf' (fun r hr => ?_) (by omega) h2⟩
-      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega) (by omega) (by omega)
-      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega) (by omega) (by omega)
-    · rw [show oY + (8 + h.D + P.slt) + i = oY + (8 + h.D + P.slt + i) by omega, hy _ (by omega),
-        getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length]; omega)]
-    · rw [hg.byteAt_scr (by omega), show oEm + lo P + dbN h P - P.slt + i = oEm + lo P + (dbN h P - P.slt + i) by omega]
-      exact hk.1.2.2.2.1 _ (by omega)
+          simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega_arith) (by omega_arith), ha'⟩,
+        sbytes_keep hf' (fun r hr => ?_) (by omega_arith) h1, sbytes_keep hf' (fun r hr => ?_) (by omega_arith) h2⟩
+      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)
+      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)
+    · rw [show oY + (8 + h.D + P.slt) + i = oY + (8 + h.D + P.slt + i) by omega_arith, hy _ (by omega_arith),
+        getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length]; omega_arith)]
+    · rw [hg.byteAt_scr (by omega_arith), show oEm + lo P + dbN h P - P.slt + i = oEm + lo P + (dbN h P - P.slt + i) by omega_arith]
+      exact hk.1.2.2.2.1 _ (by omega_arith)
     · have hl : (Spec.RsaPss.zeros 8 ++ digB h P τ).length = 8 + h.D := by
         simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length]
       rw [RsaPss.getD_app, hl]
@@ -116,13 +116,13 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       · rw [ite_eq_left e1]; exact h1 i e1
       rw [ite_eq_right e1]
       by_cases e2 : i < 8 + h.D + P.slt
-      · have e := hs (i - (8 + h.D)) (by omega)
-        rw [hg.byteAt_scr (by omega), show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega] at e
+      · have e := hs (i - (8 + h.D)) (by omega_arith)
+        rw [hg.byteAt_scr (by omega_arith), show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega_arith] at e
         rw [e]
-        simp [sltB, List.getD_eq_getElem?_getD, show i - (8 + h.D) < P.slt by omega]
-      · rw [getD_ge (l := sltB h P τ) (by simp only [sltB, List.length_map, List.length_range]; omega),
-          show oY + i = oY + (8 + h.D + P.slt) + (i - (8 + h.D + P.slt)) by omega]
-        exact h2 _ (by omega)
+        simp [sltB, List.getD_eq_getElem?_getD, show i - (8 + h.D) < P.slt by omega_arith]
+      · rw [getD_ge (l := sltB h P τ) (by simp only [sltB, List.length_map, List.length_range]; omega_arith),
+          show oY + i = oY + (8 + h.D + P.slt) + (i - (8 + h.D + P.slt)) by omega_arith]
+        exact h2 _ (by omega_arith)
 
 /-- `M'`'s length and blocks. -/
 theorem lenF_vp (P : EP) (hP : ∃ σ, In h.D P σ) :

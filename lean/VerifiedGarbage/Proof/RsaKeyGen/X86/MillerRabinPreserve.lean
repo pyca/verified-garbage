@@ -33,7 +33,7 @@ theorem StateAt.next {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat} (S
     (uniform : w32 t.mem P.g.W 192 = (mrSB P.candidate P.bytes P.start P.entropy (k + 1)).2)
     (atLoop : MrLoopAt P.candidate P.checks P.twos.1 P.twos.2 P.bytes P.start P.entropy (k + 1) (n - 1))
     (W : WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem)
-    (F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem)
+    (F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem)
     (K : Keeps WitnessStep.clob s t) : StateAt P (k + 1) (n - 1) t := by
   refine ⟨T, ?_, ?_, ?_, (step_header32 v.geometry W (Or.inr (Or.inl rfl))).trans S.randLength,
     ?_, rounds, uniform, (step_header32 v.geometry W (Or.inr (Or.inr rfl))).trans S.checks, atLoop⟩

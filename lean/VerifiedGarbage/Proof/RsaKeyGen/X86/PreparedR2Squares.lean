@@ -18,12 +18,12 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 structure SquaresState (g : Geometry) (c capacity : Nat) (p : BitVec 32) (s t : State) : Prop where
   ready : Ready g c capacity p t
   workspace : WorkspaceFrame g (montWrites g 6) s.mem t.mem
-  memory : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem
+  memory : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem
   keeps : Keeps [.eax, .ecx, .edx] s t
 
 theorem squares_ready {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (odd : c % 2 = 1)
     (value : val32 s.mem g.W (g.array 6) g.words = 2 ^ g.w * 2 ^ (64 * g.w) % c) :

@@ -35,7 +35,7 @@ theorem CrtABI.stackArgument {s : State} (A : CrtABI s) {i : Nat} (hi : i < 18) 
 
 theorem CrtABI.stack {s : State} (A : CrtABI s) :
     StkOk (s.gpr .esp) (argumentPointer s 16) ((arg s 17).toNat * 8) := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 40) A.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 16).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
   · have H : 224 ≤ (arg s 17).toNat * 8 := A.used; omega

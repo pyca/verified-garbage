@@ -185,14 +185,14 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   rw [checked_eq hL]
   generalize hc : Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take ((p.bits + 7) / 8))) = c
   have hc' : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) := hc.symm
-  have hW1 : 8 ≤ mW p.bits := by simp only [mW]; omega
-  have hW2 : mW p.bits ≤ 128 := by simp only [mW]; omega
-  have hT : slot (mW p.bits) aTab + 2048 ≤ p.Z := by simp only [slot, hdrBytes, aTab, mW, PP.L] at hZ ⊢; omega
+  have hW1 : 8 ≤ mW p.bits := by simp only [mW]; omega_arith
+  have hW2 : mW p.bits ≤ 128 := by simp only [mW]; omega_arith
+  have hT : slot (mW p.bits) aTab + 2048 ≤ p.Z := by simp only [slot, hdrBytes, aTab, mW, PP.L] at hZ ⊢; omega_arith
   have sN : slot (mW p.bits) aN + 8 * (mW p.bits + 2) ≤ slot (mW p.bits) aTab := by
-    simp only [slot, hdrBytes, aN, aTab]; omega
-  have hNZ : slot (mW p.bits) aN + 8 * (mW p.bits + 2) ≤ p.Z := by omega
+    simp only [slot, hdrBytes, aN, aTab]; omega_arith
+  have hNZ : slot (mW p.bits) aN + 8 * (mW p.bits + 2) ≤ p.Z := by omega_arith
   have hBad : 8 * fBad + 8 ≤ 256 := by decide
-  have hdrT : 256 ≤ slot (mW p.bits) aN := by simp only [slot, hdrBytes]; omega
+  have hdrT : 256 ≤ slot (mW p.bits) aN := by simp only [slot, hdrBytes]; omega_arith
   unfold main
   simp only [List.append_assoc]
   -- `p` and its working space.
@@ -205,13 +205,13 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   have htop : word t₁.mem p.B (8 * fTop) = BitVec.ofNat 64 (2 ^ mK p.bits - 1) := by
     have := ht.top; rw [hmb] at this; exact this
   have i₁ : InScr p.B p.Z s.mem t₁.mem := InScr.of_frm ht.frm fun r hr => by
-    have := phaseRanges_kmut r hr; omega
+    have := phaseRanges_kmut r hr; omega_arith
   have hU₁ : word t₁.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L := by
     rw [ht.frm.word_eq (fun r hr => by
       simp only [phaseRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [kUsed, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega)
-      (by simp only [kUsed, sFn]; omega)]
+        simp only [kUsed, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega_arith)
+      (by simp only [kUsed, sFn]; omega_arith)]
     exact hU
   refine wp_seqs_append (by simp [shapeP, loadA]) (by simp [residue]) ?_
   refine WP.mono (shapeP_ok st₁ hlen htop hL) fun t₂ ⟨st₂, hn₂, f₂, k₂⟩ => ?_
@@ -223,7 +223,7 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   have hs₃₀ := st₃₀.ws.scr
   refine WP.seq (WP.mono (WP.keep [.x5] (Q := fun t =>
       t.gpr .x5 = resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ∧ t.mem = t₃₀.mem) (by
-    brun [st₃₀.ws.x0, hdr_enc (show fBad < 32 by decide), hs₃₀.ld (d := 8 * fBad) (by omega), hr₃₀])
+    brun [st₃₀.ws.x0, hdr_enc (show fBad < 32 by decide), hs₃₀.ld (d := 8 * fBad) (by omega_arith), hr₃₀])
     (by decide) (by decide) (by decide +kernel)) fun t₃ ⟨⟨h5r, hm₃⟩, k₃'⟩ => ?_)
   have st₃ : PSt p (mW p.bits) t₃ := st₃₀.step (rs := []) (st₃₀.ws.congr' (rs := [])
     (by rw [hm₃]; exact Frm.refl _ _ _) (by simp) k₃' (by decide)) (by rw [hm₃]; exact Frm.refl _ _ _)
@@ -234,7 +234,7 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   have k₃ : Keep mmRegs t₂ t₃ := (k₃₀.trans k₃').mono (by decide)
   have e : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm p.B rs m m' → (∀ r ∈ rs, 8 * kUsed + 8 ≤ r.1 ∨
       r.1 + r.2 ≤ 8 * kUsed) → word m' p.B (8 * kUsed) = word m p.B (8 * kUsed) := fun f d =>
-    f.word_eq d (by simp only [kUsed, sFn]; omega)
+    f.word_eq d (by simp only [kUsed, sFn]; omega_arith)
   have hsh := shapeFlag_zero (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 h.dims.g
   rw [← hc'] at hsh
   refine WP.ite (resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) == 0) (by rw [eval_zero, h5r])
@@ -253,35 +253,35 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
       all_goals
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> omega
+        rcases hr with rfl | rfl <;> omega_arith
     have hU₃ : word t₃.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L := by
       rw [e f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
-        e f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega))]
+        e f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega_arith))]
       exact hU₁
     have k₁₃ : Keep mmRegs s t₃ := ((ht.keep.trans k₂).trans k₃).mono (by decide)
-    refine WP.mono (finUsed_end (s := s) st₃.ws.scr st₃.ws.x0 (by omega) (by decide) hU₃
+    refine WP.mono (finUsed_end (s := s) st₃.ws.scr st₃.ws.x0 (by omega_arith) (by decide) hU₃
       st₃.args.usedP st₃.ou i₃ k₁₃) fun t ht => ?_
     show KEnd s t p.op p.up p.L 2 (p.r.length - (p.r.drop ((p.bits + 7) / 8)).length) none
-    rw [List.length_drop, show p.r.length - (p.r.length - (p.bits + 7) / 8) = p.L by simp only [PP.L] at hL ⊢; omega]
+    rw [List.length_drop, show p.r.length - (p.r.length - (p.bits + 7) / 8) = p.L by simp only [PP.L] at hL ⊢; omega_arith]
     exact ht
   have hn₃ : wv t₃.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c := by
-    rw [f₃.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega)) (by omega)]; exact hn₂
+    rw [f₃.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega_arith)) (by omega_arith)]; exact hn₂
   -- The table.
   refine wp_seqs_append (a := [_]) (by simp) (by simp [sieve]) ?_
   rw [seqs_one]
   refine WP.mono (tableWrite_ok st₃ hT) fun t₄ ⟨st₄, tab₄, f₄, k₄⟩ => ?_
   have dT : ∀ r ∈ [(slot (mW p.bits) aTab, 2048)], 8 * fBad + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * fBad := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact .inl (by omega)
+    rw [List.mem_singleton.mp hr]; exact .inl (by omega_arith)
   have hn₄ : wv t₄.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c := by
-    rw [f₄.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by omega)) (by omega)]; exact hn₃
+    rw [f₄.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by omega_arith)) (by omega_arith)]; exact hn₃
   have hr₄ : word t₄.mem p.B (8 * fBad) = resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) := by
-    rw [f₄.word_eq dT (by omega)]; exact hr₃
+    rw [f₄.word_eq dT (by omega_arith)]; exact hr₃
   -- The sieve of `p`.
   refine wp_seqs_append (by simp [sieve]) (by simp [halveQ]) ?_
   refine WP.mono (sieve_ok st₄ hT tab₄ hn₄ hr₄) fun t₅ ⟨st₅, hb₅, f₅, k₅⟩ => ?_
   have hn₅ : wv t₅.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c := by
-    rw [f₅.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega)) (by omega)]; exact hn₄
-  have tab₅ := tab₄.frm f₅ (fun r hr => by rw [List.mem_singleton.mp hr]; omega) (by omega)
+    rw [f₅.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega_arith)) (by omega_arith)]; exact hn₄
+  have tab₅ := tab₄.frm f₅ (fun r hr => by rw [List.mem_singleton.mp hr]; omega_arith) (by omega_arith)
   -- `q`.
   refine wp_seqs_append (by simp [halveQ]) (by simp [sieve]) ?_
   refine WP.mono (halveQ_ok st₅ hn₅ hb₅) fun t₆ ⟨st₆, hn₆, hb₆, f₆, k₆⟩ => ?_
@@ -289,23 +289,23 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact sN
-    · omega) (by omega)
+    · omega_arith) (by omega_arith)
   -- The sieve of `q`.
   refine wp_seqs_append (by simp [sieve]) (by simp) ?_
   refine WP.mono (sieve_ok st₆ hT tab₆ hn₆ hb₆) fun t₇ ⟨st₇, hb₇, f₇, k₇⟩ => ?_
   have hn₇ : wv t₇.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c / 2 := by
-    rw [f₇.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega)) (by omega)]; exact hn₆
+    rw [f₇.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega_arith)) (by omega_arith)]; exact hn₆
   have hU₇ : word t₇.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L := by
     rw [e f₇ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
       e f₆ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact .inl (by simp only [kUsed, sFn]; omega)
+        · exact .inl (by simp only [kUsed, sFn]; omega_arith)
         · exact .inr (by decide)),
       e f₅ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
-      e f₄ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega)),
+      e f₄ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega_arith)),
       e f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
-      e f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega))]
+      e f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega_arith))]
     exact hU₁
   have i₇ : InScr p.B p.Z s.mem t₇.mem := by
     refine i₁.trans ((InScr.of_frm f₂ ?_).trans ((InScr.of_frm f₃ ?_).trans ((InScr.of_frm f₄ ?_).trans
@@ -313,7 +313,7 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
     all_goals
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> omega
+      rcases hr with rfl | rfl <;> omega_arith
   have k₁₇ : Keep mmRegs s t₇ :=
     ((((((ht.keep.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).mono (by decide)
   have hflag : word t₇.mem p.B (8 * fBad) = shapeFlag p.g c := by
@@ -322,7 +322,7 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   simp only [seqs]
   have hs₇ := st₇.ws.scr
   refine WP.seq (WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = shapeFlag p.g c ∧ t.mem = t₇.mem) (by
-    brun [st₇.ws.x0, hdr_enc (show fBad < 32 by decide), hs₇.ld (d := 8 * fBad) (by omega), hflag])
+    brun [st₇.ws.x0, hdr_enc (show fBad < 32 by decide), hs₇.ld (d := 8 * fBad) (by omega_arith), hflag])
     (by decide) (by decide) (by decide +kernel)) fun t₈ ⟨⟨h5, hm₈⟩, k₈⟩ => ?_)
   have i₈ : InScr p.B p.Z s.mem t₈.mem := by rw [hm₈]; exact i₇
   have k₁₈ : Keep mmRegs s t₈ := (k₁₇.trans k₈).mono (by decide)
@@ -341,11 +341,11 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
       unfold Spec.Ffdh.primeShape at hqs
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hqs
       exact hqs.1.2
-    obtain ⟨hpo, _, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+    obtain ⟨hpo, _, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
       (Spec.Rsa.os2ip (p.r.take p.L))
     rw [← hc'] at hpo
     have hq8 : wv t₈.mem p.B (slot (mW p.bits) aN) (mW p.bits) = (c - 1) / 2 := by
-      rw [hm₈, hn₇]; omega
+      rw [hm₈, hn₇]; omega_arith
     refine WP.mono (tests_ok M R st₈ hc' hq8 hqo (by rw [hm₈]; exact hU₇) hL) fun t ht => ?_
     exact PEnd.trans_pre ht (outBytes_inScr i₈ h.ou.outZ) k₁₈
   · -- A rejected shape.
@@ -354,10 +354,10 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
         Spec.Ffdh.primeShape ((c - 1) / 2)) = false := Bool.eq_false_iff.mpr fun h' => hz (hsh.mpr h')
     rw [hshape]
     simp only [Bool.not_false, ↓reduceIte]
-    refine WP.mono (finUsed_end (s := s) st₈.ws.scr st₈.ws.x0 (by omega) (by decide) (by rw [hm₈]; exact hU₇)
+    refine WP.mono (finUsed_end (s := s) st₈.ws.scr st₈.ws.x0 (by omega_arith) (by decide) (by rw [hm₈]; exact hU₇)
       st₈.args.usedP st₈.ou i₈ k₁₈) fun t ht => ?_
     show KEnd s t p.op p.up p.L 2 (p.r.length - (p.r.drop ((p.bits + 7) / 8)).length) none
-    rw [List.length_drop, show p.r.length - (p.r.length - (p.bits + 7) / 8) = p.L by simp only [PP.L] at hL ⊢; omega]
+    rw [List.length_drop, show p.r.length - (p.r.length - (p.bits + 7) / 8) = p.L by simp only [PP.L] at hL ⊢; omega_arith]
     exact ht
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

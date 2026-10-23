@@ -9,7 +9,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
@@ -160,16 +161,19 @@ fn many_blocks() {
 }
 
 /// Updates of every split of the input write the same blocks, and keep a
-/// partial block for the next.
+/// partial block for the next. Each split consumes the whole input, which
+/// leaves nothing pending, so one encryptor and one decryptor (one key
+/// expansion each, the costliest step) serve every split in turn.
 #[test]
 fn streaming_splits() {
     let key = unhex("0123456789ABCDEFF0E1D2C3B4A59687");
     let data: Vec<u8> = (0..8 * 20).map(|i| (i * 13 + 5) as u8).collect();
     let whole = encrypt(&key, &data);
+    let mut cipher = BlowfishEcbEncryptor::new(&key).unwrap();
+    let mut decipher = BlowfishEcbDecryptor::new(&key).unwrap();
     for first in 0..=data.len() {
         for second in [0, 1, 7, 8, 9, 23] {
             let second = (first + second).min(data.len());
-            let mut cipher = BlowfishEcbEncryptor::new(&key).unwrap();
             let mut output = vec![0; data.len() + 7];
             let mut written = 0;
             for range in [0..first, first..second, second..data.len()] {
@@ -180,8 +184,8 @@ fn streaming_splits() {
             }
             assert_eq!(written, data.len());
             assert_eq!(output[..written], whole[..]);
-            cipher.finalize().unwrap();
-            let mut decipher = BlowfishEcbDecryptor::new(&key).unwrap();
+            // Nothing pending, as for a new encryptor.
+            assert_eq!(cipher.output_len(7), 0);
             let mut clear = vec![0; data.len() + 7];
             let mut read = 0;
             for range in [0..first, first..second, second..data.len()] {
@@ -191,9 +195,11 @@ fn streaming_splits() {
                 read += n;
             }
             assert_eq!(clear[..read], data[..]);
-            decipher.finalize().unwrap();
+            assert_eq!(decipher.output_len(7), 0);
         }
     }
+    cipher.finalize().unwrap();
+    decipher.finalize().unwrap();
 }
 
 #[test]

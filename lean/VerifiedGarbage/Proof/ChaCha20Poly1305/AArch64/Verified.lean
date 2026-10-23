@@ -1,6 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Main
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Route
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.SealKey.Main
+import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -31,7 +35,7 @@ Correctness (`Correct.lean`, and `Stitched/` for the eight-block stream's
 own code), constant time, and a state satisfying the precondition: of the
 code with its working space as its last argument (`sealScratchContract`,
 `openScratchContract`), and then of the functions, which allocate it in a
-frame of 1280 bytes on the stack and wipe it after the code
+frame of 1280 bytes on the stack and wipe its first 768 after the code
 (`Verified.stackScratchWiped`).
 
 The taint analysis runs through the callees' code: it knows `x21`–`x25`
@@ -105,12 +109,19 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
     exact WP.mono (Pad.sealRoute_ok v hp₁ hlo h511) fun _ h => Short.MainS.agree ag h
   · split
-    · refine WP.seq (WP.mono (Short.route_ok v.callee.sve true s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+    · refine WP.seq (WP.mono (OpenKey.routeKey_ok v.callee.sve true s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
       have hp₂ := Short.APre.agree ag₂ hp₁
       refine WP.ite (decide (Short.inRoute v.callee.sve true (L s₁))) (Short.route_eval x9₂)
         (fun h => ?_) (fun _ => ?_)
       rotate_left
-      · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+      · have hL₂ : L s₂ = L s₁ := by rw [L, L, ag₂.gpr .x5 (by decide) (by decide)]
+        refine WP.iteCold_iff.mpr (WP.ite (decide (keyLo v.callee.sve true ≤ L s₁ ∧ L s₁ ≤ 704))
+          (OpenKey.key_eval x10₂) (fun hk => ?_) (fun _ => ?_))
+        · have hk' := of_decide_eq_true hk
+          have h513 : 513 ≤ keyLo v.callee.sve true := by cases v.callee.sve <;> decide
+          exact WP.mono (SealKey.sealMain_ok v hp₂ (by omega) (by omega))
+            fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+        · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
       · have hr := of_decide_eq_true h
         have hL : 512 ≤ L s₂ := by
           have hlo : 256 ≤ wideLo v.callee.sve true := by cases v.callee.sve <;> decide
@@ -139,12 +150,19 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
     exact WP.mono (OpenPad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
   · split
-    · refine WP.seq (WP.mono (Short.route_ok v.callee.sve false s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+    · refine WP.seq (WP.mono (OpenKey.routeKey_ok v.callee.sve false s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
       have hp₂ := Short.APre.agree ag₂ hp₁
       refine WP.ite (decide (Short.inRoute v.callee.sve false (L s₁))) (Short.route_eval x9₂)
         (fun h => ?_) (fun _ => ?_)
       rotate_left
-      · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
+      · have hL₂ : L s₂ = L s₁ := by rw [L, L, ag₂.gpr .x5 (by decide) (by decide)]
+        refine WP.iteCold_iff.mpr (WP.ite (decide (keyLo v.callee.sve false ≤ L s₁ ∧ L s₁ ≤ 704)) (OpenKey.key_eval x10₂)
+          (fun hk => ?_) (fun _ => ?_))
+        · have hk' := of_decide_eq_true hk
+          have h513 : 513 ≤ keyLo v.callee.sve false := by cases v.callee.sve <;> decide
+          exact WP.mono (OpenKey.openMain_ok v hp₂ (by omega) (by omega))
+            fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
+        · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
       · have hr := of_decide_eq_true h
         have hL : 512 ≤ L s₂ := by
           have hlo : 256 ≤ wideLo v.callee.sve false := by cases v.callee.sve <;> decide
@@ -317,11 +335,11 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract AArch64.ab
 
 theorem seal_framed (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95 (sealCode v.callee v.stitched))
+      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (sealCode v.callee v.stitched))
       (Spec.ChaCha20Poly1305.sealContract AArch64.abi 1280) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
     (n := 160) (post := Spec.ChaCha20Poly1305.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1280) (words := 95) (seal_verified v) (by decide) (by decide) (by decide)
+    (bytes := 1280) (words := 96) (seal_verified v) (by decide) (by decide) (by decide)
     (sealPost_out _) sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
@@ -334,11 +352,11 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract AArch64.ab
 
 theorem open_framed (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95 (openCode v.callee v.stitched))
+      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (openCode v.callee v.stitched))
       (Spec.ChaCha20Poly1305.openContract AArch64.abi 1280) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
     (n := 160) (post := Spec.ChaCha20Poly1305.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1280) (words := 95) (open_verified v) (by decide) (by decide) (by decide)
+    (bytes := 1280) (words := 96) (open_verified v) (by decide) (by decide) (by decide)
     (openPost_out _) openFrameSat_pre
 
 end VG.Proof.ChaCha20Poly1305.AArch64

@@ -14,7 +14,7 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The bytes of stack the functions use: the frame of the synthetic arguments, a call's frame and its
 return address. -/
-abbrev stack : Nat := 116
+abbrev stack : Nat := 172
 
 structure CheckDomainABI (s : State) : Prop where
   stackLow : stack ≤ (s.gpr .esp).toNat
@@ -24,9 +24,9 @@ structure CheckDomainABI (s : State) : Prop where
   domScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat * 8⟩
   scratchArgs : (⟨argumentPointer s 3, (arg s 4).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 20⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat * 8⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
     ⟨argumentPointer s 3, (arg s 4).toNat * 8⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
   domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   scratchBound : (arg s 3).toNat + (arg s 4).toNat * 8 ≤ 2 ^ 32
   pLen : Spec.Ffdh.pLenValid (arg s 2).toNat
@@ -52,11 +52,11 @@ structure CheckPublicABI (s : State) : Prop where
   retY : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
   retArgs : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
-  belowY : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
     ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
-  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
   domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   yBound : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
   scratchBound : (arg s 5).toNat + (arg s 6).toNat * 8 ≤ 2 ^ 32
@@ -81,10 +81,10 @@ structure CheckPrivateABI (s : State) : Prop where
   xScratch : (⟨argumentPointer s 5, (arg s 6).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
   scratchArgs : (⟨argumentPointer s 7, (arg s 8).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
-  belowY : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
-  belowX : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
     ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
   domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   yBound : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
@@ -121,11 +121,11 @@ structure ExchangeABI (s : State) : Prop where
   scratchArgs : (⟨argumentPointer s 9, (arg s 10).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 44⟩
   retOut : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
-  belowOut : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
-  belowX : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
-  belowY : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+  belowOut : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
     ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
   outBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   domBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32

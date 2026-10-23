@@ -32,20 +32,20 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have hNs := slot_le (w := w) (show aN < 8 by decide)
-  have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
-  have hmpos : 0 < wv s.mem B (slot w aN) w := by omega
+  have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_arith
+  have hmpos : 0 < wv s.mem B (slot w aN) w := by omega_arith
   have hSpillN : slot w o + 88 ≤ slot w aN ∨ slot w aN + 8 * (w + 2) ≤ slot w o := by
     have := slot_sep (w := w) hoN
-    omega
+    omega_arith
   have hSpillScratch : slot w o + 88 ≤ slot w aAcc + 16 ∨
       slot w aAcc + 16 + 8 * (2 * w + 2) ≤ slot w o := by
     have := slot_sep (w := w) ho1
     have := slot_sep (w := w) ho2
     unfold slot aAcc aTmp at *
-    omega
+    omega_arith
   have hOutBound := slot_le (w := w) ho
   unfold VG.Impl.Bignum.AArch64.BlockedRedc.square
-  refine WP.seq (WP.mono (Square.rawSquare_ok hs h0 hH hZ (by omega) (by omega) ha ha1 ha2)
+  refine WP.seq (WP.mono (Square.rawSquare_ok hs h0 hH hZ (by omega_arith) (by omega_arith) ha ha1 ha2)
     fun u ⟨_, huRaw, huOut, hu8, _, hu12, _, hu7, _, ku⟩ => ?_)
   have hHU := (Square.scratch_arrays huOut).hdr hH
   refine WP.seq (WP.mono (saves_ok (hs.congr ku.wr) ((ku.gpr .x0 (by decide)).trans h0)
@@ -53,14 +53,14 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
   have kuv := ku.trans kv
   have hHV := (spill_arrays hw16 hvOut).hdr hHU
   have hN0 : word v.mem B (slot w aN) = word s.mem B (slot w aN) :=
-    (hvOut.word (by omega) (by omega)).trans (huOut.word (by omega) (by omega))
+    (hvOut.word (by omega_arith) (by omega_arith)).trans (huOut.word (by omega_arith) (by omega_arith))
   have hNV : wv v.mem B (slot w aN) w = wv s.mem B (slot w aN) w :=
-    (hvOut.wv (by omega) (by omega)).trans (huOut.wv (by omega) (by omega))
-  have hRawV := (hvOut.wv (d := slot w aAcc + 16) (k := 2 * w) (by omega)
-    (by have := slot_le (w := w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)).trans huRaw
+    (hvOut.wv (by omega_arith) (by omega_arith)).trans (huOut.wv (by omega_arith) (by omega_arith))
+  have hRawV := (hvOut.wv (d := slot w aAcc + 16) (k := 2 * w) (by omega_arith)
+    (by have := slot_le (w := w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega_arith)).trans huRaw
   refine WP.seq (WP.mono (redc_layout_ok (hs.congr kuv.wr) ((kuv.gpr .x0 (by decide)).trans h0)
     hHV hZ ((kv.gpr .x8 (by decide)).trans hu8) ((kv.gpr .x12 (by decide)).trans hu12)
-    ((kv.gpr .x7 (by decide)).trans hu7) hw16 (by omega) hmod)
+    ((kv.gpr .x7 (by decide)).trans hu7) hw16 (by omega_arith) hmod)
     fun r ⟨hrValue, hrOut, hr8, hr10, hr12, hr7, kr⟩ => ?_)
   have kuvr := kuv.trans kr
   have invV : ((word v.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
@@ -69,11 +69,11 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
   obtain ⟨q, hq, heq⟩ := hrValue invV
   rewrite [hRawV, hNV] at heq
   have hNR : wv r.mem B (slot w aN) w = wv s.mem B (slot w aN) w :=
-    (hrOut.wv (by omega) (by omega)).trans hNV
+    (hrOut.wv (by omega_arith) (by omega_arith)).trans hNV
   have hHR := (Square.scratch_arrays hrOut).hdr hHV
   have hSavedR : ∀ i < 11, word r.mem B (slot w o + 8 * i) =
       u.gpr VG.Impl.Bignum.AArch64.BlockedRedc.saved[i]! :=
-    fun i hi => (hrOut.word (by omega) (by omega)).trans (hSaved i hi)
+    fun i hi => (hrOut.word (by omega_arith) (by omega_arith)).trans (hSaved i hi)
   have hFrameV : Arrays B w [aAcc, aTmp, o] s.mem v.mem :=
     ((Square.scratch_arrays huOut).mono (by simp)).trans ((spill_arrays hw16 hvOut).mono (by simp))
   have hFrameR : Arrays B w [aAcc, aTmp, o] s.mem r.mem :=
@@ -103,7 +103,7 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
     (((kd.trans kc).gpr .x10 (by decide)).trans hr10) hc6 hc5
     (((kd.trans kc).gpr .x12 (by decide)).trans hr12)
     (((kd.trans kc).gpr .x7 (by decide)).trans hr7)
-    (by omega) hw ho ho1 ho2 (by rw [hcm, hND]; exact hmpos)
+    (by omega_arith) hw ho ho1 ho2 (by rw [hcm, hND]; exact hmpos)
     (by rw [hcm, hND]; exact hTD)) fun t ⟨hRes, hOut, kt⟩ => ?_
   rewrite [hcm, hdm, hNR] at hRes
   refine ⟨?_, ?_, ?_, (kAll.trans kt).mono (by decide)⟩

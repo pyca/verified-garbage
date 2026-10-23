@@ -43,10 +43,10 @@ theorem close_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes r
   exact ⟨trace, ⟨DU, DZ⟩, flagU, by rw [same]; exact flagZ⟩
 
 theorem close_stage_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (rEnough : E.length ≤ rBytes.length) (enough : E.length ≤ E.randLength)
     (leak : SameLeak E eBytes pBytes qBytes rBytes sBytes) :
@@ -73,10 +73,10 @@ theorem close_stage_trace {mont round : Prog isa} {montName roundName : String}
     exact branch_true (drawn_used_trace v 2)
 
 theorem sized_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (rEnough : E.length ≤ rBytes.length) (enough : E.length ≤ E.randLength)
     (leak : SameLeak E eBytes pBytes qBytes rBytes sBytes) :

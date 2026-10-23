@@ -102,7 +102,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   have hfitD := hp.fitD
   have hn64 := hp.small
   have hj := hi.lt
-  have hL0 : 0 < 8 * c.bw := by omega
+  have hL0 : 0 < 8 * c.bw := by omega_arith
   have hGb : c.bw ≤ c.bw * c.G := Nat.le_mul_of_pos_right _ hG0
   have hLG : 8 * c.bw ≤ 8 * c.bw * c.G := Nat.le_mul_of_pos_right _ hG0
   obtain ⟨hregs, hdl⟩ := regsOk_ne cs.regs_ok
@@ -120,34 +120,34 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   have hwS : S ∈ s.wr := by rw [hi.wr]; exact hp.scr.wr
   have hwD : (⟨D, n⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.dat
   have hwP : (⟨P, 8 * c.bw⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.ivw
-  have subT : Region.Sub ⟨T, 8 * c.bw⟩ S := VG.Offset.sub_base B (by omega)
+  have subT : Region.Sub ⟨T, 8 * c.bw⟩ S := VG.Offset.sub_base B (by omega_arith)
   have subTbuf : Region.Sub ⟨T, 8 * c.bw⟩ (blkRegion c B) := Region.sub_prefix hLG
-  have subCore : Region.Sub (coreRegion c B) S := Region.sub_prefix (by omega)
-  have subA : Region.Sub ⟨A, 1⟩ ⟨D, n⟩ := VG.Offset.sub_base D (by omega)
+  have subCore : Region.Sub (coreRegion c B) S := Region.sub_prefix (by omega_arith)
+  have subA : Region.Sub ⟨A, 1⟩ ⟨D, n⟩ := VG.Offset.sub_base D (by omega_arith)
   have dTP : Region.Disjoint ⟨T, 8 * c.bw⟩ ⟨P, 8 * c.bw⟩ := (hp.sepP.sub_right subT).symm
   have dAP : Region.Disjoint ⟨A, 1⟩ ⟨P, 8 * c.bw⟩ := (hp.sepPD.sub_right subA).symm
   have dAS : Region.Disjoint ⟨A, 1⟩ S := hp.sepD.sub_left subA
   have dPcore : Region.Disjoint ⟨P, 8 * c.bw⟩ (coreRegion c B) := hp.sepP.sub_right subCore
   have dDcore : Region.Disjoint ⟨D, n⟩ (coreRegion c B) := hp.sepD.sub_right subCore
   have inS : ∀ {d m : Nat}, d + m ≤ 8 * c.total → InRegions s.wr (B + BitVec.ofNat 64 d) m := fun h =>
-    ⟨_, hwS, VG.Offset.contains_base B h (by omega)⟩
-  have inA : InRegions s.wr A 1 := ⟨_, hwD, VG.Offset.contains_base D (by omega) (by omega)⟩
+    ⟨_, hwS, VG.Offset.contains_base B h (by omega_arith)⟩
+  have inA : InRegions s.wr A 1 := ⟨_, hwD, VG.Offset.contains_base D (by omega_arith) (by omega_arith)⟩
   have slotIn : ∀ i < 10, Region.Sub ⟨wordAddr B (c.slots + i), 8⟩ S := fun i hi =>
-    VG.Offset.sub_base B (by omega)
+    VG.Offset.sub_base B (by omega_arith)
   have slotOut : ∀ i < 10, ∀ {R : Region}, (R = ⟨T, 8 * c.bw⟩ ∨ R = coreRegion c B ∨ R = ⟨A, 1⟩ ∨
       R = ⟨P, 8 * c.bw⟩) → Region.Disjoint ⟨wordAddr B (c.slots + i), 8⟩ R := fun i hi10 R hR => by
     rcases hR with rfl | rfl | rfl | rfl
-    · exact VG.Offset.disjoint B (.inr (by omega)) (by omega) (by omega)
-    · exact VG.Offset.disjoint_base B (by omega) (by omega)
+    · exact VG.Offset.disjoint B (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+    · exact VG.Offset.disjoint_base B (by omega_arith) (by omega_arith)
     · exact (dAS.sub_right (slotIn i hi10)).symm
     · exact (hp.sepP.sub_right (slotIn i hi10)).symm
   -- The input block to the buffer.
   unfold Core.cfb8Block
   refine WP.seq (WP.mono_syms (copyN_wp (k := c.bw) (t := .x6) (u := .x6) (rd := sb) (rs := ivR) (od := 8 * c.buf)
     (os := 0) (P := T) (Q := P)
-    ⟨hi.base ▸ rfl, by rw [hi.ivK]; simp, by decide, Ne.symm i6, by decide, Ne.symm i6, by omega, by decide,
-      by omega, by omega, fun w hw => by rw [addr_add]; exact inS (by omega),
-      fun w hw => inRd ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩, dTP, by omega⟩) fun s₁ h₁ sy₁ => ?_)
+    ⟨hi.base ▸ rfl, by rw [hi.ivK]; simp, by decide, Ne.symm i6, by decide, Ne.symm i6, by omega_arith, by decide,
+      by omega_arith, by omega_arith, fun w hw => by rw [addr_add]; exact inS (by omega_arith),
+      fun w hw => inRd ⟨_, hwP, VG.Offset.contains_base P (by omega_arith) (by omega_arith)⟩, dTP, by omega_arith⟩) fun s₁ h₁ sy₁ => ?_)
   have mem₁ : s₁.mem = over s.mem T (8 * c.bw) fun i => s.mem (P + BitVec.ofNat 64 i) := h₁.mem
   have f₁ : Frame [⟨T, 8 * c.bw⟩] s.mem s₁.mem := by rw [mem₁]; exact over_frame _ _ _ _
   have g₁ : ∀ x, x ≠ .x6 → s₁.gpr x = s.gpr x := fun x h => h₁.regs x h h
@@ -169,7 +169,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
     intro u h1 _
     have hu : u < 8 * c.bw := by simpa [bytesAt] using h1
     simp only [bytesAt, List.getElem_map, List.getElem_range]
-    rw [mem₁, over_at hu (by omega), hi.ivB u hu, List.getElem_eq_getD 0]
+    rw [mem₁, over_at hu (by omega_arith), hi.ivB u hu, List.getElem_eq_getD 0]
   have T₂ : s₂.mem T = (ciph (cfb8In enc ciph m₀ D iv j)).headD 0 := by
     have h0 := bytesAt_getD s₂.mem T hL0
     rw [p0] at h0
@@ -195,7 +195,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   -- The byte.
   refine WP.block_append (WP.block_append (WP.mono_syms (cfb8Xor_wp enc (T := T) hbI data₂ (by rw [base₂]) d6 d7
     (by rw [wr₂', ← hi.wr]; exact inA)
-    (by rw [rd₂', wr₂', ← hi.rd, ← hi.wr]; exact inRd (inS (by omega))))
+    (by rw [rd₂', wr₂', ← hi.rd, ← hi.wr]; exact inRd (inS (by omega_arith))))
     fun s₃ ⟨g₃, rd₃, wr₃, m₃, x₃⟩ sy₃ => ?_))
   have cj : (s₃.gpr .x6).setWidth 8 = cfb8C enc ciph m₀ D iv j := by
     rw [x₃, A₂, T₂]; rfl
@@ -214,9 +214,9 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   have left₄ : s₅a.gpr c.leftReg = BitVec.ofNat 64 (n - j) := by
     rw [o₅a _ (Ne.symm hdl), g₄ _ l7, g₃ _ l6 l7, lr₂, g₁ _ l6, hi.leftR]
   have left₅ : s₅.gpr c.leftReg = BitVec.ofNat 64 (n - (j + 1)) := by
-    rw [l₅, left₄, VG.Offset.ofNat_sub_ofNat (by omega), show n - j - 1 = n - (j + 1) by omega]
+    rw [l₅, left₄, VG.Offset.ofNat_sub_ofNat (by omega_arith), show n - j - 1 = n - (j + 1) by omega_arith]
   have hz₅ : isa.eval (.nonzero .x c.leftReg) s₅ = some !(decide (j + 1 = n)) := by
-    rw [eval_nonzero, left₅, ofNat_beq_zero (by omega), decide_eq_decide.mpr (show n - (j + 1) = 0 ↔ j + 1 = n by omega)]
+    rw [eval_nonzero, left₅, ofNat_beq_zero (by omega_arith), decide_eq_decide.mpr (show n - (j + 1) = 0 ↔ j + 1 = n by omega_arith)]
   have data₅ : s₅.gpr c.dataReg = D + BitVec.ofNat 64 (j + 1) := by
     rw [o₅ _ hdl, a₅a, g₄ _ d7, g₃ _ d6 d7, data₂, addr_add]
   have mem₅ : s₅.mem = s₄.mem := by rw [m₅, m₅a]
@@ -270,7 +270,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   -- The input block and the data.
   have hPout : ∀ u < 8 * c.bw, s₃.mem (P + BitVec.ofNat 64 u) = s.mem (P + BitVec.ofNat 64 u) := fun u hu => by
     have hc : (⟨P, 8 * c.bw⟩ : Region).Contains (P + BitVec.ofNat 64 u) 1 :=
-      VG.Offset.contains_base P (by omega) (by omega)
+      VG.Offset.contains_base P (by omega_arith) (by omega_arith)
     rw [m₃, writeW8_apply, ite_eq_right (fun h => dAP _ (by rw [h]; exact Region.contains_self A 1) hc),
       out₂ _ (fun R hR hR' => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -285,26 +285,26 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
       · rw [cj]
   have data₅' : ∀ q < n, s₅.mem (D + BitVec.ofNat 64 q) =
       if q < j + 1 then cfb8Out enc ciph m₀ D iv q else m₀ (D + BitVec.ofNat 64 q) := fun q hq => by
-    have hcD : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 q) 1 := VG.Offset.contains_base D (by omega) (by omega)
+    have hcD : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 q) 1 := VG.Offset.contains_base D (by omega_arith) (by omega_arith)
     have hnP : ¬ (⟨P, 8 * c.bw⟩ : Region).Contains (D + BitVec.ofNat 64 q) 1 := fun h => hp.sepPD _ h hcD
     rw [mem₅, f₄ _ (fun R hR => by simp only [List.mem_singleton] at hR; subst hR; exact hnP), m₃, writeW8_apply]
     by_cases hqj : q = j
-    · rw [ite_eq_left (by rw [hqj]), ite_eq_left (by omega), A₂, T₂, hqj]; rfl
+    · rw [ite_eq_left (by rw [hqj]), ite_eq_left (by omega_arith), A₂, T₂, hqj]; rfl
     · have hne : D + BitVec.ofNat 64 q ≠ A := fun h => hqj (by
-        have := (sub_eq_iff (x := D + BitVec.ofNat 64 q) (P := D) (i := j) (by omega)).mp h
-        rwa [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this)
+        have := (sub_eq_iff (x := D + BitVec.ofNat 64 q) (P := D) (i := j) (by omega_arith)).mp h
+        rwa [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this)
       rw [ite_eq_right hne, out₂ _ (fun R hR hR' => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
         rcases hR with rfl | rfl
         · exact (hp.sepD.sub_right subT) _ hcD hR'
         · exact dDcore _ hcD hR'), hi.data q hq]
       by_cases h3 : q < j
-      · rw [ite_eq_left h3, ite_eq_left (by omega)]
-      · rw [ite_eq_right h3, ite_eq_right (by omega)]
+      · rw [ite_eq_left h3, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right h3, ite_eq_right (by omega_arith)]
   by_cases hdone : j + 1 = n
   · exact .inl ⟨by rw [hz₅, decide_eq_true hdone]; rfl, base₅, saved₅, by rw [← hdone]; exact ivB₅,
-      fun q hq => by rw [data₅' q hq, ite_eq_left (by omega)], fr₅, rd₅', wr₅', ivK₅⟩
-  · exact .inr ⟨by rw [hz₅, decide_eq_false hdone]; rfl, base₅, ready₅, saved₅, data₅, left₅, by omega, ivB₅,
+      fun q hq => by rw [data₅' q hq, ite_eq_left (by omega_arith)], fr₅, rd₅', wr₅', ivK₅⟩
+  · exact .inr ⟨by rw [hz₅, decide_eq_false hdone]; rfl, base₅, ready₅, saved₅, data₅, left₅, by omega_arith, ivB₅,
       data₅', fr₅, rd₅', wr₅', ivK₅⟩
 
 /-- The data loop. -/

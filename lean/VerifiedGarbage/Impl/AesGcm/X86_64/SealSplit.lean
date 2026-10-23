@@ -165,6 +165,91 @@ def copySrc : Prog isa :=
   .seq (.block [.mov .rsi (.mem (at_ .r15 tlO)), .mov .rdi (.mem (at_ .r15 dataO)), .mov .rcx (.mem (at_ .r15 tlenO))])
     SealGather.copy
 
+/-! ## One to three whole blocks, without calls but `vg_aes_ctr32`
+
+`prefixS` is `prefixN` with `prefixF` in place of `prefix`. `prefixF` takes
+the texts whose first slice holds one or two whole blocks, for which a call
+of `fTo` costs more than its work: it copies the slice to `dst` (`copySrc`),
+encrypts its whole blocks there in place by a call of `vg_aes_ctr32`
+(`sCtrArgs`) from the counter block, and absorbs them into `Y` at once
+(`sGh`): the products of the blocks, `Y` added to the first, with the
+prepared powers `H'ᵏ` … `H'` of the key context, added and reduced once. It
+tells them apart by `prefix`'s own test of the number of blocks (`preTest3`),
+in a cold branch (`Code.iteCold`), so the others run what `prefix` runs, at
+the same addresses but for the test. -/
+
+/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than three:
+`preTest` with `cmp` in place of `test`, so that the texts of three blocks or
+more run as many instructions as `prefix` would. -/
+def preTest3 : List Instr :=
+  [.mov .rax (.mem (at_ .r15 tlenO)), .shift .shr .rax 4, .alu .cmp .rax (imm 3)]
+
+/-- The arguments of `vg_aes_ctr32(ctx, rounds, counter, data, n, scratch)`
+for the whole blocks at `dst`, and, kept across the call for `sGh`, their
+number in `rbp` and their end in `rbx`. -/
+def sCtrArgs : List Instr :=
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+    ([.mov .rcx (.mem (at_ .r15 dataO)), .mov .r8 (.mem (at_ .r15 tlenO)), .shift .shr .r8 4] : List Instr) ++
+    ptr .r9 .r15 scrO ++
+    ([.mov .rbp (.reg .r8), .mov .rbx (.reg .r8), .shift .shl .rbx 4, .alu .add .rbx (.reg .rcx)] : List Instr)
+
+/-- The offset in a prepared key context of `H'ʲ` (`1 ≤ j ≤ 4`): pair `p`
+at `256 + 32 p` holds `H'²ᵖ⁺²` and then `H'²ᵖ⁺¹`. -/
+def powOff (j : Nat) : Nat := 256 + 32 * ((j - 1) / 2) + 16 * (j % 2)
+
+/-- The block `16 j` bytes before `rbx`, byte-reversed, with `xmm12` (`Y`
+before the first step, zero after) added, times `H'ʲ`, added to the
+product. -/
+def sGhStep (j : Nat) : List Instr :=
+  ([.movdquLoad .xmm7 { base := .rbx, disp := -(16 * j : Int) }, .xop (.bin .pshufb .xmm7 .xmm0),
+    .xop (.bin .pxor .xmm7 .xmm12), .xop (.bin .pxor .xmm12 .xmm12),
+    .movdquLoad .xmm6 (at_ .r13 (powOff j))] : List Instr) ++ Gcm.X86_64.Pclmul.acc .xmm7 .xmm6
+
+/-- The constants, `Y` in `xmm12` and the product cleared. -/
+def sGhPre : List Instr :=
+  Gcm.X86_64.Pclmul.const .xmm0 Gcm.X86_64.Pclmul.revMask ++ Gcm.X86_64.Pclmul.const .xmm1 Gcm.X86_64.Pclmul.poly ++
+    ([.movdquLoad .xmm12 (at_ .r14 16), .xop (.bin .pshufb .xmm12 .xmm0)] : List Instr) ++ Gcm.X86_64.Pclmul.zero
+
+/-- The last step, the product reduced and stored as `Y`. -/
+def sGhPost : List Instr :=
+  sGhStep 1 ++ Gcm.X86_64.Pclmul.reduce .xmm2 ++
+    ([.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .r14 16) .xmm2] : List Instr)
+
+/-- The `rbp` (one to three) blocks before `rbx` absorbed into `Y` at once,
+with the prepared powers: the steps for `H'³` and `H'²` if there are that
+many blocks, then the one for `H'`. -/
+def sGh : Prog isa :=
+  .seq (.block sGhPre)
+    (.seq (.seq (.block [.alu .cmp .rbp (imm 3)]) (.ite .b (.block []) (.block (sGhStep 3))))
+      (.seq (.seq (.block [.alu .cmp .rbp (imm 2)]) (.ite .b (.block []) (.block (sGhStep 2))))
+        (.block sGhPost)))
+
+/-- After `prefix`'s test, the bytes of `src` after its whole blocks copied,
+and `rest`. -/
+def preTail : Prog isa :=
+  .seq (.block copyArgs) (.seq (.ite .e (.block []) copyLoop) (.block rest))
+
+/-- `prefix fTo`, but for the texts of one or two whole blocks: `src`
+copied to `dst`, its whole blocks encrypted there by `ctr` and absorbed at
+once, and the data from them on kept. The texts of fewer than three blocks
+(none too) take a cold branch, laid out after the function's return, so
+that the code the others run keeps its addresses. -/
+def prefixF (ctr fTo : Fn) : Prog isa :=
+  .seq (.block preTest3)
+    (Code.iteCold .b
+      (.seq (.block [.alu .test .rax (.reg .rax)])
+        (.ite .e preTail
+          (.seq copySrc (.seq (.block sCtrArgs) (.seq (.call ctr.name ctr.code) (.seq sGh (.block rest)))))))
+      (.seq (.seq (.block preArgs) (.frame (.push [.rax, .r10, .r11]) (.call fTo.name fTo.code) (.pop .rax 3)))
+        preTail))
+
+/-- `prefixN fTo encN` with `prefixF ctr fTo` in place of `prefix fTo`. -/
+def prefixS (ctr fTo : Fn) (encN : Prog isa) : Prog isa :=
+  .seq (.block nTest)
+    (.ite .b
+      (.seq (.block nCopyArgs) (.seq SealGather.copy (.seq (.block nArgs) (.seq encN (.block nRest)))))
+      (prefixF ctr fTo))
+
 /-- After the entry, for the instances with `seal`'s short path: `run` but for
 the texts the short path takes, which it seals at `dst`, `src` copied there
 first. -/

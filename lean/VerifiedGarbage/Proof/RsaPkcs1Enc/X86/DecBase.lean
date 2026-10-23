@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecBase.lean`): `EP`, what two runs
 share (the frame's base `B`, the pointers, the lengths, and the public key's
 bytes `nB` and `eB`), and its layout (`EP.lay`,
-`Proof/RsaPkcs1Sig/X86/Lay.lean`), with the 3392 bytes below the frame that
+`Proof/RsaPkcs1Sig/X86/Lay.lean`), with the 3448 bytes below the frame that
 the private-key operation and its return address use. `In P σ`: the state
 `σ` the body starts from; `S P σ s`: a state of the body. The shared
 contract, with the stack of the frames and of the calls, gives
@@ -85,7 +85,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := P.ro
   rw := P.rw
-  C := 3392
+  C := 3448
 
 end EP
 
@@ -122,7 +122,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the calls'. -/
-abbrev stackBytes : Nat := 16 + frameBytes + 3392
+abbrev stackBytes : Nat := 16 + frameBytes + 3448
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Enc.decryptContract abi stackBytes
@@ -152,7 +152,7 @@ def ep (s : State) : EP where
   eB := Spec.Rsa.bytesAt s.mem ((arg s 5).setWidth 64) (arg s 6).toNat
 
 theorem ep_lay (s : State) :
-    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 3392 := rfl
+    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 3448 := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
@@ -179,7 +179,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3512, 3512⟩ := by
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3568, 3568⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
     rw [Taint.sub_setWidth (by omega)]
     exact Offset.sub_below _ (by omega) (by omega)
@@ -195,7 +195,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
         (by show (arg s 6).toNat ≤ 2 ^ 64; omega) }
   rw [ep_lay]
-  refine ok_entered (S := 3512) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 3568) rfl (by decide) hsp (by simp) (by simp; omega) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -235,7 +235,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 21).isLt; omega)]; omega)
   · intro j hj
     have : j < 23 := hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+    rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
         j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨
         j = 20 ∨ j = 21 ∨ j = 22) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |

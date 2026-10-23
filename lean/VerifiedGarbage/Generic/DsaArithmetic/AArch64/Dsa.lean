@@ -45,6 +45,22 @@ def artifacts (v : Backend) : List Artifact := [
     verified := v.verifyVerified
     spSafe := v.verifySp
     features := v.features },
+  Spec.Dsa.validatePublicKeyApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["Checks domain consistency and both public subgroup memberships with the selected Montgomery backend."]
+    code := Impl.Dsa.AArch64.Prevalidated.validate v.mul
+    stack := v.stack
+    verified := v.validateVerified
+    spSafe := v.validateSp
+    features := v.features },
+  Spec.Dsa.verifyPrevalidatedApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["Retains signature range checks and digest handling; the caller establishes validation for the immutable key bytes."]
+    code := Impl.Dsa.AArch64.Prevalidated.verify v.mul
+    stack := v.stack
+    verified := v.prevalidatedVerified
+    spSafe := v.prevalidatedSp
+    features := v.features },
   Spec.Dsa.generateKeyApi.artifact AArch64.target {
     suffix := v.suffix
     notes := ["Checks the domain before consuming randomness, samples x with the \

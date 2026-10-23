@@ -45,10 +45,10 @@ theorem PublicInputs.entropy {bits : Nat} {s t : State} (P : PublicInputs bits s
   VG.Proof.RsaKeyGen.map_toNat_inj (List.cons.inj P.observations).2
 
 theorem constantTime {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56) {bits : Nat} (b : Bits bits) :
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) {bits : Nat} (b : Bits bits) :
     ConstantTime isa (contract bits).pre (contract bits).pub
       (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) := by
   apply RelCT.constantTime

@@ -317,7 +317,8 @@ jobs:
       - name: Only rust-cpu-features sets VG_CPU_FEATURES
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
       - run: python3 ci/cpu_tests.py lint ci/rust_matrix.toml
-      - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
+      # Each module in its own process, in parallel; output only on failure.
+      - run: python3 ci/run_unit_tests.py
       - run: python3 ci/check_mcdt.py
       - run: python3 ci/check_vectors.py
 

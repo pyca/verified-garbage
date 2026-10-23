@@ -159,11 +159,11 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oN oE oL oM oS oC oP oA kO fO
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
-    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega)
+    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56) ⟨State.addr s.sp - BitVec.ofNat 64 240, 240⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
-    rw [FrameStack.addr_sub' (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [FrameStack.addr_sub' (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, scrK := scrK, rlK := rlK
@@ -172,13 +172,13 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
       scl32 := (stackArg s 8).isLt
       nB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below).symm)
-        (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega)
+        (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega_arith)
       eB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below).symm)
-        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega)
+        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega_arith)
       pw := wordsAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kP.sub_left below).symm)
-        (by show (stackArg s 10).toNat * 8 ≤ 2 ^ 64; omega) }
+        (by show (stackArg s 10).toNat * 8 ≤ 2 ^ 64; omega_arith) }
   rw [ep_lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
@@ -196,14 +196,14 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [fN, fE, fL, fM, fS, fP, fO, fC]
   · intro j hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · rfl
     · simp [regArg, ep, r1]
     · rfl
     · simp [regArg, ep]
   · intro i hi
     have : i < 11 := hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10) with
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep]
 
 end VG.Proof.RsaOaep.Arm.Enc

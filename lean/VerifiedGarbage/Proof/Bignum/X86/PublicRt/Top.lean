@@ -19,7 +19,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 The checks of `PublicFn` around `sized` (`Sized.lean`): the exponent saved
 (`valid_ok`), checked (`checkExponent_ok`) after the modulus (`body_ok`),
 with the room for the multiplications' calls below `esp` (`Room`), which
-the contract's 40 bytes of stack give (`TopABI`).
+the contract's 96 bytes of stack give (`TopABI`).
 -/
 
 @[expose] public section
@@ -48,7 +48,7 @@ def Result (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitV
   let x := Spec.Rsa.os2ip (Spec.Rsa.bytesAt mem (byteAddr (args 6)) len)
   Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (if x < m then x ^ e % m else 0) len ∧
   t.gpr .eax = BitVec.ofNat 32 (decide (x < m)).toNat ∧
-  Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below sp 40] mem t.mem
+  Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below sp 96] mem t.mem
 
 /-- `PublicPost`, with the stack below `sp` changed. -/
 def Post (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (mem : Mem) (t : State) : Prop :=
@@ -56,7 +56,7 @@ def Post (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec
     (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt mem (byteAddr (args 2)) len)
       (Spec.Rsa.bytesAt mem (byteAddr (args 4)) (args 5).toNat)
       (Spec.Rsa.bytesAt mem (byteAddr (args 6)) len)) ∧
-  Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below sp 40] mem t.mem
+  Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below sp 96] mem t.mem
 
 theorem Post.of_public {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {sp : BitVec 32} {mem : Mem}
     {t : State} (P : PublicPost base bytes len args mem t) : Post base bytes len args sp mem t :=
@@ -165,17 +165,17 @@ theorem body_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
     refine WP.mono (publicFailure_post hv failed) fun t ⟨R, T⟩ => ?_
     exact ⟨Post.of_public (by simpa only [Msv] using R), Ksv.trans T⟩
 
-/-- The contract's resources with 40 bytes of stack: those of the copies per width, and the room for calls. -/
+/-- The contract's resources with 96 bytes of stack: those of the copies per width, and the room for calls. -/
 structure TopABI (s : State) : Prop where
   abi : PublicABI s
   room : CallRoom (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8)
   outArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 40⟩
 
-theorem topABI_of {s : State} (h : (Spec.Rsa.publicCheckedContract abi 40).pre s) : TopABI s := by
+theorem topABI_of {s : State} (h : (Spec.Rsa.publicCheckedContract abi 96).pre s) : TopABI s := by
   sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
-  have low : 40 ≤ (s.gpr .esp).toNat := by with_reducible assumption
-  have bs : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 40#64, 40⟩
+  have low : 96 ≤ (s.gpr .esp).toNat := by with_reducible assumption
+  have bs : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩
       ⟨argumentPointer s 8, (arg s 9).toNat * 8⟩ := by with_reducible assumption
   refine ⟨?_, ⟨low, ?_⟩, by with_reducible assumption⟩
   · constructor <;> first

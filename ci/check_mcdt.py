@@ -53,7 +53,9 @@ FN = re.compile(
 )
 # A string literal of the template: one line of it, or several separated by
 # newlines (`Rust.template`).
-STRING = re.compile(r'"((?:[^"\\]|\\.)*)"', re.DOTALL)
+# (Unrolled, `[^"\\]*(?:\\.[^"\\]*)*` rather than `(?:[^"\\]|\\.)*`, which
+# matches the same strings a character at a time: 20 times slower.)
+STRING = re.compile(r'"([^"\\]*(?:\\.[^"\\]*)*)"', re.DOTALL)
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
 
@@ -70,7 +72,7 @@ def code(body, first_line):
         line_number += body.count("\n", offset, m.start(1))
         offset = m.start(1)
         for i, line in enumerate(m.group(1).split("\n")):
-            label = LABEL.match(line)
+            label = line.endswith(":") and LABEL.match(line)
             if label:
                 labels.setdefault(label.group(1), []).append(len(instrs))
             else:
@@ -144,10 +146,13 @@ def check_function(name, instrs, lines, labels):
     def at(k):
         return f"{name}:{lines[k]}"
 
+    # Each instruction's mnemonic, computed once: functions have up to
+    # hundreds of thousands of instructions.
+    mnemonics = [mnemonic(x) for x in instrs]
     regions = []  # (first, end): instrs[first:end] is protected
     i = 0
     while i < len(instrs):
-        if mnemonic(instrs[i]) == "ldmxcsr":
+        if mnemonics[i] == "ldmxcsr":
             saved, why = prologue(instrs, i, labels)
             if why:
                 errors.append(f"{at(i)}: `{instrs[i]}` is not Intel's MCDT prologue: {why}")
@@ -155,15 +160,15 @@ def check_function(name, instrs, lines, labels):
                 continue
             first = i + 2
             end = first
-            while end < len(instrs) and mnemonic(instrs[end]) not in ("ldmxcsr", "stmxcsr"):
+            while end < len(instrs) and mnemonics[end] not in ("ldmxcsr", "stmxcsr"):
                 end += 1
-            if end == len(instrs) or mnemonic(instrs[end]) != "ldmxcsr":
+            if end == len(instrs) or mnemonics[end] != "ldmxcsr":
                 errors.append(
                     f"{at(first - 1)}: the MCDT region after this prologue has no epilogue"
                 )
                 break
             fence = end - 1
-            while fence >= first and mnemonic(instrs[fence]) == "mov":
+            while fence >= first and mnemonics[fence] == "mov":
                 fence -= 1
             if (
                 fence < first
@@ -180,22 +185,22 @@ def check_function(name, instrs, lines, labels):
         else:
             i += 1
 
-    def region_of(k):
-        return next((r for r in regions if r[0] <= k < r[1]), None)
-
-    for k, instr in enumerate(instrs):
-        r = region_of(k)
-        if mnemonic(instr) in AFFECTED and r is None:
+    # The region each instruction is in, if any.
+    region_at = [None] * len(instrs)
+    for r in regions:
+        region_at[r[0] : r[1]] = [r] * (r[1] - r[0])
+    for k, (instr, op) in enumerate(zip(instrs, mnemonics)):
+        r = region_at[k]
+        if op in AFFECTED and r is None:
             errors.append(
                 f"{at(k)}: `{instr}` is outside Intel's MXCSR prologue and "
                 "epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"
             )
-        if not is_branch(instr):
+        if op in ("call", "ret"):
+            if r is not None:
+                errors.append(f"{at(k)}: `{instr}` is inside an MCDT region")
             continue
-        if r is not None and mnemonic(instr) in ("call", "ret"):
-            errors.append(f"{at(k)}: `{instr}` is inside an MCDT region")
-            continue
-        if mnemonic(instr).startswith("j"):
+        if op.startswith("j"):
             t = target(instr, k, labels)
             if t is None:
                 if regions:
@@ -204,7 +209,7 @@ def check_function(name, instrs, lines, labels):
             # Entering a region other than through its prologue; the
             # region's first instruction is entered by the prologue's
             # fall-through, or by a jump from inside the region (a loop).
-            rt = next((q for q in regions if q[0] <= t < q[1]), None)
+            rt = region_at[t]
             if rt is not None and rt != r:
                 errors.append(
                     f"{at(k)}: `{instr}` jumps into the MCDT region at "

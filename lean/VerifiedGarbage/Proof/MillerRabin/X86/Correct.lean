@@ -24,9 +24,9 @@ theorem Entry.pushed_byte {s : State} (E : Entry s) {i : Nat} (index : i < lenOf
   exact Offset.contains_base _ (by omega) (by have := E.bound; omega)
 
 theorem correct (s : State)
-    (h : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pre s) :
+    (h : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre s) :
     ∃ tr t, Exec isa (code montName montCode) s tr t ∧ abiPreserved s t ∧
-      (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).post s t := by
+      (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).post s t := by
   have E := entry_of h
   obtain ⟨tr, t, exec, abi, result, frame⟩ := E.framed
   refine ⟨tr, t, exec, abi, ?_⟩

@@ -273,7 +273,7 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have henc := scalarBits_enc hc
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl h7 hi 0
@@ -299,10 +299,10 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     · exact lt_of_eq_of_lt F₁.b3p (hmont _)
     · exact lt_of_eq_of_lt F₁.gx (hmont _)
     · exact lt_of_eq_of_lt F₁.gy (hmont _)
-    · exact lt_of_eq_of_lt F₁.onep (Nat.mod_lt _ (by omega))
-    · rw [v₁ (by decide), hM.rx]; omega
+    · exact lt_of_eq_of_lt F₁.onep (Nat.mod_lt _ (by omega_arith))
+    · rw [v₁ (by decide), hM.rx]; omega_arith
     · rw [v₁ (by decide), hM.ry]; exact hmont _
-    · rw [v₁ (by decide), hM.rz]; omega
+    · rw [v₁ (by decide), hM.rz]; omega_arith
   have tv₁ : ∀ {i}, i < 45 → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
     show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _)
     rw [v₁ hi]
@@ -353,10 +353,10 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     · exact lt_of_eq_of_lt F₄.b3p (hmont _)
     · rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt
     · rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt
-    · exact lt_of_eq_of_lt F₄.onep (Nat.mod_lt _ (by omega))
-    · rw [v₄ (by decide), rx₃]; omega
+    · exact lt_of_eq_of_lt F₄.onep (Nat.mod_lt _ (by omega_arith))
+    · rw [v₄ (by decide), rx₃]; omega_arith
     · rw [v₄ (by decide), ry₃]; exact hmont _
-    · rw [v₄ (by decide), rz₃]; omega
+    · rw [v₄ (by decide), rz₃]; omega_arith
   have tv₄ : ∀ {i}, i < 45 → i ∉ ptsW → tmv c.C c.n base s₄ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
     fun hi hl => by
       show toM _ _ (sv c base s₄ _) = toM _ _ (sv c base s _)
@@ -447,16 +447,16 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]
       have := sl_below_bits c hc.n10 (i := FLAG) (by decide) 0 0
-      exact Or.inl (by dsimp only; omega)
+      exact Or.inl (by dsimp only; omega_arith)
     · rcases apart_slWkP (c := c) h7 (i := FLAG) (by decide) (by decide) w hw with h | h
-      · exact Or.inl (by omega)
+      · exact Or.inl (by omega_arith)
       · exact Or.inr h
   have rm₆ : sv c base s₆ RM' = sv c base s RM' :=
     sv_unch UW h7 hn (by decide) (apart_append (tb (by decide)) (apart_slWkP h7 (by decide) (by decide)))
   have Kw : Rest work s s₆ := (k₁.mono (by decide)).trans ((K₂.mono powClob_work).trans ((k₃.mono (by decide)).trans
     ((k₄.mono (by decide)).trans ((K₅.mono powClob_work).trans (g₆.mono callClob_work)))))
   refine ⟨hs₆, hM.far.of_rest Kw, hM.rest.trans (Kw.mono (by simp)), F₆, fun t ht => ?_,
-    by rw [flagW, Unch.readW32 UW apF (by omega), ← flagW]; exact hM.flag,
+    by rw [flagW, Unch.readW32 UW apF (by omega_arith), ← flagW]; exact hM.flag,
     by rw [rm₆]; exact hM.rm_lt, by rw [rm₆]; exact hM.rm, rz₆,
     ⟨_, _, _, _, _, _, q₂, q₅, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
@@ -467,7 +467,7 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     exact hM.t₁ t ht
   · refine whole_of' hM.unch UW fun w hw => (List.mem_append.mp hw).elim
       (fun hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7)
-      fun hw => by have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega
+      fun hw => by have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega_arith
 
 /-- The existing double-ladder implementation uses the same generic pipeline. -/
 theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}

@@ -198,24 +198,24 @@ theorem sealWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
   have h₂ := hpre _ p₂
   have hq₀ := hq
   have exq := hexq hq
-  obtain ⟨f₁, f₂⟩ := oneFacts (by omega : w < w + 1) (sealCore h₁) (sealCore h₂) hq
+  obtain ⟨f₁, f₂⟩ := oneFacts (by omega_arith : w < w + 1) (sealCore h₁) (sealCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega)
+  have qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_arith)
   have L := f₁.ol.lay
   have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := rfl
   have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := qt.symm
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := rfl
   have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := f₂.hW
-  have hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega
+  have hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega_arith
   unfold Impl.AesGcm.AArch64.Stitch.sealWithS
-  refine rel_seq (entryStash_rel (k := 8 * w) (j := 0) (by omega) rfl (.inl rfl) f₁ f₂ (by omega) qsp
+  refine rel_seq (entryStash_rel (k := 8 * w) (j := 0) (by omega_arith) rfl (.inl rfl) f₁ f₂ (by omega_arith) qsp
       (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
-    (WP.block_and (entryStash_ok (V := stackArg σ₁ 0) hk (by decide) hW₁ (f₁.hsp w (by omega))
-      (f₁.hsp 0 (by omega)) hT₁ (f₁.argW (by omega)) rfl f₁.perm)
-      (entry_keeps hk (by decide) hW₁ (f₁.hsp w (by omega)) (f₁.hsp 0 (by omega)) f₁.perm.w))
-    (WP.block_and (entryStash_ok (V := stackArg σ₁ 0) hk (by decide) hW₂ (f₂.hsp w (by omega))
-      (f₂.hsp 0 (by omega)) hT₂ (f₂.argW (by omega)) q0.symm f₂.perm)
-      (entry_keeps hk (by decide) hW₂ (f₂.hsp w (by omega)) (f₂.hsp 0 (by omega)) f₂.perm.w))
+    (WP.block_and (entryStash_ok (V := stackArg σ₁ 0) hk (by decide) hW₁ (f₁.hsp w (by omega_arith))
+      (f₁.hsp 0 (by omega_arith)) hT₁ (f₁.argW (by omega_arith)) rfl f₁.perm)
+      (entry_keeps hk (by decide) hW₁ (f₁.hsp w (by omega_arith)) (f₁.hsp 0 (by omega_arith)) f₁.perm.w))
+    (WP.block_and (entryStash_ok (V := stackArg σ₁ 0) hk (by decide) hW₂ (f₂.hsp w (by omega_arith))
+      (f₂.hsp 0 (by omega_arith)) hT₂ (f₂.argW (by omega_arith)) q0.symm f₂.perm)
+      (entry_keeps hk (by decide) hW₂ (f₂.hsp w (by omega_arith)) (f₂.hsp 0 (by omega_arith)) f₂.perm.w))
     fun τ₁ τ₂ ⟨a₁, k₁⟩ ⟨a₂, k₂⟩ => ?_
   have k5₁ : τ₁.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₁ .x5 (by simp), ofNat_toNat']
   have k5₂ : τ₂.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₂ .x5 (by simp), ← q5, ofNat_toNat']
@@ -320,7 +320,7 @@ theorem sealWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
         ⟨i₂.env, i₂.kept, i₂.x23, i₂.x24, i₂.x26, i₂.x27, i₂.non, rfl⟩
         ⟨g₁ .x4 (by simp), by rw [g₁ .x5 (by simp), ofNat_toNat'], g₁ .x6 (by simp), by rw [g₁ .x7 (by simp), ofNat_toNat']⟩
         ⟨g₂ .x4 (by simp), by rw [g₂ .x5 (by simp), ofNat_toNat'], g₂ .x6 (by simp), by rw [g₂ .x7 (by simp), ofNat_toNat']⟩
-        (by omega) (by rw [b₁.2.1, b₂.2.1, q1]) (by rw [b₁.2.2.2.2.2.2.1, b₂.2.2.2.2.2.2.1])
+        (by omega_arith) (by rw [b₁.2.1, b₂.2.1, q1]) (by rw [b₁.2.2.2.2.2.2.1, b₂.2.2.2.2.2.2.1])
         (hf bf₁) brd₁ bwr₁ (hf bf₂) brd₂ bwr₂
         fun v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => htbrelS p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
   simp only [↓reduceIte]
@@ -330,7 +330,7 @@ theorem sealWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
   -- `shortThr`, on the length, which is public.
   refine rel_seq (rel_taint [.x7] (by rw [r₁.sp, r₂.sp, a₁.1.sp, a₂.1.sp, qsp])
       (by agree_tac [gu₁ .x7 (by simp), gu₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)
-    (shortThr_ok u₁ x7u₁ (by omega)) (shortThr_ok u₂ x7u₂ (by omega)) fun w₁ w₂ ⟨y9₁, s₁'⟩ ⟨y9₂, s₂'⟩ => ?_
+    (shortThr_ok u₁ x7u₁ (by omega_arith)) (shortThr_ok u₂ x7u₂ (by omega_arith)) fun w₁ w₂ ⟨y9₁, s₁'⟩ ⟨y9₂, s₂'⟩ => ?_
   have c₁ := SealEntered.of_regs b₁ s₁'
   have c₂ := SealEntered.of_regs b₂ s₂'
   have gw₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], w₁.gpr r = σ₁.gpr r := fun r hr => by
@@ -339,18 +339,18 @@ theorem sealWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
     rw [s₂'.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), gu₂ r hr]
   have x7w₁ : w₁.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := by rw [gw₁ .x7 (by simp), ofNat_toNat']
   have x7w₂ : w₂.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := by rw [gw₂ .x7 (by simp), ofNat_toNat']
-  refine rel_ite (eval_zero y9₁ (by omega)) (eval_zero y9₂ (by omega)) (fun hz => ?_) (fun _ => ?_)
+  refine rel_ite (eval_zero y9₁ (by omega_arith)) (eval_zero y9₂ (by omega_arith)) (fun hz => ?_) (fun _ => ?_)
   · -- `shortMin`.
     refine rel_seq (rel_taint [.x7] (by rw [s₁'.sp, s₂'.sp, r₁.sp, r₂.sp, a₁.1.sp, a₂.1.sp, qsp])
         (by agree_tac [x7w₁, x7w₂]) ⟨_, by taint_decide⟩)
-      (shortMin_ok w₁ x7w₁ (by omega)) (shortMin_ok w₂ x7w₂ (by omega)) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
+      (shortMin_ok w₁ x7w₁ (by omega_arith)) (shortMin_ok w₂ x7w₂ (by omega_arith)) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
     have gz₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₁.gpr r = σ₁.gpr r := fun r hr => by
       rw [t₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), gw₁ r hr]
     have gz₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₂.gpr r = σ₁.gpr r := fun r hr => by
       rw [t₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), gw₂ r hr]
     have P := post (SealEntered.of_regs c₁ t₁) (SealEntered.of_regs c₂ t₂) gz₁ gz₂
-    exact rel_ite (eval_zero m9₁ (by omega)) (eval_zero m9₂ (by omega)) (fun _ => P.1)
-      (fun _ => P.2.2 (by have := of_decide_eq_true hz; omega))
+    exact rel_ite (eval_zero m9₁ (by omega_arith)) (eval_zero m9₂ (by omega_arith)) (fun _ => P.1)
+      (fun _ => P.2.2 (by have := of_decide_eq_true hz; omega_arith))
   · -- `thr`.
     refine rel_seq (rel_taint [.x7] (by rw [s₁'.sp, s₂'.sp, r₁.sp, r₂.sp, a₁.1.sp, a₂.1.sp, qsp])
         (by agree_tac [x7w₁, x7w₂]) ⟨_, by taint_decide⟩)

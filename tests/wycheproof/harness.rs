@@ -204,7 +204,8 @@ pub struct TestFile<P, T> {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hex(pub Vec<u8>);
@@ -213,7 +214,8 @@ pub struct Hex(pub Vec<u8>);
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl<'de> Deserialize<'de> for Hex {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
@@ -243,7 +245,8 @@ impl<P, T> TestFile<P, T> {
         target_arch = "x86_64",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "x86"
+        target_arch = "x86",
+        all(target_arch = "powerpc64", target_endian = "little")
     ))]
     pub fn par_tests(&self, f: impl Fn(&TestGroup<P, T>, &Test<T>) + Sync)
     where
@@ -309,7 +312,8 @@ pub fn par_each<I: Sync>(items: &[I], f: impl Fn(&I) + Sync) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 #[derive(Default)]
 pub struct Count(AtomicUsize);
@@ -318,7 +322,8 @@ pub struct Count(AtomicUsize);
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 impl Count {
     /// Counts one more.

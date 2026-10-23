@@ -85,6 +85,13 @@ def IsH2 (H T₁ T₂ : Block) : Prop :=
   ∀ Y X₁ X₂ : Block, VG.Proof.Gcm.X86_64.Pclmul.reduce
     ((VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₂).acc X₂ T₁) = ghashFrom H Y [X₁, X₂]
 
+/-- `T₃` multiplies as `H'³`, `T₂` as `H'²` and `T₁` as `H'`: three products,
+added and reduced once, are three steps of `GHASH`. -/
+def IsH3 (H T₁ T₂ T₃ : Block) : Prop :=
+  ∀ Y X₁ X₂ X₃ : Block, VG.Proof.Gcm.X86_64.Pclmul.reduce
+    (((VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₃).acc X₂ T₂).acc X₃ T₁) =
+      ghashFrom H Y [X₁, X₂, X₃]
+
 /-- What the short path's proofs need from the algebra of the field: the
 table `powers` writes (`powers_ok`), the registers its first block leaves
 (`powHead_ok`), `GHASH` of `G` from the table (`gacc_ghash`), and the
@@ -115,6 +122,8 @@ structure ShortFacts : Prop where
   /-- The prepared powers `H'` and `H'²` (`Spec.Gcm.preparedPower`) multiply as `H` and `H²`. -/
   pp1 : ∀ H : Block, IsH1 H (hInvF (hpow H 1))
   pp2 : ∀ H : Block, IsH2 H (hInvF (hpow H 1)) (hInvF (hpow H 2))
+  /-- And `H'³` as `H³` (for `seal_split`'s three whole blocks at once). -/
+  pp3 : ∀ H : Block, IsH3 H (hInvF (hpow H 1)) (hInvF (hpow H 2)) (hInvF (hpow H 3))
   /-- The powers the 256-bit loop's out-of-place setup stores give the
   products of an encryption body (for `seal_split`'s one pass). -/
   setupFin : ∀ (np : Nat) (hpn : 8 ≤ np ∧ np ≤ 24), VG.Proof.Gcm.X86_64.StitchR.SetupFin np hpn

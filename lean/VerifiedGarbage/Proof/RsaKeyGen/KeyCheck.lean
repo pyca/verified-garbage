@@ -77,55 +77,55 @@ theorem keyCheck_iff {pLen e p q d qInv : Nat} (hl1 : 32 ≤ pLen) (hl2 : pLen �
       rw [Nat.mod_zero] at hed
       have : d ≤ 1 := by
         rcases Nat.eq_zero_or_pos e with h0 | h0
-        · subst h0; omega
+        · subst h0; omega_arith
         · exact Nat.le_of_dvd (by decide) ⟨e, by rw [← hed, Nat.mul_comm]⟩
-      have := Nat.one_lt_two_pow (n := 8 * pLen) (by omega)
-      omega
+      have := Nat.one_lt_two_pow (n := 8 * pLen) (by omega_arith)
+      omega_arith
     · exact h
   have hdL := hdL hL0
-  have h2p : 2 ≤ 2 ^ (8 * pLen) := Nat.le_self_pow (by omega) 2 |>.trans' (by decide)
-  have hq1 : q - 1 ≠ 0 := fun h => by rw [h, Nat.lcm_zero_right] at hL; omega
+  have h2p : 2 ≤ 2 ^ (8 * pLen) := Nat.le_self_pow (by omega_arith) 2 |>.trans' (by decide)
+  have hq1 : q - 1 ≠ 0 := fun h => by rw [h, Nat.lcm_zero_right] at hL; omega_arith
   have hLle : L ≤ (p - 1) * (q - 1) := by
     rw [← hL]
-    exact Nat.le_of_dvd (Nat.mul_pos (by omega) (by omega)) (Nat.lcm_dvd_mul _ _)
+    exact Nat.le_of_dvd (Nat.mul_pos (by omega_arith) (by omega_arith)) (Nat.lcm_dvd_mul _ _)
   have hp3 : 3 ≤ p := by
     by_contra h
     have : (p - 1) * (q - 1) ≤ 1 := by
-      have : p - 1 ≤ 1 := by omega
-      have : q - 1 ≤ 1 := by omega
-      exact Nat.mul_le_mul (by omega) (by omega) |>.trans (by decide)
-    omega
-  have hq2 : 2 ≤ q := by omega
-  have hqi := hqiL (by omega)
+      have : p - 1 ≤ 1 := by omega_arith
+      have : q - 1 ≤ 1 := by omega_arith
+      exact Nat.mul_le_mul (by omega_arith) (by omega_arith) |>.trans (by decide)
+    omega_arith
+  have hq2 : 2 ≤ q := by omega_arith
+  have hqi := hqiL (by omega_arith)
   -- Sizes.
   have hn : p * q < 2 ^ (16 * pLen) := by
-    rw [show 16 * pLen = 8 * pLen + 8 * pLen by omega, Nat.pow_add]
-    exact Nat.mul_lt_mul_of_lt_of_le hp (by omega) (by omega)
+    rw [show 16 * pLen = 8 * pLen + 8 * pLen by omega_arith, Nat.pow_add]
+    exact Nat.mul_lt_mul_of_lt_of_le hp (by omega_arith) (by omega_arith)
   have hdn : d < p * q := by
     have : (p - 1) * (q - 1) < p * q :=
-      Nat.mul_lt_mul_of_lt_of_le (by omega) (by omega) (by omega)
-    omega
-  have hpn : p < p * q := by have := Nat.mul_le_mul_left p hq2; omega
-  have hqn : q < p * q := by have := Nat.mul_le_mul_right q hp3; omega
+      Nat.mul_lt_mul_of_lt_of_le (by omega_arith) (by omega_arith) (by omega_arith)
+    omega_arith
+  have hpn : p < p * q := by have := Nat.mul_le_mul_left p hq2; omega_arith
+  have hqn : q < p * q := by have := Nat.mul_le_mul_right q hp3; omega_arith
   have h256 : (256 : Nat) ^ (2 * pLen) = 2 ^ (16 * pLen) := by
-    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega
+    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega_arith
   have he' : e < 256 ^ (2 * pLen) := by
-    rw [h256]; exact Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega))
-  have hdP : d % (p - 1) < p - 1 := Nat.mod_lt _ (by omega)
-  have hdQ : d % (q - 1) < q - 1 := Nat.mod_lt _ (by omega)
+    rw [h256]; exact Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have hdP : d % (p - 1) < p - 1 := Nat.mod_lt _ (by omega_arith)
+  have hdQ : d % (q - 1) < q - 1 := Nat.mod_lt _ (by omega_arith)
   -- `keyValid` as numbers.
   have hkv : bitLength (p * q) = 16 * pLen →
       keyValid ⟨p * q, e, d, p, q, d % (p - 1), d % (q - 1), qInv⟩ =
         Spec.Rsa.keyValid (2 * pLen) (p * q) e d p q (d % (p - 1)) (d % (q - 1)) qInv := by
     intro hb
-    have hlen : (bitLength (p * q) + 7) / 8 = 2 * pLen := by omega
+    have hlen : (bitLength (p * q) + 7) / 8 = 2 * pLen := by omega_arith
     unfold keyValid Key.octets Key.len Spec.Rsa.checkKey
     dsimp only
     rw [hlen, Rsa.i2osp_length]
-    have hlt : ∀ x, x < p * q → x < 256 ^ (2 * pLen) := fun x h => by omega
-    rw [os2ip_i2osp_lt (by omega), os2ip_i2osp_lt he', os2ip_i2osp_lt (hlt _ hdn),
-      os2ip_i2osp_lt (hlt _ hpn), os2ip_i2osp_lt (hlt _ hqn), os2ip_i2osp_lt (hlt _ (by omega)),
-      os2ip_i2osp_lt (hlt _ (by omega)), os2ip_i2osp_lt (hlt _ (by omega))]
+    have hlt : ∀ x, x < p * q → x < 256 ^ (2 * pLen) := fun x h => by omega_arith
+    rw [os2ip_i2osp_lt (by omega_arith), os2ip_i2osp_lt he', os2ip_i2osp_lt (hlt _ hdn),
+      os2ip_i2osp_lt (hlt _ hpn), os2ip_i2osp_lt (hlt _ hqn), os2ip_i2osp_lt (hlt _ (by omega_arith)),
+      os2ip_i2osp_lt (hlt _ (by omega_arith)), os2ip_i2osp_lt (hlt _ (by omega_arith))]
   have hdvd : ∀ m, m ∣ L → 1 < m → d * e % m = 1 := fun m hm h1 => by
     rw [← Nat.mod_mod_of_dvd _ hm, Nat.mul_comm, hed, Nat.mod_eq_of_lt h1]
   have hpd : p - 1 ∣ L := hL ▸ Nat.dvd_lcm_left _ _
@@ -137,25 +137,25 @@ theorem keyCheck_iff {pLen e p q d qInv : Nat} (hl1 : 32 ≤ pLen) (hl2 : pLen �
       beq_iff_eq] at hk
     refine ⟨(mul_odd.mp hk.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1).1,
       (mul_odd.mp hk.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1).2,
-      le_of_bitLength (by rw [hb]; omega), hk.1.1.1.1.1.1.1.1.1.1.1.1.2⟩
+      le_of_bitLength (by rw [hb]; omega_arith), hk.1.1.1.1.1.1.1.1.1.1.1.1.2⟩
   · rintro ⟨hpo, hqo, htop, hev⟩
     have hb : bitLength (p * q) = 16 * pLen :=
-      (bitLength_of htop (by rw [show 16 * pLen - 1 + 1 = 16 * pLen by omega]; exact hn)).trans (by omega)
+      (bitLength_of htop (by rw [show 16 * pLen - 1 + 1 = 16 * pLen by omega_arith]; exact hn)).trans (by omega_arith)
     refine ⟨hb, ?_⟩
     rw [hkv hb]
-    have hq3 : 3 ≤ q := by omega
-    have h511 := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 511 ≤ 16 * pLen - 1 by omega)
-    have h8192 := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 16 * pLen ≤ 8192 by omega)
+    have hq3 : 3 ≤ q := by omega_arith
+    have h511 := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 511 ≤ 16 * pLen - 1 by omega_arith)
+    have h8192 := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 16 * pLen ≤ 8192 by omega_arith)
     simp only [Spec.Rsa.keyValid, Spec.Rsa.modulusValid, Bool.and_eq_true, decide_eq_true_eq,
       beq_iff_eq, Nat.mul_mod_mod]
     refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨mul_odd.mpr ⟨hpo, hqo⟩, ?_⟩, ?_⟩, ?_⟩, hev⟩, hdn⟩, hpn⟩, hqn⟩, trivial⟩,
-      hdvd _ hpd (by omega)⟩, hdvd _ hqd (by omega)⟩, hdP⟩, ?_⟩, hdQ⟩, ?_⟩, hqi⟩, hqq⟩
+      hdvd _ hpd (by omega_arith)⟩, hdvd _ hqd (by omega_arith)⟩, hdP⟩, ?_⟩, hdQ⟩, ?_⟩, hqi⟩, hqq⟩
     · exact Nat.le_trans h511 htop
     · exact Nat.lt_of_lt_of_le hn h8192
     · refine le_trans ?_ htop
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-      exact Nat.pow_le_pow_right (by decide) (by omega)
-    · rw [Nat.mul_comm]; exact hdvd _ hpd (by omega)
-    · rw [Nat.mul_comm]; exact hdvd _ hqd (by omega)
+      exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+    · rw [Nat.mul_comm]; exact hdvd _ hpd (by omega_arith)
+    · rw [Nat.mul_comm]; exact hdvd _ hqd (by omega_arith)
 
 end VG.Proof.RsaKeyGen

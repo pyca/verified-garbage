@@ -55,8 +55,8 @@ theorem plainOne_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 
   exact ⟨trace, ⟨U.context, Z.context, agree⟩, U, Z⟩
 
 theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.Constants.code g.w name mont)
       (VG.X86.Taint.Agree (roundTaint [.edi])) := by
@@ -68,8 +68,8 @@ theorem code_raw {mont : Prog isa} {name : String}
   exact (subtract_raw g.w).mono (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.Constants.code g.w name mont) (Pair g [.edi]) := by
   intro s t tr ur u z H E G

@@ -118,7 +118,7 @@ theorem narrowed_facts {s f : State} (A : CandABI s) (Bf : BodyAt (Rd s) Impl.Ff
         (narrowed (wsBase Impl.Ffdh.X86.Candidate.args s) (wsSize Impl.Ffdh.X86.Candidate.args s) f
           [outR s, usedR s]) := by
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   have sub : Region.Sub ⟨frameAt s, argsFrame⟩ (belowR s) := by

@@ -591,12 +591,12 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       (eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
   have fS := hp.st_fits
   have fV := hp.scr_fits
-  have fV64 : (scr s₀).toNat + 64 ≤ 2 ^ 32 := by omega
+  have fV64 : (scr s₀).toNat + 64 ≤ 2 ^ 32 := by omega_arith
   have a0 : s.mem.readW (addr (esp₀ s₀) 4) 32 = st s₀ := hp.arg_frame hL.frame (i := 0) (by decide)
   -- Set up the work vector.
   refine WP.seq ?_
   rw [load_eq, WP.block_append_iff]
-  refine wp_ldm hL.esp (hp.in_arg hL.rd (by omega) (by omega)) fun s₁ u₁ => ?_
+  refine wp_ldm hL.esp (hp.in_arg hL.rd (by omega_arith) (by omega_arith)) fun s₁ u₁ => ?_
   rw [a0] at u₁
   refine WP.mono (ivs_ok hp (by rw [u₁.other _ (by decide), hL.esi]) (by rw [u₁.wr, hL.wr]))
     fun s₃ ⟨e₀, e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ => ?_
@@ -605,7 +605,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.mono (loadX_ok hp (by rw [e₀, u₁.gpr]) (by rw [e₁, u₁.other _ (by decide), hL.esi])
     (by rw [e₅, u₁.rd, hL.rd]) (by rw [e₆, u₁.wr, hL.wr])) fun s₄ ⟨x0, x1, x2, x3, g₄, m₄, r₄, w₄⟩ => ?_
   have sw : ∀ r ∈ [workR (scr s₀)], ∃ r' ∈ [stR s₀, scrR s₀], Region.Sub r r' :=
-    fun r hr => ⟨scrR s₀, by simp, by simp at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+    fun r hr => ⟨scrR s₀, by simp, by simp at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩
   have hrows : Rows (V0 (stateAt 32 s.mem ((st s₀).setWidth 64)) (t₀ s₀ + i * 64) (fl s₀)) s₄ := by
     have hi8 : ∀ k, 8 ≤ k → (hk : k < 16) → s₃.mem.readW (addr (scr s₀) (vOff k)) 32 =
         (V0 (stateAt 32 s.mem ((st s₀).setWidth 64)) (t₀ s₀ + i * 64) (fl s₀))[k] := fun k h8 hk => by
@@ -616,19 +616,19 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       have nd : ∀ d, d + 16 ≤ 32 → ∀ r ∈ [workR (scr s₀)], Region.Disjoint ⟨addr (st s₀) d, 16⟩ r :=
         fun d hd r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          refine (hp.st_scr.sub_left ?_).sub_right (Region.sub_prefix (by omega))
-          rw [addr_eq (by omega)]; exact Offset.sub_base _ hd
+          refine (hp.st_scr.sub_left ?_).sub_right (Region.sub_prefix (by omega_arith))
+          rw [addr_eq (by omega_arith)]; exact Offset.sub_base _ hd
       exact ⟨f₃.readW (Region.contains_self _ _) (nd 0 (by decide)) (by decide),
         f₃.readW (Region.contains_self _ _) (nd 16 (by decide)) (by decide)⟩
     refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩
-    · rw [dw, x0, hs.1, dword_load _ (by omega) hk, V0_get _ _ _ _ (by omega),
-        dite_eq_left (by omega), Nat.zero_add, hp.stateAt_get _ (by omega)]
-    · rw [dw, x1, hs.2, dword_load _ (by omega) hk, V0_get _ _ _ _ (by omega),
-        dite_eq_left (by omega), hp.stateAt_get _ (by omega), show 4 * (4 + k) = 16 + 4 * k by omega]
-    · rw [dw, x2, dword_load _ (by omega) hk, show 32 + 4 * k = vOff (8 + k) by simp only [vOff]; omega,
-        hi8 _ (by omega) (by omega)]
-    · rw [dw, x3, dword_load _ (by omega) hk, show 48 + 4 * k = vOff (12 + k) by simp only [vOff]; omega,
-        hi8 _ (by omega) (by omega)]
+    · rw [dw, x0, hs.1, dword_load _ (by omega_arith) hk, V0_get _ _ _ _ (by omega_arith),
+        dite_eq_left (by omega_arith), Nat.zero_add, hp.stateAt_get _ (by omega_arith)]
+    · rw [dw, x1, hs.2, dword_load _ (by omega_arith) hk, V0_get _ _ _ _ (by omega_arith),
+        dite_eq_left (by omega_arith), hp.stateAt_get _ (by omega_arith), show 4 * (4 + k) = 16 + 4 * k by omega_arith]
+    · rw [dw, x2, dword_load _ (by omega_arith) hk, show 32 + 4 * k = vOff (8 + k) by simp only [vOff]; omega_arith,
+        hi8 _ (by omega_arith) (by omega_arith)]
+    · rw [dw, x3, dword_load _ (by omega_arith) hk, show 48 + 4 * k = vOff (12 + k) by simp only [vOff]; omega_arith,
+        hi8 _ (by omega_arith) (by omega_arith)]
   -- The rounds.
   have hedi₄ : s₄.gpr .edi = blkAddr s₀ i := by rw [g₄, e₂, u₁.other _ (by decide), hL.edi]
   have hmsg₄ : Msg (blkAddr s₀ i) (blk s₀ i) s₄.mem := hp.msg hi (by rw [m₄]; exact hL.frame.trans (f₃.sub sw))
@@ -661,9 +661,9 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have rA : ∀ d, d + 4 ≤ 512 → d ≠ tloOff → d ≠ thiOff → d ≠ nOff → (d % 4 = 0) →
       s₇.mem.readW (addr (scr s₀) d) 32 = s₆.mem.readW (addr (scr s₀) d) 32 := fun d hd h1 h2 h3 h4 => by
     rw [d₈]; simp only [advMem]
-    rw [rw_scr fV _ _ hd (by decide) (by simp only [nOff] at h3 ⊢; omega),
-      rw_scr fV _ _ hd (by decide) (by simp only [thiOff] at h2 ⊢; omega),
-      rw_scr fV _ _ hd (by decide) (by simp only [tloOff] at h1 ⊢; omega)]
+    rw [rw_scr fV _ _ hd (by decide) (by simp only [nOff] at h3 ⊢; omega_arith),
+      rw_scr fV _ _ hd (by decide) (by simp only [thiOff] at h2 ⊢; omega_arith),
+      rw_scr fV _ _ hd (by decide) (by simp only [tloOff] at h1 ⊢; omega_arith)]
   have f₇ : Frame [stR s₀, scrR s₀] s₀.mem s₇.mem := by
     rw [d₈]; simp only [advMem]
     have hm : scrR s₀ ∈ [stR s₀, scrR s₀] := by simp
@@ -677,17 +677,17 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     have e7 : s₇.mem.readW (addr (st s₀) (4 * k)) 32 = s₆.mem.readW (addr (st s₀) (4 * k)) 32 := by
       rw [d₈]; simp only [advMem]
       have sep : ∀ d, d + 4 ≤ 512 → Mem.Sep (addr (st s₀) (4 * k)) (32 / 8) (addr (scr s₀) d) (32 / 8) :=
-        fun d hd => hp.st_scr.sep (hp.st_contains (by omega)) (hp.scr_contains hd)
+        fun d hd => hp.st_scr.sep (hp.st_contains (by omega_arith)) (hp.scr_contains hd)
       rw [Mem.readW_writeW_sep (sep _ (by decide)) (by decide),
         Mem.readW_writeW_sep (sep _ (by decide)) (by decide),
         Mem.readW_writeW_sep (sep _ (by decide)) (by decide)]
-    rw [e7, o₆ k hk, hm₅, hp.st_frame f₃ (by omega), ← hp.stateAt_get _ hk, F_eq]
+    rw [e7, o₆ k hk, hm₅, hp.st_frame f₃ (by omega_arith), ← hp.stateAt_get _ hk, F_eq]
     simp only [Vector.getElem_ofFn]
     exact xor_order _ _ _
   have hsaved : Saved s₀ s₇.mem := by
     have s₆' : Saved s₀ s₆.mem :=
       hp.saved_frame (hp.saved_frame hL.saved (.inl f₃)) (.inr f₆)
-    exact s₆'.of_readW fun p h => rA _ (by have := saved_bound p h; omega) (by revert p h; decide)
+    exact s₆'.of_readW fun p h => rA _ (by have := saved_bound p h; omega_arith) (by revert p h; decide)
       (by revert p h; decide) (by revert p h; decide) (by revert p h; decide)
   have k₆ : ∀ d, 64 ≤ d → d + 4 ≤ 512 → s₆.mem.readW (addr (scr s₀) d) 32 = s.mem.readW (addr (scr s₀) d) 32 :=
     fun d h1 h2 => by
@@ -699,20 +699,20 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     rfl
   have hnb : nb s₀ < 2 ^ 32 := (arg s₀ 2).isLt
   have hc1 : s₆.mem.readW (addr (scr s₀) nOff) 32 - 1 = BitVec.ofNat 32 (nb s₀ - (i + 1)) := by
-    rw [k₆ _ (by decide) (by decide), hL.cnt, ofNat_pred (by omega), Nat.sub_sub]
+    rw [k₆ _ (by decide) (by decide), hL.cnt, ofNat_pred (by omega_arith), Nat.sub_sub]
   have hev : eval .ne s₇ = some (!(BitVec.ofNat 32 (nb s₀ - (i + 1)) == 0)) := by
     rw [Proof.MdStream.X86.eval_ne, d₇, hc1]; rfl
   by_cases hlast : i + 1 = nb s₀
   · left
     refine ⟨by rw [hev, hlast]; simp, hlast ▸ hcommon⟩
   · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega
+    have hne : nb s₀ - (i + 1) ≠ 0 := by omega_arith
     have h0 : BitVec.ofNat 32 (nb s₀ - (i + 1)) ≠ 0 := by
       intro h
       have h' := congrArg BitVec.toNat h
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h'
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at h'
       exact hne h'
-    refine ⟨by rw [hev]; simpa using h0, by omega, ⟨hcommon, ?_, ?_, ?_, ?_, ?_⟩⟩
+    refine ⟨by rw [hev]; simpa using h0, by omega_arith, ⟨hcommon, ?_, ?_, ?_, ?_, ?_⟩⟩
     · rw [d₁, hedi₆, hL.edi]
       simp only [blkAddr]
       rw [BitVec.add_assoc, show (64 : BitVec 32) = BitVec.ofNat 32 64 from rfl, BitVec.ofNat_add_ofNat]
@@ -721,14 +721,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       rw [rw_scr fV _ _ (by decide) (by decide) (by decide), rw_scr fV _ _ (by decide) (by decide) (by decide),
         Mem.readW_writeW_self32, k₆ _ (by decide) (by decide), hL.tlo,
         show (64 : BitVec 32) = BitVec.ofNat 32 64 from rfl, ← BitVec.ofNat_add]
-      congr 1; omega
+      congr 1; omega_arith
     · rw [d₈]; simp only [advMem]
       rw [rw_scr fV _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32,
         k₆ _ (by decide) (by decide), k₆ _ (by decide) (by decide), hL.tlo, hL.thi,
         show ∀ x : BitVec 32, x + 0 = x from fun x => BitVec.add_zero x,
         show (64 : BitVec 32) = BitVec.ofNat 32 64 from rfl,
         Proof.Blake2.X86.Stream.carry_ofNat _ _ (by decide)]
-      congr 2; omega
+      congr 2; omega_arith
     · rw [rA _ (by decide) (by decide) (by decide) (by decide) rfl, k₆ _ (by decide) (by decide), hL.flag]
     · rw [d₈]; simp only [advMem]
       rw [Mem.readW_writeW_self32, hc1]

@@ -10,7 +10,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::sm3::{vg_sm3_finalize, vg_sm3_init, vg_sm3_update};

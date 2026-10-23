@@ -57,7 +57,7 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
     InRegions (rd ++ wr) (argumentPointer s 5) (arg s 6).toNat
 
 /-- The domain, y and x, as the synthetic arguments give them, for permissions that read them, apart from
-the 40 bytes below the frame. -/
+the 96 bytes below the frame. -/
 theorem frame_geo {s : State} (A : CheckPrivateABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
     DomGeo (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (wsBase Impl.Ffdh.X86.CheckPrivate.args s)
@@ -66,26 +66,26 @@ theorem frame_geo {s : State} (A : CheckPrivateABI s) {sp : BitVec 32}
       (wsSize Impl.Ffdh.X86.CheckPrivate.args s) (pLenOf Impl.Ffdh.X86.CheckPrivate.args s) rd wr ∧
     XGeo (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (wsBase Impl.Ffdh.X86.CheckPrivate.args s)
       (wsSize Impl.Ffdh.X86.CheckPrivate.args s) (pLenOf Impl.Ffdh.X86.CheckPrivate.args s) (arg s 6).toNat rd wr ∧
-    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 2), (arg s 1).toNat⟩ (below sp 40) ∧
+    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 2), (arg s 1).toNat⟩ (below sp 96) ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 8),
-      pLenOf Impl.Ffdh.X86.CheckPrivate.args s⟩ (below sp 40) ∧
+      pLenOf Impl.Ffdh.X86.CheckPrivate.args s⟩ (below sp 96) ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 10), (arg s 6).toNat⟩
-      (below sp 40) := by
+      (below sp 96) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have yl := A.yLen
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega)
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
   have ofn : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have sub40 : Region.Sub (below sp 40) ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ := by
+  have sub40 : Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 40#64 = BitVec.ofNat 64 116 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPrivate.args s := yl
   refine ⟨⟨(ofn _).symm, (ofn _).symm, (ofn _).symm, rfl, rfl, (ofn _).symm, A.dLen, A.domBound, hrd.1,
@@ -106,11 +106,11 @@ theorem frame_keep {s : State} (A : CheckPrivateABI s) {m : Mem}
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.CheckPrivate.args s, wsSize Impl.Ffdh.X86.CheckPrivate.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase Impl.Ffdh.X86.CheckPrivate.args s, wsSize Impl.Ffdh.X86.CheckPrivate.args s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   exact frame_bytes Ft (fun r hr => by

@@ -170,7 +170,8 @@ fn rsa_oaep_test() {
 
 /// Every pair of hash functions the module supports, with a 2048-bit key of
 /// the vectors: the longest message the modulus allows decrypts from its
-/// encryption, and not with another label. This runs each pair with the
+/// encryption, and not with another label, and ciphertexts that are not
+/// the pair's encryption of anything are refused. This runs each pair with the
 /// implementations a line of CI's `rust-cpu-features` chooses even where its
 /// files do not: SHA-512/256's have only 3072-bit keys, which an emulated
 /// CPU with AVX512_IFMA leaves out ([`harness::rsa_bits_tested`]); and it is
@@ -182,7 +183,9 @@ fn rsa_oaep_every_pair() {
     let name = "rsa_oaep_2048_sha256_mgf1sha256_test.json";
     let file: TestFile<Group, Case> = harness::load(name);
     let (key, public) = keys(name, &file.test_groups[0].params.private_key);
+    let n = trim(&file.test_groups[0].params.private_key.modulus.0);
     let k = public.modulus_len();
+    assert_eq!(n.len(), k);
     // Each hash function with MGF1 over itself and over SHA-1.
     let mut pairs: Vec<(Hash, Hash)> = HASHES
         .iter()
@@ -190,12 +193,30 @@ fn rsa_oaep_every_pair() {
         .collect();
     pairs.dedup();
     assert_eq!(pairs.len(), 13);
-    for (h, g) in pairs {
+    for (i, &(h, g)) in pairs.iter().enumerate() {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
         let ct = encrypt(&public, &msg, h, g, b"label").unwrap();
         assert_eq!(decrypt(&key, &ct, h, g, b"label"), Ok(msg), "{h:?} {g:?}");
         let other = decrypt(&key, &ct, h, g, b"other");
         assert_eq!(other, Err(Error::Decryption), "{h:?} {g:?}");
+        // Ciphertexts as long as the modulus, which reach this pair's
+        // decryption and fail in it: one bit flipped; the next pair's
+        // encoding of a message; zero, whose encoding is all zeros; and the
+        // modulus and every bit set, which are not below the modulus.
+        let mut flipped = ct.clone();
+        flipped[k / 2] ^= 1;
+        let (h2, g2) = pairs[(i + 1) % pairs.len()];
+        let next = encrypt(&public, b"message", h2, g2, b"label").unwrap();
+        for (what, bad) in [
+            ("one bit flipped", flipped),
+            ("the next pair's", next),
+            ("zero", vec![0; k]),
+            ("the modulus", n.to_vec()),
+            ("every bit set", vec![0xff; k]),
+        ] {
+            let r = decrypt(&key, &bad, h, g, b"label");
+            assert_eq!(r, Err(Error::Decryption), "{h:?} {g:?}: {what}");
+        }
     }
 }
 

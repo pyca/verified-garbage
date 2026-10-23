@@ -57,7 +57,7 @@ theorem zero_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀
       ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := by
   have hv0 : ∀ r ∈ preservedV, r ≠ .v0 := by decide
   refine WP.mono (zeroAt_ok (b := 704) (J := 36) (by decide) (by decide) hx21 fun a ha => by
-    rw [hwr]; exact hp.in_ctx (a := 704 + a) (by omega)) fun s' ⟨g, rd, wr, sp, v, z⟩ =>
+    rw [hwr]; exact hp.in_ctx (a := 704 + a) (by omega_arith)) fun s' ⟨g, rd, wr, sp, v, z⟩ =>
       ⟨Kept.of (fun r _ => by rw [g]) sp rd wr (z.frame (by decide)), z,
         fun r hr => by rw [v r (hv0 r hr)]⟩
 
@@ -110,14 +110,14 @@ theorem recover_ok {s₀ s : State} (h449 : 449 ≤ L s₀) (h511 : L s₀ ≤ 5
   refine wp_sub fun s₁ u₁ => wp_subImm (by decide) fun s₂ u₂ => wp_mov fun s₃ u₃ =>
     wp_addImm (by decide) fun s₄ u₄ => wp_addImm (by decide) fun s₅ u₅ => WP.block_nil ?_
   have x25₂ : s₂.gpr .x25 = BitVec.ofNat 64 (L s₀ - 448) := by
-    rw [u₂.gpr, u₁.gpr, hx22, hx21, off, Offset.add_sub_cancel_left, Offset.ofNat_sub_ofNat (by omega),
-      show 256 + L s₀ - 704 = L s₀ - 448 by omega]
+    rw [u₂.gpr, u₁.gpr, hx22, hx21, off, Offset.add_sub_cancel_left, Offset.ofNat_sub_ofNat (by omega_arith),
+      show 256 + L s₀ - 704 = L s₀ - 448 by omega_arith]
   refine ⟨?_, ?_, ?_, ?_, ?_, by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem],
     by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
       u₁.other _ (by decide), hx23]
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), x25₂, ← BitVec.ofNat_add,
-      show L s₀ - 448 + 448 = L s₀ by omega]
+      show L s₀ - 448 + 448 = L s₀ by omega_arith]
   · rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hx23]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), x25₂]
   · intro r hr
@@ -174,20 +174,20 @@ theorem padPre_of {s₀ s : State} (hp : APre false s₀) (h449 : 449 ≤ L s₀
   have hw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [hrd, hwr]
   refine ⟨fun k => ?_, fun k => ?_, ?_, fun d n h => ?_, fun d n h => ?_, ?_, ?_, ?_, ?_,
     fun d h => ?_, fun r hr => ?_⟩
-  · rw [hw, hx0, Short.off_add]; exact hp.in_ctx' (by have := k.isLt; omega)
-  · rw [hw, hx0, Short.off_add]; exact hp.in_ctx' (by have := Nat.mod_lt k.val (show 4 > 0 by decide); omega)
+  · rw [hw, hx0, Short.off_add]; exact hp.in_ctx' (by have := k.isLt; omega_arith)
+  · rw [hw, hx0, Short.off_add]; exact hp.in_ctx' (by have := Nat.mod_lt k.val (show 4 > 0 by decide); omega_arith)
   · rw [hwr, hx0, Short.off_add]; exact hp.in_ctx (by decide)
-  · rw [hwr, hx3, Short.off_add]; exact hp.in_ctx (by omega)
-  · rw [hwr, hx1, Short.off_add]; exact hp.in_ctx (by omega)
+  · rw [hwr, hx3, Short.off_add]; exact hp.in_ctx (by omega_arith)
+  · rw [hwr, hx1, Short.off_add]; exact hp.in_ctx (by omega_arith)
   · rw [hsr, hbr]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-  · rw [hsr, hdr]; exact sub_disj s₀ (by omega) (by lit_omega) (by omega)
-  · rw [hdr, hbr]; exact sub_disj s₀ (by omega) (by omega) (by lit_omega)
+  · rw [hsr, hdr]; exact sub_disj s₀ (by omega_arith) (by lit_omega) (by omega_arith)
+  · rw [hdr, hbr]; exact sub_disj s₀ (by omega_arith) (by omega_arith) (by lit_omega)
   · rw [hx3, hx0]; exact (off_off _ 64 64).symm
   · rw [hx2, hw]
-    exact ⟨dR s₀, by simp [hp.d_wr], Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨dR s₀, by simp [hp.d_wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · rw [hx2]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    have hs : (⟨dp s₀, 448⟩ : Region).Sub (dR s₀) := Region.sub_prefix (by omega)
+    have hs : (⟨dp s₀, 448⟩ : Region).Sub (dR s₀) := Region.sub_prefix (by omega_arith)
     rcases hr with rfl | rfl
     · rw [hsr]; exact (hp.c_d.symm.sub_left hs).sub_right (sub_ctx s₀ (by lit_omega))
     · rw [hbr]; exact (hp.c_d.symm.sub_left hs).sub_right (sub_ctx s₀ (by lit_omega))
@@ -216,10 +216,10 @@ theorem crypt_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 449 
   have hL' : L s₀ ≤ 2 ^ 64 := Nat.le_of_lt (s₀.gpr .x5).isLt
   refine WP.seq (WP.block_append (WP.block_append (WP.mono (zero_ok hp h.x21 h.wr)
     fun s₄ ⟨k₄, z₄, v₄⟩ => ?_)))
-  have i₄ : Inv s₀ s₄ := h.step1 k₄ (by omega) (by omega) (by omega)
+  have i₄ : Inv s₀ s₄ := h.step1 k₄ (by omega_arith) (by omega_arith) (by omega_arith)
   refine WP.mono (WP.preservedV (args_ok hp i₄) (by lit_decide))
     fun s₅ ⟨⟨m₅, x0₅, x1₅, x2₅, x3₅, k₅⟩, v₅⟩ => ?_
-  have i₅ : Inv s₀ s₅ := i₄.step1 k₅ (by omega) (by omega) (by omega)
+  have i₅ : Inv s₀ s₅ := i₄.step1 k₅ (by omega_arith) (by omega_arith) (by omega_arith)
   refine (polyIn_ok hp i₅.x21 i₅.rd i₅.wr).mono
     fun s₆ ⟨⟨a21, a22, a23, m₆, g₆, rd₆, wr₆⟩, v₆, sp₆, _, _⟩ => ?_
   have x0₆ : s₆.gpr .x0 = off (cx s₀) 64 := by rw [g₆ _ (by decide), x0₅]
@@ -269,7 +269,7 @@ theorem crypt_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 449 
     · rcases hr with hr | hr | hr
       · exact e r 64 64 (by decide) (by decide) hr
       · exact e r 128 320 (by decide) (by decide) hr
-      · subst hr; exact ⟨sub s₀ 704 576, by simp, sub_sub s₀ (by omega) (by omega) (by lit_omega)⟩
+      · subst hr; exact ⟨sub s₀ 704 576, by simp, sub_sub s₀ (by omega_arith) (by omega_arith) (by lit_omega)⟩
     · exact e r 448 24 (by decide) (by decide) hr
   have hFd : ∀ r ∈ [sub s₀ 32 16, sub s₀ 64 408, sub s₀ 704 576], (dR s₀).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -280,7 +280,7 @@ theorem crypt_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 449 
     refine f₆₇.readW (r := sub s₀ d 8) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hd with rfl | rfl <;> rcases hr with rfl | rfl | rfl <;>
-      exact sub_disj s₀ (by omega) (by lit_omega) (by omega)
+      exact sub_disj s₀ (by omega_arith) (by lit_omega) (by omega_arith)
   have un₉ : ∀ r ∈ untouched, s₉.gpr r = s₀.gpr r := by
     intro r hr
     simp only [untouched, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -318,24 +318,24 @@ theorem crypt_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 449 
     intro i hi
     have hR : ∀ r ∈ [sub s₀ 448 24], (sub s₀ (256 + L s₀) 512).Disjoint r := by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
-      exact sub_disj s₀ (by omega) (by omega) (by lit_omega)
+      exact sub_disj s₀ (by omega_arith) (by omega_arith) (by lit_omega)
     rw [m₉, f₇₈.bytes (R := sub s₀ (256 + L s₀) 512) hR (by show 512 ≤ 2 ^ 64; decide)
-      (by show i < 512; omega)]
-    have d := hB.data i (by omega)
+      (by show i < 512; omega_arith)]
+    have d := hB.data i (by omega_arith)
     rw [x1₆, st₆] at d
     rw [d]
     -- The buffer was zero.
     have z : s₆.mem (off (cx s₀) (256 + L s₀) + BitVec.ofNat 64 i) = 0 := by
       rw [f₅₆.bytes (R := sub s₀ (256 + L s₀) 512) (by
           intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> exact sub_disj s₀ (by omega) (by omega) (by lit_omega))
-          (by show 512 ≤ 2 ^ 64; decide) (by show i < 512; omega),
+          rcases hr with rfl | rfl <;> exact sub_disj s₀ (by omega_arith) (by omega_arith) (by lit_omega))
+          (by show 512 ≤ 2 ^ 64; decide) (by show i < 512; omega_arith),
         k₅.frame.bytes (R := sub s₀ (256 + L s₀) 512) (by
           intro r hr; simp only [List.mem_singleton] at hr; subst hr
-          exact sub_disj s₀ (by omega) (by omega) (by lit_omega)) (by show 512 ≤ 2 ^ 64; decide)
-          (by show i < 512; omega),
-        Short.off_add, show 256 + L s₀ + i = 704 + (L s₀ - 448 + i) by omega]
-      exact z₄.byte (k := L s₀ - 448 + i) (by omega) (by decide)
+          exact sub_disj s₀ (by omega_arith) (by omega_arith) (by lit_omega)) (by show 512 ≤ 2 ^ 64; decide)
+          (by show i < 512; omega_arith),
+        Short.off_add, show 256 + L s₀ + i = 704 + (L s₀ - 448 + i) by omega_arith]
+      exact z₄.byte (k := L s₀ - 448 + i) (by omega_arith) (by decide)
     rw [z, VG.Proof.ChaCha20.keystream_getD _ hi]
     simp
   -- The accumulator.
@@ -355,7 +355,7 @@ theorem crypt_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 449 
   · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
   · rw [List.length_append, Poly1305.length_bytesAt]
-    have := hr.1; omega
+    have := hr.1; omega_arith
   · rw [k24, bytesAt_frame hF (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
@@ -367,11 +367,11 @@ theorem crypt_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 449 
     refine congrArg (VG.Proof.Poly1305.absorbAll _ _) ?_
     rw [x2₆, prefix_frame f₅₆ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact data_ctx hp (by lit_omega)) (by omega),
+        rcases hr with rfl | rfl <;> exact data_ctx hp (by lit_omega)) (by omega_arith),
       prefix_frame k₅.frame (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact data_ctx hp (by lit_omega)) (by omega),
+        simp only [List.mem_singleton] at hr; subst hr; exact data_ctx hp (by lit_omega)) (by omega_arith),
       prefix_frame k₄.frame (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact data_ctx hp (by lit_omega)) (by omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact data_ctx hp (by lit_omega)) (by omega_arith)]
   · have e7 : s₇.v r = s₆.v r := by
       by_cases h8 : r = .v8
       · subst h8; exact hB.v8
@@ -400,7 +400,7 @@ theorem openMain_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 4
   refine crypt_ok sve hp h449 h511 i₃ st₃ R₃ fun s₉ hc => ?_
   -- The rest of the data.
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩
-    (srcAt hp (p := 448) (by omega)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x24 hc.x25) (by lit_decide))
+    (srcAt hp (p := 448) (by omega_arith)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x24 hc.x25) (by lit_decide))
     fun s₁₀ ⟨⟨k₁₀, r₁₀⟩, v₁₀⟩ => ?_)
   have i₁₀ := mac_inv0 hc.inv k₁₀
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₁₀) (by lit_decide))
@@ -411,7 +411,7 @@ theorem openMain_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 4
     rw [k₁₁.cs _ (pres .x23) (pres30 .x23), k₁₀.cs _ (pres .x23) (pres30 .x23), hc.x23]
   -- The data decrypted.
   refine WP.seq (WP.mono (WP.preservedV (Short.xorKsWithAt_ok hp (k := 256 + L s₀) (o := 0) (n := L s₀)
-    (by omega) (by omega) x23₁₁ i₁₁.rd i₁₁.wr (xsetup_ok i₁₁.x21 x22₁₁ x23₁₁)) (by lit_decide))
+    (by omega_arith) (by omega_arith) x23₁₁ i₁₁.rd i₁₁.wr (xsetup_ok i₁₁.x21 x22₁₁ x23₁₁)) (by lit_decide))
     fun s₁₂ ⟨⟨k₁₂, d₁₂, _, _⟩, v₁₂⟩ => ?_)
   have i₁₂ : Inv0 s₀ s₁₂ := i₁₁.step k₁₂
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩)
@@ -426,16 +426,16 @@ theorem openMain_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 4
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
-  refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₁₃ (out := 48) (by omega)) (by lit_decide))
+  refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₁₃ (out := 48) (by omega_arith)) (by lit_decide))
     fun s₁₄ ⟨⟨k₁₄, tag₁₄⟩, v₁₄⟩ => ?_
   -- The tag computed.
   have hR : ∀ r ∈ [sub s₀ 32 16, sub s₀ 64 408, sub s₀ 704 576],
       (⟨dp s₀ + BitVec.ofNat 64 448, L s₀ - 448⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
-      exact (hp.c_d.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (sub_ctx s₀ (by lit_omega))
+      exact (hp.c_d.symm.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (sub_ctx s₀ (by lit_omega))
   have R₁₀ := r₁₀ _ _ hc.mac
-  rw [bytesAt_frame hc.frame hR (by omega), List.append_assoc, split_pad (by decide) (by omega),
+  rw [bytesAt_frame hc.frame hR (by omega_arith), List.append_assoc, split_pad (by decide) (by omega_arith),
     bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
     bytesAt_frame h₁.fine (by rdisj_all) hL'] at R₁₀
   have R₁₃ := Repr.frame k₁₃.frame (by rdisj_all) (Repr.frame k₁₂.frame (by rdisj_all) (r₁₁ _ _ R₁₀))
@@ -465,11 +465,11 @@ theorem openMain_ok (sve : Bool) {s₀ : State} (hp : APre false s₀) (h449 : 4
         (keystream (initState (K s₀) 1 (N s₀)) (L s₀)).getD i 0 := fun i hi => by
       have hR' : ∀ r ∈ macR s₀, (sub s₀ (256 + L s₀) 512).Disjoint r := by
         intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact sub_disj s₀ (by omega) (by omega) (by lit_omega)
+        rcases hr with rfl | rfl <;> exact sub_disj s₀ (by omega_arith) (by omega_arith) (by lit_omega)
       rw [k₁₁.frame.bytes (R := sub s₀ (256 + L s₀) 512) hR' (by show 512 ≤ 2 ^ 64; decide)
-          (by show i < 512; omega),
+          (by show i < 512; omega_arith),
         k₁₀.frame.bytes (R := sub s₀ (256 + L s₀) 512) hR' (by show 512 ≤ 2 ^ 64; decide)
-          (by show i < 512; omega)]
+          (by show i < 512; omega_arith)]
       exact hc.ks i hi
     rw [bytesAt_frame k₁₄.frame (by rdisj_all) hL', bytesAt_frame k₁₃.frame (by rdisj_all) hL',
       encrypt_eq]
@@ -502,24 +502,24 @@ theorem openRoute_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
   have hL₁ : L s₁ = L s₀ := by rw [L, L, ag.gpr .x5 (by decide) (by decide)]
   refine WP.ite (decide (L s₀ ≤ Pad.threshold v.callee.sve)) (Pad.split_eval h511 x9) (fun _ => ?_)
     (fun hgt => ?_)
-  · exact WP.mono (ShortRest.openMain_ok v hp₁ (by omega)) fun _ h => Short.MainO.agree ag h
+  · exact WP.mono (ShortRest.openMain_ok v hp₁ (by omega_arith)) fun _ h => Short.MainO.agree ag h
   have hgt' := of_decide_eq_false hgt
   cases hs : v.callee.sve
   · simp only [Bool.false_eq_true, ↓reduceIte]
     rw [hs] at hgt'
-    exact WP.mono (openMain_ok false hp₁ (by simp only [Pad.threshold, Bool.false_eq_true, ↓reduceIte] at hgt'; omega) (by omega))
+    exact WP.mono (openMain_ok false hp₁ (by simp only [Pad.threshold, Bool.false_eq_true, ↓reduceIte] at hgt'; omega_arith) (by omega_arith))
       fun _ h => Short.MainO.agree ag h
   · simp only [↓reduceIte]
     refine WP.seq (WP.mono (Pad.split_ok false s₁) fun s₂ ⟨ag₂, x92⟩ => ?_)
     have hp₂ := Short.APre.agree ag₂ hp₁
     have hL₂ : L s₂ = L s₁ := by rw [L, L, ag₂.gpr .x5 (by decide) (by decide)]
-    refine WP.ite (decide (L s₁ ≤ Pad.threshold false)) (Pad.split_eval (by omega) x92) (fun _ => ?_)
+    refine WP.ite (decide (L s₁ ≤ Pad.threshold false)) (Pad.split_eval (by omega_arith) x92) (fun _ => ?_)
       (fun hgt₂ => ?_)
-    · exact WP.mono (Pad.openMain_ok v hp₂ (by omega))
+    · exact WP.mono (Pad.openMain_ok v hp₂ (by omega_arith))
         fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
     · have := of_decide_eq_false hgt₂
       simp only [Pad.threshold, Bool.false_eq_true, ↓reduceIte] at this
-      exact WP.mono (openMain_ok true hp₂ (by omega) (by omega))
+      exact WP.mono (openMain_ok true hp₂ (by omega_arith) (by omega_arith))
         fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
 
 end VG.Proof.ChaCha20Poly1305.AArch64.OpenPad

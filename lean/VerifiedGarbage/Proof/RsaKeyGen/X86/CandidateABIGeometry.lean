@@ -34,14 +34,14 @@ theorem CallLayout.privateNat {s : State} (A : CallLayout s) :
     (callEnvironment s).p.toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := A.low; omega)
 
 theorem CallLayout.reservedNat {s : State} (A : CallLayout s) :
-    (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 112 := by
-  change ((s.gpr .esp).setWidth 64 - 112#64).toNat = _
+    (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 152 := by
+  change ((s.gpr .esp).setWidth 64 - 152#64).toNat = _
   rw [← Taint.sub_setWidth A.low, BitVec.toNat_setWidth, sub_toNat A.low,
     Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
 
 theorem CallLayout.workspaceStack {s : State} (A : CallLayout s) (Z : CallSizes s) (D : CallSeparation s) :
     (callEnvironment s).p.toNat ≤ (callEnvironment s).base.toNat ∨
-    (callEnvironment s).base.toNat + (callEnvironment s).size + 96 ≤ (callEnvironment s).p.toNat := by
+    (callEnvironment s).base.toNat + (callEnvironment s).size + 136 ≤ (callEnvironment s).p.toNat := by
   have g := CandidateGeometry.geometry_valid (workspace := (callEnvironment s).base) Z.length Z.capacity
   have nonempty : 0 < (callEnvironment s).size := by
     have := g.headerFit
@@ -54,14 +54,14 @@ theorem CallLayout.workspaceStack {s : State} (A : CallLayout s) (Z : CallSizes 
     change ((arg s 9).setWidth 64).toNat + 8 * (arg s 10).toNat ≤ 2 ^ 32
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 9).isLt (by decide))]
     exact A.workspaceFit
-  have rn : ((s.gpr .esp).setWidth 64 - 112#64).toNat = (s.gpr .esp).toNat - 112 := A.reservedNat
-  have bounds := disjoint_bounds (Nat.le_trans fit (by decide)) (n := (callEnvironment s).size) (k := 112)
+  have rn : ((s.gpr .esp).setWidth 64 - 152#64).toNat = (s.gpr .esp).toNat - 152 := A.reservedNat
+  have bounds := disjoint_bounds (Nat.le_trans fit (by decide)) (n := (callEnvironment s).size) (k := 152)
     (by rw [rn]; have := A.low; have := (s.gpr .esp).isLt; omega) nonempty (by decide) far
   rw [rn] at bounds
   rw [A.privateNat]
   have low := A.low
-  change (callEnvironment s).base.toNat + (callEnvironment s).size ≤ (s.gpr .esp).toNat - 112 ∨
-    (s.gpr .esp).toNat - 112 + 112 ≤ (callEnvironment s).base.toNat at bounds
+  change (callEnvironment s).base.toNat + (callEnvironment s).size ≤ (s.gpr .esp).toNat - 152 ∨
+    (s.gpr .esp).toNat - 152 + 152 ≤ (callEnvironment s).base.toNat at bounds
   omega
 
 end VG.Proof.RsaKeyGen.X86.Candidate

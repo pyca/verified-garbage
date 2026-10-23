@@ -73,6 +73,9 @@ representation). -/
 theorem gp_polyMul (a b : BitVec 64) : gp (polyMul a b) = X * gp a * gp b := by
   rw [show polyMul a b = clSteps a b 64 from rfl, gp_clSteps a b (Nat.le_refl _), gp_lsb]
 
+theorem polyMul_comm (a b : BitVec 64) : polyMul a b = polyMul b a :=
+  gp_ext (by rw [gp_polyMul, gp_polyMul]; ring)
+
 /-! ## Doublewords -/
 
 /-- The class of a 64-bit polynomial. -/
@@ -192,5 +195,82 @@ theorem gp_xInv2 : gp xInv2 = X + X ^ 5 + X ^ 6 + X ^ 126 + X ^ 127 := by
 theorem x2_φ_xInv2 : x ^ 2 * φ xInv2 = 1 := by
   simp only [φ, gp_xInv2, map_add, map_pow, AdjoinRoot.mk_X]
   linear_combination (1 + x) * x128 + (x + x ^ 2 + x ^ 3 + x ^ 7 + x ^ 8) * two_Q
+
+/-! ## `H · x⁻¹` by a shift (`Impl.Gcm.AArch64.Pmull.twist`) -/
+theorem gp_shl1 (q : BitVec 64) :
+    gp q = (if q.getMsbD 0 then (1 : P) else 0) + X * gp (q <<< 1) := by
+  ext d
+  rw [coeff_add, coeff_gp]
+  rcases d with _ | d
+  · rw [coeff_X_mul_zero, add_zero]
+    cases q.getMsbD 0 <;> simp [bit]
+  · rw [coeff_X_mul, coeff_gp, BitVec.getMsbD_shiftLeft]
+    have h0 : ((if q.getMsbD 0 then (1 : P) else 0)).coeff (d + 1) = 0 := by
+      split_ifs
+      · rw [coeff_one]; simp
+      · rw [coeff_zero]
+    rw [h0, zero_add]
+
+theorem gp_ushr63 (q : BitVec 64) : gp (q >>> 63) = if q.getMsbD 0 then (X : P) ^ 63 else 0 := by
+  ext d
+  rw [coeff_gp, BitVec.getMsbD_ushiftRight]
+  by_cases hd : d = 63
+  · subst hd; cases h : q.getMsbD 0 <;> simp [bit]
+  · have : (decide (d < 64) && (!decide (d < 63) && q.getMsbD (d - 63))) = false := by
+      by_cases h : d < 63
+      · simp [h]
+      · simp [show ¬ d < 64 by omega]
+    rw [this]; split_ifs <;> simp [bit, coeff_X_pow, hd]
+
+theorem ψ_ushr63 (q : BitVec 64) : ψ (q >>> 63) = if q.getMsbD 0 then x ^ 63 else 0 := by
+  simp only [ψ, gp_ushr63]; split_ifs <;> simp [AdjoinRoot.mk_X]
+
+theorem ψ_shl1 (q : BitVec 64) : ψ q = (if q.getMsbD 0 then 1 else 0) + x * ψ (q <<< 1) := by
+  conv_lhs => rw [ψ, gp_shl1]
+  simp only [ψ, map_add, map_mul, AdjoinRoot.mk_X]; split_ifs <;> simp
+
+theorem gp_one64 : gp (1#64) = (X : P) ^ 63 := by
+  have h := gp_ushr63 (BitVec.allOnes 64)
+  rw [show BitVec.allOnes 64 >>> 63 = 1#64 by decide, show (BitVec.allOnes 64).getMsbD 0 = true by decide] at h
+  simpa using h
+
+theorem ushr63 (q : BitVec 64) : q >>> 63 = if q.getMsbD 0 then 1#64 else 0#64 :=
+  gp_ext (by rw [gp_ushr63]; split_ifs <;> simp [gp_one64, gp_zero'])
+
+theorem ρ_polyMul_bit (q : BitVec 64) :
+    ρ (polyMul (q >>> 63) poly) = if q.getMsbD 0 then 1 + x + x ^ 6 else 0 := by
+  rw [ushr63]
+  split_ifs
+  · rw [ρ, show vdword (polyMul 1#64 poly) 0 = poly by decide +kernel,
+      show vdword (polyMul 1#64 poly) 1 = 0#64 by decide +kernel, ψ_poly]
+    simp [ψ, gp_zero']
+  · rw [ρ, show vdword (polyMul 0#64 poly) 0 = 0#64 by decide +kernel,
+      show vdword (polyMul 0#64 poly) 1 = 0#64 by decide +kernel]
+    simp [ψ, gp_zero']
+
+/-- `H' = H · x⁻¹`: the dwords of `a` shifted up by one bit, each taking the
+other's top bit, and `0xc2 · 2⁵⁶` added to the low one if its top bit was set. -/
+theorem twist_ρ (a0 a1 : BitVec 64) :
+    x * (ρ (ofVDwords (a0 <<< 1) (a1 <<< 1)) + ρ (ofVDwords (a1 >>> 63) (a0 >>> 63)) +
+      ρ (polyMul (a0 >>> 63) poly)) = ρ (ofVDwords a0 a1) := by
+  rw [ρ_polyMul_bit]
+  simp only [ρ, ofVDwords, vdword_append_0, vdword_append_1]
+  rw [ψ_ushr63, ψ_ushr63, ψ_shl1 a0, ψ_shl1 a1]
+  split_ifs with h1 h0 h0
+  · linear_combination x128 + (x + x ^ 2 + x ^ 7) * two_Q
+  · ring
+  · linear_combination x128 + (x + x ^ 2 + x ^ 7) * two_Q
+  · ring
+
+/-- What `twist` computes from `a`, of class `ρ a · x⁻¹`. -/
+theorem twistV_ρ (a : BitVec 128) :
+    x * ρ ((ofVDwords (vdword a 0 <<< 1) (vdword a 1 <<< 1) ^^^
+        ext8 (ofVDwords (vdword a 0 >>> 63) (vdword a 1 >>> 63))
+          (ofVDwords (vdword a 0 >>> 63) (vdword a 1 >>> 63))) ^^^
+        polyMul (vdword a 0 >>> 63) poly) = ρ a := by
+  have h := twist_ρ (vdword a 0) (vdword a 1)
+  rw [show ofVDwords (vdword a 0) (vdword a 1) = a from (vdwords a).symm] at h
+  rw [← h, ρ_xor, ρ_xor, ρ_ext8_self, φ_v]
+  simp only [ρ, ofVDwords, vdword_append_0, vdword_append_1]
 
 end VG.Proof.Gcm.AArch64.Pmull

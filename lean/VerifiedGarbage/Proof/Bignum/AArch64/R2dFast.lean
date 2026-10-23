@@ -234,7 +234,7 @@ theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M 
   have hn := hs.nowrap
   have sl8 : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs.ld (by have := hdr_lt_slot w 8 hi; have := slot_le (w := w) (show 7 < 8 by decide); omega)
+    hs.ld (by have := hdr_lt_slot w 8 hi; have := slot_le (w := w) (show 7 < 8 by decide); omega_arith)
   have sXN := slot_sep (w := w) (show aR2 ≠ aN by decide)
   have sTN := slot_sep (w := w) (show aTmp ≠ aN by decide)
   have sTX := slot_sep (w := w) (show aTmp ≠ aR2 by decide)
@@ -244,18 +244,18 @@ theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M 
   have hhs : ∀ j, 8 * sCnt + 8 ≤ slot w j := fun j => hdr_lt_slot w j (by decide)
   -- `m ≥ 2^(64 w - 1)`, and odd, so `R - m < m`.
   have hMB : M < 2 ^ (64 * w) := hM ▸ wv_lt _ _ _ _
-  have hMw := wv_split1 s.mem B (slot w aN) (show 1 ≤ w by omega)
+  have hMw := wv_split1 s.mem B (slot w aN) (show 1 ≤ w by omega_arith)
   rw [hM] at hMw
   have hP : 2 ^ (64 * w) = 2 ^ (64 * (w - 1)) * 2 ^ 63 * 2 := by
-    rw [Nat.mul_assoc, ← Nat.pow_succ, ← Nat.pow_add]; congr 1; omega
+    rw [Nat.mul_assoc, ← Nat.pow_succ, ← Nat.pow_add]; congr 1; omega_arith
   have hlo : 2 ^ (64 * (w - 1)) * 2 ^ 63 ≤ M := by
     rw [hMw, Nat.mul_comm (2 ^ (64 * (w - 1)))]
     exact Nat.le_trans (Nat.mul_le_mul_right _ hd) (Nat.le_add_right _ _)
   have hlt : 2 ^ (64 * w) - M < M := by
     have h2 : 2 ^ (64 * (w - 1)) * 2 ^ 63 % 2 = 0 := by
       rw [Nat.mul_mod, show 2 ^ 63 % 2 = 0 from rfl, Nat.mul_zero, Nat.zero_mod]
-    have : M ≠ 2 ^ (64 * (w - 1)) * 2 ^ 63 := fun h => by rw [h] at hodd; omega
-    omega
+    have : M ≠ 2 ^ (64 * (w - 1)) * 2 ^ 63 := fun h => by rw [h] at hodd; omega_arith
+    omega_arith
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.x6, .x7, .x9, .x11, .x12] (Q := fun t =>
     t.gpr .x11 = off B (slot w aR2) ∧ t.gpr .x9 = off B (slot w aN) ∧ t.gpr .x6 = off B (slot w aTmp) ∧
@@ -267,33 +267,33 @@ theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M 
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨h11, h9, h6, h12, h7, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
   -- `x := R - m`.
-  refine WP.seq (WP.mono (r2dNeg_ok hs₁ h11 h9 h12 h7 (by omega) hw' (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (r2dNeg_ok hs₁ h11 h9 h12 h7 (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₂ ⟨b, hv₂, o₂, k₂⟩ => ?_)
   rw [hm₁, hM] at hv₂
   have hb : b = true := by
     cases b
-    · simp only [Bool.toNat_false, Nat.mul_zero] at hv₂; omega
+    · simp only [Bool.toNat_false, Nat.mul_zero] at hv₂; omega_arith
     · rfl
   subst hb
   rw [Bool.toNat_true, Nat.mul_one] at hv₂
   have hs₂ := hs₁.congr k₂.wr
-  have N₂ : wv t₂.mem B (slot w aN) w = M := by rw [o₂.wv (by omega) (by omega), hm₁, hM]
+  have N₂ : wv t₂.mem B (slot w aN) w = M := by rw [o₂.wv (by omega_arith) (by omega_arith), hm₁, hM]
   have D₂ : word t₂.mem B (slot w aN + 8 * (w - 1)) = word s.mem B (slot w aN + 8 * (w - 1)) := by
-    rw [o₂.word (by omega) (by omega), hm₁]
+    rw [o₂.word (by omega_arith) (by omega_arith), hm₁]
   -- `v`.
   refine WP.seq (WP.mono (r2dRecip_ok hs₂ ((k₂.gpr .x9 (by decide)).trans h9) ((k₂.gpr .x12 (by decide)).trans h12)
-    ((k₂.gpr .x6 (by decide)).trans h6) ((k₂.gpr .x7 (by decide)).trans h7) (by omega) hw' (by omega) (by omega)
+    ((k₂.gpr .x6 (by decide)).trans h6) ((k₂.gpr .x7 (by decide)).trans h7) (by omega_arith) hw' (by omega_arith) (by omega_arith)
     (by rw [D₂]; exact hd)) fun t₃ ⟨hv₃, o₃, k₃⟩ => ?_)
   rw [D₂] at hv₃
   have a₃ : Arrays B w [aR2, aTmp] s.mem t₃.mem := by
     rw [← hm₁]
-    exact (Arrays.of_outside (j := aR2) (by decide) o₂ (Nat.le_refl _) (by omega)).trans
-      (Arrays.of_outside (j := aTmp) (by decide) o₃ (Nat.le_refl _) (by omega))
+    exact (Arrays.of_outside (j := aR2) (by decide) o₂ (Nat.le_refl _) (by omega_arith)).trans
+      (Arrays.of_outside (j := aTmp) (by decide) o₃ (Nat.le_refl _) (by omega_arith))
   have hs₃ := hs₂.congr k₃.wr
   have k13 := (k₁.trans k₂).trans k₃
   refine WP.mono (WP.keep [.x13] (Q := fun t => t.gpr .x13 = BitVec.ofNat 64 w ∧ t.mem = t₃.mem)
     (by brun [(k13.gpr .x0 (by decide)).trans hg.x0, hdr_enc (show sW < 32 by decide),
-        hs₃.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega),
+        hs₃.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_arith),
         (a₃.hdr hg.hdr).hw]) (by decide) (by decide) (by decide +kernel)) fun t₄ ⟨⟨h13, hm₄⟩, k₄⟩ => ?_
   have g₄ : Good t₄ B Z w minv :=
     ⟨hs₃.congr k₄.wr, ((k13.trans k₄).gpr .x0 (by decide)).trans hg.x0, by rw [hm₄]; exact a₃.hdr hg.hdr⟩
@@ -306,9 +306,9 @@ theorem r2dFastHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M 
     · exact h1
     · exact h2
   have X₃ : wv t₃.mem B (slot w aR2) w = 2 ^ (64 * w) - M := by
-    rw [o₃.wv (by omega) (by omega)]; omega
-  refine ⟨g₄, h13, by rw [hm₄, a₃.wv_eq (fun j hj => sep j hj _ _ (by omega) (by omega)) (by omega), hM],
-    by rw [hm₄, a₃.word_eq (fun j hj => sep j hj _ 1 (by omega) (by omega)) (by omega)],
+    rw [o₃.wv (by omega_arith) (by omega_arith)]; omega_arith
+  refine ⟨g₄, h13, by rw [hm₄, a₃.wv_eq (fun j hj => sep j hj _ _ (by omega_arith) (by omega_arith)) (by omega_arith), hM],
+    by rw [hm₄, a₃.word_eq (fun j hj => sep j hj _ 1 (by omega_arith) (by omega_arith)) (by omega_arith)],
     by rw [hm₄]; exact hv₃, by rw [hm₄, X₃], hlt, by rw [hm₄]; exact a₃, (k13.trans k₄).mono (by decide)⟩
 
 /-- `fast` with steps that do what `steps` does: `R² mod m` into array `aR2`,

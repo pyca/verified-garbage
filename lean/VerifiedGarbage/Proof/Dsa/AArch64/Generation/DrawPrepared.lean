@@ -47,7 +47,11 @@ theorem drawPrepared_ok {s : State} {B rp op : Addr} {Z w N used drawBytes : Nat
     by_cases he : r = .x0
     · subst r; exact ht0.trans h.ws.x0.symm
     · apply hk.gpr r
-      cases r <;> simp_all [mmRegs]
+      intro bad
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at bad
+      rcases bad with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact he rfl
+      all_goals exact hr (by decide)
   refine ⟨hmid.of_words hEZ hwords hk.wr ht0, ?_, ?_, ?_, kt⟩
   · apply List.ext_getElem
     · exact bytesAt_length _ _ _

@@ -234,7 +234,7 @@ theorem checked_eq : checked = Prog.chain checkedFront (.ite .e (Impl.Ffdh.X86.r
 
 /-- p, one, g and `p − 1` into slots 9, 14, 10 and 15, and ZF telling whether g is out of range. -/
 theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (valid : Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) :
     WP isa (Prog.chain checkedFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (¬ (1 < comp s.mem args len 1 ∧ comp s.mem args len 1 < comp s.mem args len 0 - 1)) ∧
@@ -277,7 +277,7 @@ theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base 
 
 /-- For a valid modulus p: `1 < g < p − 1`, then q if there is one. -/
 theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (valid : Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) :
     WP isa checked s (Res base len s
       (if Spec.Ffdh.domainValid len (domBytes s.mem args dlen) then 1 else 0)) := by
@@ -373,7 +373,7 @@ theorem bodyFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base byt
 
 /-- `vg_ffdh_check_domain`'s body: 1 exactly when the domain is valid. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40)) :
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96)) :
     WP isa Impl.Ffdh.X86.CheckDomain.body s (Res base len s
       (if Spec.Ffdh.domainValid len (domBytes s.mem args dlen) then 1 else 0)) := by
   have fit := G.fit

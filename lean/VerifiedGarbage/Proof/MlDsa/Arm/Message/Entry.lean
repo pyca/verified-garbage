@@ -134,20 +134,20 @@ theorem enter_ok {L : Lay} (hL : L.Ok) {p : Spec.MlDsa.Params} (hE : oE p = L.E)
   have hscL := hL.hE
   -- Words on the stack: in the arguments' region, apart from `scratch`.
   have estk : ∀ o, o + 4 ≤ nA → State.addr (s.sp + BitVec.ofNat 32 o) = State.addr s.sp + BitVec.ofNat 64 o :=
-    fun o ho => addr_add (by omega)
+    fun o ho => addr_add (by omega_arith)
   have dstk : ∀ o, o + 4 ≤ nA → L.SC.Disjoint ⟨State.addr (s.sp + BitVec.ofNat 32 o), 4⟩ := fun o ho => by
     rw [estk o ho]; exact hdA.sub_right (Offset.sub_base _ ho)
   have sc0 : State.addr (L.scr + BitVec.ofNat 32 0) = State.addr L.scr := by rw [BitVec.add_zero]
   have hsc4 : Region.Sub ⟨State.addr L.scr, 4⟩ L.SC := by
-    have := Offset.sub_base (State.addr L.scr) (d := 0) (n := 4) (k := L.scrLen) (by omega)
+    have := Offset.sub_base (State.addr L.scr) (d := 0) (n := 4) (k := L.scrLen) (by omega_arith)
     simpa only [BitVec.add_zero] using this
   have csc : L.SC.Contains (State.addr L.scr) 4 := by
-    simpa using (Offset.contains_base (State.addr L.scr) (d := 0) (n := 4) (k := L.scrLen) (by omega) (by omega))
+    simpa using (Offset.contains_base (State.addr L.scr) (d := 0) (n := 4) (k := L.scrLen) (by omega_arith) (by omega_arith))
   have isc : InRegions L.wr (State.addr L.scr) 4 := ⟨L.SC, hL.inSC, csc⟩
   unfold enter
   simp only [List.append_assoc]
   -- `scratch` in `r12`, the caller's `r7` in its first word.
-  refine wp_ldrSp (by omega) (hA so hso) fun s1 o1 e1 => ?_
+  refine wp_ldrSp (by omega_arith) (hA so hso) fun s1 o1 e1 => ?_
   rw [hscr] at e1
   refine wp_str (by decide) (by rw [e1, sc0, o1.wr, hwr]; exact isc) fun s2 m2 => ?_
   have q2 := Same.of_memTo m2
@@ -171,9 +171,9 @@ theorem enter_ok {L : Lay} (hL : L.Ok) {p : Spec.MlDsa.Params} (hE : oE p = L.E)
   simp only [List.append_eq, List.nil_append]
   rw [WP.block_append_iff]
   have hxo : ∀ o, o + 4 ≤ 1024 → State.addr (L.X32 + BitVec.ofNat 32 o) = L.X + BitVec.ofNat 64 o :=
-    fun o ho => hL.xo (by omega)
+    fun o ho => hL.xo (by omega_arith)
   refine WP.mono (strs_ok .r7 L.X32 L.X hxo regSaves s6 e76 (fun a ha => by
-    have := regSaves_ok a ha; exact ⟨this.1, by omega, by rw [hw6]; exact hL.inW (by omega)⟩) (by decide))
+    have := regSaves_ok a ha; exact ⟨this.1, by omega_arith, by rw [hw6]; exact hL.inW (by omega_arith)⟩) (by decide))
     fun s7 ⟨q7, r7, f7⟩ => ?_
   rw [WP.block_append_iff]
   -- The arguments on the stack, unchanged since the entry.
@@ -184,9 +184,9 @@ theorem enter_ok {L : Lay} (hL : L.Ok) {p : Spec.MlDsa.Params} (hE : oE p = L.E)
       simp only [List.mem_map] at hr
       obtain ⟨a, ha, rfl⟩ := hr
       have := regSaves_ok a ha
-      exact ((dstk o ho).sub_left (hL.sub_sc (e := a.2) (k := 4) (by omega))).symm) (by decide), o6.mem, m5,
+      exact ((dstk o ho).sub_left (hL.sub_sc (e := a.2) (k := 4) (by omega_arith))).symm) (by decide), o6.mem, m5,
       Mem.readW_writeW_sep (fun x h1 h2 => (dstk o ho).symm x h1 (hsc4 x h2)) (by decide), o1.mem]
-  refine WP.mono (lds_ok ss s7 (by rw [hss]; decide) fun a ha => ⟨by have := hsa a ha; omega, by
+  refine WP.mono (lds_ok ss s7 (by rw [hss]; decide) fun a ha => ⟨by have := hsa a ha; omega_arith, by
     rw [q7.rd, q7.wr, q7.sp, o6.rd, o6.wr, o6.sp, o5.rd, o5.wr, o5.sp, o4.rd, o4.wr, o4.sp, o3.rd, o3.wr, o3.sp,
       q2.rd, q2.wr, q2.sp, o1.rd, o1.wr, o1.sp]; exact hA _ (hsa a ha)⟩) fun s8 ⟨o8, v8⟩ => ?_
   rw [hss] at o8
@@ -198,43 +198,43 @@ theorem enter_ok {L : Lay} (hL : L.Ok) {p : Spec.MlDsa.Params} (hE : oE p = L.E)
     simp only [List.getElem?_map, List.getElem?_eq_getElem hj, Option.map_some] at this
     rw [List.getD_eq_getElem?_getD, ← this, Option.getD_some]
   have l8 : ∀ j < 4, s8.gpr ([Reg.r0, .r1, .r2, .r3].getD j .r0) = L.vals.getD (4 + j) 0 := fun j hj => by
-    rw [← hreg j (by omega)]; exact hl8 j (by omega)
+    rw [← hreg j (by omega_arith)]; exact hl8 j (by omega_arith)
   have hw8 : s8.wr = L.wr := by rw [o8.wr, q7.wr, hw6]
   have e78 : s8.gpr .r7 = L.X32 := by rw [o8.get .r7, q7.gpr, e76]
   rw [WP.block_append_iff]
   refine WP.mono (strs_ok .r7 L.X32 L.X hxo stkSaves s8 e78 (fun a ha => by
-    have := stkSaves_ok a ha; exact ⟨this.1, by omega, by rw [hw8]; exact hL.inW (by omega)⟩) (by decide))
+    have := stkSaves_ok a ha; exact ⟨this.1, by omega_arith, by rw [hw8]; exact hL.inW (by omega_arith)⟩) (by decide))
     fun s9 ⟨q9, r9, f9⟩ => ?_
   -- `0 ‖ ctx_len`.
   have e79 : s9.gpr .r7 = L.X32 := by rw [q9.gpr, e78]
   simp only [oHdr, Nat.reduceAdd]
   refine wp_movImm (d := .r12) (v := 0) (by decide) fun s10 o10 e10 => ?_
-  refine wp_strb (by decide) (by rw [o10.get .r7, e79, hxo 944 (by omega), o10.wr, q9.wr, hw8]; exact hL.inW (by omega))
+  refine wp_strb (by decide) (by rw [o10.get .r7, e79, hxo 944 (by omega_arith), o10.wr, q9.wr, hw8]; exact hL.inW (by omega_arith))
     fun s11 m11 => ?_
   have q11 := Same.of_memTo m11
   refine wp_strb (by decide)
-    (by rw [q11.gpr, o10.get .r7, e79, hxo 945 (by omega), q11.wr, o10.wr, q9.wr, hw8]; exact hL.inW (by omega))
+    (by rw [q11.gpr, o10.get .r7, e79, hxo 945 (by omega_arith), q11.wr, o10.wr, q9.wr, hw8]; exact hL.inW (by omega_arith))
     fun s12 m12 => wp_nil ?_
   have q12 := Same.of_memTo m12
   have x0_12 : s11.gpr .r0 = L.ctxLen := by
     rw [q11.gpr, o10.get .r0, q9.gpr]
-    have := l8 0 (by omega); simpa [Lay.vals] using this
+    have := l8 0 (by omega_arith); simpa [Lay.vals] using this
   have m12e : s12.mem = (s9.mem.writeW (L.X + BitVec.ofNat 64 944) ((0 : BitVec 32).setWidth 8)).writeW
       (L.X + BitVec.ofNat 64 945) (L.ctxLen.setWidth 8) := by
-    rw [m12.mem, m11.mem, o10.mem, q11.gpr, o10.get .r7, e79, e10, hxo 944 (by omega), hxo 945 (by omega),
+    rw [m12.mem, m11.mem, o10.mem, q11.gpr, o10.get .r7, e79, e10, hxo 944 (by omega_arith), hxo 945 (by omega_arith),
       ← q11.gpr, x0_12]
   -- Reads of the saves.
   have hdr2 : ∀ d, d + 4 ≤ 40 → s12.mem.readW (L.X + BitVec.ofNat 64 (904 + d)) 32 =
       s9.mem.readW (L.X + BitVec.ofNat 64 (904 + d)) 32 := fun d hd => by
-    rw [m12e, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+    rw [m12e, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
   have r9' : ∀ d, d + 4 ≤ 24 → s9.mem.readW (L.X + BitVec.ofNat 64 (904 + d)) 32 =
       s7.mem.readW (L.X + BitVec.ofNat 64 (904 + d)) 32 := fun d hd => by
     rw [f9.readW (r := ⟨L.X + BitVec.ofNat 64 (904 + d), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_map] at hr
       obtain ⟨a, ha, rfl⟩ := hr
       have := stkSaves_ok a ha
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide), o8.mem]
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), o8.mem]
   have hX := hL.x_toNat
   refine ⟨by rw [q12.rd, q11.rd, o10.rd, q9.rd, o8.rd, q7.rd, o6.rd, o5.rd, o4.rd, o3.rd, q2.rd, o1.rd, hrd],
     by rw [q12.wr, q11.wr, o10.wr, q9.wr, hw8],
@@ -246,26 +246,26 @@ theorem enter_ok {L : Lay} (hL : L.Ok) {p : Spec.MlDsa.Params} (hE : oE p = L.E)
     rw [q12.gpr, q11.gpr, o10.get r (by simp at hn ⊢; exact hn.2.2.2.2), q9.gpr,
       o8.get r (by simp at hn ⊢; exact ⟨hn.1, hn.2.1, hn.2.2.1, hn.2.2.2.1⟩), q7.gpr,
       g6 r h7 (by simp at hn; exact hn.2.2.2.2)]
-  · rw [hdr2 0 (by omega), r9' 0 (by omega)]; exact (r7 (.r12, oR7) (by decide)).trans e6
-  · rw [hdr2 4 (by omega), r9' 4 (by omega)]
+  · rw [hdr2 0 (by omega_arith), r9' 0 (by omega_arith)]; exact (r7 (.r12, oR7) (by decide)).trans e6
+  · rw [hdr2 4 (by omega_arith), r9' 4 (by omega_arith)]
     exact (r7 (.lr, oLR) (by decide)).trans (g6 .lr (by decide) (by decide))
-  · rw [hdr2 _ (by omega)]
-    rcases (by omega : j < 4 ∨ 4 ≤ j) with hj4 | hj4
-    · rw [r9' _ (by omega)]
-      rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  · rw [hdr2 _ (by omega_arith)]
+    rcases (by omega_arith : j < 4 ∨ 4 ≤ j) with hj4 | hj4
+    · rw [r9' _ (by omega_arith)]
+      rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
       · refine (r7 (.r0, fKey) (by decide)).trans ?_; rw [g6 .r0 (by decide) (by decide), h0]; rfl
       · refine (r7 (.r1, fMsg) (by decide)).trans ?_; rw [g6 .r1 (by decide) (by decide), h1]; rfl
       · refine (r7 (.r2, fLen) (by decide)).trans ?_; rw [g6 .r2 (by decide) (by decide), h2]; rfl
       · refine (r7 (.r3, fCtx) (by decide)).trans ?_; rw [g6 .r3 (by decide) (by decide), h3]; rfl
-    · obtain ⟨k, rfl⟩ : ∃ k, j = 4 + k := ⟨j - 4, by omega⟩
-      have hk : k < 4 := by omega
-      rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
-      · exact (r9 (.r0, fCtxLen) (by decide)).trans (l8 0 (by omega))
-      · exact (r9 (.r1, fRnd) (by decide)).trans (l8 1 (by omega))
-      · exact (r9 (.r2, fSig) (by decide)).trans (l8 2 (by omega))
-      · exact (r9 (.r3, fScr) (by decide)).trans (l8 3 (by omega))
+    · obtain ⟨k, rfl⟩ : ∃ k, j = 4 + k := ⟨j - 4, by omega_arith⟩
+      have hk : k < 4 := by omega_arith
+      rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+      · exact (r9 (.r0, fCtxLen) (by decide)).trans (l8 0 (by omega_arith))
+      · exact (r9 (.r1, fRnd) (by decide)).trans (l8 1 (by omega_arith))
+      · exact (r9 (.r2, fSig) (by decide)).trans (l8 2 (by omega_arith))
+      · exact (r9 (.r3, fScr) (by decide)).trans (l8 3 (by omega_arith))
   · have n45 : L.X + BitVec.ofNat 64 944 ≠ L.X + BitVec.ofNat 64 945 :=
-      Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+      Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)
     rw [show 904 + 40 = 944 from rfl, m12e]
     generalize L.X = X at n45 ⊢
     simp only [bytesAt, List.range, List.range.loop, List.map_cons, List.map_nil, add_add, Nat.reduceAdd]
@@ -281,17 +281,17 @@ theorem enter_ok {L : Lay} (hL : L.Ok) {p : Spec.MlDsa.Params} (hE : oE p = L.E)
       simp only [List.mem_map] at hr
       obtain ⟨a, ha, rfl⟩ := hr
       have := regSaves_ok a ha
-      exact ⟨L.SC, by simp, hL.sub_sc (by omega)⟩
+      exact ⟨L.SC, by simp, hL.sub_sc (by omega_arith)⟩
     have a9 : Frame [L.SC, L.STK] s8.mem s9.mem := Frame.sub f9 fun r hr => by
       simp only [List.mem_map] at hr
       obtain ⟨a, ha, rfl⟩ := hr
       have := stkSaves_ok a ha
-      exact ⟨L.SC, by simp, hL.sub_sc (by omega)⟩
+      exact ⟨L.SC, by simp, hL.sub_sc (by omega_arith)⟩
     have a12 : Frame [L.SC, L.STK] s9.mem s12.mem := by
       rw [m12e]
-      exact ((Frame.refl _ _).writeW (List.mem_cons_self ..) _ (hL.sub_sc (e := 944) (k := 1) (by omega) _
+      exact ((Frame.refl _ _).writeW (List.mem_cons_self ..) _ (hL.sub_sc (e := 944) (k := 1) (by omega_arith) _
           (Region.contains_self _ _))).writeW
-        (List.mem_cons_self ..) _ (hL.sub_sc (e := 945) (k := 1) (by omega) _ (Region.contains_self _ _))
+        (List.mem_cons_self ..) _ (hL.sub_sc (e := 945) (k := 1) (by omega_arith) _ (Region.contains_self _ _))
     rw [o6.mem] at a7
     rw [o8.mem] at a9
     exact a2.trans (a7.trans (a9.trans a12))

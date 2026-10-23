@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
 ///
-/// Baseline i686: fixed four-bit windows and a full masked scan of all sixteen powers. Fourteen paired-word CIOS products build the table once. The candidate's Montgomery header, inverse and constants are reused by every product and across witnesses. Four unconditional squares precede each window; three final squares mask their flag updates with the threshold derived from the prepared exponent marker. The result is returned without branching on it.
+/// Baseline i686: fixed four-bit windows and a full masked scan of all sixteen powers. Fourteen Montgomery products (calls of `vg_rsa_mont_mul`) build the table once. The candidate's Montgomery header, inverse and constants are reused by every product and across witnesses. Four unconditional squares precede each window; three final squares mask their flag updates with the threshold derived from the prepared exponent marker. The result is returned without branching on it.
 ///
 /// # Safety
 ///
@@ -17,7 +17,7 @@
 /// * Header word 28 must hold the array stride `8 * (w + 2)` in bytes.
 /// * The working space may contain secrets on return and must be destroyed after use.
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
-/// * `ws` must not overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ws` must not overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(

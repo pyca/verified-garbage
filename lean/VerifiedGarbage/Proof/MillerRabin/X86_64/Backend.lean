@@ -26,6 +26,13 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.MillerRabin.X86_64
 
 structure RoundImpl where
   mont : Mont
+  /-- Arithmetic specialized for callers that inline their multiplication.
+  The callable kernel may dispatch on operand indices at run time; this
+  form can select that operation while constructing the caller. -/
+  inlineMont : Mont := mont
+  inlineDepth : ∀ o a b, (inlineMont.mm o a b).x86_64Depth = 0
+  inlineSafe : ∀ o a b, (inlineMont.mm o a b).allInstrs
+    (fun i => !loadsMxcsr i && !isa.writesSp i) = true
   /-- Montgomery multiplication as the round and its callers emit it: calls
   of a function, which inline to `mont.mm` (`Verified.of_inline`), or
   `mont.mm`. -/

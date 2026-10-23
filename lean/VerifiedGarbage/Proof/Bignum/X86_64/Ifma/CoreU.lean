@@ -55,7 +55,7 @@ theorem zerosU_ok (hu : UOk l) {s : State} :
   split at h
   · rename_i σ hσ
     simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega)) (SRel.init s) hσ) fun s' hs =>
+    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega_arith)) (SRel.init s) hσ) fun s' hs =>
       ⟨fun r hr t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
     rw [hs.reg _ t ht, vi_vreg r hr, h r hr]
     split <;> rfl
@@ -101,11 +101,11 @@ theorem GlobU.ctx (e : Env l s₀ a m k bl) (g : GlobU l s₀ s) : Ctx (limU l) 
   by_cases b9 : b = .r9
   · subst b9; rw [g.r9]; refine e.rd9 d n hn ?_
     simp only [limU, lim, reduceCtorEq, ↓reduceIte, Lay.NB] at hdn ⊢
-    omega
+    omega_arith
   by_cases b10 : b = .r10
   · subst b10; rw [g.r10]; exact e.rd10 d n hn hdn
   · simp only [limU, b8, b9, b10, ite_false] at hdn
-    omega
+    omega_arith
 
 theorem LaneU.stepIn (hu : UOk l) (e : Env l s₀ a m k bl) (g : GlobU l s₀ s) {p n : Nat} (hp : p < l.nl)
     (hn : n < l.S) (h : LaneU l s a m k bl p n) :
@@ -113,16 +113,16 @@ theorem LaneU.stepIn (hu : UOk l) (e : Env l s₀ a m k bl) (g : GlobU l s₀ s)
       (if n + 1 < l.S then bl p (n + 1) else 0) := by
   obtain ⟨hl, -, h20, -, -⟩ := hu.regs
   have hS := hl.steps.2.2.2.1
-  refine ⟨g.z, fun kk hk t ht => ?_, h.bv hn, h.uv hn, fun j hj => lm_lt h20 (by omega) hj,
+  refine ⟨g.z, fun kk hk t ht => ?_, h.bv hn, h.uv hn, fun j hj => lm_lt h20 (by omega_arith) hj,
     fun kk hk t ht => ?_, fun kk hk t ht => ?_, fun t ht => ?_, fun hn' => ?_, e.alt p hp, e.mlt p hp,
-    e.klt p hp, e.blt p hp n (by omega), ?_⟩
+    e.klt p hp, e.blt p hp n (by omega_arith), ?_⟩
   · rw [h.lanes kk hk t ht]; simp only [hn, and_true]
   · rw [g.mem, g.r8]; exact e.ina p hp kk hk t ht
   · rw [g.mem, g.r10]; exact e.inm p hp kk hk t ht
   · rw [g.mem, g.r10]; exact e.ink p hp t ht
-  · rw [g.mem, g.r9, ite_eq_left (by omega)]; exact e.inb p hp (n + 1) (by omega)
+  · rw [g.mem, g.r9, ite_eq_left (by omega_arith)]; exact e.inb p hp (n + 1) (by omega_arith)
   · split
-    · exact e.blt p hp (n + 1) (by omega)
+    · exact e.blt p hp (n + 1) (by omega_arith)
     · decide
 
 /-- The registers of lane `p`: its roles and its eight of the look-ahead. -/
@@ -136,12 +136,12 @@ theorem lanes_apart {p q : Nat} (hp : p < l.nl) (hq : q < l.nl) (hpq : p ≠ q) 
       l.R * p + l.R ≤ l.nl * l.R ∧ 8 * q + 8 ≤ 8 * l.nl ∧ 8 * p + 8 ≤ 8 * l.nl := by
   have hq' := (regsS hq).2.1
   have hp' := (regsS hp).2.1
-  refine ⟨?_, hq', hp', by omega, by omega⟩
+  refine ⟨?_, hq', hp', by omega_arith, by omega_arith⟩
   rcases Nat.lt_or_gt_of_ne hpq with h | h
-  · have := Nat.mul_le_mul_left l.R (show p + 1 ≤ q by omega)
-    rw [Nat.mul_add, Nat.mul_one] at this; omega
-  · have := Nat.mul_le_mul_left l.R (show q + 1 ≤ p by omega)
-    rw [Nat.mul_add, Nat.mul_one] at this; omega
+  · have := Nat.mul_le_mul_left l.R (show p + 1 ≤ q by omega_arith)
+    rw [Nat.mul_add, Nat.mul_one] at this; omega_arith
+  · have := Nat.mul_le_mul_left l.R (show q + 1 ≤ p by omega_arith)
+    rw [Nat.mul_add, Nat.mul_one] at this; omega_arith
 
 /-- Lane `q`'s registers, kept by lane `p`'s step. -/
 theorem LaneU.frame (hu : UOk l) {p q n : Nat} (hp : p < l.nl) (hq : q < l.nl) (hpq : p ≠ q) {s' : State}
@@ -152,10 +152,10 @@ theorem LaneU.frame (hu : UOk l) {p q n : Nat} (hp : p < l.nl) (hq : q < l.nl) (
   have eu : ubN l q (n % 2) = l.nl * l.R + 8 * q + n % 2 := rfl
   have ev : uuN l q (n % 2) = l.nl * l.R + 8 * q + 2 + n % 2 := rfl
   refine ⟨fun kk hk t ht => ?_, fun hn t ht => ?_, fun hn t ht => ?_⟩
-  · have hr := regOf_bounds (l := l) (by omega) (p := q) (kk := kk) (j := n)
-    rw [hf _ (by omega) (by omega) (by omega) t ht]; exact h.lanes kk hk t ht
-  · rw [hf _ (by omega) (by omega) (by omega) t ht]; exact h.bv hn t ht
-  · rw [hf _ (by omega) (by omega) (by omega) t ht]; exact h.uv hn t ht
+  · have hr := regOf_bounds (l := l) (by omega_arith) (p := q) (kk := kk) (j := n)
+    rw [hf _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact h.lanes kk hk t ht
+  · rw [hf _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact h.bv hn t ht
+  · rw [hf _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact h.uv hn t ht
 
 /-- Lane `p`'s step `n`. -/
 theorem laneStepU_ok (hu : UOk l) (e : Env l s₀ a m k bl) (g : GlobU l s₀ s) {p n : Nat} (hp : p < l.nl)
@@ -167,14 +167,14 @@ theorem laneStepU_ok (hu : UOk l) (e : Env l s₀ a m k bl) (g : GlobU l s₀ s)
   have := (regsS hp).2.2.2.2.2
   refine WP.mono (ammStepU_ok hu hp hn (h.stepIn hu e g hp hn) (g.ctx e)) fun s' ⟨hl, hb', hu', hf, hk⟩ =>
     ⟨g.keep hk fun t ht => by
-      rw [hf _ (by simp only [uzN]; omega) (by simp only [uzN]; omega) (by simp only [uzN]; omega) t ht]
+      rw [hf _ (by simp only [uzN]; omega_arith) (by simp only [uzN]; omega_arith) (by simp only [uzN]; omega_arith) t ht]
       exact g.z t ht, ⟨fun kk hk' t ht => ?_, fun hn' t ht => ?_, fun hn' t ht => ?_⟩, hf, hk⟩
   · rw [hl kk hk' t ht]
     by_cases hn' : n + 1 < l.S
-    · simp only [hn', ite_true, show ¬ l.S ≤ n + 1 by omega, not_false_eq_true, and_true]; rfl
-    · simp only [hn', ite_false, show l.S ≤ n + 1 by omega, not_true, and_false]; rfl
-  · rw [hb' (by omega) t ht, ite_eq_left hn']
-  · rw [hu' (by omega) t ht, ite_eq_left hn']; rfl
+    · simp only [hn', ite_true, show ¬ l.S ≤ n + 1 by omega_arith, not_false_eq_true, and_true]; rfl
+    · simp only [hn', ite_false, show l.S ≤ n + 1 by omega_arith, not_true, and_false]; rfl
+  · rw [hb' (by omega_arith) t ht, ite_eq_left hn']
+  · rw [hu' (by omega_arith) t ht, ite_eq_left hn']; rfl
 
 /-- All lanes before step `n`. -/
 def AllU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ s : State) (a m : Nat → Nat → Nat) (k : Nat → Nat)
@@ -190,19 +190,19 @@ theorem lanesStepU_ok (hu : UOk l) (e : Env l s₀ a m k bl) {n : Nat} (hn : n <
         (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mxcsr = s.mxcsr := by
   intro q
   induction q with
-  | zero => intro _ s h; exact WP.block_nil ⟨h.1, fun _ h => absurd h (by omega), fun p _ hp => h.2 p hp,
+  | zero => intro _ s h; exact WP.block_nil ⟨h.1, fun _ h => absurd h (by omega_arith), fun p _ hp => h.2 p hp,
       fun _ _ => rfl, rfl⟩
   | succ q ih =>
     intro hq s h
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun s₁ ⟨g₁, d₁, t₁, r₁, x₁⟩ => ?_
-    refine WP.mono (laneStepU_ok hu e g₁ (p := q) (by omega) hn (t₁ q (Nat.le_refl _) (by omega)))
+    refine WP.mono (ih (by omega_arith) s h) fun s₁ ⟨g₁, d₁, t₁, r₁, x₁⟩ => ?_
+    refine WP.mono (laneStepU_ok hu e g₁ (p := q) (by omega_arith) hn (t₁ q (Nat.le_refl _) (by omega_arith)))
       fun s₂ ⟨g₂, l₂, f₂, k₂⟩ => ⟨g₂, fun p hp => ?_, fun p hp hp' => ?_,
         fun r hr => (k₂.gpr r hr).trans (r₁ r hr), k₂.mxcsr.trans x₁⟩
     · by_cases hpq : p = q
       · subst hpq; exact l₂
-      · exact (d₁ p (by omega)).frame hu (p := q) (by omega) (by omega) (Ne.symm hpq) f₂
-    · exact (t₁ p (by omega) hp').frame hu (p := q) (by omega) hp' (by omega) f₂
+      · exact (d₁ p (by omega_arith)).frame hu (p := q) (by omega_arith) (by omega_arith) (Ne.symm hpq) f₂
+    · exact (t₁ p (by omega_arith) hp').frame hu (p := q) (by omega_arith) hp' (by omega_arith) f₂
 
 /-- Step `n` of all lanes. -/
 theorem pairStepU_ok (hu : UOk l) (e : Env l s₀ a m k bl) {n : Nat} (hn : n < l.S) (h : AllU l s₀ s a m k bl n) :
@@ -221,8 +221,8 @@ theorem stepsU_chain (hu : UOk l) (e : Env l s₀ a m k bl) :
   | succ n ih =>
     intro hn s h
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
-    exact WP.mono (pairStepU_ok hu e (by omega) h₁) fun s₂ ⟨h₂, g₂, x₂⟩ =>
+    refine WP.mono (ih (by omega_arith) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
+    exact WP.mono (pairStepU_ok hu e (by omega_arith) h₁) fun s₂ ⟨h₂, g₂, x₂⟩ =>
       ⟨h₂, fun r hr => (g₂ r hr).trans (g₁ r hr), x₂.trans x₁⟩
 
 /-- Lane `p`'s start. -/
@@ -237,16 +237,16 @@ theorem laneStartU_ok (hu : UOk l) (e : Env l s₀ a m k bl) (g : GlobU l s₀ s
       Keeps s s' := by
   obtain ⟨hl, hR, -, -, hbud⟩ := hu.regs
   have := regsS hp
-  have hb := e.inb p hp 0 (by simp only [Lay.L]; omega)
+  have hb := e.inb p hp 0 (by simp only [Lay.L]; omega_arith)
   rw [show l.D * p + l.off 0 = l.D * p by simp only [Lay.off, Nat.zero_mod, Nat.zero_div,
     Nat.mul_zero, Nat.add_zero]] at hb
   refine WP.mono (ammStartU_ok (m := m p) hu hp (g.ctx e) h0
-    (fun t ht => by rw [g.mem, g.r8]; exact e.ina p hp 0 (by omega) t ht)
+    (fun t ht => by rw [g.mem, g.r8]; exact e.ina p hp 0 (by omega_arith) t ht)
     (by rw [g.mem, g.r10]; exact e.ink p hp 0 (by decide)) (by rw [g.mem, g.r9]; exact hb))
     fun s' ⟨h₀, hb', hu', hf, hk⟩ => ⟨g.keep hk fun t ht => by
-      rw [hf _ (by simp only [uzN]; omega) (by simp only [uzN]; omega) (by simp only [uzN]; omega)
-        (by simp only [uzN]; omega) (by simp only [uzN]; omega) t ht]; exact g.z t ht, h₀, hb', hu',
-      fun r hr h1 h2 t ht => hf r hr (by omega) (by omega) (by omega) (by omega) t ht, hk⟩
+      rw [hf _ (by simp only [uzN]; omega_arith) (by simp only [uzN]; omega_arith) (by simp only [uzN]; omega_arith)
+        (by simp only [uzN]; omega_arith) (by simp only [uzN]; omega_arith) t ht]; exact g.z t ht, h₀, hb', hu',
+      fun r hr h1 h2 t ht => hf r hr (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) t ht, hk⟩
 
 /-- The first `q` lanes' starts, from roles zero. -/
 theorem lanesStartU_ok (hu : UOk l) (e : Env l s₀ a m k bl) :
@@ -258,38 +258,38 @@ theorem lanesStartU_ok (hu : UOk l) (e : Env l s₀ a m k bl) :
   obtain ⟨-, hR, -, -, hbud⟩ := hu.regs
   intro q
   induction q with
-  | zero => intro _ s g hz; exact WP.block_nil ⟨g, fun _ h => absurd h (by omega), fun r _ hr => hz r hr,
+  | zero => intro _ s g hz; exact WP.block_nil ⟨g, fun _ h => absurd h (by omega_arith), fun r _ hr => hz r hr,
       fun _ _ => rfl, rfl⟩
   | succ q ih =>
     intro hq s g hz
-    have hqs := regsS (show q < l.nl by omega)
+    have hqs := regsS (show q < l.nl by omega_arith)
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s g hz) fun s₁ ⟨g₁, d₁, z₁, r₁, x₁⟩ => ?_
-    refine WP.mono (laneStartU_ok hu e g₁ (p := q) (by omega) fun t ht => by
-        rw [hqs.1]; exact z₁ _ (Nat.le_refl _) (by omega) t ht)
+    refine WP.mono (ih (by omega_arith) s g hz) fun s₁ ⟨g₁, d₁, z₁, r₁, x₁⟩ => ?_
+    refine WP.mono (laneStartU_ok hu e g₁ (p := q) (by omega_arith) fun t ht => by
+        rw [hqs.1]; exact z₁ _ (Nat.le_refl _) (by omega_arith) t ht)
       fun s₂ ⟨g₂, a₂, b₂, u₂, f₂, k₂⟩ => ⟨g₂, fun p hp => ?_, fun r hr hr' t ht => ?_,
         fun r hr => (k₂.gpr r hr).trans (r₁ r hr), k₂.mxcsr.trans x₁⟩
     · by_cases hpq : p = q
       · subst hpq
         refine ⟨fun kk hk t ht => ?_, fun _ t ht => b₂ t ht, fun _ t ht => u₂ t ht⟩
         by_cases k0 : kk = 0
-        · subst k0; rw [ite_eq_left ⟨rfl, by have := hu.regs.1.steps.2.2.1; omega⟩]; exact a₂ t ht
-        · have hr := regOf_bounds (l := l) (by omega) (p := p) (kk := kk) (j := 0)
+        · subst k0; rw [ite_eq_left ⟨rfl, by have := hu.regs.1.steps.2.2.1; omega_arith⟩]; exact a₂ t ht
+        · have hr := regOf_bounds (l := l) (by omega_arith) (p := p) (kk := kk) (j := 0)
           have e0 : regOf l p kk 0 = l.R * p + kk := by
             simp only [regOf, Nat.add_zero, Nat.mod_eq_of_lt hk]
-          rw [ite_eq_right (by omega), f₂ _ (by omega) (by omega) (by omega) t ht,
-            z₁ _ (by omega) (by omega) t ht]; rfl
-      · have ha := lanes_apart (show p < l.nl by omega) (show q < l.nl by omega) hpq
-        have h1 := d₁ p (by omega)
+          rw [ite_eq_right (by omega_arith), f₂ _ (by omega_arith) (by omega_arith) (by omega_arith) t ht,
+            z₁ _ (by omega_arith) (by omega_arith) t ht]; rfl
+      · have ha := lanes_apart (show p < l.nl by omega_arith) (show q < l.nl by omega_arith) hpq
+        have h1 := d₁ p (by omega_arith)
         refine ⟨fun kk hk t ht => ?_, fun hn t ht => ?_, fun hn t ht => ?_⟩
-        · have hr := regOf_bounds (l := l) (by omega) (p := p) (kk := kk) (j := 0)
-          rw [f₂ _ (by omega) (by omega) (by omega) t ht]; exact h1.lanes kk hk t ht
+        · have hr := regOf_bounds (l := l) (by omega_arith) (p := p) (kk := kk) (j := 0)
+          rw [f₂ _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact h1.lanes kk hk t ht
         · have eu : ubN l p (0 % 2) = l.nl * l.R + 8 * p := rfl
-          rw [f₂ _ (by omega) (by omega) (by omega) t ht]; exact h1.bv hn t ht
+          rw [f₂ _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact h1.bv hn t ht
         · have ev : uuN l p (0 % 2) = l.nl * l.R + 8 * p + 2 := rfl
-          rw [f₂ _ (by omega) (by omega) (by omega) t ht]; exact h1.uv hn t ht
+          rw [f₂ _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact h1.uv hn t ht
     · rw [Nat.mul_add, Nat.mul_one] at hr
-      rw [f₂ _ (by omega) (by omega) (by omega) t ht]; exact z₁ r (by omega) hr' t ht
+      rw [f₂ _ (by omega_arith) (by omega_arith) (by omega_arith) t ht]; exact z₁ r (by omega_arith) hr' t ht
 
 end
 
@@ -315,17 +315,17 @@ theorem ammCoreU_ok (hu : UOk l) {s : State} {B : Addr} {a m : Nat → Nat → N
   obtain ⟨hl, hR, h20, hn1, hbud⟩ := hu.regs
   have hst := hl.steps
   have hD := hl.D_bounds
-  have hDn : l.D * (l.nl - 1) ≤ l.D := D_le hl (show l.nl - 1 < l.nl by omega)
+  have hDn : l.D * (l.nl - 1) ≤ l.D := D_le hl (show l.nl - 1 < l.nl by omega_arith)
   rw [ammCoreU_code, WP.block_cons_iff]
   refine ⟨s.setReg .r10 (s.gpr .rbx), rfl, ?_⟩
   rw [WP.block_append_iff]
   refine WP.mono (zerosU_ok hu) fun s₁ ⟨hz, k₁⟩ => ?_
   have g₁ : GlobU l (s.setReg .r10 (s.gpr .rbx)) s₁ :=
-    ⟨fun t ht => by rw [hz (uzN l) (by simp only [uzN]; omega) t ht, ite_eq_left (Or.inr rfl)],
+    ⟨fun t ht => by rw [hz (uzN l) (by simp only [uzN]; omega_arith) t ht, ite_eq_left (Or.inr rfl)],
       k₁.gpr _ (by decide), k₁.gpr _ (by decide), k₁.gpr _ (by decide), k₁.mem, k₁.rd, k₁.wr⟩
   rw [WP.block_append_iff]
   refine WP.mono (lanesStartU_ok hu e l.nl (Nat.le_refl _) s₁ g₁ fun r hr t ht => by
-      rw [hz r (by omega) t ht, ite_eq_left (Or.inl hr)])
+      rw [hz r (by omega_arith) t ht, ite_eq_left (Or.inl hr)])
     fun s₂ ⟨g₂', d₂, _, g₂, x₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (stepsU_chain hu e l.S (Nat.le_refl _) s₂ ⟨g₂', d₂⟩) fun s₃ ⟨h₃, g₃, x₃⟩ => ?_
@@ -345,14 +345,14 @@ theorem ammCoreU_ok (hu : UOk l) {s : State} {B : Addr} {a m : Nat → Nat → N
     (fun d hd => by rw [RegUpd.wr_setReg, wr₃]; exact hs.st hd)
     (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₃)
     (RegUpd.gpr_setReg_self _ _ _) fun p hp q hq => ?_) fun s' ⟨h, g, rd, wr, x⟩ => ?_
-  · have h1 := Nat.mod_lt q (show 0 < l.R by omega)
+  · have h1 := Nat.mod_lt q (show 0 < l.R by omega_arith)
     have h2 : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
     have := read_stores hl s₃.mem B s₃ hp (k := q % l.R) (t := q / l.R) h1 h2
     have er : regOf l p (q % l.R) (l.S % l.R) = regOf l p (q % l.R) l.S := by
       simp only [regOf, Nat.add_mod_mod]
-    rw [er, (h₃.2 p hp).lanes _ h1 _ h2, ite_eq_right (by omega), Nat.add_zero, Nat.mod_add_div] at this
+    rw [er, (h₃.2 p hp).lanes _ h1 _ h2, ite_eq_right (by omega_arith), Nat.add_zero, Nat.mod_add_div] at this
     rw [RegUpd.mem_setReg, show l.D * p + l.off q =
-      l.D * p + 32 * (q % l.R) + 8 * (q / l.R) by unfold Lay.off; omega]
+      l.D * p + 32 * (q % l.R) + 8 * (q / l.R) by unfold Lay.off; omega_arith]
     exact this
   refine ⟨fun p hp q hq => by rw [h.words p hp q hq]; simp only [hq, true_or, ite_true],
     fun p hp => by rw [h.c p hp]; simp only [Nat.not_lt_zero, ↓reduceIte], ?_,
@@ -360,7 +360,7 @@ theorem ammCoreU_ok (hu : UOk l) {s : State} {B : Addr} {a m : Nat → Nat → N
     by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact RegUpd.gpr_setReg_self _ _ _,
     by rw [rd, RegUpd.rd_setReg, h₃.1.rd]; rfl, by rw [wr, RegUpd.wr_setReg, wr₃],
     by rw [x, RegUpd.mxcsr_setReg, x₃, x₂, k₁.mxcsr]; rfl⟩
-  · have o := wrList_outN (l := l) B (o := 0) (n := l.NB) (by omega)
+  · have o := wrList_outN (l := l) B (o := 0) (n := l.NB) (by omega_arith)
       ((accStores l).map fun x => (x.1, s₃.vy x.2)) s₃.mem fun x hx => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
         exact accStores_win y hy

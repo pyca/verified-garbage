@@ -12,7 +12,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::hashes::HashFunction;
@@ -351,5 +352,14 @@ mod tests {
         let mut longer = [0u8; 33];
         longer[..32].copy_from_slice(&mac);
         assert_eq!(check(&longer), Err(InvalidMac));
+    }
+
+    /// The error's message (which `crate::error`'s test checks too, on the
+    /// architectures it is built for).
+    #[test]
+    fn invalid_mac_display() {
+        extern crate std;
+        use std::string::ToString;
+        assert_eq!(InvalidMac.to_string(), "MAC does not match");
     }
 }

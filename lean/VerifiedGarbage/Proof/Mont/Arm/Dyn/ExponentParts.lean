@@ -122,7 +122,7 @@ theorem shiftWords_ok {E size : Nat} {base : Addr} :
     have hnw := hs.nowrap
     rw [shiftWords]
     simp only [List.cons_append, List.append_assoc, List.nil_append]
-    refine wp_ldr (by omega) (hs.ea h1 (by omega)) (hs.read (by omega)) fun s₁ u₁ =>
+    refine wp_ldr (by omega_arith) (hs.ea h1 (by omega_arith)) (hs.read (by omega_arith)) fun s₁ u₁ =>
       wp_mov (op2_lsr (by decide)) fun s₂ u₂ => ?_
     have w₂ := (hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)
     have e1 : s₂.gpr .r1 = s₂.gpr .r12 + BitVec.ofNat 32 E := by
@@ -149,39 +149,39 @@ theorem shiftWords_ok {E size : Nat} {base : Addr} :
         have e3 : s₃.gpr .r1 = s₃.gpr .r12 + BitVec.ofNat 32 E := by
           rw [R₃.gpr .r1 (by decide), R₃.gpr .r12 (by decide)]; exact h1
         simp only [List.cons_append, List.nil_append]
-        refine wp_str (by omega) (w₃.ea e3 (by omega)) (w₃.write (by omega)) fun s₄ m₄ => ?_
+        refine wp_str (by omega_arith) (w₃.ea e3 (by omega_arith)) (w₃.write (by omega_arith)) fun s₄ m₄ => ?_
         have w₄ := w₃.of_mupd m₄
-        refine WP.mono (shiftWords_ok (E := E) k (j + 1) s₄ w₄ (by rw [m₄.gpr]; exact e3) (by omega) (by omega))
+        refine WP.mono (shiftWords_ok (E := E) k (j + 1) s₄ w₄ (by rw [m₄.gpr]; exact e3) (by omega_arith) (by omega_arith))
           fun t ⟨wt, O, V, R⟩ => ⟨wt, ?_, ?_, (R₃.trans (m₄.rest _)).trans R⟩
         · rw [m₄.mem, m₃] at O
-          exact ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega)).trans
-            (O.mono (by omega) (by omega))
-        · rw [m₄.mem, m₃, show E + 4 * (j + 1) = E + 4 * j + 4 by omega] at O V
+          exact ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+            (O.mono (by omega_arith) (by omega_arith))
+        · rw [m₄.mem, m₃, show E + 4 * (j + 1) = E + 4 * j + 4 by omega_arith] at O V
           have head : w32 t.mem base (E + 4 * j) = v := by
-            rw [O.w32 (by omega) (by omega), w32_write_self, r4]
+            rw [O.w32 (by omega_arith) (by omega_arith), w32_write_self, r4]
           rw [val32, val32, head, V]
           have tail : val32 (s.mem.writeW (off base (E + 4 * j)) (s₃.gpr .r4)) base (E + 4 * j + 4) k =
               val32 s.mem base (E + 4 * j + 4) k :=
-            (writeW32_outside s.mem base (d := E + 4 * j) (s₃.gpr .r4) (by omega)).val32 (by omega) (by omega)
+            (writeW32_outside s.mem base (d := E + 4 * j) (s₃.gpr .r4) (by omega_arith)).val32 (by omega_arith) (by omega_arith)
           rw [tail, hv]
           cases k with
-          | zero => simp only [val32, ↓reduceIte]; omega
+          | zero => simp only [val32, ↓reduceIte]; omega_arith
           | succ k =>
             have hp := val32_parity s.mem base (E + 4 * j + 4) k
             simp only [Nat.add_one_ne_zero, ↓reduceIte]
-            omega
+            omega_arith
       by_cases hk0 : k = 0
       · subst hk0
         simp only [↓reduceIte, List.nil_append]
         exact fin s₂ _ w₂ m₂ R₂ r4₂ (by simp)
       · simp only [hk0, ↓reduceIte, List.cons_append, List.nil_append]
-        refine wp_ldr (by omega) (w₂.ea e1 (by omega)) (w₂.read (by omega)) fun s₃ u₃ =>
+        refine wp_ldr (by omega_arith) (w₂.ea e1 (by omega_arith)) (w₂.read (by omega_arith)) fun s₃ u₃ =>
           wp_mov (op2_lsl (by decide)) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
         refine fin s₅ _ ((((w₂.of_upd u₃ (by decide)).of_upd u₄ (by decide))).of_upd u₅ (by decide))
           (by rw [u₅.mem, u₄.mem, u₃.mem, m₂]) (R₂.trans (((u₃.rest (by decide)).trans (u₄.rest (by decide))).trans
             (u₅.rest (by decide)))) rfl ?_
         simp only [u₅.get, u₄.get, u₃.get, reduceCtorEq, ↓reduceIte, dpVal]
-        rw [u₂.gpr, shifted_word, u₁.gpr, u₂.mem, u₁.mem, show E + (4 * j + 4) = E + 4 * j + 4 by omega]
+        rw [u₂.gpr, shifted_word, u₁.gpr, u₂.mem, u₁.mem, show E + (4 * j + 4) = E + 4 * j + 4 by omega_arith]
         simp only [hk0, ↓reduceIte]
     exact main
 

@@ -52,14 +52,14 @@ theorem sr_sep {o n o' n' : Nat} (hs : o + n ≤ o' ∨ o' + n' ≤ o) (ho : o <
 theorem sr_sub {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) : Region.Sub (sr P o n) P.SCR := by
   rw [h.sr_eq ho]; exact h.sc_sub hn
 
-theorem low_of {k : Nat} (hk : k ≤ 3392) : Region.Sub (below P.B k) P.lay.LOW := by
+theorem low_of {k : Nat} (hk : k ≤ 3448) : Region.Sub (below P.B k) P.lay.LOW := by
   rw [← h.ok.low_eq]; exact below_sub hk h.ok.BC
 
-theorem below_sr {k o n : Nat} (hk : k ≤ 3392) (ho : o < 8448) (hn : o + n ≤ 8448) :
+theorem below_sr {k o n : Nat} (hk : k ≤ 3448) (ho : o < 8448) (hn : o + n ≤ 8448) :
     (below P.B k).Disjoint (sr P o n) := by
   rw [h.sr_eq ho]; exact (h.low_sc hn).sub_left (h.low_of hk)
 
-theorem below_ro {k : Nat} (hk : k ≤ 3392) {R : Region} (hR : R ∈ P.ro) : (below P.B k).Disjoint R :=
+theorem below_ro {k : Nat} (hk : k ≤ 3448) {R : Region} (hR : R ∈ P.ro) : (below P.B k).Disjoint R :=
   (h.ok.low_buf (.inl hR)).sub_left (h.low_of hk)
 
 theorem sr_ro {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) {R : Region} (hR : R ∈ P.ro) :
@@ -69,10 +69,10 @@ theorem sr_ro {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) {R : Region} (hR
 theorem sr_safe {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) : Safe P (sr P o n) := by
   rw [h.sr_eq ho]; exact h.safe_sc hn
 
-theorem below_safe {k : Nat} (hk : k ≤ 3392) : Safe P (below P.B k) :=
+theorem below_safe {k : Nat} (hk : k ≤ 3448) : Safe P (below P.B k) :=
   ⟨h.safe_low.1.sub_right (h.low_of hk), h.safe_low.2.sub_right (h.low_of hk)⟩
 
-theorem sp_toNat : 3392 ≤ P.B.toNat := h.ok.BC
+theorem sp_toNat : 3448 ≤ P.B.toNat := h.ok.BC
 
 end In
 
@@ -84,7 +84,7 @@ theorem St.cov_ro {σ s : State} (hs : S P σ s) {R : Region} (hR : R ∈ P.ro) 
   Covers.one (a := R.base) (n := R.len) ⟨R, hs.2.inRo hR, Region.contains_self _ _⟩
 
 /-- A call writes only parts of `scratch` and the stack below the frame. -/
-theorem Base.call {σ s t : State} (h : Base P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3392)
+theorem Base.call {σ s t : State} (h : Base P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3448)
     (hws : ∀ r ∈ ws, ∃ o n, o < 8448 ∧ o + n ≤ 8448 ∧ r = sr P o n)
     (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sp : t.gpr .esp = s.gpr .esp)
     (hf : Frame (ws ++ [below (s.gpr .esp) k]) s.mem t.mem) : Base P σ t := by
@@ -103,7 +103,7 @@ theorem Base.call {σ s t : State} (h : Base P σ s) {ws : List Region} {k : Nat
   · simp only [List.mem_singleton] at hr; subst hr; exact hs.1.below_safe hk
 
 /-- Bytes of `scratch` the call does not write. -/
-theorem keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3392)
+theorem keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3448)
     (hf : Frame (ws ++ [below (s.gpr .esp) k]) s.mem t.mem) {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448)
     (hd : ∀ r ∈ ws, (sr P o n).Disjoint r) :
     Spec.Rsa.bytesAt t.mem (sr P o n).base n = Spec.Rsa.bytesAt s.mem (sr P o n).base n := by
@@ -114,7 +114,7 @@ theorem keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (h
   · simp only [List.mem_singleton] at hr; subst hr; exact (hs.1.below_sr hk ho hn).symm
 
 /-- The bytes of a buffer we only read, through a call. -/
-theorem keep_ro {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3392)
+theorem keep_ro {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3448)
     (hf : Frame (ws ++ [below (s.gpr .esp) k]) s.mem t.mem)
     (hws : ∀ r ∈ ws, ∃ o n, o < 8448 ∧ o + n ≤ 8448 ∧ r = sr P o n) {R : Region} (hR : R ∈ P.ro) :
     Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := by
@@ -132,7 +132,7 @@ theorem repr_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr
   Proof.Hmac.Generic.Common.sha256_repr _ _ _ _ _ (fun i hi => hf.bytes (R := ⟨p, 96⟩) hd (by show (96 : Nat) ≤ 2 ^ 64; decide) hi) h
 
 /-- A SHA-256 state in `scratch` through a call that does not write it. -/
-theorem repr_keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3392)
+theorem repr_keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (hk : k ≤ 3448)
     (hf : Frame (ws ++ [below (s.gpr .esp) k]) s.mem t.mem) {o : Nat} (ho : o + 96 ≤ 8448)
     (hd : ∀ r ∈ ws, (sr P o 96).Disjoint r) {msg : List Byte}
     (h : Spec.Sha256.Repr s.mem (sr P o 96).base msg) : Spec.Sha256.Repr t.mem (sr P o 96).base msg := by
@@ -161,11 +161,11 @@ theorem Called.ofWhole {s t : State} {ws : List Region} (a : Proof.Pbkdf2.Whole.
 def InScr (P : EP) (ws : List Region) : Prop := ∀ r ∈ ws, ∃ o n, o < 8448 ∧ o + n ≤ 8448 ∧ r = sr P o n
 
 theorem Called.base {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (h : Base P σ s)
-    (hk : k ≤ 3392) (hws : InScr P ws) : Base P σ t :=
+    (hk : k ≤ 3448) (hws : InScr P ws) : Base P σ t :=
   h.call hk hws c.rd c.wr c.sp c.frame
 
 theorem Called.st {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (hs : S P σ s)
-    (hk : k ≤ 3392) (hws : InScr P ws) : S P σ t := by
+    (hk : k ≤ 3448) (hws : InScr P ws) : S P σ t := by
   have hf := c.frame
   rw [hs.2.sp] at hf
   refine ⟨hs.1, hs.2.write hf (fun r hr => ?_) c.rd c.wr c.sp⟩
@@ -176,17 +176,17 @@ theorem Called.st {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t 
     exact ⟨P.lay.LOW, by simp, hs.1.low_of hk⟩
 
 theorem Called.keep {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (hs : S P σ s)
-    (hk : k ≤ 3392) {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) (hd : ∀ r ∈ ws, (sr P o n).Disjoint r) :
+    (hk : k ≤ 3448) {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) (hd : ∀ r ∈ ws, (sr P o n).Disjoint r) :
     Spec.Rsa.bytesAt t.mem (sr P o n).base n = Spec.Rsa.bytesAt s.mem (sr P o n).base n :=
   keep_sr hs hk c.frame ho hn hd
 
 theorem Called.keepRo {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (hs : S P σ s)
-    (hk : k ≤ 3392) (hws : InScr P ws) {R : Region} (hR : R ∈ P.ro) :
+    (hk : k ≤ 3448) (hws : InScr P ws) {R : Region} (hR : R ∈ P.ro) :
     Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len :=
   keep_ro hs hk c.frame hws hR
 
 theorem Called.repr {σ s t : State} {ws : List Region} {k : Nat} (c : Called s t ws k) (hs : S P σ s)
-    (hk : k ≤ 3392) {o : Nat} (ho : o + 96 ≤ 8448) (hd : ∀ r ∈ ws, (sr P o 96).Disjoint r) {msg : List Byte}
+    (hk : k ≤ 3448) {o : Nat} (ho : o + 96 ≤ 8448) (hd : ∀ r ∈ ws, (sr P o 96).Disjoint r) {msg : List Byte}
     (h : Spec.Sha256.Repr s.mem (sr P o 96).base msg) : Spec.Sha256.Repr t.mem (sr P o 96).base msg :=
   repr_keep_sr hs hk c.frame ho hd h
 

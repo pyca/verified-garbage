@@ -16,7 +16,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 open VG.Impl.Mont.X86
 
 theorem saved_stack_far {E : Environment} (v : E.Valid) :
-    (⟨E.p.setWidth 64, 16⟩ : Region).Disjoint (below E.p 96) := by
+    (⟨E.p.setWidth 64, 16⟩ : Region).Disjoint (below E.p 136) := by
   unfold below
   rw [Taint.sub_setWidth v.low]
   exact Offset.base_disjoint_below _ (by decide)
@@ -49,15 +49,15 @@ theorem saved_read {E : Environment} (v : E.Valid) {s t : State}
   exact same.trans word
 
 theorem return_read {E : Environment} (_ : E.Valid) {s t : State}
-    (fit : 112 ≤ (s.gpr .esp).toNat) (sp : (Compact.entered s).gpr .esp = E.p)
+    (fit : 152 ≤ (s.gpr .esp).toNat) (sp : (Compact.entered s).gpr .esp = E.p)
     (returnFar : ∀ r ∈ [E.workspaceRegion, E.usedRegion], (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r)
     (F : MutableFrame E (Compact.entered s).mem t.mem) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-  have outside : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 112) := by
+  have outside : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 152) := by
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.base_disjoint_below _ (by decide)
-  have inner : (below E.p 96).Sub (below (s.gpr .esp) 112) := by
+  have inner : (below E.p 136).Sub (below (s.gpr .esp) 152) := by
     rw [← sp, Compact.entered, pushed_esp]
     exact below_inner (by decide) fit
   have same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4) (by
@@ -79,13 +79,13 @@ theorem Outputs.keep {E : Environment} {res : Option (Bool × Spec.RsaKeyGen.Ran
   exact R
 
 theorem framed_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (I : EntryInput E c entropy (Compact.entered s)) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits)
-    (fit : 112 ≤ (s.gpr .esp).toNat)
+    (fit : 152 ≤ (s.gpr .esp).toNat)
     (returnFar : ∀ r ∈ [E.workspaceRegion, E.usedRegion], (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r) :
     WP isa (VG.Impl.Dsa.X86.ProbablePrime.code E.bits montName mont roundName round) s fun t =>
       abiPreserved s t ∧ Outputs E (Spec.Dsa.probablePrime c entropy) t ∧ Tail E s.mem t.mem := by

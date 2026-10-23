@@ -179,7 +179,7 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have he2 := hc.e2
   have ht2 := hc.t2
   have hR := hc.coprime
-  have hN1 : 1 < N := by have := hc.n1; omega
+  have hN1 : 1 < N := by have := hc.n1; omega_arith
   have hcu : Cst u B Z w minv N el r t := hc.congr hI.frm (by decide) sq_hs hI.keep (by decide)
   have hy := hI.y
   have hylt := hI.ylt
@@ -190,7 +190,7 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   generalize sqIter N t k st₀ = st at hy hylt hc2 hc3 hst
   obtain ⟨y, done, ok⟩ := st
   dsimp only at hy hylt hc2 hc3
-  have hYlt : wv u.mem B (slot w aY) w < N := by rw [hy]; exact Nat.mod_lt _ (by omega)
+  have hYlt : wv u.mem B (slot w aY) w < N := by rw [hy]; exact Nat.mod_lt _ (by omega_arith)
   rw [show sqBody M.mm = seqs ([M.mm aX aY aY] ++ (eqA aX aO ++ ([.block (eqStore sMask)] ++
     (eqA aX aNg ++ [.block sqLogic, wordLoop 0 selBody, .block sqNext])))) by
       simp only [sqBody, List.append_assoc]]
@@ -198,14 +198,14 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   simp only [seqs]
   -- `x = y²`.
   have hg := hcu.good
-  refine WP.mono (M.mm_ok hg.1 hg.2 hw1 (by omega) (o := aX) (a := aY) (b := aY) (by decide)
+  refine WP.mono (M.mm_ok hg.1 hg.2 hw1 (by omega_arith) (o := aX) (a := aY) (b := aY) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hcu.hinv
     (by rw [hcu.hn]; exact hYlt)) fun u₂ ⟨_, hlt₂, hm₂, ha₂, k₂⟩ => ?_
   rw [hcu.hn] at hlt₂ hm₂
   have hX₂ : wv u₂.mem B (slot w aX) w = y * y % N * 2 ^ (64 * w) % N := sq_mont hR hy hlt₂ hm₂
   have hf₂ : Frm B (rg w [aAcc, aTmp, aX] []) u.mem u₂.mem := Frm.rg_of_arrays ha₂ _ _ (by decide)
   have hc₂ := hcu.congr hf₂ (by decide) (by simp) k₂ (by decide)
-  have hxN : y * y % N < N := Nat.mod_lt _ (by omega)
+  have hxN : y * y % N < N := Nat.mod_lt _ (by omega_arith)
   -- `x = 1`.
   refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₂.ws (a := aX) (b := aO) (by decide)
     (by decide)) fun u₃ ⟨hz₃, m₃, k₃⟩ => ?_)
@@ -216,12 +216,12 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have he1 : decide (u₃.gpr .rbp = 0) = decide (y * y % N = 1) := decide_eq_decide.mpr hz₃
   rw [he1] at m₄
   have hf₄ : Frm B (rg w [] [sMask]) u₃.mem u₄.mem := by
-    rw [m₄]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega)) _ _
+    rw [m₄]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega_arith)) _ _
       (List.mem_singleton_self _)
   have hc₄ := hc₃.congr hf₄ (by decide) (by decide) k₄ (by decide)
   -- `x = -1`.
   have hX₄ : wv u₄.mem B (slot w aX) w = wv u₂.mem B (slot w aX) w := by
-    rw [hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), m₃]
+    rw [hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith), m₃]
   refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₄.ws (a := aX) (b := aNg) (by decide)
     (by decide)) fun u₅ ⟨hz₅, m₅, k₅⟩ => ?_)
   rw [hX₄, hX₂, hc₄.hng, eq_neg_mont hR hN1 hxN rfl] at hz₅
@@ -233,13 +233,13 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have hm₅ : word u₅.mem B (8 * sMask) = mask (decide (y * y % N = 1)) := by rw [m₅, m₄, word_writeW_self]
   simp only [seqs]
   rw [sqLogic_eq]
-  refine WP.seq (WP.block_append_iff.mpr (WP.mono (sqMasks_ok hc₅.ws (k := k) (t := t) (done := done) (ok := ok) (by omega) (by omega)
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono (sqMasks_ok hc₅.ws (k := k) (t := t) (done := done) (ok := ok) (by omega_arith) (by omega_arith)
     (by rw [hw5 _ (by decide) (by decide)]; exact hc1) hc₅.ht (by rw [hw5 _ (by decide) (by decide)]; exact hc2)
     (by rw [hw5 _ (by decide) (by decide)]; exact hc3) hm₅ hem) fun u₆ ⟨hbp₆, m₆, k₆⟩ => ?_))
   have hf₆ : Frm B (rg w [] [sC2, sC3]) u₅.mem u₆.mem := by
     rw [m₆]
-    exact (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC2, sFn]; omega)) [] [sC2, sC3] (by decide)).trans
-      (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega)) [] [sC2, sC3] (by decide))
+    exact (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC2, sFn]; omega_arith)) [] [sC2, sC3] (by decide)).trans
+      (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega_arith)) [] [sC2, sC3] (by decide))
   have hc₆ := hc₅.congr hf₆ (by decide) (by decide) k₆ (by decide)
   refine WP.mono (bases2_ok hc₆.ws aY aX) fun u₇ ⟨h12, h8, hsi, m₇, k₇⟩ => ?_
   have hc₇ := hc₆.congr (js := []) (hs := []) (by rw [m₇]; exact Frm.refl _ _ _) (by simp) (by simp) k₇ (by decide)
@@ -247,17 +247,17 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   -- `y := x` if the squarings continue.
   have sY := hc₇.ws.sl (j := aY) (by decide)
   have sX := hc₇.ws.sl (j := aX) (by decide)
-  refine WP.seq (WP.mono (sel_ok hc₇.ws.scr h8 hsi hbp₇ h12 (by omega) (by omega) (by omega) (by omega)
-    (by have := slot_far (w := w) (show aY ≠ aX by decide); omega)) fun u₈ ⟨hy₈, o₈, k₈⟩ => ?_)
-  have hf₈ : Frm B (rg w [aY] []) u₇.mem u₈.mem := Frm.rg_of_out o₈ (by omega) _ _ (by decide)
+  refine WP.seq (WP.mono (sel_ok hc₇.ws.scr h8 hsi hbp₇ h12 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by have := slot_far (w := w) (show aY ≠ aX by decide); omega_arith)) fun u₈ ⟨hy₈, o₈, k₈⟩ => ?_)
+  have hf₈ : Frm B (rg w [aY] []) u₇.mem u₈.mem := Frm.rg_of_out o₈ (by omega_arith) _ _ (by decide)
   have hc₈ := hc₇.congr hf₈ (by decide) (by simp) k₈ (by decide)
   -- `k += 1`.
   have hc1₈ : word u₈.mem B (8 * sC1) = BitVec.ofNat 64 k := by
     rw [hf₈.rg_word (by decide) (by simp), m₇, hf₆.rg_word (by decide) (by decide),
       hw5 _ (by decide) (by decide)]; exact hc1
-  refine WP.mono (sqNext_ok hc₈.ws hc₈.hel (by omega) hc1₈ hk) fun u' ⟨hz, m₉, k₉⟩ => ⟨hz, ?_⟩
+  refine WP.mono (sqNext_ok hc₈.ws hc₈.hel (by omega_arith) hc1₈ hk) fun u' ⟨hz, m₉, k₉⟩ => ⟨hz, ?_⟩
   have hf₉ : Frm B (rg w [] [sC1]) u₈.mem u'.mem := by
-    rw [m₉]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC1, sCnt, sFn]; omega)) _ _
+    rw [m₉]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC1, sCnt, sFn]; omega_arith)) _ _
       (List.mem_singleton_self _)
   have hfu₅ : Frm B (rg w [aAcc, aTmp, aX] [sMask]) u.mem u₅.mem := by
     have := (hf₂.rg_trans (js' := []) (hs' := [])
@@ -267,17 +267,17 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   -- The values after the squaring.
   have hY₈ : wv u₈.mem B (slot w aY) w = (if !((!done && decide (k < t)) && !decide (y * y % N = 1) &&
       !(decide (y * y % N = N - 1) || decide (k + 1 = t))) then y else y * y % N) * 2 ^ (64 * w) % N := by
-    rw [hy₈, m₇, hf₆.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
-      hf₆.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), m₅, hX₄,
-      hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), m₃,
-      hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hy, hX₂]
+    rw [hy₈, m₇, hf₆.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith),
+      hf₆.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith), m₅, hX₄,
+      hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith), m₃,
+      hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith), hy, hX₂]
     split <;> rfl
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (((((hI.frm.rg_trans hfu₅).rg_trans hf₆).rg_trans (by rw [m₇]; exact Frm.refl _ _ _ :
       Frm B (rg w [] []) u₆.mem u₇.mem)).rg_trans hf₈).rg_trans hf₉).rg_mono (by decide) (by decide)
   · exact (((((((((hI.keep.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans k₈).trans
       k₉).mono (by decide))
-  · rw [hst, hf₉.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hY₈]
+  · rw [hst, hf₉.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith), hY₈]
     simp only [sqStep]
     by_cases hcnd : ((!done && decide (k < t)) && !decide (y * y % N = 1) &&
         !(decide (y * y % N = N - 1) || decide (k + 1 = t))) = true
@@ -286,11 +286,11 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
       simp only [hcnd, Bool.not_false, ite_true, Bool.false_eq_true, ite_false]
   · rw [hst]
     simp only [sqStep]
-    split <;> omega
+    split <;> omega_arith
   · rw [m₉, word_writeW_self]
   · rw [hf₉.rg_word (by decide) (by decide), hf₈.rg_word (by decide) (by simp), m₇, m₆]
-    rw [(writeW_outside _ B _ (d := 8 * sC3) (by simp only [sC3, sFn]; omega)).word
-      (Or.inl (by simp only [sC2, sC3, sFn]; omega)) (by simp only [sC2, sFn]; omega), word_writeW_self, hst]
+    rw [(writeW_outside _ B _ (d := 8 * sC3) (by simp only [sC3, sFn]; omega_arith)).word
+      (Or.inl (by simp only [sC2, sC3, sFn]; omega_arith)) (by simp only [sC2, sFn]; omega_arith), word_writeW_self, hst]
     simp only [sqStep]
   · rw [hf₉.rg_word (by decide) (by decide), hf₈.rg_word (by decide) (by simp), m₇, m₆, word_writeW_self, hst]
     simp only [sqStep]

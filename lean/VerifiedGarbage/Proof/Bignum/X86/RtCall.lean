@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
+import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
 import VerifiedGarbage.Proof.Framework.Omega
@@ -14,7 +15,7 @@ working space that meet the callee's precondition (`Offs`): a block that
 stores them as the nine arguments into a frame of 36 bytes below `esp`
 (`callArg`), then a call of `vg_rsa_mont_mul`, writes the Montgomery
 product of the numbers at `a` and `b` at `o`, changing only it, the callee's
-range and the 40 bytes of stack below `esp` (`call_ok`). The functions at a
+range and the 96 bytes of stack below `esp` (`call_ok`). The functions at a
 run-time width state their multiplications from it.
 -/
 
@@ -25,7 +26,7 @@ namespace VG.Proof.Bignum.X86.RtCall
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (calleeOf setWidth_toNat callee_frame rtPre_of ofs_in ofs_out ofs_eq
-  rtBody_noSp rtBody_stackUse)
+  rtBody_noSp rtBody_stackUse callee_pre)
 open VG.Spec.Rsa.MontMul (Apart scratchBytes)
 
 /-- The words of a call's frame: `ws`, `ws_len`, the width and the offsets. -/
@@ -60,7 +61,7 @@ structure Offs (bytes n m inv sc o a b : Nat) : Prop where
 section
 variable {s g : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen : BitVec 32}
 
-theorem callee_arg (low : 40 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
+theorem callee_arg (low : 96 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
     (hread : ∀ i < 9, g.mem.readW ((g.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i)) 32 =
         callArg (s.gpr .edi) wsLen n m inv sc o a b i) {i : Nat} (hi : i < 9) :
     arg (calleeOf g base bytes) i = callArg (s.gpr .edi) wsLen n m inv sc o a b i := by
@@ -82,6 +83,7 @@ theorem callee_abi (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8)
     (hB : val32 s.mem base b (2 * n) < val32 s.mem base m (2 * n)) :
     RtABI (calleeOf g base bytes) := by
   have low := R.low
+  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega
   have hsp := (s.gpr .esp).isLt
   have nwr := scr.nowrap
   have blt := scr.size_lt
@@ -117,7 +119,7 @@ theorem callee_abi (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8)
       Spec.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
     unfold Spec.Rsa.MontMul.numAt
     rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega))
-      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart.symm) (by omega)]
+      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega)]
   have argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
     show argAddr g.callEntry 0 = _
     rw [argAddr_callEntry]; simp
@@ -129,7 +131,7 @@ theorem callee_abi (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8)
   · show (g.gpr .esp - 4).toNat + 4 + 36 ≤ 2 ^ 32
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.sub_toNat (by omega)]; omega
   · rw [ws, ln, argAddr0, hesp]; exact (R.apart.sub_left (below_sub (by decide) low)).symm
-  · rw [retBase, ws, ln, hesp]; exact R.apart.sub_left (below_inner (a := 4) (k := 36) (b := 40) (by decide) low)
+  · rw [retBase, ws, ln, hesp]; exact R.apart.sub_left (below_inner (a := 4) (k := 36) (b := 96) (by decide) low)
   · rw [retBase, argAddr0]
     refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat] <;>
       (try rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.sub_toNat (by omega)]) <;> omega
@@ -157,14 +159,14 @@ end
 
 /-- The block storing the arguments, and the call. -/
 abbrev callCode (is : List Instr) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block is) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36)
+  .frame (.alloc 36) (.seq (.block is) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
 
 theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen : BitVec 32} {is : List Instr}
     (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8) (R : CallRoom (s.gpr .esp) base bytes)
     (O : Offs bytes n m inv sc o a b)
     (hinv : (val32 s.mem base m (2 * n) * w32 s.mem base inv + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b (2 * n) < val32 s.mem base m (2 * n))
-    (hns : NoSp (.seq (.block is) (.call Spec.Rsa.MontMul.mulApi.name Rt.body) : Prog isa))
+    (hns : NoSp (.seq (.block is) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa))
     (hargs : WP isa (.block is) (allocFrame 36 s) fun g =>
       Keeps [.eax, .edx] (allocFrame 36 s) g ∧
       Frame [⟨((allocFrame 36 s).gpr .esp).setWidth 64, 36⟩] (allocFrame 36 s).mem g.mem ∧
@@ -172,11 +174,12 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
         callArg (s.gpr .edi) wsLen n m inv sc o a b i) :
     WP isa (callCode is) s fun t =>
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame [⟨off base o, 8 * n⟩, ⟨off base sc, scratchBytes n⟩, below (s.gpr .esp) 40] s.mem t.mem ∧
+      Frame [⟨off base o, 8 * n⟩, ⟨off base sc, scratchBytes n⟩, below (s.gpr .esp) 96] s.mem t.mem ∧
       val32 t.mem base o (2 * n) < val32 s.mem base m (2 * n) ∧
       val32 t.mem base o (2 * n) * 2 ^ (64 * n) % val32 s.mem base m (2 * n) =
         val32 s.mem base a (2 * n) * val32 s.mem base b (2 * n) % val32 s.mem base m (2 * n) := by
   have low := R.low
+  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega
   have hsp := (s.gpr .esp).isLt
   have nwr := scr.nowrap
   unfold callCode
@@ -197,14 +200,16 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
   have hscr : (⟨base, bytes⟩ : Region) ∈ g.wr := by
     rw [Kg.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ scr.wr
   have argA : argAddr g.callEntry 0 = (g.gpr .esp).setWidth 64 := by rw [argAddr_callEntry]; simp
-  refine WP.call (k := Spec.Rsa.MontMul.mulContract abi 0) (rd := [⟨argAddr g.callEntry 0, 36⟩])
-    (wr := [⟨base, bytes⟩]) rt_correct rtBody_noSp (by rw [rtBody_stackUse]; omega) (rtPre_of A)
+  have low96 := R.low
+  refine WP.call (k := Spec.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
+    (wr := [⟨base, bytes⟩]) VG.Proof.Mont.X86.Sse2.at_correct rtBody_noSp (by rw [rtBody_stackUse]; omega)
+    (callee_pre A R gEsp)
     (Covers.of_mem fun r hr => ?_) (Covers.of_mem fun r hr => ?_) fun s' rd' wr' cs' F _ ⟨s₂, m₂, _, post⟩ => ?_
   · rcases List.mem_append.mp hr with hr | hr <;> rw [List.mem_singleton.mp hr]
     · rw [argA]; exact List.mem_append_right _ hframe
     · exact List.mem_append_right _ hscr
   · rw [List.mem_singleton.mp hr]; exact hscr
-  change (Spec.Rsa.MontMul.mulContract abi 0).post (calleeOf g base bytes) s₂ at post
+  change (Spec.Rsa.MontMul.mulContract abi 56).post (calleeOf g base bytes) s₂ at post
   sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at post
   obtain ⟨L₂, C₂, K₂⟩ := post
   have blt := scr.size_lt
@@ -235,7 +240,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
         val32 s.mem base d (2 * n) := fun d hd => by
     rw [← read_eq_val32, ← read_eq_val32, Fc'.read (r := ⟨base, bytes⟩)
       (Offset.contains_base _ (by rw [← e8]; exact hd) (by omega))
-      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart.symm) (by omega)]
+      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega)]
   rw [vc _ O2] at L₂ C₂
   rw [vc _ O6, vc _ O7] at C₂
   refine ⟨fun r hr => ?_, by rw [freed_rd, rd', Kg.2.1, allocFrame_rd],
@@ -246,7 +251,8 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
       rw [freed_esp, cs' _ hr, gEsp, BitVec.sub_add_cancel]
     · rw [freed_gpr _ _ he, cs' _ hr, Kg.1 _ (by revert hr; cases r <;> simp [calleeSaved]),
         allocFrame_gpr _ _ he]
-  · have nst : ¬ (below (s.gpr .esp) 40).Contains x 1 := hx _ (by simp)
+  · have nst96 : ¬ (below (s.gpr .esp) 96).Contains x 1 := hx _ (by simp)
+    have nst : ¬ (below (s.gpr .esp) 40).Contains x 1 := fun hc => nst96 (below_sub (by decide) low96 x hc)
     have nos : ¬ (⟨off base sc, scratchBytes n⟩ : Region).Contains x 1 := hx _ (by simp)
     have noo : ¬ (⟨off base o, 8 * n⟩ : Region).Contains x 1 := hx _ (by simp)
     rw [freed_mem]
@@ -262,10 +268,10 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
       exact Fc' x fun r hr => by rw [List.mem_singleton.mp hr]; exact nst
     · rw [F x fun r hr => ?_]
       · exact hFg x fun r hr => by
-          rw [List.mem_singleton.mp hr]; exact fun hc => nst (below_sub (by decide) low x hc)
+          rw [List.mem_singleton.mp hr]; exact fun hc => nst (below_sub (by decide) low40 x hc)
       · rcases List.mem_append.mp hr with hr | hr <;> rw [List.mem_singleton.mp hr]
         · exact hin
         · rw [rtBody_stackUse, gEsp]
-          exact fun hc => nst (below_inner (a := 0 + 4) (k := 36) (b := 40) (by decide) low x hc)
+          exact fun hc => nst96 (below_inner (a := 56 + 4) (k := 36) (b := 96) (by decide) low96 x hc)
 
 end VG.Proof.Bignum.X86.RtCall

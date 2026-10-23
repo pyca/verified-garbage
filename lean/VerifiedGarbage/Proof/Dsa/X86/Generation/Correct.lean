@@ -195,9 +195,9 @@ theorem body_ok {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk g3)
       rw [toNat_wide] at this
       have := F.scratchNat
       omega
-    · have sb : ((callEnv s).sp - BitVec.ofNat 32 160).toNat = (callEnv s).sp.toNat - 160 :=
+    · have sb : ((callEnv s).sp - BitVec.ofNat 32 200).toNat = (callEnv s).sp.toNat - 200 :=
         sub_toNat (by omega)
-      have := contains_nat (a := ((callEnv s).sp - BitVec.ofNat 32 160).setWidth 64) (n := 160)
+      have := contains_nat (a := ((callEnv s).sp - BitVec.ofNat 32 200).setWidth 64) (n := 200)
         (by rw [toNat_wide]; omega) c
       rw [toNat_wide, sb, spNat] at this
       omega

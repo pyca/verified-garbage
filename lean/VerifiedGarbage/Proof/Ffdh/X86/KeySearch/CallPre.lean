@@ -36,7 +36,7 @@ theorem ce_arg {o t : State} {used : Nat} (A : KeySearchABI o)
     (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) (ha : ArgsAt o used 11 t.mem)
     (rd wr : List Region) {j : Nat} (hj : j < 11) :
     arg (t.callEntry.withRegions rd wr) j = callArg o used j := by
-  have h1 : 164 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 220 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 44 := by rw [he]; exact VG.X86.sub_toNat (by unfold argsBytes; omega)
   rw [arg_withRegions, arg_callEntry (by omega) (by omega), ← ha j hj]
@@ -68,7 +68,7 @@ theorem win_sub {o : State} (A : KeySearchABI o) {used : Nat} (hu : used + (arg 
 /-- The callee's stack pointer on its entry. -/
 theorem esp_sub4 {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
     t.gpr .esp - 4 = o.gpr .esp - BitVec.ofNat 32 48 := by
-  have h1 : 164 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 220 ≤ (o.gpr .esp).toNat := A.stackLow
   rw [he]; apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, argsBytes]
   have := (o.gpr .esp).isLt
@@ -79,22 +79,22 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
     (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) (ha : ArgsAt o used 11 t.mem) :
     (Spec.Ffdh.generateKeyContract abi Proof.Ffdh.X86.stack).pre
       (t.callEntry.withRegions (callRd o used) (callWr o)) := by
-  have h1 : 164 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 220 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   have hs4 := esp_sub4 A he
   have hs4n : (o.gpr .esp - BitVec.ofNat 32 48).toNat = (o.gpr .esp).toNat - 48 := VG.X86.sub_toNat (by omega)
-  have ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 120 := by
+  have ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 176 := by
     rw [argAddr_withRegions, argAddr_callEntry, show 4 * 0 = 0 from rfl, BitVec.add_zero, he,
       sw_sub A (by decide)]; rfl
-  have hl116 : (o.gpr .esp - BitVec.ofNat 32 48).setWidth 64 - 116#64 = low o := by
-    rw [sw_sub A (by decide)]; show low o + BitVec.ofNat 64 116 - BitVec.ofNat 64 116 = _
+  have hl116 : (o.gpr .esp - BitVec.ofNat 32 48).setWidth 64 - 172#64 = low o := by
+    rw [sw_sub A (by decide)]; show low o + BitVec.ofNat 64 172 - BitVec.ofNat 64 172 = _
     exact BitVec.add_sub_cancel _ _
   have xr := xR_eq A
   have yr := yR_eq A
   have W := win_sub A hu
   have Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 116, 4⟩ (lowR o) := low_sub (by decide)
-  have Bs : Region.Sub ⟨low o, 116⟩ (lowR o) := Region.sub_prefix (by decide)
+  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
+  have Bs : Region.Sub ⟨low o, 172⟩ (lowR o) := Region.sub_prefix (by decide)
   have dXY : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← xr, ← yr]; exact A.xy
   have dXD : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (dR o) := by rw [← xr]; exact A.xd
@@ -114,23 +114,23 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
   have dWB : Region.Disjoint (winR o used) (bR o) := A.rb.sub_left W
   have dWF : Region.Disjoint (winR o used) (frR o) := (A.lowRand.symm.sub_left W).sub_right Fs
   have dBF : Region.Disjoint (bR o) (frR o) := A.lowB.symm.sub_right Fs
-  have rX : Region.Disjoint ⟨low o + BitVec.ofNat 64 116, 4⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
+  have rX : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← xr]; exact A.lowX.sub_left Rs
-  have rY : Region.Disjoint ⟨low o + BitVec.ofNat 64 116, 4⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
+  have rY : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← yr]; exact A.lowY.sub_left Rs
-  have rD : Region.Disjoint ⟨low o + BitVec.ofNat 64 116, 4⟩ (dR o) := A.lowD.sub_left Rs
-  have rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 116, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
-  have rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 116, 4⟩ (bR o) := A.lowB.sub_left Rs
-  have rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 116, 4⟩ (frR o) :=
+  have rD : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (dR o) := A.lowD.sub_left Rs
+  have rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
+  have rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (bR o) := A.lowB.sub_left Rs
+  have rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (frR o) :=
     Offset.disjoint _ (by omega) (by omega) (by omega)
-  have bX : Region.Disjoint ⟨low o, 116⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
+  have bX : Region.Disjoint ⟨low o, 172⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← xr]; exact A.lowX.sub_left Bs
-  have bY : Region.Disjoint ⟨low o, 116⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
+  have bY : Region.Disjoint ⟨low o, 172⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← yr]; exact A.lowY.sub_left Bs
-  have bD : Region.Disjoint ⟨low o, 116⟩ (dR o) := A.lowD.sub_left Bs
-  have bW : Region.Disjoint ⟨low o, 116⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
-  have bB : Region.Disjoint ⟨low o, 116⟩ (bR o) := A.lowB.sub_left Bs
-  have bF : Region.Disjoint ⟨low o, 116⟩ (frR o) := Offset.base_disjoint _ (by omega) (by omega)
+  have bD : Region.Disjoint ⟨low o, 172⟩ (dR o) := A.lowD.sub_left Bs
+  have bW : Region.Disjoint ⟨low o, 172⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
+  have bB : Region.Disjoint ⟨low o, 172⟩ (bR o) := A.lowB.sub_left Bs
+  have bF : Region.Disjoint ⟨low o, 172⟩ (frR o) := Offset.base_disjoint _ (by omega) (by omega)
   have xB : (arg o 0).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by have := A.xBound; rw [A.xLen] at this; exact this
   have yB : (arg o 2).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by have := A.yBound; rw [A.yLen] at this; exact this
   have wB : (arg o 8 + BitVec.ofNat 32 used).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by
@@ -141,7 +141,7 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
   have dL := A.dLen
   have sL := A.scratchLength
   have st : Proof.Ffdh.X86.stack ≤ (o.gpr .esp - BitVec.ofNat 32 48).toNat := by
-    rw [hs4n]; show 116 ≤ _; omega
+    rw [hs4n]; show 172 ≤ _; omega
   have st' : (o.gpr .esp - BitVec.ofNat 32 48).toNat + 4 + 44 ≤ 2 ^ 32 := by rw [hs4n]; omega
   sig_pre [Spec.Ffdh.generateKeyContract, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [hs4, ha0, Nat.reduceEqDiff, Nat.reduceSub, ↓reduceIte, BitVec.add_sub_cancel, ce_arg A he ha _ _ (show 0 < 11 by decide), ce_arg A he ha _ _ (show 1 < 11 by decide),
@@ -149,7 +149,7 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
     ce_arg A he ha _ _ (show 4 < 11 by decide), ce_arg A he ha _ _ (show 5 < 11 by decide),
     ce_arg A he ha _ _ (show 6 < 11 by decide), ce_arg A he ha _ _ (show 7 < 11 by decide),
     ce_arg A he ha _ _ (show 8 < 11 by decide), ce_arg A he ha _ _ (show 9 < 11 by decide),
-    ce_arg A he ha _ _ (show 10 < 11 by decide), callArg, sw_sub A (show 48 ≤ 164 by decide)]
+    ce_arg A he ha _ _ (show 10 < 11 by decide), callArg, sw_sub A (show 48 ≤ 220 by decide)]
   sig_and_intros
   all_goals first
     | exact True.intro

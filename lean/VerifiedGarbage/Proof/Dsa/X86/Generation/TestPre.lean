@@ -24,7 +24,7 @@ abbrev testRegs : List Reg := [.ebp, .ebx, .edx, .ecx, .eax]
 registers it. -/
 abbrev ppContract (bits : Nat) : Contract isa :=
   Spec.Dsa.ProbablePrime.contract (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
-    (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 112
+    (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
 
 /-- The regions the test is given: the witnesses left and the table, and the
 working space, `used` and the arguments. -/
@@ -116,7 +116,7 @@ theorem testEntry_mem {E : Env} {used : Nat} {s : State} (fit : 24 ≤ (s.gpr .e
 
 /-- A test's candidate keeps its value through writes to the stack. -/
 theorem cand_frame {E : Env} (v : E.Valid) {bits : Nat}
-    (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords) {k : Nat} (hk : k ≤ 160)
+    (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords) {k : Nat} (hk : k ≤ 200)
     {m m' : Mem} (F : Frame [below E.sp k] m m') :
     Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m' (off E.base sPP) =
       Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) := by
@@ -202,8 +202,8 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
   have lenN : (BitVec.ofNat 32 (E.witLen - used)).toNat = E.witLen - used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have ppN : (BitVec.ofNat 32 ppWords).toNat = ppWords := by decide
-  have callee : (s.gpr .esp - 24#32).setWidth 64 - 112#64 = (s.gpr .esp - 136#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [nat24]; omega_arith : 112 ≤ (s.gpr .esp - 24#32).toNat), BitVec.sub_sub]; rfl
+  have callee : (s.gpr .esp - 24#32).setWidth 64 - 152#64 = (s.gpr .esp - 176#32).setWidth 64 := by
+    rw [← Taint.sub_setWidth (by rw [nat24]; omega_arith : 152 ≤ (s.gpr .esp - 24#32).toNat), BitVec.sub_sub]; rfl
   have sy₀ : s.syms = s₀.syms := A.syms
   have m₀ : s.mem = s₀.mem := A.mem
   simp only [a0, a1, a2, a3, a4, uesp, uarg0, urd, uwr, usy, testRd, testWr, wsW, uoW, randW, randN, lenN,
@@ -218,21 +218,21 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
     rw [spU]; exact below_sub (by decide) (by omega_arith)
   have subRet : Region.Sub ⟨(s.gpr .esp - 24#32).setWidth 64, 4⟩ E.stackRegion :=
     sub_of_contains (by rw [spU]; exact below_top (k := 24) (by decide) (by omega_arith) (by decide))
-  have subCal : Region.Sub ⟨(s.gpr .esp - 136#32).setWidth 64, 112⟩ E.stackRegion :=
-    sub_of_contains (by rw [spU]; exact below_top (k := 136) (by decide) (by omega_arith) (by decide))
+  have subCal : Region.Sub ⟨(s.gpr .esp - 176#32).setWidth 64, 152⟩ E.stackRegion :=
+    sub_of_contains (by rw [spU]; exact below_top (k := 176) (by decide) (by omega_arith) (by decide))
   have subPush : Region.Sub (below (s.gpr .esp) (4 * testRegs.length + 4)) E.stackRegion := by
     rw [spU]; exact below_sub (by decide) (by omega_arith)
   have ss := v.scratchStack
   have wf := v.tapesFar E.witRegion (by simp)
   have ws := wf.1; have wk := wf.2.2
   have ts := v.tableFar.1; have tk := v.tableFar.2.2
-  have nat136 : ((s.gpr .esp - 136#32).setWidth 64).toNat = E.sp.toNat - 136 := by
+  have nat136 : ((s.gpr .esp - 176#32).setWidth 64).toNat = E.sp.toNat - 176 := by
     rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
   have nat24' : ((s.gpr .esp - 24#32).setWidth 64).toNat = E.sp.toNat - 24 := by
     rw [BitVec.toNat_setWidth, nat24]; exact Nat.mod_eq_of_lt (by omega_arith)
   have retArgs : Region.Disjoint ⟨(s.gpr .esp - 24#32).setWidth 64, 4⟩ ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ :=
     Offset.disjoint_of_le (by simp only [nat24', nat20]; omega_arith) (by simp only [nat20]; omega_arith)
-  have calArgs : Region.Disjoint ⟨(s.gpr .esp - 136#32).setWidth 64, 112⟩ ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ :=
+  have calArgs : Region.Disjoint ⟨(s.gpr .esp - 176#32).setWidth 64, 152⟩ ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ :=
     Offset.disjoint_of_le (by simp only [nat136, nat20]; omega_arith) (by simp only [nat20]; omega_arith)
   have wsUO : Region.Disjoint ⟨off E.base sPP, ppWords * 8⟩ ⟨off E.base fUsedOut, 8⟩ :=
     Offset.disjoint E.base (by simp only [sPP, ppWords, fUsedOut, hdr]; omega_arith) (by simp only [sPP, ppWords]; omega_arith)

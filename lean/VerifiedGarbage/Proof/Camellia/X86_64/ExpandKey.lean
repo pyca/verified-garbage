@@ -89,9 +89,9 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
       Spec.Camellia.bytesAt s₀.mem (s₀.gpr .rdi) (s₀.gpr .rsi).toNat := by
     rw [rdi₁]
     refine Proof.Camellia.bytesAt_congr fun i hi => f₁.bytes (R := ⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩)
-      (fun r hr => ?_) (by simp only; omega) hi
+      (fun r hr => ?_) (by simp only; omega_arith) hi
     simp only [List.mem_singleton] at hr; subst hr
-    exact dKB.sub_right (Region.sub_prefix (by omega))
+    exact dKB.sub_right (Region.sub_prefix (by omega_arith))
   -- `KL` and `KR`.
   refine WP.seq (WP.mono (loadKey_wp (len := (s₀.gpr .rsi).toNat) (s := s₁) (by rw [b₁, wr₁]; exact hwB)
     (by rw [rdi₁, rd₁]; exact hrK) (by rw [rdi₁]; exact fitK) (by rw [rdi₁, b₁]; exact dKB)
@@ -114,7 +114,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
   have rdx₄ : s₄.gpr .rdx = s₀.gpr .rdx := by rw [hg₄ _ (by decide), g₂ _ (by decide), rdx₁]
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wr₃, wr₂, wr₁]
   have hlow : ∀ k < klSlot, slotW s₄ k = slotW s₁ k := fun k hk => by
-    rw [hs₄, sl₂ k (by omega) (Or.inl hk)]
+    rw [hs₄, sl₂ k (by omega_arith) (Or.inl hk)]
   let KL : BitVec 64 × BitVec 64 := (hiW (Spec.Camellia.klkr key).1, loW (Spec.Camellia.klkr key).1)
   let KR : BitVec 64 × BitVec 64 := (hiW (Spec.Camellia.klkr key).2, loW (Spec.Camellia.klkr key).2)
   have hpre : KaPre s₄ KL KR := by
@@ -122,17 +122,17 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
       kl₂.congr (hs₄ _) (hs₄ _), kr₂.congr (hs₄ _) (hs₄ _)⟩
     · rw [hb₄, wr₄']; exact hwB
     · refine ⟨_, by rw [wr₄']; exact hwS, ?_⟩
-      rw [rdx₄, wordAddr]; exact VG.Offset.contains_base _ (by omega) (by omega)
+      rw [rdx₄, wordAddr]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
     · rw [rdx₄, hb₄]
-      exact (dSB.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega))
+      exact (dSB.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith))
     · rw [hb₄]; exact fitB
-    · rw [rdx₄]; omega
+    · rw [rdx₄]; omega_arith
     · have := mask_lt hkv
-      rw [hlow _ (by omega)]; exact mk₁ kv hkv
+      rw [hlow _ (by omega_arith)]; exact mk₁ kv hkv
     · refine sigmas_rel (m := s₄.mem) (b := s₄.gpr sb) (fun i hi j hj => ?_) i hi
-      rw [entryW_slot, hlow _ (by omega), ← entryW_slot, b₁]
+      rw [entryW_slot, hlow _ (by omega_arith), ← entryW_slot, b₁]
       exact ent₁ i hi j hj
-    · rw [rdx₄, hb₄]; exact dSB.sub_left (Region.sub_prefix (by omega))
+    · rw [rdx₄, hb₄]; exact dSB.sub_left (Region.sub_prefix (by omega_arith))
     · rw [AtEntry, a₄, r₃, hb₄, hb₂, show (BitVec.ofNat 32 (8 * keySlot)).signExtend 64 =
         BitVec.ofNat 64 (8 * keySlot + 64 * 0) from rfl]
   -- `KA` and `KB`.
@@ -148,7 +148,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
     [(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
       (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).1,
       (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).2] (fun v hv => by
-      rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega) with rfl | rfl | rfl | rfl
+      rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega_arith) with rfl | rfl | rfl | rfl
       · exact h₅.kl hpre
       · exact h₅.kr hpre
       · have := h₅.ka (by decide); rw [hKA'] at this; exact this
@@ -158,16 +158,16 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
   have hb₆ : s₆.gpr sb = s₀.gpr .rcx := by rw [o₆ _ hsb₆, hb₅]
   -- The key's length.
   obtain ⟨s₇, e₇, a₇, o₇, m₇, rd₇, wr₇⟩ := movS_ok (k := dataSlot) t0 hb₆
-    (inRd (scr_in (by rw [wr₆]; exact hscr₅) (by omega)))
+    (inRd (scr_in (by rw [wr₆]; exact hscr₅) (by omega_arith)))
   obtain ⟨s₈, e₈, z₈, g₈, m₈, rd₈, wr₈⟩ := cmpImmZ_ok s₇ t0 16
   have hds : slotW s₆ dataSlot = s₀.gpr .rsi := by
-    rw [slotW_eq_of m₆ (o₆ _ hsb₆), h₅.keep _ (by omega) (by omega) (Or.inl (by omega)), hs₄,
-      sl₂ _ (by omega) (Or.inl (by omega)), ds₁]
+    rw [slotW_eq_of m₆ (o₆ _ hsb₆), h₅.keep _ (by omega_arith) (by omega_arith) (Or.inl (by omega_arith)), hs₄,
+      sl₂ _ (by omega_arith) (Or.inl (by omega_arith)), ds₁]
   have hz₈ : s₈.zf = some (decide ((s₀.gpr .rsi).toNat = 16)) := by
     rw [z₈, a₇, hds, show (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 from rfl]
     conv => lhs; rw [show s₀.gpr .rsi = BitVec.ofNat 64 (s₀.gpr .rsi).toNat by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]]
-    rw [VG.Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+    rw [VG.Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
   refine WP.seq (WP.of_runBlock ⟨s₈, by
     rw [runBlock_append', e₆, Option.bind_some,
       show ([movS t0 dataSlot, .alu .cmp t0 (.imm 16)] : List Instr) =
@@ -176,7 +176,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
   -- The subkeys.
   have hrdx₈ : s₈.gpr .rdx = s₀.gpr .rdx := by
     rw [g₈, o₇ _ (by decide), o₆ _ (fun v hv => by
-      rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega) with rfl | rfl | rfl | rfl <;> decide),
+      rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> decide),
       h₅.rdx, rdx₄]
   have hwS₈ : (⟨s₀.gpr .rdx, 272⟩ : Region) ∈ s₈.wr := by rw [wr₈, wr₇, wr₆, wr₅]; exact hwS
   have hg₈ : ∀ v < 4, s₈.gpr (hiReg v) = hiW ([(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
@@ -193,7 +193,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
     (WP.ite (decide ((s₀.gpr .rsi).toNat = 16)) (by simp [X86_64.eval, hz₈]) (fun h16 => ?_) (fun h16 => ?_))
     fun s₉ h₉ => ?_)
   · have h16 : (s₀.gpr .rsi).toNat = 16 := by simpa using h16
-    exact stores_wp hrdx₈ hwS₈ subkeys_lt4.1 (by rw [subkeys_length.1]; omega) hg₈
+    exact stores_wp hrdx₈ hwS₈ subkeys_lt4.1 (by rw [subkeys_length.1]; omega_arith) hg₈
       (by rw [h16, subkeys_length.1]; rfl) (by rw [hklen, ite_eq_left h16])
   · have h16 : (s₀.gpr .rsi).toNat ≠ 16 := by simpa using h16
     exact stores_wp hrdx₈ hwS₈ subkeys_lt4.2 (by rw [subkeys_length.2]) hg₈
@@ -206,36 +206,36 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
     intro k h1 h2
     rw [h₉.frame.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (dSB.sub_right (by rw [wordAddr]; exact VG.Offset.sub_base _ (by omega))).symm) (by decide)]
-    have := h₅.keep k (by omega) (by omega) (Or.inl (by omega))
-    rw [hs₄, sl₂ k (by omega) (Or.inl (by omega))] at this
+        exact (dSB.sub_right (by rw [wordAddr]; exact VG.Offset.sub_base _ (by omega_arith))).symm) (by decide)]
+    have := h₅.keep k (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
+    rw [hs₄, sl₂ k (by omega_arith) (Or.inl (by omega_arith))] at this
     simp only [slotW, hb₅, b₁] at this
     rw [m₈, m₇, m₆]
     exact this
   obtain ⟨s₁₀, e₁₀, rg₁₀, o₁₀, f₁₀, rd₁₀, wr₁₀⟩ := restore_ok (s₀ := s₀) (b := s₀.gpr .rcx)
     (by rw [h₉.wr, wr₈, wr₇, wr₆, wr₅]; exact hwB) hb₉ (fun i hi => by
-      rw [hSB _ (by omega) (by omega)]; exact sv₁ i hi)
+      rw [hSB _ (by omega_arith) (by omega_arith)]; exact sv₁ i hi)
   refine WP.of_runBlock ⟨s₁₀, e₁₀, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · have hsp : s₁₀.gpr .rsp = s₀.gpr .rsp := by
       rw [o₁₀ _ (fun i hi => by unfold sreg; split <;> decide), h₉.regs _ (by decide) (by decide), g₈,
         o₇ _ (by decide), o₆ _ (fun v hv => by
-          rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega) with rfl | rfl | rfl | rfl <;> decide),
+          rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> decide),
         h₅.regs _ (by decide) (by decide) (by decide) (by decide), hg₄ _ (by decide), g₂ _ (by decide),
         g₁ _ (by decide) (by decide) (by decide) (by decide)]
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact rg₁₀ 0 (by omega)
-    · exact rg₁₀ 1 (by omega)
+    · exact rg₁₀ 0 (by omega_arith)
+    · exact rg₁₀ 1 (by omega_arith)
     · exact hsp
-    · exact rg₁₀ 2 (by omega)
-    · exact rg₁₀ 3 (by omega)
-    · exact rg₁₀ 4 (by omega)
-    · exact rg₁₀ 5 (by omega)
+    · exact rg₁₀ 2 (by omega_arith)
+    · exact rg₁₀ 3 (by omega_arith)
+    · exact rg₁₀ 4 (by omega_arith)
+    · exact rg₁₀ 5 (by omega_arith)
   · -- The return address is untouched.
     have fr : Frame [⟨s₀.gpr .rcx, 8 * slots⟩, ⟨s₀.gpr .rdx, 272⟩] s₀.mem s₁₀.mem := by
       have F₁ : Frame [⟨s₀.gpr .rcx, 8 * slots⟩, ⟨s₀.gpr .rdx, 272⟩] s₀.mem s₁.mem :=
         f₁.sub fun r hr => ⟨_, List.mem_cons_self, by
-          simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+          simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩
       have F₂ : Frame [⟨s₀.gpr .rcx, 8 * slots⟩, ⟨s₀.gpr .rdx, 272⟩] s₁.mem s₄.mem := by
         rw [m₄, m₃]; rw [b₁] at f₂
         exact f₂.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
@@ -245,13 +245,13 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-          · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega)⟩
+          · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
       have F₉ : Frame [⟨s₀.gpr .rcx, 8 * slots⟩, ⟨s₀.gpr .rdx, 272⟩] s₅.mem s₉.mem := by
         rw [← m₆, ← m₇, ← m₈]
         exact h₉.frame.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
       have F₁₀ : Frame [⟨s₀.gpr .rcx, 8 * slots⟩, ⟨s₀.gpr .rdx, 272⟩] s₉.mem s₁₀.mem :=
         f₁₀.sub fun r hr => ⟨_, List.mem_cons_self, by
-          simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+          simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩
       exact F₁.trans (F₂.trans (F₅.trans (F₉.trans F₁₀)))
     refine fr.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -262,8 +262,8 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
     rw [hkey, ← h₉.bytes]
     have hle := Proof.Camellia.scheduleLength_rounds_le (s₀.gpr .rsi).toNat
     refine Proof.Camellia.bytesAt_congr fun i hi => f₁₀.bytes (R := ⟨s₀.gpr .rdx, 272⟩) (fun r hr => ?_)
-      (by simp only; omega) (by simp only; omega)
+      (by simp only; omega_arith) (by simp only; omega_arith)
     simp only [List.mem_singleton] at hr; subst hr
-    exact dSB.sub_right (Region.sub_prefix (by omega))
+    exact dSB.sub_right (Region.sub_prefix (by omega_arith))
 
 end VG.Proof.Camellia.X86_64

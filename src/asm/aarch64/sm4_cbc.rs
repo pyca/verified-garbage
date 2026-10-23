@@ -46,45 +46,900 @@ b 21f
 21:
 add x23, x2, #0
 add x24, x3, #0
-dup v31.2d, x19
-dup v28.2d, x30
-dup v27.2d, x5
-dup v29.2d, x23
-dup v30.2d, x24
-movz x1, #0, lsl #0
-add x2, x5, #0
-movz x3, #396, lsl #0
-bl {vg_sm4_prepare_keys}
-umov x5, v27.d[0]
-umov x30, v28.d[0]
-umov x23, v29.d[0]
-umov x24, v30.d[0]
-umov x19, v31.d[0]
-cbz x24, 22f
-24:
+movz x21, #37078, lsl #0
+movk x21, #65257, lsl #16
+movk x21, #57804, lsl #32
+movk x21, #46909, lsl #48
+str x21, [x5, #0]
+movz x21, #46614, lsl #0
+movk x21, #49684, lsl #16
+movk x21, #64296, lsl #32
+movk x21, #1324, lsl #48
+str x21, [x5, #8]
+movz x21, #26411, lsl #0
+movk x21, #30362, lsl #16
+movk x21, #48682, lsl #32
+movk x21, #49924, lsl #48
+str x21, [x5, #16]
+movz x21, #17578, lsl #0
+movk x21, #9747, lsl #16
+movk x21, #34377, lsl #32
+movk x21, #39174, lsl #48
+str x21, [x5, #24]
+movz x21, #17052, lsl #0
+movk x21, #62544, lsl #16
+movk x21, #61329, lsl #32
+movk x21, #31384, lsl #48
+str x21, [x5, #32]
+movz x21, #21555, lsl #0
+movk x21, #17163, lsl #16
+movk x21, #53229, lsl #32
+movk x21, #25260, lsl #48
+str x21, [x5, #40]
+movz x21, #46052, lsl #0
+movk x21, #43292, lsl #16
+movk x21, #2249, lsl #32
+movk x21, #38376, lsl #48
+str x21, [x5, #48]
+movz x21, #57216, lsl #0
+movk x21, #64148, lsl #16
+movk x21, #36725, lsl #32
+movk x21, #42559, lsl #48
+str x21, [x5, #56]
+movz x21, #1863, lsl #0
+movk x21, #64679, lsl #16
+movk x21, #29683, lsl #32
+movk x21, #47639, lsl #48
+str x21, [x5, #64]
+movz x21, #22915, lsl #0
+movk x21, #6460, lsl #16
+movk x21, #34278, lsl #32
+movk x21, #43087, lsl #48
+str x21, [x5, #72]
+movz x21, #27496, lsl #0
+movk x21, #45697, lsl #16
+movk x21, #25713, lsl #32
+movk x21, #35802, lsl #48
+str x21, [x5, #80]
+movz x21, #60408, lsl #0
+movk x21, #19215, lsl #16
+movk x21, #22128, lsl #32
+movk x21, #13725, lsl #48
+str x21, [x5, #88]
+movz x21, #9246, lsl #0
+movk x21, #24078, lsl #16
+movk x21, #22627, lsl #32
+movk x21, #41681, lsl #48
+str x21, [x5, #96]
+movz x21, #8741, lsl #0
+movk x21, #15228, lsl #16
+movk x21, #8449, lsl #32
+movk x21, #34680, lsl #48
+str x21, [x5, #104]
+movz x21, #212, lsl #0
+movk x21, #22342, lsl #16
+movk x21, #54175, lsl #32
+movk x21, #21031, lsl #48
+str x21, [x5, #112]
+movz x21, #13900, lsl #0
+movk x21, #59138, lsl #16
+movk x21, #50336, lsl #32
+movk x21, #40648, lsl #48
+str x21, [x5, #120]
+movz x21, #49130, lsl #0
+movk x21, #53898, lsl #16
+movk x21, #51008, lsl #32
+movk x21, #46392, lsl #48
+str x21, [x5, #128]
+movz x21, #63395, lsl #0
+movk x21, #52978, lsl #16
+movk x21, #25081, lsl #32
+movk x21, #41237, lsl #48
+str x21, [x5, #136]
+movz x21, #44768, lsl #0
+movk x21, #42077, lsl #16
+movk x21, #13467, lsl #32
+movk x21, #21786, lsl #48
+str x21, [x5, #144]
+movz x21, #37805, lsl #0
+movk x21, #12338, lsl #16
+movk x21, #36085, lsl #32
+movk x21, #58289, lsl #48
+str x21, [x5, #152]
+movz x21, #63005, lsl #0
+movk x21, #12002, lsl #16
+movk x21, #26242, lsl #32
+movk x21, #24778, lsl #48
+str x21, [x5, #160]
+movz x21, #10688, lsl #0
+movk x21, #43811, lsl #16
+movk x21, #21261, lsl #32
+movk x21, #28494, lsl #48
+str x21, [x5, #168]
+movz x21, #56277, lsl #0
+movk x21, #17719, lsl #16
+movk x21, #64990, lsl #32
+movk x21, #12174, lsl #48
+str x21, [x5, #176]
+movz x21, #65283, lsl #0
+movk x21, #29290, lsl #16
+movk x21, #27757, lsl #32
+movk x21, #20827, lsl #48
+str x21, [x5, #184]
+movz x21, #7053, lsl #0
+movk x21, #37551, lsl #16
+movk x21, #56763, lsl #32
+movk x21, #32700, lsl #48
+str x21, [x5, #192]
+movz x21, #55569, lsl #0
+movk x21, #16732, lsl #16
+movk x21, #4127, lsl #32
+movk x21, #55386, lsl #48
+str x21, [x5, #200]
+movz x21, #49418, lsl #0
+movk x21, #34865, lsl #16
+movk x21, #52645, lsl #32
+movk x21, #48507, lsl #48
+str x21, [x5, #208]
+movz x21, #29741, lsl #0
+movk x21, #4816, lsl #16
+movk x21, #58808, lsl #32
+movk x21, #45236, lsl #48
+str x21, [x5, #216]
+movz x21, #27017, lsl #0
+movk x21, #19095, lsl #16
+movk x21, #38412, lsl #32
+movk x21, #32375, lsl #48
+str x21, [x5, #224]
+movz x21, #47461, lsl #0
+movk x21, #2545, lsl #16
+movk x21, #28357, lsl #32
+movk x21, #33990, lsl #48
+str x21, [x5, #232]
+movz x21, #61464, lsl #0
+movk x21, #60541, lsl #16
+movk x21, #56378, lsl #32
+movk x21, #8269, lsl #48
+str x21, [x5, #240]
+movz x21, #61049, lsl #0
+movk x21, #15967, lsl #16
+movk x21, #52183, lsl #32
+movk x21, #18489, lsl #48
+str x21, [x5, #248]
+add x14, x0, #0
+add x15, x5, #256
+movz x17, #8, lsl #0
+22:
+ldr x21, [x14, #0]
+str x21, [x15, #0]
+ldr x21, [x14, #8]
+str x21, [x15, #8]
+add x14, x14, #16
+add x15, x15, #16
+sub x17, x17, #1
+cbnz x17, 22b
+cbz x24, 23f
+25:
 ldr x6, [x23, #0]
 str x6, [x5, #768]
 ldr x6, [x23, #8]
 str x6, [x5, #776]
-dup v31.2d, x19
-dup v28.2d, x30
-dup v27.2d, x5
-dup v29.2d, x23
-dup v30.2d, x24
-add x0, x5, #0
-movz x1, #396, lsl #0
-bl {vg_sm4_crypt_prepared}
-umov x5, v27.d[0]
-umov x30, v28.d[0]
-umov x23, v29.d[0]
-umov x24, v30.d[0]
-umov x19, v31.d[0]
+ldr q16, [x5, #0]
+ldr q17, [x5, #16]
+ldr q18, [x5, #32]
+ldr q19, [x5, #48]
+ldr q20, [x5, #64]
+ldr q21, [x5, #80]
+ldr q22, [x5, #96]
+ldr q23, [x5, #112]
+ldr q24, [x5, #128]
+ldr q25, [x5, #144]
+ldr q26, [x5, #160]
+ldr q27, [x5, #176]
+ldr q28, [x5, #192]
+ldr q29, [x5, #208]
+ldr q30, [x5, #224]
+ldr q31, [x5, #240]
+movz w15, #64, lsl #0
+dup v4.16b, w15
+movz w15, #128, lsl #0
+dup v5.16b, w15
+movz w15, #192, lsl #0
+dup v6.16b, w15
+ldr w6, [x5, #768]
+rev w6, w6
+ldr w7, [x5, #772]
+rev w7, w7
+ldr w8, [x5, #776]
+rev w8, w8
+ldr w9, [x5, #780]
+rev w9, w9
+ldr w10, [x5, #256]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #260]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #264]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #268]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #272]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #276]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #280]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #284]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #288]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #292]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #296]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #300]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #304]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #308]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #312]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #316]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #320]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #324]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #328]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #332]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #336]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #340]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #344]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #348]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #352]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #356]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #360]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #364]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+ldr w10, [x5, #368]
+eor w10, w10, w7
+eor w10, w10, w8
+eor w10, w10, w9
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w6, w6, w11
+ldr w10, [x5, #372]
+eor w10, w10, w8
+eor w10, w10, w9
+eor w10, w10, w6
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w7, w7, w11
+ldr w10, [x5, #376]
+eor w10, w10, w9
+eor w10, w10, w6
+eor w10, w10, w7
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w8, w8, w11
+ldr w10, [x5, #380]
+eor w10, w10, w6
+eor w10, w10, w7
+eor w10, w10, w8
+dup v0.4s, w10
+eor v1.16b, v0.16b, v4.16b
+eor v2.16b, v0.16b, v5.16b
+eor v3.16b, v0.16b, v6.16b
+tbl v0.16b, {{v16.16b, v17.16b, v18.16b, v19.16b}}, v0.16b
+tbl v1.16b, {{v20.16b, v21.16b, v22.16b, v23.16b}}, v1.16b
+tbl v2.16b, {{v24.16b, v25.16b, v26.16b, v27.16b}}, v2.16b
+tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
+orr v2.16b, v2.16b, v3.16b
+orr v0.16b, v0.16b, v1.16b
+orr v0.16b, v0.16b, v2.16b
+umov w10, v0.s[0]
+eor w11, w10, w10, ror #30
+eor w11, w11, w10, ror #22
+eor w11, w11, w10, ror #14
+eor w11, w11, w10, ror #8
+eor w9, w9, w11
+rev w9, w9
+str w9, [x5, #768]
+rev w8, w8
+str w8, [x5, #772]
+rev w7, w7
+str w7, [x5, #776]
+rev w6, w6
+str w6, [x5, #780]
 ldr x6, [x5, #768]
 str x6, [x23, #0]
 ldr x6, [x5, #776]
 str x6, [x23, #8]
 sub x24, x24, #1
-cbz x24, 25f
+cbz x24, 26f
 ldr x6, [x23, #16]
 ldr x7, [x5, #768]
 eor x6, x6, x7
@@ -93,18 +948,18 @@ ldr x6, [x23, #24]
 ldr x7, [x5, #776]
 eor x6, x6, x7
 str x6, [x23, #24]
-b 26f
-25:
+b 27f
 26:
+27:
 add x23, x23, #16
-cbnz x24, 24b
+cbnz x24, 25b
 ldr x6, [x5, #768]
 str x6, [x19, #0]
 ldr x6, [x5, #776]
 str x6, [x19, #8]
-b 23f
-22:
+b 24f
 23:
+24:
 ldr x19, [x5, #3168]
 ldr x20, [x5, #3176]
 ldr x21, [x5, #3184]
@@ -115,421 +970,221 @@ ldr x25, [x5, #3216]
 ldr x26, [x5, #3224]
 ldr x27, [x5, #3232]
 ldr x28, [x5, #3240]
-add x16, sp, #0
 movz x17, #0, lsl #0
-str x17, [x16, #0]
-str x17, [x16, #8]
-str x17, [x16, #16]
-str x17, [x16, #24]
-str x17, [x16, #32]
-str x17, [x16, #40]
-str x17, [x16, #48]
-str x17, [x16, #56]
-str x17, [x16, #64]
-str x17, [x16, #72]
-str x17, [x16, #80]
-str x17, [x16, #88]
-str x17, [x16, #96]
-str x17, [x16, #104]
-str x17, [x16, #112]
-str x17, [x16, #120]
-str x17, [x16, #128]
-str x17, [x16, #136]
-str x17, [x16, #144]
-str x17, [x16, #152]
-str x17, [x16, #160]
-str x17, [x16, #168]
-str x17, [x16, #176]
-str x17, [x16, #184]
-str x17, [x16, #192]
-str x17, [x16, #200]
-str x17, [x16, #208]
-str x17, [x16, #216]
-str x17, [x16, #224]
-str x17, [x16, #232]
-str x17, [x16, #240]
-str x17, [x16, #248]
-str x17, [x16, #256]
-str x17, [x16, #264]
-str x17, [x16, #272]
-str x17, [x16, #280]
-str x17, [x16, #288]
-str x17, [x16, #296]
-str x17, [x16, #304]
-str x17, [x16, #312]
-str x17, [x16, #320]
-str x17, [x16, #328]
-str x17, [x16, #336]
-str x17, [x16, #344]
-str x17, [x16, #352]
-str x17, [x16, #360]
-str x17, [x16, #368]
-str x17, [x16, #376]
-str x17, [x16, #384]
-str x17, [x16, #392]
-str x17, [x16, #400]
-str x17, [x16, #408]
-str x17, [x16, #416]
-str x17, [x16, #424]
-str x17, [x16, #432]
-str x17, [x16, #440]
-str x17, [x16, #448]
-str x17, [x16, #456]
-str x17, [x16, #464]
-str x17, [x16, #472]
-str x17, [x16, #480]
-str x17, [x16, #488]
-str x17, [x16, #496]
-str x17, [x16, #504]
-str x17, [x16, #512]
-str x17, [x16, #520]
-str x17, [x16, #528]
-str x17, [x16, #536]
-str x17, [x16, #544]
-str x17, [x16, #552]
-str x17, [x16, #560]
-str x17, [x16, #568]
-str x17, [x16, #576]
-str x17, [x16, #584]
-str x17, [x16, #592]
-str x17, [x16, #600]
-str x17, [x16, #608]
-str x17, [x16, #616]
-str x17, [x16, #624]
-str x17, [x16, #632]
-str x17, [x16, #640]
-str x17, [x16, #648]
-str x17, [x16, #656]
-str x17, [x16, #664]
-str x17, [x16, #672]
-str x17, [x16, #680]
-str x17, [x16, #688]
-str x17, [x16, #696]
-str x17, [x16, #704]
-str x17, [x16, #712]
-str x17, [x16, #720]
-str x17, [x16, #728]
-str x17, [x16, #736]
-str x17, [x16, #744]
-str x17, [x16, #752]
-str x17, [x16, #760]
-str x17, [x16, #768]
-str x17, [x16, #776]
-str x17, [x16, #784]
-str x17, [x16, #792]
-str x17, [x16, #800]
-str x17, [x16, #808]
-str x17, [x16, #816]
-str x17, [x16, #824]
-str x17, [x16, #832]
-str x17, [x16, #840]
-str x17, [x16, #848]
-str x17, [x16, #856]
-str x17, [x16, #864]
-str x17, [x16, #872]
-str x17, [x16, #880]
-str x17, [x16, #888]
-str x17, [x16, #896]
-str x17, [x16, #904]
-str x17, [x16, #912]
-str x17, [x16, #920]
-str x17, [x16, #928]
-str x17, [x16, #936]
-str x17, [x16, #944]
-str x17, [x16, #952]
-str x17, [x16, #960]
-str x17, [x16, #968]
-str x17, [x16, #976]
-str x17, [x16, #984]
-str x17, [x16, #992]
-str x17, [x16, #1000]
-str x17, [x16, #1008]
-str x17, [x16, #1016]
-str x17, [x16, #1024]
-str x17, [x16, #1032]
-str x17, [x16, #1040]
-str x17, [x16, #1048]
-str x17, [x16, #1056]
-str x17, [x16, #1064]
-str x17, [x16, #1072]
-str x17, [x16, #1080]
-str x17, [x16, #1088]
-str x17, [x16, #1096]
-str x17, [x16, #1104]
-str x17, [x16, #1112]
-str x17, [x16, #1120]
-str x17, [x16, #1128]
-str x17, [x16, #1136]
-str x17, [x16, #1144]
-str x17, [x16, #1152]
-str x17, [x16, #1160]
-str x17, [x16, #1168]
-str x17, [x16, #1176]
-str x17, [x16, #1184]
-str x17, [x16, #1192]
-str x17, [x16, #1200]
-str x17, [x16, #1208]
-str x17, [x16, #1216]
-str x17, [x16, #1224]
-str x17, [x16, #1232]
-str x17, [x16, #1240]
-str x17, [x16, #1248]
-str x17, [x16, #1256]
-str x17, [x16, #1264]
-str x17, [x16, #1272]
-str x17, [x16, #1280]
-str x17, [x16, #1288]
-str x17, [x16, #1296]
-str x17, [x16, #1304]
-str x17, [x16, #1312]
-str x17, [x16, #1320]
-str x17, [x16, #1328]
-str x17, [x16, #1336]
-str x17, [x16, #1344]
-str x17, [x16, #1352]
-str x17, [x16, #1360]
-str x17, [x16, #1368]
-str x17, [x16, #1376]
-str x17, [x16, #1384]
-str x17, [x16, #1392]
-str x17, [x16, #1400]
-str x17, [x16, #1408]
-str x17, [x16, #1416]
-str x17, [x16, #1424]
-str x17, [x16, #1432]
-str x17, [x16, #1440]
-str x17, [x16, #1448]
-str x17, [x16, #1456]
-str x17, [x16, #1464]
-str x17, [x16, #1472]
-str x17, [x16, #1480]
-str x17, [x16, #1488]
-str x17, [x16, #1496]
-str x17, [x16, #1504]
-str x17, [x16, #1512]
-str x17, [x16, #1520]
-str x17, [x16, #1528]
-str x17, [x16, #1536]
-str x17, [x16, #1544]
-str x17, [x16, #1552]
-str x17, [x16, #1560]
-str x17, [x16, #1568]
-str x17, [x16, #1576]
-str x17, [x16, #1584]
-str x17, [x16, #1592]
-str x17, [x16, #1600]
-str x17, [x16, #1608]
-str x17, [x16, #1616]
-str x17, [x16, #1624]
-str x17, [x16, #1632]
-str x17, [x16, #1640]
-str x17, [x16, #1648]
-str x17, [x16, #1656]
-str x17, [x16, #1664]
-str x17, [x16, #1672]
-str x17, [x16, #1680]
-str x17, [x16, #1688]
-str x17, [x16, #1696]
-str x17, [x16, #1704]
-str x17, [x16, #1712]
-str x17, [x16, #1720]
-str x17, [x16, #1728]
-str x17, [x16, #1736]
-str x17, [x16, #1744]
-str x17, [x16, #1752]
-str x17, [x16, #1760]
-str x17, [x16, #1768]
-str x17, [x16, #1776]
-str x17, [x16, #1784]
-str x17, [x16, #1792]
-str x17, [x16, #1800]
-str x17, [x16, #1808]
-str x17, [x16, #1816]
-str x17, [x16, #1824]
-str x17, [x16, #1832]
-str x17, [x16, #1840]
-str x17, [x16, #1848]
-str x17, [x16, #1856]
-str x17, [x16, #1864]
-str x17, [x16, #1872]
-str x17, [x16, #1880]
-str x17, [x16, #1888]
-str x17, [x16, #1896]
-str x17, [x16, #1904]
-str x17, [x16, #1912]
-str x17, [x16, #1920]
-str x17, [x16, #1928]
-str x17, [x16, #1936]
-str x17, [x16, #1944]
-str x17, [x16, #1952]
-str x17, [x16, #1960]
-str x17, [x16, #1968]
-str x17, [x16, #1976]
-str x17, [x16, #1984]
-str x17, [x16, #1992]
-str x17, [x16, #2000]
-str x17, [x16, #2008]
-str x17, [x16, #2016]
-str x17, [x16, #2024]
-str x17, [x16, #2032]
-str x17, [x16, #2040]
-str x17, [x16, #2048]
-str x17, [x16, #2056]
-str x17, [x16, #2064]
-str x17, [x16, #2072]
-str x17, [x16, #2080]
-str x17, [x16, #2088]
-str x17, [x16, #2096]
-str x17, [x16, #2104]
-str x17, [x16, #2112]
-str x17, [x16, #2120]
-str x17, [x16, #2128]
-str x17, [x16, #2136]
-str x17, [x16, #2144]
-str x17, [x16, #2152]
-str x17, [x16, #2160]
-str x17, [x16, #2168]
-str x17, [x16, #2176]
-str x17, [x16, #2184]
-str x17, [x16, #2192]
-str x17, [x16, #2200]
-str x17, [x16, #2208]
-str x17, [x16, #2216]
-str x17, [x16, #2224]
-str x17, [x16, #2232]
-str x17, [x16, #2240]
-str x17, [x16, #2248]
-str x17, [x16, #2256]
-str x17, [x16, #2264]
-str x17, [x16, #2272]
-str x17, [x16, #2280]
-str x17, [x16, #2288]
-str x17, [x16, #2296]
-str x17, [x16, #2304]
-str x17, [x16, #2312]
-str x17, [x16, #2320]
-str x17, [x16, #2328]
-str x17, [x16, #2336]
-str x17, [x16, #2344]
-str x17, [x16, #2352]
-str x17, [x16, #2360]
-str x17, [x16, #2368]
-str x17, [x16, #2376]
-str x17, [x16, #2384]
-str x17, [x16, #2392]
-str x17, [x16, #2400]
-str x17, [x16, #2408]
-str x17, [x16, #2416]
-str x17, [x16, #2424]
-str x17, [x16, #2432]
-str x17, [x16, #2440]
-str x17, [x16, #2448]
-str x17, [x16, #2456]
-str x17, [x16, #2464]
-str x17, [x16, #2472]
-str x17, [x16, #2480]
-str x17, [x16, #2488]
-str x17, [x16, #2496]
-str x17, [x16, #2504]
-str x17, [x16, #2512]
-str x17, [x16, #2520]
-str x17, [x16, #2528]
-str x17, [x16, #2536]
-str x17, [x16, #2544]
-str x17, [x16, #2552]
-str x17, [x16, #2560]
-str x17, [x16, #2568]
-str x17, [x16, #2576]
-str x17, [x16, #2584]
-str x17, [x16, #2592]
-str x17, [x16, #2600]
-str x17, [x16, #2608]
-str x17, [x16, #2616]
-str x17, [x16, #2624]
-str x17, [x16, #2632]
-str x17, [x16, #2640]
-str x17, [x16, #2648]
-str x17, [x16, #2656]
-str x17, [x16, #2664]
-str x17, [x16, #2672]
-str x17, [x16, #2680]
-str x17, [x16, #2688]
-str x17, [x16, #2696]
-str x17, [x16, #2704]
-str x17, [x16, #2712]
-str x17, [x16, #2720]
-str x17, [x16, #2728]
-str x17, [x16, #2736]
-str x17, [x16, #2744]
-str x17, [x16, #2752]
-str x17, [x16, #2760]
-str x17, [x16, #2768]
-str x17, [x16, #2776]
-str x17, [x16, #2784]
-str x17, [x16, #2792]
-str x17, [x16, #2800]
-str x17, [x16, #2808]
-str x17, [x16, #2816]
-str x17, [x16, #2824]
-str x17, [x16, #2832]
-str x17, [x16, #2840]
-str x17, [x16, #2848]
-str x17, [x16, #2856]
-str x17, [x16, #2864]
-str x17, [x16, #2872]
-str x17, [x16, #2880]
-str x17, [x16, #2888]
-str x17, [x16, #2896]
-str x17, [x16, #2904]
-str x17, [x16, #2912]
-str x17, [x16, #2920]
-str x17, [x16, #2928]
-str x17, [x16, #2936]
-str x17, [x16, #2944]
-str x17, [x16, #2952]
-str x17, [x16, #2960]
-str x17, [x16, #2968]
-str x17, [x16, #2976]
-str x17, [x16, #2984]
-str x17, [x16, #2992]
-str x17, [x16, #3000]
-str x17, [x16, #3008]
-str x17, [x16, #3016]
-str x17, [x16, #3024]
-str x17, [x16, #3032]
-str x17, [x16, #3040]
-str x17, [x16, #3048]
-str x17, [x16, #3056]
-str x17, [x16, #3064]
-str x17, [x16, #3072]
-str x17, [x16, #3080]
-str x17, [x16, #3088]
-str x17, [x16, #3096]
-str x17, [x16, #3104]
-str x17, [x16, #3112]
-str x17, [x16, #3120]
-str x17, [x16, #3128]
-str x17, [x16, #3136]
-str x17, [x16, #3144]
-str x17, [x16, #3152]
-str x17, [x16, #3160]
-str x17, [x16, #3168]
-str x17, [x16, #3176]
-str x17, [x16, #3184]
-str x17, [x16, #3192]
-str x17, [x16, #3200]
-str x17, [x16, #3208]
-str x17, [x16, #3216]
-str x17, [x16, #3224]
-str x17, [x16, #3232]
-str x17, [x16, #3240]
-str x17, [x16, #3248]
-str x17, [x16, #3256]
+add x16, sp, #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #512
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #1024
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #1536
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #2048
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #2560
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #3072
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
 add sp, sp, #3264
 ret
 .p2align 6",
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
     )
 }
 
@@ -672,416 +1327,218 @@ ldr x25, [x5, #3216]
 ldr x26, [x5, #3224]
 ldr x27, [x5, #3232]
 ldr x28, [x5, #3240]
-add x16, sp, #0
 movz x17, #0, lsl #0
-str x17, [x16, #0]
-str x17, [x16, #8]
-str x17, [x16, #16]
-str x17, [x16, #24]
-str x17, [x16, #32]
-str x17, [x16, #40]
-str x17, [x16, #48]
-str x17, [x16, #56]
-str x17, [x16, #64]
-str x17, [x16, #72]
-str x17, [x16, #80]
-str x17, [x16, #88]
-str x17, [x16, #96]
-str x17, [x16, #104]
-str x17, [x16, #112]
-str x17, [x16, #120]
-str x17, [x16, #128]
-str x17, [x16, #136]
-str x17, [x16, #144]
-str x17, [x16, #152]
-str x17, [x16, #160]
-str x17, [x16, #168]
-str x17, [x16, #176]
-str x17, [x16, #184]
-str x17, [x16, #192]
-str x17, [x16, #200]
-str x17, [x16, #208]
-str x17, [x16, #216]
-str x17, [x16, #224]
-str x17, [x16, #232]
-str x17, [x16, #240]
-str x17, [x16, #248]
-str x17, [x16, #256]
-str x17, [x16, #264]
-str x17, [x16, #272]
-str x17, [x16, #280]
-str x17, [x16, #288]
-str x17, [x16, #296]
-str x17, [x16, #304]
-str x17, [x16, #312]
-str x17, [x16, #320]
-str x17, [x16, #328]
-str x17, [x16, #336]
-str x17, [x16, #344]
-str x17, [x16, #352]
-str x17, [x16, #360]
-str x17, [x16, #368]
-str x17, [x16, #376]
-str x17, [x16, #384]
-str x17, [x16, #392]
-str x17, [x16, #400]
-str x17, [x16, #408]
-str x17, [x16, #416]
-str x17, [x16, #424]
-str x17, [x16, #432]
-str x17, [x16, #440]
-str x17, [x16, #448]
-str x17, [x16, #456]
-str x17, [x16, #464]
-str x17, [x16, #472]
-str x17, [x16, #480]
-str x17, [x16, #488]
-str x17, [x16, #496]
-str x17, [x16, #504]
-str x17, [x16, #512]
-str x17, [x16, #520]
-str x17, [x16, #528]
-str x17, [x16, #536]
-str x17, [x16, #544]
-str x17, [x16, #552]
-str x17, [x16, #560]
-str x17, [x16, #568]
-str x17, [x16, #576]
-str x17, [x16, #584]
-str x17, [x16, #592]
-str x17, [x16, #600]
-str x17, [x16, #608]
-str x17, [x16, #616]
-str x17, [x16, #624]
-str x17, [x16, #632]
-str x17, [x16, #640]
-str x17, [x16, #648]
-str x17, [x16, #656]
-str x17, [x16, #664]
-str x17, [x16, #672]
-str x17, [x16, #680]
-str x17, [x16, #688]
-str x17, [x16, #696]
-str x17, [x16, #704]
-str x17, [x16, #712]
-str x17, [x16, #720]
-str x17, [x16, #728]
-str x17, [x16, #736]
-str x17, [x16, #744]
-str x17, [x16, #752]
-str x17, [x16, #760]
-str x17, [x16, #768]
-str x17, [x16, #776]
-str x17, [x16, #784]
-str x17, [x16, #792]
-str x17, [x16, #800]
-str x17, [x16, #808]
-str x17, [x16, #816]
-str x17, [x16, #824]
-str x17, [x16, #832]
-str x17, [x16, #840]
-str x17, [x16, #848]
-str x17, [x16, #856]
-str x17, [x16, #864]
-str x17, [x16, #872]
-str x17, [x16, #880]
-str x17, [x16, #888]
-str x17, [x16, #896]
-str x17, [x16, #904]
-str x17, [x16, #912]
-str x17, [x16, #920]
-str x17, [x16, #928]
-str x17, [x16, #936]
-str x17, [x16, #944]
-str x17, [x16, #952]
-str x17, [x16, #960]
-str x17, [x16, #968]
-str x17, [x16, #976]
-str x17, [x16, #984]
-str x17, [x16, #992]
-str x17, [x16, #1000]
-str x17, [x16, #1008]
-str x17, [x16, #1016]
-str x17, [x16, #1024]
-str x17, [x16, #1032]
-str x17, [x16, #1040]
-str x17, [x16, #1048]
-str x17, [x16, #1056]
-str x17, [x16, #1064]
-str x17, [x16, #1072]
-str x17, [x16, #1080]
-str x17, [x16, #1088]
-str x17, [x16, #1096]
-str x17, [x16, #1104]
-str x17, [x16, #1112]
-str x17, [x16, #1120]
-str x17, [x16, #1128]
-str x17, [x16, #1136]
-str x17, [x16, #1144]
-str x17, [x16, #1152]
-str x17, [x16, #1160]
-str x17, [x16, #1168]
-str x17, [x16, #1176]
-str x17, [x16, #1184]
-str x17, [x16, #1192]
-str x17, [x16, #1200]
-str x17, [x16, #1208]
-str x17, [x16, #1216]
-str x17, [x16, #1224]
-str x17, [x16, #1232]
-str x17, [x16, #1240]
-str x17, [x16, #1248]
-str x17, [x16, #1256]
-str x17, [x16, #1264]
-str x17, [x16, #1272]
-str x17, [x16, #1280]
-str x17, [x16, #1288]
-str x17, [x16, #1296]
-str x17, [x16, #1304]
-str x17, [x16, #1312]
-str x17, [x16, #1320]
-str x17, [x16, #1328]
-str x17, [x16, #1336]
-str x17, [x16, #1344]
-str x17, [x16, #1352]
-str x17, [x16, #1360]
-str x17, [x16, #1368]
-str x17, [x16, #1376]
-str x17, [x16, #1384]
-str x17, [x16, #1392]
-str x17, [x16, #1400]
-str x17, [x16, #1408]
-str x17, [x16, #1416]
-str x17, [x16, #1424]
-str x17, [x16, #1432]
-str x17, [x16, #1440]
-str x17, [x16, #1448]
-str x17, [x16, #1456]
-str x17, [x16, #1464]
-str x17, [x16, #1472]
-str x17, [x16, #1480]
-str x17, [x16, #1488]
-str x17, [x16, #1496]
-str x17, [x16, #1504]
-str x17, [x16, #1512]
-str x17, [x16, #1520]
-str x17, [x16, #1528]
-str x17, [x16, #1536]
-str x17, [x16, #1544]
-str x17, [x16, #1552]
-str x17, [x16, #1560]
-str x17, [x16, #1568]
-str x17, [x16, #1576]
-str x17, [x16, #1584]
-str x17, [x16, #1592]
-str x17, [x16, #1600]
-str x17, [x16, #1608]
-str x17, [x16, #1616]
-str x17, [x16, #1624]
-str x17, [x16, #1632]
-str x17, [x16, #1640]
-str x17, [x16, #1648]
-str x17, [x16, #1656]
-str x17, [x16, #1664]
-str x17, [x16, #1672]
-str x17, [x16, #1680]
-str x17, [x16, #1688]
-str x17, [x16, #1696]
-str x17, [x16, #1704]
-str x17, [x16, #1712]
-str x17, [x16, #1720]
-str x17, [x16, #1728]
-str x17, [x16, #1736]
-str x17, [x16, #1744]
-str x17, [x16, #1752]
-str x17, [x16, #1760]
-str x17, [x16, #1768]
-str x17, [x16, #1776]
-str x17, [x16, #1784]
-str x17, [x16, #1792]
-str x17, [x16, #1800]
-str x17, [x16, #1808]
-str x17, [x16, #1816]
-str x17, [x16, #1824]
-str x17, [x16, #1832]
-str x17, [x16, #1840]
-str x17, [x16, #1848]
-str x17, [x16, #1856]
-str x17, [x16, #1864]
-str x17, [x16, #1872]
-str x17, [x16, #1880]
-str x17, [x16, #1888]
-str x17, [x16, #1896]
-str x17, [x16, #1904]
-str x17, [x16, #1912]
-str x17, [x16, #1920]
-str x17, [x16, #1928]
-str x17, [x16, #1936]
-str x17, [x16, #1944]
-str x17, [x16, #1952]
-str x17, [x16, #1960]
-str x17, [x16, #1968]
-str x17, [x16, #1976]
-str x17, [x16, #1984]
-str x17, [x16, #1992]
-str x17, [x16, #2000]
-str x17, [x16, #2008]
-str x17, [x16, #2016]
-str x17, [x16, #2024]
-str x17, [x16, #2032]
-str x17, [x16, #2040]
-str x17, [x16, #2048]
-str x17, [x16, #2056]
-str x17, [x16, #2064]
-str x17, [x16, #2072]
-str x17, [x16, #2080]
-str x17, [x16, #2088]
-str x17, [x16, #2096]
-str x17, [x16, #2104]
-str x17, [x16, #2112]
-str x17, [x16, #2120]
-str x17, [x16, #2128]
-str x17, [x16, #2136]
-str x17, [x16, #2144]
-str x17, [x16, #2152]
-str x17, [x16, #2160]
-str x17, [x16, #2168]
-str x17, [x16, #2176]
-str x17, [x16, #2184]
-str x17, [x16, #2192]
-str x17, [x16, #2200]
-str x17, [x16, #2208]
-str x17, [x16, #2216]
-str x17, [x16, #2224]
-str x17, [x16, #2232]
-str x17, [x16, #2240]
-str x17, [x16, #2248]
-str x17, [x16, #2256]
-str x17, [x16, #2264]
-str x17, [x16, #2272]
-str x17, [x16, #2280]
-str x17, [x16, #2288]
-str x17, [x16, #2296]
-str x17, [x16, #2304]
-str x17, [x16, #2312]
-str x17, [x16, #2320]
-str x17, [x16, #2328]
-str x17, [x16, #2336]
-str x17, [x16, #2344]
-str x17, [x16, #2352]
-str x17, [x16, #2360]
-str x17, [x16, #2368]
-str x17, [x16, #2376]
-str x17, [x16, #2384]
-str x17, [x16, #2392]
-str x17, [x16, #2400]
-str x17, [x16, #2408]
-str x17, [x16, #2416]
-str x17, [x16, #2424]
-str x17, [x16, #2432]
-str x17, [x16, #2440]
-str x17, [x16, #2448]
-str x17, [x16, #2456]
-str x17, [x16, #2464]
-str x17, [x16, #2472]
-str x17, [x16, #2480]
-str x17, [x16, #2488]
-str x17, [x16, #2496]
-str x17, [x16, #2504]
-str x17, [x16, #2512]
-str x17, [x16, #2520]
-str x17, [x16, #2528]
-str x17, [x16, #2536]
-str x17, [x16, #2544]
-str x17, [x16, #2552]
-str x17, [x16, #2560]
-str x17, [x16, #2568]
-str x17, [x16, #2576]
-str x17, [x16, #2584]
-str x17, [x16, #2592]
-str x17, [x16, #2600]
-str x17, [x16, #2608]
-str x17, [x16, #2616]
-str x17, [x16, #2624]
-str x17, [x16, #2632]
-str x17, [x16, #2640]
-str x17, [x16, #2648]
-str x17, [x16, #2656]
-str x17, [x16, #2664]
-str x17, [x16, #2672]
-str x17, [x16, #2680]
-str x17, [x16, #2688]
-str x17, [x16, #2696]
-str x17, [x16, #2704]
-str x17, [x16, #2712]
-str x17, [x16, #2720]
-str x17, [x16, #2728]
-str x17, [x16, #2736]
-str x17, [x16, #2744]
-str x17, [x16, #2752]
-str x17, [x16, #2760]
-str x17, [x16, #2768]
-str x17, [x16, #2776]
-str x17, [x16, #2784]
-str x17, [x16, #2792]
-str x17, [x16, #2800]
-str x17, [x16, #2808]
-str x17, [x16, #2816]
-str x17, [x16, #2824]
-str x17, [x16, #2832]
-str x17, [x16, #2840]
-str x17, [x16, #2848]
-str x17, [x16, #2856]
-str x17, [x16, #2864]
-str x17, [x16, #2872]
-str x17, [x16, #2880]
-str x17, [x16, #2888]
-str x17, [x16, #2896]
-str x17, [x16, #2904]
-str x17, [x16, #2912]
-str x17, [x16, #2920]
-str x17, [x16, #2928]
-str x17, [x16, #2936]
-str x17, [x16, #2944]
-str x17, [x16, #2952]
-str x17, [x16, #2960]
-str x17, [x16, #2968]
-str x17, [x16, #2976]
-str x17, [x16, #2984]
-str x17, [x16, #2992]
-str x17, [x16, #3000]
-str x17, [x16, #3008]
-str x17, [x16, #3016]
-str x17, [x16, #3024]
-str x17, [x16, #3032]
-str x17, [x16, #3040]
-str x17, [x16, #3048]
-str x17, [x16, #3056]
-str x17, [x16, #3064]
-str x17, [x16, #3072]
-str x17, [x16, #3080]
-str x17, [x16, #3088]
-str x17, [x16, #3096]
-str x17, [x16, #3104]
-str x17, [x16, #3112]
-str x17, [x16, #3120]
-str x17, [x16, #3128]
-str x17, [x16, #3136]
-str x17, [x16, #3144]
-str x17, [x16, #3152]
-str x17, [x16, #3160]
-str x17, [x16, #3168]
-str x17, [x16, #3176]
-str x17, [x16, #3184]
-str x17, [x16, #3192]
-str x17, [x16, #3200]
-str x17, [x16, #3208]
-str x17, [x16, #3216]
-str x17, [x16, #3224]
-str x17, [x16, #3232]
-str x17, [x16, #3240]
-str x17, [x16, #3248]
-str x17, [x16, #3256]
+add x16, sp, #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #512
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #1024
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #1536
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #2048
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #2560
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
+stp x17, x17, [x16, #192]
+stp x17, x17, [x16, #208]
+stp x17, x17, [x16, #224]
+stp x17, x17, [x16, #240]
+stp x17, x17, [x16, #256]
+stp x17, x17, [x16, #272]
+stp x17, x17, [x16, #288]
+stp x17, x17, [x16, #304]
+stp x17, x17, [x16, #320]
+stp x17, x17, [x16, #336]
+stp x17, x17, [x16, #352]
+stp x17, x17, [x16, #368]
+stp x17, x17, [x16, #384]
+stp x17, x17, [x16, #400]
+stp x17, x17, [x16, #416]
+stp x17, x17, [x16, #432]
+stp x17, x17, [x16, #448]
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #3072
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+stp x17, x17, [x16, #96]
+stp x17, x17, [x16, #112]
+stp x17, x17, [x16, #128]
+stp x17, x17, [x16, #144]
+stp x17, x17, [x16, #160]
+stp x17, x17, [x16, #176]
 add sp, sp, #3264
 ret
 .p2align 6",

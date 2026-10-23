@@ -28,10 +28,10 @@ theorem used_tail {E : Environment} (v : E.Valid) {m m' : Mem} (F : Frame [E.use
   exact v.usedWorkspace _ contains (Offset.contains_base E.base (by omega) (by omega))
 
 theorem sieved_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
     WP isa (sieved E.bits montName mont roundName round) s fun t =>
@@ -80,10 +80,10 @@ theorem sieved_ok {mont round : Prog isa} {montName roundName : String}
 def bodyClob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi]
 
 theorem body_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (I : EntryInput E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
     WP isa (body E.bits montName mont roundName round) s fun t =>

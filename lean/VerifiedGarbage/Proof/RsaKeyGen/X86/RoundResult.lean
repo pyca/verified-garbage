@@ -50,7 +50,7 @@ theorem roundPost {g : Geometry} {s t : State} {capacity c b : Nat}
     (a0 : arg s 0 = BitVec.ofNat 32 g.W.toNat) (a1 : arg s 1 = BitVec.ofNat 32 capacity)
     (M : Modulus g c s.mem)
     (witness : val32 s.mem g.W (g.array 5) g.words = b % c * 2 ^ (64 * g.w) % c)
-    (post : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).post s t) :
+    (post : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).post s t) :
     (t.gpr .eax).toNat = (if Spec.MillerRabin.round c b then 1 else 0) ∧
     Spec.MillerRabin.Keeps Spec.MillerRabin.compact g.W capacity g.w s.mem t.mem := by
   have ptr : (BitVec.ofNat 32 g.W.toNat).setWidth 64 = g.W := by

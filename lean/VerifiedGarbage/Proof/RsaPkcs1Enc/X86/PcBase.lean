@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/PcBase.lean`): `EP`, what two runs
 share (the frame's base `B`, the pointers, the lengths, `e`'s bytes and
-`pre`'s words), and its layout (`EP.lay`), with the 44 bytes below the frame
+`pre`'s words), and its layout (`EP.lay`), with the 100 bytes below the frame
 that `vg_rsa_public_precomputed_checked` and its return address use.
 `In P σ`: the state `σ` the body starts from; `S P σ s`: a state of the
 body. The shared contract, with the stack of the frames and of the call,
@@ -73,7 +73,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := P.ro
   rw := P.rw
-  C := 44
+  C := 100
 
 /-- `EM`. -/
 abbrev EM : Region := ⟨P.lay.fr oEM, P.K⟩
@@ -112,7 +112,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 16 + frameBytes + 44
+abbrev stackBytes : Nat := 16 + frameBytes + 100
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Enc.encryptPrecomputedContract abi stackBytes
@@ -137,7 +137,7 @@ def ep (s : State) : EP where
   pw := Spec.Rsa.wordsAt s.mem ((arg s 12).setWidth 64) (arg s 13).toNat
 
 theorem ep_lay (s : State) :
-    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 44 := rfl
+    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 100 := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
@@ -149,27 +149,27 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   have a1 : arg s 1 = arg s 3 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oN oE oM oP oS oR oA rO kO fO
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
-    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 1132, 1132⟩ := by
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 1188, 1188⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [Taint.sub_setWidth (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
   have sl32 : (arg s 11).toNat < 2 ^ 32 := (arg s 11).isLt
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, mlK := mlK, plK := plK, slK := slK, sl32 := sl32, rlK := rlK
       eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
-        (by show (arg s 5).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 5).toNat ≤ 2 ^ 64; omega_arith)
       pw := Proof.RsaPkcs1Sig.wordsAt_frame' hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kR.sub_left below16).symm)
-        (by show (arg s 13).toNat * 8 ≤ 2 ^ 64; have := (arg s 13).isLt; omega) }
+        (by show (arg s 13).toNat * 8 ≤ 2 ^ 64; have := (arg s 13).isLt; omega_arith) }
   rw [ep_lay]
-  refine ok_entered (S := 1132) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 1188) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -190,16 +190,16 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth]
     all_goals first
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 6).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 8).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 12).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 10).isLt; omega)]; omega)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 6).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 8).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 12).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 10).isLt; omega_arith)]; omega_arith)
   · intro j hj
     have : j < 14 := hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
         j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1]
 

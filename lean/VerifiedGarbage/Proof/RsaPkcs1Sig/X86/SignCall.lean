@@ -20,7 +20,7 @@ theorem call_keeps {s t : State} (rd : t.rd = s.rd) (wr : t.wr = s.wr)
 theorem private_call_ok {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : Context g bs s)
     {name : String} {code : Prog isa} {contract : Contract isa}
-    (verified : Verified target code contract) (stack : stackUse code ≤ 3388) (noSp : NoSp code)
+    (verified : Verified target code contract) (stack : stackUse code ≤ 3444) (noSp : NoSp code)
     {rd wr : List Region} (pre : contract.pre (s.callEntry.withRegions rd wr))
     (read : Covers (rd ++ wr) (s.rd ++ s.wr)) (write : Covers wr s.wr)
     (sub : ∀ r ∈ wr, ∃ R ∈ bodyWrites g, r.Sub R) :

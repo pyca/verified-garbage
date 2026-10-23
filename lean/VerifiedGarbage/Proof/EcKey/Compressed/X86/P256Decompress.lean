@@ -30,7 +30,7 @@ theorem ct : ConstantTime isa (decompressContract Spec.P256.curve Impl.EcKey.Com
     (decompressContract Spec.P256.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by
   apply VG.Taint.constantTime (A := taint) (codecT (2 * Spec.P256.curve.len + 1))
   · exact fun _ _ hs ht hp => codec_agree hs ht hp
-  · taint_decide
+  · run_tac VG.taintDecideAt (Lean.mkNatLit 256) "taint_decide" none
 
 theorem sat : ∃ s, (Spec.EcKey.P256.inst.decompressPublicKeyContract abi 28).pre s := by
   have a0 : arg (satState 33 65) 0 = 0x1000 := by decide

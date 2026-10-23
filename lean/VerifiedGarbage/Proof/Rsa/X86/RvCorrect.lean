@@ -43,9 +43,9 @@ theorem operation_ok {s : State} (a : ABI s) :
   rw [restored.mem, restored.other .eax (by decide)]
   exact written
 
-theorem correct (s : State) (h : (Spec.Rsa.recoverPrimesContract abi 40).pre s) :
+theorem correct (s : State) (h : (Spec.Rsa.recoverPrimesContract abi 96).pre s) :
     ∃ trace t, Exec isa VG.Impl.Rsa.X86.RecoverRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.recoverPrimesContract abi 40).post s t := by
+      (Spec.Rsa.recoverPrimesContract abi 96).post s t := by
   have a := abi_of h
   obtain ⟨trace, t, run, written, preserved⟩ := operation_ok a
   refine ⟨trace, t, run, preserved, ?_⟩

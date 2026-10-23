@@ -129,9 +129,9 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   have dat₂ := hm₂.data
   generalize hP : Stitch.pre n = P at y₂' ctr₂ dat₂
   have hPn : P ≤ n := hP ▸ Nat.mul_div_le n 128
-  have hP16 : P % 16 = 0 := by rw [← hP]; simp only [Stitch.pre]; omega
+  have hP16 : P % 16 = 0 := by rw [← hP]; simp only [Stitch.pre]; omega_arith
   generalize hD' : D + BitVec.ofNat 64 P = D'
-  have hsubD : Region.Sub ⟨D', n - P⟩ ⟨D, n⟩ := hD' ▸ Offset.sub_base D (by omega)
+  have hsubD : Region.Sub ⟨D', n - P⟩ ⟨D, n⟩ := hD' ▸ Offset.sub_base D (by omega_arith)
   have hsubP' : Region.Sub ⟨D, Stitch.pre n⟩ ⟨D, n⟩ := Region.sub_prefix (Nat.mul_div_le n 128)
   have g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14] → s₂'.gpr r = s₂.gpr r :=
     fun r hr => by rw [hm₂.gpr r hr, g₂c]
@@ -172,7 +172,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
         rcases hr with rfl | rfl | rfl | rfl <;> rw [r₃.others _ (by decide), g₂' _ (by decide)],
       Nat.zero_le _, by rw [x23₃]; simp,
       by rw [x24₃, Nat.sub_zero], by rw [x25₃], hdat₃, hH₃, fun ha => by simpa [bytesAt] using ha,
-      .inr (by rw [List.length_append, hC₀l]; omega), Frame.refl _ _⟩
+      .inr (by rw [List.length_append, hC₀l]; omega_arith), Frame.refl _ _⟩
   refine WP.mono (WP.with_rdwr (absSeg2_ok L (.inr rfl) hM)) fun s₆ ⟨h₆, rd₆, wr₆⟩ => ?_
   have FW : Frame [workR W, ⟨D, n⟩] t.mem s₆.mem := by
     have F3 : Frame [workR W, ⟨D, n⟩] s₂c.mem s₃.mem := by
@@ -201,12 +201,12 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   refine WP.seq (WP.mono (WP.with_rdwr (absCall2WithX_ok L (.inr rfl)
     (fun r hr => (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))) (exW (stW (by decide))) h₆
     (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' h₆.env.sp FW
-      (fun x hx => hsubD x (Offset.sub_base D' (by omega) x hx)))))
+      (fun x hx => hsubD x (Offset.sub_base D' (by omega_arith) x hx)))))
     fun s₇ ⟨⟨⟨h₇, hlt₇⟩, I₇⟩, rd₇, wr₇⟩ => ?_)
   rw [Nat.zero_add, Nat.sub_zero] at h₇ hlt₇
   generalize hj : 16 * ((n - P) / 16) = j at h₇ hlt₇
-  have hjn : j ≤ n - P := by omega
-  have hx₁C : (x₁ ++ C₀).length % 16 = 0 := by rw [List.length_append, hC₀l]; omega
+  have hjn : j ≤ n - P := by omega_arith
+  have hx₁C : (x₁ ++ C₀).length % 16 = 0 := by rw [List.length_append, hC₀l]; omega_arith
   have he₇ := h₇.env
   have hab₃ : Absorbed s₃.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32)
       H (x₁ ++ C₀) := by
@@ -215,7 +215,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     · rw [hx₁C, Proof.Gcm.whole_of_mod hx₁C, List.drop_length]; rfl
   have hY₇ : blockAt s₇.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
       ghash H (blocks ((x₁ ++ C₀) ++ bytesAt s₃.mem D' j)) :=
-    (h₇.abs hab₃).whole_eq (by rw [List.length_append, length_bytesAt]; omega)
+    (h₇.abs hab₃).whole_eq (by rw [List.length_append, length_bytesAt]; omega_arith)
   have key₃ : KeyAt H s₃.mem W := key₂c.frame (by rw [r₃.mem]; exact hm₂.frame) dKS
   have key₇ : KeyAt H s₇.mem W := by
     refine key₃.frame h₇.frame fun r hr => ?_
@@ -259,9 +259,9 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h₇.kept .x26 (by decide), h₂.x26]
   have hfull₁₀ : DataOk (W + BitVec.ofNat 64 16) W s₁₀ D n :=
     o.dat.ok.of_eq (by rw [rd₁₀, r₃.rd, hm₂.rd, rd₂c, h₂.rd]) (by rw [wr₁₀, r₃.wr, hm₂.wr, wr₂c, h₂.wr])
-  refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK he₁₀ hk₁₀ hy₁₀ x12₁₀ x13₁₀ (by omega) hdj.rd
+  refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK he₁₀ hk₁₀ hy₁₀ x12₁₀ x13₁₀ (by omega_arith) hdj.rd
     (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ hnlt
-    (pad_big hfull₁₀.rd hnlt (by rw [← hD', Offset.add_add]; congr 2; omega) (by omega))))
+    (pad_big hfull₁₀.rd hnlt (by rw [← hD', Offset.add_add]; congr 2; omega_arith) (by omega_arith))))
     fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
   have m₁₀ : s₁₀.mem = s₇.mem := by rw [r₁₀.mem, o₉.mem, m₈]
   -- What the path has written so far.
@@ -348,7 +348,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   have fT₁₂ : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s₁₁.mem s₁₂.mem := by rw [m₁₂]; exact Proof.Cmac.frame_store2 _ _ _
   have hT₁₂ : blockAt s₁₂.mem (s₁₂.gpr .x19 + BitVec.ofNat 64 tO) = ofBytes (lensBlock al n) := by
     rw [he₁₂.x19, show tO = 96 from rfl, blockAt, m₁₂, Proof.Cmac.bytesAt_store2, le8_lens, le8_lens,
-      toNat_ofNat_of_lt (show al < 2 ^ 64 by omega), toNat_ofNat_of_lt hnlt]
+      toNat_ofNat_of_lt (show al < 2 ^ 64 by omega_arith), toNat_ofNat_of_lt hnlt]
     rfl
   have hk₁₂ : HKey H s₁₂ := hk₁₁.of_v (by rw [v₁₂]) (by rw [v₁₂]) (by rw [v₁₂])
   have y₁₂ : s₁₂.v Y = ext8 (padStep H (blockAt s₇.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16))
@@ -420,23 +420,23 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   have cbR : ∀ {R : Region}, (⟨W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO, 16⟩ : Region).Disjoint R →
       ∀ r ∈ [(⟨W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO, 16⟩ : Region)], R.Disjoint r := dcbR
   have hC₀t : C₀ = bytesAt t.mem D P := by
-    rw [← hC₀, bytesAt_frame fcb (cbR (cbD.sub_right (Region.sub_prefix hPn))) (by omega),
-      bytesAt_frame Fa (fun r hr => (dDf r hr).sub_left (Region.sub_prefix hPn)) (by omega)]
+    rw [← hC₀, bytesAt_frame fcb (cbR (cbD.sub_right (Region.sub_prefix hPn))) (by omega_arith),
+      bytesAt_frame Fa (fun r hr => (dDf r hr).sub_left (Region.sub_prefix hPn)) (by omega_arith)]
   have dD'S : ∀ r ∈ Stitch.sFrame (W + BitVec.ofNat 64 16) W D n, (⟨D', n - P⟩ : Region).Disjoint r := by
     intro r hr
     simp only [Stitch.sFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact (o.dat.ok.st.sub_left hsubD).sub_right (Lay.stSub (by decide))
     · exact (o.dat.ok.st.sub_left hsubD).sub_right (Lay.stSub (by decide))
-    · rw [hP, ← hD']; exact (Offset.base_disjoint D (Nat.le_refl _) (by omega)).symm
+    · rw [hP, ← hD']; exact (Offset.base_disjoint D (Nat.le_refl _) (by omega_arith)).symm
     · exact (ddW.sub_left hsubD).sub_right (Lay.wSub (by decide))
   have hrest₃ : bytesAt s₃.mem D' (n - P) = bytesAt t.mem D' (n - P) := by
-    rw [r₃.mem, bytesAt_frame hm₂.frame dD'S (by omega), bytesAt_frame fcb (cbR (cbD.sub_right hsubD)) (by omega),
-      bytesAt_frame Fa (fun r hr => (dDf r hr).sub_left hsubD) (by omega)]
+    rw [r₃.mem, bytesAt_frame hm₂.frame dD'S (by omega_arith), bytesAt_frame fcb (cbR (cbD.sub_right hsubD)) (by omega_arith),
+      bytesAt_frame Fa (fun r hr => (dDf r hr).sub_left hsubD) (by omega_arith)]
   have ht₁₀ : bytesAt s₁₀.mem (D' + BitVec.ofNat 64 j) (n - P - j) =
       bytesAt s₃.mem (D' + BitVec.ofNat 64 j) (n - P - j) := by
     rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame (.inr rfl) (hdat₃.drop hjn))
-      fun r hr => (hexD r hr).sub_left (fun x hx => hsubD x (Offset.sub_base D' (by omega) x hx))) (by omega)]
+      fun r hr => (hexD r hr).sub_left (fun x hx => hsubD x (Offset.sub_base D' (by omega_arith) x hx))) (by omega_arith)]
   have hsplit : bytesAt t.mem D n =
       (C₀ ++ bytesAt s₃.mem D' j) ++ bytesAt s₃.mem (D' + BitVec.ofNat 64 j) (n - P - j) := by
     rw [List.append_assoc, ← bytesAt_add, Nat.add_sub_cancel' hjn, hrest₃, hC₀t, ← hD', ← bytesAt_add,
@@ -483,13 +483,13 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
       blockAt_frame fT₁₂ d₄₈, blockAt_frame f₁₁ d₄₈, m₁₀,
       blockAt_frame h₇.frame (disj_absEx (fun r hr => (ctr_absFrame L r hr).sub_left (Region.sub_prefix (by decide)))
         (exW (stW (by decide)))),
-      r₃.mem, ctr₂.1, show (P + 15) / 16 = P / 16 by omega]
+      r₃.mem, ctr₂.1, show (P + 15) / 16 = P / 16 by omega_arith]
   have Fz : Frame (fastFrame W ++ ex) s₃.mem s₂₀.mem := by
     rw [r₂₀.mem]; exact Fb.trans (mx' (((Fc.trans Fd).trans Fg).trans Fe))
   have hcbs : blockAt s₂₀.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) = inc32 J0 := by
     have cW : ∀ {d k : Nat}, (d + k ≤ 320 ∨ 336 ≤ d) → d + k ≤ 2560 →
         (⟨W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-      fun h hk => L.w_w (by simp only [Impl.AesGcm.AArch64.Stitch.cbO]; omega) (by decide) hk
+      fun h hk => L.w_w (by simp only [Impl.AesGcm.AArch64.Stitch.cbO]; omega_arith) (by decide) hk
     have cS : ∀ {a k : Nat}, a + k ≤ 80 →
         (⟨W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO, 16⟩ : Region).Disjoint
           ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a, k⟩ :=
@@ -527,21 +527,21 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
       [ofBytes (lensBlock (bytesAt t.mem A al).length (bytesAt t.mem D n).length)] ^^^
       ciphOf t.mem Ctx R (Spec.Gcm.j0 H (bytesAt t.mem Np 12))) := by
     rw [h₁₇.out, b₁₄, hJ₁₄, hc₁₄, hY₇, List.append_assoc x₁, ht₁₀, ← hx₁, hsplit,
-      ghash_padded _ _ _ _ (by rw [List.length_append, hC₀l, length_bytesAt]; omega)
-        (by rw [length_bytesAt]; omega)]
-    simp only [List.length_append, hC₀l, length_bytesAt, show P + j + (n - P - j) = n by omega]
+      ghash_padded _ _ _ _ (by rw [List.length_append, hC₀l, length_bytesAt]; omega_arith)
+        (by rw [length_bytesAt]; omega_arith)]
+    simp only [List.length_append, hC₀l, length_bytesAt, show P + j + (n - P - j) = n by omega_arith]
     rfl
   have hT' : bytesAt s₁₇.mem (W + BitVec.ofNat 64 112) 16 = Spec.Gcm.fullTag (ciphOf t.mem Ctx R) H
       (bytesAt t.mem Np 12) (bytesAt t.mem A al) (bytesAt t.mem D n) := by
     rw [hT, Proof.Gcm.fullTag_eq]
   have hW₁₈ : bytesAt s₁₇.mem W tl = bytesAt t.mem W tl := by
-    refine bytesAt_frame F₁₇ (fun r hr => ?_) (by omega)
+    refine bytesAt_frame F₁₇ (fun r hr => ?_) (by omega_arith)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | (rfl | rfl) | hr
-    · exact (ddW.sub_left hsubP').symm.sub_left (Region.sub_prefix (by omega))
-    · exact (Offset.disjoint_base W (show tl ≤ 16 by omega) (by decide)).symm
-    · exact (Offset.disjoint_base W (show tl ≤ 256 by omega) (by decide)).symm
-    · exact exW (Region.sub_prefix (by omega)) r hr
+    · exact (ddW.sub_left hsubP').symm.sub_left (Region.sub_prefix (by omega_arith))
+    · exact (Offset.disjoint_base W (show tl ≤ 16 by omega_arith) (by decide)).symm
+    · exact (Offset.disjoint_base W (show tl ≤ 256 by omega_arith) (by decide)).symm
+    · exact exW (Region.sub_prefix (by omega_arith)) r hr
   have hb : (bytesAt s₁₇.mem (W + BitVec.ofNat 64 112) tl = bytesAt s₁₇.mem W tl) ↔
       (Spec.Gcm.fullTag (ciphOf t.mem Ctx R) H (bytesAt t.mem Np 12)
         (bytesAt t.mem A al) (bytesAt t.mem D n)).take tl = bytesAt t.mem W tl := by
@@ -557,9 +557,9 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   have hDz : ∀ {E : Addr} {k : Nat}, Region.Sub ⟨E, k⟩ ⟨D, n⟩ → ∀ r ∈ fastFrame W ++ ex, (⟨E, k⟩ : Region).Disjoint r :=
     fun hE r hr => (disj_ex dDf hexD r hr).sub_left hE
   have hpre : bytesAt s₂₀.mem D P = xorKs (ciphOf t.mem Ctx R) (inc32 J0) 0 (bytesAt t.mem D P) := by
-    rw [bytesAt_frame Fz (hDz (Region.sub_prefix hPn)) (by omega), r₃.mem, dat₂, hc₂c, hC₀t]
+    rw [bytesAt_frame Fz (hDz (Region.sub_prefix hPn)) (by omega_arith), r₃.mem, dat₂, hc₂c, hC₀t]
   have hrest : bytesAt s₂₀.mem (D + BitVec.ofNat 64 P) (n - P) = bytesAt t.mem (D + BitVec.ofNat 64 P) (n - P) := by
-    rw [hD', bytesAt_frame Fz (hDz hsubD) (by omega), hrest₃]
+    rw [hD', bytesAt_frame Fz (hDz hsubD) (by omega_arith), hrest₃]
   subst hH
   refine ⟨⟨he₂₀, by rw [← hP]; exact F₂₀, x22₂₀, by rw [x27₂₀, hBeq],
     o.dat.of_eq (by rw [r₂₀.rd, rd₁₉, rd₁₇, rd₁₆, o₁₄.rd, o₁₃.rd, rd₁₂, rd₁₁, rd₁₀, r₃.rd, hm₂.rd, rd₂c, h₂.rd])

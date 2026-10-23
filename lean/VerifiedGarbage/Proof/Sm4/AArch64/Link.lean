@@ -82,9 +82,17 @@ theorem modeAbi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa 
     (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) (hv : c.allInstrs keepsV = true) : abiPreserved s s' :=
   ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩
 
+theorem serial_prepare_keeps_x30 : KeepsReg .x30 Serial.core.prepare :=
+  Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)
+
+theorem serial_crypt_keeps_x30 : KeepsReg .x30 Serial.core.crypt :=
+  Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)
+
 /-- `KeepsReg .x30` of a mode's code: its structure, down to the core's code
 and blocks that do not write `x30`. -/
 tactic_template "sm4_keeps_x30" : tactic => `(tactic| repeat (first
+  | with_reducible exact serial_prepare_keeps_x30
+  | with_reducible exact serial_crypt_keeps_x30
   | with_reducible exact crypt_keeps_x30 _
   | with_reducible exact prepare_keeps_x30 _
   | apply KeepsReg.seq
@@ -93,7 +101,8 @@ tactic_template "sm4_keeps_x30" : tactic => `(tactic| repeat (first
   | exact Modes.AArch64.keepsReg_of_regSafe (by decide)))
 
 theorem ctr_keeps_x30 : KeepsReg .x30 ctr := by sm4_keeps_x30
-theorem cbcEncryptChained_keeps_x30 : KeepsReg .x30 cbcEncryptChained := by sm4_keeps_x30
+theorem cbcEncryptChained_keeps_x30 : KeepsReg .x30 cbcEncryptChained :=
+  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
 theorem cbcDecryptChained_keeps_x30 : KeepsReg .x30 cbcDecryptChained := by sm4_keeps_x30
 theorem ofb_keeps_x30 : KeepsReg .x30 ofb := by sm4_keeps_x30
 theorem cfbEncrypt_keeps_x30 : KeepsReg .x30 cfbEncrypt := by sm4_keeps_x30
