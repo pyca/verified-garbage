@@ -7,7 +7,8 @@
 //! blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`,
 //! which it replaces with the last output block, in constant time: its
 //! timing depends on none of the key, the chaining value and the data. It is
-//! bitsliced SM4, one feedback block at a time. ARMv7 prepares the round keys
+//! a serial SM4 core on AArch64 and bitsliced SM4 on other targets, one
+//! feedback block at a time. ARMv7 prepares the round keys
 //! once per call and retains them across feedback blocks. This module holds
 //! the key schedule and
 //! handles a partial last block (§6.4,
