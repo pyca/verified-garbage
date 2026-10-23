@@ -19,6 +19,8 @@ theorem code_sp : (VG.Impl.RsaKeyGen.X86.KeyRuntime.code).all (fun i => !isa.wri
     funext i
     cases i <;> rfl
   rw [equal]
-  exact VG.Proof.RsaKeyGen.X86.KeyNoSp.checked (NoSp.of_all (by rfl))
+  simp only [VG.Impl.RsaKeyGen.X86.KeyRuntime.code, Code.allInstrs]
+  rw [VG.Proof.RsaKeyGen.X86.KeyNoSp.checked body_noSp]
+  rfl
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

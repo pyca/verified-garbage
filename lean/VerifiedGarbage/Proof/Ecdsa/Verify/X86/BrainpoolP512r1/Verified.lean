@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Contract
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
