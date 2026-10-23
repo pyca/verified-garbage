@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
@@ -43,6 +45,10 @@ def variant : Backend where
   features := []
   signVerified := signing_verified Mont.calledProductEight
   verifyVerified := verifying_verified Mont.calledProductEight
+  validateVerified := validating_verified Mont.calledProductEight
+  prevalidatedVerified := prevalidated_verified Mont.calledProductEight
+  validateSp := by decide +kernel
+  prevalidatedSp := by decide +kernel
   parametersVerified := parameters_verified Mont.calledProductEight
   deriveVerified := derive_verified Mont.calledProductEight
   parametersSp := by decide +kernel

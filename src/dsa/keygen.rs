@@ -10,6 +10,8 @@
 ))]
 
 use alloc::{vec, vec::Vec};
+#[cfg(target_arch = "aarch64")]
+use core::sync::atomic::AtomicU8;
 
 use super::{Backend, Error, PrivateKey, PublicKey, Secret};
 use crate::arch::dsa::vg_dsa_generate_key;
@@ -80,6 +82,8 @@ impl PrivateKey {
                 p_len,
                 q_len,
                 backend,
+                #[cfg(target_arch = "aarch64")]
+                validated: AtomicU8::new(0),
             },
             packed: output,
         })
@@ -172,6 +176,8 @@ impl PrivateKey {
             p_len,
             q_len,
             backend,
+            #[cfg(target_arch = "aarch64")]
+            validated: AtomicU8::new(0),
         };
         // The packed private key p || q || g || y || x is the output itself.
         Ok(Self {

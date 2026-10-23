@@ -157,6 +157,38 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        // Import plus the first verification exposes the cost of lazy validation.
+        let mut group = c.benchmark_group(format!("dsa_verify_cold_q{}", q_len * 8));
+        group.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let fresh = PublicKey::from_components(
+                    black_box(&p),
+                    black_box(&q),
+                    black_box(&g),
+                    black_box(&y),
+                )
+                .unwrap();
+                fresh.verify(black_box(&digest), black_box(&signature))
+            })
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let key = PKey::from_dsa(
+                    Dsa::from_public_components(
+                        BigNum::from_slice(black_box(&p)).unwrap(),
+                        BigNum::from_slice(black_box(&q)).unwrap(),
+                        BigNum::from_slice(black_box(&g)).unwrap(),
+                        BigNum::from_slice(black_box(&y)).unwrap(),
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+                let mut ctx = PkeyCtx::new(&key).unwrap();
+                ctx.verify_init().unwrap();
+                ctx.verify(black_box(&digest), black_box(&der)).unwrap()
+            })
+        });
+        group.finish();
         let mut group = c.benchmark_group(format!("dsa_public_key_q{}", q_len * 8));
         group.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
