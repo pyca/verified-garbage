@@ -11,12 +11,10 @@ namespace VG.Artifacts.CamelliaCfb.AArch64
 
 /-- How the functions compute Camellia, and the mode. -/
 def note : String :=
-  "Baseline AArch64: one block at a time (each block's input depends on the block before), encrypted bitsliced in \
-  general-purpose registers (the S-boxes as Boolean circuits), with no table lookups, in a batch of eight of which \
-  the other seven are unused; the subkeys are prepared once per call, by a call of `vg_camellia_prepare_keys`, and each \
-  batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic CFB of \
-  `Impl/Modes/AArch64/`, over Camellia's ECB core, with the IV's address kept in a vector register across the \
-  core's code."
+  "Baseline AArch64: a single-block scalar Feistel core with the S-box resident in NEON registers. \
+  Table loads use fixed public addresses; secret indices select bytes only within registers. \
+  The raw expanded keys and constant table are prepared once per call. Generic CFB retains \
+  the IV pointer in x19, which the core preserves."
 
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
