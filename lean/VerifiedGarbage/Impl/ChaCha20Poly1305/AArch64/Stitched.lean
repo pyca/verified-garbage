@@ -254,17 +254,22 @@ def load : List Instr := [mov .x8 .x20, mov .x20 .x22, mov .x7 .x22, .lsr .x .x6
 /-- A block of the rest, if one is left. -/
 def maybe : Prog isa := .ite (.zero .x .x6) (.block []) (.block (Poly.block ++ [.subImm .x .x6 .x6 1]))
 
-/-- A double round, and up to two blocks. -/
-def round (sve : Bool) : Prog isa :=
-  .seq (.block (Tail.doubleRound sve)) (.seq maybe (.seq maybe (.block [.subImm .x .x4 .x4 1])))
+/-- Up to `k` blocks. -/
+def maybes : Nat → Prog isa
+  | 0 => .block []
+  | k + 1 => .seq maybe (maybes k)
 
-def rounds (sve : Bool) : Prog isa := .loop (round sve) (.nonzero .x .x4)
+/-- A double round, and up to `k` blocks. -/
+def round (sve : Bool) (k : Nat) : Prog isa :=
+  .seq (.block (Tail.doubleRound sve)) (.seq (maybes k) (.block [.subImm .x .x4 .x4 1]))
 
-/-- The keystream of four blocks into `x3[0, 256)`, with the rest's whole
-blocks absorbed. -/
-def kernel (sve : Bool) : Prog isa :=
+def rounds (sve : Bool) (k : Nat) : Prog isa := .loop (round sve k) (.nonzero .x .x4)
+
+/-- The keystream of four blocks into `x3[0, 256)`, with up to `10 k` of the
+whole blocks from `x20` absorbed. -/
+def kernel (sve : Bool) (k : Nat) : Prog isa :=
   .seq (.block VG.Impl.ChaCha20.AArch64.Neon4.setup)
-    (.seq (.block [.movz .x .x4 10 0]) (.seq (rounds sve) (.block Tail.finish)))
+    (.seq (.block [.movz .x .x4 10 0]) (.seq (rounds sve k) (.block Tail.finish)))
 
 /-- The accumulator stored, our caller's `x20` restored, `x22` and `x23` set
 to the rest's last partial block, and the rest kept in `x24`, `x25`. -/
@@ -276,13 +281,93 @@ def out : List Instr :=
 rounds, and its last partial block before it is XORed. -/
 def rest (sve : Bool) : Prog isa :=
   .seq (.block load)
-  (.seq (kernel sve)
+  (.seq (kernel sve 2)
   (.seq (.block out)
   (.seq (macPad .x22 .x23)
   (.seq (.block [mov .x22 .x24, mov .x23 .x25])
     Short.xorKs))))
 
 end TailO
+
+/-! ## Decrypting 513 to 704 bytes: the one-time key from the stream
+
+Before the chunks, `openStitchedMain` computes the one-time key with the
+scalar block function (`prologue`), about as long as the stitched pass of
+four blocks. From 513 to 704 bytes, `OpenKey.openMain` instead takes it from
+a call of the stream, which computes the keystream of counters 0 to 7 with
+the eight-block kernel, and absorbs all the data in a stitched pass of four
+blocks:
+
+* after the prologue's first block (the ChaCha20 state for counter 0 at
+  `ctx[64, 128)`), the state is copied to `ctx[640, 704)` (`copy`), since the
+  stream leaves its state unspecified, `ctx[768, 1280)` zeroed (`Pad.zero`),
+  and the stream encrypts it from the copy (`args`): the one-time key is its
+  first 32 bytes, at `ctx[768, 800)`, and the keystream of the data's first
+  448 bytes at `ctx[832, 1280)`;
+* Poly1305 is initialized with the key, and absorbs the additional data;
+* the counter at `ctx + 112` is set to 8, and, as `TailO.rest` does for the
+  rest after the chunks, the four blocks of counters 8 to 11 computed into
+  `ctx[128, 384)` while the data's whole blocks, at most 44, are absorbed, up
+  to five after each double round, then its last partial block;
+* the data's first 448 bytes are XORed with their keystream at
+  `ctx + 832`, the rest with theirs at `ctx + 128`; the lengths are
+  absorbed, and `ctx[768, 1280)` is zeroed again.
+
+The branches are on the length only, and the addresses are the context, the
+data and the additional data plus constants.
+-/
+
+namespace OpenKey
+
+/-- Word `k` of the state at `ctx[64, 128)` copied to `ctx[640, 704)`, through `w9`. -/
+def copyW (k : Nat) : List Instr := [.ldr .w .x9 .x21 (64 + 4 * k), .str .w .x9 .x21 (640 + 4 * k)]
+
+/-- The state copied. -/
+def copy : List Instr := (List.range 16).flatMap copyW
+
+/-- The stream's arguments: the copy, `ctx[768, 1280)`, and the working space. -/
+def args : List Instr :=
+  [.addImm .x .x0 .x21 640, .addImm .x .x1 .x21 768, .movz .x .x2 512 0, .addImm .x .x3 .x21 128]
+
+/-- Poly1305's arguments: its state, and the key at `ctx + 768`. -/
+def keyArgs : List Instr := [.addImm .x .x0 .x21 448, .addImm .x .x1 .x21 768]
+
+/-- The counter set to 8, and the kernel's arguments: the state, the buffer
+`ctx[128, 384)` and the data's length in `x2`. -/
+def pre : List Instr :=
+  [.movz .w .x9 8 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, .addImm .x .x3 .x21 128,
+    mov .x2 .x23]
+
+/-- The data's first 448 bytes XORed with their keystream at `ctx + 832`. -/
+def xorFirst : Prog isa :=
+  .seq (.block [mov .x14 .x23, .movz .x .x23 448 0])
+    (.seq (Short.xorKsFrom 832) (.block [mov .x23 .x14]))
+
+/-- The rest of the data, after 448 bytes. -/
+def skip : List Instr := [.addImm .x .x22 .x22 448, .subImm .x .x23 .x23 448]
+
+/-- `open` up to the tag computed, for 513 to 704 bytes. -/
+def openMain (c : XorCallee) : Prog isa :=
+  .seq (.block (save ++ moves ++ initState ++ ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128] : List Instr)))
+  (.seq (.block (copy ++ Pad.zero ++ args))
+  (.seq (.call c.name c.code)
+  (.seq (.block keyArgs)
+  (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)
+  (.seq (macPad .x24 .x25)
+  (.seq (.block lengths)
+  (.seq (.block (pre ++ TailO.load))
+  (.seq (TailO.kernel c.sve 5)
+  (.seq (.block TailO.out)
+  (.seq (macPad .x22 .x23)
+  (.seq (.block [mov .x22 .x24, mov .x23 .x25])
+  (.seq xorFirst
+  (.seq (.block skip)
+  (.seq Short.xorKs
+  (.seq absorbLengths
+  (.seq (.block Pad.zero)
+    (finalizeTo 48)))))))))))))))))
+
+end OpenKey
 
 /-- `seal` but for the tag, from the counter set to 1 (`counterOne`) after the
 one-time key's block (`prologue`). -/
@@ -452,6 +537,16 @@ def route (sve enc : Bool) : List Instr :=
   [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
     .lsr .x .x9 .x9 (wideSh sve enc)] ++ List.replicate 11 (.movz .x .x10 0 0)
 
+/-- `route` when decrypting, and `x10 = 0` iff `513 ≤ x5 ≤ 704`, the lengths
+`OpenKey.openMain` takes: `b₂ - b₁ + 1`, with `b₁ = (x5 - 705) >> 63`
+(`x5 < 705`) and `b₂ = (x5 - 513) >> 63` (`x5 < 513`), for `x5` below `2^63`.
+With the two branches, the block is 64 bytes long, as `route`'s with its
+branch and moves, so that `openStitchedMain` keeps its alignment. -/
+def routeOpen (sve : Bool) : List Instr :=
+  (route sve false).take 4 ++
+    [.subImm .x .x10 .x5 705, .lsr .x .x10 .x10 63, .subImm .x .x11 .x5 513, .lsr .x .x11 .x11 63,
+      .sub .x .x10 .x11 .x10, .addImm .x .x10 .x10 1] ++ List.replicate 4 (.movz .x .x12 0 0)
+
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
 checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route when
 encrypting and `openRoute` when decrypting (to `ShortRest.lean`'s code, which
@@ -468,8 +563,9 @@ def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (openRoute c)
-      (if stitched then .seq (.block (route c.sve false))
-        (.ite (.zero .x .x9) (openWideMain c) (openStitchedMain c))
+      (if stitched then .seq (.block (routeOpen c.sve))
+        (.ite (.zero .x .x9) (openWideMain c)
+          (Code.iteCold (.zero .x .x10) (OpenKey.openMain c) (openStitchedMain c)))
       else openMain c))
 
 /-- The code for a stream backend. -/
