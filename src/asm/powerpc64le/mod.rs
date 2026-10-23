@@ -287,4 +287,7 @@ pub(crate) mod triple_des_ofb;
 pub(crate) mod x25519;
 
 #[rustfmt::skip]
+pub(crate) mod x448;
+
+#[rustfmt::skip]
 pub(crate) mod zeroize;
