@@ -120,6 +120,12 @@ theorem Env.wInR {d n : Nat} (hd : d + n ≤ 2560) : InRegions s.wr (W + BitVec.
 theorem Env.stInR {d n : Nat} (hd : d + n ≤ 80) : InRegions s.wr (St + BitVec.ofNat 64 d) n :=
   h.stIn hd _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
+theorem Env.stRdR {d n : Nat} (hd : d + n ≤ 80) : InRegions (s.rd ++ s.wr) (St + BitVec.ofNat 64 d) n :=
+  VG.Covers.right (h.stIn hd) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+
+theorem Env.wRdR {d n : Nat} (hd : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+  VG.Covers.right (h.wIn hd) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+
 theorem Env.wRd {d n : Nat} (hd : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   VG.Covers.right (h.wIn hd)
 
