@@ -55,11 +55,15 @@ type and each pointer "to a single doubleword". Its first eight doublewords
 stand for `r3`–`r10` ("The first 8 doublewords are located in general
 registers r3–r10. Any additional doublewords are located in the stack
 Parameter Save Area"), so the `i`-th (from 0) argument after the eighth is the
-doubleword at `sp + 32 + 8 * (8 + i)` on entry (`stackArg`). Only 64-bit
-arguments (pointers, `usize`, `u64`) are modelled there. `abi` only grants
-reading them, and assumes they do not wrap around the end of the address
-space. The return address is in `LR`, not in memory; the integer result is in
-`r3` (§2.2.6).
+doubleword at `sp + 32 + 8 * (8 + i)` on entry (`stackArg`). A narrower
+integer (`u32`) is in the doubleword's low bits: "Map simple integer types
+(char, short, int, long, enum) to a single doubleword. Sign or zero extend
+values shorter than a doubleword to a doubleword based on whether the source
+data type is signed or unsigned" (§2.2.3.3), so its value is the low bits of
+the doubleword, the model relying on the upper bits no more than for a
+register. `abi` only grants reading them, and assumes they do not wrap around
+the end of the address space. The return address is in `LR`, not in memory;
+the integer result is in `r3` (§2.2.6).
 -/
 
 /-- The address of the `i`-th (from 0) argument in memory, the one after the
@@ -74,7 +78,7 @@ def abi : Abi isa where
   ptrBits := 64
   args ws := if ws.length ≤ argRegs.length then
     some fun s => (argRegs.take ws.length).map s.gpr
-  else if (ws.drop argRegs.length).all (· = 64) then
+  else if (ws.drop argRegs.length).all (· ≤ 64) then
     some fun s => argRegs.map s.gpr ++ (List.range (ws.length - argRegs.length)).map (stackArg s)
   else none
   argArea ws s := let n := ws.length - argRegs.length

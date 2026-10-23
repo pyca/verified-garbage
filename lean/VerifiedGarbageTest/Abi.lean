@@ -151,7 +151,12 @@ def ppcStack : PPC64LE.State :=
 #guard (PPC64LE.abi.args (List.replicate 9 64)).map (· ppcStack) == some [1, 2, 3, 4, 5, 6, 7, 8, 9]
 #guard (PPC64LE.abi.args (List.replicate 10 64)).map (· ppcStack) ==
   some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-#guard (PPC64LE.abi.args (List.replicate 8 64 ++ [32])).isNone
+-- A 32-bit argument in memory is the low half of its doubleword, which the
+-- caller sign- or zero-extends.
+#guard (PPC64LE.abi.args (List.replicate 8 64 ++ [32, 64])).map (· ppcStack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+#guard PPC64LE.abi.argArea (List.replicate 8 64 ++ [32, 64]) ppcStack == [(⟨0x1060, 16⟩, false)]
+#guard (PPC64LE.abi.args (List.replicate 8 64 ++ [128])).isNone
 #guard PPC64LE.abi.argArea (List.replicate 10 64) ppcStack == [(⟨0x1060, 16⟩, false)]
 #guard PPC64LE.abi.argArea (List.replicate 8 64) ppcStack == []
 #guard PPC64LE.abi.ret ppcState == 1
