@@ -301,10 +301,10 @@ def openWithS (k : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) :
       (openRest c)))
 
 /-- `vg_aes_gcm_seal_with_powers`, hashing the rest by `gh`. -/
-def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwCall 8 gh) true
+def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwSel c 8 gh) true
 
 /-- `vg_aes_gcm_open_with_powers`, hashing the rest by `gh`. -/
-def openWithPw (gh : Fn) : Prog isa := openWithS c 24 (pwTbl 16) (pwCall 16 gh) true
+def openWithPw (gh : Fn) : Prog isa := openWithS c 24 (pwTbl 16) (pwSel c 16 gh) true
 
 /-- `vg_aes_gcm_seal_store_powers`, `gh` storing the powers. -/
 def sealStorePw (gh : Fn) : Prog isa := sealWithS c 16 powTbl (pwCall 8 gh)

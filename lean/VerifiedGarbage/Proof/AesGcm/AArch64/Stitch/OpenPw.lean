@@ -64,8 +64,8 @@ theorem openPwS_correctN (s : State) (hs : openPwN s) :
   WP.withPreservedV (openWithSh_wp (w := 3) v _ hMK gh (.inr rfl) hs.1
       (fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
         have q := gwCallO_of hs sY sS hrd hwr hsp hf
-        pw_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_forO hs))
-    (stitchOpenWithS_keepsV v (.inr rfl) (pwTbl_keepsV (.inr rfl)) (pwCall16_keepsV g))
+        pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_forO hs))
+    (stitchOpenWithS_keepsV v (.inr rfl) (pwTbl_keepsV (.inr rfl)) (pwSel_keepsV v g (.inr rfl)))
 
 theorem openPwS_ctN :
     ConstantTime isa openPwN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
@@ -73,7 +73,7 @@ theorem openPwS_ctN :
   openWithSh_ct (w := 3) v _ hMK gh (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of p sY sS hrd hwr hsp hf
-      pw_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
+      pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
     (fun {σ₁ σ₂ s₁ s₂ _ _ _ _} p₁ p₂ hq c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ => by
       obtain ⟨q0, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
       have e3 : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by decide)
@@ -83,7 +83,7 @@ theorem openPwS_ctN :
         (sp₂.trans qsp) (by rw [← e3, ← q6, ← q7]; exact f₂)
       rw [← e2] at hP₂ k₂
       rw [← q0] at k₂
-      exact pw_rel g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
+      exact pwSel_rel v g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
     (fun p => pwTbl_forO p)
     (fun {σ₁ σ₂} p₁ p₂ hq v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => by
       obtain ⟨-, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq

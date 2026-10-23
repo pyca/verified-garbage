@@ -189,15 +189,21 @@ def «open» : Prog isa := openWith c c.gh
 `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers` take one more
 stack argument, `pw`, after the others, so `work` is one slot further. On the
 path for TLS records, `gh` (`vg_ghash_with_powers`) takes `pw` in `x5`, read
-from its stack slot just before the call; the other paths never read it. -/
+from its stack slot just before the call, unless one block or none is left
+to hash, which `vg_ghash` does faster; the other paths never read it. -/
 
 /-- The call of `gh` with `pw`, the stack argument at `sp + k`, in `x5`. -/
 def pwCall (k : Nat) (gh : Fn) : Prog isa := .seq (.block [.ldrSp .x5 k]) (.call gh.name gh.code)
 
+/-- The call of `vg_ghash` (`c.gh`) for at most one block (`x3`), which
+needs no powers, else `pwCall k gh`. -/
+def pwSel (k : Nat) (gh : Fn) : Prog isa :=
+  .seq (.block [.lsr .x .x9 .x3 1]) (.ite (.zero .x .x9) (.call c.gh.name c.gh.code) (pwCall k gh))
+
 /-- `vg_aes_gcm_seal_with_powers`: `tag`, `pw`, then `work` on the stack. -/
-def sealWithPw (gh : Fn) : Prog isa := sealWithE c 16 (pwCall 8 gh)
+def sealWithPw (gh : Fn) : Prog isa := sealWithE c 16 (pwSel c 8 gh)
 
 /-- `vg_aes_gcm_open_with_powers`: `tag`, `tag_len`, `pw`, then `work` on the stack. -/
-def openWithPw (gh : Fn) : Prog isa := openWithE c 24 (pwCall 16 gh)
+def openWithPw (gh : Fn) : Prog isa := openWithE c 24 (pwSel c 16 gh)
 
 end VG.Impl.AesGcm.AArch64.Fast
