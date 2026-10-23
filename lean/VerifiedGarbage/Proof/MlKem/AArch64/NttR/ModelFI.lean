@@ -130,18 +130,18 @@ theorem mm_tight (a : BitVec 16) {z M : Nat} (ha : -(M : Int) < a.toInt) (ha' : 
       -(mmB M z : Int) < (a * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329).toInt ∧
       (a * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329).toInt < mmB M z ∧
       ((a * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329).toInt - a.toInt * z) % 3329 = 0 := by
-  obtain ⟨t, ht, -, -, h3⟩ := Ntt16.mm_ok a (z := z) (by omega) hz
+  obtain ⟨t, ht, -, -, h3⟩ := Ntt16.mm_ok a (z := z) (by omega_arith) hz
   refine ⟨t, ht, ?_⟩
   have htw := tw_lt hz
   have hc : (BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw z)).toInt = Impl.MlKem.AArch64.Ntt16.tw z := by
-    rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega
+    rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega_arith
   have hzt : (BitVec.ofNat 16 z).toInt = z := by
-    rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega
+    rw [BitVec.toInt_ofNat']; simp only [Int.bmod_def]; omega_arith
   have hq : (BitVec.ofNat 16 3329).toInt = 3329 := by decide
   have hne : ¬ (a = 0x8000#16 ∧ BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw z) = 0x8000#16) := by
     rintro ⟨-, h⟩
     have := congrArg BitVec.toNat h
-    simp only [BitVec.toNat_ofNat] at this; omega
+    simp only [BitVec.toNat_ofNat] at this; omega_arith
   have et : t = _ := Option.some.inj (ht.symm.trans (by simp only [sqdmulhHLane, hne, ite_false]; rfl))
   subst et
   refine ⟨?_, ?_, h3⟩ <;>
@@ -150,16 +150,16 @@ theorem mm_tight (a : BitVec 16) {z M : Nat} (ha : -(M : Int) < a.toInt) (ha' : 
       unfold mmB
       have : dz z ≤ 3329 := by
         have := tw_def z
-        unfold dz; omega
-      have : (M - 1) * dz z ≤ 32767 * 3329 := Nat.mul_le_mul (by omega) this
-      omega
+        unfold dz; omega_arith
+      have : (M - 1) * dz z ≤ 32767 * 3329 := Nat.mul_le_mul (by omega_arith) this
+      omega_arith
     simp only [BitVec.toInt_sub, BitVec.toInt_mul, BitVec.toInt_ofInt, hc, hzt, hq, tw_def]
     rw [Int.shiftRight_eq_div_pow]
     simp only [ite_true, show (2 : Int) ^ 15 = 32768 from rfl]
     generalize (2 * a.toInt * (((z : Int) * 65536 + 3329) / 6658) + 32768) / 65536 = T at *
     generalize a.toInt * (z : Int) = X at *
     simp only [Int.bmod_def]
-    omega
+    omega_arith
 
 /-- A lane times `z`, modulo `q`, with the bound of the lane. -/
 theorem mmW_tight {a : BitVec 16} {X : Zq} {M z : Nat} (h : LRep a X M) (hM : M ≤ 32768) (hz : z < 3329) :

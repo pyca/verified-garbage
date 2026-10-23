@@ -75,33 +75,33 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
       (VG.Impl.Rsa.Arm.Keys.seqs [g.gPart, .block (cmpF fG 1), .ite .eq g.checkPart (.block [])])
       (St G (aOut G HO k (VG.Proof.Dsa.Generation.generatorResult p (Spec.Dsa.decodeBE (qBytes G k)) (hsL G)
         rest)) X) := by
-  have hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
-  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
+  have hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
   have hlq1 : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := hpd.width
-  have hl384 : G.pLen ≤ 384 := by omega
+  have hl384 : G.pLen ≤ 384 := by omega_arith
   generalize hqv : Spec.Dsa.decodeBE (qBytes G k) = qv at hqlo ⊢
   have qpos : 0 < qv := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hqlo
   -- (p − 1) / q fits the exponent's words.
   have hev : (p - 1) / qv < 2 ^ (32 * g.e) := by
     have hp := hpd.upper
     refine (Nat.div_lt_iff_lt_mul qpos).mpr ?_
-    calc p - 1 < 2 ^ (8 * G.pLen) := by omega
-      _ = 2 ^ (8 * G.pLen - 8 * G.qLen + 1) * 2 ^ (8 * G.qLen - 1) := by rw [← Nat.pow_add]; congr 1; omega
+    calc p - 1 < 2 ^ (8 * G.pLen) := by omega_arith
+      _ = 2 ^ (8 * G.pLen - 8 * G.qLen + 1) * 2 ^ (8 * G.qLen - 1) := by rw [← Nat.pow_add]; congr 1; omega_arith
       _ ≤ 2 ^ (32 * g.e) * qv := Nat.mul_le_mul (Nat.pow_le_pow_right (by decide) he) hqlo
-  have pl := padTail_length HO.md (n := G.qLen) (by omega) hL
+  have pl := padTail_length HO.md (n := G.qLen) (by omega_arith) hL
   refine VP.seq (gPart_vp (c := aPCfg G HO k p rest) (pv := p) (ev := (p - 1) / qv) (qv := qv) certs ok hp hlq1 hn
     hpm hpb hpe hpr hctx he4 he0 (by simp) (by simp [pAp, KU, VG.Proof.Rsa.Arm.Keys.upd, aP])
     (by simp) (by simp [pAp, KU, VG.Proof.Rsa.Arm.Keys.upd, aP, aE, hqv])
     (by simp) (by simp [pAp, KU, VG.Proof.Rsa.Arm.Keys.upd, aP, aE, aPm1])
     (by simp) (by simp [pAp, KU, VG.Proof.Rsa.Arm.Keys.upd, aP, aE, aPm1, aOne])
     (by simp [aH, aP, aE, aPm1, aOne]) (by simp [aTmp, aP, aE, aPm1, aOne]) (by simp [aG, aP, aE, aPm1, aOne]) rfl
-    hpd.odd (by have := hpd.lower; have : 1 < 2 ^ (8 * G.pLen - 1) := Nat.one_lt_two_pow (by omega); omega)
+    hpd.odd (by have := hpd.lower; have : 1 < 2 ^ (8 * G.pLen - 1) := Nat.one_lt_two_pow (by omega_arith); omega_arith)
     hpd.upper hev (fun x hx => ?_) hhsb hmod h32 (by simp; decide) (by simp; decide) rfl) ?_
   · simp only [pRest, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · simp only [VG.Proof.Rsa.i2osp_length, sPBE, sG]; omega
-    · simp only [pl, sG]; omega
-    · simp only [hql, sQ, sG]; omega
+    · simp only [VG.Proof.Rsa.i2osp_length, sPBE, sG]; omega_arith
+    · simp only [pl, sG]; omega_arith
+    · simp only [hql, sQ, sG]; omega_arith
   have hres : gRes G p qv 0 = Spec.Dsa.generator p qv (hsL G) := by simp [gRes]
   rw [hres]
   unfold VG.Proof.Dsa.Generation.generatorResult
@@ -136,7 +136,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
         decide (Spec.Dsa.parametersValid ⟨p, qv, gv⟩) := by
       rw [hpk]
       exact VG.Proof.Dsa.Generation.check_encodedParams (by
-          unfold Spec.Dsa.generationLengthsValid at hlq; unfold Spec.Dsa.lengthsValid; omega)
+          unfold Spec.Dsa.generationLengthsValid at hlq; unfold Spec.Dsa.lengthsValid; omega_arith)
         (by rw [hpl8]; exact hpd.upper) (by rw [hql8]; exact qlt) (by rw [hpl8]; exact Nat.lt_trans hgb.2 hpd.upper)
     let Dg : Cfg := ({ aPCfg G HO k p rest with cl := (sG, Spec.Rsa.i2osp gv G.pLen) :: (aPCfg G HO k p rest).cl }).setV fG 1
     refine VP.seq (G := fun σ s => St G Dg X σ s ∧ isa.eval .eq s = some true)
@@ -151,10 +151,10 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
       (by simp [Dg]; decide)).mono (fun σ s h => h.1.1) fun σ s ⟨h, x⟩ => ⟨?_, x⟩
     · simp only [Dg, pRest, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl
-      · simp only [VG.Proof.Rsa.i2osp_length, sG, sPacked]; omega
-      · simp only [VG.Proof.Rsa.i2osp_length, sPBE, sPacked]; omega
-      · simp only [pl, sPacked]; omega
-      · simp only [hql, sQ, sPacked]; omega
+      · simp only [VG.Proof.Rsa.i2osp_length, sG, sPacked]; omega_arith
+      · simp only [VG.Proof.Rsa.i2osp_length, sPBE, sPacked]; omega_arith
+      · simp only [pl, sPacked]; omega_arith
+      · simp only [hql, sQ, sPacked]; omega_arith
     rw [hok] at h
     by_cases hv : Spec.Dsa.parametersValid ⟨p, qv, gv⟩
     · simp only [hv, decide_true, ckCfg, ↓reduceIte] at h
