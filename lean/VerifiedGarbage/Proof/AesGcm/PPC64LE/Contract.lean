@@ -19,7 +19,7 @@ namespace VG.Proof.AesGcm.PPC64LE
 
 open VG VG.PPC64LE
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk encryptWith)
+open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk encryptWith openResult)
 
 abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 12 ∨ r.toNat = 14
 
@@ -206,5 +206,40 @@ def sealPPC64LE : Contract isa where
         (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) =
       (bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat, bytesAt s'.mem (stackArg s 0) 16)
   pub := onePub 2
+
+/-- What `vg_aes_gcm_open` needs: `(ctx = r3, rounds = r4, nonce = r5, nonce_len = r6, aad = r7,
+aad_len = r8, data = r9, len = r10, tag = [sp + 96], tag_len = [sp + 104], scratch = [sp + 112])`. -/
+def openPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .r3, 256⟩
+  let nonce : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
+  let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
+  let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
+  let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  let scr : Region := ⟨stackArg s 2, 2560⟩
+  s.rd = [ctx, nonce, aad, tag, args s 3] ∧ s.wr = [data, scr] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+    aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 3) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 3) ∧
+    (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧
+    s.sp.toNat + 120 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+
+/-- What `vg_aes_gcm_open` computes, in a state. -/
+abbrev openRes (s : State) : Option (List Byte) :=
+  openResult (ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat) (ctxH s.mem (s.gpr .r3)) (stackArg s 1).toNat
+    (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat)
+    (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) (bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+
+/-- `vg_aes_gcm_open`: the result in the low 32 bits of `r3`. It may leak
+whether it succeeds. -/
+def openPPC64LE : Contract isa where
+  pre := openPre
+  post s s' :=
+    match openRes s with
+    | some pt => (s'.gpr .r3).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat = pt
+    | none => (s'.gpr .r3).setWidth 32 = 0 ∧
+        bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat = bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat
+  pub s₁ s₂ := onePub 3 s₁ s₂ ∧ (rounds (s₁.gpr .r4) → (openRes s₁).isSome = (openRes s₂).isSome)
 
 end VG.Proof.AesGcm.PPC64LE
