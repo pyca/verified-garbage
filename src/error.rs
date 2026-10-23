@@ -7,7 +7,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 // Each module's re-export has a doc of the key lengths it accepts, which
@@ -16,15 +17,33 @@
 ///
 /// Every module whose constructor fails only on the length of the key
 /// returns this one type.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidKeyLength;
 
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 impl core::fmt::Display for InvalidKeyLength {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("invalid key length")
     }
 }
 
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 impl core::error::Error for InvalidKeyLength {}
 
 /// Implements `core::fmt::Display` for the error enum `$ty`, writing `$msg`
@@ -58,9 +77,15 @@ mod tests {
                 $(assert!(!$e.to_string().is_empty(), "{:?}", $e);)+
             };
         }
+        check!(crate::hmac::InvalidMac, crate::rc4::Error::InvalidKeyLength);
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "x86"
+        ))]
         check!(
             super::InvalidKeyLength,
-            crate::hmac::InvalidMac,
             crate::aes_cbc::Error::InvalidKeyLength,
             crate::aes_cbc::Error::IncompleteBlock,
             crate::aes_ccm::Error::InvalidKeyLength,
@@ -133,7 +158,6 @@ mod tests {
             crate::rc2_cbc::Error::InvalidIvLength,
             crate::rc2_cbc::Error::IncompleteBlock,
             crate::rc2_cbc::Error::OutputTooSmall,
-            crate::rc4::Error::InvalidKeyLength,
             crate::seed_cbc::Error::InvalidKeyLength,
             crate::seed_cbc::Error::IncompleteBlock,
             crate::seed_ecb::Error::IncompleteBlock,
