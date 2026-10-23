@@ -6,10 +6,10 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Route
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.SealKey.Main
 import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipePairs
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-public import VerifiedGarbage.Impl.StackScratch.AArch64.Pairs
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
@@ -19,10 +19,10 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipePairs
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-meta import VerifiedGarbage.Impl.StackScratch.AArch64.Pairs
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
@@ -35,8 +35,8 @@ Correctness (`Correct.lean`, and `Stitched/` for the eight-block stream's
 own code), constant time, and a state satisfying the precondition: of the
 code with its working space as its last argument (`sealScratchContract`,
 `openScratchContract`), and then of the functions, which allocate it in a
-frame of 1280 bytes on the stack and wipe its first 768 after the code, two
-doublewords per store (`Verified.stackScratchWipedPairs`).
+frame of 1280 bytes on the stack and wipe its first 768 after the code
+(`Verified.stackScratchWiped`).
 
 The taint analysis runs through the callees' code: it knows `x21`–`x25`
 (the context, the data, the additional data and their lengths) for public
@@ -335,11 +335,11 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract AArch64.ab
 
 theorem seal_framed (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratchWipedPairs 1280 .x7 48 (sealCode v.callee v.stitched))
+      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (sealCode v.callee v.stitched))
       (Spec.ChaCha20Poly1305.sealContract AArch64.abi 1280) :=
-  AArch64.Verified.stackScratchWipedPairs (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
     (n := 160) (post := Spec.ChaCha20Poly1305.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1280) (pairs := 48) (seal_verified v) (by decide) (by decide) (by decide)
+    (bytes := 1280) (words := 96) (seal_verified v) (by decide) (by decide) (by decide)
     (sealPost_out _) sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
@@ -352,11 +352,11 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract AArch64.ab
 
 theorem open_framed (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratchWipedPairs 1280 .x7 48 (openCode v.callee v.stitched))
+      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (openCode v.callee v.stitched))
       (Spec.ChaCha20Poly1305.openContract AArch64.abi 1280) :=
-  AArch64.Verified.stackScratchWipedPairs (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
     (n := 160) (post := Spec.ChaCha20Poly1305.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1280) (pairs := 48) (open_verified v) (by decide) (by decide) (by decide)
+    (bytes := 1280) (words := 96) (open_verified v) (by decide) (by decide) (by decide)
     (openPost_out _) openFrameSat_pre
 
 end VG.Proof.ChaCha20Poly1305.AArch64

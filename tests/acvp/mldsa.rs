@@ -15,7 +15,8 @@
 ))]
 
 /// Defines the tests of the parameter set named `$name` (`"ML-DSA-44"`), of
-/// the module `$module` and its key types.
+/// the module `$module` (`verified_garbage::mldsa44`, `verified_garbage::mldsa65`,
+/// `verified_garbage::mldsa87`) and its key types.
 macro_rules! mldsa_tests {
     ($name:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
         use serde::Deserialize;

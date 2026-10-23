@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.CT
-public import VerifiedGarbage.Impl.StackScratch.AArch64.Pairs
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
@@ -154,9 +154,9 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
 open VG.Impl.ChaCha20Poly1305.AArch64 in
 /-- The frames of `vg_chacha20_poly1305_seal`, in its frame of 1280 bytes, use at most those. -/
 theorem seal_depth (v : Proof.ChaCha20.AArch64.XorImpl) :
-    16 * (Impl.StackScratch.AArch64.withStackScratchWipedPairs 1280 .x7 48 (sealCode v.callee v.stitched)).aarch64Depth
+    16 * (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (sealCode v.callee v.stitched)).aarch64Depth
       ≤ 1280 := by
-  simp only [Impl.StackScratch.AArch64.withStackScratchWipedPairs, Impl.StackScratch.AArch64.withStackScratch,
+  simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
     Code.aarch64Depth, Instr.frameUnits, depth_of_noFrames (sealCode_noFrames v)]
   decide
 

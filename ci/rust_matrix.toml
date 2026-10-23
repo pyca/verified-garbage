@@ -115,6 +115,9 @@ rust = "stable"
 # SHA-512's AVX2 code and RSA's baseline or ADX code (whatever
 # the runner's AVX512_IFMA). And SM4-GCM with each of its GHASH
 # implementations: the baseline's, PCLMULQDQ's and VPCLMULQDQ's.
+# RSA's arithmetic runs in full on the unrestricted line, and its
+# baseline and ADX code on p4p's and skx's, so the restricted lines run
+# only the small RSA groups that reach each hash's implementation.
 [[cpu]]
 chip = "native"
 arch = "x86_64"
@@ -128,29 +131,32 @@ aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
 aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
 aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm sm4_gcm cpu
 aes,avx,avx2,ssse3,vaes | aes_xts cpu
-sha,ssse3 | dsa_parameters rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
-avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep cpu
-avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
-adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
+sha,ssse3 | dsa_parameters rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256_sha cpu
+avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep_pairs cpu
+avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
+adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 """
 
 # x86 feature dispatch, natively in a 32-bit userspace, with the
 # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
 # instances, RSAES-PKCS1-v1_5 decryption, RSASSA-PSS and RSAES-OAEP
 # with SHA-1's and SHA-256's SHA extensions, and DSA parameter
-# generation with them) and every test with the baseline
-# implementations; x86's RSA arithmetic has one implementation, which
-# `none` tests in full, so the runner's features run only the small RSA
-# groups that reach each hash's implementation; and
+# generation with them) and the same groups with the baseline
+# implementations; and
 # AES-GCM's and AES-GCM-SIV's instances for AES's or GHASH's
 # extension alone, and SM4-GCM's with PCLMULQDQ's GHASH. The container's options are `rust`'s x86 entry's.
+# The `rust` job's x86 entry runs every test, in this container: what
+# has one implementation on x86 (RSA's arithmetic, RSA key generation,
+# FFDH, Blowfish, CAST5, the curves, …) is the same code there, so no line
+# here repeats it, and the lines run only the small RSA groups that reach
+# each hash's implementation.
 [[cpu]]
 chip = "native"
 arch = "x86"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:i686", options = "--platform linux/386 --security-opt seccomp=unconfined" }
 runs = """
 - | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs dsa_parameters sm4_gcm cpu
-none | all
+none | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs dsa_parameters sm4_gcm cpu
 aes | aes_gcm aes_gcm_siv cpu
 pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 """
@@ -167,13 +173,16 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 # AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
 # code, and for ChaCha20's and ChaCha20-Poly1305's `_avx512`
 # instances, which the CPU's AVX512VL replaces with `_avx512vl`.
+# The unrestricted line runs RSA's ADX arithmetic in full; the line
+# without BMI1 (whose SHA-256 is then the baseline's) runs only the small
+# RSA groups that reach each hash's implementation.
 [[cpu]]
 chip = "skx"
 arch = "x86_64"
 runs = """
 - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 bmi2,adx | ffdh dsa ed448 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx2,bmi2,adx | rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,bmi2,adx | rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx512f | argon2 rfc9106 cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
 """
@@ -181,12 +190,14 @@ avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
 # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
 # not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption and RSASSA-PSS
 # with the hash functions' AVX2 code and RSA's baseline code, and
-# P-256, P-384 and P-521 with their baseline multiplications).
+# P-256, P-384 and P-521 with their baseline multiplications). RSA's
+# baseline arithmetic runs in full on p4p, so the small RSA groups that
+# reach each hash's implementation run here.
 [[cpu]]
 chip = "hsw"
 arch = "x86_64"
 runs = """
-- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 """
 
 # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
@@ -208,11 +219,13 @@ runs = """
 # with SHA-512 using it, with and without ADX; and RSAES-OAEP with
 # it and MGF1 over SHA-1 with SHA-1's baseline code and RSA's ADX
 # code, or with SHA-1's SHA extensions and RSA's baseline code).
+# RSA's ADX and baseline arithmetic run in full on skx and p4p, so only
+# the small RSA groups that reach each hash's implementation run here.
 [[cpu]]
 chip = "arl"
 runs = """
-- | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx2,sha512 | ed25519 rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | sha384 sha512 ed25519 rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,sha512 | ed25519 rsa_oaep_pairs p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,sha512,bmi2,adx | rsa_oaep_pairs cpu
 avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 """
@@ -231,17 +244,20 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # vg_rsa_private_checked_ifma and each hash function's
 # implementations (and RSAES-OAEP decryption with SHA-1's SHA
 # extensions and SHA-512's baseline code).
-# Full suites run when the host has AVX512_IFMA. On SDE hosts without it,
-# ci/cpu_tests.py substitutes focused RSA groups at run time. Feature lines
-# stay identical so shards on different host CPUs agree on their split.
+# The unrestricted line runs RSA's full suite when the host has
+# AVX512_IFMA. On SDE hosts without it, ci/cpu_tests.py substitutes a
+# focused RSA group at run time. Feature lines stay identical so shards
+# on different host CPUs agree on their split. The restricted lines differ
+# from it only in the hash functions' implementations, so they run the
+# small RSA groups that reach each one.
 # Two shards retain separate runners for the vectors and hash checks.
 [[cpu]]
 chip = "icx"
 shards = 2
 runs = """
 - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac chacha20 poly1305 cpu
-avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
+avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu
 aes,avx,avx2,ssse3,vaes | aes_gcm cpu
 avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
@@ -254,10 +270,12 @@ aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 # Ed25519's verification with both (vg_ed25519_verify_shani_ifma)
 # and RSASSA-PSS signing and RSAES-OAEP decryption with both (with
 # MGF1 over SHA-1 with its SHA extensions or its baseline code).
+# RSA's IFMA arithmetic runs in full on icx, so only the small RSA groups
+# that reach each hash's implementation run here.
 [[cpu]]
 chip = "dmr"
 runs = """
-- | ed25519 rsa_pss rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | ed25519 rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 """
 
@@ -277,7 +295,9 @@ avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 # RSAES-OAEP: `sha2` takes SHA-1's and SHA-256's `_sha2`
 # instances with SHA-512's scalar ones, `none` the scalar ones,
 # `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
-# `sha2,sha3` both extensions together.
+# `sha2,sha3` both extensions together. AArch64's RSA arithmetic has one
+# implementation, which the `rust` job tests in full, so these lines run
+# only the small RSA groups that reach each hash's implementation.
 [[cpu]]
 chip = "native"
 arch = "aarch64"
@@ -286,10 +306,10 @@ runs = """
 - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs sm4_gcm cpu
 neon | chacha20
 aes | aes_gcm aes_gcm_siv
-sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
-sha2 | dsa_parameters rsa_oaep
-sha2,sha3 | rsa_oaep
-none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep sm4_gcm
+sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep_pairs
+sha2 | dsa_parameters rsa_oaep_pairs
+sha2,sha3 | rsa_oaep_pairs
+none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1_hashes rsa_oaep_pairs sm4_gcm
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job

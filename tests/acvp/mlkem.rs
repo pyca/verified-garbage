@@ -91,7 +91,8 @@ pub fn encap_decap(name: &str, function: &str) -> Vec<EncapDecap> {
 }
 
 /// Defines the tests of the parameter set named `$name` (`"ML-KEM-768"`), of
-/// the module `verified_garbage::$module` and its key types.
+/// the module `verified_garbage::$module` (`verified_garbage::mlkem768`,
+/// `verified_garbage::mlkem1024`) and its key types.
 macro_rules! mlkem_tests {
     ($name:literal, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident) => {
         use verified_garbage::hashes::sha3::{Sha3_256, Shake256};
