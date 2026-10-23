@@ -36,7 +36,7 @@ theorem eval_zero {s : State} {r : Reg} {n : Nat} (h : s.gpr r = BitVec.ofNat 64
   by_cases h0 : n = 0
   · subst h0; rfl
   · have : BitVec.ofNat 64 n ≠ 0 := fun e => h0 ((ofNat_eq_zero hn).mp e)
-    simp [h0, this]
+    simp only [h0, decide_false, beq_eq_false_iff_ne.mpr this]
 
 theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n :=
@@ -168,7 +168,7 @@ theorem eval_sub16 {s : State} {a : Nat} (h : s.gpr .r6 = BitVec.ofNat 64 a - Bi
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, toNat64 (by omega), toNat64 (by omega)] at this
       simp at this; omega
-    simp [h16, this]
+    simp only [h16, decide_false, beq_eq_false_iff_ne.mpr this]
 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)) {yo : Nat}
@@ -222,8 +222,9 @@ theorem headPre_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
   refine WP.mono h₄ fun s₄ ⟨h6, g₄, hk₄⟩ => ?_
   have g : ∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s₄.gpr r = s₂.gpr r :=
     fun r a b c d e => by rw [g₄ r e, g₃ r a b c d e]
-  have hk₄' : Keeps s₂ s₄ := ⟨by rw [hk₄.mem, hm₃], by rw [hk₄.rd, lo.keeps.1],
-    by rw [hk₄.wr, lo.keeps.2.1], by rw [hk₄.sp, lo.keeps.2.2.1], by rw [hk₄.lr, lo.keeps.2.2.2]⟩
+  have k4rd : s₄.rd = s₂.rd := by rw [hk₄.rd, lo.keeps.1]
+  have k4wr : s₄.wr = s₂.wr := by rw [hk₄.wr, lo.keeps.2.1]
+  have k4sp : s₄.sp = s₂.sp := by rw [hk₄.sp, lo.keeps.2.2.1]
   -- The bytes copied, and the buffer.
   have hdk := length_bytesAt s.mem D k
   have fw : Frame [⟨V .r30 + BitVec.ofNat 64 (32 + x.length % 16), k⟩] s.mem s₄.mem := by
@@ -234,8 +235,8 @@ theorem headPre_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
         hg₂ r (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
           (by revert r; decide),
         hg r (by revert r; decide) (by revert r; decide)])
-      (by rw [hk₄'.sp, hk₂'.sp]) (by rw [hk₄'.rd, hk₂'.rd]) (by rw [hk₄'.wr, hk₂'.wr]),
-    hk'.symm, hk1, hk16, hkn, ?_, ?_, h6, h.data.of_eq (by rw [hk₄'.rd, hk₂'.rd]) (by rw [hk₄'.wr, hk₂'.wr]),
+      (by rw [k4sp, hk₂'.sp]) (by rw [k4rd, hk₂'.rd]) (by rw [k4wr, hk₂'.wr]),
+    hk'.symm, hk1, hk16, hkn, ?_, ?_, h6, h.data.of_eq (by rw [k4rd, hk₂'.rd]) (by rw [k4wr, hk₂'.wr]),
     ?_, ?_, ?_, fw⟩
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), h24]
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), h25]
@@ -376,6 +377,7 @@ theorem whole_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {
       exact e₃
     · have := g.frame; rw [hk₂.mem, hk₁.mem] at this; exact h.frame.trans (gh_absFrame this)
 
+omit L in
 /-- The last bytes, buffered. -/
 theorem tail_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
     (h : AbsMid V sp yo H x D n m₀ j s) (hj : n - j < 16) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
@@ -464,7 +466,7 @@ theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
   · have h0 : n ≠ 0 := by simpa using hf
     refine WP.seq (WP.mono (absorbFill_ok L hyo h h0) fun s' ⟨j, _, hj⟩ => ?_)
     refine WP.seq (WP.mono (whole_ok L hyo hj (hj.data_eq hyo)) fun s'' ⟨j', _, hj', hlt⟩ => ?_)
-    exact tail_ok L hyo hj' hlt (hj'.data_eq hyo)
+    exact tail_ok hyo hj' hlt (hj'.data_eq hyo)
 
 end
 
