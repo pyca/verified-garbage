@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 
 /-!
 # scrypt on PPC64LE: correctness

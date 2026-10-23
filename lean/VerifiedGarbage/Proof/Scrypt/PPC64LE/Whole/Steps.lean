@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.PPC64LE.Whole.Layout
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Impl.Scrypt.PPC64LE.Scrypt
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 
 /-!
 # scrypt on PPC64LE: the blocks between the calls

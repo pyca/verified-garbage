@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Scrypt.PPC64LE.RoMix
 meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 
 /-!
 # scrypt on PPC64LE: constant time, up to the indices `j`, and the shared contract
