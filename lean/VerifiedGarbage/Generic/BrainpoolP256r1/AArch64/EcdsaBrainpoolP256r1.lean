@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Verified
-
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Verified
@@ -66,12 +66,13 @@ namespace VG.Generic.BrainpoolP256r1.AArch64.EcdsaBrainpoolP256r1
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.signApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. \
+      Scalar multiplication uses a seven-bit fixed-base comb with 37 complete general-curve additions. \
+      Each table is scanned in constant time and the signed entry is selected with SIMD masks. \
       Inversions are calls of `vg_brainpoolp256r1_inv_mod_p` and `vg_brainpoolp256r1_inv_mod_n`, by divsteps. \
       Branches and memory addresses depend only on pointers and loop counters."]
-    code := Impl.Ecdsa.AArch64.signBrainpoolP256r1
-    verified := Proof.Ecdsa.AArch64.BrainpoolP256r1.sign_verified h.law h.inv },
+    consts := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts
+    code := Impl.Ecdsa.AArch64.BrainpoolP256r1.signComb
+    verified := Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_verified h.law h.inv },
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
       Public scalar multiplication uses a joint radix-four table built by a shared addition loop, \
