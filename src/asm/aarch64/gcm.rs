@@ -5698,58 +5698,78 @@ cbz x7, 20f
 ldr x12, [x6, #0]
 ldr x13, [x6, #8]
 add x6, x6, #16
-lsr x14, x13, #4
+lsr x14, x13, #6
 cbz x14, 23f
 25:
 ldr q0, [x12, #0]
 str q0, [x11, #0]
-add x12, x12, #16
-add x11, x11, #16
+ldr q1, [x12, #16]
+str q1, [x11, #16]
+ldr q2, [x12, #32]
+str q2, [x11, #32]
+ldr q3, [x12, #48]
+str q3, [x11, #48]
+add x12, x12, #64
+add x11, x11, #64
 sub x14, x14, #1
 cbnz x14, 25b
 b 24f
 23:
 24:
+movz x15, #63, lsl #0
+and x13, x13, x15
+lsr x14, x13, #4
+cbz x14, 26f
+28:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+add x12, x12, #16
+add x11, x11, #16
+sub x14, x14, #1
+cbnz x14, 28b
+b 27f
+26:
+27:
 movz x15, #15, lsl #0
 and x13, x13, x15
-cbz x13, 26f
+cbz x13, 29f
 lsr x14, x13, #3
-cbz x14, 28f
-210:
+cbz x14, 211f
+213:
 ldr x14, [x12, #0]
 str x14, [x11, #0]
 add x12, x12, #8
 add x11, x11, #8
 sub x13, x13, #8
 lsr x14, x13, #3
-cbnz x14, 210b
-b 29f
-28:
-29:
+cbnz x14, 213b
+b 212f
+211:
+212:
 lsr x14, x13, #2
-cbz x14, 211f
+cbz x14, 214f
 ldr w14, [x12, #0]
 str w14, [x11, #0]
 add x12, x12, #4
 add x11, x11, #4
 sub x13, x13, #4
-b 212f
-211:
-212:
-cbz x13, 213f
+b 215f
+214:
 215:
+cbz x13, 216f
+218:
 ldrb w14, [x12, #0]
 strb w14, [x11, #0]
 add x12, x12, #1
 add x11, x11, #1
 sub x13, x13, #1
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-27:
+cbnz x13, 218b
+b 217f
+216:
+217:
+b 210f
+29:
+210:
 sub x7, x7, #1
 cbnz x7, 22b
 b 21f
@@ -8268,6 +8288,134 @@ ret
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_with_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// `vg_aes_gcm_seal_gather` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal_gather`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherWithPowersContract`.
+///
+/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal_with_powers_aes`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+sub sp, sp, #32
+add x16, sp, #0
+str x30, [x16, #16]
+ldr x17, [sp, #48]
+str x17, [x16, #0]
+ldr x17, [sp, #56]
+str x17, [x16, #8]
+ldr x11, [sp, #32]
+cbz x7, 20f
+22:
+ldr x12, [x6, #0]
+ldr x13, [x6, #8]
+add x6, x6, #16
+lsr x14, x13, #6
+cbz x14, 23f
+25:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+ldr q1, [x12, #16]
+str q1, [x11, #16]
+ldr q2, [x12, #32]
+str q2, [x11, #32]
+ldr q3, [x12, #48]
+str q3, [x11, #48]
+add x12, x12, #64
+add x11, x11, #64
+sub x14, x14, #1
+cbnz x14, 25b
+b 24f
+23:
+24:
+movz x15, #63, lsl #0
+and x13, x13, x15
+lsr x14, x13, #4
+cbz x14, 26f
+28:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+add x12, x12, #16
+add x11, x11, #16
+sub x14, x14, #1
+cbnz x14, 28b
+b 27f
+26:
+27:
+movz x15, #15, lsl #0
+and x13, x13, x15
+cbz x13, 29f
+lsr x14, x13, #3
+cbz x14, 211f
+213:
+ldr x14, [x12, #0]
+str x14, [x11, #0]
+add x12, x12, #8
+add x11, x11, #8
+sub x13, x13, #8
+lsr x14, x13, #3
+cbnz x14, 213b
+b 212f
+211:
+212:
+lsr x14, x13, #2
+cbz x14, 214f
+ldr w14, [x12, #0]
+str w14, [x11, #0]
+add x12, x12, #4
+add x11, x11, #4
+sub x13, x13, #4
+b 215f
+214:
+215:
+cbz x13, 216f
+218:
+ldrb w14, [x12, #0]
+strb w14, [x11, #0]
+add x12, x12, #1
+add x11, x11, #1
+sub x13, x13, #1
+cbnz x13, 218b
+b 217f
+216:
+217:
+b 210f
+29:
+210:
+sub x7, x7, #1
+cbnz x7, 22b
+b 21f
+20:
+21:
+ldr x6, [sp, #32]
+ldr x7, [sp, #40]
+bl {vg_aes_gcm_seal_with_powers_aes}
+ldr x30, [sp, #16]
+add sp, sp, #32
+ret
+.arch_extension noaes
+.p2align 6",
+        vg_aes_gcm_seal_with_powers_aes = sym super::gcm::vg_aes_gcm_seal_with_powers_aes,
     )
 }
 
@@ -12425,58 +12573,78 @@ cbz x7, 20f
 ldr x12, [x6, #0]
 ldr x13, [x6, #8]
 add x6, x6, #16
-lsr x14, x13, #4
+lsr x14, x13, #6
 cbz x14, 23f
 25:
 ldr q0, [x12, #0]
 str q0, [x11, #0]
-add x12, x12, #16
-add x11, x11, #16
+ldr q1, [x12, #16]
+str q1, [x11, #16]
+ldr q2, [x12, #32]
+str q2, [x11, #32]
+ldr q3, [x12, #48]
+str q3, [x11, #48]
+add x12, x12, #64
+add x11, x11, #64
 sub x14, x14, #1
 cbnz x14, 25b
 b 24f
 23:
 24:
+movz x15, #63, lsl #0
+and x13, x13, x15
+lsr x14, x13, #4
+cbz x14, 26f
+28:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+add x12, x12, #16
+add x11, x11, #16
+sub x14, x14, #1
+cbnz x14, 28b
+b 27f
+26:
+27:
 movz x15, #15, lsl #0
 and x13, x13, x15
-cbz x13, 26f
+cbz x13, 29f
 lsr x14, x13, #3
-cbz x14, 28f
-210:
+cbz x14, 211f
+213:
 ldr x14, [x12, #0]
 str x14, [x11, #0]
 add x12, x12, #8
 add x11, x11, #8
 sub x13, x13, #8
 lsr x14, x13, #3
-cbnz x14, 210b
-b 29f
-28:
-29:
+cbnz x14, 213b
+b 212f
+211:
+212:
 lsr x14, x13, #2
-cbz x14, 211f
+cbz x14, 214f
 ldr w14, [x12, #0]
 str w14, [x11, #0]
 add x12, x12, #4
 add x11, x11, #4
 sub x13, x13, #4
-b 212f
-211:
-212:
-cbz x13, 213f
+b 215f
+214:
 215:
+cbz x13, 216f
+218:
 ldrb w14, [x12, #0]
 strb w14, [x11, #0]
 add x12, x12, #1
 add x11, x11, #1
 sub x13, x13, #1
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-27:
+cbnz x13, 218b
+b 217f
+216:
+217:
+b 210f
+29:
+210:
 sub x7, x7, #1
 cbnz x7, 22b
 b 21f
@@ -22339,6 +22507,136 @@ ret
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_with_powers_aes_sha3` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_WITH_POWERS_AES_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "sha3"]);
+
+/// `vg_aes_gcm_seal_gather` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal_gather`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherWithPowersContract`.
+///
+/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal_with_powers_aes_sha3`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `sha3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+.arch_extension sha3
+sub sp, sp, #32
+add x16, sp, #0
+str x30, [x16, #16]
+ldr x17, [sp, #48]
+str x17, [x16, #0]
+ldr x17, [sp, #56]
+str x17, [x16, #8]
+ldr x11, [sp, #32]
+cbz x7, 20f
+22:
+ldr x12, [x6, #0]
+ldr x13, [x6, #8]
+add x6, x6, #16
+lsr x14, x13, #6
+cbz x14, 23f
+25:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+ldr q1, [x12, #16]
+str q1, [x11, #16]
+ldr q2, [x12, #32]
+str q2, [x11, #32]
+ldr q3, [x12, #48]
+str q3, [x11, #48]
+add x12, x12, #64
+add x11, x11, #64
+sub x14, x14, #1
+cbnz x14, 25b
+b 24f
+23:
+24:
+movz x15, #63, lsl #0
+and x13, x13, x15
+lsr x14, x13, #4
+cbz x14, 26f
+28:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+add x12, x12, #16
+add x11, x11, #16
+sub x14, x14, #1
+cbnz x14, 28b
+b 27f
+26:
+27:
+movz x15, #15, lsl #0
+and x13, x13, x15
+cbz x13, 29f
+lsr x14, x13, #3
+cbz x14, 211f
+213:
+ldr x14, [x12, #0]
+str x14, [x11, #0]
+add x12, x12, #8
+add x11, x11, #8
+sub x13, x13, #8
+lsr x14, x13, #3
+cbnz x14, 213b
+b 212f
+211:
+212:
+lsr x14, x13, #2
+cbz x14, 214f
+ldr w14, [x12, #0]
+str w14, [x11, #0]
+add x12, x12, #4
+add x11, x11, #4
+sub x13, x13, #4
+b 215f
+214:
+215:
+cbz x13, 216f
+218:
+ldrb w14, [x12, #0]
+strb w14, [x11, #0]
+add x12, x12, #1
+add x11, x11, #1
+sub x13, x13, #1
+cbnz x13, 218b
+b 217f
+216:
+217:
+b 210f
+29:
+210:
+sub x7, x7, #1
+cbnz x7, 22b
+b 21f
+20:
+21:
+ldr x6, [sp, #32]
+ldr x7, [sp, #40]
+bl {vg_aes_gcm_seal_with_powers_aes_sha3}
+ldr x30, [sp, #16]
+add sp, sp, #32
+ret
+.arch_extension noaes
+.arch_extension nosha3
+.p2align 6",
+        vg_aes_gcm_seal_with_powers_aes_sha3 = sym super::gcm::vg_aes_gcm_seal_with_powers_aes_sha3,
+    )
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
@@ -25382,58 +25680,78 @@ cbz x7, 20f
 ldr x12, [x6, #0]
 ldr x13, [x6, #8]
 add x6, x6, #16
-lsr x14, x13, #4
+lsr x14, x13, #6
 cbz x14, 23f
 25:
 ldr q0, [x12, #0]
 str q0, [x11, #0]
-add x12, x12, #16
-add x11, x11, #16
+ldr q1, [x12, #16]
+str q1, [x11, #16]
+ldr q2, [x12, #32]
+str q2, [x11, #32]
+ldr q3, [x12, #48]
+str q3, [x11, #48]
+add x12, x12, #64
+add x11, x11, #64
 sub x14, x14, #1
 cbnz x14, 25b
 b 24f
 23:
 24:
+movz x15, #63, lsl #0
+and x13, x13, x15
+lsr x14, x13, #4
+cbz x14, 26f
+28:
+ldr q0, [x12, #0]
+str q0, [x11, #0]
+add x12, x12, #16
+add x11, x11, #16
+sub x14, x14, #1
+cbnz x14, 28b
+b 27f
+26:
+27:
 movz x15, #15, lsl #0
 and x13, x13, x15
-cbz x13, 26f
+cbz x13, 29f
 lsr x14, x13, #3
-cbz x14, 28f
-210:
+cbz x14, 211f
+213:
 ldr x14, [x12, #0]
 str x14, [x11, #0]
 add x12, x12, #8
 add x11, x11, #8
 sub x13, x13, #8
 lsr x14, x13, #3
-cbnz x14, 210b
-b 29f
-28:
-29:
+cbnz x14, 213b
+b 212f
+211:
+212:
 lsr x14, x13, #2
-cbz x14, 211f
+cbz x14, 214f
 ldr w14, [x12, #0]
 str w14, [x11, #0]
 add x12, x12, #4
 add x11, x11, #4
 sub x13, x13, #4
-b 212f
-211:
-212:
-cbz x13, 213f
+b 215f
+214:
 215:
+cbz x13, 216f
+218:
 ldrb w14, [x12, #0]
 strb w14, [x11, #0]
 add x12, x12, #1
 add x11, x11, #1
 sub x13, x13, #1
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-27:
+cbnz x13, 218b
+b 217f
+216:
+217:
+b 210f
+29:
+210:
 sub x7, x7, #1
 cbnz x7, 22b
 b 21f
