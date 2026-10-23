@@ -961,6 +961,7 @@ const POWERS_MIN_LEN: usize = 256;
 /// messages gain from their path for TLS records, and from loading the
 /// powers rather than computing them.
 #[cfg(target_arch = "aarch64")]
+#[allow(dead_code)]
 const PLAIN_MAX: usize = 16;
 
 /// Why an AES-GCM operation failed.
@@ -1179,9 +1180,7 @@ impl AesGcm {
         // On AArch64, a message of more than `PLAIN_MAX` bytes takes the
         // powers, through `seal_prepared`.
         #[cfg(target_arch = "aarch64")]
-        if data.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
+        if let Some(p) = self.fns.powers {
             return Ok(self.seal_prepared(p, nonce, aad, data));
         }
         let seal = self.fns.seal;
@@ -1264,9 +1263,7 @@ impl AesGcm {
         return self.open_with(data, tag, nonce, aad);
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(target_arch = "aarch64")]
-        if data.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
+        if let Some(p) = self.fns.powers {
             return self.open_prepared(p, nonce, aad, data, tag);
         }
         #[cfg(not(target_arch = "x86_64"))]
@@ -1369,9 +1366,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "aarch64")]
-        if out.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
+        if let Some(p) = self.fns.powers {
             return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
@@ -1438,7 +1433,7 @@ impl AesGcm {
 impl AesGcm {
     /// `encrypt_in_place` with the `_with_powers` instances `p` and the
     /// powers.
-    #[inline(never)]
+    #[inline]
     fn seal_prepared(&self, p: &Prepared, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
         let seal = p.seal;
@@ -1465,7 +1460,7 @@ impl AesGcm {
     }
 
     /// `open` with the `_with_powers` instances `p` and the powers.
-    #[inline(never)]
+    #[inline]
     fn open_prepared(
         &self,
         p: &Prepared,
