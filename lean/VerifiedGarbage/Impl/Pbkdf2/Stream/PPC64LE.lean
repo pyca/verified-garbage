@@ -99,8 +99,13 @@ def iterateMain : Prog isa :=
   (.seq (.ite (.zero .d .r22) (.block []) (.loop (Iter.step H) (.nonzero .d .r22)))
     (.block (Hash.restoreAt H.W)))
 
+/-- `iterate` after zero-extending `n`: `iterateMain` in a frame saving the
+link register. -/
+def iterateBody : Prog isa :=
+  .seq (.frame (.push .r0) (iterateMain H) (.pop .r0)) (.block [.mtlr .r0])
+
 /-- PBKDF2's `iterate` with its working space as an argument. -/
 def iterate : Prog isa :=
-  .seq (.block (.mflr .r0 :: zextN)) (.seq (.frame (.push .r0) (iterateMain H) (.pop .r0)) (.block [.mtlr .r0]))
+  .seq (.block (.mflr .r0 :: zextN)) (iterateBody H)
 
 end VG.Impl.Pbkdf2.Stream.PPC64LE

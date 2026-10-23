@@ -241,6 +241,7 @@ theorem correct {s₀ : State} (hp : (iterG hH.SH (bytes H) 96).pre s₀) :
   have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by have := hp.2.2.2.2.2.2.2.1; omega)
     (by have := hp.2.2.2.2.2.2.2.1; omega)
   unfold VG.Impl.Pbkdf2.Stream.PPC64LE.iterate VG.Impl.Pbkdf2.Stream.PPC64LE.zextN
+    VG.Impl.Pbkdf2.Stream.PPC64LE.iterateBody
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (wp_lsl (by decide) fun s₁ x₁ =>
     wp_lsr (by decide) fun s₂ x₂ => WP.block_nil (WP.seq ?_)))
   have q₂ : ∀ r, r ≠ .r0 → r ≠ .r5 → s₂.gpr r = s₀.gpr r := fun r h0 h5 => by
