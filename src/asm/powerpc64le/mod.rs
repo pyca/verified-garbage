@@ -44,6 +44,9 @@ pub(crate) mod brainpoolp384r1_point;
 pub(crate) mod brainpoolp512r1_mont;
 
 #[rustfmt::skip]
+pub(crate) mod camellia;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
