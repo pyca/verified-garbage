@@ -53,7 +53,7 @@ theorem words_split {x y h : Nat} (hx : x < 2 ^ 32) (e : x + 2 ^ 32 * y = h) : x
 overflows, and the next carry is again at most `(2 N + 2) 2³²`. -/
 theorem column_bounds {AB QM H c qm N : Nat} (hN : N < 2 ^ 29) (hP : AB ≤ N * (2 ^ 32 - 1) * (2 ^ 32 - 1))
     (hQ : QM ≤ N * (2 ^ 32 - 1) * (2 ^ 32 - 1)) (fl : 2 ^ 32 * H ≤ AB + QM)
-    (fw : AB + QM - 2 ^ 32 * H ≤ (2 * N + 1) * (2 ^ 32 - 1)) (hc : c ≤ (2 * N + 2) * 2 ^ 32)
+    (fw : AB + QM - 2 ^ 32 * H ≤ (2 * N + 3) * (2 ^ 32 - 1)) (hc : c ≤ (2 * N + 2) * 2 ^ 32)
     (hqm : qm ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1)) :
     H + qm / 2 ^ 32 < 2 ^ 64 ∧ 2 ^ 32 * (H + qm / 2 ^ 32) ≤ AB + QM + qm ∧
       AB + QM + qm - 2 ^ 32 * (H + qm / 2 ^ 32) + c < 2 ^ 64 ∧ (AB + QM + qm + c) / 2 ^ 32 < 2 ^ 64 ∧
@@ -65,7 +65,7 @@ theorem column_bounds {AB QM H c qm N : Nat} (hN : N < 2 ^ 29) (hP : AB ≤ N * 
 /-- A column sum without a digit (`qm = 0`). -/
 theorem column_bounds0 {AB QM H c N : Nat} (hN : N < 2 ^ 29) (hP : AB ≤ N * (2 ^ 32 - 1) * (2 ^ 32 - 1))
     (hQ : QM ≤ N * (2 ^ 32 - 1) * (2 ^ 32 - 1)) (fl : 2 ^ 32 * H ≤ AB + QM)
-    (fw : AB + QM - 2 ^ 32 * H ≤ (2 * N + 1) * (2 ^ 32 - 1)) (hc : c ≤ (2 * N + 2) * 2 ^ 32) :
+    (fw : AB + QM - 2 ^ 32 * H ≤ (2 * N + 3) * (2 ^ 32 - 1)) (hc : c ≤ (2 * N + 2) * 2 ^ 32) :
     H < 2 ^ 64 ∧ AB + QM - 2 ^ 32 * H + c < 2 ^ 64 ∧ (AB + QM + c) / 2 ^ 32 < 2 ^ 64 ∧
       (AB + QM + c) / 2 ^ 32 ≤ (2 * N + 2) * 2 ^ 32 := by
   refine ⟨by omega, by omega, by omega, by omega⟩

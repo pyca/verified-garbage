@@ -147,9 +147,24 @@ theorem pushed_ready (K : KReady s W L N S mo inv o a b V) :
   simp only [val32, Nat.mul_zero, Nat.add_zero] at e1 e2
   rw [e1, e2]; exact K.inv
 
-/-- After the MCDT frame: `R (T + R c) = A B + Q M` for the quotient digits
-`Q`, with `T + R c < 2 M`; the memory as it was but the scratch and the MCDT
-frame's 8 bytes; `esp` and the permissions as they were. -/
+/-- The value of `N` digits below `2³²`. -/
+theorem value_lt_pow {q : Nat → Nat} (hq : ∀ i, q i ≤ 2 ^ 32 - 1) :
+    ∀ N, Column.value (2 ^ 32) q N < 2 ^ (32 * N)
+  | 0 => by simp [Column.value]
+  | N + 1 => by
+    have ih := value_lt_pow hq N
+    have hN := hq N
+    simp only [Column.value, NatSum.succ] at ih ⊢
+    rw [← Nat.pow_mul, pow32_succ]
+    generalize hX : 2 ^ (32 * N) = X at ih ⊢
+    have := Nat.mul_le_mul_right X hN
+    rw [Nat.sub_mul, Nat.one_mul] at this
+    omega
+
+/-- After the MCDT frame: `R (T + R c) = A B + Q M` for some `Q` (the
+quotient digits'), with `T + R c < 2 M`, `T`'s words in reverse at `S + 24`;
+the memory as it was but the scratch and the MCDT frame's 8 bytes; `esp` and
+the permissions as they were. -/
 structure Mid (s : State) (W : Addr) (L N S mo inv o a b : Nat) (V : Nat → BitVec 32) (v : State) : Prop where
   ws : Ws v W L
   prm : Params v W L V 0
@@ -157,9 +172,9 @@ structure Mid (s : State) (W : Addr) (L N S mo inv o a b : Nat) (V : Nat → Bit
   rd : v.rd = s.rd
   wr : v.wr = s.wr
   modulus : val32 v.mem W mo N = val32 s.mem W mo N
-  bound : val32 v.mem W (S + 24 + 4 * N) N + 2 ^ (32 * N) * w32 v.mem W (S + 16) < 2 * val32 s.mem W mo N
-  eqn : 2 ^ (32 * N) * (val32 v.mem W (S + 24 + 4 * N) N + 2 ^ (32 * N) * w32 v.mem W (S + 16)) =
-    val32 s.mem W a N * val32 s.mem W b N + val32 v.mem W (S + 24) N * val32 s.mem W mo N
+  bound : rvalT v.mem W N S N + 2 ^ (32 * N) * w32 v.mem W (S + 16) < 2 * val32 s.mem W mo N
+  eqn : ∃ Q, 2 ^ (32 * N) * (rvalT v.mem W N S N + 2 ^ (32 * N) * w32 v.mem W (S + 16)) =
+    val32 s.mem W a N * val32 s.mem W b N + Q * val32 s.mem W mo N
   out : ∀ x, (∀ j < 8, x ≠ (s.gpr .esp - 12).setWidth 64 + BitVec.ofNat 64 j) →
     (ofs W x < S ∨ S + (8 * N + 28) ≤ ofs W x) → v.mem x = s.mem x
 
@@ -176,7 +191,7 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
   have esp0 : s0.gpr .esp = s.gpr .esp - 12 := mcdtPushed_esp _ _ (by decide)
   obtain ⟨hw0, P0, hinv0, ws0⟩ := pushed_ready K
   refine WP.mcdtFrame (by decide) hlo columns_noSp'
-    (WP.mono (columns_ok Ly K.pv hinv0 (by rw [mcdtPushed_mcdt]; omega) hw0 P0) fun u ⟨c, I⟩ => ?_)
+    (WP.mono (columns_ok Ly K.pv hinv0 (by rw [mcdtPushed_mcdt]; omega) hw0 P0) fun u ⟨c, q, I⟩ => ?_)
   have Ku := I.keep
   have espu : u.gpr .esp = s0.gpr .esp := Ku.1 _ (by decide)
   -- Memory past the working space, as the push left it.
@@ -203,7 +218,7 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
   have eq := I.eq
   rw [show 2 * N - N = N by omega] at eq
   rw [Column.partSum_done _ _ _ (Nat.le_refl _), Column.partSum_congr_left _ _ N (2 * N)
-    (b := digits u.mem W (S + 24)) (fun i hi => by simp only [Column.prefixDigits]; rw [ite_eq_left (by omega)]),
+    (b := q) (fun i hi => by simp only [Column.prefixDigits]; rw [ite_eq_left (by omega)]),
     Column.partSum_done _ _ _ (Nat.le_refl _)] at eq
   simp only [value_digits] at eq
   have ea := ws0 (d := a) (k := N) Ly.a_le
@@ -211,10 +226,11 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
   have em := ws0 (d := mo) (k := N) Ly.mo_le
   rw [ea, eb, em, VG.Proof.Mont.X86.Square.pow32, VG.Proof.Mont.X86.Square.pow32, show (2 : Nat) ^ (32 * (2 * N)) = 2 ^ (32 * N) * 2 ^ (32 * N) by
     rw [← Nat.pow_add]; congr 1; omega] at eq
-  have eq' : 2 ^ (32 * N) * (val32 u.mem W (S + 24 + 4 * N) N + 2 ^ (32 * N) * c) =
-      val32 s.mem W a N * val32 s.mem W b N + val32 u.mem W (S + 24) N * val32 s.mem W mo N := by
+  have eq' : 2 ^ (32 * N) * (rvalT u.mem W N S N + 2 ^ (32 * N) * c) =
+      val32 s.mem W a N * val32 s.mem W b N + Column.value (2 ^ 32) q N * val32 s.mem W mo N := by
     rw [← eq]; grind
-  obtain ⟨hT, hc2⟩ := final_bound (val32_lt _ _ _ _) K.bLt (Nat.le_of_lt (val32_lt _ _ _ _)) (val32_lt _ _ _ _) eq'
+  obtain ⟨hT, hc2⟩ := final_bound (val32_lt _ _ _ _) K.bLt (Nat.le_of_lt (val32_lt _ _ _ _))
+    (value_lt_pow I.qlt N) eq'
   have hc0 : w32 u.mem W (S + 16) = c := by
     have := I.carry
     have := Nat.zero_le (w32 u.mem W (S + 20))
@@ -232,7 +248,7 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
     (fun i hi j hj => by
       rw [mcdtPopped_mem, far _ (K.prm.far i hi j hj)]; exact pushed_param s hlo hhi hi hj)
     (fun a h => by rw [hpr, hpw]; exact h), hpe, hpr, hpw, by rw [mcdtPopped_mem, mou],
-    by rw [mcdtPopped_mem, hc0]; exact hT, by rw [mcdtPopped_mem, hc0]; exact eq', fun x hx hr => ?_⟩
+    by rw [mcdtPopped_mem, hc0]; exact hT, ⟨_, by rw [mcdtPopped_mem, hc0]; exact eq'⟩, fun x hx hr => ?_⟩
   rw [mcdtPopped_mem, I.out x (fun r h => by simp only [List.mem_singleton] at h; subst h; exact hr),
     pushed_other s hlo hx]
 
@@ -256,7 +272,8 @@ theorem kernel_ok (K : KReady s W L N S mo inv o a b V) :
     (reduction_ok Ly K.pv M.ws M.prm (by rw [M.modulus]; exact M.bound)) fun v ⟨Vv, Ov, Kv⟩ => ?_)
   have hM : 0 < val32 s.mem W mo N := by have := K.bLt; omega
   rw [M.modulus] at Vv
-  refine ⟨by rw [Vv]; exact Nat.mod_lt _ hM, by rw [Vv]; exact final_mod M.eqn, ?_, ?_⟩
+  obtain ⟨Q, eqn⟩ := M.eqn
+  refine ⟨by rw [Vv]; exact Nat.mod_lt _ hM, by rw [Vv]; exact final_mod eqn, ?_, ?_⟩
   · intro x hx hr
     have h1 : v.mem x = p.mem x :=
       Ov x fun r h => by
