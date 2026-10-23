@@ -492,6 +492,9 @@ theorem LS.keep {s₀ s s' : State} (hp : Pre s₀) {L : List Zq} (h : LS s₀ L
   ⟨h.env.regs hp hk.mem hk.gp hk.rd hk.wr hk.sp, hk.mem ▸ h.buf, h4.trans h.r4, h5.trans h.r5,
     h.len, fun k hk' => hk.mem ▸ h.coeff k hk'⟩
 
+theorem Keep.env' {s₀ s s' : State} (hk : Keep s s') (hp : Pre s₀) (h : SEnv s₀ s) : SEnv s₀ s' :=
+  h.regs hp hk.mem hk.gp hk.rd hk.wr hk.sp
+
 /-- The first candidate of a chunk. -/
 def cand1 (b₀ b₁ : Byte) : BitVec 64 := b₀.setWidth 64 + (b₁.setWidth 64 <<< 60) >>> 52
 
@@ -759,5 +762,82 @@ theorem body_ok {s₀ s : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) (h : I
     WP isa rejBody s fun s' => Inv s₀ (t + 1) s' ∧ (s'.gpr .r6 != 0) = decide (t + 1 ≠ 280) :=
   WP.seq (WP.mono (piece1 hp ht h) fun _ h₁ => WP.seq (WP.mono (piece2 hp h₁) fun _ h₂ =>
     WP.seq (WP.mono (piece3 hp h₂) fun _ h₃ => WP.seq (WP.mono (piece4 hp h₃) fun _ h₄ => piece5 hp ht h₄))))
+
+/-! ## The whole function -/
+
+theorem init_ok {s₀ s : State} (hp : Pre s₀) (h : SEnv s₀ s)
+    (hb : Spec.Sha3.bytesAt s.mem (S s₀ + BitVec.ofNat 64 840) 840 = xof (B s₀) 840) :
+    WP isa (.block [.addi .r3 .r31 840, mov .r4 .r30, .li .r5 0, .li .r6 280]) s (Inv s₀ 0) := by
+  have hk : WP isa (.block [.addi .r3 .r31 840, mov .r4 .r30, .li .r5 0, .li .r6 280]) s fun s' =>
+      s'.gpr .r3 = S s₀ + BitVec.ofNat 64 840 ∧ s'.gpr .r4 = A s₀ ∧ s'.gpr .r5 = BitVec.ofNat 64 0 ∧
+        s'.gpr .r6 = BitVec.ofNat 64 280 ∧ Keep s s' := by
+    prun [h.r30, h.r31]
+    refine ⟨?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩⟩ <;> first | exact trivial | rfl | pres_tac
+  refine WP.mono hk fun s' ⟨r3, r4, r5, r6, k⟩ =>
+    ⟨⟨k.env' hp h, k.mem ▸ hb, ?_, ?_, by simp [Ls, sampleAfter], fun _ h => ?_⟩, r3, r6⟩
+  · rw [r4]; simp [Ls, sampleAfter]
+  · rw [r5]; simp [Ls, sampleAfter]
+  · simp [Ls, sampleAfter] at h
+
+theorem ret_val {n : Nat} (h : n ≤ 256) :
+    BitVec.ofNat 64 n >>> 8 = if n = 256 then 1 else 0 := by
+  have : n < 2 ^ 64 := by omega
+  split
+  · subst n; decide
+  · apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt this, Nat.shiftRight_eq_div_pow]
+    show n / 256 = 0
+    omega
+
+/-- What the function leaves. -/
+structure Done (s₀ s : State) : Prop where
+  pres : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
+  sp : s.sp = s₀.sp
+  lr : s.lr = s₀.lr
+  r3 : s.gpr .r3 = (if (Ls s₀ 280).length = 256 then 1 else 0)
+  coeff : ∀ k < (Ls s₀ 280).length, coeffAt s.mem (A s₀) k = BitVec.ofNat 32 ((Ls s₀ 280).getD k 0).val
+
+theorem end_ok {s₀ s : State} (hp : Pre s₀) (h : Inv s₀ 280 s) : WP isa (.block sampleEnd) s (Done s₀) := by
+  have e := h.ls.env
+  have i1680 : InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 1680) 8 :=
+    ⟨⟨S s₀, 2048⟩, List.mem_append_right _ (by rw [e.wr, hp.wr]; simp),
+      Offset.contains_base _ (by decide) (by have := hp.fs; omega)⟩
+  have i1688 : InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 1688) 8 :=
+    ⟨⟨S s₀, 2048⟩, List.mem_append_right _ (by rw [e.wr, hp.wr]; simp),
+      Offset.contains_base _ (by decide) (by have := hp.fs; omega)⟩
+  have i1696 : InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 1696) 8 :=
+    ⟨⟨S s₀, 2048⟩, List.mem_append_right _ (by rw [e.wr, hp.wr]; simp),
+      Offset.contains_base _ (by decide) (by have := hp.fs; omega)⟩
+  have i1704 : InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 1704) 8 :=
+    ⟨⟨S s₀, 2048⟩, List.mem_append_right _ (by rw [e.wr, hp.wr]; simp),
+      Offset.contains_base _ (by decide) (by have := hp.fs; omega)⟩
+  have hk : WP isa (.block sampleEnd) s fun s' =>
+      s'.gpr .r3 = s.gpr .r5 >>> 8 ∧ s'.lr = s₀.lr ∧ s'.gpr .r29 = s₀.gpr .r29 ∧ s'.gpr .r30 = s₀.gpr .r30 ∧
+      s'.gpr .r31 = s₀.gpr .r31 ∧ (∀ r ∈ preserved, r ≠ .r29 → r ≠ .r30 → r ≠ .r31 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.sp = s.sp := by
+    prun [sampleEnd, e.r31, i1680, i1688, i1696, i1704, e.s29, e.s30, e.s31, e.slr]
+    refine ⟨by trivial, by trivial, by trivial, by trivial, by trivial, fun r hr a b c => ?_, by trivial⟩
+    have h0 : r ≠ .r0 := by rintro rfl; simp [preserved] at hr
+    have h3 : r ≠ .r3 := by rintro rfl; simp [preserved] at hr
+    simp only [RegUpd.gpr_write, a, b, c, h0, h3, ite_false]
+  refine WP.mono hk fun s' ⟨r3, lr, r29, r30, r31, cs, m, sp⟩ => ⟨fun r hr => ?_, sp.trans e.sp, lr, ?_, ?_⟩
+  · by_cases a : r = .r29
+    · subst a; exact r29
+    by_cases b : r = .r30
+    · subst b; exact r30
+    by_cases c : r = .r31
+    · subst c; exact r31
+    exact (cs r hr a b c).trans (e.cs r hr a b c)
+  · rw [r3, h.ls.r5, ret_val h.ls.len]
+  · intro k hk; rw [m]; exact h.ls.coeff k hk
+
+theorem correct {s₀ : State} (hp : Pre s₀) : WP isa sampleNTT s₀ (Done s₀) := by
+  refine WP.seq (WP.mono (setup_ok hp) fun s₁ ⟨h₁, hz⟩ => WP.seq ?_)
+  refine WP.mono (absorb_phase hp h₁ hz) fun s₂ ⟨h₂, hr, h3⟩ => WP.seq ?_
+  refine WP.mono (pad_phase hp h₂ hr h3) fun s₃ ⟨h₃, hst⟩ => WP.seq ?_
+  refine WP.mono (squeeze_phase hp h₃ hst) fun s₄ ⟨h₄, hb⟩ => WP.seq ?_
+  refine WP.mono (init_ok hp h₄ hb) fun s₅ h₅ => WP.seq ?_
+  exact wp_loop_nz (Inv s₀) (N := 280) (by decide) (fun t ht s h => body_ok hp ht h)
+    (fun s h => end_ok hp h) h₅
 
 end VG.Proof.MlKem.PPC64LE.Sample
