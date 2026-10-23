@@ -190,6 +190,18 @@ class Workflow(unittest.TestCase):
         self.assertIn("if: ${{ needs.rust-arches.outputs.check != '[]' }}", text)
         self.assertIn("include: ${{ fromJSON(needs.rust-arches.outputs.check) }}", text)
 
+    def test_check_lints_only_what_the_tested_jobs_lint(self):
+        # Otherwise a run that leaves an architecture out could fail on a
+        # lint that a run testing it, a full run included, never runs.
+        def lints(text):
+            return {re.sub(r' --target "\$target"', "", line.strip())
+                    for line in text.splitlines() if line.strip().startswith("cargo clippy")}
+        check = lints(job("rust-check"))
+        self.assertEqual(len(check), 3)
+        for name in ("rust", "rust-thumb"):
+            with self.subTest(job=name):
+                self.assertLessEqual(check, lints(job(name)))
+
     def test_all_green_needs_every_rust_job(self):
         text = job("all-green")
         for name in RUST_JOBS:

@@ -572,9 +572,14 @@ jobs:
           shared-key: rust-thumb
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: rustc -vV
+      # With each set of features the `rust` job lints, as `rust-check` lints
+      # this target when a run leaves ARM out.
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}
-        run: cargo clippy --all-targets --locked
+        run: |
+          cargo clippy --all-targets --locked
+          cargo clippy --all-targets --locked --features std
+          cargo clippy --all-targets --locked --features cpu-features-env
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
