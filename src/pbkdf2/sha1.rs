@@ -8,8 +8,8 @@
 //! `vg_sha1_compress_shani`, and, on x86, the SHA-NI streaming, HMAC and
 //! iteration functions, with the same contract).
 //!
-//! On ARMv7 and x86, the whole derivation is the one for every streaming hash
-//! function, calling SHA-1's verified streaming functions, HMAC-SHA-1's
+//! On ARMv7, x86 and PPC64LE, the whole derivation is the one for every
+//! streaming hash function, calling SHA-1's verified streaming functions, HMAC-SHA-1's
 //! `init` and `finalize` and `vg_pbkdf2_hmac_sha1_iterate` (contract
 //! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
 //! every streaming hash function.
@@ -20,7 +20,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::pbkdf2_sha1::vg_pbkdf2_hmac_sha1;

@@ -499,7 +499,8 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub(crate) fn pbkdf2_group(
     c: &mut Criterion,
