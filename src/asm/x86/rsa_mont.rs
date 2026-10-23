@@ -79,7 +79,12 @@ mov ebx, DWORD PTR [eax+4]
 movd xmm7, ebx
 mov ebx, DWORD PTR [esp+36]
 cmp ebx, 12
-jae 21f
+jb 21f
+mov ebx, DWORD PTR [eax+8]
+movd xmm2, ebx
+punpcklqdq xmm7, xmm2
+jmp 22f
+21:
 22:
 mov eax, DWORD PTR [esp+12]
 mov ebx, DWORD PTR [esp+16]
@@ -121,7 +126,24 @@ cmp ebp, 20
 jae 28b
 27:
 cmp ebp, 16
-jae 29f
+jb 29f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 210f
+29:
 210:
 cmp ebp, 8
 jae 211f
@@ -154,7 +176,10 @@ paddq xmm1, xmm2
 214:
 mov ebp, ecx
 sub ebp, 8
-jb 215f
+jae 215f
+mov ebp, 0
+jmp 216f
+215:
 216:
 mov esi, DWORD PTR [esp+28]
 add esi, 32
@@ -187,7 +212,24 @@ cmp ebp, 20
 jae 219b
 218:
 cmp ebp, 16
-jae 220f
+jb 220f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 221f
+220:
 221:
 cmp ebp, 8
 jae 222f
@@ -309,7 +351,24 @@ cmp ebp, 20
 jae 229b
 228:
 cmp ebp, 16
-jae 230f
+jb 230f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 231f
+230:
 231:
 cmp ebp, 8
 jae 232f
@@ -376,7 +435,24 @@ cmp ebp, 20
 jae 238b
 237:
 cmp ebp, 16
-jae 239f
+jb 239f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 240f
+239:
 240:
 cmp ebp, 8
 jae 241f
@@ -480,7 +556,24 @@ cmp ebp, 20
 jae 248b
 247:
 cmp ebp, 16
-jae 249f
+jb 249f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 250f
+249:
 250:
 cmp ebp, 8
 jae 251f
@@ -530,7 +623,10 @@ paddq xmm1, xmm2
 256:
 mov ebp, ecx
 sub ebp, 8
-jb 257f
+jae 257f
+mov ebp, 0
+jmp 258f
+257:
 258:
 mov esi, DWORD PTR [esp+28]
 add esi, 32
@@ -563,7 +659,24 @@ cmp ebp, 20
 jae 261b
 260:
 cmp ebp, 16
-jae 262f
+jb 262f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 263f
+262:
 263:
 cmp ebp, 8
 jae 264f
@@ -692,7 +805,24 @@ cmp ebp, 20
 jae 271b
 270:
 cmp ebp, 16
-jae 272f
+jb 272f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 273f
+272:
 273:
 cmp ebp, 8
 jae 274f
@@ -776,7 +906,24 @@ cmp ebp, 20
 jae 282b
 281:
 cmp ebp, 16
-jae 283f
+jb 283f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 284f
+283:
 284:
 cmp ebp, 8
 jae 285f
@@ -901,153 +1048,6 @@ pop ebx
 pop ebx
 pop ebx
 ret
-21:
-mov ebx, DWORD PTR [eax+8]
-movd xmm2, ebx
-punpcklqdq xmm7, xmm2
-jmp 22b
-29:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 210b
-215:
-mov ebp, 0
-jmp 216b
-220:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 221b
-230:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 231b
-239:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 240b
-249:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 250b
-257:
-mov ebp, 0
-jmp 258b
-262:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 263b
-272:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 273b
-283:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 284b
 .p2align 6",
     )
 }
@@ -1143,7 +1143,12 @@ mov ebx, DWORD PTR [eax+4]
 movd xmm7, ebx
 mov ebx, DWORD PTR [esp+36]
 cmp ebx, 12
-jae 21f
+jb 21f
+mov ebx, DWORD PTR [eax+8]
+movd xmm2, ebx
+punpcklqdq xmm7, xmm2
+jmp 22f
+21:
 22:
 mov eax, DWORD PTR [esp+12]
 mov ebx, DWORD PTR [esp+16]
@@ -1185,7 +1190,24 @@ cmp ebp, 20
 jae 28b
 27:
 cmp ebp, 16
-jae 29f
+jb 29f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 210f
+29:
 210:
 cmp ebp, 8
 jae 211f
@@ -1218,7 +1240,10 @@ paddq xmm1, xmm2
 214:
 mov ebp, ecx
 sub ebp, 8
-jb 215f
+jae 215f
+mov ebp, 0
+jmp 216f
+215:
 216:
 mov esi, DWORD PTR [esp+28]
 add esi, 32
@@ -1251,7 +1276,24 @@ cmp ebp, 20
 jae 219b
 218:
 cmp ebp, 16
-jae 220f
+jb 220f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 221f
+220:
 221:
 cmp ebp, 8
 jae 222f
@@ -1373,7 +1415,24 @@ cmp ebp, 20
 jae 229b
 228:
 cmp ebp, 16
-jae 230f
+jb 230f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 231f
+230:
 231:
 cmp ebp, 8
 jae 232f
@@ -1440,7 +1499,24 @@ cmp ebp, 20
 jae 238b
 237:
 cmp ebp, 16
-jae 239f
+jb 239f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 240f
+239:
 240:
 cmp ebp, 8
 jae 241f
@@ -1544,7 +1620,24 @@ cmp ebp, 20
 jae 248b
 247:
 cmp ebp, 16
-jae 249f
+jb 249f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 250f
+249:
 250:
 cmp ebp, 8
 jae 251f
@@ -1594,7 +1687,10 @@ paddq xmm1, xmm2
 256:
 mov ebp, ecx
 sub ebp, 8
-jb 257f
+jae 257f
+mov ebp, 0
+jmp 258f
+257:
 258:
 mov esi, DWORD PTR [esp+28]
 add esi, 32
@@ -1627,7 +1723,24 @@ cmp ebp, 20
 jae 261b
 260:
 cmp ebp, 16
-jae 262f
+jb 262f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 263f
+262:
 263:
 cmp ebp, 8
 jae 264f
@@ -1756,7 +1869,24 @@ cmp ebp, 20
 jae 271b
 270:
 cmp ebp, 16
-jae 272f
+jb 272f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 273f
+272:
 273:
 cmp ebp, 8
 jae 274f
@@ -1840,7 +1970,24 @@ cmp ebp, 20
 jae 282b
 281:
 cmp ebp, 16
-jae 283f
+jb 283f
+movdqu xmm2, XMMWORD PTR [esi]
+movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
+pmuludq xmm2, xmm3
+pmuludq xmm4, xmm5
+paddq xmm0, xmm2
+psrlq xmm2, 32
+paddq xmm1, xmm2
+paddq xmm0, xmm4
+psrlq xmm4, 32
+paddq xmm1, xmm4
+add esi, 16
+add edi, 16
+sub ebp, 16
+jmp 284f
+283:
 284:
 cmp ebp, 8
 jae 285f
@@ -1965,153 +2112,6 @@ pop ebx
 pop ebx
 pop ebx
 ret
-21:
-mov ebx, DWORD PTR [eax+8]
-movd xmm2, ebx
-punpcklqdq xmm7, xmm2
-jmp 22b
-29:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 210b
-215:
-mov ebp, 0
-jmp 216b
-220:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 221b
-230:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 231b
-239:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 240b
-249:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 250b
-257:
-mov ebp, 0
-jmp 258b
-262:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 263b
-272:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 273b
-283:
-movdqu xmm2, XMMWORD PTR [esi]
-movdqu xmm3, XMMWORD PTR [edi]
-pshufd xmm4, xmm2, 49
-pshufd xmm5, xmm3, 49
-pmuludq xmm2, xmm3
-pmuludq xmm4, xmm5
-paddq xmm0, xmm2
-psrlq xmm2, 32
-paddq xmm1, xmm2
-paddq xmm0, xmm4
-psrlq xmm4, 32
-paddq xmm1, xmm4
-add esi, 16
-add edi, 16
-sub ebp, 16
-jmp 284b
 .p2align 6",
     )
 }

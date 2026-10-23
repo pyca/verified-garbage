@@ -182,15 +182,14 @@ theorem window_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S 
     congr 1; exact decide_eq_decide.mpr (by omega)
   have eax6 : PtrAt t6 W .eax mo := by
     rw [PtrAt, F6.gpr, u5.other _ (by decide), g4, u3.other _ (by decide)]; exact a2
-  have hc : isa.eval .ae t6 = some (decide (3 ≤ N)) := by
-    show t6.cf.map (!·) = _
-    rw [cf6]
-    by_cases h : 3 ≤ N
-    · rw [decide_eq_false (show ¬ N < 3 by omega), decide_eq_true h]; rfl
-    · rw [decide_eq_true (show N < 3 by omega), decide_eq_false h]; rfl
-  refine WP.iteCold_iff.mpr (WP.ite (decide (3 ≤ N)) hc ?_ ?_)
+  refine WP.ite (decide (N < 3)) cf6 ?_ ?_
   · intro h3
-    have h3' : 3 ≤ N := of_decide_eq_true h3
+    have h3' : ¬ 3 ≤ N := by have := of_decide_eq_true h3; omega
+    refine WP.block_nil ⟨by rw [x6_6]; exact dword_zero' 0, by rw [x6_6]; exact dword_zero' 2, ?_, ?_, mem6, mc6, K6⟩
+    · rw [x7_6, dword_movd_0, eM1]
+    · rw [x7_6, dword_movd_2, ite_eq_right h3']; rfl
+  · intro h3
+    have h3' : 3 ≤ N := by have := of_decide_eq_false h3; omega
     have hw6 := hw.of_keeps K6
     refine wp_movX (readSrc_ptr hw6 eax6 (d := 8) (by omega_using [hmo, h3'])) fun t7 u7 m7 y7 =>
       wp_xopX _ fun t8 g8 m8 rd8 wr8 mc8 x8 => wp_xopX _ fun t9 g9 m9 rd9 wr9 mc9 x9 => WP.block_nil ?_
@@ -205,11 +204,6 @@ theorem window_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S 
       (K6.widen u7.keeps).widen (rs := []) ⟨fun r _ => by rw [g9, g8], by rw [rd9, rd8], by rw [wr9, wr8]⟩⟩
     · rw [x9_7, dword_punpcklqdq_0, x7_6, dword_movd_0, eM1]
     · rw [x9_7, dword_punpcklqdq_2, dword_movd_0, ite_eq_left h3', u7.gpr, mem6]; rfl
-  · intro h3
-    have h3' : ¬ 3 ≤ N := of_decide_eq_false h3
-    refine WP.block_nil ⟨by rw [x6_6]; exact dword_zero' 0, by rw [x6_6]; exact dword_zero' 2, ?_, ?_, mem6, mc6, K6⟩
-    · rw [x7_6, dword_movd_0, eM1]
-    · rw [x7_6, dword_movd_2, ite_eq_right h3']; rfl
 
 /-- The columns of one kind: `k < N`, then the others. -/
 theorem phases_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S mo inv o a b c : Nat}

@@ -658,16 +658,18 @@ theorem reduceLo_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
     (Sk.of_upd [.ebp] u2 m2 x2)
   have e1 : t1.gpr .ebp = BitVec.ofNat 32 (4 * k) := by rw [u1.gpr, C.ecx]
   refine WP.seq (WP.mono (Q := fun (t : State) => t.gpr .ebp = BitVec.ofNat 32 (4 * (k - 2)) ∧
-    Sk [.eax, .ebx, .esi, .edi, .ebp] s t) (WP.iteCold_iff.mpr ?_) fun t3 ⟨b3, K3⟩ => ?_)
+    Sk [.eax, .ebx, .esi, .edi, .ebp] s t) ?_ fun t3 ⟨b3, K3⟩ => ?_)
   · by_cases h2 : k < 2
-    · refine WP.ite true (by
-          show t2.cf = _; rw [c2, e1, toNat_ofNat_lt (by omega), decide_eq_true (by show 4 * k < 8; omega)])
-        (fun _ => wp_movX rfl fun t4 u4 m4 x4 => WP.block_nil ⟨?_, K2.trans (Sk.of_upd [.ebp] u4 m4 x4)⟩)
-        (fun h => absurd h (by decide))
-      rw [u4.gpr, show k - 2 = 0 by omega]; rfl
     · refine WP.ite false (by
-          show t2.cf = _; rw [c2, e1, toNat_ofNat_lt (by omega), decide_eq_false (by show ¬ 4 * k < 8; omega)])
-        (fun h => absurd h (by decide)) (fun _ => WP.block_nil ⟨?_, K2⟩)
+          show t2.cf.map (!·) = _; rw [c2, e1, toNat_ofNat_lt (by omega), decide_eq_true (by show 4 * k < 8; omega)]
+          rfl)
+        (fun h => absurd h (by decide))
+        (fun _ => wp_movX rfl fun t4 u4 m4 x4 => WP.block_nil ⟨?_, K2.trans (Sk.of_upd [.ebp] u4 m4 x4)⟩)
+      rw [u4.gpr, show k - 2 = 0 by omega]; rfl
+    · refine WP.ite true (by
+          show t2.cf.map (!·) = _; rw [c2, e1, toNat_ofNat_lt (by omega), decide_eq_false (by show ¬ 4 * k < 8; omega)]
+          rfl)
+        (fun _ => WP.block_nil ⟨?_, K2⟩) (fun h => absurd h (by decide))
       rw [u2.gpr, e1]; show _ - BitVec.ofNat 32 8 = _; rw [sub_ofNat (by omega)]; congr 1; omega
   refine WP.seq (ldW_ok (C.prm.of_sk K3) PV.s PV.n4 (r := .esi) (by decide) (by decide) 8 1 fun t4 e4 a4 K4 => ?_)
   have K4' := K3.trans (K4.mono [.eax, .ebx, .esi, .edi, .ebp])

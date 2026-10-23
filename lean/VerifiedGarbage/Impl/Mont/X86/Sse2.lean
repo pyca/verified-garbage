@@ -121,7 +121,7 @@ def dot : Prog isa := seqs [
   .block [.alu .cmp .ebp (.imm 20)],
   .ite .ae (.loop (.block quadBody) .ae) (.block []),
   .block [.alu .cmp .ebp (.imm 16)],
-  Code.iteCold .ae (.block quadLast) (.block []),
+  .ite .b (.block []) (.block quadLast),
   .block [.alu .cmp .ebp (.imm 8)],
   .ite .ae (.block pair) (.block []),
   .block [.alu .cmp .ebp (.imm 4)],
@@ -201,7 +201,7 @@ def reduce (hi : Bool) : Prog isa :=
     dot
   else seqs [
     .block [.mov .ebp (.reg .ecx), .alu .sub .ebp (.imm 8)],
-    Code.iteCold .b (.block [.mov .ebp (.imm 0)]) (.block []),
+    .ite .ae (.block []) (.block [.mov .ebp (.imm 0)]),
     .block (ldW .esi 8 1 ++ [.alu .sub .esi (.reg .ecx)] ++ ld pM .edi ++ [.alu .add .edi (.imm 12)]),
     dot,
     .block ([.xop (.bin .movdqa .xmm2 .xmm6), .pmuludq .xmm2 .xmm7] ++ acc .xmm2)]
@@ -261,8 +261,8 @@ def copyA : Prog isa := .seq
 def window : Prog isa := .seq
   (.block [.xop (.bin .pxor .xmm6 .xmm6), .mov .eax (.mem (kp pM)), .mov .ebx (.mem (at_ .eax 4)),
     .xop (.movd .xmm7 .ebx), .mov .ebx (.mem (kp pN4)), .alu .cmp .ebx (.imm 12)])
-  (Code.iteCold .ae (.block [.mov .ebx (.mem (at_ .eax 8)), .xop (.movd .xmm2 .ebx), .xop (.bin .punpcklqdq .xmm7 .xmm2)])
-    (.block []))
+  (.ite .b (.block [])
+    (.block [.mov .ebx (.mem (at_ .eax 8)), .xop (.movd .xmm2 .ebx), .xop (.bin .punpcklqdq .xmm7 .xmm2)]))
 
 /-- The columns of one kind: those with `k < N`, then the others. -/
 def phases (sq : Bool) : Prog isa := .seq (.loop (column sq false) .ne) (.loop (column sq true) .ne)

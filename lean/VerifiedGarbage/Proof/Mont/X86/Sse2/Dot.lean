@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Pair
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
@@ -370,6 +369,13 @@ theorem wp_cmpCnt {s0 t : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0 W
     show u.cf.map _ = _
     rw [c1, I.cnt, toNat_ofNat_lt (by omega), toNat_ofNat_lt hc]; rfl)
 
+theorem eval_b_of_ae {u : State} {b : Bool} (h : isa.eval .ae u = some (!b)) : isa.eval .b u = some b := by
+  change u.cf.map (!·) = some (!b) at h
+  show u.cf = some b
+  cases hc : u.cf with
+  | none => rw [hc] at h; cases h
+  | some v => rw [hc, Option.map_some, Option.some.injEq] at h; rw [Bool.not_inj h]
+
 /-- Four products at a time while at least five words remain. -/
 theorem quads_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hc : isa.eval .ae t = some (!decide (4 * (n - j) < 20))) :
@@ -404,14 +410,13 @@ theorem dot_ok {s0 : State} {W : Addr} {L x y n S H : Nat} (E : DotEnv s0 L x y 
   refine WP.seq (wp_cmpCnt I0 hn (c := 20) (by decide) fun t1 I1 c1 => WP.block_nil ?_)
   refine WP.seq (WP.mono (quads_ok E I1 c1) fun t2 ⟨j, I2, h2⟩ => ?_)
   refine WP.seq (wp_cmpCnt I2 hn (c := 16) (by decide) fun t3 I3 c3 => WP.block_nil ?_)
-  refine WP.seq (WP.mono (Q := fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 4) (WP.iteCold_iff.mpr ?_)
+  refine WP.seq (WP.mono (Q := fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 4) ?_
     fun t4 ⟨j, I4, h4⟩ => ?_)
   · by_cases h4 : n < j + 4
-    · exact WP.ite false (by rw [c3, decide_eq_true (by omega)]; rfl) (fun h => absurd h (by decide))
-        fun _ => WP.block_nil ⟨j, I3, h4⟩
-    · exact WP.ite true (by rw [c3, decide_eq_false (by omega)]; rfl)
+    · exact WP.ite true (by rw [eval_b_of_ae c3, decide_eq_true (by omega)])
+        (fun _ => WP.block_nil ⟨j, I3, h4⟩) (fun h => absurd h (by decide))
+    · exact WP.ite false (by rw [eval_b_of_ae c3, decide_eq_false (by omega)]) (fun h => absurd h (by decide))
         (fun _ => WP.mono (quadLast_ok E I3 (by omega)) fun u J => ⟨j + 4, J, by have := I3.hi; omega⟩)
-        (fun h => absurd h (by decide))
   refine WP.seq (wp_cmpCnt I4 hn (c := 8) (by decide) fun t5 I5 c5 => WP.block_nil ?_)
   refine WP.seq (WP.mono (Q := fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 2) ?_ fun t6 ⟨j, I6, h6⟩ => ?_)
   · by_cases h2 : n < j + 2
