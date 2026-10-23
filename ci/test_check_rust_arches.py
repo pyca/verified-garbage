@@ -112,7 +112,7 @@ class Output(unittest.TestCase):
         self.assertEqual((out["rust"], out["thumb"], out["cpu"]), ([], [], []))
         # Every target is still built.
         targets = [t for e in MATRIX["check"] for t in e["targets"]]
-        self.assertEqual(out["check"], [{"targets": " ".join(targets), "toolchain": MATRIX["stable"]}])
+        self.assertEqual(out["check"], [{"targets": " ".join(targets)}])
 
     def test_merge_group_reads_paths(self):
         for paths in ("src/asm/arm/md5.rs\n", "lean/A.lean\n", "src/lib.rs\n", ""):
@@ -126,15 +126,6 @@ class Output(unittest.TestCase):
         self.assertIn("i686-unknown-linux-gnu", targets)
         self.assertNotIn("x86_64-unknown-linux-gnu", targets)
         self.assertNotIn("armv7-unknown-linux-gnueabihf", targets)
-
-    def test_toolchains(self):
-        full = run("workflow_dispatch")
-        for job in ("rust", "thumb", "cpu"):
-            for e in full[job]:
-                with self.subTest(job=job, entry=e.get("name") or e.get("chip")):
-                    rust = e.get("rust", "stable")
-                    self.assertEqual(e["toolchain"], MATRIX["stable"] if rust == "stable" else rust)
-        self.assertRegex(MATRIX["stable"], r"^\d+\.\d+\.\d+$")
 
     def test_every_job(self):
         full = run("workflow_dispatch")
@@ -195,10 +186,6 @@ class Workflow(unittest.TestCase):
                 self.assertIn(f"if: ${{{{ needs.rust-arches.outputs.{output} != '[]' }}}}", text)
                 self.assertIn(f"include: ${{{{ fromJSON(needs.rust-arches.outputs.{output}) }}}}", text)
                 self.assertIn("TESTS: ${{ matrix.tests }}", text)
-                self.assertIn("RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}", text)
-                # The benchmarks' dependencies alone, for bench.yml, build
-                # with the latest stable.
-                self.assertRegex(text, r"name: Install Rust\n\s+run: rustup toolchain install \$\{\{ matrix.toolchain \}\}")
         text = job("rust-check")
         self.assertIn("if: ${{ needs.rust-arches.outputs.check != '[]' }}", text)
         self.assertIn("include: ${{ fromJSON(needs.rust-arches.outputs.check) }}", text)

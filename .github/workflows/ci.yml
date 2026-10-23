@@ -389,7 +389,7 @@ jobs:
     env:
       # Selects the toolchain without `rustup default`, which refuses 32-bit
       # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
@@ -421,10 +421,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component clippy,rustfmt,llvm-tools ${CARGO_BUILD_TARGET:+--target "$CARGO_BUILD_TARGET"}
-        # The target the armv7-cross image cross-compiles for, which the
-        # image's toolchain has but the pinned one does not.
-        shell: bash
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy,rustfmt,llvm-tools
       # The dependencies (built with opt-level 3) are most of the build.
       # Only main saves, so pull requests restore main's entries instead of
       # filling the cache quota with their own.
@@ -463,15 +460,9 @@ jobs:
       # changes the key (ci/bench_cache_key.sh), so every push to main looks
       # it up, without downloading, and builds only on a miss. ARMv7's too,
       # cross-compiled in the armv7-cross image, as that workflow builds it.
-      # With the latest stable Rust, which that workflow builds with, not the
-      # pinned one (ci/rust_matrix.toml).
       - id: bench-cache-key
         if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
-        env:
-          RUSTUP_TOOLCHAIN: stable
-        run: |
-          rustup toolchain install stable --profile minimal
-          echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
+        run: echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
       - id: bench-cache
         if: ${{ steps.bench-cache-key.outputs.key }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -487,7 +478,6 @@ jobs:
         # crates of this repository are rebuilt there anyway.
         env:
           RUSTFLAGS: ""
-          RUSTUP_TOOLCHAIN: stable
         run: |
           export CARGO_TARGET_DIR="$GITHUB_WORKSPACE/bench-target"
           cargo bench --no-run --locked
@@ -548,7 +538,7 @@ jobs:
     container:
       image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
     env:
-      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
       # For every cargo command, in place of the image's ARMv7 (with the
       # same linker and runner).
       CARGO_BUILD_TARGET: thumbv7neon-unknown-linux-gnueabihf
@@ -582,7 +572,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: rust-thumb
@@ -664,7 +654,7 @@ jobs:
       image: ${{ matrix.container.image || '' }}
       options: ${{ matrix.container.options || '' }}
     env:
-      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      RUSTUP_TOOLCHAIN: stable
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
@@ -715,9 +705,7 @@ jobs:
           tar -xJf sde.tar.xz -C "$RUNNER_TEMP/sde" --strip-components 1
           rm sde.tar.xz
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component llvm-tools ${CARGO_BUILD_TARGET:+--target "$CARGO_BUILD_TARGET"}
-        # As in the `rust` job, for the armv7-cross image.
-        shell: bash
+        run: rustup toolchain install stable --profile minimal --component llvm-tools
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: rust-cpu-features
@@ -937,7 +925,7 @@ jobs:
         include: ${{ fromJSON(needs.rust-arches.outputs.check) }}
     runs-on: ubuntu-26.04
     env:
-      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      RUSTUP_TOOLCHAIN: stable
       TARGETS: ${{ matrix.targets }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -950,7 +938,7 @@ jobs:
             !/docs/
             !/bench/
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component clippy --target ${TARGETS// / --target }
+        run: rustup toolchain install stable --profile minimal --component clippy --target ${TARGETS// / --target }
       - name: Build and lint
         run: |
           for target in $TARGETS; do
@@ -1157,5 +1145,5 @@ jobs:
           else
             gh issue create --title "$TITLE" --body "$BODY
 
-          Merge queue runs test only the architectures their changes reach (ci/rust_arches.py), so main can fail here alone: through a change outside the repository (a runner, Rust's beta or nightly), or a change that reached an architecture ci/rust_arches.py did not count it as reaching."
+          Merge queue runs test only the architectures their changes reach (ci/rust_arches.py), so main can fail here alone: through a change outside the repository (a runner, a new Rust release), or a change that reached an architecture ci/rust_arches.py did not count it as reaching."
           fi

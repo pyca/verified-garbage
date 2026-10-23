@@ -15,7 +15,7 @@ so a pull request's coverage is checked for those it tests. The merge queue
 does the same with the paths its group changes from the group's base (main,
 or the group ahead of it), which passed: an architecture none of them reaches
 builds and runs exactly what passed there. What that leaves out, which
-changes outside the repository (runners, `beta` and `nightly`), is tested by
+changes outside the repository (runners, Rust's releases), is tested by
 the full runs that the Full CI workflow starts on main every few hours, when
 main has moved, and by any run started by hand (`workflow_dispatch`): every
 job. Every architecture whose tests a run leaves out is built and linted
@@ -35,10 +35,9 @@ build the same tests into one cache per platform, the first entry of each
 It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 `all=true` or `all=false` (whether that is every architecture), and each
 job's matrix (`rust=`, `thumb=`, `cpu=`, `check=`): the JSON list of its
-entries, each with `tests` and the `toolchain` it installs (the matrix's
-pinned `stable` for `rust = "stable"` and every CPU), and each CPU with
-shards as one entry per shard. `check` has one entry, with the space-separated
-`targets` of every architecture not tested, or none.
+entries, each with `tests`, and each CPU with shards as one entry per shard.
+`check` has one entry, with the space-separated `targets` of every
+architecture not tested, or none.
 """
 
 import json
@@ -125,13 +124,10 @@ def arches(paths):
 
 
 def entries(matrix, job):
-    """The matrix's entries of `job`, a CPU with shards once per shard, each
-    with the `toolchain` it installs."""
+    """The matrix's entries of `job`, a CPU with shards once per shard."""
     out = []
     for entry in matrix[job]:
         entry = dict(entry)
-        rust = entry.get("rust", "stable")
-        entry["toolchain"] = matrix["stable"] if rust == "stable" else rust
         n = entry.pop("shards", None)
         if n is None:
             out.append(entry)
@@ -174,7 +170,7 @@ def output(matrix, selected, tests=True):
         lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
     targets = [t for e in matrix["check"] if tests and e["arch"] not in selected
                for t in e["targets"]]
-    check = [{"targets": " ".join(targets), "toolchain": matrix["stable"]}] if targets else []
+    check = [{"targets": " ".join(targets)}] if targets else []
     lines.append(f"check={json.dumps(check, separators=(',', ':'))}")
     return "".join(line + "\n" for line in lines)
 

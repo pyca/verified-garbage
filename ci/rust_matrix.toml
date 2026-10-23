@@ -3,12 +3,6 @@
 # entries it keeps. Each entry's `arch` is the `target_arch` its tests run
 # (the SDE chips', which have none, are x86-64's).
 
-# The Rust release an entry's `rust = "stable"` (and every `cpu` entry)
-# builds with: pinned, so that a new release, which can bring new lints or
-# map different lines for coverage, fails the pull request that bumps it, not
-# a run of main. Bump it with the release.
-stable = "1.99.1"
-
 # `rust`: every test, with coverage, on each platform, and the lints.
 [[rust]]
 name = "Linux, x86-64"
