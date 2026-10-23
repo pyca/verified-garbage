@@ -216,3 +216,987 @@ ld %r21, 192(%r21)
 blr",
     )
 }
+
+/// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
+///
+/// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
+///
+/// The model has no carry bit, so numbers are 32-bit digits, in Montgomery form with `R = 2^(64 w)`. `e` is read a byte at a time into a register saturated at `2^33`, and its 33 bits are scanned from the top, each a square and a multiplication by the input with the product selected by a mask of the bit, so the code is the same for every `e` of the same length. `pre` is made safe before any arithmetic (`n` forced odd with its top word not zero, `R² mod n` zeroed unless below `n`), which leaves the values of a valid modulus unchanged. The nonvolatile registers it uses are saved in the working space's header.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `out_len` must be in 64..=1024.
+/// * `input_len` must be `out_len`.
+/// * `pre_len` must be `2 * ⌈out_len / 8⌉`.
+/// * `e_len` must be in 1..=`out_len`.
+/// * For the result to be RSAEP's, `pre` must hold what `vg_rsa_public_precompute` wrote for a modulus of `out_len` bytes (returning 1); otherwise it is unspecified.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `pre`, `e`, `input` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `pre`, `e`, `input` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"addi %r11, %r1, 96
+ld %r11, 0(%r11)
+std %r14, 128(%r11)
+std %r15, 136(%r11)
+std %r16, 144(%r11)
+std %r17, 152(%r11)
+std %r18, 160(%r11)
+std %r19, 168(%r11)
+std %r20, 176(%r11)
+std %r21, 184(%r11)
+std %r22, 192(%r11)
+std %r24, 200(%r11)
+std %r25, 208(%r11)
+std %r26, 216(%r11)
+std %r27, 224(%r11)
+std %r28, 232(%r11)
+std %r29, 240(%r11)
+std %r23, 248(%r11)
+addi %r23, %r11, 0
+addi %r27, %r3, 0
+addi %r28, %r4, 0
+addi %r11, %r4, 7
+rldicl %r11, %r11, 61, 3
+rldicr %r29, %r11, 3, 60
+addi %r29, %r29, 16
+addi %r10, %r23, 256
+rldicr %r11, %r11, 1, 62
+li %r24, 0
+20:
+lbz %r0, 0(%r7)
+rldicr %r24, %r24, 8, 55
+or %r24, %r24, %r0
+rldicl %r3, %r24, 31, 33
+li %r4, 0
+subf %r3, %r3, %r4
+rldicl %r3, %r3, 1, 63
+subf %r3, %r3, %r4
+li %r4, 1
+rldicr %r4, %r4, 33, 30
+xor %r0, %r24, %r4
+and %r0, %r0, %r3
+xor %r24, %r24, %r0
+addi %r7, %r7, 1
+addi %r8, %r8, -1
+cmpldi %cr0, %r8, 0
+bne %cr0, 20b
+li %r4, 1
+and %r0, %r24, %r4
+addi %r3, %r24, -3
+rldicl %r3, %r3, 1, 63
+xor %r3, %r3, %r4
+and %r0, %r0, %r3
+rldicr %r3, %r4, 33, 30
+subf %r3, %r3, %r24
+rldicl %r3, %r3, 1, 63
+and %r0, %r0, %r3
+li %r3, 0
+subf %r26, %r0, %r3
+rldicr %r24, %r24, 31, 32
+addi %r14, %r10, 0
+addi %r15, %r5, 0
+rldicl %r17, %r11, 63, 1
+21:
+ld %r0, 0(%r15)
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 21b
+add %r14, %r10, %r29
+rldicl %r17, %r11, 63, 1
+22:
+ld %r0, 0(%r15)
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 22b
+addi %r10, %r10, 0
+add %r10, %r10, %r29
+add %r10, %r10, %r29
+add %r10, %r10, %r29
+add %r10, %r10, %r29
+addi %r12, %r9, 0
+addi %r6, %r28, 0
+addi %r14, %r10, 0
+rldicl %r17, %r11, 63, 1
+li %r0, 0
+23:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 23b
+add %r15, %r10, %r6
+addi %r15, %r15, -1
+addi %r16, %r12, 0
+addi %r17, %r6, 0
+24:
+lbz %r0, 0(%r16)
+stb %r0, 0(%r15)
+addi %r16, %r16, 1
+addi %r15, %r15, -1
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 24b
+add %r14, %r10, %r29
+addi %r14, %r14, -16
+li %r0, 0
+std %r0, 0(%r14)
+addi %r10, %r23, 256
+ld %r0, 0(%r10)
+li %r3, 1
+or %r0, %r0, %r3
+std %r0, 0(%r10)
+rldicr %r14, %r11, 2, 61
+add %r14, %r14, %r10
+addi %r14, %r14, -8
+ld %r0, 0(%r14)
+rldicl %r3, %r0, 63, 1
+li %r4, 1
+and %r4, %r0, %r4
+or %r3, %r3, %r4
+addi %r3, %r3, -1
+rldicl %r3, %r3, 1, 63
+or %r0, %r0, %r3
+std %r0, 0(%r14)
+add %r14, %r10, %r29
+rldicr %r3, %r11, 2, 61
+add %r3, %r14, %r3
+li %r0, 0
+std %r0, 0(%r3)
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+25:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 25b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+addi %r14, %r10, 0
+add %r14, %r14, %r29
+rldicl %r17, %r11, 63, 1
+26:
+ld %r0, 0(%r14)
+and %r0, %r0, %r20
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 26b
+ld %r0, 0(%r10)
+ld %r12, 0(%r10)
+mulld %r3, %r0, %r12
+li %r4, 2
+subf %r3, %r3, %r4
+mulld %r12, %r12, %r3
+mulld %r3, %r0, %r12
+li %r4, 2
+subf %r3, %r3, %r4
+mulld %r12, %r12, %r3
+mulld %r3, %r0, %r12
+li %r4, 2
+subf %r3, %r3, %r4
+mulld %r12, %r12, %r3
+mulld %r3, %r0, %r12
+li %r4, 2
+subf %r3, %r3, %r4
+mulld %r12, %r12, %r3
+li %r3, 0
+subf %r12, %r12, %r3
+rldicr %r12, %r12, 32, 31
+rldicl %r12, %r12, 32, 32
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+27:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 27b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+and %r26, %r26, %r20
+addi %r14, %r10, 0
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+rldicl %r17, %r11, 63, 1
+li %r0, 0
+28:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 28b
+addi %r14, %r10, 0
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+add %r14, %r14, %r29
+li %r0, 1
+stw %r0, 0(%r14)
+addi %r5, %r10, 0
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+addi %r6, %r10, 0
+add %r6, %r6, %r29
+addi %r7, %r10, 0
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r4, %r11, 0
+addi %r14, %r8, 0
+rldicl %r17, %r11, 63, 1
+addi %r17, %r17, 1
+li %r0, 0
+29:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 29b
+210:
+lwz %r18, 0(%r6)
+addi %r6, %r6, 4
+lwz %r0, 0(%r8)
+lwz %r3, 0(%r7)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+mulld %r19, %r0, %r12
+rlwinm %r19, %r19, 0, 0, 31
+lwz %r3, 0(%r10)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+rldicl %r22, %r0, 32, 32
+addi %r14, %r8, 0
+addi %r15, %r7, 0
+addi %r16, %r10, 0
+addi %r17, %r11, -1
+211:
+lwz %r0, 4(%r14)
+lwz %r3, 4(%r15)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+lwz %r3, 4(%r16)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r22
+rldicl %r22, %r0, 32, 32
+stw %r0, 0(%r14)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 211b
+lwz %r0, 4(%r14)
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+add %r0, %r0, %r22
+stw %r0, 0(%r14)
+rldicl %r0, %r0, 32, 32
+add %r0, %r0, %r20
+stw %r0, 4(%r14)
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 210b
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+212:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 212b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r5, 0
+addi %r17, %r11, 0
+213:
+lwz %r0, 0(%r15)
+lwz %r3, 0(%r14)
+xor %r3, %r3, %r0
+and %r3, %r3, %r20
+xor %r3, %r3, %r0
+stw %r3, 0(%r16)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 213b
+addi %r5, %r10, 0
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+addi %r6, %r10, 0
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+addi %r7, %r10, 0
+add %r7, %r7, %r29
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r4, %r11, 0
+addi %r14, %r8, 0
+rldicl %r17, %r11, 63, 1
+addi %r17, %r17, 1
+li %r0, 0
+214:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 214b
+215:
+lwz %r18, 0(%r6)
+addi %r6, %r6, 4
+lwz %r0, 0(%r8)
+lwz %r3, 0(%r7)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+mulld %r19, %r0, %r12
+rlwinm %r19, %r19, 0, 0, 31
+lwz %r3, 0(%r10)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+rldicl %r22, %r0, 32, 32
+addi %r14, %r8, 0
+addi %r15, %r7, 0
+addi %r16, %r10, 0
+addi %r17, %r11, -1
+216:
+lwz %r0, 4(%r14)
+lwz %r3, 4(%r15)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+lwz %r3, 4(%r16)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r22
+rldicl %r22, %r0, 32, 32
+stw %r0, 0(%r14)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 216b
+lwz %r0, 4(%r14)
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+add %r0, %r0, %r22
+stw %r0, 0(%r14)
+rldicl %r0, %r0, 32, 32
+add %r0, %r0, %r20
+stw %r0, 4(%r14)
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 215b
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+217:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 217b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r5, 0
+addi %r17, %r11, 0
+218:
+lwz %r0, 0(%r15)
+lwz %r3, 0(%r14)
+xor %r3, %r3, %r0
+and %r3, %r3, %r20
+xor %r3, %r3, %r0
+stw %r3, 0(%r16)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 218b
+li %r25, 33
+219:
+addi %r5, %r10, 0
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+addi %r6, %r10, 0
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+addi %r7, %r10, 0
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r4, %r11, 0
+addi %r14, %r8, 0
+rldicl %r17, %r11, 63, 1
+addi %r17, %r17, 1
+li %r0, 0
+220:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 220b
+221:
+lwz %r18, 0(%r6)
+addi %r6, %r6, 4
+lwz %r0, 0(%r8)
+lwz %r3, 0(%r7)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+mulld %r19, %r0, %r12
+rlwinm %r19, %r19, 0, 0, 31
+lwz %r3, 0(%r10)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+rldicl %r22, %r0, 32, 32
+addi %r14, %r8, 0
+addi %r15, %r7, 0
+addi %r16, %r10, 0
+addi %r17, %r11, -1
+222:
+lwz %r0, 4(%r14)
+lwz %r3, 4(%r15)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+lwz %r3, 4(%r16)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r22
+rldicl %r22, %r0, 32, 32
+stw %r0, 0(%r14)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 222b
+lwz %r0, 4(%r14)
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+add %r0, %r0, %r22
+stw %r0, 0(%r14)
+rldicl %r0, %r0, 32, 32
+add %r0, %r0, %r20
+stw %r0, 4(%r14)
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 221b
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+223:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 223b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r5, 0
+addi %r17, %r11, 0
+224:
+lwz %r0, 0(%r15)
+lwz %r3, 0(%r14)
+xor %r3, %r3, %r0
+and %r3, %r3, %r20
+xor %r3, %r3, %r0
+stw %r3, 0(%r16)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 224b
+addi %r5, %r10, 0
+add %r5, %r5, %r29
+addi %r6, %r10, 0
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+addi %r7, %r10, 0
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r4, %r11, 0
+addi %r14, %r8, 0
+rldicl %r17, %r11, 63, 1
+addi %r17, %r17, 1
+li %r0, 0
+225:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 225b
+226:
+lwz %r18, 0(%r6)
+addi %r6, %r6, 4
+lwz %r0, 0(%r8)
+lwz %r3, 0(%r7)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+mulld %r19, %r0, %r12
+rlwinm %r19, %r19, 0, 0, 31
+lwz %r3, 0(%r10)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+rldicl %r22, %r0, 32, 32
+addi %r14, %r8, 0
+addi %r15, %r7, 0
+addi %r16, %r10, 0
+addi %r17, %r11, -1
+227:
+lwz %r0, 4(%r14)
+lwz %r3, 4(%r15)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+lwz %r3, 4(%r16)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r22
+rldicl %r22, %r0, 32, 32
+stw %r0, 0(%r14)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 227b
+lwz %r0, 4(%r14)
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+add %r0, %r0, %r22
+stw %r0, 0(%r14)
+rldicl %r0, %r0, 32, 32
+add %r0, %r0, %r20
+stw %r0, 4(%r14)
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 226b
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+228:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 228b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r5, 0
+addi %r17, %r11, 0
+229:
+lwz %r0, 0(%r15)
+lwz %r3, 0(%r14)
+xor %r3, %r3, %r0
+and %r3, %r3, %r20
+xor %r3, %r3, %r0
+stw %r3, 0(%r16)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 229b
+rldicl %r0, %r24, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+rldicr %r24, %r24, 1, 62
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r5, %r10, 0
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r5, 0
+addi %r17, %r11, 0
+230:
+lwz %r0, 0(%r15)
+lwz %r3, 0(%r14)
+xor %r3, %r3, %r0
+and %r3, %r3, %r20
+xor %r3, %r3, %r0
+stw %r3, 0(%r16)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 230b
+addi %r25, %r25, -1
+cmpldi %cr0, %r25, 0
+bne %cr0, 219b
+addi %r5, %r10, 0
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+add %r5, %r5, %r29
+addi %r6, %r10, 0
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+add %r6, %r6, %r29
+addi %r7, %r10, 0
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+add %r7, %r7, %r29
+addi %r8, %r10, 0
+add %r8, %r8, %r29
+add %r8, %r8, %r29
+addi %r9, %r10, 0
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+add %r9, %r9, %r29
+addi %r4, %r11, 0
+addi %r14, %r8, 0
+rldicl %r17, %r11, 63, 1
+addi %r17, %r17, 1
+li %r0, 0
+231:
+std %r0, 0(%r14)
+addi %r14, %r14, 8
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 231b
+232:
+lwz %r18, 0(%r6)
+addi %r6, %r6, 4
+lwz %r0, 0(%r8)
+lwz %r3, 0(%r7)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+mulld %r19, %r0, %r12
+rlwinm %r19, %r19, 0, 0, 31
+lwz %r3, 0(%r10)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+rldicl %r22, %r0, 32, 32
+addi %r14, %r8, 0
+addi %r15, %r7, 0
+addi %r16, %r10, 0
+addi %r17, %r11, -1
+233:
+lwz %r0, 4(%r14)
+lwz %r3, 4(%r15)
+mulld %r3, %r18, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+lwz %r3, 4(%r16)
+mulld %r3, %r19, %r3
+add %r0, %r0, %r3
+add %r0, %r0, %r22
+rldicl %r22, %r0, 32, 32
+stw %r0, 0(%r14)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 233b
+lwz %r0, 4(%r14)
+add %r0, %r0, %r20
+rldicl %r20, %r0, 32, 32
+rlwinm %r0, %r0, 0, 0, 31
+add %r0, %r0, %r22
+stw %r0, 0(%r14)
+rldicl %r0, %r0, 32, 32
+add %r0, %r0, %r20
+stw %r0, 4(%r14)
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 232b
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r10, 0
+addi %r17, %r11, 0
+li %r20, 0
+234:
+lwz %r0, 0(%r14)
+lwz %r3, 0(%r16)
+subf %r0, %r3, %r0
+subf %r0, %r20, %r0
+stw %r0, 0(%r15)
+rldicl %r20, %r0, 1, 63
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 234b
+lwz %r0, 0(%r14)
+subf %r0, %r20, %r0
+rldicl %r0, %r0, 1, 63
+li %r3, 0
+subf %r20, %r0, %r3
+addi %r14, %r8, 0
+addi %r15, %r9, 0
+addi %r16, %r5, 0
+addi %r17, %r11, 0
+235:
+lwz %r0, 0(%r15)
+lwz %r3, 0(%r14)
+xor %r3, %r3, %r0
+and %r3, %r3, %r20
+xor %r3, %r3, %r0
+stw %r3, 0(%r16)
+addi %r14, %r14, 4
+addi %r15, %r15, 4
+addi %r16, %r16, 4
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 235b
+addi %r15, %r10, 0
+add %r15, %r15, %r29
+add %r15, %r15, %r29
+add %r15, %r15, %r29
+add %r15, %r15, %r29
+add %r15, %r15, %r28
+addi %r15, %r15, -1
+addi %r16, %r27, 0
+addi %r17, %r28, 0
+236:
+lbz %r0, 0(%r15)
+and %r0, %r0, %r26
+stb %r0, 0(%r16)
+addi %r16, %r16, 1
+addi %r15, %r15, -1
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 236b
+li %r3, 1
+and %r3, %r3, %r26
+ld %r14, 128(%r23)
+ld %r15, 136(%r23)
+ld %r16, 144(%r23)
+ld %r17, 152(%r23)
+ld %r18, 160(%r23)
+ld %r19, 168(%r23)
+ld %r20, 176(%r23)
+ld %r21, 184(%r23)
+ld %r22, 192(%r23)
+ld %r24, 200(%r23)
+ld %r25, 208(%r23)
+ld %r26, 216(%r23)
+ld %r27, 224(%r23)
+ld %r28, 232(%r23)
+ld %r29, 240(%r23)
+ld %r23, 248(%r23)
+blr",
+    )
+}
