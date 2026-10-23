@@ -89,7 +89,7 @@ theorem pins_C1 : Pins C1 baseRegs := fun _ _ _ h₁ h₂ => base_pins h₁.base
 
 theorem pins_C2 : Pins C2 baseRegs := fun _ _ _ h₁ h₂ => base_pins h₁.1 h₂.1
 
-theorem pins_C3 : Pins C3 (baseRegs ++ [.r15, .r18]) := by
+theorem pins_C3 : Pins C3 (baseRegs ++ ([.r15, .r18] : List Reg)) := by
   intro d s₁ s₂ h₁ h₂ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact base_pins h₁.1 h₂.1 r hr

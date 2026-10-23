@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Precompute
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.ReverseEncoding
 import VerifiedGarbage.Proof.Bignum.ByteWords
-import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

@@ -4,11 +4,15 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreDouble
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreDouble
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Precompute
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # The precomputed values of an RSA modulus on PPC64LE: `R² mod n`

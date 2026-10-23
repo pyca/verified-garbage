@@ -107,7 +107,7 @@ def dataOf (s : State) : PD :=
 theorem front_ok {s : State} (h : fnContract.pre s) :
     WP isa (.block (Precompute.save ++ setup)) s fun s₂ =>
       C1 (dataOf s) s₂ ∧ (∀ i < 9, s₂.mem.readW (off (savW (s.gpr .r7)) (8 * i)) 64 = s.gpr (saved i)) ∧
-        Keep ([.r21] ++ [.r4, .r5, .r8, .r9, .r10, .r11, .r12, .r19]) s s₂ := by
+        Keep (([.r21] : List Reg) ++ ([.r4, .r5, .r8, .r9, .r10, .r11, .r12, .r19] : List Reg)) s s₂ := by
   obtain ⟨hrd, hwr, dPN, dPS, dNS, nwP, nwN, nwS, ⟨hk, hk'⟩, hpl, hsl⟩ := h
   simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords] at hpl hsl
   have hs : Scr s (s.gpr .r7) ((s.gpr .r8).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) nwS
