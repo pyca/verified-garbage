@@ -96,10 +96,23 @@ class Modules(unittest.TestCase):
                 self.assertEqual(rust_arches.arches([path], [t]), ALL)
 
     def test_the_repositorys_modules(self):
-        # Every gated module of the library builds on the four oldest
-        # architectures alone, and the crate's roots on every one.
-        self.assertEqual(rust_arches.arches(["src/x25519.rs"], [rust_arches.tree_version]),
-                         ["aarch64", "arm", "x86", "x86_64"])
+        # Each of the library's own modules gated on a list of architectures
+        # (whatever else its `cfg` requires, as `all(..., feature = "alloc")`)
+        # reaches exactly those, and the crate's roots every one.
+        gated = 0
+        for path in sorted((CI.parent / "src").glob("*.rs")):
+            text = path.read_text()
+            m = re.search(r"(?m)^#!\[cfg\(((?:any|all)\((?:[^()]|\([^()]*\))*\))\)\]", text)
+            if m is None or "not(" in m.group(1):
+                continue
+            listed = set(re.findall(r'target_arch = "(\w+)"', m.group(1)))
+            if not listed:
+                continue
+            gated += 1
+            with self.subTest(path=path.name):
+                self.assertEqual(rust_arches.arches([f"src/{path.name}"], [rust_arches.tree_version]),
+                                 sorted(listed))
+        self.assertGreater(gated, 50)
         self.assertEqual(rust_arches.arches(["src/lib.rs", "tests/main.rs"], [rust_arches.tree_version]), ALL)
 
     def test_git_versions(self):
