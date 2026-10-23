@@ -369,6 +369,48 @@ def openMain (c : XorCallee) : Prog isa :=
 
 end OpenKey
 
+/-! ## Encrypting 513 to 704 bytes: the one-time key from the stream
+
+`SealKey.sealMain` is `OpenKey.openMain` for `seal`: the one-time key and the
+keystream of the data's first 448 bytes from a call of the stream on
+`ctx[768, 1280)`, Poly1305 initialized and the additional data absorbed;
+then, as `seal` must, the data's first 448 bytes are encrypted
+(`OpenKey.xorFirst`) before Poly1305 absorbs them, in a stitched pass of
+four blocks (counters 8 to 11, into `ctx[128, 384)`; up to three blocks
+after each double round, 28 in all); the rest of the data is encrypted with
+those four blocks (`Short.xorKs`) and absorbed with its padding, the
+lengths absorbed, and `ctx[768, 1280)` zeroed again. It replaces the scalar
+block function before the chunks (`prologue`), which `sealStitchedMain`
+computes, with the zeroing and a separate pass of XORs. -/
+
+namespace SealKey
+
+/-- The counter set to 8, the kernel's arguments, the data's length kept in
+`x2`, and `x23` set to the 448 bytes the pass absorbs. -/
+def pre : List Instr :=
+  [.movz .w .x9 8 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, .addImm .x .x3 .x21 128,
+    mov .x2 .x23, .movz .x .x23 448 0]
+
+/-- `seal` but for the tag, for 513 to 704 bytes. -/
+def sealMain (c : XorCallee) : Prog isa :=
+  .seq (.block (save ++ moves ++ initState ++ ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128] : List Instr)))
+  (.seq (.block (OpenKey.copy ++ Pad.zero ++ OpenKey.args))
+  (.seq (.call c.name c.code)
+  (.seq (.block OpenKey.keyArgs)
+  (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)
+  (.seq (macPad .x24 .x25)
+  (.seq (.block lengths)
+  (.seq OpenKey.xorFirst
+  (.seq (.block (pre ++ TailO.load))
+  (.seq (TailO.kernel c.sve 3)
+  (.seq (.block TailO.out)
+  (.seq Short.xorKs
+  (.seq (macPad .x22 .x23)
+  (.seq absorbLengths
+    (.block Pad.zero))))))))))))))
+
+end SealKey
+
 /-- `seal` but for the tag, from the counter set to 1 (`counterOne`) after the
 one-time key's block (`prologue`). -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
@@ -537,24 +579,27 @@ def route (sve enc : Bool) : List Instr :=
   [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
     .lsr .x .x9 .x9 (wideSh sve enc)] ++ List.replicate 11 (.movz .x .x10 0 0)
 
-/-- The shortest length `OpenKey.openMain` takes: 513 with SVE2. Without
-it, from 513 to 576 bytes the stitched code's rest (1 to 64 bytes) goes to
-the stream, cheaper there than the pass of four blocks without XAR; from 577
-it computes that pass already (`TailO`), and the one-time key's block is
-what `OpenKey.openMain` saves (Neoverse N2: decrypting 513 bytes 9.9% faster
-with SVE2, 8.8% slower without). -/
-def keyLo (sve : Bool) : Nat := if sve then 513 else 577
+/-- The shortest length `OpenKey.openMain` (or `SealKey.sealMain`, `enc`)
+takes: 513 with SVE2 or when encrypting. Decrypting without SVE2, from 513
+to 576 bytes the stitched code's rest (1 to 64 bytes) goes to the stream,
+cheaper there than the pass of four blocks without XAR; from 577 it computes
+that pass already (`TailO`), and the one-time key's block is what
+`OpenKey.openMain` saves (Neoverse N2: decrypting 513 bytes 9.9% faster with
+SVE2, 8.8% slower without). When encrypting, the stitched code computes
+that pass from 513 (`Tail`). -/
+def keyLo (sve enc : Bool) : Nat := if sve || enc then 513 else 577
 
-/-- `route` when decrypting, after `x10 = 0` iff `keyLo sve ≤ x5 ≤ 704`, the
-lengths `OpenKey.openMain` takes: `b₂ - b₁ + 1`, with `b₁ = (x5 - 705) >> 63`
-(`x5 < 705`, in `x9`) and `b₂ = (x5 - keyLo sve) >> 63` (`x5 < keyLo sve`),
-for any `x5`. Four moves first keep the block, with its two branches, 64
-bytes long, as `route`'s with its branch, so that `openStitchedMain` keeps
-its alignment; only `x9` and `x10` are written. -/
-def routeOpen (sve : Bool) : List Instr :=
+/-- `route`, after `x10 = 0` iff `keyLo sve enc ≤ x5 ≤ 704`, the lengths
+`OpenKey.openMain` or `SealKey.sealMain` takes: `b₂ - b₁ + 1`, with
+`b₁ = (x5 - 705) >> 63` (`x5 < 705`, in `x9`) and
+`b₂ = (x5 - keyLo sve enc) >> 63` (`x5 < keyLo sve enc`), for any `x5`. Four
+moves first keep the block, with its two branches, 64 bytes long, as
+`route`'s with its branch, so that the stitched code keeps its alignment;
+only `x9` and `x10` are written. -/
+def routeKey (sve enc : Bool) : List Instr :=
   List.replicate 4 (.movz .x .x10 0 0) ++
-    [.subImm .x .x9 .x5 705, .lsr .x .x9 .x9 63, .subImm .x .x10 .x5 (keyLo sve), .lsr .x .x10 .x10 63,
-      .sub .x .x10 .x10 .x9, .addImm .x .x10 .x10 1] ++ (route sve false).take 4
+    [.subImm .x .x9 .x5 705, .lsr .x .x9 .x9 63, .subImm .x .x10 .x5 (keyLo sve enc), .lsr .x .x10 .x10 63,
+      .sub .x .x10 .x10 .x9, .addImm .x .x10 .x10 1] ++ (route sve enc).take 4
 
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
 checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route when
@@ -565,14 +610,15 @@ for the lengths `route` picks) or not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (Pad.sealRoute c)
-      (if stitched then .seq (.block (route c.sve true))
-        (.ite (.zero .x .x9) (sealWideMain c) (sealStitchedMain c))
+      (if stitched then .seq (.block (routeKey c.sve true))
+        (.ite (.zero .x .x9) (sealWideMain c)
+          (Code.iteCold (.zero .x .x10) (SealKey.sealMain c) (sealStitchedMain c)))
       else sealMain c))
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (openRoute c)
-      (if stitched then .seq (.block (routeOpen c.sve))
+      (if stitched then .seq (.block (routeKey c.sve false))
         (.ite (.zero .x .x9) (openWideMain c)
           (Code.iteCold (.zero .x .x10) (OpenKey.openMain c) (openStitchedMain c)))
       else openMain c))
