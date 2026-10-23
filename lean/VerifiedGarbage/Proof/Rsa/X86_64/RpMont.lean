@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Tactic.Push
 
 /-!

@@ -10,9 +10,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.Divisibility.Basic
-import Mathlib.Algebra.NeZero
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: `m = 2^t r`
