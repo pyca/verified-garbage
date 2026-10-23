@@ -23,6 +23,12 @@ pub(crate) mod chacha20;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ed25519_r32;
+
+#[rustfmt::skip]
+pub(crate) mod gf25519_r32;
+
+#[rustfmt::skip]
 pub(crate) mod hmac_sha256;
 
 #[rustfmt::skip]
