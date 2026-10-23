@@ -207,49 +207,49 @@ theorem finishN_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ : Nat}
       VG.Proof.X448.AArch64.Outside2 base o₁ 64 o₂ 64 s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.gpr = s.gpr := by
   rw [finish_eq, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (combine_ok (fun k e => L e k) hL (fun i hi e he' => by have := he e he' i hi; omega)
+  refine WP.mono (combine_ok (fun k e => L e k) hL (fun i hi e he' => by have := he e he' i hi; omega_arith)
     (fun i hi e he' => ho e he' i hi)) fun t ⟨tw, tm, tg, tr, twr, tv⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (m56_ok (fun e he' => by
-    rw [tv _ (fun i _ => V_ne _ (by omega) _ (by omega) (by omega))]; exact hM e he')) fun u ⟨uM, um, ur, uw, ug, uv⟩ => ?_
+    rw [tv _ (fun i _ => V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hM e he')) fun u ⟨uM, um, ur, uw, ug, uv⟩ => ?_
   have hu : ∀ i < 8, LaneIs u (16 + i) (fun e => w56 (L e) i) := fun i hi e he' => by
-    rw [uv _ (V_ne _ (by omega) _ (by omega) (by omega))]; exact tw i hi e he'
+    rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact tw i hi e he'
   rw [WP.block_append_iff]
   -- the last carries
   have b0 : ∀ e < 2, ∀ i < 8, w56 (L e) i < 2 ^ 57 := fun e he' i hi => by
-    have := he e he' i hi; have := ho e he' i hi; simp only [w56]; omega
+    have := he e he' i hi; have := ho e he' i hi; simp only [w56]; omega_arith
   simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [WP.block_append_iff]
   refine WP.mono (carry56_ok (i := 16) (Or.inl rfl) uM (hu 0 (by decide)) (hu 1 (by decide))
-    (fun e he' => by have := b0 e he' 1 (by decide); have := b0 e he' 0 (by decide); omega))
+    (fun e he' => by have := b0 e he' 1 (by decide); have := b0 e he' 0 (by decide); omega_arith))
     fun v ⟨va, vb, vm, vg, vr, vw, vv⟩ => ?_
   have vM : ∀ e < 2, (vdword (v.v (V 31)) e).toNat = 2 ^ 56 - 1 := fun e he' => by
-    rw [vv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-      (V_ne _ (by omega) _ (by omega) (by omega))]; exact uM e he'
+    rw [vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+      (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact uM e he'
   have v4 : LaneIs v 20 (fun e => w56 (L e) 4) := fun e he' => by
-    rw [vv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-      (V_ne _ (by omega) _ (by omega) (by omega))]; exact hu 4 (by decide) e he'
+    rw [vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+      (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hu 4 (by decide) e he'
   have v5 : LaneIs v 21 (fun e => w56 (L e) 5) := fun e he' => by
-    rw [vv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-      (V_ne _ (by omega) _ (by omega) (by omega))]; exact hu 5 (by decide) e he'
+    rw [vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+      (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hu 5 (by decide) e he'
   refine WP.mono (carry56_ok (i := 20) (Or.inr rfl) vM v4 v5
-    (fun e he' => by have := b0 e he' 5 (by decide); have := b0 e he' 4 (by decide); omega))
+    (fun e he' => by have := b0 e he' 5 (by decide); have := b0 e he' 4 (by decide); omega_arith))
     fun w ⟨wa, wb, wm, wg, wr, ww, wv⟩ => ?_
   -- the results
   have wl : ∀ i < 8, LaneIs w (16 + i) (fun e => out56 (L e) i) := by
     intro i hi e he'
-    rcases (show i = 0 ∨ i = 1 ∨ i = 4 ∨ i = 5 ∨ (i ≠ 0 ∧ i ≠ 1 ∧ i ≠ 4 ∧ i ≠ 5) by omega)
+    rcases (show i = 0 ∨ i = 1 ∨ i = 4 ∨ i = 5 ∨ (i ≠ 0 ∧ i ≠ 1 ∧ i ≠ 4 ∧ i ≠ 5) by omega_arith)
       with rfl | rfl | rfl | rfl | ⟨i0, i1, i4, i5⟩
-    · rw [wv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega)), va e he']; simp [out56]
-    · rw [wv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega)), vb e he']; simp [out56]
+    · rw [wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), va e he']; simp [out56]
+    · rw [wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), vb e he']; simp [out56]
     · rw [wa e he']; simp [out56]
     · rw [wb e he']; simp [out56]
-    · rw [wv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega)),
-        vv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega)), hu i hi e he']
+    · rw [wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)),
+        vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), hu i hi e he']
       simp [out56, i0, i1, i4, i5]
   have gw : w.gpr = s.gpr := by rw [wg, vg, ug, tg]
   have hw : Scr w base := scr_of hs gw (by rw [ww, vw, uw, twr])
@@ -259,29 +259,29 @@ theorem finishN_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ : Nat}
     VG.Proof.X448.AArch64.Outside2 base o₁ 64 o₂ 64 w.mem x.mem ∧ x.gpr = w.gpr ∧ x.rd = w.rd ∧ x.wr = w.wr ∧
     (∀ i < 8, x.v (V (16 + i)) = w.v (V (16 + i)))
   refine WP.mono (wp_range_flatMap (M := isa) (N := 4) inv (fun n x hn ⟨x1, x2, xo, xg, xr, xw, xv⟩ => ?_) 4
-    (by decide) w ⟨fun _ h => absurd h (by omega), fun _ h => absurd h (by omega),
+    (by decide) w ⟨fun _ h => absurd h (by omega_arith), fun _ h => absurd h (by omega_arith),
       VG.Proof.X448.AArch64.Outside2.refl _ _ _ _ _ _, rfl, rfl, rfl, fun _ _ => rfl⟩)
-    fun x ⟨x1, x2, xo, xg, xr, xw, _⟩ => ⟨fun i hi => x1 i (by omega), fun i hi => x2 i (by omega), ?_,
+    fun x ⟨x1, x2, xo, xg, xr, xw, _⟩ => ⟨fun i hi => x1 i (by omega_arith), fun i hi => x2 i (by omega_arith), ?_,
       by rw [xr, wr, vr, ur, tr], by rw [xw, ww, vw, uw, twr], by rw [xg, gw]⟩
   · have hx : Scr x base := ⟨by rw [xg]; exact hw.x3, by rw [xg]; exact hw.mask, xw ▸ hw.wr, hw.nowrap⟩
     refine WP.mono (outChunk_ok hx hn h₁ h₁' h₂ h₂' h12) fun y ⟨y1, y2, yo, yg, yr, yw, yv⟩ =>
-      ⟨fun i hi => ?_, fun i hi => ?_, xo.trans fun p hp hq => yo p (by omega) (by omega), yg.trans xg,
-        yr.trans xr, yw.trans xw, fun i hi => (yv _ (V_ne _ (by omega) _ (by omega) (by omega))
-          (V_ne _ (by omega) _ (by omega) (by omega))).trans (xv i hi)⟩
-    · rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega) with h | rfl | rfl
-      · rw [VG.Proof.X448.AArch64.Outside2.word (fun p hp hq => yo p hp hq) (by omega) (by omega) (by omega)]
+      ⟨fun i hi => ?_, fun i hi => ?_, xo.trans fun p hp hq => yo p (by omega_arith) (by omega_arith), yg.trans xg,
+        yr.trans xr, yw.trans xw, fun i hi => (yv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))).trans (xv i hi)⟩
+    · rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega_arith) with h | rfl | rfl
+      · rw [VG.Proof.X448.AArch64.Outside2.word (fun p hp hq => yo p hp hq) (by omega_arith) (by omega_arith) (by omega_arith)]
         exact x1 i h
-      · rw [show o₁ + 8 * (2 * n) = o₁ + 8 * (2 * n + 0) by omega, y1 0 (by decide), xv _ (by omega)]
-        exact wl _ (by omega) 0 (by decide)
-      · rw [y1 1 (by decide), xv _ (by omega)]
-        exact wl _ (by omega) 0 (by decide)
-    · rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega) with h | rfl | rfl
-      · rw [VG.Proof.X448.AArch64.Outside2.word (fun p hp hq => yo p hp hq) (by omega) (by omega) (by omega)]
+      · rw [show o₁ + 8 * (2 * n) = o₁ + 8 * (2 * n + 0) by omega_arith, y1 0 (by decide), xv _ (by omega_arith)]
+        exact wl _ (by omega_arith) 0 (by decide)
+      · rw [y1 1 (by decide), xv _ (by omega_arith)]
+        exact wl _ (by omega_arith) 0 (by decide)
+    · rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega_arith) with h | rfl | rfl
+      · rw [VG.Proof.X448.AArch64.Outside2.word (fun p hp hq => yo p hp hq) (by omega_arith) (by omega_arith) (by omega_arith)]
         exact x2 i h
-      · rw [show o₂ + 8 * (2 * n) = o₂ + 8 * (2 * n + 0) by omega, y2 0 (by decide), xv _ (by omega)]
-        exact wl _ (by omega) 1 (by decide)
-      · rw [y2 1 (by decide), xv _ (by omega)]
-        exact wl _ (by omega) 1 (by decide)
+      · rw [show o₂ + 8 * (2 * n) = o₂ + 8 * (2 * n + 0) by omega_arith, y2 0 (by decide), xv _ (by omega_arith)]
+        exact wl _ (by omega_arith) 1 (by decide)
+      · rw [y2 1 (by decide), xv _ (by omega_arith)]
+        exact wl _ (by omega_arith) 1 (by decide)
   · intro p hp hq
     rw [xo p hp hq, wm, vm, um, tm]
 

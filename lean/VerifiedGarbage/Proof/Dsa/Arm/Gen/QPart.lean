@@ -114,24 +114,24 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) (ok : PrimeOk (8 * G.qLen) g.qCode)
     VP (St G c X) g.qPart
       (St G (testCfg c (qClaims HO.md G k) G.witLen
         (Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k)) (G.witB.drop u))) X) := by
-  have hq0 : 0 < G.qLen := by omega
-  have hq56 : G.qLen < 56 := by omega
+  have hq0 : 0 < G.qLen := by omega_arith
+  have hq56 : G.qLen < 56 := by omega_arith
   have pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md hq56 HO.hL
   have hsl : (seedAt G k).length = G.qLen := by
-    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega
+    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
   -- The hash and q.
   have hHl : (HO.H (seedAt G k)).length = G.qLen := by
-    rw [HO.hash _ (by omega), HO.md.digest_length, HO.hN, hk4]
-  have hne : HO.H (seedAt G k) ≠ [] := fun e => by rw [e] at hHl; simp at hHl; omega
+    rw [HO.hash _ (by omega_arith), HO.md.digest_length, HO.hN, hk4]
+  have hne : HO.H (seedAt G k) ≠ [] := fun e => by rw [e] at hHl; simp at hHl; omega_arith
   have qb : shapedOctets (HO.H (seedAt G k)) 7 = qBytes G k := by rw [hH]
   have qbl : (qBytes G k).length = G.qLen := by
     rw [← qb, shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
-      (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega),
+      (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega_arith),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHl]
   have hqc : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
-    VG.Proof.Dsa.Generation.qCandidate_octets (by omega) _ (by rw [← hH, hHl])
+    VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [← hH, hHl])
   rw [← hqc]
-  have hsK : 4096 + 17024 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega
+  have hsK : 4096 + 17024 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega_arith
   generalize hpd : padTail HO.md G.qLen = pad at hpad pl
   generalize hsd : seedAt G k = sd at hsl hHl hne qb
   let c1 : Cfg := { c with cl := [(sMsg, sd), (G.qLen, pad)] }
@@ -143,16 +143,16 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) (ok : PrimeOk (8 * G.qLen) g.qCode)
   refine VP.seq (G := St G c1 X) ?_ (VP.seq (G := St G c2 X) ?_ (VP.seq (G := St G c3 X) ?_
     (VP.seq (G := St G c4 X) ?_ ?_)))
   · -- The seed, before the padding.
-    have := seedCopy_vp (X := X) (cl' := [(G.qLen, pad)]) rfl hk hq0 (by omega) (by omega) hsb hS hSv fun y hy => by
-      rw [List.mem_singleton] at hy; subst hy; exact ⟨hpad, .inr (by simp only [sMsg]; omega)⟩
+    have := seedCopy_vp (X := X) (cl' := [(G.qLen, pad)]) rfl hk hq0 (by omega_arith) (by omega_arith) hsb hS hSv fun y hy => by
+      rw [List.mem_singleton] at hy; subst hy; exact ⟨hpad, .inr (by simp only [sMsg]; omega_arith)⟩
     rwa [hsd] at this
   · -- The hash.
     refine hash_vp HO (c := fun _ => c1) (fun σ s h => h.1) rfl (msg := fun _ => sd) (dst := sQ)
-      (fun σ s ⟨h, _⟩ => ⟨by omega, ?_⟩) (by decide) (by simp only [sQ, sA]; omega)
+      (fun σ s ⟨h, _⟩ => ⟨by omega_arith, ?_⟩) (by decide) (by simp only [sQ, sA]; omega_arith)
       fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
     · have b1 := h.sb (sMsg, sd) (by simp [c1])
       have b2 := h.sb (G.qLen, pad) (by simp [c1])
-      rw [show (64 : Nat) = sd.length + pad.length by omega, VG.Proof.Dsa.Generation.bytesAt_append, b1]
+      rw [show (64 : Nat) = sd.length + pad.length by omega_arith, VG.Proof.Dsa.Generation.bytesAt_append, b1]
       have a : VG.Proof.Bignum.off (G.sa sMsg) sd.length = G.sa G.qLen := by
         simp only [VG.Proof.Bignum.off, GP.sa, sMsg, hsl]; rw [BitVec.add_zero]
       rw [a, b2, ← hpd]
@@ -160,43 +160,43 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) (ok : PrimeOk (8 * G.qLen) g.qCode)
     refine h.of_scrs R (os := [(sState, 32), (sA, 112), (sQ, 4 * g.G.k)]) (fun p hp => ?_)
       (f.mono fun r hr => List.mem_append_left _ (by simpa [GP.rss] using hr)) fun y hy => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl <;> simp only [sState, sA, sQ] <;> omega
+      rcases hp with rfl | rfl | rfl <;> simp only [sState, sA, sQ] <;> omega_arith
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl
     · refine .inl ⟨by simp [c1], fun p hp => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl <;> simp only [Apart, pl, sState, sA, sQ] <;> omega
-    · exact .inr ⟨by rw [hHl, ← hk4]; exact e, by simp only [hHl, sQ]; omega⟩
+      rcases hp with rfl | rfl | rfl <;> simp only [Apart, pl, sState, sA, sQ] <;> omega_arith
+    · exact .inr ⟨by rw [hHl, ← hk4]; exact e, by simp only [hHl, sQ]; omega_arith⟩
   · -- q's shape.
-    refine shapeQ_vp (c := fun _ => c2) (fun σ s h => h.1) rfl (N := G.qLen) (by omega) (by omega)
+    refine shapeQ_vp (c := fun _ => c2) (fun σ s h => h.1) rfl (N := G.qLen) (by omega_arith) (by omega_arith)
       (bs := HO.H sd) (fun σ s ⟨h, _⟩ => by have := h.sb (sQ, HO.H sd) (by simp [c2]); rwa [hHl] at this)
       fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
-    refine h.of_scr R (o := sQ) (n := G.qLen) (by simp only [sQ]; omega) (f.mono (by simp)) fun y hy => ?_
+    refine h.of_scr R (o := sQ) (n := G.qLen) (by simp only [sQ]; omega_arith) (f.mono (by simp)) fun y hy => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl
-    · exact .inl ⟨by simp [c2], .inl (by simp only [pl, sQ]; omega)⟩
-    · exact .inr ⟨by rw [qbl, ← qb]; exact e, by simp only [qbl, sQ]; omega⟩
+    · exact .inl ⟨by simp [c2], .inl (by simp only [pl, sQ]; omega_arith)⟩
+    · exact .inr ⟨by rw [qbl, ← qb]; exact e, by simp only [qbl, sQ]; omega_arith⟩
   · -- q to the test's working space.
     refine copyS_vp (c := fun _ => c3) (fun σ s h => h.1) rfl (dst := sA) (src := sQ) (n := G.qLen) hq0
-      (by omega) (by simp only [sA]; omega) (by simp only [sQ]; omega) (.inr (by simp only [sQ, sA]; omega))
+      (by omega_arith) (by simp only [sA]; omega_arith) (by simp only [sQ]; omega_arith) (.inr (by simp only [sQ, sA]; omega_arith))
       fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
     have b := h.sb (sQ, qBytes G k) (by simp [c3])
-    refine h.of_scr R (o := sA) (n := G.qLen) (by simp only [sA]; omega) (f.mono (by simp)) fun y hy => ?_
+    refine h.of_scr R (o := sA) (n := G.qLen) (by simp only [sA]; omega_arith) (f.mono (by simp)) fun y hy => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl | rfl
-    · exact .inr ⟨by rw [qbl, e, ← qbl]; exact b, by simp only [qbl, sA]; omega⟩
-    · exact .inl ⟨by simp [c3], .inl (by simp only [pl, sA]; omega)⟩
-    · exact .inl ⟨by simp [c3], .inl (by simp only [qbl, sQ, sA]; omega)⟩
+    · exact .inr ⟨by rw [qbl, e, ← qbl]; exact b, by simp only [qbl, sA]; omega_arith⟩
+    · exact .inl ⟨by simp [c3], .inl (by simp only [pl, sA]; omega_arith)⟩
+    · exact .inl ⟨by simp [c3], .inl (by simp only [qbl, sQ, sA]; omega_arith)⟩
   · -- The test.
-    have hqk := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega) (seedAt G k)
-    have hbl := VG.Proof.Dsa.Generation.qCandidate_bitLength (n := 8 * G.qLen) (by omega) (seedAt G k)
+    have hqk := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega_arith) (seedAt G k)
+    have hbl := VG.Proof.Dsa.Generation.qCandidate_bitLength (n := 8 * G.qLen) (by omega_arith) (seedAt G k)
     rw [← hqc] at hqk hbl
-    refine test_vp (c := c4) ok rfl hu hU hUv hwl hsize hb8 (by simp [c4]) (by rw [qbl]; omega) hqk.1 hbl h88 h92
+    refine test_vp (c := c4) ok rfl hu hU hUv hwl hsize hb8 (by simp [c4]) (by rw [qbl]; omega_arith) hqk.1 hbl h88 h92
       fun y hy => ?_
     simp only [qClaims, List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl
-    · exact ⟨by simp [c4, hpd], .inl (by simp only [hpd, pl, sA]; omega)⟩
-    · exact ⟨by simp [c4], .inl (by simp only [qbl, sQ, sA]; omega)⟩
+    · exact ⟨by simp [c4, hpd], .inl (by simp only [hpd, pl, sA]; omega_arith)⟩
+    · exact ⟨by simp [c4], .inl (by simp only [qbl, sQ, sA]; omega_arith)⟩
 
 end
 
