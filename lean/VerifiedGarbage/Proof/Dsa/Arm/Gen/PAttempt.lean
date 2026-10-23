@@ -148,31 +148,31 @@ theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) (okp : PrimeOk (8 * G.pLen) g.pC
     VP (St G (pCfg c HO G k off 0 [(sQ, qBytes G k)]) X) g.pAttempt
       (St G (pAttCfg c G (Spec.Dsa.decodeBE (xBytes HO G k off)) (Spec.Dsa.decodeBE (qBytes G k))
         (pRest HO.md G k) u) X) := by
-  have hq56 : G.qLen < 56 := by omega
+  have hq56 : G.qLen < 56 := by omega_arith
   have pl := padTail_length HO.md hq56 HO.hL
   have hsl : (seedAt G k).length = G.qLen := by
-    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega
+    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
   have hHl : ∀ j, (hX HO G k off j).length = G.qLen := fun j => by
-    rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega), HO.md.digest_length, HO.hN, hk4]
+    rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega_arith), HO.md.digest_length, HO.hN, hk4]
   have hc : (cnt G + 1) * G.qLen + G.qLen ≤ G.pLen + 64 ∧ G.pLen ≤ (cnt G + 1) * G.qLen := by
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> simp only [cnt, e1, e2] <;> decide
   have xl : (xBytes HO G k off).length = G.pLen := by
     rw [xBytes, VG.Proof.Ffdh.ParameterCandidate.topCut_length (by
-      rw [← List.length_pos_iff, List.length_drop, accB_length HO hHl]; omega), List.length_drop,
-      accB_length HO hHl]; omega
+      rw [← List.length_pos_iff, List.length_drop, accB_length HO hHl]; omega_arith), List.length_drop,
+      accB_length HO hHl]; omega_arith
   have hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k)).length = G.qLen := by
-    rw [← hH, HO.hash _ (by omega), HO.md.digest_length, HO.hN, hk4]
-  have hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega
+    rw [← hH, HO.hash _ (by omega_arith), HO.md.digest_length, HO.hN, hk4]
+  have hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega_arith
   have ql : (qBytes G k).length = G.qLen := by
     rw [qBytes, VG.Proof.Ffdh.ParameterCandidate.shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
-      (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega),
+      (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega_arith),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHq]
   have hqv : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
-    VG.Proof.Dsa.Generation.qCandidate_octets (by omega) _ (by rw [hHq])
+    VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [hHq])
   have qpos : 0 < Spec.Dsa.decodeBE (qBytes G k) := by
-    rw [hqv]; have := (VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega) (seedAt G k)).2.1
+    rw [hqv]; have := (VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega_arith) (seedAt G k)).2.1
     have : 0 < 2 ^ (8 * G.qLen - 1) := Nat.two_pow_pos _
-    omega
+    omega_arith
   have hXv : sX = 192 := rfl
   have hAv : sA = 4096 := rfl
   have hQv : sQ = 128 := rfl
@@ -181,16 +181,16 @@ theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) (okp : PrimeOk (8 * G.pLen) g.pC
   rw [hp, hq]
   refine VP.seq (pX_vp HO hlq hp hq hk4 hsb hk hS hSv hO hOv hoff (rest := [(sQ, qBytes G k)]) fun y hy => by
     rw [List.mem_singleton] at hy; subst hy
-    simp only [Apart, ql, pStart]; omega) ?_
+    simp only [Apart, ql, pStart]; omega_arith) ?_
   refine VP.seq (pArith_vp certs hlq (by simp) xl (by simp) ql qpos (rest := pRest HO.md G k) fun y hy => by
     simp only [pRest, List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl
-    · exact ⟨by simp, by simp only [Apart, pl]; omega⟩
-    · exact ⟨by simp, by simp only [Apart, ql]; omega⟩) ?_
+    · exact ⟨by simp, by simp only [Apart, pl]; omega_arith⟩
+    · exact ⟨by simp, by simp only [Apart, ql]; omega_arith⟩) ?_
   have xlt : Spec.Dsa.decodeBE (xBytes HO G k off) < 2 ^ (8 * G.pLen) := by
     have := VG.Proof.Dsa.decodeBE_lt (xBytes HO G k off)
     rwa [xl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-  have plt := pVal_lt (q := Spec.Dsa.decodeBE (qBytes G k)) (show 1 ≤ 8 * G.pLen by omega) xlt
+  have plt := pVal_lt (q := Spec.Dsa.decodeBE (qBytes G k)) (show 1 ≤ 8 * G.pLen by omega_arith) xlt
   have plt' : pVal (Spec.Dsa.decodeBE (xBytes HO G k off)) (Spec.Dsa.decodeBE (qBytes G k)) < 256 ^ G.pLen := by
     rwa [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
   refine VP.seq (topBit_vp rfl (by simp) plt') ?_
@@ -208,7 +208,7 @@ theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) (okp : PrimeOk (8 * G.pLen) g.pC
       rw [VG.Proof.Dsa.decodeBE_os2ip, VG.Proof.Rsa.os2ip_i2osp, Nat.mod_eq_of_lt plt']
     have podd : pv % 2 = 1 := hpv ▸ VG.Proof.Dsa.Generation.pReduction_odd _ _
     have pbl : Spec.Dsa.bitLength pv = 8 * G.pLen :=
-      (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, plt⟩
+      (VG.Proof.Dsa.bitLength_iff_bounds (by omega_arith)).mpr ⟨by omega_arith, plt⟩
     unfold pAttCfg
     rw [hpv]
     simp only [hcnd, ↓reduceIte]
@@ -221,25 +221,25 @@ theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) (okp : PrimeOk (8 * G.pLen) g.pC
       rw [cl0] at hy
       simp only [pRest, List.mem_cons, List.not_mem_nil, or_false] at hy
       rcases hy with rfl | rfl | rfl
-      · simp only [VG.Proof.Rsa.i2osp_length]; omega
-      · simp only [pl]; omega
-      · simp only [ql]; omega
+      · simp only [VG.Proof.Rsa.i2osp_length]; omega_arith
+      · simp only [pl]; omega_arith
+      · simp only [ql]; omega_arith
     have pin : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c0.cl := by rw [cl0]; simp
     let c1 : Cfg := { c0 with cl := (sA, Spec.Rsa.i2osp pv G.pLen) :: c0.cl }
     refine VP.seq (G := St G c1 X) (copyS_vp (c := fun _ => c0) (fun σ s h => h.1.1.1) rfl (dst := sA) (src := sPBE)
-      (n := G.pLen) (by omega) (by omega) (by simp only [sK, sA, wa]; omega) (by simp only [sK, sA, wa]; omega)
-      (.inr (by omega)) fun σ s t h R f e => ⟨?_, h.1.1.2⟩) ?_
+      (n := G.pLen) (by omega_arith) (by omega_arith) (by simp only [sK, sA, wa]; omega_arith) (by simp only [sK, sA, wa]; omega_arith)
+      (.inr (by omega_arith)) fun σ s t h R f e => ⟨?_, h.1.1.2⟩) ?_
     · have b := h.1.1.1.sb _ pin
       simp only [VG.Proof.Rsa.i2osp_length] at b
-      refine h.1.1.1.of_scr R (o := sA) (n := G.pLen) (by simp only [sK, sA, wa]; omega) (f.mono (by simp))
+      refine h.1.1.1.of_scr R (o := sA) (n := G.pLen) (by simp only [sK, sA, wa]; omega_arith) (f.mono (by simp))
         fun y hy => ?_
       rcases List.mem_cons.mp hy with rfl | hy
-      · exact .inr ⟨by rw [VG.Proof.Rsa.i2osp_length, e, b], by simp only [VG.Proof.Rsa.i2osp_length, sK, sA, wa]; omega⟩
-      · exact .inl ⟨hy, .inl (by have := big y hy; omega)⟩
+      · exact .inr ⟨by rw [VG.Proof.Rsa.i2osp_length, e, b], by simp only [VG.Proof.Rsa.i2osp_length, sK, sA, wa]; omega_arith⟩
+      · exact .inl ⟨hy, .inl (by have := big y hy; omega_arith)⟩
     refine VP.seq (test_vp (c := c1) (cb := Spec.Rsa.i2osp pv G.pLen) okp rfl hu (by simp only [c1, eLS]; exact hU)
-      (by simp only [c1, eV]; exact hUv) hwl hsize (by simp only [wa]; omega) (by simp [c1])
-      (by rw [VG.Proof.Rsa.i2osp_length]; omega) (by rw [pb]; exact podd) (by rw [pb]; exact pbl) (by simp only [c1, eLS]; exact h88) (by simp only [c1, eLS]; exact h92)
-      (cl' := c0.cl) fun y hy => ⟨by simp [c1, hy], .inl (by have := big y hy; omega)⟩) ?_
+      (by simp only [c1, eV]; exact hUv) hwl hsize (by simp only [wa]; omega_arith) (by simp [c1])
+      (by rw [VG.Proof.Rsa.i2osp_length]; omega_arith) (by rw [pb]; exact podd) (by rw [pb]; exact pbl) (by simp only [c1, eLS]; exact h88) (by simp only [c1, eLS]; exact h92)
+      (cl' := c0.cl) fun y hy => ⟨by simp [c1, hy], .inl (by have := big y hy; omega_arith)⟩) ?_
     rw [pb, show testCfg c1 c0.cl G.witLen (Spec.Dsa.probablePrime pv (G.witB.drop u)) =
       testCfg c0 c0.cl G.witLen (Spec.Dsa.probablePrime pv (G.witB.drop u)) by unfold testCfg; split <;> rfl]
     exact pDecide_vp _

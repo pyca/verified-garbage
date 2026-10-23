@@ -37,14 +37,14 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0
   refine WP.seq (hM.keep.withSp hsp ?_)
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder
   -- The table of `u`.
   refine WP.seq (WP.mono (bits_ok hM.scr h0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)
-    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
+    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_arith)))
     fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
   have hs₁ := hM.scr.of_keeps k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
@@ -82,7 +82,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
       (sv_unch U₂ h7 hn hi (apart_gW hi (fun h => hl (subG _ h))))).trans (v₁ hi)
   refine WP.seq (WP.mono (bits_ok hs₃ h0 (sl_le c h7 (i := V) (by decide)) (tbl_le h7)
-    (Or.inl (by have := sl_below_bits c (i := V) (by decide) 0 0; omega)))
+    (Or.inl (by have := sl_below_bits c (i := V) (by decide) 0 0; omega_arith)))
     fun s₄ ⟨b₄, k₄, O₄⟩ => ?_)
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   have U₄ : Unch base [(bitsAt c.n 0, 64 * c.n)] s₃.mem s₄.mem := O₄.unch
@@ -100,10 +100,10 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     · exact lt_of_eq_of_lt F₄.b3p (hmont _)
     · rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt
     · rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt
-    · exact lt_of_eq_of_lt F₄.onep (Nat.mod_lt _ (by omega))
-    · rw [v₄ (by decide), rx₃]; omega
+    · exact lt_of_eq_of_lt F₄.onep (Nat.mod_lt _ (by omega_arith))
+    · rw [v₄ (by decide), rx₃]; omega_arith
     · rw [v₄ (by decide), ry₃]; exact hmont _
-    · rw [v₄ (by decide), rz₃]; omega
+    · rw [v₄ (by decide), rz₃]; omega_arith
   have tv₄ : ∀ {i}, i < 45 → i ∉ combPtsW → tmv c.C c.n base s₄ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
     fun hi hl => by
       show toM _ _ (sv c base s₄ _) = toM _ _ (sv c base s _)
@@ -165,10 +165,10 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans (W₃ (by decide) (by decide))))
   have flag₆ : flagW c base s₆ = flagW c base s := by
     rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide),
-      Unch.readW32 U₄ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
-      Unch.readW32 U₃ (fun w hw => (apart_slW (c := c) (i := FLAG) (by decide) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
+      Unch.readW32 U₄ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega_arith) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith),
+      Unch.readW32 U₃ (fun w hw => (apart_slW (c := c) (i := FLAG) (by decide) w hw).imp (fun h => by omega_arith) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith),
       flag_unch_gW U₂ h7 h0 hn,
-      Unch.readW32 U₁ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+      Unch.readW32 U₁ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega_arith) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)]
   refine ⟨hs₆, by rw [wr₆, K₅.2.2, k₄.2.2, k₃.2.2, K₂.2.2, k₁.2.2, hM.wr],
     by rw [rd₆, K₅.2.1, k₄.2.1, k₃.2.1, K₂.2.1, k₁.2.1, hM.rd],
     by rw [g₆ _ (by decide), K₅.1 _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide), K₂.1 _ (by decide),

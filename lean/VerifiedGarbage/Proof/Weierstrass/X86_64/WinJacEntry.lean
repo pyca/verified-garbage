@@ -81,16 +81,16 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
   have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
   have hbits := hf.bits hL hF
   generalize hk' : k + JacWinCfg.offset K.J = k' at hbits
-  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega
+  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok K.tc hs (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
-    (by show 5 < 9; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
+    (by show 5 < 9; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_arith) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
   have hH : K.tc.H = 16 := rfl
   rw [hwin, hH] at r₁
   generalize ha : magH 16 (Window5.nib k' j) = a at r₁
-  have ha16 : a ≤ 16 := by rw [← ha]; exact magH_le (by have := Window5.nib_lt k' j; omega)
+  have ha16 : a ≤ 16 := by rw [← ha]; exact magH_le (by have := Window5.nib_lt k' j; omega_arith)
   refine WP.mono (jselect_ok hL hs₁ r₁ ha16) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have m₁ : s₁.mem = s.mem := k₁.2.1
@@ -109,7 +109,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
   have hy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by
     rw [← ty, e₂ 1 (by decide)]
     split
-    · exact (hT a (by omega) ha16).lt 1 (by decide)
+    · exact (hT a (by omega_arith) ha16).lt 1 (by decide)
     · exact hp0
   have hyneg : K.E.y + 8 * K.M.n ≤ K.neg ∨ K.neg + 8 * K.M.n ≤ K.E.y := by
     rw [hL.Ty]; exact (hL.jg_apart (x := K.neg) (by jw_mem) (by decide)).symm
@@ -126,30 +126,30 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
         rcases hw with rfl | rfl
         · exact mem_jwW_ws (other_ws (by jw_mem))
         · exact mem_jwW_tmp
-      have := hL.bits_w w hw'; omega) (by omega)]
+      have := hL.bits_w w hw'; omega_arith) (by omega_arith)]
     have := F₂.bits hL hF t ht; rw [hk'] at this; exact this
   rw [WP.block_append_iff]
   refine WP.mono (signMask_ok K.tc hs₃ (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
-    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega) (by rw [k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (by decide),
+    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_arith) (by rw [k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (by decide),
       k₁.1 _ (by decide), hb]) hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   rw [hwin] at x₄
   refine WP.mono (sel_ok (decide (Window5.nib k' j < 2 ^ (K.tc.w - 1))) K.M.n hs₄ x₄ (o := K.E.y)
     (a := K.E.y) (b := K.neg) (hL.le my) (hL.le my) (hL.le hneg) (Or.inl (Nat.le_refl _))
-    (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+    (by omega_arith)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
+  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
   -- `T`'s words: as at `s₂` but `Y`.
   have keepT : ∀ c < 5, c ≠ 1 → wordsVal s₅.mem base (TS K c) K.M.n = wordsVal s₂.mem base (TS K c) K.M.n := by
     intro c hc h1
     have hy : TS K c + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ TS K c := by
-      rw [hL.Ty]; exact jg_sep K (by omega)
-    rw [O₅.wordsVal hy (b64 _ (jg_mem (by omega))), m₄, k₃.unch.wordsVal (fun w hw => by
+      rw [hL.Ty]; exact jg_sep K (by omega_arith)
+    rw [O₅.wordsVal hy (b64 _ (jg_mem (by omega_arith))), m₄, k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · exact (hL.jg_apart (x := K.neg) (by jw_mem) (i := 80 + c) (by omega)).symm
-      · exact hL.lay.tmp _ (jg_mem (by omega))) (b64 _ (jg_mem (by omega)))]
+      · exact (hL.jg_apart (x := K.neg) (by jw_mem) (i := 80 + c) (by omega_arith)).symm
+      · exact hL.lay.tmp _ (jg_mem (by omega_arith))) (b64 _ (jg_mem (by omega_arith)))]
   have y₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -224,7 +224,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
       simp only [decide_eq_true hng, ↓reduceIte] at keepY
       have hy : tmv C K.M.n base s₅ (TS K 1) = -tmv C K.M.n base s₂ (TS K 1) := by
         show toM _ _ _ = -toM _ _ _
-        rw [keepY, toM_sub (by omega), toM_zero, ty]
+        rw [keepY, toM_sub (by omega_arith), toM_zero, ty]
         grind
       refine ⟨fun c hc => ?_, ?_, ?_, ?_, ?_⟩
       · by_cases h1 : c = 1
@@ -243,7 +243,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
         · subst h1; exact keepY
         · exact keepT c hc h1
   · rw [tz 2 (by decide) (by decide)]
-    exact T₂z 2 (by decide) (by rw [ha] at h; omega)
+    exact T₂z 2 (by decide) (by rw [ha] at h; omega_arith)
   · rw [ha] at h ⊢
     rw [keepT 2 (by decide) (by decide), e₂' 2 (by decide), ite_eq_left_of_eq_true _ _ (eq_true h)]
 

@@ -44,7 +44,7 @@ structure LWInv (s₀ : State) (B : Addr) (Z ed k w : Nat) (src : Addr) (bs : Li
 theorem loadWordsStep_ok {s₀ t : State} {B src : Addr} {Z ed k w : Nat} {bs : List Byte}
     (hk : k = 8 * w) (hk' : k < 2 ^ 31) (hl : bs.length = k) (hed : ed + 8 * w ≤ Z)
     (hsrc : InRegions (s₀.rd ++ s₀.wr) src k)
-    (hb : ∀ i (hi : i < k), s₀.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega))
+    (hb : ∀ i (hi : i < k), s₀.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_arith))
     (hsep : ∀ i < k, ofs B (src + BitVec.ofNat 64 i) < ed ∨ ed + 8 * w ≤ ofs B (src + BitVec.ofNat 64 i))
     {j : Nat} (hj : j < w) (h : LWInv s₀ B Z ed k w src bs j t) :
     WP isa (.block [ld .x3 .x1, .rev .x3 .x3, .subImm .x .x5 .x5 8, st .x3 .x5, next .x1, .subImm .x .x2 .x2 8]) t
@@ -52,13 +52,13 @@ theorem loadWordsStep_ok {s₀ t : State} {B src : Addr} {Z ed k w : Nat} {bs : 
   have hn := h.scr.nowrap
   have hread : InRegions (t.rd ++ t.wr) (src + BitVec.ofNat 64 (8 * j)) 8 := by
     rw [h.keep.rd, h.keep.wr]
-    exact VG.CallLay.inRegions_sub hsrc (by omega) (by omega)
+    exact VG.CallLay.inRegions_sub hsrc (by omega_arith) (by omega_arith)
   have hbytes : ∀ i (hi : i < bs.length), t.mem (src + BitVec.ofNat 64 i) = bs[i] := by
     intro i hi
-    rw [h.out _ (by have := hsep i (by omega); omega)]
-    exact hb i (by omega)
-  have hdigit := read_digit (q := w - 1 - j) (by omega) hbytes
-  rw [hl, show k - 8 * (w - 1 - j + 1) = 8 * j by omega] at hdigit
+    rw [h.out _ (by have := hsep i (by omega_arith); omega_arith)]
+    exact hb i (by omega_arith)
+  have hdigit := read_digit (q := w - 1 - j) (by omega_arith) hbytes
+  rw [hl, show k - 8 * (w - 1 - j + 1) = 8 * j by omega_arith] at hdigit
   refine WP.mono (WP.keep [.x1, .x2, .x3, .x5] (Q := fun u =>
     u.mem = t.mem.writeW (off B (ed + 8 * (w - 1 - j))) (BitVec.ofNat 64 (Spec.Rsa.os2ip bs / 256 ^ (8 * (w - 1 - j)))) ∧
     u.gpr .x1 = src + BitVec.ofNat 64 (8 * (j + 1)) ∧ u.gpr .x2 = BitVec.ofNat 64 (k - 8 * (j + 1)) ∧
@@ -66,28 +66,28 @@ theorem loadWordsStep_ok {s₀ t : State} {B src : Addr} {Z ed k w : Nat} {bs : 
     fun u ⟨⟨hm, h1, h2, h5⟩, ku⟩ => ?_
   · have hx5 : off B (ed + 8 * (w - j)) - BitVec.ofNat 64 8 = off B (ed + 8 * (w - 1 - j)) := by
       show B + _ - _ = B + _
-      rw [VG.Offset.add_ofNat_sub B (by omega)]; congr 2; omega
+      rw [VG.Offset.add_ofNat_sub B (by omega_arith)]; congr 2; omega_arith
     have hx1 : src + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 8 = src + BitVec.ofNat 64 (8 * (j + 1)) := by
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2
     have hx2 : BitVec.ofNat 64 (k - 8 * j) - BitVec.ofNat 64 8 = BitVec.ofNat 64 (k - 8 * (j + 1)) := by
-      rw [VG.Offset.ofNat_sub_ofNat (by omega)]; congr 1
+      rw [VG.Offset.ofNat_sub_ofNat (by omega_arith)]; congr 1
     have hx5' : off B (ed + 8 * (w - 1 - j)) = off B (ed + 8 * (w - (j + 1))) := by
-      rw [show w - (j + 1) = w - 1 - j by omega]
+      rw [show w - (j + 1) = w - 1 - j by omega_arith]
     brun [h.x1, h.x2, h.x5, hread, exec_rev, readW64, hdigit, hx5, hx1, hx2,
-      h.scr.st (show ed + 8 * (w - 1 - j) + 8 ≤ Z by omega)]
+      h.scr.st (show ed + 8 * (w - 1 - j) + 8 ≤ Z by omega_arith)]
     exact hx5'
-  · have hw8 : ed + 8 * (w - 1 - j) + 8 ≤ 2 ^ 64 := by omega
+  · have hw8 : ed + 8 * (w - 1 - j) + 8 ≤ 2 ^ 64 := by omega_arith
     refine ⟨⟨h.scr.congr ku.wr, (h.keep.trans ku).mono (by decide), h1, h2, h5, fun q hq hq' => ?_, ?_⟩, ?_⟩
     · rw [hm]
       by_cases he : q = w - 1 - j
       · subst he; exact word_writeW_self _ _ _ _
-      · rw [(writeW_outside t.mem B _ hw8).word (by omega) (by omega)]
-        exact h.words q (by omega) hq'
+      · rw [(writeW_outside t.mem B _ hw8).word (by omega_arith) (by omega_arith)]
+        exact h.words q (by omega_arith) hq'
     · intro x hx
-      rw [hm, writeW_outside t.mem B _ hw8 x (by omega)]
+      rw [hm, writeW_outside t.mem B _ hw8 x (by omega_arith)]
       exact h.out x hx
-    · rw [h2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+    · rw [h2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
 
 theorem loadWords_ok {s : State} {B src : Addr} {Z ed k w : Nat} {bs : List Byte}
     (hs : Scr s B Z) (h1 : s.gpr .x1 = src) (h2 : s.gpr .x2 = BitVec.ofNat 64 k)

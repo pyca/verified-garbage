@@ -59,22 +59,22 @@ theorem reduce_ok {s : State} {base : Addr} {size acc tmp out n p : Nat} {M : Mo
   unfold reduce
   rw [L.width]
   refine WP.block_append (WP.block_append (WP.mono
-    (redSum_ok (minv32 M) hs ha hmod (by omega) (by omega) ham (by omega))
+    (redSum_ok (minv32 M) hs ha hmod (by omega_arith) (by omega_arith) ham (by omega_arith))
     fun s₁ ⟨O₁, K₁, V₁⟩ => ?_))
   have hs₁ := hs.of_keeps K₁ (by decide)
   have M₁ : val32 s₁.mem base M.mo n = p := by
     rw [Outs.val32 O₁ (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega) (by omega), hm]
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith), hm]
   refine WP.mono (addIfNeg_ok hs₁ (acc := acc + 4) (modulus := M.mo) (tmp := tmp) (n := n)
-    (by omega) hmod htmp (by omega) htm) fun s₂ ⟨O₂, K₂, V₂⟩ => ?_
+    (by omega_arith) hmod htmp (by omega_arith) htm) fun s₂ ⟨O₂, K₂, V₂⟩ => ?_
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have M₂ : val32 s₂.mem base M.mo n = p := by
     rw [Outs.val32 O₂ (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega) (by omega), M₁]
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith), M₁]
   have P : 2 ^ (32 * (n + 1)) = 2 ^ (32 * n) * 2 ^ 32 := by
     rw [pow32_succ, Nat.mul_comm]
   have E : val32 s₁.mem base acc (n + 2) =
@@ -85,7 +85,7 @@ theorem reduce_ok {s : State} {base : Addr} {size acc tmp out n p : Nat} {M : Mo
     rw [V₁, hm]
     simp only [sign32]
     have P' : 2 ^ (32 * (n + 2)) = (2 ^ (32 * n) * 2 ^ 32) * 2 ^ 32 := by
-      rw [show n + 2 = (n + 1) + 1 by omega, pow32_succ, pow32_succ]
+      rw [show n + 2 = (n + 1) + 1 by omega_arith, pow32_succ, pow32_succ]
       ring
     rw [P', P]
     rw [Nat.add_right_comm]
@@ -106,8 +106,8 @@ theorem reduce_ok {s : State} {base : Addr} {size acc tmp out n p : Nat} {M : Mo
     (by simpa only [← P, Nat.cast_pow, Nat.cast_ofNat] using hval)
     (by rw [← low32]) E (high32 _ _ _ _) F
   rcases H with ⟨bound, result⟩
-  refine WP.mono (csub_ok hs₂ L.width L.positive (by omega) hout hsub hmod
-    (by omega) L.sm (by omega) L.os M₂ bound) fun z ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
+  refine WP.mono (csub_ok hs₂ L.width L.positive (by omega_arith) hout hsub hmod
+    (by omega_arith) L.sm (by omega_arith) L.os M₂ bound) fun z ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
   · intro x hx
     have hac := hx (acc, 4 * (n + 2)) (by simp)
     have htc := hx (tmp, 4 * (n + 1)) (by simp)
@@ -118,11 +118,11 @@ theorem reduce_ok {s : State} {base : Addr} {size acc tmp out n p : Nat} {M : Mo
       O₂ x (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega),
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith),
       O₁ x (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega)]
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith)]
   · exact (K₁.trans (K₂.mono (by decide))).trans (K₃.mono (by decide))
   · rw [V₃]
     exact result

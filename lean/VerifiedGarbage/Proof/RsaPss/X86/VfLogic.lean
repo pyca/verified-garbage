@@ -118,7 +118,7 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
   obtain ⟨b, rest, hbr⟩ : ∃ b rest, P.nB = b :: rest := by
     cases e : P.nB with
-    | nil => rw [e] at hl; simp at hl; omega
+    | nil => rw [e] at hl; simp at hl; omega_arith
     | cons b rest => exact ⟨b, rest, rfl⟩
   have hn0 : n0 P = b := by simp [n0, hbr]
   have hbt : b.toNat ≠ 0 := fun e => hf.1 (hn0 ▸ BitVec.eq_of_toNat_eq e)
@@ -132,8 +132,8 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
   have hs0 : (sLenO P).getD 0 = eLen P := by unfold sLenO eLen; split <;> rfl
   rw [show Spec.RsaPss.verify h.G h.G P.nB = Spec.RsaPss.verify h.G h.G (b :: rest) by rw [hbr],
     RsaPss.verify_bytes h.G hG (emLen := P.K - lo P) (lo := lo P)
-      (by unfold digB; rw [RsaPkcs1Sig.bytesAt_len, gl]) (by rw [hsB, List.length_cons]; omega) rfl hem
-      (by rw [List.length_cons]; omega) hlo (by rw [gl, hs0]; omega)]
+      (by unfold digB; rw [RsaPkcs1Sig.bytesAt_len, gl]) (by rw [hsB, List.length_cons]; omega_arith) rfl hem
+      (by rw [List.length_cons]; omega_arith) hlo (by rw [gl, hs0]; omega_arith)]
   generalize hz : 8 * (P.K - lo P) - (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (b :: rest)) - 1) = z at hcz ⊢
   replace hcz : (cW ((n0 P).setWidth 32)).setWidth 8 = (0xFF : Byte) >>> z := by rw [hn0]; exact hcz
   have hx' : ∀ i < P.K, ((Spec.Rsa.publicOpChecked (b :: rest) P.eB sB).getD
@@ -142,8 +142,8 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
   have hxl : ((Spec.Rsa.publicOpChecked (b :: rest) P.eB sB).getD
       (Spec.RsaPss.zeros (b :: rest).length)).length = P.K := by
     cases e : Spec.Rsa.publicOpChecked (b :: rest) P.eB sB with
-    | none => rw [Option.getD_none, RsaPss.zeros_length, List.length_cons]; omega
-    | some y => rw [Option.getD_some, RsaPss.publicOpChecked_length' e, List.length_cons]; omega
+    | none => rw [Option.getD_none, RsaPss.zeros_length, List.length_cons]; omega_arith
+    | some y => rw [Option.getD_some, RsaPss.publicOpChecked_length' e, List.length_cons]; omega_arith
   generalize ((Spec.Rsa.publicOpChecked (b :: rest) P.eB sB).getD (Spec.RsaPss.zeros (b :: rest).length)) = x
     at hx' hxl ⊢
   have hdrop : ∀ i, lo P + i < P.K → (x.drop (lo P)).getD i 0 = emv P τ (lo P + i) := fun i hi' => by
@@ -151,37 +151,37 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
   have hL : P.K - lo P - h.G.len - 1 = dbN h P := by rw [gl]
   have hvH : RsaPss.vH h.G (x.drop (lo P)) (dbN h P) = seedV h P τ := by
     unfold RsaPss.vH
-    refine RsaPss.eq_range_map (by simp only [List.length_take, List.length_drop, hxl, gl]; omega) fun i hi' => ?_
+    refine RsaPss.eq_range_map (by simp only [List.length_take, List.length_drop, hxl, gl]; omega_arith) fun i hi' => ?_
     rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by rw [gl]; exact hi'), List.getElem?_drop,
-      ← List.getD_eq_getElem?_getD, hdrop _ (by omega), Nat.add_assoc]
+      ← List.getD_eq_getElem?_getD, hdrop _ (by omega_arith), Nat.add_assoc]
   have ht : ∀ j < dbN h P, ((x.drop (lo P)).take (dbN h P)).getD j 0 = emv P τ (lo P + j) := fun j hj => by
-    rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hj, ← List.getD_eq_getElem?_getD, hdrop _ (by omega)]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hj, ← List.getD_eq_getElem?_getD, hdrop _ (by omega_arith)]
   have hmk : (Spec.Mgf1.mgf1 h.G (seedV h P τ) (dbN h P)).length = dbN h P := Mgf1.mgf1_length hG _ _
   have htl : ((x.drop (lo P)).take (dbN h P)).length = dbN h P := by
-    simp only [List.length_take, List.length_drop, hxl]; omega
+    simp only [List.length_take, List.length_drop, hxl]; omega_arith
   have hvDb : RsaPss.vDb h.G (x.drop (lo P)) (dbN h P) z = dbL h P τ := by
     unfold RsaPss.vDb
     rw [hvH]
-    refine RsaPss.eq_range_map (by rw [RsaPss.clearTop_length, Mgf1.xorBytes_length, hmk, htl]; omega)
+    refine RsaPss.eq_range_map (by rw [RsaPss.clearTop_length, Mgf1.xorBytes_length, hmk, htl]; omega_arith)
       fun i hi' => ?_
     rw [RsaPss.clearTop_getD]
     by_cases e : i = 0
     · subst e
-      rw [ite_eq_left rfl, RsaPss.xorBytes_getD (by omega) (by omega), ht 0 (by omega), ← hcz]
+      rw [ite_eq_left rfl, RsaPss.xorBytes_getD (by omega_arith) (by omega_arith), ht 0 (by omega_arith), ← hcz]
       simp only [dbF, ite_true, Nat.add_zero]
-    · rw [ite_eq_right e, RsaPss.xorBytes_getD (by omega) (by omega), ht i hi']
+    · rw [ite_eq_right e, RsaPss.xorBytes_getD (by omega_arith) (by omega_arith), ht i hi']
       simp only [dbF, e, ite_false]
   have hlz : RsaPss.lz (dbL h P τ) = lzF h P τ := rfl
   unfold RsaPss.EncOk
-  rw [hL, hvDb, hvH, hlz, hdrop _ (by omega), hdrop 0 (by omega), show lo P + (P.K - lo P - 1) = P.K - 1 by omega,
-    Nat.add_zero, hx' 0 (by omega), ← hcz, acc2_iff h P τ hlo (fun e => hf.1 (BitVec.eq_of_toNat_eq e)) (by omega) hi.slt32, HOk_iff]
+  rw [hL, hvDb, hvH, hlz, hdrop _ (by omega_arith), hdrop 0 (by omega_arith), show lo P + (P.K - lo P - 1) = P.K - 1 by omega_arith,
+    Nat.add_zero, hx' 0 (by omega_arith), ← hcz, acc2_iff h P τ hlo (fun e => hf.1 (BitVec.eq_of_toNat_eq e)) (by omega_arith) hi.slt32, HOk_iff]
   constructor
   · rintro ⟨⟨⟨a1, a0, a2⟩, f, v, sl⟩, hm⟩
     rw [M_eq h f sl] at hm
     refine ⟨a0, a1, a2, f, by rw [dbL_getD h f]; exact v, ?_, hm⟩
     unfold sLenO
     by_cases ha : P.any = 0
-    · rw [ite_eq_left ha]; right; have := sl ha; congr 1; omega
+    · rw [ite_eq_left ha]; right; have := sl ha; congr 1; omega_arith
     · rw [ite_eq_right ha]; left; rfl
   · rintro ⟨a0, a1, a2, f, v, sl, hm⟩
     have sl' : P.any = 0 → dbN h P - lzF h P τ - 1 = P.slt := fun ha => by
@@ -189,7 +189,7 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
       rw [ite_eq_left ha] at sl
       rcases sl with sl | sl
       · exact absurd sl (by simp)
-      · have := Option.some.inj sl; omega
+      · have := Option.some.inj sl; omega_arith
     exact ⟨⟨⟨a1, a0, a2⟩, f, by rw [← dbL_getD h f]; exact v, sl'⟩, by rw [M_eq h f sl']; exact hm⟩
 
 end VG.Proof.RsaPss.X86.Vf

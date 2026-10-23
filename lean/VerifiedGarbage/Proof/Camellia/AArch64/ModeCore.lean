@@ -66,11 +66,11 @@ theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tailS
     (hr : Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B)) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 d, 8⟩ r := by
   rcases hr with h | h
-  · exact h.sub_left (VG.Offset.sub_base B (show d + 8 ≤ 8 * slots by rw [slots_eq]; rw [tailSlot_eq] at hd; omega))
+  · exact h.sub_left (VG.Offset.sub_base B (show d + 8 ≤ 8 * slots by rw [slots_eq]; rw [tailSlot_eq] at hd; omega_arith))
   · refine Region.Disjoint.sub_right ?_ h
     show Region.Disjoint ⟨B + BitVec.ofNat 64 d, 8⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 128⟩
-    exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at hd ⊢; omega)
-      (by simp only [tailSlot_eq] at hd; omega) (by simp only [tailSlot_eq]; omega)
+    exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at hd ⊢; omega_arith)
+      (by simp only [tailSlot_eq] at hd; omega_arith) (by simp only [tailSlot_eq]; omega_arith)
 
 theorem ready_frame {dir : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region}
     (h : Ready dir s B k) (hf : Frame rs s.mem s'.mem)
@@ -81,12 +81,12 @@ theorem ready_frame {dir : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitV
   have hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
       s'.mem.readW (B + BitVec.ofNat 64 d) 64 = s.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_disjoint h1 (hd r hr)) (by decide)
-  have hg4 : k.1 / 6 ≤ 4 := by omega
+  have hg4 : k.1 / 6 ≤ 4 := by omega_arith
   refine ⟨hR, ⟨fun kv hkv => ?_, fun i hi => (he i hi).congr fun j hj => ?_⟩, ?_⟩
   · have hk := mask_range hkv
     rw [← hm kv hkv]
-    exact hR' (8 * kv.1) (by rw [tailSlot_eq]; omega)
-  · exact hR' (8 * keySlot + 64 * i + 8 * j) (by rw [keySlot_eq, tailSlot_eq]; omega)
+    exact hR' (8 * kv.1) (by rw [tailSlot_eq]; omega_arith)
+  · exact hR' (8 * keySlot + 64 * i + 8 * j) (by rw [keySlot_eq, tailSlot_eq]; omega_arith)
   · rw [hg .x4 (by cases dir <;> decide), hx4]
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec 64)} (h : KeyArgs s rs k)
@@ -99,7 +99,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
+  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_arith
   exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base p hl)).symm
 
 /-- The cipher of the direction `d`. -/
@@ -207,7 +207,7 @@ theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toN
 theorem ws_covers {s : State} {B : Addr} {d : Dir} (hs : ScrIn s B (dirCore d).total) :
     Covers [⟨B, 8 * slots⟩] s.wr := Covers.of_sub fun r hr => by
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨_, hs.wr, 0, by rw [BitVec.add_zero], by show 0 + 8 * slots ≤ 8 * (dirCore d).total; rw [total_eq]; omega⟩
+  exact ⟨_, hs.wr, 0, by rw [BitVec.add_zero], by show 0 + 8 * slots ≤ 8 * (dirCore d).total; rw [total_eq]; omega_arith⟩
 
 theorem toNat_rounds {R : Nat} (hR : R = 18 ∨ R = 24) : (BitVec.ofNat 64 R).toNat = R := by
   rcases hR with rfl | rfl <;> rfl
@@ -246,7 +246,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
   show WP isa (prepareCall d) s _
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
   have hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * slots⟩ :=
-    (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; omega))
+    (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; omega_arith))
   have w : WP isa (.call (Spec.Camellia.Prepared.prepareApi layout).name prepareKeys) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ Frame [⟨B, 8 * slots⟩] s₄.mem s'.mem ∧
       Holds layout s'.mem B R (schedWords s.mem p R) (specDir d) := by
@@ -271,7 +271,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
       · rw [State.withRegions_wr, g3, g4, Nat.mul_comm]
       · rw [g0, g3, g4, Nat.mul_comm]; exact hsep
       · rw [g0]; exact hfit
-      · rw [g3, g4]; omega
+      · rw [g3, g4]; omega_arith
       · rw [g1]; exact hRr
       · rw [g2]; cases d <;> decide
       · rw [g4, size_eq]
@@ -322,11 +322,11 @@ theorem holds_of_keeps {R : Nat} (hR : R = 18 ∨ R = 24) {m m' : Mem} {B : Addr
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  have hg4 : R / 6 ≤ 4 := by omega
-  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega) (by
+  have hg4 : R / 6 ≤ 4 := by omega_arith
+  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_arith) (by
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     rw [evenSlot_eq, m3Slot_eq, keySlot_eq, savedSlot_eq, tailSlot_eq]
-    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega)]
+    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_arith)]
   exact h r hr i hi
 
 theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
@@ -385,7 +385,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
         rw [State.withRegions_mem, State.callEntry_mem, mem₄]
       refine ⟨rfl, ?_, ?_, ?_, ?_, ?_⟩
       · rw [State.withRegions_wr, g1, g2, Nat.mul_comm]
-      · rw [g1, g2]; omega
+      · rw [g1, g2]; omega_arith
       · rw [g0]; exact hRr
       · rw [g2, size_eq]
       · rw [g0, g1, hm₀]; exact ⟨ws, specDir d, hH⟩
