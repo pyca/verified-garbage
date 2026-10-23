@@ -19,7 +19,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::idea::vg_idea_expand_key;
@@ -40,7 +41,12 @@ pub struct IdeaCfb64 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
 /// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 type Cfb = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl IdeaCfb64 {
