@@ -165,4 +165,82 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     · rw [tm]
       exact (fr₁.mono (by simp)).trans ((frame_of_outside0 out₃ (Nat.le_refl _)).mono (by simp))
 
+/-! ## The public data of a run, and the state after `setup` -/
+
+/-- The public data of a run: `pre`, `n`, the working space, `n_len`, the
+working space's size in bytes and `n`'s bytes. -/
+structure PD where
+  P : Addr
+  N : Addr
+  S : Addr
+  k : Nat
+  Z : Nat
+  nb : List Byte
+
+/-- The words of a number of `n_len` bytes. -/
+abbrev PD.w (d : PD) : Nat := (d.k + 7) / 8
+
+/-- The registers `setup` sets for the rest of the function. -/
+def baseRegs : List Reg := [.r19, .r10, .r5, .r8, .r9, .r11, .r21, .r6, .r12]
+
+/-- What holds from `setup` on. -/
+structure Base (d : PD) (s : State) : Prop where
+  scr : Scr s d.S d.Z
+  pre : Scr s d.P (16 * d.w)
+  k64 : 64 ≤ d.k
+  k1024 : d.k ≤ 1024
+  hZ : slot d.w 8 ≤ d.Z
+  hPS : ∀ x, ofs d.S x < d.Z → 16 * d.w ≤ ofs d.P x
+  len : d.nb.length = d.k
+  r19 : s.gpr .r19 = d.P
+  r10 : s.gpr .r10 = off d.S (slot d.w 0)
+  r5 : s.gpr .r5 = off d.S (slot d.w 1)
+  r8 : s.gpr .r8 = off d.S (slot d.w 2)
+  r9 : s.gpr .r9 = off d.S (slot d.w 3)
+  r11 : s.gpr .r11 = BitVec.ofNat 64 (2 * d.w)
+  r21 : s.gpr .r21 = d.S
+  r6 : s.gpr .r6 = BitVec.ofNat 64 d.k
+  r12 : s.gpr .r12 = d.N
+
+theorem Base.keep {d : PD} {s t : State} {rs : List Reg} (h : Base d s) (k : Keep rs s t)
+    (hr : ∀ r ∈ baseRegs, r ∉ rs := by decide) : Base d t where
+  scr := h.scr.congr k.wr
+  pre := h.pre.congr k.wr
+  k64 := h.k64
+  k1024 := h.k1024
+  hZ := h.hZ
+  hPS := h.hPS
+  len := h.len
+  r19 := (k.gpr _ (hr _ (by decide))).trans h.r19
+  r10 := (k.gpr _ (hr _ (by decide))).trans h.r10
+  r5 := (k.gpr _ (hr _ (by decide))).trans h.r5
+  r8 := (k.gpr _ (hr _ (by decide))).trans h.r8
+  r9 := (k.gpr _ (hr _ (by decide))).trans h.r9
+  r11 := (k.gpr _ (hr _ (by decide))).trans h.r11
+  r21 := (k.gpr _ (hr _ (by decide))).trans h.r21
+  r6 := (k.gpr _ (hr _ (by decide))).trans h.r6
+  r12 := (k.gpr _ (hr _ (by decide))).trans h.r12
+
+/-- The state after `setup`: `n`'s bytes are readable, apart from the working
+space and still in memory. -/
+structure C1 (d : PD) (s : State) : Prop where
+  base : Base d s
+  rd : ∀ i < d.k, InRegions (s.rd ++ s.wr) (off d.N i) 1
+  sep : ∀ i < d.k, ∀ x, ofs d.S x < d.Z → off d.N i ≠ x
+  bytes : ∀ i (h : i < d.nb.length), s.mem (off d.N i) = d.nb[i]
+
+theorem C1.bytesAt {d : PD} {s : State} (h : C1 d s) : Spec.Rsa.bytesAt s.mem d.N d.k = d.nb :=
+  List.ext_getElem (by simp [Spec.Rsa.bytesAt, h.base.len]) fun i h1 h2 => by
+    simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
+    exact h.bytes i h2
+
+theorem core_C1 {d : PD} {s : State} (h : C1 d s) :
+    WP isa core s fun t =>
+      (preOut d.nb d.P (2 * d.w) (t.gpr .r3) t.mem ∧ Frame [arrR d.S d.w, ⟨d.P, 16 * d.w⟩] s.mem t.mem) ∧
+        Keep coreRegs s t := by
+  have hb := h.base
+  refine WP.mono (core_ok hb.scr hb.pre rfl hb.k64 hb.k1024 hb.hZ hb.r19 hb.r6 hb.r12 hb.r10 hb.r5 hb.r8
+    hb.r9 hb.r11 h.rd h.sep hb.hPS) fun t ⟨⟨ho, hf⟩, k⟩ => ⟨⟨?_, hf⟩, k⟩
+  rwa [h.bytesAt] at ho
+
 end VG.Proof.Bignum.PPC64LE.Pre
