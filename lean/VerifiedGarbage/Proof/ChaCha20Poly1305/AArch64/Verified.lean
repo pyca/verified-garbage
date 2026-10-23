@@ -148,9 +148,10 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
         (fun h => ?_) (fun _ => ?_)
       rotate_left
       · have hL₂ : L s₂ = L s₁ := by rw [L, L, ag₂.gpr .x5 (by decide) (by decide)]
-        refine WP.iteCold_iff.mpr (WP.ite (decide (513 ≤ L s₁ ∧ L s₁ ≤ 704)) (OpenKey.key_eval x10₂)
+        refine WP.iteCold_iff.mpr (WP.ite (decide (keyLo v.callee.sve ≤ L s₁ ∧ L s₁ ≤ 704)) (OpenKey.key_eval x10₂)
           (fun hk => ?_) (fun _ => ?_))
         · have hk' := of_decide_eq_true hk
+          have h513 : 513 ≤ keyLo v.callee.sve := by cases v.callee.sve <;> decide
           exact WP.mono (OpenKey.openMain_ok v hp₂ (by omega) (by omega))
             fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
         · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)

@@ -289,11 +289,11 @@ def rest (sve : Bool) : Prog isa :=
 
 end TailO
 
-/-! ## Decrypting 513 to 704 bytes: the one-time key from the stream
+/-! ## Decrypting 513 (or 577) to 704 bytes: the one-time key from the stream
 
 Before the chunks, `openStitchedMain` computes the one-time key with the
 scalar block function (`prologue`), about as long as the stitched pass of
-four blocks. From 513 to 704 bytes, `OpenKey.openMain` instead takes it from
+four blocks. From `keyLo` to 704 bytes, `OpenKey.openMain` instead takes it from
 a call of the stream, which computes the keystream of counters 0 to 7 with
 the eight-block kernel, and absorbs all the data in a stitched pass of four
 blocks:
@@ -537,15 +537,23 @@ def route (sve enc : Bool) : List Instr :=
   [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55, .subImm .x .x9 .x9 (wideLo sve enc),
     .lsr .x .x9 .x9 (wideSh sve enc)] ++ List.replicate 11 (.movz .x .x10 0 0)
 
-/-- `route` when decrypting, after `x10 = 0` iff `513 ≤ x5 ≤ 704`, the lengths
-`OpenKey.openMain` takes: `b₂ - b₁ + 1`, with `b₁ = (x5 - 705) >> 63`
-(`x5 < 705`, in `x9`) and `b₂ = (x5 - 513) >> 63` (`x5 < 513`), for `x5`
-below `2^63`. Four moves first keep the block, with its two branches, 64
+/-- The shortest length `OpenKey.openMain` takes: 513 with SVE2. Without
+it, from 513 to 576 bytes the stitched code's rest (1 to 64 bytes) goes to
+the stream, cheaper there than the pass of four blocks without XAR; from 577
+it computes that pass already (`TailO`), and the one-time key's block is
+what `OpenKey.openMain` saves (Neoverse N2: decrypting 513 bytes 9.9% faster
+with SVE2, 8.8% slower without). -/
+def keyLo (sve : Bool) : Nat := if sve then 513 else 577
+
+/-- `route` when decrypting, after `x10 = 0` iff `keyLo sve ≤ x5 ≤ 704`, the
+lengths `OpenKey.openMain` takes: `b₂ - b₁ + 1`, with `b₁ = (x5 - 705) >> 63`
+(`x5 < 705`, in `x9`) and `b₂ = (x5 - keyLo sve) >> 63` (`x5 < keyLo sve`),
+for any `x5`. Four moves first keep the block, with its two branches, 64
 bytes long, as `route`'s with its branch, so that `openStitchedMain` keeps
 its alignment; only `x9` and `x10` are written. -/
 def routeOpen (sve : Bool) : List Instr :=
   List.replicate 4 (.movz .x .x10 0 0) ++
-    [.subImm .x .x9 .x5 705, .lsr .x .x9 .x9 63, .subImm .x .x10 .x5 513, .lsr .x .x10 .x10 63,
+    [.subImm .x .x9 .x5 705, .lsr .x .x9 .x9 63, .subImm .x .x10 .x5 (keyLo sve), .lsr .x .x10 .x10 63,
       .sub .x .x10 .x10 .x9, .addImm .x .x10 .x10 1] ++ (route sve false).take 4
 
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis

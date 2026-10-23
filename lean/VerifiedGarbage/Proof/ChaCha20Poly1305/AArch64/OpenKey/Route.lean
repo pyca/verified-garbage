@@ -31,14 +31,14 @@ theorem shr63_sub {x k : Nat} (hx : x < 2 ^ 64) (hk : k ≤ 1024) :
       Nat.mod_eq_of_lt (by omega : x - k < 2 ^ 64)]
 
 /-- The value `routeOpen` leaves in `x10`. -/
-abbrev keyVal (x : BitVec 64) : BitVec 64 :=
-  (x - BitVec.ofNat 64 513) >>> 63 - (x - BitVec.ofNat 64 705) >>> 63 + BitVec.ofNat 64 1
+abbrev keyVal (lo : Nat) (x : BitVec 64) : BitVec 64 :=
+  (x - BitVec.ofNat 64 lo) >>> 63 - (x - BitVec.ofNat 64 705) >>> 63 + BitVec.ofNat 64 1
 
-theorem keyVal_eq {x : Nat} (hx : x < 2 ^ 64) :
-    (keyVal (BitVec.ofNat 64 x) == 0) = decide (513 ≤ x ∧ x ≤ 704) := by
-  have b₂ := shr63_sub hx (k := 513) (by decide)
+theorem keyVal_eq {lo x : Nat} (hlo : 1 ≤ lo) (hlo' : lo ≤ 705) (hx : x < 2 ^ 64) :
+    (keyVal lo (BitVec.ofNat 64 x) == 0) = decide (lo ≤ x ∧ x ≤ 704) := by
+  have b₂ := shr63_sub hx (k := lo) (by omega)
   have b₁ := shr63_sub hx (k := 705) (by decide)
-  have q₂ : (x - 513) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
+  have q₂ : (x - lo) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
   have q₁ : (x - 705) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
   have hz : ∀ y : BitVec 64, (y == 0) = decide (y.toNat = 0) := fun y => by
     by_cases hy : y = 0
@@ -49,7 +49,7 @@ theorem keyVal_eq {x : Nat} (hx : x < 2 ^ 64) :
   rw [hz, keyVal, BitVec.toNat_add, BitVec.toNat_sub, b₁, b₂, BitVec.toNat_ofNat]
   congr 1
   apply propext
-  by_cases h513 : x < 513
+  by_cases h513 : x < lo
   · simp only [h513, show x < 705 by omega, ite_true]; omega
   · by_cases h705 : x < 705
     · simp only [h513, h705, ite_true, ite_false]; omega
@@ -57,25 +57,25 @@ theorem keyVal_eq {x : Nat} (hx : x < 2 ^ 64) :
       by_cases hb : x - 705 < 2 ^ 63
       · rw [Nat.div_eq_of_lt hb]; omega
       · rw [Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega),
-          Nat.div_eq_of_lt_le (k := 1) (m := x - 513) (by omega) (by omega)]
+          Nat.div_eq_of_lt_le (k := 1) (m := x - lo) (by omega) (by omega)]
         omega
 
 /-- `routeOpen`: `x10` and then `route`'s `x9`. -/
 theorem routeOpen_ok (sve : Bool) (s₀ : State) :
     WP isa (.block (routeOpen sve)) s₀ fun s₁ => Agree s₀ s₁ ∧
-      s₁.gpr .x9 = routeVal sve false (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (s₀.gpr .x5) := by
+      s₁.gpr .x9 = routeVal sve false (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5) := by
   have hlo : wideLo sve false < 4096 := by cases sve <;> decide
   have hsh : wideSh sve false < 64 := by cases sve <;> decide
   have h : WP isa (.block (routeOpen sve)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = routeVal sve false (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (s₀.gpr .x5) ∧
+      s₁.gpr .x9 = routeVal sve false (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5) ∧
       s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
     unfold routeOpen
     refine WP.block_append (WP.block_append ((pad_ok 4 s₀).mono fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ => ?_))
     refine wp_subImm (by decide) fun s₅ u₅ => wp_lsr (by decide) fun s₆ u₆ =>
-      wp_subImm (by decide) fun s₇ u₇ => wp_lsr (by decide) fun s₈ u₈ => wp_sub fun s₉ u₉ =>
+      wp_subImm (by cases sve <;> decide) fun s₇ u₇ => wp_lsr (by decide) fun s₈ u₈ => wp_sub fun s₉ u₉ =>
       wp_addImm (by decide) fun s₁₀ u₁₀ => WP.block_nil ?_
     have x5 : s₄.gpr .x5 = s₀.gpr .x5 := g₄ _ (by decide)
-    have x10₁₀ : s₁₀.gpr .x10 = keyVal (s₀.gpr .x5) := by
+    have x10₁₀ : s₁₀.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5) := by
       rw [u₁₀.gpr, u₉.gpr, u₈.gpr, u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), x5,
         u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.gpr, x5]
     show WP isa (.block (List.take 4 (route sve false))) s₁₀ _
@@ -97,9 +97,10 @@ theorem routeOpen_ok (sve : Bool) (s₀ : State) :
     fun s₁ ⟨⟨⟨g, x9, x10, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9, x10⟩
 
 /-- The branch: to `OpenKey.openMain` iff the length is 513 to 704 bytes. -/
-theorem key_eval {s₀ s₁ : State} (h : s₁.gpr .x10 = keyVal (s₀.gpr .x5)) :
-    isa.eval (.zero .x .x10) s₁ = some (decide (513 ≤ L s₀ ∧ L s₀ ≤ 704)) := by
+theorem key_eval {sve : Bool} {s₀ s₁ : State} (h : s₁.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5)) :
+    isa.eval (.zero .x .x10) s₁ = some (decide (keyLo sve ≤ L s₀ ∧ L s₀ ≤ 704)) := by
   have e : isa.eval (.zero .x .x10) s₁ = some (s₁.gpr .x10 == 0) := eval_zero s₁ .x10
-  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, keyVal_eq (s₀.gpr .x5).isLt]
+  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀,
+    keyVal_eq (by cases sve <;> decide) (by cases sve <;> decide) (s₀.gpr .x5).isLt]
 
 end VG.Proof.ChaCha20Poly1305.AArch64.OpenKey
