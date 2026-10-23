@@ -19,7 +19,7 @@ namespace VG.Proof.AesGcm.PPC64LE
 
 open VG VG.PPC64LE
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk)
+open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk encryptWith)
 
 abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 12 ∨ r.toNat = 14
 
@@ -169,5 +169,42 @@ def streamVerifyPPC64LE : Contract isa where
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp
+
+/-- The first `n` stack arguments, at `sp + 96`. -/
+abbrev args (s : State) (n : Nat) : Region := ⟨stackArgAddr s 0, 8 * n⟩
+
+/-- What `vg_aes_gcm_seal` needs: `(ctx = r3, rounds = r4, nonce = r5, nonce_len = r6, aad = r7,
+aad_len = r8, data = r9, len = r10, tag = [sp + 96], scratch = [sp + 104])`. -/
+def sealPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .r3, 256⟩
+  let nonce : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
+  let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
+  let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
+  let tag : Region := ⟨stackArg s 0, 16⟩
+  let scr : Region := ⟨stackArg s 1, 2560⟩
+  s.rd = [ctx, nonce, aad, args s 2] ∧ s.wr = [data, tag, scr] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+    aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 2) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 2) ∧
+    (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 112 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+
+/-- The public arguments of `seal` and `open`, with `n` on the stack. -/
+def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
+  s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp ∧
+    ∀ i < n, stackArg s₁ i = stackArg s₂ i
+
+/-- `vg_aes_gcm_seal`. -/
+def sealPPC64LE : Contract isa where
+  pre := sealPre
+  post s s' :=
+    encryptWith (ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat) (ctxH s.mem (s.gpr .r3)) 16
+        (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat)
+        (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) =
+      (bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat, bytesAt s'.mem (stackArg s 0) 16)
+  pub := onePub 2
 
 end VG.Proof.AesGcm.PPC64LE

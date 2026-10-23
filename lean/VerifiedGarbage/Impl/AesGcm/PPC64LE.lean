@@ -397,4 +397,44 @@ def streamVerify : Prog isa :=
       (.seq recv (.seq (finTag 0) (cmp 0))))
     (.block restore)))
 
+/-! ## One shot -/
+
+/-- The entry of `seal` and `open`: `(ctx = r3, rounds = r4, nonce = r5,
+nonce_len = r6, aad = r7, aad_len = r8, data = r9, len = r10, tag = [sp + 96],
+…, scratch = [sp + off])`, kept in `r29`, `r28`, `r24` (and `r25`, `r18`),
+`r21`, `r22`, `r27`, `r23` and `r20`; the state is at `W + 16` (`r30`). -/
+def oneEntry (off : Nat) : List Instr :=
+  [.addSp .r12 0, .load .d .r12 .r12 off] ++ save .r12 ++
+    ([mov .r29 .r3, mov .r28 .r4, .addi .r30 .r31 16, mov .r24 .r5, mov .r25 .r6, mov .r18 .r6,
+      mov .r21 .r7, mov .r22 .r8, mov .r27 .r9, mov .r23 .r10, .addSp .r12 0, .load .d .r20 .r12 96] :
+      List Instr)
+
+/-- `J₀`, then the additional data absorbed and padded. -/
+def oneAad : Prog isa :=
+  .seq j0
+  (.seq (.block [mov .r24 .r21, mov .r25 .r22, .li .r26 0])
+  (.seq (absorb 16)
+  (.seq (.block [.li .r0 15, .logic .and .r26 .r22 .r0])
+    (flush 16))))
+
+/-- The arguments of `crypt` or `absorb` for the data, from its start. -/
+def dataArgs : List Instr := [mov .r24 .r27, mov .r25 .r23, .li .r26 0]
+
+/-- The data encrypted or decrypted, from the first counter block. -/
+def oneCrypt : Prog isa := .seq (.block dataArgs) crypt
+
+/-- The data (as ciphertext) absorbed and padded, and the tag into `W + o`. -/
+def oneTag (o : Nat) : Prog isa :=
+  .seq (.block dataArgs)
+  (.seq (absorb 16)
+  (.seq (.block [.li .r0 15, .logic .and .r26 .r23 .r0])
+  (.seq (flush 16)
+  (.seq (.block [mov .r24 .r22, mov .r26 .r23])
+    (tag o)))))
+
+/-- `vg_aes_gcm_seal`, with `scratch = [sp + 104]`. -/
+def «seal» : Prog isa :=
+  .seq (.block (oneEntry 104))
+    (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
+
 end VG.Impl.AesGcm.PPC64LE
