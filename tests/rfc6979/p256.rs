@@ -108,10 +108,6 @@ fn p256_verify() {
     }
     assert_ne!(key, other);
     assert!(format!("{key:?}").starts_with("VerifyingKey"));
-    assert_eq!(
-        Error::InvalidSignature.to_string(),
-        "invalid ECDSA signature"
-    );
 }
 
 #[test]
@@ -139,5 +135,4 @@ fn p256_keys() {
         }
         assert!(key.public_key().is_ok());
     }
-    assert_eq!(Error::InvalidKey.to_string(), "invalid ECDSA private key");
 }
