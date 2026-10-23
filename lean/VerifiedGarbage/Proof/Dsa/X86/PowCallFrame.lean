@@ -58,9 +58,8 @@ theorem squarings_stackUse (n : Nat) : ∀ k, stackUse (squarings n k) ≤ 96
   | 0 => by simp [squarings, stackUse]
   | k + 1 => by
     rw [show squarings n (k + 1) = .seq (squarings n k) (mul n 4 4 4) from rfl]
-    simp only [stackUse, mul_stackUse]
-    have := squarings_stackUse n k
-    omega
+    simp only [stackUse, mul_stackUse, Nat.max_le]
+    exact ⟨squarings_stackUse n k, Nat.le_refl _⟩
 
 theorem body_stackUse (n e : Nat) : stackUse (body n e) ≤ 96 := by
   have := squarings_stackUse n 6
@@ -68,7 +67,7 @@ theorem body_stackUse (n e : Nat) : stackUse (body n e) ≤ 96 := by
   have h₂ : stackUse (one n (slot n 7)) = 0 := rfl
   have h₃ : stackUse (selectProduct (contextMod n) (slot n 6) (slot n 7) 4) = 0 := rfl
   have h₄ : stackUse (shiftDown e (slot n 8)) = 0 := rfl
-  simp only [body, core, setup, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄]
+  simp only [body, core, setup, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄, Nat.max_le]
   omega
 
 theorem zone_ofs {sp : BitVec 32} {base : Addr} {size : Nat}
