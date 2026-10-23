@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.DeriveVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Verified
@@ -56,6 +57,16 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.Exchange.code
     verified := Proof.Ffdh.X86.Exchange.verified
     spSafe := Proof.Ffdh.X86.Shape.exchange_spSafe
+    stack := 116 },
+  Spec.Ffdh.derivePublicApi.artifact X86.target {
+    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
+      The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power \
+      over x's `x_len` bytes, loaded at the top of the exponent, and y's range is the acceptance \
+      mask, which clears the output. Powers of a checked generator remain in its q subgroup, so y \
+      needs only its range check. Callee-saved registers reside in scratch."]
+    code := Impl.Ffdh.X86.DerivePublic.code
+    verified := Proof.Ffdh.X86.Derive.verified
+    spSafe := Proof.Ffdh.X86.Shape.derivePublic_spSafe
     stack := 116 },
   Spec.Ffdh.keyInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.KeyInit.code

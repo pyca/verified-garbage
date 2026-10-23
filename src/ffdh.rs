@@ -234,13 +234,24 @@ impl PrivateKey {
             return Err(Error::InvalidKey);
         }
         let mut y = alloc::vec![0; params.p.len()];
+        // One exponentiation checks the scalar range and derives a valid y.
+        #[cfg(target_arch = "x86")]
+        {
+            if params.domain.derive_public(scalar, &mut y) != 1 {
+                return Err(Error::InvalidKey);
+            }
+            Ok(Self::assemble(params, canonical(&y), scalar, exponent_len))
+        }
         // A checked domain's generator is a valid public value. Exchange
         // computes g^x, rejecting degenerate results; from_components then
         // checks the scalar range and the resulting key pair.
-        if !params.domain.exchange(scalar, &params.g, &mut y) {
-            return Err(Error::InvalidKey);
+        #[cfg(not(target_arch = "x86"))]
+        {
+            if !params.domain.exchange(scalar, &params.g, &mut y) {
+                return Err(Error::InvalidKey);
+            }
+            Self::from_components(params, &y, x)
         }
-        Self::from_components(params, &y, x)
     }
 
     /// Import y and x with variable-time parsing; check range and y=g^x mod p.
@@ -259,14 +270,20 @@ impl PrivateKey {
         if !params.domain.check_private(y, x) {
             return Err(Error::InvalidKey);
         }
-        Ok(Self {
+        Ok(Self::assemble(params, y, x, exponent_len))
+    }
+
+    /// The key of a checked pair: canonical `y`, and `x` without the zeros
+    /// before its `exponent_len` bytes.
+    fn assemble(params: &Parameters, y: &[u8], x: &[u8], exponent_len: usize) -> Self {
+        Self {
             public: PublicKey {
                 params: params.clone(),
                 y: y.to_vec(),
             },
             x: scalar(x, params.p.len()),
             exponent_len,
-        })
+        }
     }
     /// Borrow the public half of this key.
     pub fn public_key(&self) -> &PublicKey {
