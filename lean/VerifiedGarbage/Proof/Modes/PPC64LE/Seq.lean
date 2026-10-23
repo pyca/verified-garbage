@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # A mode on PPC64LE, for any core: the whole function

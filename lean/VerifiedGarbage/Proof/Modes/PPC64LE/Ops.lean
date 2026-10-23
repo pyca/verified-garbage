@@ -2,11 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Proof.Modes.Ops
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # The modes' operations on PPC64LE
@@ -63,49 +67,10 @@ def opMem (A : Loc → Addr) (o : Op) (m : Mem) : Mem := fun x =>
     o.val (cont A m) (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat
   else m x
 
-/-! ## Bytes -/
-
-section
-variable {is : List Instr} {s : State} {Q : State → Prop}
-
-/-- `lbz t, off(n)` -/
-theorem wp_lbz {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 2 ^ 15)
-    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hin : InRegions (s.rd ++ s.wr) a 1)
-    (k : ∀ s', Upd s s' t ((s.mem a).setWidth 64) → WP isa (.block is) s' Q) :
-    WP isa (.block (.lbz t n off :: is)) s Q := by
-  refine WP.cons (s' := s.write t ((s.mem a).setWidth 64)) ?_ (k _ (Upd.write _ _ _))
-  rw [exec_lbz hn ho (by rw [ha]; exact hin), ha]
-  simp only [Mem.read]
-  congr 2
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_append]
-  simp
-
-/-- `stb t, off(n)` -/
-theorem wp_stb {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 2 ^ 15)
-    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hout : InRegions s.wr a 1)
-    (k : ∀ s', Mupd s s' (s.mem.writeW a ((s.gpr t).setWidth 8)) → WP isa (.block is) s' Q) :
-    WP isa (.block (.stb t n off :: is)) s Q := by
-  refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr t).setWidth 8) }) ?_
-    (k _ ⟨rfl, rfl, rfl, rfl⟩)
-  rw [exec_stb hn ho (by rw [ha]; exact hout), ha]
-  rfl
-
-end
-
 theorem write4_apply (m : Mem) (a x : Addr) (v : BitVec 32) :
     m.writeW a v x = if (x - a).toNat < 4 then v.extractLsb' (8 * (x - a).toNat) 8 else m x := by
   simp only [Mem.writeW, Mem.write]
   rfl
-
-theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec 8) :
-    m.writeW a v x = if (x - a).toNat < 1 then v else m x := by
-  simp only [Mem.writeW, Mem.write]
-  split
-  · rename_i h
-    rw [show (x - a).toNat = 0 by omega]
-    simp
-  · rfl
 
 theorem byte_xor (u v : BitVec 32) (t : Nat) :
     (u ^^^ v).extractLsb' (8 * t) 8 = u.extractLsb' (8 * t) 8 ^^^ v.extractLsb' (8 * t) 8 := by
@@ -117,10 +82,6 @@ theorem setWidth_xor8 (u v : Byte) : (u.setWidth 64 ^^^ v.setWidth 64).setWidth 
   simp
 
 theorem setWidth_xor32 (u v : BitVec 32) : (u.setWidth 64 ^^^ v.setWidth 64).setWidth 32 = u ^^^ v := by
-  ext j hj
-  simp
-
-theorem setWidth8_64 (u : Byte) : (u.setWidth 64).setWidth 8 = u := by
   ext j hj
   simp
 
