@@ -122,6 +122,31 @@ theorem initArgs_ok {C W : Addr} {R : Nat} {s : State} (h29 : s.gpr .r29 = C) (h
   exact ⟨by simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.reduceAdd],
     fun r a b c d e f g => by simp [a, b, c, d, e, f, g], ⟨rfl, rfl, rfl, rfl⟩⟩
 
+/-- The arguments of `init`'s call of `vg_aes_ctr32`: the hash subkey's block
+encrypted from the counter block `T`. -/
+theorem init_cc {C W : Addr} {R : Nat} {s : State} (dcs : (⟨C, 256⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (fc : C.toNat + 256 ≤ 2 ^ 64) (hR : R = 10 ∨ R = 12 ∨ R = 14) (hW : Covers [⟨W, 2560⟩] s.wr)
+    (hC : Covers [⟨C, 256⟩] s.wr) (a3 : s.gpr .r3 = C) (a4 : s.gpr .r4 = BitVec.ofNat 64 R)
+    (a5 : s.gpr .r5 = W + BitVec.ofNat 64 96) (a6 : s.gpr .r6 = C + BitVec.ofNat 64 240)
+    (a7 : s.gpr .r7 = BitVec.ofNat 64 1) (a8 : s.gpr .r8 = W + BitVec.ofNat 64 512) :
+    CtrCall s C (W + BitVec.ofNat 64 96) (C + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 := by
+  refine ⟨a3, a4, a5, a6, a7, a8, hR, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
+  · simpa using Offset.disjoint C (d := 0) (n := 240) (e := 240) (k := 16) (.inl (by decide))
+      (by decide) (by decide)
+  · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
+  · exact ((dcs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))).symm
+  · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
+  · exact (dcs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 240) (by decide),
+      Nat.mod_eq_of_lt (by omega)]; omega
+  · exact Covers.cons (Covers.right (covers_prefix hC (by decide))) (Covers.cons
+      (Covers.right (covers_off hW (by decide) (by decide))) (Covers.cons
+        (Covers.right (covers_off hC (by decide) (by decide))) (Covers.cons
+          (Covers.right (covers_off hW (by decide) (by decide))) Covers.nil)))
+  · exact Covers.cons (covers_off hW (by decide) (by decide)) (Covers.cons
+      (covers_off hC (by decide) (by decide)) (Covers.cons (covers_off hW (by decide) (by decide)) Covers.nil))
+
 /-- `init`. -/
 theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
     WP isa init s₀ fun s' => abiPreserved s₀ s' ∧ initPPC64LE.post s₀ s' := by
@@ -154,25 +179,8 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
   refine WP.seq (WP.mono (initArgs_ok g29 g31 g28 (by rw [wr₂]; exact hC) (by rw [wr₂]; exact hW))
     fun s₃ ⟨hm₃, a3, a4, a5, a6, a7, a8, hg₃, hk₃⟩ => ?_)
   have cc : CtrCall s₃ (s₀.gpr .r5) (s₀.gpr .r6 + BitVec.ofNat 64 96) (s₀.gpr .r5 + BitVec.ofNat 64 240)
-      (s₀.gpr .r6 + BitVec.ofNat 64 512) (initR s₀) 1 := by
-    refine ⟨a3, a4, a5, a6, a7, a8, hR, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
-    · simpa using Offset.disjoint (s₀.gpr .r5) (d := 0) (n := 240) (e := 240) (k := 16) (.inl (by decide))
-        (by decide) (by decide)
-    · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
-    · exact ((dcs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))).symm
-    · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
-    · exact (dcs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 240) (by decide),
-        Nat.mod_eq_of_lt (by omega)]; omega
-    · rw [hk₃.rd, hk₃.wr, wr₂]
-      exact Covers.cons (Covers.right (covers_prefix hC (by decide))) (Covers.cons
-        (Covers.right (covers_off hW (by decide) (by decide))) (Covers.cons
-          (Covers.right (covers_off hC (by decide) (by decide))) (Covers.cons
-            (Covers.right (covers_off hW (by decide) (by decide))) Covers.nil)))
-    · rw [hk₃.wr, wr₂]
-      exact Covers.cons (covers_off hW (by decide) (by decide)) (Covers.cons
-        (covers_off hC (by decide) (by decide)) (Covers.cons (covers_off hW (by decide) (by decide)) Covers.nil))
+      (s₀.gpr .r6 + BitVec.ofNat 64 512) (initR s₀) 1 :=
+    init_cc dcs fc hR (by rw [hk₃.wr, wr₂]; exact hW) (by rw [hk₃.wr, wr₂]; exact hC) a3 a4 a5 a6 a7 a8
   refine WP.seq (WP.mono (ctr_call cc) fun s₄ cp => ?_)
   -- The memory along the way.
   obtain ⟨m₂', hm₂'⟩ : ∃ m, m = (s₂.mem.writeW (s₀.gpr .r5 + BitVec.ofNat 64 240) (0 : BitVec 64)).writeW
