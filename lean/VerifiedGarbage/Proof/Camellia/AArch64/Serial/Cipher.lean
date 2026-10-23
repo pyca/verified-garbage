@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Block
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Block
 public import VerifiedGarbage.Spec.Camellia.Ctr
 import VerifiedGarbage.Proof.Camellia.CtrCipher
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Rounds
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
 
 /-! # Relating the raw memory kernel to the existing public Camellia cipher -/
 

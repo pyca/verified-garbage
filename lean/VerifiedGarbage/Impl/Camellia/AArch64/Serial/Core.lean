@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
-public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
+import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 public import VerifiedGarbage.Impl.Tbl.AArch64
 public import VerifiedGarbage.Spec.Camellia
+public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+public import VerifiedGarbage.Impl.Modes.FbMode
 
 /-! # A single-block Camellia core for dependent feedback modes
 
