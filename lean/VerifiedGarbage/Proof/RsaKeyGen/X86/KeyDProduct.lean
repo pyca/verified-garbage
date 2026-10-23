@@ -33,7 +33,7 @@ theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (widt
   have L : Product.Layout Z n 2 (arr n 0) (arr n aU) (arr n aDen) kProduct := by
     refine ⟨h.wpos, by decide, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     all_goals simp only [arr, S, aU, aDen, kProduct, VG.Impl.Rsa.X86.Keys.hdr] at *
-    all_goals omega
+    all_goals omega_arith
   unfold dProduct
   refine WP.seq (WP.mono (Product.correct h.workspace L) fun u ⟨Ou, V, Ku⟩ => ?_)
   change Outs B [(kProduct, 4), (arr n 0, 4 * (n + 4))] s.mem u.mem at Ou
@@ -42,20 +42,20 @@ theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (widt
   change val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 + val32 s.mem B (arr n aV) n < 2 ^ (32 * n) at fits
   have hu := h.rest Ku
   have low : val32 u.mem B (arr n 0) n = val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 :=
-    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : n ≤ n + 4) (by rw [V]; omega)).trans V
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_arith : n ≤ n + 4) (by rw [V]; omega_arith)).trans V
   have C : val32 u.mem B (arr n aV) n = val32 s.mem B (arr n aV) n := by
-    apply Ou.val32 _ (by unfold S at fc; omega)
+    apply Ou.val32 _ (by unfold S at fc; omega_arith)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     all_goals simp only [arr, S, aV, kProduct, VG.Impl.Rsa.X86.Keys.hdr]
-    all_goals omega
+    all_goals omega_arith
   refine WP.mono (chainAddW_ok hu.workspace h.wpos
-    (by change arr n aD + 4 * n ≤ Z; unfold S at fd; omega)
-    (by change arr n 0 + 4 * n ≤ Z; unfold S at f0; omega)
-    (by change arr n aV + 4 * n ≤ Z; unfold S at fc; omega)
-    (by change arr n aD + 4 * n ≤ arr n 0 ∨ arr n 0 + 4 * n ≤ arr n aD; unfold arr S aD; omega)
-    (by change arr n aD + 4 * n ≤ arr n aV ∨ arr n aV + 4 * n ≤ arr n aD; unfold arr S aD aV; omega))
+    (by change arr n aD + 4 * n ≤ Z; unfold S at fd; omega_arith)
+    (by change arr n 0 + 4 * n ≤ Z; unfold S at f0; omega_arith)
+    (by change arr n aV + 4 * n ≤ Z; unfold S at fc; omega_arith)
+    (by change arr n aD + 4 * n ≤ arr n 0 ∨ arr n 0 + 4 * n ≤ arr n aD; unfold arr S aD; omega_arith)
+    (by change arr n aD + 4 * n ≤ arr n aV ∨ arr n aV + 4 * n ≤ arr n aD; unfold arr S aD aV; omega_arith))
     fun t ⟨Ot, ⟨carry, _, sum⟩, Kt⟩ => ?_
   change Outside B (arr n aD) (4 * n) u.mem t.mem at Ot
   change val32 t.mem B (arr n aD) n + 2 ^ (32 * n) * carry.toNat =
@@ -63,7 +63,7 @@ theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (widt
   rw [low, C] at sum
   have result : num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV := by
     change val32 t.mem B (arr n aD) n = _
-    cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega
+    cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega_arith
   refine ⟨hu.rest Kt, ?_, result, Ku.trans (Kt.mono (by decide))⟩
   have first : Outs B (dProductRanges n) s.mem u.mem := Ou.mono (by
     intro r hr
