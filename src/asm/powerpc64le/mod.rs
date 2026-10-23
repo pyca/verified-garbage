@@ -8,6 +8,9 @@ pub(crate) mod aes;
 pub(crate) mod aes_cbc;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ccm;
+
+#[rustfmt::skip]
 pub(crate) mod aes_cfb;
 
 #[rustfmt::skip]

@@ -96,6 +96,12 @@ mod tests {
             crate::blowfish_cbc::Error::InvalidKeyLength,
             crate::blowfish_cbc::Error::IncompleteBlock,
         );
+        check!(
+            crate::aes_ccm::Error::InvalidKeyLength,
+            crate::aes_ccm::Error::InvalidNonceLength,
+            crate::aes_ccm::Error::InvalidTextLength,
+            crate::aes_ccm::Error::TagMismatch,
+        );
         #[cfg(any(
             target_arch = "x86_64",
             target_arch = "aarch64",
@@ -103,10 +109,6 @@ mod tests {
             target_arch = "x86"
         ))]
         check!(
-            crate::aes_ccm::Error::InvalidKeyLength,
-            crate::aes_ccm::Error::InvalidNonceLength,
-            crate::aes_ccm::Error::InvalidTextLength,
-            crate::aes_ccm::Error::TagMismatch,
             crate::aes_gcm::Error::InvalidKeyLength,
             crate::aes_gcm::Error::InvalidNonceLength,
             crate::aes_gcm::Error::InvalidTextLength,
