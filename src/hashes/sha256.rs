@@ -24,7 +24,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 #[cfg(target_arch = "x86_64")]
@@ -95,7 +96,7 @@ mod tests {
         for len in 0..msg.len() {
             let expected = Sha256::digest(&msg[..len]);
             for split in 0..=len {
-                let mut h = Sha256::new();
+                let mut h = Sha256::default();
                 h.update(&msg[..split]);
                 let copy = h.clone();
                 h.update(&msg[split..len]);
@@ -149,5 +150,34 @@ mod tests {
             assert_eq!(backend, Sha256Backend::Scalar);
         }
         assert_eq!(Sha256::new().backend, Sha256Backend::select(detected()));
+    }
+
+    /// The `HashFunction` implementation is the inherent functions.
+    #[test]
+    fn hash_function() {
+        use crate::hashes::HashFunction;
+        let msg = [0x5a; 300];
+        let mut h = <Sha256 as HashFunction>::new();
+        HashFunction::update(&mut h, &msg[..100]);
+        HashFunction::update(&mut h, &msg[100..]);
+        assert_eq!(HashFunction::finalize(h), Sha256::digest(&msg));
+        assert_eq!(<Sha256 as HashFunction>::digest(&msg), Sha256::digest(&msg));
+        assert_eq!(<Sha256 as HashFunction>::OUTPUT_SIZE, 32);
+        assert_eq!(<Sha256 as HashFunction>::BLOCK_SIZE, 64);
+    }
+
+    /// A computation rebuilt from another's streaming state, length and
+    /// implementation (as HMAC's are) continues it.
+    #[test]
+    fn from_state() {
+        let msg = [0x5a; 300];
+        let mut h = Sha256::new();
+        h.update(&msg[..100]);
+        let backend = h.backend();
+        let (state, length) = h.state_mut();
+        assert_eq!(length, 100);
+        let mut g = Sha256::from_state(*state, length, backend);
+        g.update(&msg[100..]);
+        assert_eq!(g.finalize(), Sha256::digest(&msg));
     }
 }
