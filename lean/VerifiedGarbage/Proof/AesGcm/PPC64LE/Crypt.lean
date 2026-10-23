@@ -41,13 +41,33 @@ abbrev cbA (St : Addr) : Addr := St + BitVec.ofNat 64 48
 abbrev ksA (St : Addr) : Addr := St + BitVec.ofNat 64 64
 
 /-- The regions `crypt` writes. -/
-abbrev crRs (W St D : Addr) (n : Nat) : List Region := [stR St, wR W, ⟨D, n⟩]
+abbrev crRs (W St D : Addr) (n : Nat) : List Region := [⟨St + BitVec.ofNat 64 48, 32⟩, wR W, ⟨D, n⟩]
 
-theorem crRs_of_pieces {W St D : Addr} {n : Nat} {m m' : Mem} (h : Frame (pieceRs W St) m m') :
-    Frame (crRs W St D n) m m' :=
-  Frame.mono h fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with rfl | rfl <;> simp
+/-- The keystream block, within `crypt`'s regions. -/
+theorem ks_cr {W St D : Addr} {n : Nat} :
+    ∀ r ∈ [(⟨ksA St, 16⟩ : Region)], ∃ r' ∈ crRs W St D n, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨⟨St + BitVec.ofNat 64 48, 32⟩, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
+
+/-- `vg_aes_ctr32`'s writes on the keystream block, within `crypt`'s regions. -/
+theorem ctrKs_cr {W St D : Addr} {n : Nat} :
+    ∀ r ∈ [(⟨cbA St, 16⟩ : Region), ⟨ksA St, 16 * 1⟩, ⟨W, 2048⟩], ∃ r' ∈ crRs W St D n,
+      Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨⟨St + BitVec.ofNat 64 48, 32⟩, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
+  · exact ⟨⟨St + BitVec.ofNat 64 48, 32⟩, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
+  · exact ⟨wR W, by simp, sub_wR0 (by decide)⟩
+
+theorem crRs_pieces {W St : Addr} {m m' : Mem}
+    (h : Frame [(⟨St + BitVec.ofNat 64 48, 32⟩ : Region), wR W] m m') : Frame (pieceRs W St) m m' :=
+  h.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact sub_st (by decide) W
+    · exact ⟨wR W, by simp, fun _ h => h⟩
 
 /-- What `crypt` needs: the counter state after `nc` bytes of text, and the
 `n` bytes at `D` writable and apart from `St`, `W` and the key context. -/
@@ -107,7 +127,7 @@ theorem CrPre.key {m : Mem} (hf : Frame (crRs W St D n) s₀.mem m) : cph m C R 
   rw [Proof.Cmac.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact hp.env.cs.sub_left hs
+    · exact (hp.env.cs.sub_left hs).sub_right (Offset.sub_base _ (by decide))
     · exact (hp.env.cw.sub_left hs).sub_right (Region.sub_prefix (by decide))
     · exact (hp.dc.sub_left (Region.sub_prefix (Nat.le_refl _))).symm.sub_left hs) (by omega)]
 
@@ -246,9 +266,7 @@ theorem ctail_wp {k : Nat} {s : State} (hm : CrMid s₀ W St C R D n nc icb k s)
       · exact sub_st (by decide) W
       · exact sub_st (by decide) W
       · exact sub_w0 (by decide) St
-  have frs₉ : Frame (crRs W St D n) s₀.mem s₉.mem :=
-    hm.frame.trans (crRs_of_pieces (frame_pieces frZ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact sub_st (by decide) W))
+  have frs₉ : Frame (crRs W St D n) s₀.mem s₉.mem := hm.frame.trans (frZ.sub ks_cr)
   have key₉ : aesWith R (bytesAt s₉.mem C (16 * (R + 1))) = cph s₀.mem C R := hp.key frs₉
   have z₉ : blockAt s₉.mem (ksA St) = 0 := by
     have h16 := Proof.AesGcm.bytesAt_writeBytes_self s.mem (ksA St) (Spec.Gcm.zeros 16) (by decide)
@@ -301,12 +319,7 @@ theorem ctail_wp {k : Nat} {s : State} (hm : CrMid s₀ W St C R D n nc icb k s)
   have frW : Frame [⟨D + BitVec.ofNat 64 k, n - k⟩] s₁₀.mem s'.mem := by
     rw [m']; exact Proof.AesGcm.writeBytes_frame' _ hxl
   refine ⟨pk₁₀.trans (pk₁₃.trans (PK.ofKeeps kx)), ?_, ?_, ?_⟩
-  · exact frs₉.trans ((crRs_of_pieces (frame_pieces ck.frame fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact sub_st (by decide) W
-      · exact sub_st (by decide) W
-      · exact sub_w0 (by decide) St)).trans (crSub (by omega) frW))
+  · exact frs₉.trans ((ck.frame.sub ctrKs_cr).trans (crSub (by omega) frW))
   · have := hp.ctrKeep (by omega) frW hctr
     rwa [show nc + k + (n - k) = nc + n by omega] at this
   · refine crOut (Nat.add_sub_cancel' hle) ?_ ?_
@@ -413,7 +426,7 @@ theorem cwhole_wp {k : Nat} {s : State} (hm : CrMid s₀ W St C R D n nc icb k s
     refine ck.frame.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨stR St, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨⟨St + BitVec.ofNat 64 48, 32⟩, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
     · exact ⟨⟨D, n⟩, by simp, hsub⟩
     · exact ⟨wR W, by simp, Region.sub_prefix (by decide)⟩
   -- Data outside the blocks is kept by the call.

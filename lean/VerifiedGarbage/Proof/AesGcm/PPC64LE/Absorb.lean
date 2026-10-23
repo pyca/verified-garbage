@@ -61,6 +61,23 @@ theorem frame_pieces {W St : Addr} {rs : List Region} {m m' : Mem} (hf : Frame r
     (hs : ∀ r ∈ rs, ∃ r' ∈ pieceRs W St, Region.Sub r r') : Frame (pieceRs W St) m m' :=
   Frame.sub hf hs
 
+/-- `vg_ghash`'s writes, within `absorb`'s regions. -/
+theorem gh_abs {W St : Addr} {yo : Nat} :
+    ∀ r ∈ [(⟨St + BitVec.ofNat 64 yo, 16⟩ : Region), ⟨W, 256⟩], ∃ r' ∈ absRs W St yo, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+  · exact ⟨wR W, by simp, sub_wR0 (by decide)⟩
+
+/-- Bytes written in the buffer, within `absorb`'s regions. -/
+theorem buf_abs {W St : Addr} {yo o n : Nat} (h : o + n ≤ 16) :
+    ∀ r ∈ [(⟨St + BitVec.ofNat 64 (32 + o), n⟩ : Region)], ∃ r' ∈ absRs W St yo, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨⟨St + BitVec.ofNat 64 32, 16⟩, List.mem_cons_of_mem _ (List.mem_cons_self ..),
+    Offset.sub _ (by omega) (by omega)⟩
+
 /-! ## What `absorb` needs, and its steps -/
 
 /-- The accumulator and the buffer. -/
@@ -87,7 +104,7 @@ structure AbsPre (s : State) (W St C : Addr) (yo : Nat) (D : Addr) (n : Nat) (x 
 structure AbsMid (s₀ : State) (W St C : Addr) (yo : Nat) (D : Addr) (n : Nat) (x : List Byte) (k : Nat)
     (s : State) : Prop where
   pk : PK s₀ s
-  frame : Frame (pieceRs W St) s₀.mem s.mem
+  frame : Frame (absRs W St yo) s₀.mem s.mem
   r18 : s.gpr .r18 = D + BitVec.ofNat 64 k
   r19 : s.gpr .r19 = BitVec.ofNat 64 (n - k)
   abs : Absorbed s.mem (yA St yo) (bA St) (hk s₀.mem C) (x ++ bytesAt s₀.mem D k)
@@ -97,7 +114,7 @@ structure AbsMid (s₀ : State) (W St C : Addr) (yo : Nat) (D : Addr) (n : Nat) 
 structure AbsPost (s₀ : State) (W St C : Addr) (yo : Nat) (D : Addr) (n : Nat) (x : List Byte)
     (s : State) : Prop where
   pk : PK s₀ s
-  frame : Frame (pieceRs W St) s₀.mem s.mem
+  frame : Frame (absRs W St yo) s₀.mem s.mem
   abs : Absorbed s.mem (yA St yo) (bA St) (hk s₀.mem C) (x ++ bytesAt s₀.mem D n)
 
 theorem length_bytesAt' (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n :=
@@ -140,8 +157,9 @@ variable {s₀ : State} {W St C : Addr} {yo : Nat} {D : Addr} {n : Nat} {x : Lis
 include hp
 
 /-- The data from `k` on, in a state the pieces lead to. -/
-theorem AbsPre.data {k j : Nat} (hkj : k + j ≤ n) {m : Mem} (hf : Frame (pieceRs W St) s₀.mem m) :
+theorem AbsPre.data {k j : Nat} (hkj : k + j ≤ n) {m : Mem} (hf' : Frame (absRs W St yo) s₀.mem m) :
     bytesAt m (D + BitVec.ofNat 64 k) j = bytesAt s₀.mem (D + BitVec.ofNat 64 k) j := by
+  have hf := hf'.sub (absRs_pieces (by rcases hp.hyo with h | h <;> omega))
   have hs : Region.Sub ⟨D + BitVec.ofNat 64 k, j⟩ ⟨D, n⟩ := Offset.sub_base _ hkj
   exact bytesAt_keep hf (hp.dst.sub_left hs) (hp.dw.sub_left hs) (by have := hp.lt; omega)
 
@@ -178,10 +196,11 @@ theorem tail_wp {k : Nat} {s : State} (hm : AbsMid s₀ W St C yo D n x k s) (hr
     refine WP.mono (copyBytes_wp s₃ hb) fun s₄ ⟨m₄, _, kp₄⟩ => ⟨hm.pk.trans (pk₃.trans (PK.ofKeeps kp₄)),
       ?_, ?_⟩
     · rw [m₄, m₃]
-      refine Frame.trans hm.frame (frame_pieces (Proof.AesGcm.writeBytes_frame' _ (length_bytesAt' ..))
+      refine Frame.trans hm.frame ((Proof.AesGcm.writeBytes_frame' _ (length_bytesAt' ..)).sub
         fun r hr => ?_)
       simp only [List.mem_singleton] at hr; subst hr
-      exact sub_st (by omega) W
+      exact ⟨⟨St + BitVec.ofNat 64 32, 16⟩, List.mem_cons_of_mem _ (List.mem_cons_self ..),
+        Region.sub_prefix (by omega)⟩
     · have hd := hp.data (k := k) (j := n - k) (by omega) hm.frame
       have hsplit : bytesAt s₀.mem D n =
           bytesAt s₀.mem D k ++ bytesAt s₀.mem (D + BitVec.ofNat 64 k) (n - k) := by
@@ -268,11 +287,7 @@ theorem whole_wp {k : Nat} {s : State} (hm : AbsMid s₀ W St C yo D n x k s)
         rw [hW0]; exact he.wIn (by decide)
     refine WP.mono (gh_call hgp) fun s' ⟨ck, hy⟩ => ⟨k + 16 * nb, ⟨hm.pk.trans (pk₆.trans
       (pk₉.trans (PK.ofCall ck))), ?_, ?_, ?_, ?_, by omega⟩, by omega, .inl (by omega)⟩
-    · refine Frame.trans hm.frame (frame_pieces (m := s.mem) (by rw [← m₉]; exact ck.frame) fun r hr => ?_)
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact sub_st hyo W
-      · exact sub_w0 (by decide) St
+    · exact Frame.trans hm.frame (Frame.sub (m := s.mem) (by rw [← m₉]; exact ck.frame) gh_abs)
     · rw [ck.saved .r18 (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
         u₇.other _ (by decide), r18₆]
     · rw [ck.saved .r19 (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
@@ -286,7 +301,7 @@ theorem whole_wp {k : Nat} {s : State} (hm : AbsMid s₀ W St C yo D n x k s)
         (by rw [length_bytesAt']; omega) ?_
       rw [hy, m₉, blocksAt_eq, hd]
       change ghashFrom (hk s.mem C) _ _ = _
-      rw [hk_keep hp.env hm.frame]
+      rw [hk_keep hp.env (hm.frame.sub (absRs_pieces hyo))]
 
 omit hp in
 /-- `r5 = r20 - 16` when the buffer is full, and when not. -/
@@ -379,16 +394,14 @@ theorem fill_wp (hn : n ≠ 0) :
     have mem₈ : s₈.mem = writeBytes s₀.mem (bA St + BitVec.ofNat 64 o) d := by
       rw [m₈, show St + BitVec.ofNat 64 (32 + o) = bA St + BitVec.ofNat 64 o from
         (add_ofNat_add _ _ _).symm]
-    have fr₈ : Frame (pieceRs W St) s₀.mem s₈.mem := by
-      rw [mem₈]
-      refine frame_pieces (Proof.AesGcm.writeBytes_frame' _ hdl) fun r hr => ?_
-      simp only [List.mem_singleton] at hr; subst hr
-      rw [add_ofNat_add]; exact sub_st (by omega) W
+    have fr₈ : Frame (absRs W St yo) s₀.mem s₈.mem := by
+      rw [m₈]
+      exact (Proof.AesGcm.writeBytes_frame' _ hdl).sub (buf_abs (by omega))
     have hY : blockAt s₈.mem (yA St yo) = blockAt s₀.mem (yA St yo) := by
       rw [mem₈, add_ofNat_add]; exact keepY he hp.hyo _ (by omega)
     have hB : bytesAt s₈.mem (bA St) (o + f) = x.drop (whole x.length) ++ d := by
       rw [mem₈, ← hdl, Proof.AesGcm.bytesAt_writeBytes _ _ _ _ (by omega), ← hoo, hp.abs.2]
-    have hk₈ : hk s₈.mem C = hk s₀.mem C := hk_keep he fr₈
+    have hk₈ : hk s₈.mem C = hk s₀.mem C := hk_keep he (fr₈.sub (absRs_pieces hyo))
     refine WP.seq (wp_subi (by decide) (by decide) fun s₉ u₉ => WP.block_nil ?_)
     have r5₉ : s₉.gpr .r5 = BitVec.ofNat 64 (o + f) - BitVec.ofNat 64 16 := by
       rw [u₉.gpr, g₈ _ (by decide), r20₇]
@@ -411,12 +424,7 @@ theorem fill_wp (hn : n ≠ 0) :
         (by rw [he₉.r15]) ⟨by decide, by decide, by decide⟩ (by decide) (he₉.stRd (by decide)) hyd hds) ?_
       intro s' g
       refine ⟨f, ⟨pk₉.trans g.pk, ?_, ?_, ?_, ?_, hfn⟩, .inl (by omega)⟩
-      · refine Frame.trans (fr₈.trans (by rw [u₉.mem]; exact Frame.refl _ _))
-          (frame_pieces g.frame fun r hr => ?_)
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact sub_st hyo W
-        · exact sub_w0 (by decide) St
+      · exact Frame.trans (fr₈.trans (by rw [u₉.mem]; exact Frame.refl _ _)) (g.frame.sub gh_abs)
       · rw [g.args .r18 (by decide), r18₉]
       · rw [g.args .r19 (by decide), r19₉]
       · rw [hd]

@@ -175,4 +175,33 @@ theorem sub_w0 {W : Addr} {n : Nat} (hn : n ≤ 2112) (St : Addr) :
     ∃ r' ∈ pieceRs W St, Region.Sub ⟨W, n⟩ r' :=
   ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix hn⟩
 
+/-- The regions `absorb yo` writes: the accumulator, the buffer and `W`. -/
+abbrev absRs (W St : Addr) (yo : Nat) : List Region :=
+  [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨St + BitVec.ofNat 64 32, 16⟩, wR W]
+
+/-- The regions `flush yo` and `lens yo` write: the accumulator and `W`. -/
+abbrev ghRs (W St : Addr) (yo : Nat) : List Region := [⟨St + BitVec.ofNat 64 yo, 16⟩, wR W]
+
+theorem ghRs_abs {W St : Addr} {yo : Nat} : ∀ r ∈ ghRs W St yo, ∃ r' ∈ absRs W St yo, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+
+theorem absRs_pieces {W St : Addr} {yo : Nat} (hyo : yo + 16 ≤ 80) :
+    ∀ r ∈ absRs W St yo, ∃ r' ∈ pieceRs W St, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact sub_st hyo W
+  · exact sub_st (by decide) W
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- Within `W`'s first 2112 bytes, for any of these region lists. -/
+theorem sub_wR {W : Addr} {d n : Nat} (hd : d + n ≤ 2112) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ (wR W) :=
+  Offset.sub_base _ hd
+
+theorem sub_wR0 {W : Addr} {n : Nat} (hn : n ≤ 2112) : Region.Sub ⟨W, n⟩ (wR W) := Region.sub_prefix hn
+
 end VG.Proof.AesGcm.PPC64LE

@@ -47,6 +47,26 @@ theorem zeroT (m : Mem) (W : Addr) :
       writeBytes m (tA W) (zeros 16) := by
   rw [← tA_add]; exact Proof.AesGcm.write_zeros16 m (tA W)
 
+/-- `T`, within the regions of `flush` and `lens`. -/
+theorem t_gh {W St : Addr} {yo : Nat} :
+    ∀ r ∈ [(⟨tA W, 16⟩ : Region)], ∃ r' ∈ ghRs W St yo, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨wR W, by simp, sub_wR (by unfold tO; omega)⟩
+
+/-- `vg_ghash`'s writes, within the regions of `flush` and `lens`. -/
+theorem gh_gh {W St : Addr} {yo : Nat} :
+    ∀ r ∈ [(⟨St + BitVec.ofNat 64 yo, 16⟩ : Region), ⟨W, 256⟩], ∃ r' ∈ ghRs W St yo, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+  · exact ⟨wR W, by simp, sub_wR0 (by decide)⟩
+
+theorem ghRs_pieces {W St : Addr} {yo : Nat} (hyo : yo + 16 ≤ 80) {m m' : Mem}
+    (h : Frame (ghRs W St yo) m m') : Frame (pieceRs W St) m m' :=
+  (h.sub ghRs_abs).sub (absRs_pieces hyo)
+
 /-! ## `flush` -/
 
 /-- What `flush yo` needs: GHASH has absorbed `x`, `x.length mod 16`
@@ -61,7 +81,7 @@ structure FlPre (s : State) (W St C : Addr) (yo : Nat) (x : List Byte) : Prop wh
 structure GhPost (s₀ : State) (W St C : Addr) (yo : Nat) (x : List Byte) (s : State) : Prop where
   pk : PK s₀ s
   args : ∀ r ∈ [Reg.r18, .r19, .r20], s.gpr r = s₀.gpr r
-  frame : Frame (pieceRs W St) s₀.mem s.mem
+  frame : Frame (ghRs W St yo) s₀.mem s.mem
   abs : Absorbed s.mem (yA St yo) (bA St) (hk s₀.mem C) x
 
 theorem flush_wp {s : State} {W St C : Addr} {yo : Nat} {x : List Byte} (hp : FlPre s W St C yo x) :
@@ -120,10 +140,7 @@ theorem flush_wp {s : State} {W St C : Addr} {yo : Nat} {x : List Byte} (hp : Fl
       exact (Proof.AesGcm.writeBytes_frame' (n := 16) _ (by simp [zeros])).trans
         ((Proof.AesGcm.writeBytes_frame' _ hxl).sub fun r hr => ⟨_, List.mem_singleton_self _, by
           simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩)
-    have fr₇ : Frame (pieceRs W St) s.mem s₇.mem :=
-      frame_pieces frT fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact sub_w (by unfold tO; omega) St
+    have fr₇ : Frame (ghRs W St yo) s.mem s₇.mem := frT.sub t_gh
     have hT : blockAt s₇.mem (tA W) = Spec.Gcm.ofBytes (xs ++ zeros (16 - o)) := by
       simp only [blockAt]; rw [m₇, Proof.AesGcm.bytesAt_pad _ _ _ (by omega), hxl]
     have hY : blockAt s₇.mem (yA St yo) = blockAt s.mem (yA St yo) := by
@@ -142,13 +159,9 @@ theorem flush_wp {s : State} {W St C : Addr} {yo : Nat} {x : List Byte} (hp : Fl
         revert r; decide
       rw [g.args r hr, kp₇.gpr r hn.1, u₆.other _ hn.2.2.2.2, u₅.other _ hn.2.2.2.1,
         u₄.other _ hn.2.2.1, u₃.gpr, u₂.gpr, u₁.other _ hn.2.1]
-    · refine fr₇.trans (frame_pieces g.frame fun r hr => ?_)
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact sub_st hyo W
-      · exact sub_w0 (by decide) St
+    · exact fr₇.trans (g.frame.sub gh_gh)
     · refine absorb_pad hp.abs (by omega) rfl ?_
-      rw [g.y, hk_keep he fr₇, hY, hT, hoo, hxs]
+      rw [g.y, hk_keep he (ghRs_pieces hyo fr₇), hY, hT, hoo, hxs]
 
 /-! ## `lens` -/
 
@@ -176,7 +189,7 @@ structure LensPre (s : State) (W St C : Addr) (yo : Nat) (a c : Nat) : Prop wher
 structure LensPost (s₀ : State) (W St C : Addr) (yo : Nat) (a c : Nat) (s : State) : Prop where
   pk : PK s₀ s
   args : ∀ r ∈ [Reg.r18, .r19, .r20], s.gpr r = s₀.gpr r
-  frame : Frame (pieceRs W St) s₀.mem s.mem
+  frame : Frame (ghRs W St yo) s₀.mem s.mem
   y : blockAt s.mem (yA St yo) =
     ghashFrom (hk s₀.mem C) (blockAt s₀.mem (yA St yo)) [Spec.Gcm.ofBytes (lensBlock a c)]
 
@@ -217,10 +230,7 @@ theorem lens_wp {s : State} {W St C : Addr} {yo a c : Nat} (hp : LensPre s W St 
     rfl
   have frT : Frame [⟨tA W, 16⟩] s.mem s₇.mem := by
     rw [m₇]; exact Proof.AesGcm.writeBytes_frame' _ (length_lensBlock a c)
-  have fr₇ : Frame (pieceRs W St) s.mem s₇.mem :=
-    frame_pieces frT fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact sub_w (by unfold tO; omega) St
+  have fr₇ : Frame (ghRs W St yo) s.mem s₇.mem := frT.sub t_gh
   have hT : blockAt s₇.mem (tA W) = Spec.Gcm.ofBytes (lensBlock a c) := by
     simp only [blockAt]
     rw [m₇, ← length_lensBlock a c,
@@ -240,11 +250,7 @@ theorem lens_wp {s : State} {W St C : Addr} {yo a c : Nat} (hp : LensPre s W St 
   · have hn : r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r9 ∧ r ≠ .r10 ∧ r ≠ .r11 := by revert r; decide
     rw [g.args r hr, u₇.gpr, u₆.gpr, u₅.other _ hn.2.2.2.2, u₄.other _ hn.2.2.2.1, u₃.other _ hn.2.2.1,
       u₂.other _ hn.2.1, u₁.other _ hn.1]
-  · refine fr₇.trans (frame_pieces g.frame fun r hr => ?_)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact sub_st hyo W
-    · exact sub_w0 (by decide) St
-  · rw [g.y, hk_keep he fr₇, hY, hT]
+  · exact fr₇.trans (g.frame.sub gh_gh)
+  · rw [g.y, hk_keep he (ghRs_pieces hyo fr₇), hY, hT]
 
 end VG.Proof.AesGcm.PPC64LE
