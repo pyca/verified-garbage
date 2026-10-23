@@ -56,6 +56,9 @@ theorem in_left {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegions wr a n
     InRegions (rd ++ wr) a n := by
   obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
 
+theorem covers_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r] ts :=
+  Covers.of_mem fun x hx => by simp only [List.mem_singleton] at hx; exact hx ▸ h
+
 theorem covers_left {rd wr rs : List Region} (h : Covers rs wr) : Covers rs (rd ++ wr) :=
   fun a n hi => in_left (h a n hi)
 
