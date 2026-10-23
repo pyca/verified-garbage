@@ -76,6 +76,11 @@ def G₁ (Ctx W SP : Addr) (sl : Nat) (σ s : State) : Prop :=
   Env Ctx (W + BitVec.ofNat 64 16) W SP s ∧ s.gpr .rax = BitVec.ofNat 64 (sl / 16) ∧
     s.zf = some (decide (sl / 16 = 0)) ∧ s.mem = σ.mem ∧ s.rd = σ.rd ∧ s.wr = σ.wr
 
+/-- `G₁` but for the flags: what the call needs. -/
+def G₀ (Ctx W SP : Addr) (sl : Nat) (σ s : State) : Prop :=
+  Env Ctx (W + BitVec.ofNat 64 16) W SP s ∧ s.gpr .rax = BitVec.ofNat 64 (sl / 16) ∧
+    s.mem = σ.mem ∧ s.rd = σ.rd ∧ s.wr = σ.wr
+
 /-- After `preArgs`. -/
 def G₂ (Ctx W SP D S : Addr) (R sl : Nat) (σ s : State) : Prop :=
   Env Ctx (W + BitVec.ofNat 64 16) W SP s ∧ s.gpr .rdi = Ctx ∧ s.gpr .rsi = BitVec.ofNat 64 R ∧
@@ -101,8 +106,8 @@ theorem g₁_wp : WP isa (.block SealSplit.preTest) σ (G₁ Ctx W SP sl σ) := 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁, ax₁, zf₁, m₁, rd₁, wr₁⟩
 
-theorem g₂_wp {s : State} (g : G₁ Ctx W SP sl σ s) : WP isa (.block SealSplit.preArgs) s (G₂ Ctx W SP D S R sl σ) := by
-  obtain ⟨he, ax, -, m, rd, wr⟩ := g
+theorem g₂_wp {s : State} (g : G₀ Ctx W SP sl σ s) : WP isa (.block SealSplit.preArgs) s (G₂ Ctx W SP D S R sl σ) := by
+  obtain ⟨he, ax, m, rd, wr⟩ := g
   refine WP.mono (pre2_ok (R := R) (D := D) (S := S) he (by rw [m]; exact h.rounds) (by rw [m]; exact h.dat)
     (by rw [m]; exact h.src)) fun s₂ ⟨di, si, dx, cx, r8, r9, r10, r11, a, g₂, m₂, rd₂, wr₂⟩ => ?_
   exact ⟨he.keep g₂ rd₂ wr₂, di, si, dx, cx, r8, by rw [r9, ax], by rw [r10, ax], r11, a, m₂.trans m, rd₂.trans rd,
@@ -204,33 +209,31 @@ theorem call_rel (T : BlkToFn M) :
     gU₂ _ (by decide : Reg.r9 ≠ .rsp), di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, hU₁, hU₂,
     a0₁, a0₂, a1₁, a1₂, a2₁, a2₂, and_self]
 
-/-- `prefix`, in two runs. -/
-theorem prefix_ct (T : BlkToFn M) :
-    RelCT isa (fun a b => a = σ ∧ b = σ') (SealSplit.prefix T.fn) fun _ _ => True := by
+/-- `prefix`'s call, from states with the number of whole blocks in `rax`. -/
+theorem callPart_rel (T : BlkToFn M) :
+    RelCT isa (fun a b => G₀ Ctx W SP sl σ a ∧ G₀ Ctx W SP sl σ' b)
+      (.seq (.block SealSplit.preArgs) (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)))
+      fun a b => Mid2 Ctx W SP D S R sl σ a ∧ Mid2 Ctx W SP D S R sl σ' b := by
+  refine RelCT.seq (step [.r13, .r14, .r15] preArgs_check (F₁ := G₀ Ctx W SP sl σ) (F₂ := G₀ Ctx W SP sl σ')
+    (fun _ _ g r hr => by
+      have e₁ := g.1.1; have e₂ := g.2.1
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [e₁.r13, e₂.r13]
+      · rw [e₁.r14, e₂.r14]
+      · rw [e₁.r15, e₂.r15])
+    (fun _ _ g => g) (fun _ g => g₂_wp h g) (fun _ g => g₂_wp h' g)) ?_
+  exact (rel_wp (call_rel h h' T) (fun _ _ g => g) (fun _ g => mid2_call_wp h T g)
+    (fun _ g => mid2_call_wp h' T g)).mono (fun _ _ g => g) fun _ _ g => g.2
+
+/-- After `prefix`'s call (or none): the bytes left copied, and `rest`. -/
+theorem tail_rel :
+    RelCT isa (fun a b => Mid2 Ctx W SP D S R sl σ a ∧ Mid2 Ctx W SP D S R sl σ' b)
+      (.seq (.block SealSplit.copyArgs) (.seq (.ite .e (.block []) copyLoop) (.block SealSplit.rest)))
+      fun _ _ => True := by
   have r15 : ∀ {s₁ s₂ : State}, Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ → Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ →
       ∀ r ∈ [Reg.r15], s₁.gpr r = s₂.gpr r := fun e₁ e₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [e₁.r15, e₂.r15]
-  unfold SealSplit.prefix
-  refine RelCT.seq (step [.r15] preTest_check (F₁ := (· = σ)) (F₂ := (· = σ'))
-    (G₁ := G₁ Ctx W SP sl σ) (G₂ := G₁ Ctx W SP sl σ')
-    (fun _ _ g => by obtain ⟨rfl, rfl⟩ := g; exact r15 h.env h'.env) (fun _ _ g => g)
-    (fun _ hs => by rw [hs]; exact g₁_wp h) (fun _ hs => by rw [hs]; exact g₁_wp h')) ?_
-  refine RelCT.seq (R := fun a b => Mid2 Ctx W SP D S R sl σ a ∧ Mid2 Ctx W SP D S R sl σ' b)
-    (RelCT.ite (fun _ _ g => by simp only [eval, g.1.2.2.1, g.2.2.2.1]) ?_ ?_) ?_
-  · refine StreamTo.RelCT.of_imp (sl / 16 = 0) (fun _ _ g => by
-      have e := g.2; simp only [eval, g.1.1.2.2.1] at e; simpa using e) fun h0 => ?_
-    exact skip_rel fun _ _ g => ⟨mid2_zero g.1.1 h0, mid2_zero g.1.2 h0⟩
-  · refine RelCT.seq (step [.r13, .r14, .r15] preArgs_check (F₁ := G₁ Ctx W SP sl σ) (F₂ := G₁ Ctx W SP sl σ')
-      (fun _ _ g r hr => by
-        have e₁ := g.1.1.1; have e₂ := g.1.2.1
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · rw [e₁.r13, e₂.r13]
-        · rw [e₁.r14, e₂.r14]
-        · rw [e₁.r15, e₂.r15])
-      (fun _ _ g => g.1) (fun _ g => g₂_wp h g) (fun _ g => g₂_wp h' g)) ?_
-    exact (rel_wp (call_rel h h' T) (fun _ _ g => g) (fun _ g => mid2_call_wp h T g)
-      (fun _ g => mid2_call_wp h' T g)).mono (fun _ _ g => g) fun _ _ g => g.2
   refine RelCT.seq (step [.r15] copyArgs_check (F₁ := Mid2 Ctx W SP D S R sl σ) (F₂ := Mid2 Ctx W SP D S R sl σ')
     (fun _ _ g => r15 g.1.env g.2.env) (fun _ _ g => g) (fun _ g => g₃_wp h g) (fun _ g => g₃_wp h' g)) ?_
   refine RelCT.seq (R := fun a b => G₄ Ctx W SP σ a ∧ G₄ Ctx W SP σ' b)
@@ -248,6 +251,26 @@ theorem prefix_ct (T : BlkToFn M) :
     · rw [cx₁, cx₂]
   exact (step [.r15] rest_check (F₁ := G₄ Ctx W SP σ) (F₂ := G₄ Ctx W SP σ') (fun _ _ g => r15 g.1.1 g.2.1)
     (fun _ _ g => g) (fun _ g => rest_runs g.1) (fun _ g => rest_runs g.1)).mono (fun _ _ g => g) fun _ _ _ => trivial
+
+/-- `prefix`, in two runs. -/
+theorem prefix_ct (T : BlkToFn M) :
+    RelCT isa (fun a b => a = σ ∧ b = σ') (SealSplit.prefix T.fn) fun _ _ => True := by
+  have r15 : ∀ {s₁ s₂ : State}, Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ → Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ →
+      ∀ r ∈ [Reg.r15], s₁.gpr r = s₂.gpr r := fun e₁ e₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [e₁.r15, e₂.r15]
+  unfold SealSplit.prefix
+  refine RelCT.seq (step [.r15] preTest_check (F₁ := (· = σ)) (F₂ := (· = σ'))
+    (G₁ := G₁ Ctx W SP sl σ) (G₂ := G₁ Ctx W SP sl σ')
+    (fun _ _ g => by obtain ⟨rfl, rfl⟩ := g; exact r15 h.env h'.env) (fun _ _ g => g)
+    (fun _ hs => by rw [hs]; exact g₁_wp h) (fun _ hs => by rw [hs]; exact g₁_wp h')) ?_
+  refine RelCT.seq (R := fun a b => Mid2 Ctx W SP D S R sl σ a ∧ Mid2 Ctx W SP D S R sl σ' b)
+    (RelCT.ite (fun _ _ g => by simp only [eval, g.1.2.2.1, g.2.2.2.1]) ?_ ?_) ?_
+  · refine StreamTo.RelCT.of_imp (sl / 16 = 0) (fun _ _ g => by
+      have e := g.2; simp only [eval, g.1.1.2.2.1] at e; simpa using e) fun h0 => ?_
+    exact skip_rel fun _ _ g => ⟨mid2_zero g.1.1 h0, mid2_zero g.1.2 h0⟩
+  · exact (callPart_rel h h' T).mono (fun _ _ g =>
+      ⟨⟨g.1.1.1, g.1.1.2.1, g.1.1.2.2.2⟩, ⟨g.1.2.1, g.1.2.2.1, g.1.2.2.2.2⟩⟩) fun _ _ g => g
+  exact tail_rel h h'
 
 end
 

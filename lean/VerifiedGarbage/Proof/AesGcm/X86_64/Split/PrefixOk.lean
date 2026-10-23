@@ -221,6 +221,26 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
     rw [length_bytesAt] at this
     rw [this, m₃, hs₂]
 
+/-- The call of `prefix` for the `sl / 16` whole blocks at `src`, from a
+state `s₁` with their number in `rax` and `s`'s memory: what `Mid2` says. -/
+theorem call_ok (T : BlkToFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁)
+    (ax₁ : s₁.gpr .rax = BitVec.ofNat 64 (sl / 16)) (m₁ : s₁.mem = s.mem) (rd₁ : s₁.rd = s.rd)
+    (wr₁ : s₁.wr = s.wr) :
+    WP isa (.seq (.block SealSplit.preArgs)
+      (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3))) s₁
+      (Mid2 Ctx W SP D S R sl s) := by
+  have hn := h.data.ok.lt
+  have hsl := h.sl_le
+  refine WP.seq (WP.mono (pre2_ok (R := R) (D := D) (S := S) he₁ (by rw [m₁]; exact h.rounds) (by rw [m₁]; exact h.dat)
+    (by rw [m₁]; exact h.src)) fun s₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
+  have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep g₂ rd₂ wr₂
+  exact WP.mono (preCall_ok h T (q := sl / 16) (by omega) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
+    (m₂.trans m₁) di₂ si₂ dx₂ cx₂ r8₂ (by rw [r9₂, ax₁]) (by rw [r10₂, ax₁]) r11₂ ax₂)
+    fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => ⟨he₂.keep (fun r hr => cs₃ r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₃ wr₃,
+      rd₃.trans (rd₂.trans rd₁), wr₃.trans (wr₂.trans wr₁), by rw [m₂, m₁] at fr₃; exact fr₃, bl₃, ct₃, y₃⟩
+
 /-- `prefix`: the whole blocks at `src` encrypted to `dst` and absorbed by a
 call of `vg_aes_gcm_encrypt_blocks_to` (`T`), the bytes left copied, and
 `len` and the data from them on kept. -/
@@ -242,16 +262,7 @@ theorem prefix_ok (T : BlkToFn M) :
     · rw [h0']; rfl
     · rw [h0', m₁]; rfl
     · rw [h0', m₁]; rfl
-  · have h0' : sl / 16 ≠ 0 := of_decide_eq_false h0
-    refine WP.seq (WP.mono (pre2_ok (R := R) (D := D) (S := S) he₁ (by rw [m₁]; exact h.rounds) (by rw [m₁]; exact h.dat)
-      (by rw [m₁]; exact h.src)) fun s₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
-    have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep g₂ rd₂ wr₂
-    refine WP.mono (preCall_ok h T (q := sl / 16) (by omega) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
-      (m₂.trans m₁) di₂ si₂ dx₂ cx₂ r8₂ (by rw [r9₂, ax₁]) (by rw [r10₂, ax₁]) r11₂ ax₂)
-      fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => tail_ok h ⟨he₂.keep (fun r hr => cs₃ r (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₃ wr₃,
-        rd₃.trans (rd₂.trans rd₁), wr₃.trans (wr₂.trans wr₁), by rw [m₂, m₁] at fr₃; exact fr₃, bl₃, ct₃, y₃⟩
+  · exact WP.mono (call_ok h T he₁ ax₁ m₁ rd₁ wr₁) fun _ H => tail_ok h H
 
 end
 
