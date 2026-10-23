@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 public import VerifiedGarbage.Proof.Sm4.AArch64.FbVerified
+public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Impl.Sm4.AArch64.Cbc
@@ -31,8 +32,8 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 the chaining value (`Proof.Modes.AArch64.cbcEncryptChained_wp` and
 `cbcDecryptChained_wp`) over SM4's core for each direction: decryption over
 `dirCoreSpec .decrypt`, encryption over the feedback modes' core
-(`fbCoreSpec`), with the IV's address in `x19`, which the core keeps in
-`v31` (`keeps_x19`). `cbcEncryptChained_verified`,
+(`Serial.blockSpec`), with the IV's address kept in `x19`
+(`Serial.keeps_x19`). `cbcEncryptChained_verified`,
 `cbcDecryptChained_verified`: each is correct and constant time, by the
 taint analysis with public values in vector registers (`VectorTaint`), as
 for OFB and CFB (`fbPre`, `fbTaint_agree`): the pointers, `n` and the stack
@@ -120,7 +121,7 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp fbCoreSpec (r := ⟨.x1, .x2, .x3, .x4⟩)
+  refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp Serial.blockSpec (r := ⟨.x1, .x2, .x3, .x4⟩)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x19)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
@@ -130,8 +131,8 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKD⟩ keeps_x19)
-    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [fbCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
+      · exact dKD⟩ Serial.keeps_x19)
+    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [Serial.cipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
 
 theorem cbcEncryptChained_verified :
     Verified AArch64.target cbcEncryptChained (Proof.Sm4.cbcEncChainedScratchContract AArch64.abi (slots + 12)) :=

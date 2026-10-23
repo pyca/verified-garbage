@@ -98,3 +98,44 @@ fn incomplete_blocks() {
         assert_eq!(chain, [7; 16]);
     }
 }
+
+/// The scalar block core must respect byte-aligned slices and both guards,
+/// including empty calls and the old sixteen-block batching boundaries.
+#[test]
+fn unaligned_guarded() {
+    for key in [[0; 16], [0xff; 16], core::array::from_fn(|i| i as u8)] {
+        let ctx = Sm4Cbc::new(&key);
+        let iv = core::array::from_fn(|i| (i * 19 + 3) as u8);
+        for blocks in [0, 1, 2, 3, 15, 16, 17, 31, 32, 33, 64, 65] {
+            let input: Vec<u8> = (0..16 * blocks).map(|i| (i * 29 + 11) as u8).collect();
+            let expected = reference(&key, iv, &input);
+            let after = expected.last_chunk::<16>().copied().unwrap_or(iv);
+            for offset in 0..16 {
+                let mut buffer = vec![0xa5; offset + input.len() + 16];
+                buffer[offset..offset + input.len()].copy_from_slice(&input);
+                let mut chain = [0xa5; 48];
+                let start = (offset + 3) % 16;
+                chain[start..start + 16].copy_from_slice(&iv);
+                ctx.encrypt(
+                    (&mut chain[start..start + 16]).try_into().unwrap(),
+                    &mut buffer[offset..offset + input.len()],
+                )
+                .unwrap();
+                assert_eq!(&buffer[offset..offset + input.len()], &expected);
+                assert_eq!(&chain[start..start + 16], &after);
+                chain[start..start + 16].copy_from_slice(&iv);
+                ctx.decrypt(
+                    (&mut chain[start..start + 16]).try_into().unwrap(),
+                    &mut buffer[offset..offset + input.len()],
+                )
+                .unwrap();
+                assert_eq!(&buffer[offset..offset + input.len()], &input);
+                assert_eq!(&chain[start..start + 16], &after);
+                assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
+                assert!(buffer[offset + input.len()..].iter().all(|&b| b == 0xa5));
+                assert!(chain[..start].iter().all(|&b| b == 0xa5));
+                assert!(chain[start + 16..].iter().all(|&b| b == 0xa5));
+            }
+        }
+    }
+}
