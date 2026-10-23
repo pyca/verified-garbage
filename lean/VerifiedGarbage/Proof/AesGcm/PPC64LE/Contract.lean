@@ -19,7 +19,7 @@ namespace VG.Proof.AesGcm.PPC64LE
 
 open VG VG.PPC64LE
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0)
+open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk)
 
 abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 12 ∨ r.toNat = 14
 
@@ -115,5 +115,59 @@ def streamDecryptPPC64LE : Contract isa where
       StreamRepr s'.mem (s.gpr .r5) ciph h iv a c' ∧
         bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
   pub := streamCryptPub
+
+/-- What `vg_aes_gcm_stream_finish` needs: `(ctx = r3, rounds = r4, state = r5, aad_len = r6,
+text_len = r7, tag = r8, scratch = r9)`. -/
+def finPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .r3, 256⟩
+  let st : Region := ⟨s.gpr .r5, 80⟩
+  let tag : Region := ⟨s.gpr .r8, 16⟩
+  let scr : Region := ⟨s.gpr .r9, 2560⟩
+  s.rd = [ctx] ∧ s.wr = [st, tag, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧
+    tag.Disjoint scr ∧
+    (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 16 ≤ 2 ^ 64 ∧
+    (s.gpr .r9).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+
+/-- `vg_aes_gcm_stream_finish`. -/
+def streamFinishPPC64LE : Contract isa where
+  pre := finPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat
+    let h := ctxH s.mem (s.gpr .r3)
+    ∀ iv a c, StreamRepr s.mem (s.gpr .r5) ciph h iv a c →
+      s.gpr .r6 = BitVec.ofNat 64 a.length → (s.gpr .r7).toNat = c.length →
+      bytesAt s'.mem (s.gpr .r8) 16 = fullTag ciph h iv a c
+  pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.sp = s₂.sp
+
+/-- What `vg_aes_gcm_stream_verify` needs: `(ctx = r3, rounds = r4, state = r5, aad_len = r6,
+text_len = r7, tag = r8, tag_len = r9, scratch = r10)`. -/
+def verPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .r3, 256⟩
+  let st : Region := ⟨s.gpr .r5, 80⟩
+  let tag : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
+  let scr : Region := ⟨s.gpr .r10, 2560⟩
+  s.rd = [ctx, tag] ∧ s.wr = [st, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧ tag.Disjoint scr ∧
+    (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+
+/-- `vg_aes_gcm_stream_verify`. -/
+def streamVerifyPPC64LE : Contract isa where
+  pre := verPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat
+    let h := ctxH s.mem (s.gpr .r3)
+    let tl := (s.gpr .r9).toNat
+    ∀ iv a c, StreamRepr s.mem (s.gpr .r5) ciph h iv a c →
+      s.gpr .r6 = BitVec.ofNat 64 a.length → (s.gpr .r7).toNat = c.length →
+      let t := fullTag ciph h iv a c
+      if tagLenOk tl ∧ t.take tl = bytesAt s.mem (s.gpr .r8) tl then (s'.gpr .r3).setWidth 32 = 1
+      else (s'.gpr .r3).setWidth 32 = 0
+  pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp
 
 end VG.Proof.AesGcm.PPC64LE

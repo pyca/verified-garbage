@@ -53,6 +53,16 @@ def artifacts : List Artifact := [
     notes := [callNote]
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
     stack := 2592
-    verified := streamDecrypt_framed }]
+    verified := streamDecrypt_framed },
+  Spec.Gcm.streamFinishApi.artifact PPC64LE.target {
+    notes := [callNote]
+    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 Impl.AesGcm.PPC64LE.streamFinish
+    stack := 2592
+    verified := streamFinish_framed },
+  Spec.Gcm.streamVerifyApi.artifact PPC64LE.target {
+    notes := [callNote]
+    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamVerify
+    stack := 2592
+    verified := streamVerify_framed }]
 
 end VG.Artifacts.AesGcm.PPC64LE
