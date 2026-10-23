@@ -78,6 +78,9 @@ mod tests {
             };
         }
         check!(
+            crate::blowfish_ecb::Error::InvalidKeyLength,
+            crate::blowfish_ecb::Error::IncompleteBlock,
+            crate::blowfish_ecb::Error::OutputTooSmall,
             crate::hmac::InvalidMac,
             crate::idea_ecb::Error::InvalidKeyLength,
             crate::idea_ecb::Error::IncompleteBlock,
@@ -125,9 +128,6 @@ mod tests {
             crate::aes_xts::Error::DataUnitTooLong,
             crate::blowfish_cbc::Error::InvalidKeyLength,
             crate::blowfish_cbc::Error::IncompleteBlock,
-            crate::blowfish_ecb::Error::InvalidKeyLength,
-            crate::blowfish_ecb::Error::IncompleteBlock,
-            crate::blowfish_ecb::Error::OutputTooSmall,
             crate::camellia_cbc::Error::InvalidKeyLength,
             crate::camellia_cbc::Error::IncompleteBlock,
             crate::camellia_ecb::Error::InvalidKeyLength,
