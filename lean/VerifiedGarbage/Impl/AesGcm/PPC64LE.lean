@@ -69,9 +69,9 @@ def tO : Nat := 96
 def scrO : Nat := 512
 def lrO : Nat := 240
 /-- The received tag, padded with zeros, in `verify`. -/
-def rO : Nat := 16
+def rO : Nat := 256
 /-- The first bytes of the computed tag, padded with zeros, in `verify`. -/
-def vO : Nat := 32
+def vO : Nat := 272
 
 /-- Our caller's registers, and where we save them. -/
 def saved : List (Reg × Nat) :=
