@@ -1709,6 +1709,100 @@ blr",
     )
 }
 
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
+///
+/// Includes SHA-512 of the seed (calls of SHA-512's streaming functions, their state and working space in `scratch`), RFC 8032 pruning, and base-point multiplication (a call of `vg_ed25519_scalar_base`). The digest, the scalar, the saved nonvolatile registers and `lr` are in a frame of 176 bytes on the stack, whose first 136 are cleared before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `seed` must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `seed` and `scratch` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -176(%r1)
+addi %r6, %r1, 32
+mflr %r0
+std %r20, 96(%r6)
+std %r21, 104(%r6)
+std %r22, 112(%r6)
+std %r23, 120(%r6)
+std %r0, 128(%r6)
+addi %r20, %r3, 0
+addi %r21, %r4, 0
+addi %r22, %r5, 0
+addi %r23, %r6, 0
+addi %r3, %r22, 0
+bl {vg_sha512_init}
+addi %r3, %r22, 0
+li %r4, 0
+addi %r5, %r21, 0
+li %r6, 32
+addi %r7, %r22, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r22, 0
+li %r4, 32
+addi %r5, %r23, 0
+addi %r6, %r22, 192
+bl {vg_sha512_finalize_scratch}
+ld %r8, 0(%r23)
+rldicl %r8, %r8, 61, 3
+rldicr %r8, %r8, 3, 60
+std %r8, 64(%r23)
+ld %r8, 8(%r23)
+std %r8, 72(%r23)
+ld %r8, 16(%r23)
+std %r8, 80(%r23)
+ld %r8, 24(%r23)
+rldicr %r8, %r8, 2, 61
+rldicl %r8, %r8, 62, 2
+lis %r9, 16384
+rldicr %r9, %r9, 32, 31
+or %r8, %r8, %r9
+std %r8, 88(%r23)
+addi %r3, %r20, 0
+addi %r4, %r23, 64
+addi %r5, %r22, 0
+bl {vg_ed25519_scalar_base}
+ld %r0, 128(%r23)
+ld %r20, 96(%r23)
+ld %r21, 104(%r23)
+ld %r22, 112(%r23)
+ld %r23, 120(%r23)
+mtlr %r0
+addi %r12, %r1, 32
+li %r11, 0
+std %r11, 0(%r12)
+std %r11, 8(%r12)
+std %r11, 16(%r12)
+std %r11, 24(%r12)
+std %r11, 32(%r12)
+std %r11, 40(%r12)
+std %r11, 48(%r12)
+std %r11, 56(%r12)
+std %r11, 64(%r12)
+std %r11, 72(%r12)
+std %r11, 80(%r12)
+std %r11, 88(%r12)
+std %r11, 96(%r12)
+std %r11, 104(%r12)
+std %r11, 112(%r12)
+std %r11, 120(%r12)
+std %r11, 128(%r12)
+addi %r1, %r1, 176
+blr",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
+    )
+}
+
 /// Ed25519 scalar reduction (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `wide mod L` to `*out`, using all 64 input bytes. Contract: `VG.Spec.Ed25519.scalarReduceContract`. Constant time: only pointers may affect timing.
 ///
 /// Uses baseline integer instructions. The function reduces all 512 input bits from the top, one at a time, in eight 32-bit limbs: the remainder doubled with the bit as the carry in, then `L` subtracted (as an addition of `2^256 - L`, whose carry out says whether the remainder was at least `L`) and selected with a mask. The nonvolatile registers it uses are saved at bytes 1024 to 1119 of `scratch`.
@@ -5188,6 +5282,196 @@ blr",
         vg_ed25519_r32_point_add = sym super::ed25519_r32::vg_ed25519_r32_point_add,
         vg_gf25519_r32_pow250 = sym super::gf25519_r32::vg_gf25519_r32_pow250,
         vg_gf25519_r32_mul = sym super::gf25519_r32::vg_gf25519_r32_mul,
+    )
+}
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// Includes SHA-512 (calls of SHA-512's streaming functions), scalar reduction, base-point multiplication, and scalar multiply-add (calls of `vg_ed25519_scalar_reduce`, `vg_ed25519_scalar_base` and `vg_ed25519_scalar_mul_add`). The secret scalar, the nonce, their digests, a copy of `pk`, the saved nonvolatile registers and `lr` are in a frame of 320 bytes on the stack, whose first 224 are cleared before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * `seed` must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the 368 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -320(%r1)
+addi %r9, %r1, 32
+mflr %r0
+std %r20, 224(%r9)
+std %r21, 232(%r9)
+std %r22, 240(%r9)
+std %r23, 248(%r9)
+std %r24, 256(%r9)
+std %r25, 264(%r9)
+std %r0, 272(%r9)
+addi %r20, %r3, 0
+addi %r21, %r4, 0
+addi %r22, %r6, 0
+addi %r23, %r7, 0
+addi %r24, %r8, 0
+addi %r25, %r9, 0
+ld %r8, 0(%r5)
+std %r8, 192(%r25)
+ld %r8, 8(%r5)
+std %r8, 200(%r25)
+ld %r8, 16(%r5)
+std %r8, 208(%r25)
+ld %r8, 24(%r5)
+std %r8, 216(%r25)
+addi %r3, %r24, 0
+bl {vg_sha512_init}
+addi %r3, %r24, 0
+li %r4, 0
+addi %r5, %r21, 0
+li %r6, 32
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+li %r4, 32
+addi %r5, %r25, 128
+addi %r6, %r24, 192
+bl {vg_sha512_finalize_scratch}
+ld %r8, 128(%r25)
+rldicl %r8, %r8, 61, 3
+rldicr %r8, %r8, 3, 60
+std %r8, 0(%r25)
+ld %r8, 136(%r25)
+std %r8, 8(%r25)
+ld %r8, 144(%r25)
+std %r8, 16(%r25)
+ld %r8, 152(%r25)
+rldicr %r8, %r8, 2, 61
+rldicl %r8, %r8, 62, 2
+lis %r9, 16384
+rldicr %r9, %r9, 32, 31
+or %r8, %r8, %r9
+std %r8, 24(%r25)
+ld %r8, 160(%r25)
+std %r8, 32(%r25)
+ld %r8, 168(%r25)
+std %r8, 40(%r25)
+ld %r8, 176(%r25)
+std %r8, 48(%r25)
+ld %r8, 184(%r25)
+std %r8, 56(%r25)
+addi %r3, %r24, 0
+bl {vg_sha512_init}
+addi %r3, %r24, 0
+li %r4, 0
+addi %r5, %r25, 32
+li %r6, 32
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+li %r4, 32
+addi %r5, %r22, 0
+addi %r6, %r23, 0
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+addi %r4, %r23, 32
+addi %r5, %r25, 128
+addi %r6, %r24, 192
+bl {vg_sha512_finalize_scratch}
+addi %r3, %r25, 64
+addi %r4, %r25, 128
+addi %r5, %r24, 0
+bl {vg_ed25519_scalar_reduce}
+addi %r3, %r20, 0
+addi %r4, %r25, 64
+addi %r5, %r24, 0
+bl {vg_ed25519_scalar_base}
+addi %r3, %r24, 0
+bl {vg_sha512_init}
+addi %r3, %r24, 0
+li %r4, 0
+addi %r5, %r20, 0
+li %r6, 32
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+li %r4, 32
+addi %r5, %r25, 192
+li %r6, 32
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+li %r4, 64
+addi %r5, %r22, 0
+addi %r6, %r23, 0
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+addi %r4, %r23, 64
+addi %r5, %r25, 128
+addi %r6, %r24, 192
+bl {vg_sha512_finalize_scratch}
+addi %r3, %r25, 96
+addi %r4, %r25, 128
+addi %r5, %r24, 0
+bl {vg_ed25519_scalar_reduce}
+addi %r3, %r20, 32
+addi %r4, %r25, 64
+addi %r5, %r25, 96
+addi %r6, %r25, 0
+addi %r7, %r24, 0
+bl {vg_ed25519_scalar_mul_add}
+ld %r0, 272(%r25)
+ld %r20, 224(%r25)
+ld %r21, 232(%r25)
+ld %r22, 240(%r25)
+ld %r23, 248(%r25)
+ld %r24, 256(%r25)
+ld %r25, 264(%r25)
+mtlr %r0
+addi %r12, %r1, 32
+li %r11, 0
+std %r11, 0(%r12)
+std %r11, 8(%r12)
+std %r11, 16(%r12)
+std %r11, 24(%r12)
+std %r11, 32(%r12)
+std %r11, 40(%r12)
+std %r11, 48(%r12)
+std %r11, 56(%r12)
+std %r11, 64(%r12)
+std %r11, 72(%r12)
+std %r11, 80(%r12)
+std %r11, 88(%r12)
+std %r11, 96(%r12)
+std %r11, 104(%r12)
+std %r11, 112(%r12)
+std %r11, 120(%r12)
+std %r11, 128(%r12)
+std %r11, 136(%r12)
+std %r11, 144(%r12)
+std %r11, 152(%r12)
+std %r11, 160(%r12)
+std %r11, 168(%r12)
+std %r11, 176(%r12)
+std %r11, 184(%r12)
+std %r11, 192(%r12)
+std %r11, 200(%r12)
+std %r11, 208(%r12)
+std %r11, 216(%r12)
+addi %r1, %r1, 320
+blr",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add,
     )
 }
 
@@ -12087,5 +12371,94 @@ blr",
         vg_gf25519_r32_mul = sym super::gf25519_r32::vg_gf25519_r32_mul,
         vg_gf25519_r32_pow250 = sym super::gf25519_r32::vg_gf25519_r32_pow250,
         vg_ed25519_r32_point_add = sym super::ed25519_r32::vg_ed25519_r32_point_add,
+    )
+}
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// Includes SHA-512 of R || A || message (calls of SHA-512's streaming functions), challenge reduction (a call of `vg_ed25519_scalar_reduce`), and strict verification of the Ed25519 equation (a call of `vg_ed25519_verify_equation`). The challenge, its digest, the saved nonvolatile registers and `lr` are in a frame of 224 bytes on the stack.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -224(%r1)
+addi %r8, %r1, 32
+mflr %r0
+std %r20, 128(%r8)
+std %r21, 136(%r8)
+std %r22, 144(%r8)
+std %r23, 152(%r8)
+std %r24, 160(%r8)
+std %r25, 168(%r8)
+std %r0, 176(%r8)
+addi %r20, %r3, 0
+addi %r21, %r4, 0
+addi %r22, %r5, 0
+addi %r23, %r6, 0
+addi %r24, %r7, 0
+addi %r25, %r8, 0
+addi %r3, %r24, 0
+bl {vg_sha512_init}
+addi %r3, %r24, 0
+li %r4, 0
+addi %r5, %r23, 0
+li %r6, 32
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+li %r4, 32
+addi %r5, %r20, 0
+li %r6, 32
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+li %r4, 64
+addi %r5, %r21, 0
+addi %r6, %r22, 0
+addi %r7, %r24, 192
+bl {vg_sha512_update_scratch}
+addi %r3, %r24, 0
+addi %r4, %r22, 64
+addi %r5, %r25, 64
+addi %r6, %r24, 192
+bl {vg_sha512_finalize_scratch}
+addi %r3, %r25, 0
+addi %r4, %r25, 64
+addi %r5, %r24, 0
+bl {vg_ed25519_scalar_reduce}
+li %r8, 0
+std %r8, 32(%r25)
+std %r8, 40(%r25)
+std %r8, 48(%r25)
+std %r8, 56(%r25)
+addi %r3, %r20, 0
+addi %r4, %r23, 0
+addi %r5, %r25, 0
+addi %r6, %r24, 0
+bl {vg_ed25519_verify_equation}
+ld %r0, 176(%r25)
+ld %r20, 128(%r25)
+ld %r21, 136(%r25)
+ld %r22, 144(%r25)
+ld %r23, 152(%r25)
+ld %r24, 160(%r25)
+ld %r25, 168(%r25)
+mtlr %r0
+addi %r1, %r1, 224
+blr",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation,
     )
 }
