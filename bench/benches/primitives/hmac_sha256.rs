@@ -1,14 +1,13 @@
 //! HMAC-SHA-256.
 
 use criterion::Criterion;
+use openssl::hash::MessageDigest;
+use verified_garbage::hashes::sha256::Sha256;
+use verified_garbage::hmac::Hmac;
 
 pub const USES: &[&str] = &["hmac_sha256", "sha256"];
 
 pub fn bench(c: &mut Criterion) {
-    use openssl::hash::MessageDigest;
-    use verified_garbage::hashes::sha256::Sha256;
-    use verified_garbage::hmac::Hmac;
-
     crate::hmac_group(
         c,
         "hmac-sha256",
