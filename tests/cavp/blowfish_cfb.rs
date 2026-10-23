@@ -19,8 +19,12 @@ use super::unhex;
 /// CFB64 from ECB: the output and the block to continue from (the last
 /// ciphertext block, or after a partial segment `CIPH_K` of the last whole
 /// one's).
-fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [u8; 8]) {
-    let mut ecb = BlowfishEcbEncryptor::new(key).unwrap();
+fn reference(
+    ecb: &mut BlowfishEcbEncryptor,
+    iv: [u8; 8],
+    data: &[u8],
+    encrypt: bool,
+) -> (Vec<u8>, [u8; 8]) {
     let mut chain = iv;
     let mut out = Vec::new();
     for block in data.chunks(8) {
@@ -35,7 +39,6 @@ fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [
         };
         out.extend(y);
     }
-    ecb.finalize().unwrap();
     (out, chain)
 }
 
@@ -78,8 +81,10 @@ fn pyca_vectors() {
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
+        let mut ecb = BlowfishEcbEncryptor::new(&key).unwrap();
         // The block to continue from, which the vector does not give.
-        let (expected, after) = reference(&key, iv, &plaintext, true);
+        let (expected, after) = reference(&mut ecb, iv, &plaintext, true);
+        ecb.finalize().unwrap();
         assert_eq!(expected, ciphertext);
         let ctx = BlowfishCfb64::new(&key).unwrap();
         check(&ctx, iv, &plaintext, true, &ciphertext, after);
@@ -96,13 +101,15 @@ fn from_ecb() {
     let iv: [u8; 8] = core::array::from_fn(|i| (i * 11 + 5) as u8);
     for key_len in [4, 16, 56] {
         let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let mut ecb = BlowfishEcbEncryptor::new(&key).unwrap();
         let ctx = BlowfishCfb64::new(&key).unwrap();
         for len in 0..=data.len() {
             for encrypt in [true, false] {
-                let (output, after) = reference(&key, iv, &data[..len], encrypt);
+                let (output, after) = reference(&mut ecb, iv, &data[..len], encrypt);
                 check(&ctx, iv, &data[..len], encrypt, &output, after);
             }
         }
+        ecb.finalize().unwrap();
     }
 }
 
