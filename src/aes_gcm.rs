@@ -209,7 +209,8 @@ use crate::arch::gcm::{
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
     VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN, vg_aes_gcm_open_with_powers_aes,
-    vg_aes_gcm_seal_with_powers_aes, vg_ghash_store_powers_aes,
+    vg_aes_gcm_seal_gather_with_powers_aes, vg_aes_gcm_seal_with_powers_aes,
+    vg_ghash_store_powers_aes,
 };
 use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
@@ -218,7 +219,8 @@ use crate::arch::gcm::{
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_with_powers_aes_sha3,
+    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_gather_with_powers_aes_sha3,
+    vg_aes_gcm_seal_with_powers_aes_sha3,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -773,8 +775,6 @@ struct Prepared {
     features: Features,
     seal: SealPrepared,
     open: OpenPrepared,
-    /// None on AArch64, where `encrypt` copies its pieces and calls `seal`.
-    #[cfg(target_arch = "x86_64")]
     seal_gather: SealGatherPrepared,
     #[cfg(target_arch = "x86_64")]
     stream_encrypt: StreamPrepared,
@@ -844,8 +844,9 @@ use prepared_types::{OpenPrepared, SealGatherPrepared, SealPrepared};
 type Ctx = [u64; 128];
 #[cfg(target_arch = "aarch64")]
 type Ctx = [u64; 16];
-/// The `_with_powers` instances of `seal` and `open`: `vg_aes_gcm_seal`'s
-/// and `vg_aes_gcm_open`'s arguments, then the powers.
+/// The `_with_powers` instances of `seal`, `seal_gather` and `open`:
+/// `vg_aes_gcm_seal`'s, `vg_aes_gcm_seal_gather`'s and `vg_aes_gcm_open`'s
+/// arguments, then the powers.
 #[cfg(target_arch = "aarch64")]
 type SealPrepared = unsafe extern "C" fn(
     *const [u64; 32],
@@ -853,6 +854,21 @@ type SealPrepared = unsafe extern "C" fn(
     *const u8,
     usize,
     *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *mut [u8; 16],
+    *const Ctx,
+);
+#[cfg(target_arch = "aarch64")]
+type SealGatherPrepared = unsafe extern "C" fn(
+    *const [u64; 32],
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const [usize; 2],
     usize,
     *mut u8,
     usize,
@@ -915,12 +931,14 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
 static PREPARED_AES: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
+    seal_gather: vg_aes_gcm_seal_gather_with_powers_aes,
 };
 
 #[cfg(target_arch = "aarch64")]
 static PREPARED_AES_SHA3: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes_sha3,
     open: vg_aes_gcm_open_with_powers_aes_sha3,
+    seal_gather: vg_aes_gcm_seal_gather_with_powers_aes_sha3,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -1368,12 +1386,6 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        #[cfg(target_arch = "aarch64")]
-        if out.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
-            return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
-        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -1382,6 +1394,13 @@ impl AesGcm {
             d.write([p.as_ptr() as usize, p.len()]);
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
+        // On AArch64, as `encrypt_in_place` there.
+        #[cfg(target_arch = "aarch64")]
+        if out.len() > PLAIN_MAX
+            && let Some(p) = self.fns.powers
+        {
+            return Ok(self.seal_gather_prepared(p, nonce, aad, src, plaintext.len(), out));
+        }
         // The gathering seals every shape (on x86-64, a `_prepared` one a
         // TLS record's by `vg_aes_gcm_seal_split_prepared` from the first
         // piece, before anything else).
@@ -1500,27 +1519,39 @@ impl AesGcm {
         }
     }
 
-    /// `encrypt` with the `_with_powers` instances `p`: copies the pieces
-    /// `plaintext` to `out`, one after the other (as
-    /// `vg_aes_gcm_seal_gather` does), and seals them there with
-    /// `seal_prepared`. Which bytes it copies where depends only on the
-    /// pieces' lengths (whose sum `encrypt` checked is `out.len()`).
+    /// `encrypt` with the `_with_powers` instances `p`: its descriptors
+    /// `src` of `count` pieces, as `encrypt` writes them.
     #[inline(never)]
-    fn seal_pieces_prepared(
+    fn seal_gather_prepared(
         &self,
         p: &Prepared,
         nonce: &[u8],
         aad: &[u8],
-        plaintext: &[&[u8]],
+        src: *const [usize; 2],
+        count: usize,
         out: &mut [u8],
     ) -> Block {
-        let mut rest = &mut *out;
-        for piece in plaintext {
-            let (dst, tail) = rest.split_at_mut(piece.len());
-            dst.copy_from_slice(piece);
-            rest = tail;
-        }
-        self.seal_prepared(p, nonce, aad, out)
+        let mut tag: Block = [0; 16];
+        let f = p.seal_gather;
+        // SAFETY: as in `encrypt`'s call of `seal_gather`, with the powers
+        // as in `seal_prepared`.
+        unsafe {
+            f(
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                count,
+                out.as_mut_ptr(),
+                out.len(),
+                &mut tag,
+                &self.powers,
+            )
+        };
+        tag
     }
 }
 
