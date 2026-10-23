@@ -231,7 +231,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
 ///
-/// This implementation reads each block once: it enciphers eight blocks at a time with the AES instructions, each round applied to all eight, then one at a time, computing the tweaks in general-purpose registers beside them.
+/// This implementation reads each block once: it enciphers eight blocks at a time with the AES instructions, each round applied to all eight, then one at a time, computing each group's tweaks in general-purpose registers while the group before it runs.
 ///
 /// # Safety
 ///
@@ -275,89 +275,155 @@ lsr x13, x3, #3
 sub x9, x9, #16
 ldr q29, [x9, #0]
 cbz x13, 20f
+add x12, x5, #0
+add x8, x5, #128
+str x14, [x12, #0]
+str x15, [x12, #8]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #16]
+str x15, [x12, #24]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #32]
+str x15, [x12, #40]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #48]
+str x15, [x12, #56]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #64]
+str x15, [x12, #72]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #80]
+str x15, [x12, #88]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #96]
+str x15, [x12, #104]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #112]
+str x15, [x12, #120]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
 22:
 ldr q0, [x2, #0]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #0]
+ldr q31, [x12, #0]
 eor v0.16b, v0.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q1, [x2, #16]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #16]
+ldr q31, [x12, #16]
 eor v1.16b, v1.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q2, [x2, #32]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #32]
+ldr q31, [x12, #32]
 eor v2.16b, v2.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q3, [x2, #48]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #48]
+ldr q31, [x12, #48]
 eor v3.16b, v3.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q4, [x2, #64]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #64]
+ldr q31, [x12, #64]
 eor v4.16b, v4.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q5, [x2, #80]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #80]
+ldr q31, [x12, #80]
 eor v5.16b, v5.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q6, [x2, #96]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #96]
+ldr q31, [x12, #96]
 eor v6.16b, v6.16b, v31.16b
+ldr q7, [x2, #112]
+ldr q31, [x12, #112]
+eor v7.16b, v7.16b, v31.16b
+str x14, [x8, #0]
+str x15, [x8, #8]
 adds x14, x14, x14
 adcs x15, x15, x15
 movz x9, #135, lsl #0
 movz x10, #0, lsl #0
 csel x9, x9, x10, hs
 eor x14, x14, x9
-ldr q7, [x2, #112]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #112]
-eor v7.16b, v7.16b, v31.16b
+str x14, [x8, #16]
+str x15, [x8, #24]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #32]
+str x15, [x8, #40]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #48]
+str x15, [x8, #56]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #64]
+str x15, [x8, #72]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #80]
+str x15, [x8, #88]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #96]
+str x15, [x8, #104]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #112]
+str x15, [x8, #120]
 adds x14, x14, x14
 adcs x15, x15, x15
 movz x9, #135, lsl #0
@@ -596,34 +662,39 @@ aese v6.16b, v29.16b
 eor v6.16b, v6.16b, v30.16b
 aese v7.16b, v29.16b
 eor v7.16b, v7.16b, v30.16b
-ldr q31, [x5, #0]
+ldr q31, [x12, #0]
 eor v0.16b, v0.16b, v31.16b
 str q0, [x2, #0]
-ldr q31, [x5, #16]
+ldr q31, [x12, #16]
 eor v1.16b, v1.16b, v31.16b
 str q1, [x2, #16]
-ldr q31, [x5, #32]
+ldr q31, [x12, #32]
 eor v2.16b, v2.16b, v31.16b
 str q2, [x2, #32]
-ldr q31, [x5, #48]
+ldr q31, [x12, #48]
 eor v3.16b, v3.16b, v31.16b
 str q3, [x2, #48]
-ldr q31, [x5, #64]
+ldr q31, [x12, #64]
 eor v4.16b, v4.16b, v31.16b
 str q4, [x2, #64]
-ldr q31, [x5, #80]
+ldr q31, [x12, #80]
 eor v5.16b, v5.16b, v31.16b
 str q5, [x2, #80]
-ldr q31, [x5, #96]
+ldr q31, [x12, #96]
 eor v6.16b, v6.16b, v31.16b
 str q6, [x2, #96]
-ldr q31, [x5, #112]
+ldr q31, [x12, #112]
 eor v7.16b, v7.16b, v31.16b
 str q7, [x2, #112]
 add x2, x2, #128
 sub x3, x3, #8
 lsr x13, x3, #3
+add x10, x12, #0
+add x12, x8, #0
+add x8, x10, #0
 cbnz x13, 22b
+ldr x14, [x12, #0]
+ldr x15, [x12, #8]
 b 21f
 20:
 21:
@@ -700,7 +771,7 @@ pub(crate) const VG_AES_XTS_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
 ///
-/// This implementation reads each block once: it deciphers eight blocks at a time with the AES instructions, each round applied to all eight, then one at a time, computing the tweaks in general-purpose registers beside them.
+/// This implementation reads each block once: it deciphers eight blocks at a time with the AES instructions, each round applied to all eight, then one at a time, computing each group's tweaks in general-purpose registers while the group before it runs.
 ///
 /// # Safety
 ///
@@ -756,89 +827,155 @@ aesimc v27.16b, v27.16b
 aesimc v28.16b, v28.16b
 aesimc v29.16b, v29.16b
 cbz x13, 20f
+add x12, x5, #0
+add x8, x5, #128
+str x14, [x12, #0]
+str x15, [x12, #8]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #16]
+str x15, [x12, #24]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #32]
+str x15, [x12, #40]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #48]
+str x15, [x12, #56]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #64]
+str x15, [x12, #72]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #80]
+str x15, [x12, #88]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #96]
+str x15, [x12, #104]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x12, #112]
+str x15, [x12, #120]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
 22:
 ldr q0, [x2, #0]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #0]
+ldr q31, [x12, #0]
 eor v0.16b, v0.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q1, [x2, #16]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #16]
+ldr q31, [x12, #16]
 eor v1.16b, v1.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q2, [x2, #32]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #32]
+ldr q31, [x12, #32]
 eor v2.16b, v2.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q3, [x2, #48]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #48]
+ldr q31, [x12, #48]
 eor v3.16b, v3.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q4, [x2, #64]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #64]
+ldr q31, [x12, #64]
 eor v4.16b, v4.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q5, [x2, #80]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #80]
+ldr q31, [x12, #80]
 eor v5.16b, v5.16b, v31.16b
-adds x14, x14, x14
-adcs x15, x15, x15
-movz x9, #135, lsl #0
-movz x10, #0, lsl #0
-csel x9, x9, x10, hs
-eor x14, x14, x9
 ldr q6, [x2, #96]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #96]
+ldr q31, [x12, #96]
 eor v6.16b, v6.16b, v31.16b
+ldr q7, [x2, #112]
+ldr q31, [x12, #112]
+eor v7.16b, v7.16b, v31.16b
+str x14, [x8, #0]
+str x15, [x8, #8]
 adds x14, x14, x14
 adcs x15, x15, x15
 movz x9, #135, lsl #0
 movz x10, #0, lsl #0
 csel x9, x9, x10, hs
 eor x14, x14, x9
-ldr q7, [x2, #112]
-dup v31.2d, x14
-mov v31.d[1], x15
-str q31, [x5, #112]
-eor v7.16b, v7.16b, v31.16b
+str x14, [x8, #16]
+str x15, [x8, #24]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #32]
+str x15, [x8, #40]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #48]
+str x15, [x8, #56]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #64]
+str x15, [x8, #72]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #80]
+str x15, [x8, #88]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #96]
+str x15, [x8, #104]
+adds x14, x14, x14
+adcs x15, x15, x15
+movz x9, #135, lsl #0
+movz x10, #0, lsl #0
+csel x9, x9, x10, hs
+eor x14, x14, x9
+str x14, [x8, #112]
+str x15, [x8, #120]
 adds x14, x14, x14
 adcs x15, x15, x15
 movz x9, #135, lsl #0
@@ -1077,34 +1214,39 @@ aesd v6.16b, v17.16b
 eor v6.16b, v6.16b, v16.16b
 aesd v7.16b, v17.16b
 eor v7.16b, v7.16b, v16.16b
-ldr q31, [x5, #0]
+ldr q31, [x12, #0]
 eor v0.16b, v0.16b, v31.16b
 str q0, [x2, #0]
-ldr q31, [x5, #16]
+ldr q31, [x12, #16]
 eor v1.16b, v1.16b, v31.16b
 str q1, [x2, #16]
-ldr q31, [x5, #32]
+ldr q31, [x12, #32]
 eor v2.16b, v2.16b, v31.16b
 str q2, [x2, #32]
-ldr q31, [x5, #48]
+ldr q31, [x12, #48]
 eor v3.16b, v3.16b, v31.16b
 str q3, [x2, #48]
-ldr q31, [x5, #64]
+ldr q31, [x12, #64]
 eor v4.16b, v4.16b, v31.16b
 str q4, [x2, #64]
-ldr q31, [x5, #80]
+ldr q31, [x12, #80]
 eor v5.16b, v5.16b, v31.16b
 str q5, [x2, #80]
-ldr q31, [x5, #96]
+ldr q31, [x12, #96]
 eor v6.16b, v6.16b, v31.16b
 str q6, [x2, #96]
-ldr q31, [x5, #112]
+ldr q31, [x12, #112]
 eor v7.16b, v7.16b, v31.16b
 str q7, [x2, #112]
 add x2, x2, #128
 sub x3, x3, #8
 lsr x13, x3, #3
+add x10, x12, #0
+add x12, x8, #0
+add x8, x10, #0
 cbnz x13, 22b
+ldr x14, [x12, #0]
+ldr x15, [x12, #8]
 b 21f
 20:
 21:

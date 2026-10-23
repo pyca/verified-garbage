@@ -38,8 +38,8 @@ def artifacts : List Artifact := [
     suffix := "_aes"
     notes := [
       "This implementation reads each block once: it enciphers eight blocks at a time with the AES " ++
-      "instructions, each round applied to all eight, then one at a time, computing the tweaks in " ++
-      "general-purpose registers beside them."]
+      "instructions, each round applied to all eight, then one at a time, computing each group's " ++
+      "tweaks in general-purpose registers while the group before it runs."]
     code := Impl.AesXts.AArch64Aes.encrypt
     verified := Aes.encrypt_verified
     features := ["aes"] },
@@ -47,8 +47,8 @@ def artifacts : List Artifact := [
     suffix := "_aes"
     notes := [
       "This implementation reads each block once: it deciphers eight blocks at a time with the AES " ++
-      "instructions, each round applied to all eight, then one at a time, computing the tweaks in " ++
-      "general-purpose registers beside them."]
+      "instructions, each round applied to all eight, then one at a time, computing each group's " ++
+      "tweaks in general-purpose registers while the group before it runs."]
     code := Impl.AesXts.AArch64Aes.decrypt
     verified := Aes.decrypt_verified
     features := ["aes"] }]

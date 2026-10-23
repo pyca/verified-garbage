@@ -28,7 +28,7 @@ in `x14` and `x15`.
 namespace VG.Proof.AesXts.AArch64.Aes
 
 open VG VG.AArch64 VG.AArch64.RegUpd
-open VG.Impl.AesXts.AArch64Aes (mulA pre1 pre post1 post)
+open VG.Impl.AesXts.AArch64Aes (mulA pre1 pre post1 post preL1 preL genStep gen)
 open VG.Proof.AesXts (mulA128)
 open VG.Proof.Aes.AArch64.Aese (exec_ldrq exec_strq setV_v_self setV_v_of_ne)
 
@@ -167,16 +167,16 @@ theorem pre_ok (D S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) :
       rw [o' r hr.2 h, o₁ r hr.1 h]
     · rw [g' r h₁ h₂ h₃ h₄, g₁ r h₁ h₂ h₃ h₄]
 
-/-- `post rs j`: each register of `rs` XORed with the tweak saved at
-`S + 16 (j + k)` and stored to the data block `D + 16 (j + k)`. -/
-theorem post_ok (D S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) :
+/-- `post t rs j`: each register of `rs` XORed with the tweak saved at
+`S + 16 (j + k)` (`t` holding `S`) and stored to the data block `D + 16 (j + k)`. -/
+theorem post_ok (t : Reg) (D S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) :
     ∀ (rs : List VReg) (j : Nat) (s : State), rs.Nodup → .v31 ∉ rs → j + rs.length ≤ 8 →
     D.toNat + 16 * (j + rs.length) ≤ 2 ^ 64 →
-    s.gpr .x2 = D → s.gpr .x5 = S →
+    s.gpr .x2 = D → s.gpr t = S →
     (∀ k < rs.length, InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 (16 * (j + k))) 16) →
     (∀ k < rs.length, InRegions s.wr (D + BitVec.ofNat 64 (16 * (j + k))) 16) →
     (∀ k < rs.length, Region.Disjoint ⟨D + BitVec.ofNat 64 (16 * (j + k)), 16⟩ ⟨S, 128⟩) →
-    WP isa (.block (post rs j)) s fun s' =>
+    WP isa (.block (post t rs j)) s fun s' =>
       (∀ k (h : k < rs.length), s'.mem.readW (D + BitVec.ofNat 64 (16 * (j + k))) 128 =
         s.v rs[k] ^^^ s.mem.readW (S + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
       Frame [⟨D + BitVec.ofNat 64 (16 * j), 16 * rs.length⟩] s.mem s'.mem ∧
@@ -194,7 +194,7 @@ theorem post_ok (D S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) :
     let s₁ := s.setV .v31 T
     let s₂ := s₁.setV b (s₁.v b ^^^ s₁.v .v31)
     let s₃ : State := { s₂ with mem := s.mem.write (D + BitVec.ofNat 64 (16 * j)) 16 (s.v b ^^^ T) }
-    have x₁ : exec (.ldrq .v31 .x5 (16 * j)) s = some s₁ := by
+    have x₁ : exec (.ldrq .v31 t (16 * j)) s = some s₁ := by
       rw [exec_ldrq ⟨by omega, by omega⟩ (by rw [hx5]; simpa using hld 0 (by simp)), hx5]
     have x₂ : exec (.vop (.logic .eor b b .v31)) s₁ = some s₂ := rfl
     have v₂ : s₂.v b = s.v b ^^^ T := by
@@ -215,7 +215,7 @@ theorem post_ok (D S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) :
       f₃.readW (r := ⟨S + BitVec.ofNat 64 (16 * (j + k)), 16⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ((hds 0 (by simp)).sub_right (hsl (j + k) (by omega))).symm) (by decide)
-    refine WP.mono (post_ok D S hS bs (j + 1) s₃ (List.nodup_cons.mp hnd).2 (fun h => h31 (List.mem_cons_of_mem _ h))
+    refine WP.mono (post_ok t D S hS bs (j + 1) s₃ (List.nodup_cons.mp hnd).2 (fun h => h31 (List.mem_cons_of_mem _ h))
       (by omega) (by omega) (by simpa [s₃, s₂, s₁, State.setV] using hx2)
       (by simpa [s₃, s₂, s₁, State.setV] using hx5)
       (fun k hk => by rw [e0]; simpa [s₃, s₂, s₁, State.setV] using hld (k + 1) (by simp; omega))
@@ -250,5 +250,136 @@ theorem post_ok (D S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) :
     · rw [sp']; rfl
     · rw [rd']; rfl
     · rw [wr']; rfl
+
+/-- `preL rs j`: each register of `rs` loaded from the data block
+`D + 16 (j + k)` and XORed with the tweak at `S + 16 (j + k)` (`x12`
+holding `S`). -/
+theorem preL_ok (D S : Addr) :
+    ∀ (rs : List VReg) (j : Nat) (s : State), rs.Nodup → .v31 ∉ rs → j + rs.length ≤ 8 →
+    s.gpr .x2 = D → s.gpr .x12 = S →
+    (∀ k < rs.length, InRegions (s.rd ++ s.wr) (D + BitVec.ofNat 64 (16 * (j + k))) 16) →
+    (∀ k < rs.length, InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 (16 * (j + k))) 16) →
+    WP isa (.block (preL rs j)) s fun s' =>
+      (∀ k (h : k < rs.length), s'.v rs[k] =
+        s.mem.readW (D + BitVec.ofNat 64 (16 * (j + k))) 128 ^^^
+          s.mem.readW (S + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
+      (∀ r, r ∉ rs → r ≠ .v31 → s'.v r = s.v r) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+  | [], _, s, _, _, _, _, _, _, _ =>
+    WP.block_nil ⟨fun _ h => absurd h (by simp), fun _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
+  | b :: bs, j, s, hnd, h31, hj, hx2, hx12, hld, hlt => by
+    have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
+    have hb31 : b ≠ .v31 := fun h => h31 (h ▸ List.mem_cons_self ..)
+    simp only [List.length_cons] at hj
+    have e0 : ∀ (p : Addr) (k : Nat), p + BitVec.ofNat 64 (16 * (j + 1 + k)) = p + BitVec.ofNat 64 (16 * (j + (k + 1))) :=
+      fun p k => by rw [show j + 1 + k = j + (k + 1) by omega]
+    let d := s.mem.readW (D + BitVec.ofNat 64 (16 * j)) 128
+    let T := s.mem.readW (S + BitVec.ofNat 64 (16 * j)) 128
+    let s₁ := s.setV b d
+    let s₂ := s₁.setV .v31 T
+    let s₃ := s₂.setV b (s₂.v b ^^^ s₂.v .v31)
+    have x₁ : exec (.ldrq b .x2 (16 * j)) s = some s₁ := by
+      rw [exec_ldrq ⟨by omega, by omega⟩ (by rw [hx2]; simpa using hld 0 (by simp)), hx2]
+    have x₂ : exec (.ldrq .v31 .x12 (16 * j)) s₁ = some s₂ := by
+      rw [exec_ldrq ⟨by omega, by omega⟩ (by simpa [s₁, State.setV, hx12] using hlt 0 (by simp))]
+      simp [s₁, State.setV, hx12, s₂, T]
+    have x₃ : exec (.vop (.logic .eor b b .v31)) s₂ = some s₃ := rfl
+    rw [preL, preL1, WP.block_append_iff]
+    refine WP.of_runBlock ⟨s₃, by simp only [runBlock_cons, isa, x₁, runStep_some, x₂, x₃, runBlock_nil], ?_⟩
+    have v₃ : s₃.v b = d ^^^ T := by simp [s₃, s₂, s₁, State.setV, hb31]
+    have g₃ : s₃.gpr = s.gpr := rfl
+    have m₃ : s₃.mem = s.mem := rfl
+    refine WP.mono (preL_ok D S bs (j + 1) s₃ (List.nodup_cons.mp hnd).2 (fun h => h31 (List.mem_cons_of_mem _ h))
+      (by omega) (by rw [g₃, hx2]) (by rw [g₃, hx12])
+      (fun k hk => by rw [e0]; exact hld (k + 1) (by simp; omega))
+      (fun k hk => by rw [e0]; exact hlt (k + 1) (by simp; omega)))
+      fun s' ⟨v', o', g', m', sp', rd', wr'⟩ => ?_
+    refine ⟨fun k hk => ?_, fun r hr h => ?_, g'.trans g₃, m'.trans m₃, sp', rd', wr'⟩
+    · cases k with
+      | zero =>
+        simp only [List.getElem_cons_zero, Nat.add_zero]
+        rw [o' _ hbs hb31, v₃]
+      | succ k =>
+        simp only [List.getElem_cons_succ]
+        have hk' : k < bs.length := by simpa using hk
+        rw [v' k hk', m₃, e0, e0]
+    · simp only [List.mem_cons, not_or] at hr
+      rw [o' r hr.2 h]; simp [s₃, s₂, s₁, State.setV, hr.1, h]
+
+/-- The tweak in `lo`, `hi` stored as two words at `a`, read as one. -/
+theorem readW_store2 (m : Mem) (a : Addr) (lo hi : BitVec 64) :
+    ((m.writeW a lo).writeW (a + BitVec.ofNat 64 8) hi).readW a 128 = hi ++ lo := by
+  have hs : Mem.Sep a (64 / 8) (a + BitVec.ofNat 64 8) (64 / 8) := by
+    have := Offset.sep a (d := 0) (n := 8) (e := 8) (k := 8) (by decide) (by decide) (by decide)
+    simpa using this
+  rw [readW128, Mem.readW_writeW_self64, Mem.readW_writeW_sep hs (by decide), Mem.readW_writeW_self64]
+
+/-- `genStep r j`: the tweak stored at `S + 16 j` (`r` holding `S`), and
+multiplied by `α`. -/
+theorem genStep_run (r : Reg) (S : Addr) (j : Nat) (s : State) (hj : j < 8) (hr : s.gpr r = S)
+    (in0 : InRegions s.wr (S + BitVec.ofNat 64 (16 * j)) 8)
+    (in8 : InRegions s.wr (S + BitVec.ofNat 64 (16 * j + 8)) 8) :
+    ∃ s', runBlock isa (genStep r j) s = some s' ∧
+      s'.mem = (s.mem.writeW (S + BitVec.ofNat 64 (16 * j)) (s.gpr .x14)).writeW
+        (S + BitVec.ofNat 64 (16 * j + 8)) (s.gpr .x15) ∧
+      tweakOf s' = mulA128 (tweakOf s) ∧
+      (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → s'.gpr r = s.gpr r) ∧
+      s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  let s₁ : State := { s with mem := s.mem.writeW (S + BitVec.ofNat 64 (16 * j)) (s.gpr .x14) }
+  let s₂ : State := { s₁ with mem := s₁.mem.writeW (S + BitVec.ofNat 64 (16 * j + 8)) (s.gpr .x15) }
+  have x₁ : exec (.str .x .x14 r (16 * j)) s = some s₁ := by
+    rw [exec_str_x ⟨by omega, by omega⟩ (by rw [hr]; exact in0), hr]
+  have x₂ : exec (.str .x .x15 r (16 * j + 8)) s₁ = some s₂ := by
+    rw [exec_str_x ⟨by omega, by omega⟩ (by simpa [s₁, hr] using in8)]
+    simp [s₁, s₂, hr]
+  obtain ⟨s', hr', ht, hg, hv, hm, hsp, hrd, hwr⟩ := mulA_run s₂
+  refine ⟨s', ?_, by rw [hm], by rw [ht], fun r h1 h2 h3 h4 => by rw [hg r h1 h2 h3 h4],
+    by rw [hv], by rw [hsp], by rw [hrd], by rw [hwr]⟩
+  rw [genStep, List.cons_append, List.cons_append, List.nil_append]
+  simp only [runBlock_cons, isa, x₁, runStep_some, x₂]
+  exact hr'
+
+/-- The first `k` steps of `gen r`, from the tweak `t`: the tweaks `twW t j`
+at `S + 16 j` (`r` holding `S`). -/
+theorem gen_ok (r : Reg) (S : Addr) (hS : S.toNat + 128 ≤ 2 ^ 64) (h9 : r ≠ .x9) (h10 : r ≠ .x10)
+    (h14 : r ≠ .x14) (h15 : r ≠ .x15) (s : State) (hr : s.gpr r = S)
+    (hin : ∀ d, d + 8 ≤ 128 → InRegions s.wr (S + BitVec.ofNat 64 d) 8) :
+    ∀ k ≤ 8, WP isa (.block ((List.range k).flatMap (genStep r))) s fun s' =>
+      (∀ j < k, s'.mem.readW (S + BitVec.ofNat 64 (16 * j)) 128 = twW (tweakOf s) j) ∧
+      Frame [⟨S, 128⟩] s.mem s'.mem ∧ tweakOf s' = twW (tweakOf s) k ∧
+      (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → s'.gpr r = s.gpr r) ∧
+      s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (by omega), Frame.refl _ _, rfl, fun _ _ _ _ _ => rfl, rfl, rfl, rfl,
+      rfl⟩
+  | k + 1, hk => by
+    rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
+    refine WP.mono (gen_ok r S hS h9 h10 h14 h15 s hr hin k (by omega))
+      fun s₁ ⟨e₁, f₁, t₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    obtain ⟨s', r', m', t', g', v', sp', rd', wr'⟩ := genStep_run r S k s₁ (by omega)
+      (by rw [g₁ r h9 h10 h14 h15, hr]) (by rw [wr₁]; exact hin _ (by omega))
+      (by rw [wr₁]; exact hin _ (by omega))
+    refine WP.of_runBlock ⟨s', r', ?_⟩
+    have hsep : ∀ j < k, Region.Disjoint ⟨S + BitVec.ofNat 64 (16 * j), 16⟩ ⟨S + BitVec.ofNat 64 (16 * k), 16⟩ :=
+      fun j hj => Offset.disjoint S (by omega) (by omega) (by omega)
+    have fk : Frame [⟨S + BitVec.ofNat 64 (16 * k), 16⟩] s₁.mem s'.mem := by
+      rw [m']
+      have c0 : Region.Contains ⟨S + BitVec.ofNat 64 (16 * k), 16⟩ (S + BitVec.ofNat 64 (16 * k)) (64 / 8) := by
+        have := Offset.contains_base (S + BitVec.ofNat 64 (16 * k)) (d := 0) (n := 8) (k := 16) (by decide) (by decide)
+        simpa using this
+      have c8 : Region.Contains ⟨S + BitVec.ofNat 64 (16 * k), 16⟩ (S + BitVec.ofNat 64 (16 * k + 8)) (64 / 8) := by
+        rw [← Offset.add_add_eq S (show 16 * k + 8 = 16 * k + 8 from rfl)]
+        exact Offset.contains_base _ (d := 8) (n := 8) (k := 16) (by decide) (by decide)
+      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c8
+    refine ⟨fun j hj => ?_, ?_, by rw [t', t₁]; rfl, fun r h1 h2 h3 h4 => by rw [g' r h1 h2 h3 h4, g₁ r h1 h2 h3 h4],
+      v'.trans v₁, sp'.trans sp₁, rd'.trans rd₁, wr'.trans wr₁⟩
+    · by_cases hjk : j = k
+      · subst hjk
+        rw [m', ← Offset.add_add_eq S (show 16 * j + 8 = 16 * j + 8 from rfl), readW_store2, ← tweakOf, t₁]
+      · rw [fk.readW (r := ⟨S + BitVec.ofNat 64 (16 * j), 16⟩) (Region.contains_self _ _) (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hsep j (by omega)) (by decide), e₁ j (by omega)]
+    · exact f₁.trans (fk.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, Offset.sub_base S (by omega)⟩)
 
 end VG.Proof.AesXts.AArch64.Aes
