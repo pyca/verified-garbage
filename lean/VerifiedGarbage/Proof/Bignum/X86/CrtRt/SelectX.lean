@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseLanes
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Lanes
 import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Spec.Rsa
 
 /-! # The selection under a mask, sixteen bytes at a time
 
