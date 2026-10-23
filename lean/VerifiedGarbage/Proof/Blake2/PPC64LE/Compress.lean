@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Blake2.PPC64LE.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -25,6 +26,7 @@ meta import VerifiedGarbage.Proof.Blake2.PPC64LE.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -373,39 +375,6 @@ theorem lds_ok (s : State) (st : Addr) (hr3 : s.gpr .r3 = st)
     refine ⟨hp.step (by omega) (by rw [hw, hm, hv n (by omega)]) h₂.1,
       fun q hq => ?_, h₂.2.1.trans hm, h₂.2.2.1.trans hrd, h₂.2.2.2.trans hwr⟩
     rw [h₂.gpr (ne_wreg hq (by omega)), ho q hq]
-
-/-- `movImm` of a doubleword leaves it in the register. -/
-theorem movImm64_eq (x : BitVec 64) :
-    ((x.extractLsb' 48 16 ++ (0 : BitVec 16)).signExtend 64 ||| (x.extractLsb' 32 16).setWidth 64) <<< 32 |||
-      (x.extractLsb' 16 16).setWidth 64 <<< 16 ||| (x.extractLsb' 0 16).setWidth 64 = x := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
-    BitVec.getLsbD_signExtend, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  by_cases h16 : i < 16
-  · simp [h16, show i < 32 by omega, hi]
-  by_cases h32 : i < 32
-  · simp [h16, h32, hi, show i - 16 < 64 by omega, show i - 16 < 16 by omega,
-      show 16 + (i - 16) = i by omega]
-  by_cases h48 : i < 48
-  · simp [h16, h32, hi, show i - 32 < 64 by omega, show i - 32 < 32 by omega,
-      show i - 32 < 16 by omega, show ¬i - 16 < 16 by omega, show 32 + (i - 32) = i by omega]
-  · simp [h16, h32, hi, show i - 32 < 64 by omega, show i - 32 < 32 by omega,
-      show ¬i - 32 < 16 by omega, show i - 32 - 16 < 16 by omega, show ¬i - 16 < 16 by omega,
-      show 48 + (i - 32 - 16) = i by omega]
-
-/-- `movImm` of a word leaves it in the low 32 bits. -/
-theorem movImm32_eq (x : BitVec 32) :
-    (((x.setWidth 64).extractLsb' 16 16 ++ (0 : BitVec 16)).signExtend 64 |||
-      ((x.setWidth 64).extractLsb' 0 16).setWidth 64).setWidth 32 = x := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend,
-    BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  by_cases h : i < 16
-  · simp [h, show i < 32 from hi, show i < 64 by omega]
-  · simp [h, show i < 32 from hi, show i < 64 by omega, show i - 16 < 16 by omega,
-      show 16 + (i - 16) = i by omega]
 
 theorem iv_ok (d : Reg) (x : BitVec z.bits) (s : State) :
     WP isa (.block (movImm z.bits d (x.setWidth 64))) s fun s' =>

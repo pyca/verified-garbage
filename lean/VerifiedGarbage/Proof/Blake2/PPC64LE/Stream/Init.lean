@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Blake2.PPC64LE.Compress
+import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 
 /-!
 # Streaming BLAKE2 on PPC64LE: `init`
@@ -51,10 +51,10 @@ theorem wp_movImm (hw : w = 64 ∨ w = 32) {d : Reg} {x : BitVec w} {rest : List
     refine WP.cons exec_lis (WP.cons exec_ori (WP.cons (exec_lsl (by decide)) (WP.cons exec_oris
       (WP.cons exec_ori (k _ ⟨x, BitVec.setWidth_eq _, ⟨?_, fun r h => ?_, rfl, rfl, rfl, rfl⟩⟩)))))
     · simp only [State.write, ite_true, BitVec.setWidth_eq]
-      exact Proof.Blake2.PPC64LE.movImm64_eq x
+      exact PPC64LE.movImm64_eq x
     · simp [State.write, h]
   · simp only [movImm, show (32 : Nat) ≠ 64 by decide, ite_false, List.cons_append, List.nil_append]
-    refine WP.cons exec_lis (WP.cons exec_ori (k _ ⟨_, Proof.Blake2.PPC64LE.movImm32_eq x,
+    refine WP.cons exec_lis (WP.cons exec_ori (k _ ⟨_, PPC64LE.movImm32_eq x,
       ⟨by simp [State.write], fun r h => by simp [State.write, h], rfl, rfl, rfl, rfl⟩⟩))
 
 theorem wp_storew (hw : w = 64 ∨ w = 32) {t n : Reg} {off : Nat} {a : Addr}
