@@ -645,4 +645,119 @@ theorem accept_ok {s₀ s : State} (hp : Pre s₀) {L : List Zq} (h : LS s₀ L 
       · rw [ite_eq_right e', ite_eq_left (by omega)]
         exact h.coeff k (by omega)
 
+/-! ## An iteration -/
+
+/-- The coefficients sampled from the first `t` chunks. -/
+abbrev Ls (s₀ : State) (t : Nat) : List Zq := sampleAfter [] (VG.Proof.MlKem.xofByte (B s₀)) t
+
+/-- After `t` iterations. -/
+structure Inv (s₀ : State) (t : Nat) (s : State) : Prop where
+  ls : LS s₀ (Ls s₀ t) s
+  r3 : s.gpr .r3 = S s₀ + BitVec.ofNat 64 (840 + 3 * t)
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (280 - t)
+
+theorem buf_byte {s₀ s : State} (hp : Pre s₀) {L : List Zq} (h : LS s₀ L s) {t k : Nat} (ht : t < 280) (hk : k < 3) :
+    InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 (840 + 3 * t) + BitVec.ofNat 64 k) 1 ∧
+    s.mem (S s₀ + BitVec.ofNat 64 (840 + 3 * t) + BitVec.ofNat 64 k) =
+      VG.Proof.MlKem.xofByte (B s₀) (3 * t + k) := by
+  have fs := hp.fs
+  refine ⟨?_, ?_⟩
+  · rw [ptr_add, h.env.rd, h.env.wr]
+    exact ⟨⟨S s₀, 2048⟩, List.mem_append_right _ (by rw [hp.wr]; simp),
+      Offset.contains_base _ (by omega) (by omega)⟩
+  · rw [show S s₀ + BitVec.ofNat 64 (840 + 3 * t) + BitVec.ofNat 64 k =
+        S s₀ + BitVec.ofNat 64 840 + BitVec.ofNat 64 (3 * t + k) by rw [ptr_add, ptr_add, Nat.add_assoc],
+      ← bytesAt_getD s.mem (S s₀ + BitVec.ofNat 64 840) (show 3 * t + k < 840 by omega), h.buf,
+      VG.Proof.MlKem.xof_getD _ (by omega)]
+
+theorem cand1_lt (b₀ b₁ : Byte) : (cand1 b₀ b₁).toNat < 4096 := by
+  rw [cand1_toNat]; have := b₀.isLt; have := b₁.isLt; omega
+
+theorem cand2_lt (b₁ b₂ : Byte) : (cand2 b₁ b₂).toNat < 4096 := by
+  rw [cand2_toNat]; have := b₁.isLt; have := b₂.isLt; omega
+
+theorem Ls_succ (s₀ : State) (t : Nat) (hl : (Ls s₀ t).length ≤ 256) :
+    Ls s₀ (t + 1) = accD (accD (Ls s₀ t)
+      (cand1 (VG.Proof.MlKem.xofByte (B s₀) (3 * t)) (VG.Proof.MlKem.xofByte (B s₀) (3 * t + 1))).toNat)
+      (cand2 (VG.Proof.MlKem.xofByte (B s₀) (3 * t + 1)) (VG.Proof.MlKem.xofByte (B s₀) (3 * t + 2))).toNat := by
+  rw [Ls, sampleAfter_succ, stepCap_eq hl, cand1_toNat, cand2_toNat]
+
+/-- The candidates of chunk `t`. -/
+abbrev D1 (s₀ : State) (t : Nat) : BitVec 64 :=
+  cand1 (VG.Proof.MlKem.xofByte (B s₀) (3 * t)) (VG.Proof.MlKem.xofByte (B s₀) (3 * t + 1))
+abbrev D2 (s₀ : State) (t : Nat) : BitVec 64 :=
+  cand2 (VG.Proof.MlKem.xofByte (B s₀) (3 * t + 1)) (VG.Proof.MlKem.xofByte (B s₀) (3 * t + 2))
+
+/-- After the candidates of chunk `t` and the test of the first. -/
+structure P1 (s₀ : State) (t : Nat) (s : State) : Prop where
+  ls : LS s₀ (Ls s₀ t) s
+  r3 : s.gpr .r3 = S s₀ + BitVec.ofNat 64 (840 + 3 * t)
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (280 - t)
+  r10 : s.gpr .r10 = D1 s₀ t
+  r11 : s.gpr .r11 = D2 s₀ t
+  r12 : s.gpr .r12 = accR (D1 s₀ t) (BitVec.ofNat 64 (Ls s₀ t).length)
+
+/-- After the first candidate. -/
+structure P2 (s₀ : State) (t : Nat) (s : State) : Prop where
+  ls : LS s₀ (accD (Ls s₀ t) (D1 s₀ t).toNat) s
+  r3 : s.gpr .r3 = S s₀ + BitVec.ofNat 64 (840 + 3 * t)
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (280 - t)
+  r11 : s.gpr .r11 = D2 s₀ t
+
+/-- After the test of the second candidate. -/
+structure P3 (s₀ : State) (t : Nat) (s : State) : Prop where
+  p2 : P2 s₀ t s
+  r12 : s.gpr .r12 = accR (D2 s₀ t) (BitVec.ofNat 64 (accD (Ls s₀ t) (D1 s₀ t).toNat).length)
+
+/-- After the second candidate. -/
+structure P4 (s₀ : State) (t : Nat) (s : State) : Prop where
+  ls : LS s₀ (Ls s₀ (t + 1)) s
+  r3 : s.gpr .r3 = S s₀ + BitVec.ofNat 64 (840 + 3 * t)
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (280 - t)
+
+theorem piece1 {s₀ s : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) (h : Inv s₀ t s) :
+    WP isa (.block (candidates ++ acceptTest .r10)) s (P1 s₀ t) := by
+  obtain ⟨i0, v0⟩ := buf_byte hp h.ls ht (k := 0) (by decide)
+  obtain ⟨i1, v1⟩ := buf_byte hp h.ls ht (k := 1) (by decide)
+  obtain ⟨i2, v2⟩ := buf_byte hp h.ls ht (k := 2) (by decide)
+  rw [BitVec.add_zero] at i0 v0
+  refine WP.mono (blk1_ok h.r3 h.ls.r5 i0 i1 i2) fun s₁ ⟨r10, r11, r12, r3, r4, r5, r6, k₁⟩ => ?_
+  simp only [v0, v1, v2] at r10 r11 r12
+  exact ⟨h.ls.keep hp k₁ r4 (r5.trans h.ls.r5.symm), r3, r6.trans h.r6, r10, r11, r12⟩
+
+theorem piece2 {s₀ s : State} (hp : Pre s₀) {t : Nat} (h : P1 s₀ t s) :
+    WP isa (accept .r10) s (P2 s₀ t) :=
+  WP.mono (accept_ok hp h.ls (d := .r10) h.r10 (cand1_lt _ _) (by rw [h.r12, h.ls.r5]))
+    fun _ ⟨ls, rr⟩ => ⟨ls, (rr .r3 (by decide) (by decide)).trans h.r3, (rr .r6 (by decide) (by decide)).trans h.r6,
+      (rr .r11 (by decide) (by decide)).trans h.r11⟩
+
+theorem piece3 {s₀ s : State} (hp : Pre s₀) {t : Nat} (h : P2 s₀ t s) :
+    WP isa (.block (acceptTest .r11)) s (P3 s₀ t) :=
+  WP.mono (blk2_ok h.ls.r5 h.r11) fun _ ⟨r12, r3, r4, r5, r6, r11, k⟩ =>
+    ⟨⟨h.ls.keep hp k r4 (r5.trans h.ls.r5.symm), r3.trans h.r3, r6.trans h.r6, r11⟩, r12⟩
+
+theorem piece4 {s₀ s : State} (hp : Pre s₀) {t : Nat} (h : P3 s₀ t s) :
+    WP isa (accept .r11) s (P4 s₀ t) :=
+  WP.mono (accept_ok hp h.p2.ls (d := .r11) h.p2.r11 (cand2_lt _ _) (by rw [h.r12, h.p2.ls.r5]))
+    fun _ ⟨ls, rr⟩ => ⟨by rw [Ls_succ s₀ t (sampleAfter_length_le (by simp) _ t)]; exact ls,
+      (rr .r3 (by decide) (by decide)).trans h.p2.r3, (rr .r6 (by decide) (by decide)).trans h.p2.r6⟩
+
+theorem piece5 {s₀ s : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) (h : P4 s₀ t s) :
+    WP isa (.block [.addi .r3 .r3 3, .subi .r6 .r6 1]) s
+      fun s' => Inv s₀ (t + 1) s' ∧ (s'.gpr .r6 != 0) = decide (t + 1 ≠ 280) := by
+  have hk : WP isa (.block [.addi .r3 .r3 3, .subi .r6 .r6 1]) s fun s' =>
+      s'.gpr .r3 = s.gpr .r3 + BitVec.ofNat 64 3 ∧ s'.gpr .r6 = s.gpr .r6 - BitVec.ofNat 64 1 ∧
+      s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r5 = s.gpr .r5 ∧ Keep s s' := by
+    prun []
+    refine ⟨?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩⟩ <;> first | exact trivial | rfl | pres_tac
+  refine WP.mono hk fun s' ⟨r3, r6, r4, r5, k⟩ => ⟨⟨h.ls.keep hp k r4 r5, ?_, ?_⟩, ?_⟩
+  · rw [r3, h.r3, ptr_add, show 840 + 3 * t + 3 = 840 + 3 * (t + 1) by omega]
+  · rw [r6, h.r6]; exact count_sub ht
+  · rw [r6, h.r6, count_sub ht]; exact count_nz ht (by decide)
+
+theorem body_ok {s₀ s : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) (h : Inv s₀ t s) :
+    WP isa rejBody s fun s' => Inv s₀ (t + 1) s' ∧ (s'.gpr .r6 != 0) = decide (t + 1 ≠ 280) :=
+  WP.seq (WP.mono (piece1 hp ht h) fun _ h₁ => WP.seq (WP.mono (piece2 hp h₁) fun _ h₂ =>
+    WP.seq (WP.mono (piece3 hp h₂) fun _ h₃ => WP.seq (WP.mono (piece4 hp h₃) fun _ h₄ => piece5 hp ht h₄))))
+
 end VG.Proof.MlKem.PPC64LE.Sample
