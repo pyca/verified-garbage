@@ -81,14 +81,14 @@ theorem zstore_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {i : Nat} 
     hc₁ hc₂ hc₃) fun u ⟨mu, k₂⟩ =>
       ⟨⟨(k₂.gpr .x7 (by decide)).trans h7, mu⟩, (k₁.trans k₂).mono (by decide)⟩
 
-/-- `sqMasks`: the masks of continuing, `done` and `ok`. -/
+/-- `sqMasks`: the masks of not continuing, `done` and `ok`. -/
 theorem sqMasks_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k t : Nat} {done ok e1 em : Bool}
     (hk : k < 2 ^ 62) (ht : t < 2 ^ 62)
     (hc1 : word s.mem B (8 * sC1) = BitVec.ofNat 64 k) (hT : word s.mem B (8 * sT) = BitVec.ofNat 64 t)
     (hc2 : word s.mem B (8 * sC2) = mask done) (hc3 : word s.mem B (8 * sC3) = mask ok)
     (hm : word s.mem B (8 * sMask) = mask e1) (h9 : decide (s.gpr .x9 = 0) = em) :
     WP isa (.block sqMasks) s fun u =>
-      (u.gpr .x15 = mask ((!done && decide (k < t)) && !e1 && !(em || decide (k + 1 = t))) ∧
+      (u.gpr .x15 = mask (!((!done && decide (k < t)) && !e1 && !(em || decide (k + 1 = t)))) ∧
         u.mem = (s.mem.writeW (off B (8 * sC2))
           (mask (done || ((!done && decide (k < t)) && (e1 || (em || decide (k + 1 = t))))))).writeW
             (off B (8 * sC3)) (mask (ok || ((!done && decide (k < t)) && e1)))) ∧
@@ -209,13 +209,13 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   obtain ⟨y, done, ok⟩ := st
   dsimp only at hy hylt hc2 hc3
   have hYlt : wv u.mem B (slot w aY) w < N := by rw [hy]; exact Nat.mod_lt _ (by omega_arith)
-  rw [show sqBody M.mm = seqs ([copyA aX aY, M.mm aX aX aY] ++ (eqA aX aO ++
-    ([.block (zeroMask ++ [sth .x15 sMask])] ++ (eqA aX aNg ++
+  rw [show sqBody M.mm = seqs ([copyA aX aY, M.mm aY aY aY] ++ (eqA aY aO ++
+    ([.block (zeroMask ++ [sth .x15 sMask])] ++ (eqA aY aNg ++
       [.block sqLogic, VG.Impl.Rsa.AArch64.Crt.selLoop, .block sqNext])))) by
       simp only [sqBody, List.append_assoc]]
   refine wp_seqs_append (by simp) (by simp [eqA]) ?_
   simp only [seqs]
-  -- `x = y²`.
+  -- `x = y`, `y = y²`.
   refine WP.seq (WP.mono (copyA_ok hcu.ws (o := aX) (a := aY) (by decide) (by decide) (by decide))
     fun u₁ ⟨hx₁, o₁, _, _, k₁⟩ => ?_)
   have hf₁ : Frm B (rg w [aX] []) u.mem u₁.mem := Frm.rg_of_out o₁ (by omega_arith) _ _ (by decide)
@@ -223,17 +223,17 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have hY₁ : wv u₁.mem B (slot w aY) w = wv u.mem B (slot w aY) w :=
     hf₁.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)
   have hg₁ := hc₁.good
-  refine WP.mono (M.mm_ok hg₁.1 hg₁.2 hw1 (by omega_arith) (o := aX) (a := aX) (b := aY) (by decide)
+  refine WP.mono (M.mm_ok hg₁.1 hg₁.2 hw1 (by omega_arith) (o := aY) (a := aY) (b := aY) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc₁.hinv
     (by rw [hY₁, hc₁.hn]; exact hYlt)) fun u₂ ⟨_, hlt₂, hm₂, ha₂, k₂⟩ => ?_
   rw [hc₁.hn] at hlt₂ hm₂
-  rw [hx₁, hY₁] at hm₂
-  have hX₂ : wv u₂.mem B (slot w aX) w = y * y % N * 2 ^ (64 * w) % N := VG.Proof.Rsa.sq_mont hR hy hlt₂ hm₂
-  have hf₂ : Frm B (rg w [aAcc, aTmp, aX] []) u₁.mem u₂.mem := Frm.rg_of_arrays ha₂ _ _ (by decide)
+  rw [hY₁] at hm₂
+  have hX₂ : wv u₂.mem B (slot w aY) w = y * y % N * 2 ^ (64 * w) % N := VG.Proof.Rsa.sq_mont hR hy hlt₂ hm₂
+  have hf₂ : Frm B (rg w [aAcc, aTmp, aY] []) u₁.mem u₂.mem := Frm.rg_of_arrays ha₂ _ _ (by decide)
   have hc₂ := hc₁.congr hf₂ (by decide) (by simp) k₂ (by decide)
   have hxN : y * y % N < N := Nat.mod_lt _ (by omega_arith)
-  -- `x = 1`.
-  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₂.ws (a := aX) (b := aO) (by decide)
+  -- `y² = 1`.
+  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₂.ws (a := aY) (b := aO) (by decide)
     (by decide)) fun u₃ ⟨hz₃, m₃, _, _, k₃⟩ => ?_)
   rw [hX₂, hc₂.ho, VG.Proof.Rsa.eq_one_mont hR hN1 hxN rfl] at hz₃
   have hc₃ := hc₂.congr (js := []) (hs := []) (by rw [m₃]; exact Frm.refl _ _ _) (by simp) (by simp) k₃ (by decide)
@@ -245,10 +245,10 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
     rw [m₄]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega_arith)) _ _
       (List.mem_singleton_self _)
   have hc₄ := hc₃.congr hf₄ (by decide) (by decide) k₄ (by decide)
-  -- `x = -1`.
-  have hX₄ : wv u₄.mem B (slot w aX) w = wv u₂.mem B (slot w aX) w := by
+  -- `y² = -1`.
+  have hX₄ : wv u₄.mem B (slot w aY) w = wv u₂.mem B (slot w aY) w := by
     rw [hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith), m₃]
-  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₄.ws (a := aX) (b := aNg) (by decide)
+  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok hc₄.ws (a := aY) (b := aNg) (by decide)
     (by decide)) fun u₅ ⟨hz₅, m₅, _, _, k₅⟩ => ?_)
   rw [hX₄, hX₂, hc₄.hng, VG.Proof.Rsa.eq_neg_mont hR hN1 hxN rfl] at hz₅
   have hc₅ := hc₄.congr (js := []) (hs := []) (by rw [m₅]; exact Frm.refl _ _ _) (by simp) (by simp) k₅ (by decide)
@@ -271,7 +271,7 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   refine WP.mono (bases2w_ok hc₆.ws aX aY) fun u₇ ⟨⟨h16, h17, h14, m₇⟩, k₇⟩ => ?_
   have hc₇ := hc₆.congr (js := []) (hs := []) (by rw [m₇]; exact Frm.refl _ _ _) (by simp) (by simp) k₇ (by decide)
   have h15₇ : u₇.gpr .x15 = _ := (k₇.gpr .x15 (by decide)).trans h15₆
-  -- `y := x` if the squarings continue.
+  -- The old `y` back unless the squarings continue.
   have sY := hc₇.ws.sl (j := aY) (by decide)
   have sX := hc₇.ws.sl (j := aX) (by decide)
   refine WP.seq (WP.mono (selLoop_ok hc₇.ws.scr h16 h17 h14 h15₇ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
@@ -286,7 +286,7 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   have hf₉ : Frm B (rg w [] [sC1]) u₈.mem u'.mem := by
     rw [m₉]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC1, sFn]; omega_arith)) _ _
       (List.mem_singleton_self _)
-  have hfu₅ : Frm B (rg w [aX, aAcc, aTmp, aX] [sMask]) u.mem u₅.mem := by
+  have hfu₅ : Frm B (rg w [aX, aAcc, aTmp, aY] [sMask]) u.mem u₅.mem := by
     have := ((hf₁.rg_trans hf₂).rg_trans (js' := []) (hs' := [])
       (by rw [m₃]; exact Frm.refl _ _ _ : Frm B (rg w [] []) u₂.mem u₃.mem)).rg_trans hf₄
     rw [← m₅] at this
@@ -294,14 +294,16 @@ theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : Bit
   -- The values after the squaring.
   have hY₈ : wv u₈.mem B (slot w aY) w = (if ((!done && decide (k < t)) && !decide (y * y % N = 1) &&
       !(decide (y * y % N = N - 1) || decide (k + 1 = t))) then y * y % N else y) * 2 ^ (64 * w) % N := by
-    have hXu₆ : wv u₆.mem B (slot w aX) w = y * y % N * 2 ^ (64 * w) % N := by
-      rw [hf₆.rg_wv hZ16 (j := aX) (by decide) (by decide) (by decide) (by omega_arith), m₅, hX₄, hX₂]
-    have hYu₆ : wv u₆.mem B (slot w aY) w = y * 2 ^ (64 * w) % N := by
-      rw [hf₆.rg_wv hZ16 (j := aY) (by decide) (by decide) (by decide) (by omega_arith), m₅,
-        hf₄.rg_wv hZ16 (j := aY) (by decide) (by decide) (by decide) (by omega_arith), m₃,
-        hf₂.rg_wv hZ16 (j := aY) (by decide) (by decide) (by decide) (by omega_arith), hY₁, hy]
+    have hYu₆ : wv u₆.mem B (slot w aY) w = y * y % N * 2 ^ (64 * w) % N := by
+      rw [hf₆.rg_wv hZ16 (j := aY) (by decide) (by decide) (by decide) (by omega_arith), m₅, hX₄, hX₂]
+    have hXu₆ : wv u₆.mem B (slot w aX) w = y * 2 ^ (64 * w) % N := by
+      rw [hf₆.rg_wv hZ16 (j := aX) (by decide) (by decide) (by decide) (by omega_arith), m₅,
+        hf₄.rg_wv hZ16 (j := aX) (by decide) (by decide) (by decide) (by omega_arith), m₃,
+        hf₂.rg_wv hZ16 (j := aX) (by decide) (by decide) (by decide) (by omega_arith), hx₁, hy]
     rw [hy₈, m₇, hXu₆, hYu₆]
-    split <;> rfl
+    generalize ((!done && decide (k < t)) && !decide (y * y % N = 1) &&
+      !(decide (y * y % N = N - 1) || decide (k + 1 = t))) = c
+    cases c <;> rfl
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (((((hI.frm.rg_trans hfu₅).rg_trans hf₆).rg_trans (by rw [m₇]; exact Frm.refl _ _ _ :
       Frm B (rg w [] []) u₆.mem u₇.mem)).rg_trans hf₈).rg_trans hf₉).rg_mono (by decide) (by decide)

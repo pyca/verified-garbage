@@ -73,7 +73,7 @@ theorem mulPS (b : Addr) (o x y : Slot) (ho : 14 ≤ o.val) : PSpec b (mulP o x 
 
 theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 14 ≤ o.val)
     (x : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 15) :
-    ∀ m s, 1 ≤ m → m < n → Rest (.r12 :: clob) s₀ s → Frame [PR b] s₀.mem s.mem →
+    ∀ m s, 1 ≤ m → m ≤ n → Rest (.r12 :: clob) s₀ s → Frame [PR b] s₀.mem s.mem →
       s.gpr .r12 = BitVec.ofNat 64 m →
       env s.mem b = Function.update (env s₀.mem b) o (sqn x (n - m)) →
       WP isa (.loop (.seq (mulP o o o) (.block [.subi .r12 .r12 1])) (.nonzero .d .r12)) s fun t =>
@@ -81,7 +81,7 @@ theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 1
         env t.mem b = Function.update (env s₀.mem b) o (sqn x n) := by
   intro m s h1 h2 hr hf hb he
   refine WP.loop (M := isa) (fun m (s : State) =>
-    1 ≤ m ∧ m < n ∧ Rest (.r12 :: clob) s₀ s ∧ Frame [PR b] s₀.mem s.mem ∧
+    1 ≤ m ∧ m ≤ n ∧ Rest (.r12 :: clob) s₀ s ∧ Frame [PR b] s₀.mem s.mem ∧
     s.gpr .r12 = BitVec.ofNat 64 m ∧
     env s.mem b = Function.update (env s₀.mem b) o (sqn x (n - m))) ?_
     m s ⟨h1, h2, hr, hf, hb, he⟩

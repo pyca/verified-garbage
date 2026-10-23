@@ -58,6 +58,9 @@ def inputs (full : Bool) : List (Nat × Nat) :=
 
 def scratchArg (full : Bool) : Nat := if full then 16 else 14
 
+/-- The cdecl argument holding `q`'s length in bytes. -/
+def qLenArg (full : Bool) : Nat := if full then 9 else 7
+
 def entry (full : Bool) : List Instr :=
   [.mov .eax (.mem (VG.Impl.Bignum.X86.PublicFn.argument (scratchArg full)))] ++
   VG.Impl.Bignum.X86.PublicFn.save ++ [.mov .edi (.reg .eax)]

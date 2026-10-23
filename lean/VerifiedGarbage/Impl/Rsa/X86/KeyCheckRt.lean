@@ -15,7 +15,7 @@ the modulus's length `n_len` (argument 1) and the working space `scratch`
 namespace VG.Impl.Rsa.X86.KeyCheckRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyRt
 open VG.Impl.Rsa.X86.KeyCheck (sF sMask aZ aOne aN aE aP aQ aDP aDQ aQI aD aM1 aM2 aVQ aVR aVD aVT aY aX aA aT aW
-  nArr acc cnt33 inputs scratchArg entry failure)
+  nArr acc cnt33 inputs scratchArg qLenArg entry failure)
 
 /-- `n_len` and `scratch`. -/
 def lay (full : Bool) : Lay := { len := 1, ws := scratchArg full }
@@ -35,6 +35,11 @@ def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
   [copy (lay full) aY y, copy (lay full) aX x, copy (lay full) aA aZ, .block cnt,
     mulMod (lay full) aZ aY aX aA m aT]
 
+/-- `esi = 8 q_len`, the bits of `q`'s bytes: the steps of the product `q qInv`. -/
+def qBits : List Instr :=
+  [.mov .esi (.mem (PublicFn.argument (qLenArg full))), .alu .add .esi (.reg .esi),
+    .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]
+
 def start : Prog isa :=
   seqs ([.block (setOne (lay full) aOne), .block (bitOf (lay full) sMask aP)] ++ divSet full aN aP)
 
@@ -42,7 +47,7 @@ def crtChecks : Prog isa := seqs (eqA full aVQ aQ ++ eqA full aVR aZ ++
   [copy (lay full) aM1 aP, .block (clrLow (lay full) aM1), copy (lay full) aM2 aQ, .block (clrLow (lay full) aM2)] ++
   ltA full aDP aM1 ++ mulA full aE aDP aM1 cnt33 ++ eqA full aA aOne ++
   ltA full aDQ aM2 ++ mulA full aE aDQ aM2 cnt33 ++ eqA full aA aOne ++
-  ltA full aQI aP ++ mulA full aQ aQI aP (bits (lay full)) ++ eqA full aA aOne)
+  ltA full aQI aP ++ mulA full aQ aQI aP (qBits full) ++ eqA full aA aOne)
 
 def crtBody : Prog isa := seqs [start full, division full, crtChecks full]
 

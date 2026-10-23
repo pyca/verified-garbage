@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 
@@ -117,11 +118,11 @@ end
 
 /-- A piece checked by `τA` leaks the same trace from two stages. -/
 theorem pub_trace {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    (hc : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome = true)
     {s0 t0 s t : State} {A B AW BW V W : Nat → Nat} {al bl aw bw sl tl : List Nat}
     (h : KS g s0 A al AW aw V sl s) (j : KS g t0 B bl BW bw W tl t)
     {tr ur : List Leak} {sf tf : State} (es : Exec isa c s tr sf) (et : Exec isa c t ur tf) : tr = ur :=
-  (VG.RelCT.taint (A := taint) τA (fun _ _ h => h) hc _ _ _ _ _ _ (ks_agree pg h j) es et).1
+  (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h) hc _ _ _ _ _ _ (ks_agree pg h j) es et).1
 
 /-- A piece leaking the same trace from two runs, each meeting its correctness lemma. -/
 theorem stage_relCT {c : Prog isa} {P Q P' Q' : State → Prop}
@@ -171,11 +172,11 @@ theorem fixedLoop_relCT {body : Prog isa} {c : Nat}
   · intro s t h; exact h
 
 /-- Code whose leaks `τA` makes public. -/
-def Pub (c : Prog isa) : Prop := ∃ hint, (VG.Taint.check taint τA c hint).isSome = true
+def Pub (c : Prog isa) : Prop := ∃ hint, (VG.Taint.check sseTaint τA c hint).isSome = true
 
 theorem Pub.trace {c : Prog isa} (h : Pub c) : RelCT isa (VG.X86.Taint.Agree τA) c (fun _ _ => True) := by
   obtain ⟨hint, hT⟩ := h
-  exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h) hT
+  exact VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h) hT
 
 /-- A stage from which `mmul o a b` runs: the callee's precondition holds, and the stage after the call. -/
 def MulPre (g : Geo) (o a b : Nat) (s : State) : Prop :=
@@ -188,14 +189,14 @@ def MulPost (g : Geo) (u : State) : Prop := ∃ s0 A live AW liveW V ls, KS g s0
 
 theorem mmul_relCT {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha : MontIndex a)
     (hb : MontIndex b) (ho0 : o ≠ mBase)
-    (hT : (VG.Taint.check taint τF (.block (mulArgs o a b)) (.block [])).isSome = true)
+    (hT : (VG.Taint.check sseTaint τF (.block (mulArgs o a b)) (.block [])).isSome = true)
     (hC : Pub (.block (clrTop o))) :
     RelCT isa (fun s t => MulPre g o a b s ∧ MulPre g o a b t) (mmul o a b) (fun _ _ => True) := by
   unfold VG.Impl.Rsa.X86.RecoverRt.mmul
   have Call : RelCT isa (fun s t => MulPre g o a b s ∧ MulPre g o a b t) (callCode (mulArgs o a b))
       (fun _ _ => True) := by
     refine RelCT.frameAlloc (R := fun _ _ => True) ?_
-    have blk := (VG.RelCT.taint (A := taint) (P := fun f₁ f₂ => ∃ s₁ s₂, (MulPre g o a b s₁ ∧ MulPre g o a b s₂) ∧
+    have blk := (VG.RelCT.taint (A := sseTaint) (P := fun f₁ f₂ => ∃ s₁ s₂, (MulPre g o a b s₁ ∧ MulPre g o a b s₂) ∧
         f₁ = allocFrame 36 s₁ ∧ f₂ = allocFrame 36 s₂) τF (fun _ _ ⟨s₁, s₂, ⟨I₁, I₂⟩, q₁, q₂⟩ => by
           obtain ⟨_, _, _, _, _, _, _, _, h₁, _⟩ := I₁
           obtain ⟨_, _, _, _, _, _, _, _, h₂, _⟩ := I₂
@@ -243,7 +244,7 @@ theorem KS.stage {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {live liveW ls 
 
 /-- A piece checked by `τA`, between stages, with each run's correctness. -/
 theorem pub_relCT {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    (hc : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome = true)
     {P Q P' Q' : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t)
     (left : ∀ s, P s → WP isa c s P') (right : ∀ t, Q t → WP isa c t Q') :
     RelCT isa (fun s t => P s ∧ Q t) c (fun s t => P' s ∧ Q' t) :=
@@ -254,7 +255,7 @@ theorem pub_relCT {g : Geo} (pg : PubG g) {c : Prog isa}
 
 /-- A piece checked by `τA` from two stages. -/
 theorem pub_relCT' {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    (hc : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome = true)
     {P Q : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t) :
     RelCT isa (fun s t => P s ∧ Q t) c (fun _ _ => True) := fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
   obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs

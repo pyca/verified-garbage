@@ -5,8 +5,8 @@
 //! iteration calls MD5's verified compression function directly, twice per
 //! step.
 //!
-//! On ARMv7 and x86, the whole derivation is the one for every streaming hash
-//! function, calling MD5's verified streaming functions, HMAC-MD5's
+//! On ARMv7, x86 and PPC64LE, the whole derivation is the one for every
+//! streaming hash function, calling MD5's verified streaming functions, HMAC-MD5's
 //! `init` and `finalize` and `vg_pbkdf2_hmac_md5_iterate` (contract
 //! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
 //! every streaming hash function.
@@ -15,7 +15,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::pbkdf2_md5::vg_pbkdf2_hmac_md5;

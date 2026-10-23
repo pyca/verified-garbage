@@ -20,7 +20,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "x86",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::ed25519::vg_ed25519_verify;

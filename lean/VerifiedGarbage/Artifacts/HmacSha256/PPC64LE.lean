@@ -1,22 +1,25 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Hmac.PPC64LE.Shared
-public import VerifiedGarbage.Proof.Hmac.PPC64LE.AnyKey
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # HMAC-SHA-256 (RFC 2104) on PPC64LE
 
-`init` takes a key of any length (`initAnyKeyApi`), and chooses on entry by
-its public length (`Proof/Hmac/PPC64LE/AnyKey.lean`): a key of at most a
-block goes to `init_scratch`'s code in a frame of its own holding its working
-space; a longer key is first hashed with SHA-256's verified streaming
-functions into the working space of a frame that it zeroes before returning,
-and `init_scratch` is called with its digest (`Proof/Hmac/PPC64LE/InitLong.lean`).
-Both paths take the same stack. `finalize` keeps its working space in a
-frame of its own too. `init_scratch` and `finalize_scratch` take theirs as an
-argument.
+The code for every Merkle–Damgård hash function with verified PPC64LE
+streaming functions (`Impl/Hmac/Stream/PPC64LE.lean`), calling SHA-256's.
+`init_scratch` sets both states' hash values with the streaming `init` and
+absorbs `K₀ ⊕ ipad` and `K₀ ⊕ opad` with `update`; `finalize_scratch`
+finalizes the inner state, makes it represent the outer block, absorbs the
+inner digest and finalizes again. Both take their working space as an
+argument. `init` takes a key of any length (`initAnyKeyApi`), and chooses on
+entry by its public length: a key of at most a block goes to
+`init_scratch`'s code in a frame of its own holding its working space; a
+longer key is first hashed with the streaming functions into the working
+space of a frame that it zeroes before returning, and `init_scratch` is
+called with its digest. Both paths take the same stack. `finalize` keeps its
+working space in a frame of its own too.
 -/
 
 @[expose] public section
@@ -25,20 +28,21 @@ namespace VG.Artifacts.HmacSha256.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha256I.initAnyKeyApi.artifact PPC64LE.target {
-    code := Impl.Hmac.PPC64LE.initAny
-    stack := 48 + 864
-    verified := Proof.Hmac.PPC64LE.AnyKey.initAny },
+    code := Proof.Hmac.Stream.PPC64LE.initCode Proof.Hmac.Stream.PPC64LE.Sha256.hash Spec.Hmac.sha256I 6
+    stack := 96 + Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I
+    verified := Proof.Hmac.Stream.PPC64LE.Sha256.initAny },
   Spec.Hmac.sha256I.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 864 .r7 Impl.Hmac.PPC64LE.finalize
-    stack := 96 + 864
-    verified := Proof.Hmac.PPC64LE.Shared.finalize },
+    code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I) .r7
+      Proof.Hmac.Stream.PPC64LE.Sha256.hash.finalize
+    stack := 96 + Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I
+    verified := Proof.Hmac.Stream.PPC64LE.Sha256.finalize },
   Spec.Hmac.sha256I.initScratchApi.artifact PPC64LE.target {
-    code := Impl.Hmac.PPC64LE.init
-    stack := 48
-    verified := Proof.Hmac.PPC64LE.Shared.initScratch },
-  Spec.Hmac.sha256I.finalizeScratchApi.artifact PPC64LE.target {
-    code := Impl.Hmac.PPC64LE.finalize
+    code := Proof.Hmac.Stream.PPC64LE.Sha256.hash.init
     stack := 96
-    verified := Proof.Hmac.PPC64LE.Shared.finalizeScratch }]
+    verified := Proof.Hmac.Stream.PPC64LE.Sha256.initScratch },
+  Spec.Hmac.sha256I.finalizeScratchApi.artifact PPC64LE.target {
+    code := Proof.Hmac.Stream.PPC64LE.Sha256.hash.finalize
+    stack := 96
+    verified := Proof.Hmac.Stream.PPC64LE.Sha256.finalizeScratch }]
 
 end VG.Artifacts.HmacSha256.PPC64LE

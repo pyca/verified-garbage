@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcStart
 import VerifiedGarbage.Proof.Rsa.X86.KcLoad
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Initialized RSA key workspace from the caller's byte arrays -/
 
@@ -39,6 +40,25 @@ theorem loaded_values (g : CallGeometry) (m : Mem) :
       aN, aE, aD, aP, aQ, aDP, aDQ, aQI]
   all_goals repeat' first | split | rfl | omega
 
+/-- `q`'s length argument bounds `q`. -/
+theorem qLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) :
+    ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ (numbers g m).q < 2 ^ (8 * a) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size (qLenArg g.full) (BitVec.ofNat 32 a) := by
+  have qi : 2 * (if g.full then 4 else 3) < scratchArg g.full := by cases g.full <;> decide
+  have qa : 2 * (if g.full then 4 else 3) + 1 = qLenArg g.full := by cases g.full <;> rfl
+  have pos := h.inputPositive _ qi
+  have bound := h.inputBound _ qi
+  have up := h.upper
+  simp only [CallGeometry.buffer, qa] at pos bound
+  refine ⟨(g.args (qLenArg g.full)).toNat, pos, by omega, ?_, ?_⟩
+  · have lt := VG.Proof.Bignum.os2ip_lt (inputBytes g m (if g.full then 4 else 3))
+    have ln : (inputBytes g m (if g.full then 4 else 3)).length = (g.args (qLenArg g.full)).toNat := by
+      rw [inputBytes, VG.Proof.Bignum.bytesAt_length]; simp only [CallGeometry.buffer, qa]
+    rw [ln, VG.Proof.Bignum.pow256_eq] at lt
+    exact lt
+  · rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    exact h.arguments _ (by cases g.full <;> decide)
+
 theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa (VG.Impl.Rsa.X86.KeyCheckRt.loads g.full) s fun t => Inputs g t ∧
       BodyIn (geometry g) (numbers g s.mem) t ∧
@@ -72,7 +92,7 @@ theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
     fun t ⟨ht, kt, vt, tt, rt⟩ => ?_
   rw [loadValues_frame h Oz _ _ (fun p hp => (inputs_fit _ p hp).1), loaded_values] at vt
   have kt' : Keep g.base (2 * g.n) (List.range nArr) [] z.mem t.mem := by rw [← kwEq]; exact kt
-  exact ⟨ht, ⟨inputsRt ht len, vt, tt⟩,
+  exact ⟨ht, ⟨inputsRt ht len, vt, tt, qLen_ok ht s.mem⟩,
     Bz.trans (hz.keepBody kt' (fun j hj => List.mem_range.mp hj) (by simp)),
     (kz.mono (by decide)).trans rt⟩
 end VG.Proof.Rsa.X86.KeyCheck

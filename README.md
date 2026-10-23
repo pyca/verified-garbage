@@ -334,7 +334,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -646,7 +646,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -664,7 +664,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -718,7 +718,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -736,7 +736,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -880,7 +880,7 @@ yours to keep:
 
 <td>✅ bitsliced, 8 blocks at a time</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1150,7 +1150,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1240,7 +1240,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1504,7 +1504,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1522,7 +1522,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1540,7 +1540,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1558,7 +1558,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1576,7 +1576,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1594,7 +1594,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1612,7 +1612,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1630,7 +1630,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1768,7 +1768,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1786,7 +1786,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1822,7 +1822,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1840,7 +1840,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1876,7 +1876,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1912,7 +1912,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -2170,7 +2170,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 

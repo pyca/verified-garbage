@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Select3
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.SelectX
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
@@ -76,8 +76,8 @@ theorem selectIn_ok {s : State} (h : RtWs L s B Z len N) {o a : Nat} (ho : o < N
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide)))
   have m : u.mem = s.mem := by rw [m₃, m₂, m₁]
   have ecx : u.gpr .ecx = cmask k := by rw [K.1 _ (by decide)]; exact hk
-  refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.selectLoop_ok (h.rt.of_keeps K) (x := arr (kw len) a) (d := arr (kw len) o) (N := kk len extra) k
-    (by have := h.kw_pos; simp only [kk]; omega) (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (selectLoopX_ok (h.rt.of_keeps K) (x := arr (kw len) a) (d := arr (kw len) o)
+    (N := kk len extra) k (by omega) (by omega) (by omega)
     (by rw [PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂) c₃ ecx) fun t ⟨O, V, _, Kt⟩ => ?_)
   rw [m] at O V
@@ -180,7 +180,7 @@ theorem select3_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o < 
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))
   have m : u.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
   have ecx : u.gpr .ecx = cmask k := by rw [K.1 _ (by decide)]; exact hk
-  refine WP.seq (WP.mono (select3Loop_ok (h.rt.of_keeps K) (x := arr (kw len) a) (y := arr (kw len) b)
+  refine WP.seq (WP.mono (select3LoopX_ok (h.rt.of_keeps K) (x := arr (kw len) a) (y := arr (kw len) b)
     (d := arr (kw len) o) (N := kw len) k wpos (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide)]; exact p₂)

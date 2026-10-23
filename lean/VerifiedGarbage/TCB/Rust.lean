@@ -549,9 +549,15 @@ def tableName (n : String) : Bool :=
   | 'V' :: 'G' :: '_' :: c :: cs => (c :: cs).all fun c => ('A' ≤ c && c ≤ 'Z') || c.isDigit || c == '_'
   | _ => false
 
-/-- Tables of the same name in `cs` and `ds` have the same words. -/
+/-- Tables of the same name in `cs` and `ds` have the same words.
+
+Every artifact of a target is checked against every other (`checkConsts`),
+and a table of hundreds of kilobytes is usually the same value in memory in
+each artifact that has it (`files` shares them): `withPtrEq` finds that at
+once, without comparing its words again. -/
 def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
-  cs.all fun (n, ws) => ds.all fun (m, vs) => m != n || vs == ws
+  cs.all fun (n, ws) => ds.all fun (m, vs) =>
+    m != n || withPtrEq vs ws (fun _ => vs == ws) (fun h => by simp [h])
 
 /-- The tables of constants of `a` (`Artifact.consts`) have distinct names,
 and so do those its instructions carry but for repeats of the same table;

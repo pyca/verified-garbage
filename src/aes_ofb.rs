@@ -19,7 +19,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::aes::Backend;
@@ -77,8 +78,11 @@ fn select(f: Features) -> Backend {
     Backend::select_for(f, VG_AES_OFB_AES_FEATURES)
 }
 
-/// The only implementation of AES on ARMv7.
-#[cfg(target_arch = "arm")]
+/// The only implementation of AES on ARMv7 and PPC64LE.
+#[cfg(any(
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 fn select(f: Features) -> Backend {
     Backend::select(f)
 }

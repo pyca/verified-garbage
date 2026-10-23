@@ -203,7 +203,7 @@ def chkBlk : List Instr :=
 /-- After `x = y²`, with `x = 1` in `sMask` and `x9 = 0` iff `x = -1`: the
 squaring is live if not `done` and `k < t`; it finds `y` if `x = 1`, fails
 if `x = -1` or `k + 1 = t`, and continues with `y := x` otherwise.
-`done` and `ok` updated, and `x15` the mask of continuing. -/
+`done` and `ok` updated, and `x15` the mask of not continuing. -/
 def sqMasks : List Instr :=
   zeroMask ++ [mov .x10 .x15,
     ldh .x3 sC1, ldh .x4 sT, .subs .x .x3 .x3 .x4] ++ borrowMask ++ [mov .x5 .x15,
@@ -214,19 +214,20 @@ def sqMasks : List Instr :=
     ldh .x2 sMask, .logic .and .x .x13 .x5 .x2,
     .logic .orr .x .x3 .x2 .x10, .logic .and .x .x3 .x3 .x5, ldh .x1 sC2, .logic .orr .x .x3 .x3 .x1, sth .x3 sC2,
     ldh .x3 sC3, .logic .orr .x .x3 .x3 .x13, sth .x3 sC3,
-    .logic .orr .x .x3 .x2 .x10, .logic .eor .x .x3 .x3 .x4, .logic .and .x .x15 .x5 .x3] : List Instr)
+    .logic .eor .x .x5 .x5 .x4, .logic .orr .x .x3 .x2 .x10, .logic .orr .x .x15 .x5 .x3] : List Instr)
 
-/-- `sqMasks`, then the bases of `x` and `y`. -/
+/-- `sqMasks`, then the bases of the old `y` and of `x`. -/
 def sqLogic : List Instr := sqMasks ++ (ws ++ base aX .x16 ++ base aY .x17 ++ [mov .x14 .x12])
 
 /-- `k += 1`, and `64 Bw - k` into `x3`. -/
 def sqNext : List Instr :=
   ws ++ bw ++ ([.lsl .x .x4 .x14 6, ldh .x3 sC1, .addImm .x .x3 .x3 1, sth .x3 sC1, .sub .x .x3 .x4 .x3] : List Instr)
 
-/-- A squaring: `x := y²`, the masks of `x = ±1`, and `y := x` if the
+/-- A squaring, in place so that it is the shared square: the old `y` kept
+in `aX`, `y := y²`, the masks of `y² = ±1`, and the old `y` back unless the
 squarings continue. -/
 def sqBody : Prog isa :=
-  seqs ([copyA aX aY, mul aX aX aY] ++ eqA aX aO ++ [.block (zeroMask ++ [sth .x15 sMask])] ++ eqA aX aNg ++
+  seqs ([copyA aX aY, mul aY aY aY] ++ eqA aY aO ++ [.block (zeroMask ++ [sth .x15 sMask])] ++ eqA aY aNg ++
     [.block sqLogic, Crt.selLoop, .block sqNext])
 
 /-- The candidates tried `+= 1`, and `x15` nonzero to go on: fewer than 100

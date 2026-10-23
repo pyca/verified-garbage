@@ -221,15 +221,18 @@ def invert : Prog isa := .seq (.block (one ++ [.li .r12 255])) (.loop invStep (.
 /-- `r7` modulo `2³¹` (for `r7` below `2⁶⁴`). -/
 def low31 : List Instr := [.lsl .r7 .r7 33, .lsr .d .r7 .r7 33]
 
-/-- Bit 255 of `[X2]` cleared, and 19 times it into `r8`. -/
-def freezeA : List Instr :=
-  [.load .w .r7 .r6 (X2 + 28), .lsr .d .r8 .r7 31] ++ low31 ++
-  [.store .w .r7 .r6 (X2 + 28), .li .r5 19, .mul .r8 .r8 .r5]
+/-- Bit 255 of `[x]` cleared, and 19 times it into `r8`. -/
+def freezeAAt (x : Nat) : List Instr :=
+  [.load .w .r7 .r6 (x + 28), .lsr .d .r8 .r7 31] ++ low31 ++
+  [.store .w .r7 .r6 (x + 28), .li .r5 19, .mul .r8 .r8 .r5]
 
-/-- The mask `-(bit 255 of [Y])` into `r11`, and bit 255 of `[Y]` cleared. -/
-def freezeB : List Instr :=
-  [.load .w .r7 .r6 (Y + 28), .lsr .d .r11 .r7 31, .li .r4 0, .sub .r11 .r4 .r11] ++ low31 ++
-    [.store .w .r7 .r6 (Y + 28)]
+/-- The mask `-(bit 255 of [y])` into `r11`, and bit 255 of `[y]` cleared. -/
+def freezeBAt (y : Nat) : List Instr :=
+  [.load .w .r7 .r6 (y + 28), .lsr .d .r11 .r7 31, .li .r4 0, .sub .r11 .r4 .r11] ++ low31 ++
+    [.store .w .r7 .r6 (y + 28)]
+
+abbrev freezeA : List Instr := freezeAAt X2
+abbrev freezeB : List Instr := freezeBAt Y
 
 /-- Limb `k` of `[X2]`, or of `[Y]` if the mask `r11` is all ones, as word
 `k` of `out` (`r3`). -/

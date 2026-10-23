@@ -85,7 +85,7 @@ theorem sized_relCT (g : CallGeometry) (len : Lengths g) :
   | @seq _ _ _ u _ _ _ e1 er =>
     cases et with
     | @seq _ _ _ v _ _ _ f1 fr =>
-      have eq1 := (VG.RelCT.taint (A := taint) τA (fun _ _ h => h) numbersCheck _ _ _ _ _ _
+      have eq1 := (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h) numbersCheck _ _ _ _ _ _
         (inputs_agree pg hs ht) e1 f1).1
       obtain ⟨cs, zs⟩ := wp_result (numbers_ok hs len) e1
       obtain ⟨ct, zt⟩ := wp_result (numbers_ok ht len) f1

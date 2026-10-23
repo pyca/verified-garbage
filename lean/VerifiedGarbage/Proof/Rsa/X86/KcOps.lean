@@ -142,6 +142,19 @@ def Counted (k : Nat) (u u' : State) : Prop :=
 theorem cnt33_ok (u : State) : WP isa (.block cnt33) u (Counted 33 u) :=
   wp_movi fun _ up => WP.block_nil ⟨up.keeps, up.mem, up.gpr⟩
 
+/-- The bits of `q`'s bytes, from its length argument `a`. -/
+theorem qBits_ok {full : Bool} {u : State} {B : Addr} {Z a : Nat}
+    (c : VG.Proof.Bignum.X86.CallArgument u B Z (qLenArg full) (BitVec.ofNat 32 a)) :
+    WP isa (.block (qBits full)) u (Counted (8 * a) u) := by
+  unfold qBits
+  refine wp_movS c.readSrc fun t1 u1 _ => wp_addS rfl fun t2 u2 _ => wp_addS rfl fun t3 u3 _ =>
+    wp_addS rfl fun t4 u4 _ => WP.block_nil ⟨((u1.keeps.trans u2.keeps).trans u3.keeps).trans u4.keeps,
+      by rw [u4.mem, u3.mem, u2.mem, u1.mem], ?_⟩
+  rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
 /-- The bits of a number. -/
 theorem bits_ok' {g : Geo} {u : State} (h : RtWs g.L u g.B g.Z g.len nArr) :
     WP isa (.block (VG.Impl.Rsa.X86.KeyRt.bits g.L)) u (Counted (32 * g.w) u) := by
@@ -154,7 +167,8 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (hy : y ∈ live) (hx : x ∈ live) (hm : m ∈ live) (hz : aZ ∈ live) (hA0 : A aZ = 0)
     (hmi : MulIdx nArr aZ aY aX aA m aT) (hxY : x ≠ aY) (hxX : x ≠ aX)
     (hfree : ∀ j ∈ live, j = aA ∨ j ∉ mulArrs aY aX aA aT) (hk : 0 < k) (hk' : k < 2 ^ 32)
-    (hcnt : ∀ u : State, RtWs g.L u g.B g.Z g.len nArr → WP isa (.block cnt) u (Counted k u)) :
+    (hcnt : ∀ u : State, RtWs g.L u g.B g.Z g.len nArr → Keeps bodyRegs s0 u → Outside g.B 0 g.Z s0.mem u.mem →
+      WP isa (.block cnt) u (Counted k u)) :
     WP isa (seqs (mulA g.full y x m cnt)) s fun t => ∃ R,
       (A x < A m → 2 * A m ≤ 2 ^ (32 * g.w) → R = A y % 2 ^ k * A x % A m) ∧
       Stg g s0 (upd A aA R) (aA :: live) c t := by
@@ -177,7 +191,8 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   refine WP.mono (h2.copy_ok (o := aA) (a := aZ) (by decide)
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hz)) (by decide)) fun t3 h3 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (hcnt t3 h3.ws) fun t4 ⟨K4, m4, c4⟩ => ?_
+  refine WP.mono (hcnt t3 h3.ws h3.rest (VG.Proof.Rsa.X86.KeyRt.keep_outside h3.ws.ws h3.keep
+    (fun j hj => List.mem_range.mp hj) (by decide))) fun t4 ⟨K4, m4, c4⟩ => ?_
   have k4 : Keep g.B g.w [] [] t3.mem t4.mem := by rw [m4]; exact Keep.refl _ _ _ _ _
   have h4 := h3.next (h3.ws.keep K4 (by decide) (by decide) (by rw [m4]; exact fun _ _ => rfl)) k4 (by simp) (by simp)
     K4 (by decide) (h3.arrs_keep k4 (by simp) (by simp)) h3.live_lt

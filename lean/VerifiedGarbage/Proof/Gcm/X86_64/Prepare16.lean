@@ -389,6 +389,12 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
       by rw [rd, rd₂, rd₁], by rw [wr, wr₂, wr₁]⟩
   rw [m]; exact (hi₂.st k (plan_stored k hk)).2 l hl
 
+/-- It writes none of the context from byte 512 on. -/
+theorem prepare16_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s) (he : Exec isa prepare16 s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' :=
+  written16 (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => h.2.1) s t s' hs he
+
 theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
     WP isa prepare16 s₀ fun s => gprPreserved s₀ s ∧ prepare16X86_64.post s₀ s := by
   obtain ⟨_, hwr, hwrap, hret⟩ := hp
