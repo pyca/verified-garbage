@@ -166,34 +166,34 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
   have nb : numBase = 3336 := rfl
   have cb1 : cb len (one c) = bc len c := by simp [cb, one]
   have cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
-  have hk : ∃ k, cwc len c = k + 1 := ⟨cwc len c - 1, by omega⟩
+  have hk : ∃ k, cwc len c = k + 1 := ⟨cwc len c - 1, by omega_arith⟩
   obtain ⟨k, ek⟩ := hk
   have fitP : ∀ p ∈ baseR len c, p.1 + p.2 ≤ bytes := by
     intro p hp
     simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;> omega
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;> omega_arith
   let M₀ := sv s.mem base len c 0
   unfold prepBase
   -- One in slot 3, three in slot 7.
-  refine WP.seq (WP.mono (setSmall_ok (x := .slot c 3) h (one_ok c) (by rw [cb1]; omega) (v := 1) (by decide))
+  refine WP.seq (WP.mono (setSmall_ok (x := .slot c 3) h (one_ok c) (by rw [cb1]; omega_arith) (v := 1) (by decide))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   simp only [cb1, cw1] at O₁ V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
-  refine WP.seq (WP.mono (setSmall_ok (x := .slot c 7) h₁ (one_ok c) (by rw [cb1]; omega) (v := 3) (by decide))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  refine WP.seq (WP.mono (setSmall_ok (x := .slot c 7) h₁ (one_ok c) (by rw [cb1]; omega_arith) (v := 3) (by decide))
     fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   simp only [cb1, cw1] at O₂ V₂
-  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
+  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   have M₂ : val32 u₂.mem base numBase (cwc len c) = M₀ := by
-    rw [O₂.val32 (by omega) (by omega), O₁.val32 (by omega) (by omega), ← z0]
+    rw [O₂.val32 (by omega_arith) (by omega_arith), O₁.val32 (by omega_arith) (by omega_arith), ← z0]
   have one₂ : val32 u₂.mem base (lo len (.slot c 3)) (cwc len c) = 1 := by
-    rw [O₂.val32 (by omega) (by omega), V₁]
+    rw [O₂.val32 (by omega_arith) (by omega_arith), V₁]
   -- `ecx`: whether the modulus is above one.
-  refine WP.seq (WP.mono (lessThan_ok (a := .slot c 3) (b := .slot c 0) h₂ (one_ok c) (by rw [cb1]; omega)
-    (by rw [cb1]; omega)) fun u₃ ⟨m₃, e₃, K₃⟩ => ?_)
+  refine WP.seq (WP.mono (lessThan_ok (a := .slot c 3) (b := .slot c 0) h₂ (one_ok c) (by rw [cb1]; omega_arith)
+    (by rw [cb1]; omega_arith)) fun u₃ ⟨m₃, e₃, K₃⟩ => ?_)
   simp only [cw1, one₂, z0, M₂] at e₃
   have h₃ := h₂.regs (K₃.mono (by decide) : Keeps [.eax, .ecx, .edx, .ebp, .esi] u₂ u₃) m₃
   -- `ecx`: whether it is to be replaced.
-  refine WP.seq (wp_movS (readSrc_sc h₃.scratch (d := numBase) (by omega)) fun v₁ a₁ _ => ?_)
+  refine WP.seq (wp_movS (readSrc_sc h₃.scratch (d := numBase) (by omega_arith)) fun v₁ a₁ _ => ?_)
   refine wp_logicS (.inl rfl) rfl fun v₂ a₂ => wp_movS rfl fun v₃ a₃ _ => wp_subS rfl fun v₄ a₄ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun v₅ a₅ => wp_logicS (.inr rfl) rfl fun v₆ a₆ => WP.block_nil ?_
   have mem₆ : v₆.mem = u₂.mem := by rw [a₆.mem, a₅.mem, a₄.mem, a₃.mem, a₂.mem, a₁.mem, m₃]
@@ -219,8 +219,8 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
         (a₄.keeps.mono (by decide))).trans (a₅.keeps.mono (by decide))).trans (a₆.keeps.mono (by decide))) :
       Keeps [.eax, .ecx, .edx, .ebp, .esi] u₂ v₆) mem₆
   -- The modulus replaced by three where it is to be.
-  refine WP.seq (WP.mono (select_ok (x := .slot c 7) (d := .slot c 0) h₆ (one_ok c) (by rw [cb1]; omega)
-    (by rw [cb1]; omega) (by rw [cb1]; simp only [Apart]; omega) ecx₆) fun u₇ ⟨O₇, V₇, K₇⟩ => ?_)
+  refine WP.seq (WP.mono (select_ok (x := .slot c 7) (d := .slot c 0) h₆ (one_ok c) (by rw [cb1]; omega_arith)
+    (by rw [cb1]; omega_arith) (by rw [cb1]; simp only [Apart]; omega_arith) ecx₆) fun u₇ ⟨O₇, V₇, K₇⟩ => ?_)
   simp only [cb1, cw1] at O₇ V₇
   have safe₇ : val32 u₇.mem base numBase (cwc len c) = safeM M₀ := by
     rw [← z0, V₇, mem₆]
@@ -231,17 +231,17 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
     · have e : (!(decide (1 < M₀) && decide (M₀ % 2 = 1))) = false := by simp [hp.1, hp.2]
       rw [e]; simp [hp]
     · have e : (!(decide (1 < M₀) && decide (M₀ % 2 = 1))) = true := by
-        simp only [Bool.not_eq_true', Bool.and_eq_false_iff, decide_eq_false_iff_not]; omega
+        simp only [Bool.not_eq_true', Bool.and_eq_false_iff, decide_eq_false_iff_not]; omega_arith
       rw [e]; simp [hp]
-  have h₇ := h₆.keep K₇ (by decide) (by decide) (O₇.mono (Nat.zero_le _) (by omega))
+  have h₇ := h₆.keep K₇ (by decide) (by decide) (O₇.mono (Nat.zero_le _) (by omega_arith))
   -- The inverse.
   have odd₇ : w32 u₇.mem base numBase % 2 = 1 := by
     rw [← VG.Proof.Mont.X86.Dynamic.val32_parity u₇.mem base numBase k, ← ek, safe₇]; exact safeM_odd _
-  refine WP.seq (WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h₇.scratch (mo := numBase) (inv := invOff) (by omega)
-    (by simp only [invOff]; omega) odd₇) fun u₈ ⟨I₈, O₈, K₈⟩ => ?_)
-  have h₈ := h₇.keep K₈ (by decide) (by decide) (O₈.mono (Nat.zero_le _) (by simp only [invOff]; omega))
+  refine WP.seq (WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h₇.scratch (mo := numBase) (inv := invOff) (by omega_arith)
+    (by simp only [invOff]; omega_arith) odd₇) fun u₈ ⟨I₈, O₈, K₈⟩ => ?_)
+  have h₈ := h₇.keep K₈ (by decide) (by decide) (O₈.mono (Nat.zero_le _) (by simp only [invOff]; omega_arith))
   have M₈ : val32 u₈.mem base numBase (cwc len c) = safeM M₀ := by
-    rw [O₈.val32 (by simp only [invOff]; omega) (by omega), safe₇]
+    rw [O₈.val32 (by simp only [invOff]; omega_arith) (by omega_arith), safe₇]
   -- `R² mod M`.
   refine WP.mono (powerTwo_ok h₈ c (by simp only [sv, z0]; rw [M₈]; exact safeM_gt _)) fun u ⟨F₉, V₉, K₉⟩ => ?_
   have sp₈ : u₈.gpr .esp = s.gpr .esp := by
@@ -250,32 +250,32 @@ theorem prepBase_ok (h : In Ex base bytes len args s) (c : Ctx) :
   have fitW : ∀ p ∈ powR len c, p.1 + p.2 ≤ bytes := by
     intro p hp
     simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
   have keepVal : ∀ d, d + 4 * cwc len c ≤ bytes → (d + 4 * cwc len c ≤ lo len (.slot c 1) ∨
       lo len (.slot c 1) + (bc len c + 4) ≤ d) → (d + 4 * cwc len c ≤ lo len (.slot c 4) ∨ lo len (.slot c 4) + bc len c ≤ d) →
       val32 u.mem base d (cwc len c) = val32 u₈.mem base d (cwc len c) := fun d hd h1 h2 =>
     frameR_val32 F₉ h.room nw' hd (by
       intro p hp
       simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega) fitW
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith) fitW
   refine ⟨?_, ?_, ?_, ?_, ?_, (K₆.trans ((K₇.mono (by decide)).trans (K₈.mono (by decide)))).trans K₉⟩
-  · have F₁ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₁ (by omega) (by simp)
-    have F₂ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₂ (by omega) (by simp)
-    have F₇ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₇ (by omega) (by simp)
-    have F₈ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₈ (by simp only [invOff]; omega) (by simp)
+  · have F₁ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₁ (by omega_arith) (by simp)
+    have F₂ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₂ (by omega_arith) (by simp)
+    have F₇ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₇ (by omega_arith) (by simp)
+    have F₈ := frameR_of_outside (sp := s.gpr .esp) (ws := baseR len c) O₈ (by simp only [invOff]; omega_arith) (by simp)
     rw [mem₆] at F₇
     exact (((F₁.trans F₂).trans F₇).trans F₈).trans (frameR_mono F₉ (by simp))
-  · simp only [sv, z0]; rw [keepVal _ (by omega) (by omega) (by omega), M₈]; simp only [M₀, sv, z0]
+  · simp only [sv, z0]; rw [keepVal _ (by omega_arith) (by omega_arith) (by omega_arith), M₈]; simp only [M₀, sv, z0]
   · simp only [sv]
-    rw [keepVal _ (by omega) (by omega) (by omega), O₈.val32 (by simp only [invOff]; omega) (by omega),
-      O₇.val32 (by omega) (by omega), mem₆, one₂]
+    rw [keepVal _ (by omega_arith) (by omega_arith) (by omega_arith), O₈.val32 (by simp only [invOff]; omega_arith) (by omega_arith),
+      O₇.val32 (by omega_arith) (by omega_arith), mem₆, one₂]
   · simp only [sv] at V₉ ⊢; rw [V₉]; simp only [z0]; rw [M₈]; simp only [M₀, sv, z0]
   · have W : w32 u.mem base invOff = w32 u₈.mem base invOff := by
       rw [← w32_val32_one, ← w32_val32_one]
-      exact frameR_val32 F₉ h.room nw' (by simp only [invOff]; omega) (by
+      exact frameR_val32 F₉ h.room nw' (by simp only [invOff]; omega_arith) (by
         intro p hp
         simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
-        rcases hp with rfl | rfl <;> dsimp only <;> simp only [invOff] <;> omega) fitW
+        rcases hp with rfl | rfl <;> dsimp only <;> simp only [invOff] <;> omega_arith) fitW
     rw [W]
     rw [← safe₇, ek, val32, Nat.add_mul, Nat.mul_assoc, Nat.add_right_comm, Nat.add_mul_mod_self_left]
     exact I₈

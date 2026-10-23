@@ -108,32 +108,32 @@ theorem validate_ok (h : In Ex base bytes len args s) {n p q x qi : Nat}
   have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
   have cb2 : cb len (two .wide) = 2 * bc len .wide := by simp [cb, two]
   have cw2 : cw len (two .wide) = 2 * cwc len .wide := by
-    have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega
+    have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega_arith
   have ma : mulAOff = 2312 := rfl
   have po : prodOff = 256 := rfl
   have fitV := valR_fit h
   let cn := cwc len .wide
   -- `n`'s low half is `n`.
   have nlo : val32 s.mem base (lo len (.slot .wide 9)) cn = n :=
-    val32_low (b := cn) (by rw [show cn + cn = 2 * cwc len .wide by omega]; exact hn) hnb
+    val32_low (b := cn) (by rw [show cn + cn = 2 * cwc len .wide by omega_arith]; exact hn) hnb
   unfold validate
   -- `p` into the multiplicand, and `p q`.
-  refine WP.seq (WP.mono (copy_ok h (x := .slot .wide 10) (d := mulA) (one_ok .wide) (by rw [cb1]; omega)
-    (by rw [cb1]; simp only [mulA, lo]; omega) (by rw [cb1]; simp only [mulA, lo]; exact .inl (by omega)))
+  refine WP.seq (WP.mono (copy_ok h (x := .slot .wide 10) (d := mulA) (one_ok .wide) (by rw [cb1]; omega_arith)
+    (by rw [cb1]; simp only [mulA, lo]; omega_arith) (by rw [cb1]; simp only [mulA, lo]; exact .inl (by omega_arith)))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   simp only [mulA, lo, cb1, cw1] at O₁ V₁
   rw [show numBase + 10 * st len .wide = lo len (.slot .wide 10) from rfl, hp] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   have k₁ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₁.mem base d k = val32 s.mem base d k :=
     fun hd hk => O₁.val32 (.inr (by omega_using [pf.2.1, hd])) (by omega_using [hk, h.bytes_lt])
-  refine WP.seq (WP.mono (wideProduct_ok h₁ (b := .slot .wide 11) (by omega) (by simp only [lo]; omega))
+  refine WP.seq (WP.mono (wideProduct_ok h₁ (b := .slot .wide 11) (by omega_arith) (by simp only [lo]; omega_arith))
     fun u₂ ⟨F₂, V₂, K₂⟩ => ?_)
-  rw [V₁, k₁ (d := lo len (.slot .wide 11)) (k := cwc len .wide) (by omega) (by omega), hq] at V₂
+  rw [V₁, k₁ (d := lo len (.slot .wide 11)) (k := cwc len .wide) (by omega_arith) (by omega_arith), hq] at V₂
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (prodR_fit h₁)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
   have k₂ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₂.mem base d k = val32 s.mem base d k :=
-    fun hd hk => (prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega) hk).trans (k₁ hd hk)
+    fun hd hk => (prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega_arith) hk).trans (k₁ hd hk)
   -- `p q = n`.
   have pq : val32 u₂.mem base prodOff (2 * cn) = p * q := by
     have sp := val32_succ u₂.mem base prodOff (2 * cn)
@@ -143,59 +143,59 @@ theorem validate_ok (h : In Ex base bytes len args s) {n p q x qi : Nat}
       have := val32_lt s.mem base (lo len (.slot .wide 10)) cn
       have := val32_lt s.mem base (lo len (.slot .wide 11)) cn
       rw [hp] at *; rw [hq] at *
-      rw [show 32 * (2 * cn) = 32 * cn + 32 * cn by omega, Nat.pow_add]
+      rw [show 32 * (2 * cn) = 32 * cn + 32 * cn by omega_arith, Nat.pow_add]
       exact Nat.mul_lt_mul'' (by assumption) (by assumption)
     have : w32 u₂.mem base (prodOff + 4 * (2 * cn)) = 0 := by
       by_contra hne
       have : 2 ^ (32 * (2 * cn)) ≤ 2 ^ (32 * (2 * cn)) * w32 u₂.mem base (prodOff + 4 * (2 * cn)) :=
-        Nat.le_mul_of_pos_right _ (by omega)
-      omega
+        Nat.le_mul_of_pos_right _ (by omega_arith)
+      omega_arith
     rw [this, Nat.mul_zero, Nat.add_zero] at sp
     exact sp.symm
   refine WP.seq (WP.mono (equal_ok h₂ (a := prod) (b := .slot .wide 9) (two_ok .wide)
-    (by rw [cb2]; simp only [prod, lo]; omega_using [pf.1, pf.2.1, pf.2.2]) (by rw [cb2]; omega)) fun u₃ ⟨M₃, C₃, K₃⟩ => ?_)
+    (by rw [cb2]; simp only [prod, lo]; omega_using [pf.1, pf.2.1, pf.2.2]) (by rw [cb2]; omega_arith)) fun u₃ ⟨M₃, C₃, K₃⟩ => ?_)
   simp only [prod, lo, cw2] at C₃
-  rw [show numBase + 9 * st len .wide = lo len (.slot .wide 9) from rfl, k₂ (d := lo len (.slot .wide 9)) (k := 2 * cwc len .wide) (by omega) (by omega), hn,
+  rw [show numBase + 9 * st len .wide = lo len (.slot .wide 9) from rfl, k₂ (d := lo len (.slot .wide 9)) (k := 2 * cwc len .wide) (by omega_arith) (by omega_arith), hn,
     show 2 * cwc len .wide = 2 * cn from rfl, pq] at C₃
   have h₃ := h₂.regs K₃ M₃
   -- The mask stored.
-  refine WP.seq (wp_storeS (h₃.scratch.ea (d := accOff) (by omega))
-    (h₃.scratch.write (d := accOff) (n := 4) (by omega)) fun u₄ m₄ => WP.block_nil ?_)
-  have O₄ : Outside base accOff 4 u₃.mem u₄.mem := by rw [m₄.mem]; exact writeW32_outside _ _ _ (by omega)
+  refine WP.seq (wp_storeS (h₃.scratch.ea (d := accOff) (by omega_arith))
+    (h₃.scratch.write (d := accOff) (n := 4) (by omega_arith)) fun u₄ m₄ => WP.block_nil ?_)
+  have O₄ : Outside base accOff 4 u₃.mem u₄.mem := by rw [m₄.mem]; exact writeW32_outside _ _ _ (by omega_arith)
   have A₄ : w32 u₄.mem base accOff = (cmask (decide (p * q = n))).toNat := by
     rw [m₄.mem, w32_write_self, C₃]
-  have h₄ := h₃.keep (m₄.keeps []) (by decide) (by decide) (O₄.mono (Nat.zero_le _) (by omega))
+  have h₄ := h₃.keep (m₄.keeps []) (by decide) (by decide) (O₄.mono (Nat.zero_le _) (by omega_arith))
   have k₄ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₄.mem base d k = val32 s.mem base d k :=
-    fun hd hk => by rw [O₄.val32 (.inr (by omega)) (by omega), M₃]; exact k₂ hd hk
+    fun hd hk => by rw [O₄.val32 (.inr (by omega_arith)) (by omega_arith), M₃]; exact k₂ hd hk
   -- The input below `n`.
   refine WP.seq (WP.mono (lessThan_ok h₄ (a := .slot .wide 15) (b := .slot .wide 9) (one_ok .wide)
-    (by rw [cb1]; omega) (by rw [cb1]; omega)) fun u₅ ⟨M₅, C₅, K₅⟩ => ?_)
-  rw [cw1, k₄ (d := lo len (.slot .wide 15)) (k := cwc len .wide) (by omega) (by omega),
-    k₄ (d := lo len (.slot .wide 9)) (k := cwc len .wide) (by omega) (by omega), hx, nlo] at C₅
+    (by rw [cb1]; omega_arith) (by rw [cb1]; omega_arith)) fun u₅ ⟨M₅, C₅, K₅⟩ => ?_)
+  rw [cw1, k₄ (d := lo len (.slot .wide 15)) (k := cwc len .wide) (by omega_arith) (by omega_arith),
+    k₄ (d := lo len (.slot .wide 9)) (k := cwc len .wide) (by omega_arith) (by omega_arith), hx, nlo] at C₅
   have h₅ := h₄.regs K₅ M₅
   refine WP.seq (WP.mono (accept_ok h₅ (a := decide (p * q = n)) (by rw [M₅]; exact A₄) C₅) fun u₆ ⟨O₆, A₆, K₆⟩ => ?_)
-  have h₆ := h₅.keep K₆ (by decide) (by decide) (O₆.mono (Nat.zero_le _) (by omega))
+  have h₆ := h₅.keep K₆ (by decide) (by decide) (O₆.mono (Nat.zero_le _) (by omega_arith))
   have k₆ : ∀ {d k}, numBase ≤ d → d + 4 * k ≤ bytes → val32 u₆.mem base d k = val32 s.mem base d k :=
-    fun hd hk => by rw [O₆.val32 (.inr (by omega)) (by omega), M₅]; exact k₄ hd hk
+    fun hd hk => by rw [O₆.val32 (.inr (by omega_arith)) (by omega_arith), M₅]; exact k₄ hd hk
   -- `qInv` below `p`.
   refine WP.seq (WP.mono (lessThan_ok h₆ (a := .slot .wide 14) (b := .slot .wide 10) (one_ok .wide)
-    (by rw [cb1]; omega) (by rw [cb1]; omega)) fun u₇ ⟨M₇, C₇, K₇⟩ => ?_)
-  rw [cw1, k₆ (d := lo len (.slot .wide 14)) (k := cwc len .wide) (by omega) (by omega),
-    k₆ (d := lo len (.slot .wide 10)) (k := cwc len .wide) (by omega) (by omega), hqi, hp] at C₇
+    (by rw [cb1]; omega_arith) (by rw [cb1]; omega_arith)) fun u₇ ⟨M₇, C₇, K₇⟩ => ?_)
+  rw [cw1, k₆ (d := lo len (.slot .wide 14)) (k := cwc len .wide) (by omega_arith) (by omega_arith),
+    k₆ (d := lo len (.slot .wide 10)) (k := cwc len .wide) (by omega_arith) (by omega_arith), hqi, hp] at C₇
   have h₇ := h₆.regs K₇ M₇
   refine WP.mono (accept_ok h₇ (a := decide (p * q = n) && decide (x < n)) (by rw [M₇]; exact A₆) C₇) fun u ⟨O₈, A₈, K₈⟩ => ⟨?_, ?_, ?_⟩
   · have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
     have F₁ : Frame (frameR base (s.gpr .esp) (valR len)) s.mem u₁.mem :=
-      frameR_of_outside O₁ (by omega) (by simp)
+      frameR_of_outside O₁ (by omega_arith) (by simp)
     have F₂' : Frame (frameR base (s.gpr .esp) (valR len)) u₁.mem u₂.mem :=
       frameR_mono F₂ fun p hp => by
         simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp; rcases hp with rfl | rfl <;> simp
     have F₄ : Frame (frameR base (s.gpr .esp) (valR len)) u₂.mem u₄.mem := by
-      rw [← M₃]; exact frameR_of_outside O₄ (by omega) (by simp)
+      rw [← M₃]; exact frameR_of_outside O₄ (by omega_arith) (by simp)
     have F₆ : Frame (frameR base (s.gpr .esp) (valR len)) u₄.mem u₆.mem := by
-      rw [← M₅]; exact frameR_of_outside O₆ (by omega) (by simp)
+      rw [← M₅]; exact frameR_of_outside O₆ (by omega_arith) (by simp)
     have F₈ : Frame (frameR base (s.gpr .esp) (valR len)) u₆.mem u.mem := by
-      rw [← M₇]; exact frameR_of_outside O₈ (by omega) (by simp)
+      rw [← M₇]; exact frameR_of_outside O₈ (by omega_arith) (by simp)
     exact (((F₁.trans F₂').trans F₄).trans F₆).trans F₈
   · rw [A₈]; congr 2; simp only [Bool.and_assoc, Bool.decide_and]
   · exact ((((((K₁.mono (by decide)).trans K₂).trans K₃).trans ((m₄.keeps []).mono (by decide))).trans
