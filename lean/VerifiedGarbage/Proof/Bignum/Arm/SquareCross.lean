@@ -146,53 +146,53 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
   rintro s1 ⟨p1, m1, r1⟩
   have e1 := env.of_mem m1 r1
   rw [WP.seq_iff]
-  refine WP.mono (crossArgs_ok s1 (A := a + 4 * k) (C := len) (P := o) e1.workspace (by omega) p1
+  refine WP.mono (crossArgs_ok s1 (A := a + 4 * k) (C := len) (P := o) e1.workspace (by omega_arith) p1
     (by rw [m1]; exact h.next) (by rw [m1, hlen]; exact h.cnt) (by rw [m1, ho]; exact h.tptr)) ?_
   rintro s2 ⟨g2, g12, glr, g0, g11, m2, r2⟩
   have o2a := writeW32_outside s1.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 8))
-    (by omega)
+    (by omega_arith)
   have o2b := writeW32_outside (s1.mem.writeW (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (o + 8)))
-    (State.addr base) (d := M + 12) (base + BitVec.ofNat 32 (a + 4 * k + 4)) (by omega)
+    (State.addr base) (d := M + 12) (base + BitVec.ofNat 32 (a + 4 * k + 4)) (by omega_arith)
   rw [← m2] at o2b
   have O2 : Outside (State.addr base) (M + 12) 12 s1.mem s2.mem :=
-    (o2a.mono (by omega) (by omega)).trans (o2b.mono (by omega) (by omega))
-  have e2 := e1.next (Outs.of_outside (O2.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))
+    (o2a.mono (by omega_arith) (by omega_arith)).trans (o2b.mono (by omega_arith) (by omega_arith))
+  have e2 := e1.next (Outs.of_outside (O2.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r2
   rw [WP.seq_iff]
-  refine WP.mono (crossScalar_ok s2 e2.workspace (by omega) g2) ?_
+  refine WP.mono (crossScalar_ok s2 e2.workspace (by omega_arith) g2) ?_
   rintro s3 ⟨g1, m3, r3⟩
   have e3 := e2.of_mem m3 r3
   have ctx : RowCtx s3 base size o (a + 4 * (k + 1)) len :=
-    ⟨nowrap, by omega, by omega, by omega, e3.workspace.writable⟩
+    ⟨nowrap, by omega_arith, by omega_arith, by omega_arith, e3.workspace.writable⟩
   rw [WP.seq_iff]
-  refine WP.mono (row_ok s3 ctx (by omega) ((r3.gpr .r0 (by simp)).trans g0)
-    (by rw [r3.gpr .r12 (by simp), g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega])
+  refine WP.mono (row_ok s3 ctx (by omega_arith) ((r3.gpr .r0 (by simp)).trans g0)
+    (by rw [r3.gpr .r12 (by simp), g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_arith])
     ((r3.gpr .lr (by simp)).trans glr)) ?_
   intro s4 ri
-  have e4 := e3.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega)
-    (by omega)) (by simp)) ri.rest
+  have e4 := e3.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith)
+    (by omega_arith)) (by simp)) ri.rest
   rw [WP.seq_iff]
-  refine WP.mono (crossCarry_ok s4 e4.workspace (d := o + 4 * len) (by omega) ri.outPtr) ?_
+  refine WP.mono (crossCarry_ok s4 e4.workspace (d := o + 4 * len) (by omega_arith) ri.outPtr) ?_
   rintro s5 ⟨m5, r5⟩
-  have o5 := writeW32_outside s4.mem (State.addr base) (d := o + 4 * len) (s4.gpr .r11) (by omega)
+  have o5 := writeW32_outside s4.mem (State.addr base) (d := o + 4 * len) (s4.gpr .r11) (by omega_arith)
   rw [← m5] at o5
   have OW : Outside (State.addr base) o (4 * len + 4) s3.mem s5.mem :=
-    (ri.outside.mono (by omega) (by omega)).trans (o5.mono (by omega) (by omega))
-  have e5 := e4.next (Outs.of_outside (o5.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))
+    (ri.outside.mono (by omega_arith) (by omega_arith)).trans (o5.mono (by omega_arith) (by omega_arith))
+  have e5 := e4.next (Outs.of_outside (o5.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r5
   rw [WP.seq_iff]
   refine WP.mono (sqAnchor_ok s5 e5) ?_
   rintro s6 ⟨p6, m6, r6⟩
   have e6 := e5.of_mem m6 r6
   have cnt6 : s6.mem.readW (off (State.addr base) (M + 16)) 32 = BitVec.ofNat 32 len := by
-    rw [m6, outside_read32 OW (by omega) (by omega), m3, m2, rd_other _ (by omega) (by omega) (by omega),
-      rd_other _ (by omega) (by omega) (by omega), m1, hlen]
+    rw [m6, outside_read32 OW (by omega_arith) (by omega_arith), m3, m2, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
+      rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m1, hlen]
     exact h.cnt
-  refine WP.mono (sqCount_ok s6 e6.workspace (by omega) p6 cnt6 (by omega) (by omega)) ?_
+  refine WP.mono (sqCount_ok s6 e6.workspace (by omega_arith) p6 cnt6 (by omega_arith) (by omega_arith)) ?_
   rintro t ⟨m7, z7, r7⟩
-  have o7 := writeW32_outside s6.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 (len - 1)) (by omega)
+  have o7 := writeW32_outside s6.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 (len - 1)) (by omega_arith)
   rw [← m7] at o7
-  have et := e6.next (Outs.of_outside (o7.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))
+  have et := e6.next (Outs.of_outside (o7.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r7
   -- Everything but the metadata's words from `M + 12` and the row.
   have all : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s.mem t.mem := by
@@ -201,50 +201,50 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
     have A2 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s3.mem s5.mem :=
       Outs.of_outside OW (by simp)
     have A3 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s6.mem t.mem :=
-      Outs.of_outside (o7.mono (o' := M + 12) (n' := 12) (by omega) (by omega)) (by simp)
+      Outs.of_outside (o7.mono (o' := M + 12) (n' := 12) (by omega_arith) (by omega_arith)) (by simp)
     rw [m1] at A1; rw [m3] at A2; rw [m6] at A3
     exact A1.trans (A2.trans A3)
   -- The value.
-  have aw := e2.aWord (j := k) (by omega)
-  have av := e3.aVal (d := a + 4 * (k + 1)) (k := len) (by omega) (by omega)
+  have aw := e2.aWord (j := k) (by omega_arith)
+  have av := e3.aVal (d := a + 4 * (k + 1)) (k := len) (by omega_arith) (by omega_arith)
   have v3 : val32 s3.mem (State.addr base) (M + 24) (2 * n + 2) = sqCross m0 (State.addr base) a n k := by
-    rw [m3, O2.val32 (by omega) (by omega), m1]; exact h.value
+    rw [m3, O2.val32 (by omega_arith) (by omega_arith), m1]; exact h.value
   have rep := val32_replace (m := s3.mem) (m' := s5.mem) (base := State.addr base) (d := M + 24)
-    (i := 2 * k + 1) (j := n - k) (k := n + 1 - k) (OW.val32 (by omega) (by omega))
-    (OW.val32 (by omega) (by omega))
-  rw [show 2 * k + 1 + (n - k) + (n + 1 - k) = 2 * n + 2 by omega,
-    show M + 24 + 4 * (2 * k + 1) = o by omega, show n - k = len + 1 by omega] at rep
+    (i := 2 * k + 1) (j := n - k) (k := n + 1 - k) (OW.val32 (by omega_arith) (by omega_arith))
+    (OW.val32 (by omega_arith) (by omega_arith))
+  rw [show 2 * k + 1 + (n - k) + (n + 1 - k) = 2 * n + 2 by omega_arith,
+    show M + 24 + 4 * (2 * k + 1) = o by omega_arith, show n - k = len + 1 by omega_arith] at rep
   have xn : val32 s5.mem (State.addr base) o len = val32 s4.mem (State.addr base) o len :=
-    o5.val32 (by omega) (by omega)
+    o5.val32 (by omega_arith) (by omega_arith)
   have wn : w32 s5.mem (State.addr base) (o + 4 * len) = (s4.gpr .r11).toNat := by
     rw [m5, w32_write_self]
   have wo : w32 s3.mem (State.addr base) (o + 4 * len) = 0 := by
-    rw [m3, O2.w32 (by omega) (by omega), m1, show o + 4 * len = M + 24 + 4 * (k + n) by omega]
+    rw [m3, O2.w32 (by omega_arith) (by omega_arith), m1, show o + 4 * len = M + 24 + 4 * (k + n) by omega_arith]
     have z := h.top
-    rw [show n + 2 - k = (n + 1 - k) + 1 by omega] at z
+    rw [show n + 2 - k = (n + 1 - k) + 1 by omega_arith] at z
     exact val32_zero_head z
   have row := ri.value
   rw [(r3.gpr .r11 (by simp)).trans g11, g1] at row
   change _ = _ + w32 s2.mem (State.addr base) (a + 4 * k) * _ + (0 : BitVec 32).toNat at row
   rw [aw, show a + 4 * (k + 1) = a + 4 * (k + 1) from rfl] at row
   have vt : val32 t.mem (State.addr base) (M + 24) (2 * n + 2) = val32 s5.mem (State.addr base) (M + 24) (2 * n + 2) := by
-    rw [o7.val32 (by omega) (by omega), m6]
-  refine ⟨⟨et, by omega, h.md.of_outs all (by simp; omega) (by omega), ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
-  · rw [m7, rd_other _ (by omega) (by omega) (by omega), m6, outside_read32 OW (by omega) (by omega), m3, m2,
-      rd_self, show a + 4 * k + 4 = a + 4 * (k + 1) by omega]
-  · rw [m7, rd_self, hlen, show n - 1 - k - 1 = n - 1 - (k + 1) by omega]
-  · rw [m7, rd_other _ (by omega) (by omega) (by omega), m6, outside_read32 OW (by omega) (by omega), m3, m2,
-      rd_other _ (by omega) (by omega) (by omega), rd_self, ho, show M + 28 + 8 * k + 8 = M + 28 + 8 * (k + 1) by omega]
+    rw [o7.val32 (by omega_arith) (by omega_arith), m6]
+  refine ⟨⟨et, by omega_arith, h.md.of_outs all (by simp; omega_arith) (by omega_arith), ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rw [m7, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, outside_read32 OW (by omega_arith) (by omega_arith), m3, m2,
+      rd_self, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_arith]
+  · rw [m7, rd_self, hlen, show n - 1 - k - 1 = n - 1 - (k + 1) by omega_arith]
+  · rw [m7, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, outside_read32 OW (by omega_arith) (by omega_arith), m3, m2,
+      rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), rd_self, ho, show M + 28 + 8 * k + 8 = M + 28 + 8 * (k + 1) by omega_arith]
   · rw [vt]
     have := cross_value rep (by rw [val32_succ, xn, wn]) row (by rw [val32_succ, wo])
     rw [this, v3, av, hlen]
     rfl
-  · rw [all.val32 (by simp; omega) (by omega)]
+  · rw [all.val32 (by simp; omega_arith) (by omega_arith)]
     have z := h.top
-    rw [show n + 2 - k = 1 + (n + 2 - (k + 1)) by omega] at z
+    rw [show n + 2 - k = 1 + (n + 2 - (k + 1)) by omega_arith] at z
     have z' := val32_zero_tail z
-    rwa [show M + 24 + 4 * (k + n) + 4 * 1 = M + 24 + 4 * (k + 1 + n) by omega] at z'
-  · rw [z7, hlen]; simp only [show n - 1 - k = 1 ↔ k + 2 = n by omega]
+    rwa [show M + 24 + 4 * (k + n) + 4 * 1 = M + 24 + 4 * (k + 1 + n) by omega_arith] at z'
+  · rw [z7, hlen]; simp only [show n - 1 - k = 1 ↔ k + 2 = n by omega_arith]
   · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans
       ((r3.mono (by simp [roundClobbers])).trans ((ri.rest.mono (by simp [loopClobbers, roundClobbers])).trans
       ((r5.mono (by simp [roundClobbers])).trans ((r6.mono (by simp [roundClobbers])).trans
