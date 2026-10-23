@@ -159,22 +159,22 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   rw [qil] at oQI qiS kQI fQI hrd
   rw [dql] at oDQ dqS kDQ fDQ hrd
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
-    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega)
+    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
       ⟨State.addr s.sp - BitVec.ofNat 64 4584, 4584⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
-    rw [FrameStack.addr_sub' (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [FrameStack.addr_sub' (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, pl1 := pl1, plK := plK, ql1 := ql1, qlK := qlK, slK := slK
       dl32 := (stackArg s 4).isLt
       nB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below).symm)
-        (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega)
+        (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega_arith)
       eB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below).symm)
-        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega) }
+        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega_arith) }
   rw [ep_lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
@@ -193,14 +193,14 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [fN, fE, fD, fP, fQ, fDP, fDQ, fQI, fO, fS]
   · intro j hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · rfl
     · simp [regArg, ep, r1]
     · rfl
     · simp [regArg, ep]
   · intro i hi
     have : i < 17 := hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
         i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [ep, a10, a12, a14]
