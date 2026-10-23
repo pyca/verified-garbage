@@ -3134,21 +3134,49 @@ b 23f
 movz x9, #15, lsl #0
 and x11, x28, x9
 cbz x11, 25f
+lsr x9, x25, #4
+cbz x9, 27f
+add x13, x27, x11
+sub x13, x13, #16
+movz x9, #128, lsl #0
+ldr q0, [x13, #0]
+movi v1.2d, #0
+mov v1.d[0], x9
+movz x6, #4368, lsl #0
+movk x6, #4882, lsl #16
+movk x6, #5396, lsl #32
+movk x6, #5910, lsl #48
+movz x7, #6424, lsl #0
+movk x7, #6938, lsl #16
+movk x7, #7452, lsl #32
+movk x7, #7966, lsl #48
+mov v2.d[0], x6
+mov v2.d[1], x7
+dup v3.16b, w11
+sub v2.16b, v2.16b, v3.16b
+tbl v4.16b, {{v0.16b, v1.16b}}, v2.16b
+str q4, [x12, #0]
+b 28f
 27:
+29:
 ldrb w9, [x27, #0]
 strb w9, [x12, #0]
 add x27, x27, #1
 add x12, x12, #1
 sub x11, x11, #1
-cbnz x11, 27b
-b 26f
-25:
-26:
+cbnz x11, 29b
 movz x9, #128, lsl #0
 strb w9, [x12, #0]
+28:
+b 26f
+25:
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x12, #0]
+26:
 add x9, x28, #8
 lsr x9, x9, #6
-cbz x9, 28f
+cbz x9, 210f
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -3160,9 +3188,9 @@ stp x9, x9, [x12, #0]
 stp x9, x9, [x12, #16]
 stp x9, x9, [x12, #32]
 stp x9, x9, [x12, #48]
-b 29f
-28:
-29:
+b 211f
+210:
+211:
 add x19, sp, #0
 add x22, x25, #0
 add x9, x22, x22
@@ -3170,6 +3198,10 @@ add x9, x9, x9
 add x9, x9, x9
 rev x9, x9
 str x9, [x19, #88]
+add x12, sp, #80
+ldr x9, [x12, #0]
+ldr x10, [x12, #8]
+stp x9, x10, [x12, #0]
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -3412,21 +3444,49 @@ b 23f
 movz x9, #15, lsl #0
 and x11, x28, x9
 cbz x11, 25f
+lsr x9, x25, #4
+cbz x9, 27f
+add x13, x27, x11
+sub x13, x13, #16
+movz x9, #128, lsl #0
+ldr q0, [x13, #0]
+movi v1.2d, #0
+mov v1.d[0], x9
+movz x6, #4368, lsl #0
+movk x6, #4882, lsl #16
+movk x6, #5396, lsl #32
+movk x6, #5910, lsl #48
+movz x7, #6424, lsl #0
+movk x7, #6938, lsl #16
+movk x7, #7452, lsl #32
+movk x7, #7966, lsl #48
+mov v2.d[0], x6
+mov v2.d[1], x7
+dup v3.16b, w11
+sub v2.16b, v2.16b, v3.16b
+tbl v4.16b, {{v0.16b, v1.16b}}, v2.16b
+str q4, [x12, #0]
+b 28f
 27:
+29:
 ldrb w9, [x27, #0]
 strb w9, [x12, #0]
 add x27, x27, #1
 add x12, x12, #1
 sub x11, x11, #1
-cbnz x11, 27b
-b 26f
-25:
-26:
+cbnz x11, 29b
 movz x9, #128, lsl #0
 strb w9, [x12, #0]
+28:
+b 26f
+25:
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x12, #0]
+26:
 add x9, x28, #8
 lsr x9, x9, #6
-cbz x9, 28f
+cbz x9, 210f
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -3438,9 +3498,9 @@ stp x9, x9, [x12, #0]
 stp x9, x9, [x12, #16]
 stp x9, x9, [x12, #32]
 stp x9, x9, [x12, #48]
-b 29f
-28:
-29:
+b 211f
+210:
+211:
 add x19, sp, #0
 add x22, x25, #0
 add x9, x22, x22
@@ -3448,6 +3508,10 @@ add x9, x9, x9
 add x9, x9, x9
 rev x9, x9
 str x9, [x19, #88]
+add x12, sp, #80
+ldr x9, [x12, #0]
+ldr x10, [x12, #8]
+stp x9, x10, [x12, #0]
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -4104,21 +4168,49 @@ b 23f
 movz x9, #15, lsl #0
 and x11, x28, x9
 cbz x11, 25f
+lsr x9, x25, #4
+cbz x9, 27f
+add x13, x27, x11
+sub x13, x13, #16
+movz x9, #128, lsl #0
+ldr q0, [x13, #0]
+movi v1.2d, #0
+mov v1.d[0], x9
+movz x6, #4368, lsl #0
+movk x6, #4882, lsl #16
+movk x6, #5396, lsl #32
+movk x6, #5910, lsl #48
+movz x7, #6424, lsl #0
+movk x7, #6938, lsl #16
+movk x7, #7452, lsl #32
+movk x7, #7966, lsl #48
+mov v2.d[0], x6
+mov v2.d[1], x7
+dup v3.16b, w11
+sub v2.16b, v2.16b, v3.16b
+tbl v4.16b, {{v0.16b, v1.16b}}, v2.16b
+str q4, [x12, #0]
+b 28f
 27:
+29:
 ldrb w9, [x27, #0]
 strb w9, [x12, #0]
 add x27, x27, #1
 add x12, x12, #1
 sub x11, x11, #1
-cbnz x11, 27b
-b 26f
-25:
-26:
+cbnz x11, 29b
 movz x9, #128, lsl #0
 strb w9, [x12, #0]
+28:
+b 26f
+25:
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x12, #0]
+26:
 add x9, x28, #8
 lsr x9, x9, #6
-cbz x9, 28f
+cbz x9, 210f
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -4130,9 +4222,9 @@ stp x9, x9, [x12, #0]
 stp x9, x9, [x12, #16]
 stp x9, x9, [x12, #32]
 stp x9, x9, [x12, #48]
-b 29f
-28:
-29:
+b 211f
+210:
+211:
 add x19, sp, #0
 add x22, x25, #0
 add x9, x22, x22
@@ -4140,6 +4232,10 @@ add x9, x9, x9
 add x9, x9, x9
 rev x9, x9
 str x9, [x19, #88]
+add x12, sp, #80
+ldr x9, [x12, #0]
+ldr x10, [x12, #8]
+stp x9, x10, [x12, #0]
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -4809,21 +4905,49 @@ b 23f
 movz x9, #15, lsl #0
 and x11, x28, x9
 cbz x11, 25f
+lsr x9, x25, #4
+cbz x9, 27f
+add x13, x27, x11
+sub x13, x13, #16
+movz x9, #128, lsl #0
+ldr q0, [x13, #0]
+movi v1.2d, #0
+mov v1.d[0], x9
+movz x6, #4368, lsl #0
+movk x6, #4882, lsl #16
+movk x6, #5396, lsl #32
+movk x6, #5910, lsl #48
+movz x7, #6424, lsl #0
+movk x7, #6938, lsl #16
+movk x7, #7452, lsl #32
+movk x7, #7966, lsl #48
+mov v2.d[0], x6
+mov v2.d[1], x7
+dup v3.16b, w11
+sub v2.16b, v2.16b, v3.16b
+tbl v4.16b, {{v0.16b, v1.16b}}, v2.16b
+str q4, [x12, #0]
+b 28f
 27:
+29:
 ldrb w9, [x27, #0]
 strb w9, [x12, #0]
 add x27, x27, #1
 add x12, x12, #1
 sub x11, x11, #1
-cbnz x11, 27b
-b 26f
-25:
-26:
+cbnz x11, 29b
 movz x9, #128, lsl #0
 strb w9, [x12, #0]
+28:
+b 26f
+25:
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x12, #0]
+26:
 add x9, x28, #8
 lsr x9, x9, #6
-cbz x9, 28f
+cbz x9, 210f
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
@@ -4835,9 +4959,9 @@ stp x9, x9, [x12, #0]
 stp x9, x9, [x12, #16]
 stp x9, x9, [x12, #32]
 stp x9, x9, [x12, #48]
-b 29f
-28:
-29:
+b 211f
+210:
+211:
 add x19, sp, #0
 add x22, x25, #0
 add x9, x22, x22
@@ -4845,6 +4969,10 @@ add x9, x9, x9
 add x9, x9, x9
 rev x9, x9
 str x9, [x19, #88]
+add x12, sp, #80
+ldr x9, [x12, #0]
+ldr x10, [x12, #8]
+stp x9, x10, [x12, #0]
 add x0, sp, #0
 add x1, sp, #32
 movz x2, #1, lsl #0
