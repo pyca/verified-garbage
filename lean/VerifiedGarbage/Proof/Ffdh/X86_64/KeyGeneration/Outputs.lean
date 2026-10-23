@@ -142,7 +142,9 @@ theorem zero_live {p : KeyPublic} {original s t : State} {used keys scalars : Na
     (hrc : (⟨o, p.len⟩ : Region) ≠ inCtl original)
     (hf : ∀ x, (∀ j < p.len, x ≠ o + BitVec.ofNat 64 j) → t.mem x = s.mem x)
     (k : Keep [.rsi, .rcx, .rax] s t) : KeyLive p original used keys scalars t :=
-  h.restore k.2.1 k.2.2 (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved]))
+  h.restore k.2.1 k.2.2 (fun r hr => k.gpr (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide))
     (zero_frame h.input hr hrc hf)
 
 end VG.Proof.Ffdh.X86_64.KeyGeneration
