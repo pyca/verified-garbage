@@ -89,6 +89,20 @@ theorem lsr2 {len : Nat} (h : 4 * len < 2 ^ 64) :
     Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
   omega
 
+/-- One more coefficient of an invariant saying which are `out`. -/
+theorem coeff_one {m m₀ : Mem} {F : Addr} {out : Nat → BitVec 32} {a : Nat} (ha : a < 256)
+    (h : ∀ j < 256, coeffAt m F j = if j < a then out j else coeffAt m₀ F j) {v : BitVec 32}
+    (hv : v = out a) :
+    ∀ j < 256, coeffAt (m.writeW (coeffAddr F a) v) F j = if j < a + 1 then out j else coeffAt m₀ F j := by
+  intro j hj
+  rw [coeffAt_writeW _ _ (by rw [n_eq]; exact hj) (by rw [n_eq]; exact ha), h j hj]
+  by_cases e : a = j
+  · subst e; rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self a), hv]
+  · rw [ite_eq_right e]
+    by_cases hj' : j < a
+    · rw [ite_eq_left hj', ite_eq_left (by omega)]
+    · rw [ite_eq_right hj', ite_eq_right (by omega)]
+
 /-! ## Words -/
 
 /-- A word, zero-extended, as `lwz` loads it. -/

@@ -382,28 +382,35 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
     wr'.trans wr, sp'.trans sp, by rw [m]; exact Frame.refl _ _⟩, by rw [r4, e .r4 (by decide)]; rfl, r10, m ▸ hm.poly⟩⟩
   rw [kp r hr, e r (by revert r hr; decide)]
 
-theorem restore_ok' {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State}
-    (h : LInv s₀ m₁ 7 s) :
-    WP isa (.block (restoreRegs .r4 0)) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
-      s'.sp = s₀.sp ∧ s'.lr = s₀.lr ∧ PolyIs s'.mem (F s₀) (Spec.MlKem.ntt (P s₀)) := by
+/-- `r14` and `r15` restored from `S + 512`, through `r4 + off`. -/
+theorem restore_end {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State} (he : Env s₀ m₁ s)
+    {off : Nat} (ho : off + 8 < 2 ^ 15) (ho4 : off % 4 = 0)
+    (hA : s.gpr .r4 + BitVec.ofNat 64 off = S s₀ + BitVec.ofNat 64 512) :
+    WP isa (.block (restoreRegs .r4 off)) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
+      s'.sp = s₀.sp ∧ s'.lr = s₀.lr ∧ s'.mem = s.mem := by
   have fS := hp.fitS
   have e8 : S s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 8 = S s₀ + BitVec.ofNat 64 520 := ptr_add _ _ _
   have rS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 o) k := fun h' =>
-    h.env.inRS hp (Offset.contains_base _ h' (by omega))
+    he.inRS hp (Offset.contains_base _ h' (by omega))
   have dj : ∀ {o : Nat}, o + 8 ≤ 1024 → ∀ r ∈ [polyRegion (F s₀)],
       Region.Disjoint ⟨S s₀ + BitVec.ofNat 64 o, 8⟩ r := fun ho r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact hp.disj.symm.sub_left (Offset.sub_base _ ho)
-  refine WP.mono (restore_ok (b := .r4) (by decide) (by decide) (off := 0) (by decide) (by decide)
-    (A := S s₀ + BitVec.ofNat 64 512) (by rw [h.r4, BitVec.add_zero]) (rS (by omega))
+  refine WP.mono (restore_ok (b := .r4) (by decide) (by decide) ho ho4 hA (rS (by omega))
     (by rw [e8]; exact rS (by omega))) fun s' ⟨r14, r15, kp, lr, sp, m⟩ =>
-      ⟨preserved_of (g := s₀.gpr) ?_ ?_ (fun r hr => (kp r hr).trans (h.env.kept r hr)),
-        sp.trans h.env.sp, lr.trans h.env.lr, ?_⟩
-  · rw [r14, h.env.frame.readW (Region.contains_self _ 8) (dj (by omega)) (by decide)]
+      ⟨preserved_of (g := s₀.gpr) ?_ ?_ (fun r hr => (kp r hr).trans (he.kept r hr)),
+        sp.trans he.sp, lr.trans he.lr, m⟩
+  · rw [r14, he.frame.readW (Region.contains_self _ 8) (dj (by omega)) (by decide)]
     exact hm.sav.1
-  · rw [r15, e8, h.env.frame.readW (Region.contains_self _ 8) (dj (by omega)) (by decide), ← e8]
+  · rw [r15, e8, he.frame.readW (Region.contains_self _ 8) (dj (by omega)) (by decide), ← e8]
     exact hm.sav.2
-  · rw [m, ntt_eq_nttL]; exact h.poly
+
+theorem restore_ok' {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State}
+    (h : LInv s₀ m₁ 7 s) :
+    WP isa (.block (restoreRegs .r4 0)) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
+      s'.sp = s₀.sp ∧ s'.lr = s₀.lr ∧ PolyIs s'.mem (F s₀) (Spec.MlKem.ntt (P s₀)) :=
+  WP.mono (restore_end hp hm h.env (by decide) (by decide) (by rw [h.r4, BitVec.add_zero]))
+    fun s' ⟨h1, h2, h3, m⟩ => ⟨h1, h2, h3, by rw [m, ntt_eq_nttL]; exact h.poly⟩
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa ntt s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ s.lr = s₀.lr ∧
