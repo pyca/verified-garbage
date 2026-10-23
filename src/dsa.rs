@@ -101,6 +101,7 @@ impl core::error::Error for Error {}
 /// An owned DSA public key. Import checks widths; verification checks the
 /// domain and public value. Domain primality is the caller's responsibility.
 #[derive(Debug)]
+#[cfg_attr(not(target_arch = "aarch64"), derive(Clone))]
 pub struct PublicKey {
     packed: Vec<u8>,
     p_len: usize,
@@ -111,6 +112,7 @@ pub struct PublicKey {
     validated: AtomicU8,
 }
 
+#[cfg(target_arch = "aarch64")]
 impl Clone for PublicKey {
     fn clone(&self) -> Self {
         Self {

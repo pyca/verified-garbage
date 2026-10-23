@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.SizeBounds
 
 /-! # The public schedule after independent verifying-workspace initialization -/
 

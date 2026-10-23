@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(target_arch = "aarch64")]
+extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};
 use alloc::{format, string::ToString};
 
@@ -529,9 +531,7 @@ fn immutable_public_validation_cache() {
         assert_eq!(public.verify(&digest, sig), raw == 1);
     }
 
-    let invalid =
-        PublicKey::from_components(&vec![0; 128], &vec![0; 20], &vec![0; 128], &vec![0; 128])
-            .unwrap();
+    let invalid = PublicKey::from_components(&[0; 128], &[0; 20], &[0; 128], &[0; 128]).unwrap();
     assert!(!invalid.verify(&digest, &signature));
     assert_eq!(invalid.validated.load(Ordering::Relaxed), 2);
     assert!(!invalid.verify(&digest, &signature));

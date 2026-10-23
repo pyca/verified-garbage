@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedABI
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSat
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
+public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
 
 /-! # Verified DSA signature checking under the merged immutable-key precondition -/
 

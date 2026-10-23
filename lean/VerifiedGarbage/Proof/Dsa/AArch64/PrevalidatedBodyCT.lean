@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
 /-! # Constant time through validation, computation and the ABI return -/
 

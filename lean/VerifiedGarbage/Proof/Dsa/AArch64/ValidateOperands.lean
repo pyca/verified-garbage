@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
 /-! # Packed verification operands after workspace initialization -/
 

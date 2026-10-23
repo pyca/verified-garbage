@@ -1,20 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCompute
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCompute
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
+import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerifyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCompute
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerifyCT
@@ -26,6 +25,9 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 
 /-! # Constant time of validation and signing/verification together -/
 

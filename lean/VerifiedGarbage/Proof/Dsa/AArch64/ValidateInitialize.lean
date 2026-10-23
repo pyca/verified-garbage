@@ -4,9 +4,11 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateShape
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateOperands
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
+public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
 /-! # Establishing all verifying operands after public domain acceptance -/
 

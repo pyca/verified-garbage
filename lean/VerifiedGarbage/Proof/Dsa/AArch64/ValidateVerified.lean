@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedABI
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedABI
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingAgreement
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.AArch64.ValidateMain
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateBody
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
 
 /-! # The AArch64 DSA domain check verified against the shared contract -/
 
