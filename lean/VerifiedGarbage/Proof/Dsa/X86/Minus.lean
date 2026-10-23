@@ -31,32 +31,32 @@ theorem modulusMinus_ok {s : State} {base : Addr} {size n m amount : Nat}
     have := slot_bound (n := n) hj
     have := hz
     simp only [stride] at *
-    omega
+    omega_arith
   have sep60 := slot_sep (n := n) (i := 6) (j := 0) (by decide)
   have sep67 := slot_sep (n := n) (i := 6) (j := 7) (by decide)
   have sep70 := slot_sep (n := n) (i := 7) (j := 0) (by decide)
   simp only [stride] at sep60 sep67 sep70
   unfold modulusMinus
-  refine WP.seq (WP.mono (setConstW_ok hs (k := 2 * n) (o := slot n 7) (x := amount) (by omega)
-    (by have := bounds 7 (by decide); omega)
-    (by rw [show 32 * (2 * n) = 64 * n by omega]; exact Nat.lt_of_le_of_lt ha hm)) fun u ⟨Vu, Ku, Ou⟩ => ?_)
-  rw [show 4 * (2 * n) = 8 * n by omega] at Ou
+  refine WP.seq (WP.mono (setConstW_ok hs (k := 2 * n) (o := slot n 7) (x := amount) (by omega_arith)
+    (by have := bounds 7 (by decide); omega_arith)
+    (by rw [show 32 * (2 * n) = 64 * n by omega_arith]; exact Nat.lt_of_le_of_lt ha hm)) fun u ⟨Vu, Ku, Ou⟩ => ?_)
+  rw [show 4 * (2 * n) = 8 * n by omega_arith] at Ou
   rw [← wordsVal_eq_val32] at Vu
   have Hu := hs.of_keeps Ku (by decide)
   have Mu : wordsVal u.mem base (slot n 0) n = m :=
-    (Ou.wordsVal (by omega) (by have := hs.nowrap; have := bounds 0 (by decide); omega)).trans hv
-  obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega⟩
+    (Ou.wordsVal (by omega_arith) (by have := hs.nowrap; have := bounds 0 (by decide); omega_arith)).trans hv
+  obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega_arith⟩
   rw [hk]
-  refine WP.mono (chainSubW_ok Hu (k := k + 1) (by omega) (by have := bounds 6 (by decide); omega)
-    (by have := bounds 0 (by decide); omega) (by have := bounds 7 (by decide); omega)
-    (by omega) (by omega)) fun t ⟨Ot, ⟨c, _, Vt⟩, Kt⟩ => ?_
+  refine WP.mono (chainSubW_ok Hu (k := k + 1) (by omega_arith) (by have := bounds 6 (by decide); omega_arith)
+    (by have := bounds 0 (by decide); omega_arith) (by have := bounds 7 (by decide); omega_arith)
+    (by omega_arith) (by omega_arith)) fun t ⟨Ot, ⟨c, _, Vt⟩, Kt⟩ => ?_
   have Ol : Outside base (slot n 6) (8 * n) u.mem t.mem := by
-    simpa only [show 4 * (k + 1) = 8 * n by omega] using Ot
+    simpa only [show 4 * (k + 1) = 8 * n by omega_arith] using Ot
   refine ⟨?_, (slotOutside_whole Ou (by decide)).trans (slotOutside_whole Ol (by decide)),
     (Ku.mono (by decide)).trans (Kt.mono (by decide))⟩
   rw [wordsVal_eq_val32, hk] at Mu Vu ⊢
   rw [Mu, Vu] at Vt
   have lt := val32_lt t.mem base (slot n 6) (k + 1)
-  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at Vt <;> omega
+  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at Vt <;> omega_arith
 
 end VG.Proof.Dsa.X86
