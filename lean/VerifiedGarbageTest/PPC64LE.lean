@@ -42,6 +42,13 @@ def reg (i : Instr) : Option (BitVec 64) := (exec i s0).map (·.gpr .r7)
 #guard reg (.logic .and .r7 .r4 .r6) == some 0x8000000100000001
 #guard reg (.logic .or .r7 .r4 .r5) == some 0x80000001f0000005
 #guard reg (.logic .xor .r7 .r4 .r6) == some 0x7ffffffef1234566
+-- Multiplies: the low 64 bits of the product, and the high 64 bits of the
+-- unsigned product (`r4` and `r6` have their top bits set, so a signed
+-- `mulhd` would differ).
+#guard reg (.mul .r7 .r4 .r6) == some 0x9234567691234567
+#guard reg (.mulhu .r7 .r4 .r6) == some 0x800000017091a2b2
+#guard reg (.mulhu .r7 .r6 .r5) == some 0x3
+#guard reg (.mul .r7 .r6 .r5) == some 0xfffffffc048d159c
 
 -- Word rotates and shifts read the low word and zero-extend the result.
 #guard reg (.rotr .w .r7 .r4 4) == some 0x1f000000

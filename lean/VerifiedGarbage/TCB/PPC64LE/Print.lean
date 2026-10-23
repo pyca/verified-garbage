@@ -36,6 +36,8 @@ def imm16 (v : BitVec 16) : String := toString v.toNat
 def Instr.asm : Instr → List String
   | .add d n m => [s!"add {d.name}, {n.name}, {m.name}"]
   | .sub d n m => [s!"subf {d.name}, {m.name}, {n.name}"]
+  | .mul d n m => [s!"mulld {d.name}, {n.name}, {m.name}"]
+  | .mulhu d n m => [s!"mulhdu {d.name}, {n.name}, {m.name}"]
   | .addi d n imm => [s!"addi {d.name}, {n.name}, {imm}"]
   | .subi d n imm => [s!"addi {d.name}, {n.name}, -{imm}"]
   | .li d imm => [s!"li {d.name}, {imm}"]
