@@ -23,21 +23,25 @@ namespace VG.Proof.X25519.PPC64LE
 open VG VG.PPC64LE VG.Impl.X25519.PPC64LE
 open VG.Spec.X25519 (P Fe)
 
-/-- `r6` holds the working space `b`, 4096 writable bytes. -/
+/-- `r6` holds the working space `b`, at least 4096 writable bytes: X25519's
+has 4096, Ed25519's on PPC64LE 8192. -/
 structure Ctx (b : Addr) (s : State) : Prop where
   r6 : s.gpr .r6 = b
-  wr : (⟨b, 4096⟩ : Region) ∈ s.wr
+  wr : ∃ n, 4096 ≤ n ∧ (⟨b, n⟩ : Region) ∈ s.wr
 
 theorem Ctx.of_rest {b : Addr} {s s' : State} {ws : List Reg} (h : Ctx b s) (hr : Rest ws s s')
     (h6 : Reg.r6 ∉ ws) : Ctx b s' :=
   ⟨by rw [hr.gpr _ h6, h.r6], by rw [hr.wr]; exact h.wr⟩
 
 theorem Ctx.inW {b : Addr} {s : State} (h : Ctx b s) {d n : Nat} (hd : d + n ≤ 4096) :
-    InRegions s.wr (b + BitVec.ofNat 64 d) n := in_base h.wr (by omega_using [hd]) (by omega_using [hd])
+    InRegions s.wr (b + BitVec.ofNat 64 d) n := by
+  obtain ⟨k, hk, hw⟩ := h.wr
+  exact in_base hw (by omega_using [hd, hk]) (by omega_using [hd])
 
 theorem Ctx.inR {b : Addr} {s : State} (h : Ctx b s) {d n : Nat} (hd : d + n ≤ 4096) :
-    InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 d) n :=
-  in_base (List.mem_append_right _ h.wr) (by omega_using [hd]) (by omega_using [hd])
+    InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 d) n := by
+  obtain ⟨k, hk, hw⟩ := h.wr
+  exact in_base (List.mem_append_right _ hw) (by omega_using [hd, hk]) (by omega_using [hd])
 
 /-- Limb `k` of the element at `o`. -/
 def limb (m : Mem) (B : Addr) (o k : Nat) : Nat := wd m B (o + 4 * k)
