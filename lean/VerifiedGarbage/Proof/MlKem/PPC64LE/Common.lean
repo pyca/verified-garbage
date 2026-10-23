@@ -65,11 +65,40 @@ theorem ptr_succ (p : BitVec 64) (k i : Nat) :
     p + BitVec.ofNat 64 (k * i) + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (k * (i + 1)) := by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
 
+/-- A pointer advanced twice. -/
+theorem ptr_add (p : BitVec 64) (a b : Nat) :
+    p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+
+/-- Two pointers from `p` differ exactly when their offsets do. -/
+theorem ptr_ne (p : BitVec 64) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    (p + BitVec.ofNat 64 a - (p + BitVec.ofNat 64 b) != 0) = decide (a ≠ b) := by
+  by_cases h : a = b
+  · subst h; simp
+  · have hne : p + BitVec.ofNat 64 a ≠ p + BitVec.ofNat 64 b := fun e => h (by
+      have := congrArg BitVec.toNat ((BitVec.add_right_inj p).mp e)
+      rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at this)
+    have : p + BitVec.ofNat 64 a - (p + BitVec.ofNat 64 b) ≠ 0 := fun e => hne (by bv_omega)
+    rw [bne_iff_ne.mpr this]; simp [h]
+
+/-- `4 len >> 2`, the count of a block's butterflies. -/
+theorem lsr2 {len : Nat} (h : 4 * len < 2 ^ 64) :
+    BitVec.ofNat 64 (4 * len) >>> 2 = BitVec.ofNat 64 (len - 0) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  omega
+
 /-! ## Words -/
 
 /-- A word, zero-extended, as `lwz` loads it. -/
 theorem toNat_setWidth64 (v : BitVec 32) : (v.setWidth 64).toNat = v.toNat := by
   rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := v.isLt; omega)
+
+/-- A word, zero-extended. -/
+theorem setWidth64_ofNat {v : Nat} (hv : v < 2 ^ 32) : (BitVec.ofNat 32 v).setWidth 64 = BitVec.ofNat 64 v := by
+  apply BitVec.eq_of_toNat_eq
+  rw [toNat_setWidth64, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (by omega)]
 
 /-- A doubleword below `2³²`, as `stw` stores it. -/
 theorem setWidth32_ofNat {x : BitVec 64} {v : Nat} (h : x.toNat = v) (hv : v < 2 ^ 32) :

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.Ntt
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Ntt
 public import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -117,5 +118,70 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 2 ^ 15) {b : Reg
     · subst ej; exact Mem.readW_writeW_self32 _ _ _
     · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
       exact h.tab j (by omega)
+
+/-! ## Saved registers -/
+
+/-- The preserved registers the functions never write. -/
+def kept : List Reg := [.r2, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27,
+  .r28, .r29, .r30, .r31]
+
+theorem preserved_split : ∀ r ∈ preserved, r = .r14 ∨ r = .r15 ∨ r ∈ kept := by decide
+
+/-- Our caller's `r14` and `r15`, from `g`, saved at `A`. -/
+def Saved (m : Mem) (A : Addr) (g : Reg → BitVec 64) : Prop :=
+  m.readW A 64 = g .r14 ∧ m.readW (A + BitVec.ofNat 64 8) 64 = g .r15
+
+/-- Two doublewords at `A` and `A + 8` are separate. -/
+theorem sep8 (A : Addr) : Mem.Sep A (64 / 8) (A + BitVec.ofNat 64 8) (64 / 8) := by
+  have := Offset.sep A (d := 0) (n := 8) (e := 8) (k := 8) (by omega) (by omega) (by omega)
+  rwa [BitVec.add_zero] at this
+
+theorem saved_write (m : Mem) (A : Addr) (g : Reg → BitVec 64) :
+    Saved ((m.writeW A (g .r14)).writeW (A + BitVec.ofNat 64 8) (g .r15)) A g :=
+  ⟨by rw [Mem.readW_writeW_sep (sep8 A) (by decide), Mem.readW_writeW_self64],
+    Mem.readW_writeW_self64 _ _ _⟩
+
+/-- `saveRegs b off` stores `r14` and `r15` at `A = b + off`. -/
+theorem save_ok {s : State} {b : Reg} (hb : b ≠ .r0) {off : Nat} (ho : off + 8 < 2 ^ 15) (ho4 : off % 4 = 0)
+    {A : Addr} (hA : s.gpr b + BitVec.ofNat 64 off = A) (hw0 : InRegions s.wr A 8)
+    (hw8 : InRegions s.wr (A + BitVec.ofNat 64 8) 8) :
+    WP isa (.block (saveRegs b off)) s fun s' => s'.gpr = s.gpr ∧ s'.lr = s.lr ∧ s'.sp = s.sp ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = (s.mem.writeW A (s.gpr .r14)).writeW (A + BitVec.ofNat 64 8) (s.gpr .r15) := by
+  have e8 : s.gpr b + BitVec.ofNat 64 (off + 8) = A + BitVec.ofNat 64 8 := by
+    rw [← hA, BitVec.add_assoc, ← BitVec.ofNat_add]
+  refine WP.cons (exec_store_d hb ⟨by omega, ho4⟩ (by rw [hA]; exact hw0)) ?_
+  refine WP.cons (exec_store_d hb ⟨ho, by omega⟩ (by show InRegions s.wr _ 8; rw [e8]; exact hw8)) (wp_nil ?_)
+  show s.gpr = s.gpr ∧ s.lr = s.lr ∧ s.sp = s.sp ∧ s.rd = s.rd ∧ s.wr = s.wr ∧
+    (s.mem.writeW (s.gpr b + BitVec.ofNat 64 off) (s.gpr .r14)).writeW (s.gpr b + BitVec.ofNat 64 (off + 8))
+      (s.gpr .r15) = _
+  rw [hA, e8]
+  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+/-- `restoreRegs b off` loads `r14` and `r15` from `A = b + off`. -/
+theorem restore_ok {s : State} {b : Reg} (hb : b ≠ .r0) (hb14 : b ≠ .r14) {off : Nat} (ho : off + 8 < 2 ^ 15)
+    (ho4 : off % 4 = 0) {A : Addr} (hA : s.gpr b + BitVec.ofNat 64 off = A)
+    (hr0 : InRegions (s.rd ++ s.wr) A 8) (hr8 : InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 8) 8) :
+    WP isa (.block (restoreRegs b off)) s fun s' => s'.gpr .r14 = s.mem.readW A 64 ∧
+      s'.gpr .r15 = s.mem.readW (A + BitVec.ofNat 64 8) 64 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      s'.lr = s.lr ∧ s'.sp = s.sp ∧ s'.mem = s.mem := by
+  have e8 : s.gpr b + BitVec.ofNat 64 (off + 8) = A + BitVec.ofNat 64 8 := by
+    rw [← hA, BitVec.add_assoc, ← BitVec.ofNat_add]
+  refine WP.cons (exec_load_d hb ⟨by omega, ho4⟩ (by rw [hA]; exact hr0)) ?_
+  have g : (s.write .r14 (s.mem.readW (s.gpr b + BitVec.ofNat 64 off) 64)).gpr b = s.gpr b := by
+    simp only [State.write, hb14, ite_false]
+  refine WP.cons (exec_load_d hb ⟨ho, by omega⟩ (by rw [g, e8]; exact hr8)) (wp_nil ?_)
+  rw [g, e8, hA]
+  refine ⟨by simp [State.write], by simp [State.write], fun r hr => ?_, rfl, rfl, rfl⟩
+  have : r ≠ .r14 ∧ r ≠ .r15 := by revert r hr; decide
+  simp [State.write, this.1, this.2]
+
+/-- The preserved registers, with `r14` and `r15` restored. -/
+theorem preserved_of {g : Reg → BitVec 64} {s : State} (h14 : s.gpr .r14 = g .r14) (h15 : s.gpr .r15 = g .r15)
+    (hk : ∀ r ∈ kept, s.gpr r = g r) : ∀ r ∈ preserved, s.gpr r = g r := fun r hr => by
+  rcases preserved_split r hr with rfl | rfl | h
+  · exact h14
+  · exact h15
+  · exact hk r h
 
 end VG.Proof.MlKem.PPC64LE
