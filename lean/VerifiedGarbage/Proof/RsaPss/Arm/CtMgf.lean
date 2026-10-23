@@ -314,7 +314,7 @@ theorem mgfC_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hc32 : c < 2 ^ 32) :
         t.gpr .r1 = BitVec.ofNat 32 c := by
       prun [ctrSet, atS, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hc.slotS, hm.2.ctr,
         movw_val (show oY + dig h.H < 2 ^ 16 by show oY + h.D < 2 ^ 16; pomega),
-        movw_val (show dig h.H + 4 < 2 ^ 16 by show h.D + 4 < 2 ^ 16; omega), movw_val (show 1 < 2 ^ 16 by decide)]
+        movw_val (show dig h.H + 4 < 2 ^ 16 by show h.D + 4 < 2 ^ 16; omega_arith), movw_val (show 1 < 2 ^ 16 by decide)]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1⟩ => ?_
     have fr : Frame [slotR L sL, slotR L sNb] s.mem t.mem := by
       rw [m]
@@ -379,14 +379,14 @@ theorem mgfC_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hc32 : c < 2 ^ 32) :
       sa_write scr _ _ (o := oY + h.D + 1) (i := oY + i) (by pomega) (by pomega),
       sa_write scr _ _ (o := oY + h.D) (i := oY + i) (by pomega) (by pomega), RsaPss.getD_app, P.sd σ, hy i hi]
     by_cases h1 : i < h.D
-    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+    · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
     by_cases h2 : i < h.D + 4
-    · obtain ⟨j, rfl⟩ : ∃ j, i = h.D + j := ⟨i - h.D, by omega⟩
-      rw [Nat.add_sub_cancel_left, i2osp4_getD c _ (by omega)]
-      have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
+    · obtain ⟨j, rfl⟩ : ∃ j, i = h.D + j := ⟨i - h.D, by omega_arith⟩
+      rw [Nat.add_sub_cancel_left, i2osp4_getD c _ (by omega_arith)]
+      have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega_arith
       rcases this with rfl | rfl | rfl | rfl <;>
-        simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.reduceSub]
-    · rw [getD_ge (l := Spec.Rsa.i2osp c 4) (i := i - h.D) (by rw [i2osp4_length]; omega)]
-      simp (disch := omega) only [↓ite_eq_right]
+        simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.reduceSub]
+    · rw [getD_ge (l := Spec.Rsa.i2osp c 4) (i := i - h.D) (by rw [i2osp4_length]; omega_arith)]
+      simp (disch := omega_arith) only [↓ite_eq_right]
 
 end VG.Proof.RsaPss.Arm

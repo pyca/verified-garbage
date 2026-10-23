@@ -38,10 +38,10 @@ theorem rowBody2_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   rw [rowBody2, WP.seq_iff]
   refine WP.mono (rowStepAt_ok s 0 (by decide) _ _ x (by rw [inv.rest.gpr .r1 (by simp), h1])
     (by rw [inv.rest.gpr .r10 (by simp), h10]) (by rw [inv.rest.gpr .r9 (by simp), h9])
-    (row_addr_at ctx inv.outPtr (by omega)) (row_addr_at ctx inv.inPtr (by omega))
-    (read s inv.rest.wr _ (by omega)) (row_writable ctx inv.rest.wr (by omega))) ?_
+    (row_addr_at ctx inv.outPtr (by omega_arith)) (row_addr_at ctx inv.inPtr (by omega_arith))
+    (read s inv.rest.wr _ (by omega_arith)) (row_writable ctx inv.rest.wr (by omega_arith))) ?_
   rintro s1 ⟨v1, m1, k1⟩
-  obtain ⟨outside1, value1⟩ := row_value_step ctx inv (by omega) m1 v1
+  obtain ⟨outside1, value1⟩ := row_value_step ctx inv (by omega_arith) m1 v1
   have wr1 : s1.wr = s0.wr := k1.wr.trans inv.rest.wr
   have p0 : s1.gpr .r0 = base + BitVec.ofNat 32 (o + 4 * i) :=
     (k1.gpr .r0 (by simp [rowClobbers])).trans inv.outPtr
@@ -51,34 +51,34 @@ theorem rowBody2_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   rw [WP.seq_iff]
   refine WP.mono (rowStepAt_ok s1 4 (by decide) _ _ x (by rw [rest1.gpr .r1 (by simp), h1])
     (by rw [rest1.gpr .r10 (by simp), h10]) (by rw [rest1.gpr .r9 (by simp), h9])
-    (row_addr_at ctx p0 (by omega)) (row_addr_at ctx p12 (by omega))
-    (read s1 wr1 _ (by omega)) (row_writable ctx wr1 (by omega))) ?_
+    (row_addr_at ctx p0 (by omega_arith)) (row_addr_at ctx p12 (by omega_arith))
+    (read s1 wr1 _ (by omega_arith)) (row_writable ctx wr1 (by omega_arith))) ?_
   rintro s2 ⟨v2, m2, k2⟩
-  rw [show o + 4 * i + 4 = o + 4 * (i + 1) by omega] at m2
-  rw [show b + 4 * i + 4 = b + 4 * (i + 1) by omega, show o + 4 * i + 4 = o + 4 * (i + 1) by omega] at v2
-  obtain ⟨outside2, value2⟩ := row_value_step_of ctx outside1 value1 (by omega) m2 v2
+  rw [show o + 4 * i + 4 = o + 4 * (i + 1) by omega_arith] at m2
+  rw [show b + 4 * i + 4 = b + 4 * (i + 1) by omega_arith, show o + 4 * i + 4 = o + 4 * (i + 1) by omega_arith] at v2
+  obtain ⟨outside2, value2⟩ := row_value_step_of ctx outside1 value1 (by omega_arith) m2 v2
   refine WP.mono (rowAdvance2_ok s2) ?_
   rintro s3 ⟨q0, q12, cnt, zero, mem, k3⟩
   have count2 : s2.gpr .lr = BitVec.ofNat 32 (n - i) :=
     (k2.gpr .lr (by simp [rowClobbers])).trans ((k1.gpr .lr (by simp [rowClobbers])).trans inv.count)
   have sub2 : BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 2 = BitVec.ofNat 32 (n - (i + 2)) := by
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), show n - i - 2 = n - (i + 2) by omega]
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), show n - i - 2 = n - (i + 2) by omega_arith]
+  refine ⟨⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [q0, k2.gpr .r0 (by simp [rowClobbers]), p0]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 8 = _
-    rw [Offset.add_add, show o + 4 * i + 8 = o + 4 * (i + 2) by omega]
+    rw [Offset.add_add, show o + 4 * i + 8 = o + 4 * (i + 2) by omega_arith]
   · rw [q12, k2.gpr .r12 (by simp [rowClobbers]), p12]
     change base + BitVec.ofNat 32 (b + 4 * i) + BitVec.ofNat 32 8 = _
-    rw [Offset.add_add, show b + 4 * i + 8 = b + 4 * (i + 2) by omega]
+    rw [Offset.add_add, show b + 4 * i + 8 = b + 4 * (i + 2) by omega_arith]
   · rw [cnt, count2]
     exact sub2
-  · rw [mem, show 4 * (i + 2) = 4 * (i + 1 + 1) by omega]; exact outside2
-  · rw [mem, k3.gpr .r11 (by simp), show i + 2 = i + 1 + 1 by omega]; exact value2
+  · rw [mem, show 4 * (i + 2) = 4 * (i + 1 + 1) by omega_arith]; exact outside2
+  · rw [mem, k3.gpr .r11 (by simp), show i + 2 = i + 1 + 1 by omega_arith]; exact value2
   · refine rest1.trans ((k2.mono ?_).trans (k3.mono ?_))
     all_goals intro r hr; cases r <;> simp_all [rowClobbers, stepClobbers]
   · rw [zero, count2]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 2 == 0) = _
-    rw [sub2, ofNat_beq_zero (by omega)]
-    simp only [show n - (i + 2) = 0 ↔ i + 2 = n by omega]
+    rw [sub2, ofNat_beq_zero (by omega_arith)]
+    simp only [show n - (i + 2) = 0 ↔ i + 2 = n by omega_arith]
 
 end VG.Proof.Bignum.Arm

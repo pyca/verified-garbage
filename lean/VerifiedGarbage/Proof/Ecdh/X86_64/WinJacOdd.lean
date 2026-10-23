@@ -146,11 +146,11 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
   refine WP.mono (addConst_ok hs₁' (n := c.n) (src := c.sl K) (dst := c.sl WK)
     (c := 32 ^ Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) h0 (sl_le c h7 (by decide)) (by omega_arith)
     (Or.inl (by omega_arith)) (by
-      rw [show 64 * (c.n + 1) = 64 * c.n + 63 + 1 by omega, Nat.pow_succ]
-      have := Nat.two_pow_pos (64 * c.n + 63); omega)
-    (by rw [show 64 * (c.n + 1) = 64 * c.n + 63 + 1 by omega, Nat.pow_succ]
-        have : 2 ^ (64 * c.n) ≤ 2 ^ (64 * c.n + 63) := Nat.pow_le_pow_right (by decide) (by omega)
-        omega))
+      rw [show 64 * (c.n + 1) = 64 * c.n + 63 + 1 by omega_arith, Nat.pow_succ]
+      have := Nat.two_pow_pos (64 * c.n + 63); omega_arith)
+    (by rw [show 64 * (c.n + 1) = 64 * c.n + 63 + 1 by omega_arith, Nat.pow_succ]
+        have : 2 ^ (64 * c.n) ≤ 2 ^ (64 * c.n + 63) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+        omega_arith))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁'.of_keepRegs k₂ (by decide)
   rw [hB]
@@ -162,7 +162,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl
     · exact ⟨(c.sl K, 8 * c.n), List.mem_append_right _ (by simp [slW]), Nat.le_refl _, Nat.le_refl _⟩
-    · exact ⟨(c.sl WK, 16 * c.n), List.mem_append_left _ (by simp [winX, hK]), Nat.le_refl _, by omega⟩
+    · exact ⟨(c.sl WK, 16 * c.n), List.mem_append_left _ (by simp [winX, hK]), Nat.le_refl _, by omega_arith⟩
   have U₃ : Unch base (winX c ++ slW c [K]) s₁.mem s₃.mem :=
     (Uo'.trans (((O₂.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega_arith)).unch.trans
       ((O₃.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega_arith)).unch)).mono
@@ -196,7 +196,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     rw [hJ, show (32 : Nat) = 2 ^ 5 by rfl, ← Nat.pow_mul, ← Nat.pow_succ']
     have : 2 ^ (64 * c.n) ≤ 2 ^ (5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1) :=
       Nat.pow_le_pow_right (by decide) hJ5
-    omega
+    omega_arith
   refine WP.seq (WP.mono (winJacOW_ok (jwLayQO hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn2 hn64 hnb hP
     hkJ hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄, M₄, L₄, R₄⟩ => ?_)
@@ -216,7 +216,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
   rw [WP.block_append_iff]
   refine WP.mono (sub_ok hs₄ M₄ (o := c.sl PT) (a := c.sl ZERO) (b := c.sl RY) (L.le mPT) (L.le mZE)
     (L.le mRY) (L.lay.tmp _ mPT) (L.lay.tmp _ mZE) (L.lay.tmp _ mRY) (L.lay.mo _ mPT)
-    (by rw [hMn, F₄.zero]; omega) (L₄ _ (by rw [← hRY]; simp))) fun s₅ ⟨k₅, e₅⟩ => ?_
+    (by rw [hMn, F₄.zero]; omega_arith) (L₄ _ (by rw [← hRY]; simp))) fun s₅ ⟨k₅, e₅⟩ => ?_
   have hs₅ := k₅.scr hs₄
   rw [hMn, F₄.zero] at e₅
   have nRP : c.sl RY ≠ c.sl PT := by
@@ -227,35 +227,35 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact apRP
-      · exact L.lay.tmp _ mRY) (by have := L.le mRY; omega)
+      · exact L.lay.tmp _ mRY) (by have := L.le mRY; omega_arith)
   have hb₀ : ∀ {m m' : Mem} {W : List (Nat × Nat)}, Unch base W m m' →
       (∀ w ∈ W, bitsAt c.n 0 + 0 + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n 0 + 0) →
       m' (off base (bitsAt c.n 0 + 0)) = m (off base (bitsAt c.n 0 + 0)) := fun hu hw =>
-    tbl_unch hu h7 hn (j := 0) (t := 0) (by decide) (by omega) hw
+    tbl_unch hu h7 hn (j := 0) (t := 0) (by decide) (by omega_arith) hw
   have hT0 : s₅.mem (off base (bitsAt c.n 0 + 0)) = if k.testBit 0 then 1 else 0 := by
     rw [hb₀ k₅.unch (by
         intro w hw
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
-        · exact (tbl_apart_slW' (c := c) (l := [PT]) (by decide) (j := 0) (t := 0) (by decide) (by omega)) _
+        · exact (tbl_apart_slW' (c := c) (l := [PT]) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)) _
             (List.mem_map.mpr ⟨PT, List.mem_singleton_self _, rfl⟩)
-        · exact (tbl_apart_slW' (c := c) (l := [TMP]) (by decide) (j := 0) (t := 0) (by decide) (by omega)) _
+        · exact (tbl_apart_slW' (c := c) (l := [TMP]) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)) _
             (List.mem_map.mpr ⟨TMP, List.mem_singleton_self _, rfl⟩)),
-      hb₀ U₄ (tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega)),
+      hb₀ U₄ (tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)),
       hb₀ U₃ (fun w hw => (List.mem_append.mp hw).elim
-        ((tbl_apart_winX (c := c) (j := 0) (t := 0) (by decide) (by omega)) w)
-        ((tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega)) w)),
-      hb₀ U₁ (tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega))]
-    exact ht₀ 0 (by omega)
+        ((tbl_apart_winX (c := c) (j := 0) (t := 0) (by decide) (by omega_arith)) w)
+        ((tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)) w)),
+      hb₀ U₁ (tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith))]
+    exact ht₀ 0 (by omega_arith)
   rw [Nat.add_zero] at hT0
   rw [WP.block_append_iff]
-  refine WP.mono (byteMask_ok hs₅ (x := bitsAt c.n 0) (by have := bitsAt_le c h7 (j := 0) (by decide); omega)
+  refine WP.mono (byteMask_ok hs₅ (x := bitsAt c.n 0) (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)
     hT0) fun s₆ ⟨x₆, k₆⟩ => ?_
   have hs₆ := hs₅.of_keeps k₆ (by decide)
   have m₆ : s₆.mem = s₅.mem := k₆.2.1
   have aRP : c.sl RY ≤ c.sl PT ∨ c.sl PT + 8 * c.n ≤ c.sl RY := by
     rcases apRP with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
   refine WP.mono (sel_ok (!k.testBit 0) c.n hs₆ x₆ (o := c.sl RY) (a := c.sl RY) (b := c.sl PT)
     (L.le mRY) (L.le mRY) (L.le mPT) (Or.inl (Nat.le_refl _)) aRP) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_
@@ -278,7 +278,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     exact L₄ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine WP.seq (WP.mono (pPow_ok hc hs₇ hM₇ rz₇ F₇.onep (fun h9 t ht => by
       rw [tbl_unch U47 h7 hn (j := 1) (by decide) ht
-          (tbl_apart_slW' (by decide) (by decide) ht (.inr (.inr (by omega)))),
+          (tbl_apart_slW' (by decide) (by decide) ht (.inr (.inr (by omega_arith)))),
         tbl_unch U₄ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht),
         tbl_unch U₃ h7 hn (j := 1) (by decide) ht (fun w hw => (List.mem_append.mp hw).elim
           ((tbl_apart_winX (by decide) ht) w) ((tbl_apart_slW' (by decide) (by decide) ht) w)),
@@ -343,8 +343,8 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
       split
       · rfl
       · rcases htv' with h' | h'
-        · omega
-        · omega
+        · omega_arith
+        · omega_arith
     have hodd := OddWin.oddK_odd hn2 (Nat.le_of_lt hlt)
     have hlt' := OddWin.oddK_lt h1 hlt
     rw [← hoK] at hodd hlt'
@@ -367,7 +367,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
       exact hq
     · simp only [hk2, ↓reduceIte] at hq ⊢
       have hyl : sv c base s₄ RY < c.C.p := L₄ _ (by rw [← hRY]; simp)
-      rw [toM_sub (by omega), toM_zero]
+      rw [toM_sub (by omega_arith), toM_zero]
       have := hq.negY
       rw [negPt_negPt] at this
       rw [show (0 : Fe c.C) - toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ RY) =
