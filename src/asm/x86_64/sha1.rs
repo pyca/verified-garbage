@@ -2291,6 +2291,217 @@ ret
     )
 }
 
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-280]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+112], rbx
+mov QWORD PTR [rcx+120], rbp
+mov QWORD PTR [rcx+128], r12
+mov QWORD PTR [rcx+136], r13
+mov QWORD PTR [rcx+144], r14
+mov QWORD PTR [rcx+152], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+mov eax, 1732584193
+mov DWORD PTR [rdi], eax
+mov eax, -271733879
+mov DWORD PTR [rdi+4], eax
+mov eax, -1732584194
+mov DWORD PTR [rdi+8], eax
+mov eax, 271733878
+mov DWORD PTR [rdi+12], eax
+mov eax, -1009589776
+mov DWORD PTR [rdi+16], eax
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+20], xmm0
+movdqu XMMWORD PTR [rbx+36], xmm0
+movdqu XMMWORD PTR [rbx+52], xmm0
+movdqu XMMWORD PTR [rbx+68], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+cmp r12, 8
+jb 27f
+cmp rax, 8
+jb 29f
+mov r8, QWORD PTR [r13]
+mov r9, QWORD PTR [r13+rax*1-8]
+mov ecx, 15
+sub rcx, rax
+shl rcx, 3
+shr r9, cl
+shr r9, 8
+mov rcx, rax
+sub rcx, 8
+shl rcx, 3
+mov edx, 128
+shl rdx, cl
+or r9, rdx
+movq xmm1, r8
+movq xmm2, r9
+punpcklqdq xmm1, xmm2
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+jmp 210f
+29:
+mov r8, QWORD PTR [r13+rax*1-8]
+mov ecx, 8
+sub rcx, rax
+shl rcx, 3
+shr r8, cl
+mov rcx, rax
+shl rcx, 3
+mov r9d, 128
+shl r9, cl
+or r8, r9
+movq xmm1, r8
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+210:
+jmp 28f
+27:
+test rax, rax
+je 211f
+213:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+20], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 213b
+jmp 212f
+211:
+212:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+20], r8b
+28:
+jmp 26f
+25:
+mov r8d, 128
+movq xmm1, r8
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+26:
+cmp r10, 56
+jae 214f
+jmp 215f
+214:
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+20], xmm0
+movdqu XMMWORD PTR [rbx+36], xmm0
+movdqu XMMWORD PTR [rbx+52], xmm0
+movdqu XMMWORD PTR [rbx+68], xmm0
+215:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+movq xmm7, rax
+pslldq xmm7, 8
+movdqu xmm0, XMMWORD PTR [rbx+68]
+por xmm0, xmm7
+movdqu XMMWORD PTR [rbx+68], xmm0
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+112]
+mov rbp, QWORD PTR [r15+120]
+mov r12, QWORD PTR [r15+128]
+mov r13, QWORD PTR [r15+136]
+mov r14, QWORD PTR [r15+144]
+mov r15, QWORD PTR [r15+152]
+lea rsp, [rsp+280]
+ret
+.p2align 6",
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+    )
+}
+
 /// The CPU features `vg_sha1_update_shani` requires (`Artifact.features`).
 pub(crate) const VG_SHA1_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
@@ -2925,6 +3136,221 @@ mov r12, QWORD PTR [r15+128]
 mov r13, QWORD PTR [r15+136]
 mov r14, QWORD PTR [r15+144]
 mov r15, QWORD PTR [r15+152]
+ret
+.p2align 6",
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+    )
+}
+
+/// The CPU features `vg_sha1_digest_shani` requires (`Artifact.features`).
+pub(crate) const VG_SHA1_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-280]
+mov rcx, rsp
+add rcx, 8
+add rcx, 96
+mov QWORD PTR [rcx+112], rbx
+mov QWORD PTR [rcx+120], rbp
+mov QWORD PTR [rcx+128], r12
+mov QWORD PTR [rcx+136], r13
+mov QWORD PTR [rcx+144], r14
+mov QWORD PTR [rcx+152], r15
+mov r15, rcx
+mov rbx, rcx
+sub rbx, 96
+mov r13, rdi
+mov r12, rsi
+mov rbp, rdx
+mov rdi, rbx
+mov eax, 1732584193
+mov DWORD PTR [rdi], eax
+mov eax, -271733879
+mov DWORD PTR [rdi+4], eax
+mov eax, -1732584194
+mov DWORD PTR [rdi+8], eax
+mov eax, 271733878
+mov DWORD PTR [rdi+12], eax
+mov eax, -1009589776
+mov DWORD PTR [rdi+16], eax
+mov r14, r12
+shr r14, 6
+test r14, r14
+je 20f
+mov rsi, r13
+mov rdi, rbx
+mov rdx, r14
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rax, r14
+shl rax, 6
+add r13, rax
+jmp 21f
+20:
+21:
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+20], xmm0
+movdqu XMMWORD PTR [rbx+36], xmm0
+movdqu XMMWORD PTR [rbx+52], xmm0
+movdqu XMMWORD PTR [rbx+68], xmm0
+mov r10, r12
+and r10, 63
+mov r11d, 0
+mov r9, r10
+shr r9, 4
+je 22f
+24:
+movdqu xmm1, XMMWORD PTR [r13]
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+add r13, 16
+add r11, 16
+sub r9, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov rax, r10
+and rax, 15
+je 25f
+cmp r12, 8
+jb 27f
+cmp rax, 8
+jb 29f
+mov r8, QWORD PTR [r13]
+mov r9, QWORD PTR [r13+rax*1-8]
+mov ecx, 15
+sub rcx, rax
+shl rcx, 3
+shr r9, cl
+shr r9, 8
+mov rcx, rax
+sub rcx, 8
+shl rcx, 3
+mov edx, 128
+shl rdx, cl
+or r9, rdx
+movq xmm1, r8
+movq xmm2, r9
+punpcklqdq xmm1, xmm2
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+jmp 210f
+29:
+mov r8, QWORD PTR [r13+rax*1-8]
+mov ecx, 8
+sub rcx, rax
+shl rcx, 3
+shr r8, cl
+mov rcx, rax
+shl rcx, 3
+mov r9d, 128
+shl r9, cl
+or r8, r9
+movq xmm1, r8
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+210:
+jmp 28f
+27:
+test rax, rax
+je 211f
+213:
+movzx r8d, BYTE PTR [r13]
+mov BYTE PTR [rbx+r11*1+20], r8b
+add r13, 1
+add r11, 1
+sub rax, 1
+jne 213b
+jmp 212f
+211:
+212:
+mov r8d, 128
+mov BYTE PTR [rbx+r11*1+20], r8b
+28:
+jmp 26f
+25:
+mov r8d, 128
+movq xmm1, r8
+movdqu XMMWORD PTR [rbx+r11*1+20], xmm1
+26:
+cmp r10, 56
+jae 214f
+jmp 215f
+214:
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx+20], xmm0
+movdqu XMMWORD PTR [rbx+36], xmm0
+movdqu XMMWORD PTR [rbx+52], xmm0
+movdqu XMMWORD PTR [rbx+68], xmm0
+215:
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+movq xmm7, rax
+pslldq xmm7, 8
+movdqu xmm0, XMMWORD PTR [rbx+68]
+por xmm0, xmm7
+movdqu XMMWORD PTR [rbx+68], xmm0
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu XMMWORD PTR [rbx+16], xmm0
+movdqu XMMWORD PTR [rbx+32], xmm0
+movdqu XMMWORD PTR [rbx+48], xmm0
+movdqu XMMWORD PTR [rbx+64], xmm0
+movdqu XMMWORD PTR [rbx+80], xmm0
+mov rbx, QWORD PTR [r15+112]
+mov rbp, QWORD PTR [r15+120]
+mov r12, QWORD PTR [r15+128]
+mov r13, QWORD PTR [r15+136]
+mov r14, QWORD PTR [r15+144]
+mov r15, QWORD PTR [r15+152]
+lea rsp, [rsp+280]
 ret
 .p2align 6",
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
