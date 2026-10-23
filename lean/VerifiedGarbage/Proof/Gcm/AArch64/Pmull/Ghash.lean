@@ -335,13 +335,16 @@ theorem tReg_ne {i j : Nat} (hi : 1 ≤ i) (hi' : i ≤ 8) (hj : 1 ≤ j) (hj' :
 theorem sReg_ne {i j : Nat} (hi : 1 ≤ i) (hi' : i ≤ 8) (hj : 1 ≤ j) (hj' : j ≤ 8) (h : i ≠ j) :
     sReg i ≠ sReg j := fun e => h (sReg_inj i (by omega) j (by omega) hi hj e)
 
-/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`. -/
-theorem pow_ok {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj : 1 ≤ j) (hjK : j ≤ K)
-    (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : Inv s₀ K n s) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.pow (K + 1) i j)) s (Inv s₀ (K + 1) n) := by
-  rw [Impl.Gcm.AArch64.Pmull.pow, WP.block_append_iff]
-  refine WP.mono (mul_ok (sReg (K + 1)) (sReg i) (sReg j) (tReg j) s (sReg_free _) (sReg_free _)
-    (tReg_free _) (hI.sw j hj hjK) hI.c) fun s₁ ⟨m₁, o₁⟩ => ?_
+/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`, from code `m` that computes the product into `sReg (K + 1)`. -/
+theorem powWith_ok (m : List Instr) {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i) (hiK : i ≤ K)
+    (hj : 1 ≤ j) (hjK : j ≤ K) (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : Inv s₀ K n s)
+    (hm : WP isa (.block m) s fun s' =>
+      ρ (s'.v (sReg (K + 1))) = x * ρ (s.v (sReg i)) * φ (s.v (tReg j)) ∧
+        VOnly [LO, MID, HI, T, sReg (K + 1)] s s') :
+    WP isa (.block (m ++ ([.vop (.ext (tReg (K + 1)) (sReg (K + 1)) (sReg (K + 1)) 8)] : List Instr)))
+      s (Inv s₀ (K + 1) n) := by
+  rw [WP.block_append_iff]
+  refine WP.mono hm fun s₁ ⟨m₁, o₁⟩ => ?_
   refine WP.mono (swap_ok (tReg (K + 1)) (sReg (K + 1)) s₁) fun s' ⟨w, o₂⟩ => ?_
   have O := o₁.trans o₂
   have kv : ∀ r, r ∉ [LO, MID, HI, T] → r ≠ tReg (K + 1) → r ≠ sReg (K + 1) → s'.v r = s.v r :=
@@ -365,6 +368,61 @@ theorem pow_ok {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj
   · rcases (by omega : k = K + 1 ∨ k ≤ K) with rfl | hkK'
     · rw [ks, w, ext8_ext8]
     · rw [told k hk hkK', sold k hk hkK', hI.sw k hk hkK']
+
+/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`. -/
+theorem pow_ok {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj : 1 ≤ j) (hjK : j ≤ K)
+    (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : Inv s₀ K n s) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.pow (K + 1) i j)) s (Inv s₀ (K + 1) n) :=
+  powWith_ok _ hi hiK hj hjK hij hK hI (mul_ok (sReg (K + 1)) (sReg i) (sReg j) (tReg j) s
+    (sReg_free _) (sReg_free _) (tReg_free _) (hI.sw j hj hjK) hI.c)
+
+/-- The square `sqr` computes is the product `mulV` would: its middle products cancel. -/
+theorem sqr_mulV (a t : BitVec 128) (h : a = ext8 t t) :
+    reduce ⟨polyMul (vdword a 1) (vdword a 1), 0, polyMul (vdword a 0) (vdword a 0)⟩ = mulV a t := by
+  have hm : polyMul (vdword a 0) (vdword t 0) ^^^ polyMul (vdword a 1) (vdword t 1) = 0 := by
+    rw [h, vdword_ext8_0, vdword_ext8_1, polyMul_comm (vdword t 0), BitVec.xor_self]; rfl
+  have zx : ∀ x : BitVec 128, 0 ^^^ x = x := fun x => by simp
+  rw [mulV, ← h]
+  simp only [Prod.acc, Prod.zero, zx, hm]
+
+/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`, by `powS`. -/
+theorem powS_ok {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj : 1 ≤ j) (hjK : j ≤ K)
+    (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : Inv s₀ K n s) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.powS (K + 1) i j)) s (Inv s₀ (K + 1) n) := by
+  rw [Impl.Gcm.AArch64.Pmull.powS]
+  refine powWith_ok _ hi hiK hj hjK hij hK hI ?_
+  split
+  · next he =>
+    subst he
+    refine WP.mono (sqr_ok (sReg (K + 1)) (sReg i) s (sReg_free _) hI.c) fun _ ⟨h, o⟩ => ⟨?_, o⟩
+    rw [h, sqr_mulV _ _ (hI.sw i hi hiK), mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add]
+  · refine WP.mono (mulD_ok (sReg (K + 1)) (sReg i) (sReg j) (tReg j) s (sReg_free _) (sReg_free _)
+      (tReg_free _) (hI.sw j hj hjK) hI.c) fun _ ⟨h, o⟩ => ⟨?_, o⟩
+    rw [h, mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add]
+
+theorem powersS_ok {s₀ : State} {n : Nat} {s : State} (hI : Inv s₀ 1 n s) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.powersS) s (Inv s₀ 8 n) := by
+  simp only [Impl.Gcm.AArch64.Pmull.powersS, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (powS_ok (K := 1) (i := 1) (j := 1) le_rfl le_rfl le_rfl le_rfl rfl (by decide) hI)
+    fun s₂ h₂ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powS_ok (K := 2) (i := 2) (j := 1) (by decide) le_rfl le_rfl (by decide) rfl
+    (by decide) h₂) fun s₃ h₃ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powS_ok (K := 3) (i := 2) (j := 2) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₃) fun s₄ h₄ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powS_ok (K := 4) (i := 3) (j := 2) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₄) fun s₅ h₅ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powS_ok (K := 5) (i := 3) (j := 3) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₅) fun s₆ h₆ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powS_ok (K := 6) (i := 4) (j := 3) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₆) fun s₇ h₇ => ?_
+  exact powS_ok (K := 7) (i := 4) (j := 4) (by decide) (by decide) (by decide) (by decide) rfl
+    (by decide) h₇
 
 theorem powers_ok {s₀ : State} {n : Nat} {s : State} (hI : Inv s₀ 1 n s) :
     WP isa (.block Impl.Gcm.AArch64.Pmull.powers) s (Inv s₀ 8 n) := by
@@ -1240,10 +1298,10 @@ theorem prologueS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) :
     fun r hr => by simp only [gpr_write_x, hr, ite_false]
   have hp₁ := Pm.congr (s₁ := s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0))
     (g .x0 (by decide)) (g .x1 (by decide)) (g .x2 (by decide)) (g .x3 (by decide)) rfl rfl hp
-  have hw : WP isa (.block (Impl.Gcm.AArch64.Pmull.prologue ++ Impl.Gcm.AArch64.Pmull.powers))
+  have hw : WP isa (.block (Impl.Gcm.AArch64.Pmull.prologue ++ Impl.Gcm.AArch64.Pmull.powersS))
       (s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0)) (Inv (s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0)) 8 0) := by
     rw [WP.block_append_iff]
-    exact WP.mono (prologue_ok hp₁) fun _ hI => powers_ok hI
+    exact WP.mono (prologue_ok hp₁) fun _ hI => powersS_ok hI
   refine WP.mono (WP.gprs (rs := [.x8]) hw (by decide +kernel) (by decide +kernel))
     fun s ⟨hI, g8⟩ => ⟨Inv.congr (g .x0 (by decide)) (g .x1 (by decide)) (g .x2 (by decide))
       (g .x3 (by decide)) rfl rfl rfl hI, ?_⟩

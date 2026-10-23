@@ -73,6 +73,9 @@ representation). -/
 theorem gp_polyMul (a b : BitVec 64) : gp (polyMul a b) = X * gp a * gp b := by
   rw [show polyMul a b = clSteps a b 64 from rfl, gp_clSteps a b (Nat.le_refl _), gp_lsb]
 
+theorem polyMul_comm (a b : BitVec 64) : polyMul a b = polyMul b a :=
+  gp_ext (by rw [gp_polyMul, gp_polyMul]; ring)
+
 /-! ## Doublewords -/
 
 /-- The class of a 64-bit polynomial. -/

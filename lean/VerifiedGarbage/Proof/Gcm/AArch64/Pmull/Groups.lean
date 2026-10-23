@@ -209,6 +209,70 @@ theorem mulV_ok (d a sk t : VReg) (s : State) (ha : Free a) (hs : Free sk) (ht :
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with (h | h | h) | (h | h | h | h) | (h | h | h | h | h) <;> simp [h]
 
+/-- `accD`: the four products of `acc`, written into a product that need not be clear. -/
+theorem accD_ok (a sk t : VReg) (s : State) (ha : Free a) (hs : Free sk) (ht : Free t) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.accD a sk t)) s fun s' =>
+      prod s' = Prod.zero.acc (s.v a) (s.v sk) (s.v t) ∧ VOnly [LO, MID, HI, T] s s' := by
+  obtain ⟨ha3, ha4, ha5, -⟩ := ha
+  obtain ⟨-, -, hs5, -⟩ := hs
+  obtain ⟨ht3, ht4, ht5, -⟩ := ht
+  have zx : ∀ x : BitVec 128, 0 ^^^ x = x := fun x => by simp
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.AArch64.Pmull.accD, runBlock_cons, runStep_some, runBlock_nil, exec_pmull0,
+    exec_pmull1, exec_eor, Option.some.injEq, exists_eq_left', v_setV, ite_true, ite_false,
+    reduceCtorEq, ha3, ha4, ha5, hs5, ht3, ht4, ht5]
+  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV], by simp only [rd_setV],
+    by simp only [wr_setV], by simp only [sp_setV]⟩⟩
+  · simp only [prod, Prod.acc, Prod.zero, v_setV, ite_true, ite_false, reduceCtorEq, zx]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [v_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- `d ← mulV(a, t)`, from `accD`. -/
+theorem mulD_ok (d a sk t : VReg) (s : State) (ha : Free a) (hs : Free sk) (ht : Free t)
+    (hst : s.v sk = ext8 (s.v t) (s.v t)) (hc : s.v C = ofVDwords poly poly) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.mulD d a sk t)) s fun s' =>
+      s'.v d = mulV (s.v a) (s.v t) ∧ VOnly [LO, MID, HI, T, d] s s' := by
+  rw [Impl.Gcm.AArch64.Pmull.mulD, WP.block_append_iff]
+  refine WP.mono (accD_ok a sk t s ha hs ht) fun s₁ ⟨p₁, o₁⟩ => ?_
+  refine WP.mono (reduce_ok d s₁ (by rw [o₁.v C (by decide), hc])) fun s₂ ⟨p₂, o₂⟩ => ⟨?_, ?_⟩
+  · rw [mulV, p₂, p₁, hst]
+  · exact o₁.trans o₂ |>.weaken fun r hr => by
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with (h | h | h | h) | (h | h | h | h | h) <;> simp [h]
+
+/-- `reduceS`: `reduce` of `lo` and `hi`, with a zero `mid`. -/
+theorem reduceS_ok (d : VReg) (s : State) (hc : s.v C = ofVDwords poly poly) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.reduceS d)) s fun s' =>
+      s'.v d = reduce ⟨s.v LO, 0, s.v HI⟩ ∧ VOnly [LO, MID, HI, T, d] s s' := by
+  have hc0 : vdword (ofVDwords poly poly) 0 = poly := vdword_append_0 _ _
+  have zx : ∀ x : BitVec 128, 0 ^^^ x = x := fun x => by simp
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.AArch64.Pmull.reduceS, runBlock_cons, runStep_some, runBlock_nil,
+    exec_pmull0, exec_eor, exec_ext8, Option.some.injEq, exists_eq_left', v_setV, ite_true,
+    ite_false, reduceCtorEq, hc]
+  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV], by simp only [rd_setV],
+    by simp only [wr_setV], by simp only [sp_setV]⟩⟩
+  · simp only [hc0, reduce, zx]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [v_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
+/-- `sqr`: `reduce` of the squares of the halves of `sk`, with a zero `mid`. -/
+theorem sqr_ok (d sk : VReg) (s : State) (hs : Free sk) (hc : s.v C = ofVDwords poly poly) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.sqr d sk)) s fun s' =>
+      s'.v d = reduce ⟨polyMul (vdword (s.v sk) 1) (vdword (s.v sk) 1), 0,
+        polyMul (vdword (s.v sk) 0) (vdword (s.v sk) 0)⟩ ∧ VOnly [LO, MID, HI, T, d] s s' := by
+  obtain ⟨-, -, hs5, -⟩ := hs
+  refine WP.block_cons_iff.mpr ⟨_, exec_pmull0 HI sk sk s, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_pmull1 LO sk sk _, ?_⟩
+  refine WP.mono (reduceS_ok d _ (by simp only [v_setV, reduceCtorEq, ite_false, hc]))
+    fun s' ⟨h, o⟩ => ⟨?_, ?_⟩
+  · rw [h]; simp only [v_setV, ite_true, ite_false, reduceCtorEq, hs5]
+  · refine ⟨fun r hr => ?_, by rw [o.gpr]; rfl, by rw [o.mem]; rfl, by rw [o.rd]; rfl,
+      by rw [o.wr]; rfl, by rw [o.sp]; rfl⟩
+    rw [o.v r hr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [v_setV, hr.1, hr.2.2.1, ite_false]
+
 /-- `ext d, n, n, #8`: the halves of `n`, swapped. -/
 theorem swap_ok (d n : VReg) (s : State) :
     WP isa (.block [.vop (.ext d n n 8)]) s fun s' =>
