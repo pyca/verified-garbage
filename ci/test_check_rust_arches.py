@@ -14,9 +14,11 @@ import rust_arches
 CI = Path(__file__).resolve().parent
 WORKFLOW = CI.parent / ".github/workflows/ci.yml"
 ALL = ["aarch64", "arm", "x86", "x86_64"]
+MATRIX = tomllib.loads((CI / "rust_matrix.toml").read_text())
 
 # The jobs that run or check the Rust tests.
-RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "cpu-features-times", "rust-cpu-features", "coverage")
+RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "cpu-features-times", "rust-cpu-features", "rust-check",
+             "coverage")
 
 
 def job(name):
@@ -68,6 +70,7 @@ class Arches(unittest.TestCase):
                     "ci/test_check_lean_shards.py",
                     ".github/actions/lean-assemble/action.yml",
                     ".github/workflows/lean-cache.yml",
+                    ".github/workflows/full-ci.yml",
                 ]
             ),
             [],
@@ -107,10 +110,36 @@ class Output(unittest.TestCase):
         out = run("pull_request", "lean/A.lean\n")
         self.assertEqual((out["arches"], out["all"]), ([], False))
         self.assertEqual((out["rust"], out["thumb"], out["cpu"]), ([], [], []))
+        # Every target is still built.
+        targets = [t for e in MATRIX["check"] for t in e["targets"]]
+        self.assertEqual(out["check"], [{"targets": " ".join(targets), "toolchain": MATRIX["stable"]}])
+
+    def test_merge_group_reads_paths(self):
+        for paths in ("src/asm/arm/md5.rs\n", "lean/A.lean\n", "src/lib.rs\n", ""):
+            with self.subTest(paths=paths):
+                self.assertEqual(run("merge_group", paths), run("pull_request", paths))
+
+    def test_check_builds_the_arches_not_tested(self):
+        out = run("pull_request", "src/asm/x86_64/md5.rs\nsrc/asm/arm/md5.rs\n")
+        targets = out["check"][0]["targets"].split()
+        self.assertIn("aarch64-apple-darwin", targets)
+        self.assertIn("i686-unknown-linux-gnu", targets)
+        self.assertNotIn("x86_64-unknown-linux-gnu", targets)
+        self.assertNotIn("armv7-unknown-linux-gnueabihf", targets)
+
+    def test_toolchains(self):
+        full = run("workflow_dispatch")
+        for job in ("rust", "thumb", "cpu"):
+            for e in full[job]:
+                with self.subTest(job=job, entry=e.get("name") or e.get("chip")):
+                    rust = e.get("rust", "stable")
+                    self.assertEqual(e["toolchain"], MATRIX["stable"] if rust == "stable" else rust)
+        self.assertRegex(MATRIX["stable"], r"^\d+\.\d+\.\d+$")
 
     def test_every_job(self):
-        full = run("merge_group")
+        full = run("workflow_dispatch")
         self.assertEqual(full, run("pull_request", "src/lib.rs\n"))
+        self.assertEqual(full["check"], [])
         self.assertEqual((full["arches"], full["all"]), (ALL, True))
         # Every architecture has a job, and every job is in one of them.
         jobs = [e for job in ("rust", "thumb", "cpu") for e in full[job]]
@@ -123,8 +152,9 @@ class Output(unittest.TestCase):
         self.assertTrue(all("shards" not in e for e in full["cpu"]))
 
     def test_push_builds_one_job_per_cache(self):
-        push, full = run("push"), run("merge_group")
+        push, full = run("push"), run("workflow_dispatch")
         self.assertEqual((push["arches"], push["all"]), ([], False))
+        self.assertEqual(push["check"], [])
         for job in ("rust", "thumb"):
             self.assertEqual(push[job], [dict(e, tests=False) for e in full[job]])
         # The CPU jobs, which build the same tests, once per runner
@@ -156,6 +186,7 @@ class Workflow(unittest.TestCase):
                 self.assertIn(entry["arch"], ALL)
         for entry in matrix["cpu"]:
             self.assertIn(entry.get("arch", "x86_64"), ALL)
+        self.assertEqual(sorted(e["arch"] for e in matrix["check"]), ALL)
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):
@@ -164,6 +195,20 @@ class Workflow(unittest.TestCase):
                 self.assertIn(f"if: ${{{{ needs.rust-arches.outputs.{output} != '[]' }}}}", text)
                 self.assertIn(f"include: ${{{{ fromJSON(needs.rust-arches.outputs.{output}) }}}}", text)
                 self.assertIn("TESTS: ${{ matrix.tests }}", text)
+                self.assertIn("RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}", text)
+                # The benchmarks' dependencies alone, for bench.yml, build
+                # with the latest stable.
+                self.assertRegex(text, r"name: Install Rust\n\s+run: rustup toolchain install \$\{\{ matrix.toolchain \}\}")
+        text = job("rust-check")
+        self.assertIn("if: ${{ needs.rust-arches.outputs.check != '[]' }}", text)
+        self.assertIn("include: ${{ fromJSON(needs.rust-arches.outputs.check) }}", text)
+
+    def test_all_green_needs_every_rust_job(self):
+        text = job("all-green")
+        for name in RUST_JOBS:
+            if name != "cpu-features-times":
+                with self.subTest(job=name):
+                    self.assertRegex(text, rf"needs: \[[^]]*\b{name}\b")
 
 
 if __name__ == "__main__":

@@ -52,8 +52,12 @@ Lake rebuilds your changes and anything not yet cached.
   and a test helper only some architectures call is built only for them.
   A pull request starts the Rust jobs (`ci/rust_matrix.toml`) of only the
   architectures its changes reach (`ci/rust_arches.py`: an architecture's
-  `src/asm/<target>/`, or shared code for all), and checks their coverage;
-  the merge queue always runs every job.
+  `src/asm/<target>/`, or shared code for all), and checks their coverage,
+  and so does the merge queue, from the group's base; every architecture
+  left out is still built and linted (`rust-check`). Every job runs in a
+  full run (`workflow_dispatch`), which the Full CI workflow
+  (`.github/workflows/full-ci.yml`) starts on main every six hours when main
+  has moved; a failed one opens an issue.
 * **Known-answer tests need clear provenance.** Never type test vectors into
   a test. Use Wycheproof (`tests/wycheproof/`), or vendor the published
   files byte for byte into a directory under `vectors/`, with a new

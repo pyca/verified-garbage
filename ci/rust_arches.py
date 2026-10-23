@@ -12,21 +12,33 @@ vectors, Cargo's files, the Rust jobs' workflow, matrices and scripts):
 every path but those of one architecture and those in `NOT_RUST`. Each
 architecture's jobs cover every line it builds (ci/merge_rust_coverage.py),
 so a pull request's coverage is checked for those it tests. The merge queue
-runs every job, and a push to main builds without tests, for main's caches:
-every job of `rust` and `thumb`, and of `cpu`, whose jobs all build the same
-tests into one cache per platform, the first entry of each (see `cache_of`).
+does the same with the paths its group changes from the group's base (main,
+or the group ahead of it), which passed: an architecture none of them reaches
+builds and runs exactly what passed there. What that leaves out, which
+changes outside the repository (runners, `beta` and `nightly`), is tested by
+the full runs that the Full CI workflow starts on main every few hours, when
+main has moved, and by any run started by hand (`workflow_dispatch`): every
+job. Every architecture whose tests a run leaves out is built and linted
+without running anything (`check`). A push to main builds without tests, for
+main's caches: every job of `rust` and `thumb`, and of `cpu`, whose jobs all
+build the same tests into one cache per platform, the first entry of each
+(see `cache_of`).
 
   rust_arches.py pull_request < PATHS
+  rust_arches.py merge_group < PATHS
       the jobs of the architectures the changed paths (one per line) reach
-  rust_arches.py merge_group
+  rust_arches.py workflow_dispatch
       every job
   rust_arches.py push
       one job per cache, with `tests` false
 
 It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 `all=true` or `all=false` (whether that is every architecture), and each
-job's matrix (`rust=`, `thumb=`, `cpu=`): the JSON list of its entries,
-each with `tests`, and each CPU with shards as one entry per shard.
+job's matrix (`rust=`, `thumb=`, `cpu=`, `check=`): the JSON list of its
+entries, each with `tests` and the `toolchain` it installs (the matrix's
+pinned `stable` for `rust = "stable"` and every CPU), and each CPU with
+shards as one entry per shard. `check` has one entry, with the space-separated
+`targets` of every architecture not tested, or none.
 """
 
 import json
@@ -36,6 +48,7 @@ import tomllib
 
 MATRIX = Path(__file__).resolve().parent / "rust_matrix.toml"
 JOBS = ("rust", "thumb", "cpu")
+EVENTS = ("pull_request", "merge_group")
 
 # `src/asm/<target>/`'s target, and the architecture (`target_arch`) it is
 # compiled for.
@@ -66,6 +79,7 @@ NOT_RUST_FILES = {
     "logo.svg",
     "logo-dark.svg",
     ".github/workflows/bench.yml",
+    ".github/workflows/full-ci.yml",
     ".github/workflows/lean-cache.yml",
 }
 
@@ -111,10 +125,13 @@ def arches(paths):
 
 
 def entries(matrix, job):
-    """The matrix's entries of `job`, a CPU with shards once per shard."""
+    """The matrix's entries of `job`, a CPU with shards once per shard, each
+    with the `toolchain` it installs."""
     out = []
     for entry in matrix[job]:
         entry = dict(entry)
+        rust = entry.get("rust", "stable")
+        entry["toolchain"] = matrix["stable"] if rust == "stable" else rust
         n = entry.pop("shards", None)
         if n is None:
             out.append(entry)
@@ -155,15 +172,19 @@ def output(matrix, selected, tests=True):
                 first.setdefault(cache_of(e), e)
             keep = list(first.values())
         lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
+    targets = [t for e in matrix["check"] if tests and e["arch"] not in selected
+               for t in e["targets"]]
+    check = [{"targets": " ".join(targets), "toolchain": matrix["stable"]}] if targets else []
+    lines.append(f"check={json.dumps(check, separators=(',', ':'))}")
     return "".join(line + "\n" for line in lines)
 
 
 def main(argv):
     matrix = tomllib.loads(MATRIX.read_text())
     everything = sorted(set(ARCHES.values()))
-    if argv == ["pull_request"]:
+    if len(argv) == 1 and argv[0] in EVENTS:
         out = output(matrix, arches(line.strip() for line in sys.stdin if line.strip()))
-    elif argv == ["merge_group"]:
+    elif argv == ["workflow_dispatch"]:
         out = output(matrix, everything)
     elif argv == ["push"]:
         out = output(matrix, everything, tests=False)

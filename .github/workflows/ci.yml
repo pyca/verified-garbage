@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
   merge_group:
+  # A full run: every job, whatever changed (ci/rust_arches.py). The Full CI
+  # workflow starts one on main every few hours when main has moved.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -323,8 +326,13 @@ jobs:
   # those its changes can affect (ci/rust_arches.py): an architecture's own
   # `src/asm/<target>/`, or the shared code, which is every architecture's.
   # Each architecture's tests cover every line it builds (`coverage`), so
-  # those that run are checked alone. The merge queue runs every job, so that
-  # everything is checked before anything lands. A push to main is the commit the
+  # those that run are checked alone. The merge queue narrows them the same
+  # way, by what its group changes from the group's base, which passed: an
+  # architecture none of its changes reach builds and runs exactly what
+  # passed there. Every architecture left out is still built and linted
+  # (`rust-check`), and a full run (`workflow_dispatch`, which the Full CI
+  # workflow starts on main every six hours when main has moved) runs every
+  # job, for what changes outside the repository. A push to main is the commit the
   # merge queue tested (see the `lean` job's `reuse`): its Rust jobs only
   # build (each entry's `tests`, the jobs' `TESTS`), for main's caches, which
   # only main saves, and so run once per cache: every `rust` and `thumb` job,
@@ -338,6 +346,7 @@ jobs:
       rust: ${{ steps.arches.outputs.rust }}
       thumb: ${{ steps.arches.outputs.thumb }}
       cpu: ${{ steps.arches.outputs.cpu }}
+      check: ${{ steps.arches.outputs.check }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -346,13 +355,21 @@ jobs:
           fetch-depth: 2
           # Only ci/rust_arches.py and its matrix: the diff reads trees, not files.
           sparse-checkout: ci
+      # A merge group's base: main, or the group ahead of it in the queue,
+      # whose changes it contains too (as many commits back as PRs ahead).
+      - if: ${{ github.event_name == 'merge_group' }}
+        env:
+          BASE: ${{ github.event.merge_group.base_sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE"
       - id: arches
         env:
           EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.merge_group.base_sha }}
         run: |
-          if [ "$EVENT" = pull_request ]; then
-            git diff --name-only --no-renames HEAD^1 HEAD
-          fi | python3 ci/rust_arches.py "$EVENT" | tee -a "$GITHUB_OUTPUT"
+          case "$EVENT" in
+            pull_request) git diff --name-only --no-renames HEAD^1 HEAD ;;
+            merge_group) git diff --name-only --no-renames "$BASE" HEAD ;;
+          esac | python3 ci/rust_arches.py "$EVENT" | tee -a "$GITHUB_OUTPUT"
 
   # Every test, with coverage, on each platform of ci/rust_matrix.toml's
   # `rust`, and the lints.
@@ -372,7 +389,7 @@ jobs:
     env:
       # Selects the toolchain without `rustup default`, which refuses 32-bit
       # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
@@ -397,11 +414,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
+          # Pinned, so that new vectors (or vectors gone, and the lines only
+          # they covered) fail the pull request that bumps it.
+          ref: 7a325932231bd7a724c791c8b0d65ea4d6d2f435
           path: wycheproof
           persist-credentials: false
 
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy,rustfmt,llvm-tools
+        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component clippy,rustfmt,llvm-tools ${CARGO_BUILD_TARGET:+--target "$CARGO_BUILD_TARGET"}
+        # The target the armv7-cross image cross-compiles for, which the
+        # image's toolchain has but the pinned one does not.
+        shell: bash
       # The dependencies (built with opt-level 3) are most of the build.
       # Only main saves, so pull requests restore main's entries instead of
       # filling the cache quota with their own.
@@ -440,9 +463,15 @@ jobs:
       # changes the key (ci/bench_cache_key.sh), so every push to main looks
       # it up, without downloading, and builds only on a miss. ARMv7's too,
       # cross-compiled in the armv7-cross image, as that workflow builds it.
+      # With the latest stable Rust, which that workflow builds with, not the
+      # pinned one (ci/rust_matrix.toml).
       - id: bench-cache-key
         if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
-        run: echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
+        env:
+          RUSTUP_TOOLCHAIN: stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
       - id: bench-cache
         if: ${{ steps.bench-cache-key.outputs.key }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -458,6 +487,7 @@ jobs:
         # crates of this repository are rebuilt there anyway.
         env:
           RUSTFLAGS: ""
+          RUSTUP_TOOLCHAIN: stable
         run: |
           export CARGO_TARGET_DIR="$GITHUB_WORKSPACE/bench-target"
           cargo bench --no-run --locked
@@ -518,7 +548,7 @@ jobs:
     container:
       image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
     env:
-      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
       # For every cargo command, in place of the image's ARMv7 (with the
       # same linker and runner).
       CARGO_BUILD_TARGET: thumbv7neon-unknown-linux-gnueabihf
@@ -545,11 +575,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
+          # Pinned, so that new vectors (or vectors gone, and the lines only
+          # they covered) fail the pull request that bumps it.
+          ref: 7a325932231bd7a724c791c8b0d65ea4d6d2f435
           path: wycheproof
           persist-credentials: false
 
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
+        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: rust-thumb
@@ -631,7 +664,7 @@ jobs:
       image: ${{ matrix.container.image || '' }}
       options: ${{ matrix.container.options || '' }}
     env:
-      RUSTUP_TOOLCHAIN: stable
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
@@ -658,6 +691,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
+          # Pinned, so that new vectors (or vectors gone, and the lines only
+          # they covered) fail the pull request that bumps it.
+          ref: 7a325932231bd7a724c791c8b0d65ea4d6d2f435
           path: wycheproof
           persist-credentials: false
       - name: This runner's CPU
@@ -679,7 +715,9 @@ jobs:
           tar -xJf sde.tar.xz -C "$RUNNER_TEMP/sde" --strip-components 1
           rm sde.tar.xz
       - name: Install Rust
-        run: rustup toolchain install stable --profile minimal --component llvm-tools
+        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component llvm-tools ${CARGO_BUILD_TARGET:+--target "$CARGO_BUILD_TARGET"}
+        # As in the `rust` job, for the armv7-cross image.
+        shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: rust-cpu-features
@@ -848,7 +886,8 @@ jobs:
           key: cpu-features-times-${{ github.run_id }}
           restore-keys: cpu-features-times-
       # This push ran no tests: the times are those of the merge queue's run
-      # of this commit, as in the `lean` job's `reuse`.
+      # of this commit, as in the `lean` job's `reuse`, for the CPUs it ran
+      # (`rust-arches`); the others keep theirs.
       - id: queue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -882,6 +921,46 @@ jobs:
         with:
           path: .cpu-features-times
           key: cpu-features-times-${{ github.run_id }}-${{ github.run_attempt }}
+
+  # Every architecture whose tests this run leaves out (`rust-arches`), for
+  # each of its targets (ci/rust_matrix.toml's `check`): the library built,
+  # which assembles every verified function (`cargo check` and clippy
+  # generate no code), and every target linted, as the `rust` job lints them.
+  # Nothing is linked or run: the targets' standard libraries are all it
+  # needs.
+  rust-check:
+    name: "Rust: build the architectures not tested"
+    needs: rust-arches
+    if: ${{ needs.rust-arches.outputs.check != '[]' }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.rust-arches.outputs.check) }}
+    runs-on: ubuntu-26.04
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      TARGETS: ${{ matrix.targets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/bench/
+      - name: Install Rust
+        run: rustup toolchain install ${{ matrix.toolchain }} --profile minimal --component clippy --target ${TARGETS// / --target }
+      - name: Build and lint
+        run: |
+          for target in $TARGETS; do
+            echo "::group::$target"
+            cargo build --lib --locked --target "$target"
+            cargo clippy --all-targets --locked --target "$target"
+            cargo clippy --all-targets --locked --target "$target" --features std
+            cargo clippy --all-targets --locked --target "$target" --features cpu-features-env
+            echo "::endgroup::"
+          done
 
   # The coverage of the architectures whose tests ran (`rust-arches`), each
   # of which covers every line it builds by itself (ci/merge_rust_coverage.py),
@@ -950,7 +1029,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-cpu-features, rust-check, coverage]
     runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
@@ -968,6 +1047,7 @@ jobs:
           RUST: ${{ needs.rust.result }} ${{ needs.rust-arches.outputs.rust == '[]' }}
           THUMB: ${{ needs.rust-thumb.result }} ${{ needs.rust-arches.outputs.thumb == '[]' }}
           CPU: ${{ needs.rust-cpu-features.result }} ${{ needs.rust-arches.outputs.cpu == '[]' }}
+          CHECK: ${{ needs.rust-check.result }} ${{ needs.rust-arches.outputs.check == '[]' }}
           # Skipped exactly when no architecture ran its tests (`rust-arches`).
           COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.arches == '[]' }}
           # Skipped when `lean` built the proofs itself.
@@ -975,11 +1055,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS | $RUST | $THUMB | $CPU | $COVERAGE | $SHARDS"
+          echo "$RESULTS | $RUST | $THUMB | $CPU | $CHECK | $COVERAGE | $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
-          for r in "$RUST" "$THUMB" "$CPU"; do
+          for r in "$RUST" "$THUMB" "$CPU" "$CHECK"; do
             [ "$r" = "success false" ] || [ "$r" = "skipped true" ] || exit 1
           done
           [ "$COVERAGE" = "success false" ] || [ "$COVERAGE" = "skipped true" ] || exit 1
@@ -1051,3 +1131,31 @@ jobs:
           # The metrics embed the complete lean-plan, whose working
           # artifact lasts one day.
           retention-days: 30
+
+  # A full run of main that failed (see `workflow_dispatch`) opens an issue,
+  # or comments on the one still open: no pull request waits on these runs,
+  # so nobody would see it otherwise. Each failure since the issue opened is
+  # a comment, until someone fixes main and closes it.
+  full-run-failed:
+    name: Report the failed full run
+    needs: all-green
+    if: ${{ failure() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: The full CI run of main fails
+      BODY: "The full CI run of ${{ github.sha }} failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    steps:
+      - run: |
+          number=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq "[.[] | select(.title == env.TITLE)][0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY
+
+          Merge queue runs test only the architectures their changes reach (ci/rust_arches.py), so main can fail here alone: through a change outside the repository (a runner, Rust's beta or nightly), or a change that reached an architecture ci/rust_arches.py did not count it as reaching."
+          fi

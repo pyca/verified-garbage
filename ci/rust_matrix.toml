@@ -3,6 +3,12 @@
 # entries it keeps. Each entry's `arch` is the `target_arch` its tests run
 # (the SDE chips', which have none, are x86-64's).
 
+# The Rust release an entry's `rust = "stable"` (and every `cpu` entry)
+# builds with: pinned, so that a new release, which can bring new lints or
+# map different lines for coverage, fails the pull request that bumps it, not
+# a run of main. Bump it with the release.
+stable = "1.99.1"
+
 # `rust`: every test, with coverage, on each platform, and the lints.
 [[rust]]
 name = "Linux, x86-64"
@@ -291,3 +297,25 @@ runs = """
 none | rsa ffdh dsa_parameters cpu
 """
 
+
+# `rust-check`: the targets of each architecture, built (the library, whose
+# code generation assembles the verified functions) and linted (every target,
+# with each set of features the `rust` job lints) for each architecture whose
+# tests a run leaves out (ci/rust_arches.py), on one runner, without linking
+# or running anything: what every architecture builds, gated on every change
+# even when only some run their tests.
+[[check]]
+arch = "x86_64"
+targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+
+[[check]]
+arch = "x86"
+targets = ["i686-unknown-linux-gnu"]
+
+[[check]]
+arch = "aarch64"
+targets = ["aarch64-unknown-linux-gnu", "aarch64-apple-darwin"]
+
+[[check]]
+arch = "arm"
+targets = ["armv7-unknown-linux-gnueabihf", "thumbv7neon-unknown-linux-gnueabihf"]
