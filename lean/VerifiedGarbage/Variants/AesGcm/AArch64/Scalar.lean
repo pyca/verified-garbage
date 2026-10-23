@@ -13,6 +13,6 @@ the cipher (`vg_aes_ctr32`, `vg_aes_expand_key_scratch`) and the hash (`vg_ghash
 
 namespace VG.Variants.AesGcm.AArch64.Scalar
 
-def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.scalar, .scalar, .scalar, false⟩
+def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.scalar, .scalar, .scalar, false, false⟩
 
 end VG.Variants.AesGcm.AArch64.Scalar
