@@ -3,12 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

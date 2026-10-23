@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
-import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_seal` is constant time

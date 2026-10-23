@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Gcm.Stream
@@ -26,6 +25,9 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on PPC64LE: the pieces of `seal` and `open` are constant time

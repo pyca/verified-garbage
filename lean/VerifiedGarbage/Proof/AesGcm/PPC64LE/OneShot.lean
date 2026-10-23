@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 public import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
