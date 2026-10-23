@@ -72,17 +72,17 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
     (hk : Kept k s) (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
     WP isa (.block (tagSeg o)) s (Tag1 Ctx St W SP k o R (blockAt s.mem (St + BitVec.ofNat 64 16))
       (blockAt s.mem St) s.mem) := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_arith
   have r₁ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₂ := he.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₁ := he.perm.wW (show o + 8 ≤ 2560 by omega)
-  have w₂ := he.perm.wW (show o + 8 + 8 ≤ 2560 by omega)
-  have ho8 : (o + 8) % 8 = 0 ∧ o + 8 < 32768 := by omega
-  have ho0 : o % 8 = 0 ∧ o < 32768 := by omega
-  have ho' : o < 4096 := by omega
+  have w₁ := he.perm.wW (show o + 8 ≤ 2560 by omega_arith)
+  have w₂ := he.perm.wW (show o + 8 + 8 ≤ 2560 by omega_arith)
+  have ho8 : (o + 8) % 8 = 0 ∧ o + 8 < 32768 := by omega_arith
+  have ho0 : o % 8 = 0 ∧ o < 32768 := by omega_arith
+  have ho' : o < 4096 := by omega_arith
   have dsep : (⟨W + BitVec.ofNat 64 o, 8⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8, 8⟩ := by
     rw [add_ofNat_assoc]
-    exact (L.st_w (a := 24) (n := 8) (by decide) (by omega)).symm
+    exact (L.st_w (a := 24) (n := 8) (by decide) (by omega_arith)).symm
   obtain ⟨s₁, run₁, m₁, x0₁, x1₁, x2₁, x3₁, x4₁, x5₁, og, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa (tagSeg o) s = some s₁ ∧
       s₁.mem = (s.mem.writeW (W + BitVec.ofNat 64 o) (s.mem.readW (St + BitVec.ofNat 64 16) 64)).writeW
         (W + BitVec.ofNat 64 (o + 8))
@@ -112,20 +112,20 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
     simpa using L.st_w (a := 0) (n := 16) (by decide) hoW
   refine ⟨he₁, hk.of_others og, ?_, ?_, ?_, f₁⟩
   · refine ⟨x0₁, x1₁, x2₁, x3₁, x4₁, x5₁, hR,
-      by have := L.ww; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega, by decide,
+      by have := L.ww; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith, by decide,
       by simpa using (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (d := 0) (n := 16) (by decide)),
-      (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega)),
+      (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_arith)),
       (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide)),
       dJo, by simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 2048) (by decide) (.inr ⟨by decide, by decide⟩),
-      L.w_w (by omega) (by omega) (by decide), ?_, ?_⟩
-    · refine covers_cons ?_ (covers_cons ?_ (covers_cons (covers_left (he₁.perm.wC (by omega)))
+      L.w_w (by omega_arith) (by omega_arith) (by decide), ?_, ?_⟩
+    · refine covers_cons ?_ (covers_cons ?_ (covers_cons (covers_left (he₁.perm.wC (by omega_arith)))
         (covers_left (he₁.perm.wC (by decide)))))
       · exact fun a m' ⟨r, hr, hc'⟩ => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact he₁.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega⟩
+          exact he₁.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_arith⟩
       · simpa using covers_left (he₁.perm.stC (d := 0) (n := 16) (by decide))
     · exact covers_cons (by simpa using he₁.perm.stC (d := 0) (n := 16) (by decide))
-        (covers_cons (he₁.perm.wC (by omega)) (he₁.perm.wC (by decide)))
+        (covers_cons (he₁.perm.wC (by omega_arith)) (he₁.perm.wC (by decide)))
   · rw [blockAt, m₁, bytesAt_copy2 _ dsep]; rfl
   · exact blockAt_frame f₁ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo
 

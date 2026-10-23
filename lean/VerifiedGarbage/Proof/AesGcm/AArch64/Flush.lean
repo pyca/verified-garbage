@@ -106,10 +106,10 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
   refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
   obtain ⟨og₂, sp₂, rd₂, wr₂⟩ := r₂
   have lp : LoopPre s₂ P (W + BitVec.ofNat 64 96) o := by
-    refine ⟨by omega, ?_, ?_, ?_⟩
+    refine ⟨by omega_arith, ?_, ?_, ?_⟩
     · rw [rd₂, wr₂, r₁.rd, r₁.wr]; exact hP
-    · rw [wr₂, r₁.wr]; exact he.perm.wC (by omega)
-    · exact hPW.sub_right (Region.sub_prefix (by omega))
+    · rw [wr₂, r₁.wr]; exact he.perm.wC (by omega_arith)
+    · exact hPW.sub_right (Region.sub_prefix (by omega_arith))
   refine WP.seq (WP.mono (copy_ok s₂ x12₂ x11₂ x13₂ lp) fun s₃ ⟨m₃, g₃, sp₃, rd₃, wr₃⟩ => ?_)
   have gg₃ : ∀ r, r ∉ [Reg.x12] ++ [.x9, .x11, .x13] ++ loopRegs → s₃.gpr r = s.gpr r := fun r hr => by
     rw [g₃ r (fun h' => hr (List.mem_append_right _ h')),
@@ -117,7 +117,7 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
       r₁.others r (fun h' => hr (List.mem_append_left _ (List.mem_append_left _ h')))]
   -- The blocks of the call.
   have ev : isa.eval (.zero .x .x25) s₃ = some (decide (o = 0)) :=
-    eval_zero (by rw [gg₃ _ (by decide), h25]) (by omega)
+    eval_zero (by rw [gg₃ _ (by decide), h25]) (by omega_arith)
   refine WP.seq (WP.mono (Q := fun (s₄ : State) => s₄.gpr .x3 = BitVec.ofNat 64 (padBlocks o) ∧ Regs [.x3] s₃ s₄)
     (WP.ite (decide (o = 0)) ev (fun ht => ?_) (fun hf => ?_)) fun s₄ ⟨x3₄, r₄⟩ => ?_)
   · have h0 : o = 0 := by simpa using ht
@@ -132,7 +132,7 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
       s₅.gpr .x0 = Ctx + BitVec.ofNat 64 240 ∧ s₅.gpr .x1 = St + BitVec.ofNat 64 yo ∧
       s₅.gpr .x4 = W + BitVec.ofNat 64 512 ∧ s₅.gpr .x2 = W + BitVec.ofNat 64 96 ∧
       Regs [.x0, .x1, .x4, .x2] s₄ s₅ := by
-    have hyo' : yo < 4096 := by omega
+    have hyo' : yo < 4096 := by omega_arith
     refine ⟨_, by rw [ghArgs_eq]; arun [hyo'], ?_⟩
     refine ⟨?_, ?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
     · simp [gpr_write, gg₄ .x21 (by decide), he.x21]
@@ -153,28 +153,28 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
     rcases hr with rfl | rfl | rfl <;> decide)) hsp hrd hwr
   have fz : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₂.mem := by rw [m₂]; exact Proof.Cmac.frame_store2 _ _ _
   have hPo : bytesAt s₂.mem P o = bytesAt s.mem P o :=
-    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hPW) (by omega)
+    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hPW) (by omega_arith)
   have hlen := length_bytesAt s₂.mem P o
   refine ⟨he₅, hk.of_eq fun r hr => ggA r (by
       simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide),
     by rw [ggA _ (by decide), h25], ?_, ?_, ?_⟩
-  · have hnb : padBlocks o ≤ 1 := by simp only [padBlocks]; split <;> omega
-    refine ghCall_of L hyo he₅ x0₅ x1₅ x2₅ (by rw [r₅.others _ (by decide), x3₄]) x4₅ (by omega)
-      (L.st_w (by omega) (.inr ⟨by decide, by omega⟩)) (L.w_w (.inl (by omega)) (by omega) (by decide))
-      (covers_left (he₅.perm.wC (by omega)))
-  · rw [hm₅, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by decide), hlen, hPo]
+  · have hnb : padBlocks o ≤ 1 := by simp only [padBlocks]; split <;> omega_arith
+    refine ghCall_of L hyo he₅ x0₅ x1₅ x2₅ (by rw [r₅.others _ (by decide), x3₄]) x4₅ (by omega_arith)
+      (L.st_w (by omega_arith) (.inr ⟨by decide, by omega_arith⟩)) (L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
+      (covers_left (he₅.perm.wC (by omega_arith)))
+  · rw [hm₅, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by decide), hlen, hPo]
     congr 1
     have := zeroT_bytes s.mem (W + BitVec.ofNat 64 96)
-    rw [← m₂, show (16 : Nat) = o + (16 - o) by omega, bytesAt_add] at this
+    rw [← m₂, show (16 : Nat) = o + (16 - o) by omega_arith, bytesAt_add] at this
     have e := congrArg (List.drop o) this
     rw [List.drop_left' (length_bytesAt _ _ _)] at e
-    rw [e, show o + (16 - o) = 16 by omega, Spec.Gcm.zeros, List.drop_replicate]
+    rw [e, show o + (16 - o) = 16 by omega_arith, Spec.Gcm.zeros, List.drop_replicate]
     rfl
   · rw [hm₅]
     exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
 
 /-- The call after a padding: `T` absorbed, if there were bytes. -/
 theorem padCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o : Nat} {P : Addr} {m₀ : Mem} {s : State}
