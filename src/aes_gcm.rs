@@ -981,8 +981,7 @@ static PREPARED_AES_SHA3: Prepared = Prepared {
 ))]
 impl Backend {
     /// Its `_prepared` instances, if it has them and a CPU with the features
-    /// `f` has those of their key setup (which on x86-64 needs AVX2 beyond
-    /// the `_aesni_pclmul_avx` instances' features).
+    /// `f` has those of their key setup.
     fn prepared(self, f: Features) -> Option<&'static Prepared> {
         let p = match self {
             #[cfg(target_arch = "x86_64")]
@@ -2712,6 +2711,29 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// `Backend::fns` gives a backend's `_prepared` table only to a CPU that
+    /// runs their key setup (every CPU that runs the backend, so far), and
+    /// that table is `Fns::with` (which the statics otherwise run only at
+    /// compile time).
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[test]
+    fn fns() {
+        use super::{
+            FNS_AESNI_PCLMUL_AVX, FNS_AESNI_PCLMUL_AVX_PREPARED, PREPARED_AESNI_PCLMUL_AVX,
+        };
+        use core::ptr::{eq, fn_addr_eq};
+        let (b, p) = (Backend::AesNiPclmulAvx, &PREPARED_AESNI_PCLMUL_AVX);
+        assert!(eq(b.fns(Features::of(&[])), &FNS_AESNI_PCLMUL_AVX));
+        assert!(eq(b.fns(b.features()), &FNS_AESNI_PCLMUL_AVX_PREPARED));
+        let with = b.plain_fns().with(p);
+        assert!(fn_addr_eq(with.seal, p.seal));
+        assert!(fn_addr_eq(with.open, p.open));
+        assert!(fn_addr_eq(with.seal_gather, p.seal_gather));
+        assert!(fn_addr_eq(with.stream_encrypt_long, p.stream_encrypt));
+        assert!(fn_addr_eq(with.stream_decrypt_long, p.stream_decrypt));
+        assert!(with.prepare.is_some_and(|f| fn_addr_eq(f, p.prepare)));
     }
 
     /// `vg_aes_gcm_prepare16`, on 128-bit and on 256-bit registers, makes the
