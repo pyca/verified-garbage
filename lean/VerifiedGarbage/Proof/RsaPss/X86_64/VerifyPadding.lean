@@ -298,7 +298,7 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     exact forall_congr' fun i => imp_congr_right fun hi => by rw [hHb i hi]
   rw [h33, e0, acc1V_eq_zero, ← h36]
   by_cases hff : (fixed && decide ((W1 36).toNat < db)) = true
-  · have hfx : fixed = true := by cases fixed <;> simp_all
+  · have hfx : fixed = true := (Bool.and_eq_true_iff.mp hff).1
     have hlt : (W1 36).toNat < db := by simpa [hfx] using hff
     have hpF : posF = db - (W1 36).toNat - 1 := by rw [hposF, ifp hff]
     rw [ifp hff, hpF, fixed_cond dbL hdbl hlt]

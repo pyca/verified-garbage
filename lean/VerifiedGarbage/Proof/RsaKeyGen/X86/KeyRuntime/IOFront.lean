@@ -32,7 +32,8 @@ theorem writeCore_front {E : Environment} {s : State} {e p q : Nat} (h : Input E
   refine selectIO_ok h fun u Ku memory => ?_
   have hu := h.keep (h.ws.rest Ku) Ku (by intro d hd; rw [memory])
   have Ru : CoreOutcome E.base E.n e p q u.mem := by rw [memory]; exact result
-  refine WP.mono (VG.Proof.RsaKeyGen.X86.Key.writeCore_ok hu.outputs Ru)
+  refine WP.mono (VG.Proof.RsaKeyGen.X86.Key.writeCore_ok (g := E.outputs) (s := u)
+    (e := e) (p := p) (q := q) hu.outputs Ru)
     fun t ⟨ht, written, F, K⟩ => ?_
   rw [memory] at F
   exact ⟨ht, written, F, (Ku.mono (by decide)).trans K⟩
