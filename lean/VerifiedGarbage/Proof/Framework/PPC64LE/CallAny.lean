@@ -12,7 +12,8 @@ Code may also allocate a buffer on the stack (`alloc bytes`, as
 `withStackScratch` does): `sdepth` is the number of bytes of stack below the
 stack pointer that code and its callees use, counting each frame's bytes,
 and `Exec.frameAny` bounds what it changes in memory by the regions it may
-write and those bytes. `WP.callAny` calls verified code with any frames.
+write and those bytes. `WP.callAny` calls verified code with any frames, and `WP.frameRegAny` runs
+such code in a frame saving a register.
 -/
 
 @[expose] public section
@@ -174,5 +175,54 @@ theorem WP.callAny {name : String} {c : Prog isa} {k : Contract isa}
   · have : (s₁.withRegions s.rd s.wr).withRegions rd wr = s₁ := by
       rw [State.withRegions_withRegions, ← hr, ← hwr]; rfl
     rw [this]; exact hpost
+
+/-- `WP.narrowF` for code with any frames: it differs from `s` in memory only
+within `wr` and the `sdepth c` bytes below the stack pointer. -/
+theorem WP.narrowAny {c : Prog isa} {s : State} {rd wr : List Region} {P : State → Prop}
+    (h : WP isa c (s.withRegions rd wr) P)
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      Frame (wr ++ [below s.sp (sdepth c)]) s.mem s'.mem → P (s'.withRegions rd wr) → Q s')
+    (hd : sdepth c < 2 ^ 64) : WP isa c s Q := by
+  obtain ⟨t, s₁, he, hp⟩ := h
+  have hf := Exec.frameAny he hd
+  obtain ⟨hr, hwr, hsp⟩ := Exec.rdwr he
+  simp only [State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+    State.withRegions_sp] at hr hwr hf hsp
+  have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
+  simp only [State.withRegions_withRegions, State.withRegions_self] at he'
+  refine ⟨t, _, he', hQ _ rfl rfl hsp hf ?_⟩
+  have : (s₁.withRegions s.rd s.wr).withRegions rd wr = s₁ := by
+    rw [State.withRegions_withRegions, ← hr, ← hwr]; rfl
+  rw [this]; exact hp
+
+/-- `WP.frameReg` for a body with any frames. -/
+theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
+    (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
+    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
+    (hn : sdepth main + 48 < 2 ^ 64) :
+    WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
+  refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega))
+  · intro a n hi
+    exact InRegions_append_cons.mpr (.inr hi)
+  · intro a n hi
+    exact InRegions_append_cons (xs := []).mpr (.inr hi)
+  · intro s' hrd hwr hsp' hf hq
+    have hread : s'.mem.read (s'.sp + 32) 8 = s₀.gpr r := by
+      rw [hsp', show (pushed r s₀).sp = s₀.sp - 48 from rfl,
+        hf.read (r := ⟨s₀.sp - 48 + 32, 16⟩) (by simp [Region.Contains]) (fun R hR => ?_) (by decide)]
+      · exact read_write_self _ _ _
+      · rcases List.mem_append.mp hR with hR | hR
+        · exact hd R hR
+        · simp only [List.mem_singleton] at hR; subst hR
+          exact frame_not_below s₀.sp hn
+    have e : popped r s' = { (s'.withRegions s₀.rd s₀.wr).write r (s₀.gpr r) with sp := s₀.sp } := by
+      simp only [popped, hread]
+      simp only [hsp', hwr, pushed, List.tail_cons, BitVec.sub_add_cancel]
+      cases s'
+      simp only [pushed] at hrd
+      subst hrd
+      rfl
+    rw [e]; exact hq
 
 end VG.PPC64LE

@@ -11,7 +11,9 @@ code leaks the same trace in two runs when the callee's contract holds in
 both (narrowed to the regions it is given, as `WP.call` does) and its public
 data agrees, since the callee's run from the narrowed state is the actual
 run with fewer permissions (`Exec.widen` and determinism), and the callee is
-constant time. `bl` and `blr` leak no addresses of their own.
+constant time. `bl` and `blr` leak no addresses of their own. A frame saving a
+register (`RelCT.frame`) leaks the addresses of its push and pop, which
+depend only on the stack pointer.
 -/
 
 @[expose] public section
@@ -74,5 +76,39 @@ theorem RelCT.call {n : String} {c : Prog isa} {k : Contract isa}
   subst h₁ h₂
   obtain ⟨p₁, p₂, hpub, c₁, w₁, c₂, w₂⟩ := hP _ _ hp
   exact ⟨rd, wr, rd, wr, p₁, p₂, hpub, c₁, w₁, c₂, w₂, rfl, fun _ _ _ _ _ _ => rfl⟩
+
+/-- Two runs of a frame saving a register leak the same trace when the stack
+pointer agrees and the runs of its body, from the states after the push, do;
+the stack pointer agrees after it too. -/
+theorem RelCT.frame {r r' : Reg} {body : Prog isa} {P R : State → State → Prop}
+    (hsp : ∀ s₁ s₂, P s₁ s₂ → s₁.sp = s₂.sp)
+    (hb : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = pushed r s₁ ∧ b = pushed r s₂) body R) :
+    RelCT isa P (.frame (.push r) body (.pop r')) fun a b => a.sp = b.sp := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  have hpush : ∀ {s a : State}, isa.push (.push r) s = some a → a = pushed r s := by
+    intro s a h
+    simp only [isa, push] at h
+    split at h <;> cases h
+    rfl
+  have hsp' : ∀ {s s₂ s' : State}, isa.pop (.pop r') (pushed r s) s₂ = some s' → s₂.sp = s.sp - 48 ∧
+      s'.sp = s.sp := by
+    intro s s₂ s' h
+    obtain ⟨-, -, -, -, e, n, hn, e'⟩ := pop_eq h
+    simp only [pushed, List.head?_cons, Option.some.injEq, Region.mk.injEq] at hn
+    rw [e', e, ← hn.2]
+    exact ⟨rfl, by simp only [pushed]; bv_omega⟩
+  cases e₁ with
+  | frame p₁ b₁ q₁ =>
+    cases e₂ with
+    | frame p₂ b₂ q₂ =>
+      have ea := hpush p₁
+      have eb := hpush p₂
+      subst ea eb
+      obtain ⟨rfl, -⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, rfl⟩ b₁ b₂
+      obtain ⟨g₁, g₁'⟩ := hsp' q₁
+      obtain ⟨g₂, g₂'⟩ := hsp' q₂
+      have e := hsp _ _ hp
+      refine ⟨?_, show s₁'.sp = s₂'.sp by rw [g₁', g₂', e]⟩
+      simp only [addrs, g₁, g₂, e]
 
 end VG.PPC64LE
