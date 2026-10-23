@@ -39,9 +39,9 @@ end
 /-- A Montgomery product between stages, with each run's correctness. -/
 theorem mmul_stage {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha : MontIndex a)
     (hb : MontIndex b) (ho0 : o ≠ mBase)
-    (hT : (VG.Taint.check taint τF (.block (VG.Impl.Rsa.X86.RecoverRt.mulArgs o a b)) (.block [])).isSome = true)
-    (hC : (VG.Taint.check taint τA (.block (VG.Impl.Rsa.X86.RecoverRt.clrTop o))
-      (VG.Taint.hintOf taint τA (.block (VG.Impl.Rsa.X86.RecoverRt.clrTop o)))).isSome = true)
+    (hT : (VG.Taint.check sseTaint τF (.block (VG.Impl.Rsa.X86.RecoverRt.mulArgs o a b)) (.block [])).isSome = true)
+    (hC : (VG.Taint.check sseTaint τA (.block (VG.Impl.Rsa.X86.RecoverRt.clrTop o))
+      (VG.Taint.hintOf sseTaint τA (.block (VG.Impl.Rsa.X86.RecoverRt.clrTop o)))).isSome = true)
     {P Q P' Q' : State → Prop} (hP : ∀ s, P s → MulPre g o a b s) (hQ : ∀ t, Q t → MulPre g o a b t)
     (left : ∀ s, P s → WP isa (VG.Impl.Rsa.X86.RecoverRt.mmul o a b) s P')
     (right : ∀ t, Q t → WP isa (VG.Impl.Rsa.X86.RecoverRt.mmul o a b) t Q') :
@@ -63,8 +63,8 @@ theorem candMont_pre {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen d
       Nat.mod_lt (2 ^ (128 * g.n)) positive, by decide, by decide⟩
 
 theorem tableCopyCheck (i : Nat) (hi : i < 14) :
-    (VG.Taint.check taint τA (VG.Impl.Rsa.X86.KeyRt.copy VG.Impl.Rsa.X86.RecoverRt.nar (i + 2) mXm)
-      (VG.Taint.hintOf taint τA (VG.Impl.Rsa.X86.KeyRt.copy VG.Impl.Rsa.X86.RecoverRt.nar (i + 2) mXm))).isSome =
+    (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.KeyRt.copy VG.Impl.Rsa.X86.RecoverRt.nar (i + 2) mXm)
+      (VG.Taint.hintOf sseTaint τA (VG.Impl.Rsa.X86.KeyRt.copy VG.Impl.Rsa.X86.RecoverRt.nar (i + 2) mXm))).isSome =
       true := by
   match i, hi with
   | 0, _ => exact tableCopy0Check

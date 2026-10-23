@@ -51,8 +51,8 @@ open VG.Proof.Rsa (sub32)
     {m y z len words : Nat} {fallback : Prog isa}
     (odd : m%2=1) (small : len<2^32)
     (width : 2*Spec.Rsa.modulusWords (len+8)=words)
-    (choiceCheck : (VG.Taint.check taint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice len))
-      (VG.Taint.hintOf taint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice len)))).isSome=true)
+    (choiceCheck : (VG.Taint.check sseTaint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice len))
+      (VG.Taint.hintOf sseTaint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice len)))).isSome=true)
     {hint : VG.Taint.Hint VG.X86.Taint.T}
     (bodyCheck : (VG.Taint.check taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.GcdBatch.offset words 15))
       (VG.Impl.Rsa.X86.GcdBatch.body words)

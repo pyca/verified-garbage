@@ -7,9 +7,14 @@ import VerifiedGarbage.Proof.Rsa.X86.KcPair
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.Slots
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The trace of the key checks at a run-time width, once the modulus and exponent are accepted
 
@@ -60,7 +65,7 @@ def Run (g : CallGeometry) (sp : BitVec 32) (s : State) : Prop :=
 
 theorem sized_relCT (g : CallGeometry) (sp : BitVec 32) :
     RelCT isa (Both (Run g sp)) (sized g.full) fun _ _ => True :=
-  RelCT.taint (A := taint) (τV g.full)
+  RelCT.taint (A := sseTaint) (τV g.full)
     (fun _ _ h => agreeV h.1.1 h.2.1 h.1.2.1 h.2.2.1 (h.1.2.2.trans h.2.2.2.symm)) (sizedCheck g.full)
 
 /-- What the runs of `sized` from the states themselves need: the inputs, `esp`, and the arguments apart

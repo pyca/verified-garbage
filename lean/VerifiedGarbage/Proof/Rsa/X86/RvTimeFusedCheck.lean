@@ -3,10 +3,12 @@ module
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedMultiply
 public import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
@@ -27,49 +29,49 @@ def fusedBefore : Prog isa := .seq (.seq (.seq (eqAt sE1 mX aO)
 def fusedAfter : Prog isa := seqs [VG.Impl.Rsa.X86.KeyRt.sel nar mY mX mXm sBit,
   eqAt sE1 mY aO, eqAt sE2 mY aNg, fusedTail]
 
-theorem fusedSmallStartCheck : (VG.Taint.check taint τA (fusedSmallStart)
-    (VG.Taint.hintOf taint τA (fusedSmallStart))).isSome = true := by
+theorem fusedSmallStartCheck : (VG.Taint.check sseTaint τA (fusedSmallStart)
+    (VG.Taint.hintOf sseTaint τA (fusedSmallStart))).isSome = true := by
   taint_decide
 
-theorem fusedSmallStepCheck : (VG.Taint.check taint τA (fusedSmallStep)
-    (VG.Taint.hintOf taint τA (fusedSmallStep))).isSome = true := by
+theorem fusedSmallStepCheck : (VG.Taint.check sseTaint τA (fusedSmallStep)
+    (VG.Taint.hintOf sseTaint τA (fusedSmallStep))).isSome = true := by
   taint_decide
 
-theorem fusedSmall7Check : (VG.Taint.check taint τA (fusedSmall7)
-    (VG.Taint.hintOf taint τA (fusedSmall7))).isSome = true := by
+theorem fusedSmall7Check : (VG.Taint.check sseTaint τA (fusedSmall7)
+    (VG.Taint.hintOf sseTaint τA (fusedSmall7))).isSome = true := by
   taint_decide
 
-theorem fusedBeforeCheck : (VG.Taint.check taint τA (fusedBefore)
-    (VG.Taint.hintOf taint τA (fusedBefore))).isSome = true := by
+theorem fusedBeforeCheck : (VG.Taint.check sseTaint τA (fusedBefore)
+    (VG.Taint.hintOf sseTaint τA (fusedBefore))).isSome = true := by
   taint_decide
 
-theorem fusedAfterCheck : (VG.Taint.check taint τA (fusedAfter)
-    (VG.Taint.hintOf taint τA (fusedAfter))).isSome = true := by
+theorem fusedAfterCheck : (VG.Taint.check sseTaint τA (fusedAfter)
+    (VG.Taint.hintOf sseTaint τA (fusedAfter))).isSome = true := by
   taint_decide
 
-theorem fusedInitCheck : (VG.Taint.check taint τA (fusedInit)
-    (VG.Taint.hintOf taint τA (fusedInit))).isSome = true := by
+theorem fusedInitCheck : (VG.Taint.check sseTaint τA (fusedInit)
+    (VG.Taint.hintOf sseTaint τA (fusedInit))).isSome = true := by
   taint_decide
 
-theorem fusedFinishCheck : (VG.Taint.check taint τA (fusedFinish)
-    (VG.Taint.hintOf taint τA (fusedFinish))).isSome = true := by
+theorem fusedFinishCheck : (VG.Taint.check sseTaint τA (fusedFinish)
+    (VG.Taint.hintOf sseTaint τA (fusedFinish))).isSome = true := by
   taint_decide
 
-theorem fusedPrepareCheck : (VG.Taint.check taint τA (fusedPrepare)
-    (VG.Taint.hintOf taint τA (fusedPrepare))).isSome = true := by
+theorem fusedPrepareCheck : (VG.Taint.check sseTaint τA (fusedPrepare)
+    (VG.Taint.hintOf sseTaint τA (fusedPrepare))).isSome = true := by
   taint_decide
 
-theorem fusedWindowTopCheck : (VG.Taint.check taint τA (.block windowTop)
-    (VG.Taint.hintOf taint τA (.block windowTop))).isSome = true := by
+theorem fusedWindowTopCheck : (VG.Taint.check sseTaint τA (.block windowTop)
+    (VG.Taint.hintOf sseTaint τA (.block windowTop))).isSome = true := by
   taint_decide
 
-theorem fusedShiftUpCheck : (VG.Taint.check taint τA (shiftUp)
-    (VG.Taint.hintOf taint τA (shiftUp))).isSome = true := by
+theorem fusedShiftUpCheck : (VG.Taint.check sseTaint τA (shiftUp)
+    (VG.Taint.hintOf sseTaint τA (shiftUp))).isSome = true := by
   taint_decide
 
 theorem fusedBitHeadCheck (k : Nat) (hk : k ≤ 3) :
-    (VG.Taint.check taint τA (.block (fusedBitHead k))
-      (VG.Taint.hintOf taint τA (.block (fusedBitHead k)))).isSome = true := by
+    (VG.Taint.check sseTaint τA (.block (fusedBitHead k))
+      (VG.Taint.hintOf sseTaint τA (.block (fusedBitHead k)))).isSome = true := by
   match k, hk with
   | 0, _ => first | rfl | taint_decide
   | 1, _ => first | rfl | taint_decide

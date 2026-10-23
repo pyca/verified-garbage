@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 meta import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimePrepare
@@ -23,8 +24,8 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Spec.Rsa (recoverPrimes)
 
 omit rsaBatchLaw in
-theorem recoveryChoiceCheck : (VG.Taint.check taint τA (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice)
-    (VG.Taint.hintOf taint τA (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice))).isSome=true := by
+theorem recoveryChoiceCheck : (VG.Taint.check sseTaint τA (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice)
+    (VG.Taint.hintOf sseTaint τA (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice))).isSome=true := by
   taint_decide
 
 theorem selectedRest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)

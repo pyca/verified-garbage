@@ -29,7 +29,7 @@ theorem ABI.numberBounds {full : Bool} {s : State} (a : ABI full s) (m : Mem) :
     cases full <;> exact a.qSmall
   have p := VG.Proof.Rsa.short_factor_bounds pLen width
   have q := VG.Proof.Rsa.short_factor_bounds qLen width
-  exact ⟨p.1, q.1, p.2.1, q.2.1, q.2.2⟩
+  exact ⟨p.1, q.1, p.2.1, q.2.1⟩
 
 theorem numbers_entry {full : Bool} {s : State} {m : Mem} (a : ABI full s)
     (o : Outside (caller full s).base 0 (caller full s).size s.mem m) :

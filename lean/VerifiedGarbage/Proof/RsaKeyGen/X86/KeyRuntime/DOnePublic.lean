@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-! # The unit-exponent path has public control flow. -/
 

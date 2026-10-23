@@ -26,7 +26,7 @@ def ProdsOk (g : Geo) (v : Vals) (R₁ R₂ R₃ : Nat) : Prop :=
     R₁ = v.e % 2 ^ 33 * v.dP % (2 * (v.p / 2))) ∧
   (v.dQ < 2 * (v.q / 2) → 2 * (2 * (v.q / 2)) ≤ 2 ^ (32 * g.w) →
     R₂ = v.e % 2 ^ 33 * v.dQ % (2 * (v.q / 2))) ∧
-  (v.qI < v.p → 2 * v.p ≤ 2 ^ (32 * g.w) → R₃ = v.q % 2 ^ (32 * g.w) * v.qI % v.p)
+  (v.qI < v.p → 2 * v.p ≤ 2 ^ (32 * g.w) → R₃ = v.q * v.qI % v.p)
 
 /-- After the division of `n` by `p`. -/
 def DivN (g : Geo) (s0 : State) (v : Vals) (t : State) : Prop := ∃ X₁ X₂,
@@ -38,10 +38,12 @@ def CrtOut (g : Geo) (s0 : State) (v : Vals) (t : State) : Prop := ∃ X₁ X₂
   (0 < v.p → X₂ = v.n % v.p ∧ X₁ = v.n / v.p) ∧ ProdsOk g v R₁ R₂ R₃ ∧
   Stg g s0 (aFin v) liveFin (VG.Proof.Rsa.crtBits v.p v.q v.dP v.dQ v.qI X₁ X₂ R₁ R₂ R₃) t
 
-theorem crtChecks_ok' {g : Geo} {s0 s : State} {v : Vals} (h : DivN g s0 v s) :
+theorem crtChecks_ok' {g : Geo} {s0 s : State} {v : Vals} (h : DivN g s0 v s)
+    (hq : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.q < 2 ^ (8 * a) ∧
+      VG.Proof.Bignum.X86.CallArgument s0 g.B g.Z (qLenArg g.full) (BitVec.ofNat 32 a)) :
     WP isa (crtChecks g.full) s (CrtOut g s0 v) := by
   obtain ⟨X₁, X₂, hX, h⟩ := h
-  exact WP.mono (crtChecks_ok h) fun t ⟨R₁, R₂, R₃, h1, h2, h3, ht⟩ => ⟨X₁, X₂, R₁, R₂, R₃, hX, ⟨h1, h2, h3⟩, ht⟩
+  exact WP.mono (crtChecks_ok h hq) fun t ⟨R₁, R₂, R₃, h1, h2, h3, ht⟩ => ⟨X₁, X₂, R₁, R₂, R₃, hX, ⟨h1, h2, h3⟩, ht⟩
 
 theorem start_ok' {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
     WP isa (start g.full) s fun u => WP isa (division g.full) u (DivN g s v) :=
@@ -53,7 +55,7 @@ theorem crtBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa 
   refine WP.mono (start_ok' h) fun u hu => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono hu fun t1 h1 => ?_
-  exact crtChecks_ok' h1
+  exact crtChecks_ok' h1 h.qLen
 
 /-! ## The checks of `d` -/
 

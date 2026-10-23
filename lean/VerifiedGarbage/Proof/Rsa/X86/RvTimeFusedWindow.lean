@@ -55,7 +55,7 @@ theorem FI.stage {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n : Nat}
   exact KS.stage h
 
 theorem FI.trace {g : Geo} (pg : PubG g) {c : Prog isa}
-    (check : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome=true)
+    (check : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome=true)
     {s0 t0 s t : State} {A B AW BW V W : Nat → Nat} {n : Nat}
     {st tt : VG.Proof.Rsa.Fused.State} (h : FI g s0 A AW V n st s) (j : FI g t0 B BW W n tt t)
     {tr ur : List Leak} {sf tf : State} (es : Exec isa c s tr sf) (et : Exec isa c t ur tf) : tr=ur := by

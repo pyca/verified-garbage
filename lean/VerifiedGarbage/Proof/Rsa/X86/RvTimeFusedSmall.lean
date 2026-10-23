@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 meta import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
@@ -92,9 +93,9 @@ theorem fusedMultiply_relCT {g : Geo} {n j : Nat} (pg : PubG g)
     refine wp_subS rfl fun v D cf => WP.block_nil ⟨hu.of_rest D.keeps (by decide) D.mem,?_⟩
     rw [cf,U.gpr,E.candidate,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := E.limit; omega)]
     rfl
-  have check : (VG.Taint.check taint τA
+  have check : (VG.Taint.check sseTaint τA
       (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sCand)), .alu .sub .eax (.imm 14)])
-      (VG.Taint.hintOf taint τA
+      (VG.Taint.hintOf sseTaint τA
         (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sCand)), .alu .sub .eax (.imm 14)]))).isSome=true := by
     taint_decide
   have eq1 := pub_trace pg check hs ht e1 f1
