@@ -1,5 +1,7 @@
 module
 
+import Mathlib.Tactic.ClearExcept
+
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSStore
 public import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -122,7 +124,7 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
   have big := gi.scrBig
   have l := h.lens
   have R : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s s' := ⟨fun r hr => by
-    refine hpres r ?_ ?_ <;> cases r <;> simp_all [preserved], hrd, hwr, hsp⟩
+    refine hpres r ?_ ?_ <;> clear * - hr <;> cases r <;> simp_all [preserved], hrd, hwr, hsp⟩
   have bl : Region.Sub (belowA s.sp (armStack code)) G.rBelow := by
     have := gi.sp176; have := ok.stack
     refine fun a ha => ?_
