@@ -121,8 +121,9 @@ def artifacts : List Artifact := [
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
         of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by \
-        Montgomery multiplication (by calls of `vg_rsa_mont_mul`) over all the bits of `r`, a square and a multiplication by `g` or \
-        1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
+        Montgomery multiplication (by calls of `vg_rsa_mont_mul`) over all the bits of `r`, \
+        two squares and one multiplication per two-bit window, with the four powers read by \
+        masked selections in the existing workspace; then `64 Bw` squarings, each kept or not under masks; the \
         candidates stop at the first that finds the factors, which is the only branch on the key. \
         `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \
         `64 w` steps of bit-serial division."]

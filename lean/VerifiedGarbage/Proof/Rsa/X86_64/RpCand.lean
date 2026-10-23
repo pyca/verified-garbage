@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
@@ -51,8 +51,8 @@ theorem gBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Nat}
 /-- The candidate's `y = g^r mod n`, in Montgomery form in `Y`. -/
 theorem candA_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t c : Nat}
     (hc : Cst u B Z w minv N el r t) (hcand : word u.mem B (8 * sCand) = BitVec.ofNat 64 c) (hc100 : c < 100) :
-    WP isa (seqs [.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop M.mm]) u
-      fun u' => Frm B (rg w [aX, aAcc, aTmp, aXm, aG, aY] [sC1, sC2, sC3]) u.mem u'.mem ∧ Keep mmRegs u u' ∧
+    WP isa (seqs [.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, windowExp M.mm]) u
+      fun u' => Frm B (rg w [aX, aAcc, aTmp, aXm, aG, aY, aE, aD] [sC1, sC2, sC3]) u.mem u'.mem ∧ Keep mmRegs u u' ∧
         wv u'.mem B (slot w aY) w = powMod (c + 2) r N * 2 ^ (64 * w) % N := by
   have hZ16 := hc.hZ16
   have hw1 := hc.ws.w1
@@ -89,7 +89,7 @@ theorem candA_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64
   rw [hc₄.ho] at hy₅
   have hG₅ : wv u₅.mem B (slot w aG) w = wv u₃.mem B (slot w aXm) w := by
     rw [hf₅.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega), hg₄]
-  refine WP.mono (expLoop_ok M hc₅ (g := c + 2) (by rw [hG₅]; exact hlt₃) (by rw [hG₅]; exact hXm) hy₅)
+  refine WP.mono (RecoveryWindow.exp_ok M hc₅ (g := c + 2) (by rw [hG₅]; exact hlt₃) (by rw [hG₅]; exact hXm))
     fun u' ⟨hf₆, k₆, hlt₆, hy₆⟩ => ⟨?_, ?_, ?_⟩
   · have hf₁ : Frm B (rg w [] []) u.mem u₁.mem := by rw [m₁]; exact Frm.refl _ _ _
     exact (((((hf₁.rg_trans hf₂).rg_trans hf₃).rg_trans hf₄).rg_trans hf₅).rg_trans hf₆).rg_mono
@@ -196,7 +196,7 @@ theorem candNext_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Nat
       mask_not, mask_and', ec, sx100, Bool.and_self, mask_beq_zero]) rfl) fun u ⟨a, b⟩ => ⟨a.1, a.2, b⟩
 
 /-- The arrays and slots a candidate changes. -/
-def candJs : List Nat := [aX, aAcc, aTmp, aXm, aG, aY]
+def candJs : List Nat := [aX, aAcc, aTmp, aXm, aG, aY, aE, aD]
 def candHs : List Nat := [sMask, sC1, sC2, sC3, sCand]
 
 theorem cand_hs : ∀ i ∈ candHs, rSlot i = true ∧ i ≠ sMinv ∧ i ≠ sT := by decide
@@ -217,7 +217,7 @@ theorem candBody_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec
   have hw2 := hc.ws.w2
   have h256 := hc.ws.h256
   rw [show candBody M.mm = seqs ([.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
-      expLoop M.mm] ++ ((eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
+      windowExp M.mm] ++ ((eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
         [.loop (sqBody M.mm) .ne, .block candNext])) by
     simp only [candBody, List.append_assoc, List.cons_append, List.nil_append]]
   refine wp_seqs_append (by simp) (by simp) (WP.mono (candA_ok M hc hcand hc100) fun u₁ ⟨hf₁, k₁, hY₁⟩ => ?_)
