@@ -33,6 +33,7 @@ abbrev hk (m : Mem) (C : Addr) : Block := blockAt m (C + BitVec.ofNat 64 240)
 writing only the accumulator and the first 256 bytes of `W`. -/
 structure Gh1Post (s : State) (W St C : Addr) (yo : Nat) (Db : Addr) (s' : State) : Prop where
   pk : PK s s'
+  args : ∀ r ∈ [Reg.r18, .r19, .r20], s'.gpr r = s.gpr r
   frame : Frame [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨W, 256⟩] s.mem s'.mem
   y : blockAt s'.mem (St + BitVec.ofNat 64 yo) =
     ghashFrom (hk s.mem C) (blockAt s.mem (St + BitVec.ofNat 64 yo)) [blockAt s.mem Db]
@@ -73,7 +74,11 @@ theorem ghash1_wp {s : State} {W St C : Addr} (h : Env s W St C) {yo : Nat} (hyo
     · rw [pk₅.wr]
       refine Covers.pair (h.stIn hyo) ?_
       rw [hW0]; exact h.wIn (by decide)
-  refine WP.mono (gh_call hgp) fun s' ⟨ck, hy⟩ => ⟨pk₅.trans (PK.ofCall ck), ?_, ?_⟩
+  refine WP.mono (gh_call hgp) fun s' ⟨ck, hy⟩ => ⟨pk₅.trans (PK.ofCall ck), fun r hr => ?_, ?_, ?_⟩
+  · have hp : r ∈ preserved := by revert r; decide
+    have hn : r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r7 := by revert r; decide
+    rw [ck.saved r hp, u₅.other _ hn.2.2.2.2, u₄.other _ hn.2.2.2.1, u₃.other _ hn.2.2.1, u₂.other _ hn.2.1,
+      u₁.other _ hn.1]
   · rw [← m₅]; exact ck.frame
   · rw [hy, m₅, blocksAt_one]
 
