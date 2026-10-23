@@ -19,13 +19,13 @@ theorem code_ok {s : State} {base : Addr} {size n src : Nat} (scratch : Scr s ba
     WP isa (code n src) s fun t =>
       t.gpr .ebx = cmask (decide (2 ≤ val32 s.mem base src n)) ∧
       t.mem = s.mem ∧ Keeps [.eax, .ebx, .ebp, .edx] s t := by
-  refine WP.seq (WP.mono (OrScan.code_ok scratch (by omega) (by omega)) fun a ⟨Z, M, K⟩ => ?_)
-  refine WP.mono (finish_ok (scratch.of_keeps K (by decide)) (by omega) Z) fun t ⟨V, Mt, Kt⟩ => ?_
+  refine WP.seq (WP.mono (OrScan.code_ok scratch (by omega_arith) (by omega_arith)) fun a ⟨Z, M, K⟩ => ?_)
+  refine WP.mono (finish_ok (scratch.of_keeps K (by decide)) (by omega_arith) Z) fun t ⟨V, Mt, Kt⟩ => ?_
   rw [M] at V
   have compare : (¬(val32 s.mem base (src + 4) (n - 1) = 0 ∧ w32 s.mem base src < 2)) ↔
       2 ≤ val32 s.mem base src n := by
-    rw [← below_two _ _ _ _ (by omega)]
-    omega
+    rw [← below_two _ _ _ _ (by omega_arith)]
+    omega_arith
   rw [decide_eq_decide.mpr compare] at V
   exact ⟨V, Mt.trans M, (K.mono (by decide)).widen Kt⟩
 
