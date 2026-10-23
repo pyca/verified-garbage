@@ -1223,7 +1223,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// Field elements are eight 64-bit words in Montgomery form. Scalar multiplication uses a fixed 512-iteration ladder with the general complete addition formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. The inversion modulo `n` is a call of `vg_brainpoolp512r1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers and loop counters.
+/// Field elements are eight 64-bit words in Montgomery form. Joint radix-four multiplication shares 512 doublings and uses a fifteen-entry public table. General complete addition formulas of Renes, Costello and Batina (Algorithm 1) handle any `a`. The inversion modulo `n` is a call of `vg_brainpoolp512r1_inv_mod_n`, by divsteps. Lookup addresses and zero-digit branches depend on the public digest and signature; other branches and addresses depend only on pointers and loop counters.
 ///
 /// # Safety
 ///
@@ -2206,201 +2206,110 @@ movz x2, #2752, lsl #0
 movz x3, #320, lsl #0
 bl {vg_brainpoolp512r1_mul_mod_n}
 umov x30, v29.d[0]
-ldr x1, [x0, #2048]
-str x1, [x0, #2624]
-ldr x1, [x0, #2056]
-str x1, [x0, #2632]
-ldr x1, [x0, #2064]
-str x1, [x0, #2640]
-ldr x1, [x0, #2072]
-str x1, [x0, #2648]
-ldr x1, [x0, #2080]
-str x1, [x0, #2656]
-ldr x1, [x0, #2088]
-str x1, [x0, #2664]
-ldr x1, [x0, #2096]
-str x1, [x0, #2672]
-ldr x1, [x0, #2104]
-str x1, [x0, #2680]
-ldr x1, [x0, #2240]
-str x1, [x0, #2048]
-ldr x1, [x0, #2248]
-str x1, [x0, #2056]
-ldr x1, [x0, #2256]
-str x1, [x0, #2064]
-ldr x1, [x0, #2264]
-str x1, [x0, #2072]
-ldr x1, [x0, #2272]
-str x1, [x0, #2080]
-ldr x1, [x0, #2280]
-str x1, [x0, #2088]
-ldr x1, [x0, #2288]
-str x1, [x0, #2096]
-ldr x1, [x0, #2296]
-str x1, [x0, #2104]
-ldr x1, [x0, #576]
-str x1, [x0, #960]
-ldr x1, [x0, #584]
-str x1, [x0, #968]
-ldr x1, [x0, #592]
-str x1, [x0, #976]
-ldr x1, [x0, #600]
-str x1, [x0, #984]
-ldr x1, [x0, #608]
-str x1, [x0, #992]
-ldr x1, [x0, #616]
-str x1, [x0, #1000]
-ldr x1, [x0, #624]
-str x1, [x0, #1008]
-ldr x1, [x0, #632]
-str x1, [x0, #1016]
-ldr x1, [x0, #640]
-str x1, [x0, #1024]
-ldr x1, [x0, #648]
-str x1, [x0, #1032]
-ldr x1, [x0, #656]
-str x1, [x0, #1040]
-ldr x1, [x0, #664]
-str x1, [x0, #1048]
-ldr x1, [x0, #672]
-str x1, [x0, #1056]
-ldr x1, [x0, #680]
-str x1, [x0, #1064]
-ldr x1, [x0, #688]
-str x1, [x0, #1072]
-ldr x1, [x0, #696]
-str x1, [x0, #1080]
+movz x19, #64, lsl #0
+movz x5, #1, lsl #0
+21:
+sub x19, x19, #1
+add x16, x0, x19
+ldrb w1, [x16, #2240]
+lsl x17, x19, #3
+add x17, x0, x17
+and x2, x1, x5
+strb w2, [x17, #2944]
+lsr x2, x1, #1
+and x2, x2, x5
+strb w2, [x17, #2945]
+lsr x2, x1, #2
+and x2, x2, x5
+strb w2, [x17, #2946]
+lsr x2, x1, #3
+and x2, x2, x5
+strb w2, [x17, #2947]
+lsr x2, x1, #4
+and x2, x2, x5
+strb w2, [x17, #2948]
+lsr x2, x1, #5
+and x2, x2, x5
+strb w2, [x17, #2949]
+lsr x2, x1, #6
+and x2, x2, x5
+strb w2, [x17, #2950]
+lsr x2, x1, #7
+and x2, x2, x5
+strb w2, [x17, #2951]
+cbnz x19, 21b
+movz x19, #64, lsl #0
+movz x5, #1, lsl #0
+22:
+sub x19, x19, #1
+add x16, x0, x19
+ldrb w1, [x16, #2304]
+lsl x17, x19, #3
+add x17, x0, x17
+and x2, x1, x5
+strb w2, [x17, #3456]
+lsr x2, x1, #1
+and x2, x2, x5
+strb w2, [x17, #3457]
+lsr x2, x1, #2
+and x2, x2, x5
+strb w2, [x17, #3458]
+lsr x2, x1, #3
+and x2, x2, x5
+strb w2, [x17, #3459]
+lsr x2, x1, #4
+and x2, x2, x5
+strb w2, [x17, #3460]
+lsr x2, x1, #5
+and x2, x2, x5
+strb w2, [x17, #3461]
+lsr x2, x1, #6
+and x2, x2, x5
+strb w2, [x17, #3462]
+lsr x2, x1, #7
+and x2, x2, x5
+strb w2, [x17, #3463]
+cbnz x19, 22b
 movz x1, #13737, lsl #0
 movk x1, #2689, lsl #16
 movk x1, #10860, lsl #32
 movk x1, #51409, lsl #48
-str x1, [x0, #512]
+str x1, [x0, #832]
 movz x1, #18455, lsl #0
 movk x1, #33576, lsl #16
 movk x1, #11304, lsl #32
 movk x1, #55632, lsl #48
-str x1, [x0, #520]
+str x1, [x0, #840]
 movz x1, #60695, lsl #0
 movk x1, #41457, lsl #16
 movk x1, #19415, lsl #32
 movk x1, #62837, lsl #48
-str x1, [x0, #528]
+str x1, [x0, #848]
 movz x1, #53701, lsl #0
 movk x1, #11680, lsl #16
 movk x1, #63417, lsl #32
 movk x1, #55404, lsl #48
-str x1, [x0, #536]
+str x1, [x0, #856]
 movz x1, #25641, lsl #0
 movk x1, #35379, lsl #16
 movk x1, #34913, lsl #32
 movk x1, #61756, lsl #48
-str x1, [x0, #544]
+str x1, [x0, #864]
 movz x1, #46665, lsl #0
 movk x1, #37757, lsl #16
 movk x1, #31057, lsl #32
 movk x1, #39006, lsl #48
-str x1, [x0, #552]
+str x1, [x0, #872]
 movz x1, #992, lsl #0
 movk x1, #61271, lsl #16
 movk x1, #20800, lsl #32
 movk x1, #60564, lsl #48
-str x1, [x0, #560]
+str x1, [x0, #880]
 movz x1, #59242, lsl #0
 movk x1, #63857, lsl #16
 movk x1, #25955, lsl #32
 movk x1, #37890, lsl #48
-str x1, [x0, #568]
-mov v29.d[0], x30
-bl {vg_brainpoolp512r1_mul}
-umov x30, v29.d[0]
-movz x1, #10804, lsl #0
-movk x1, #8425, lsl #16
-movk x1, #33686, lsl #32
-movk x1, #20606, lsl #48
-str x1, [x0, #512]
-movz x1, #23092, lsl #0
-movk x1, #58766, lsl #16
-movk x1, #25543, lsl #32
-movk x1, #155, lsl #48
-str x1, [x0, #520]
-movz x1, #9386, lsl #0
-movk x1, #11655, lsl #16
-movk x1, #42070, lsl #32
-movk x1, #57707, lsl #48
-str x1, [x0, #528]
-movz x1, #48642, lsl #0
-movk x1, #39031, lsl #16
-movk x1, #12520, lsl #32
-movk x1, #51006, lsl #48
-str x1, [x0, #536]
-movz x1, #9267, lsl #0
-movk x1, #65058, lsl #16
-movk x1, #3171, lsl #32
-movk x1, #38880, lsl #48
-str x1, [x0, #544]
-movz x1, #55325, lsl #0
-movk x1, #27927, lsl #16
-movk x1, #22444, lsl #32
-movk x1, #52186, lsl #48
-str x1, [x0, #552]
-movz x1, #43682, lsl #0
-movk x1, #2997, lsl #16
-movk x1, #4773, lsl #32
-movk x1, #25635, lsl #48
-str x1, [x0, #560]
-movz x1, #36519, lsl #0
-movk x1, #18206, lsl #16
-movk x1, #43956, lsl #32
-movk x1, #27210, lsl #48
-str x1, [x0, #568]
-ldr x1, [x0, #960]
-str x1, [x0, #2688]
-ldr x1, [x0, #968]
-str x1, [x0, #2696]
-ldr x1, [x0, #976]
-str x1, [x0, #2704]
-ldr x1, [x0, #984]
-str x1, [x0, #2712]
-ldr x1, [x0, #992]
-str x1, [x0, #2720]
-ldr x1, [x0, #1000]
-str x1, [x0, #2728]
-ldr x1, [x0, #1008]
-str x1, [x0, #2736]
-ldr x1, [x0, #1016]
-str x1, [x0, #2744]
-ldr x1, [x0, #1024]
-str x1, [x0, #2752]
-ldr x1, [x0, #1032]
-str x1, [x0, #2760]
-ldr x1, [x0, #1040]
-str x1, [x0, #2768]
-ldr x1, [x0, #1048]
-str x1, [x0, #2776]
-ldr x1, [x0, #1056]
-str x1, [x0, #2784]
-ldr x1, [x0, #1064]
-str x1, [x0, #2792]
-ldr x1, [x0, #1072]
-str x1, [x0, #2800]
-ldr x1, [x0, #1080]
-str x1, [x0, #2808]
-ldr x1, [x0, #1088]
-str x1, [x0, #2432]
-ldr x1, [x0, #1096]
-str x1, [x0, #2440]
-ldr x1, [x0, #1104]
-str x1, [x0, #2448]
-ldr x1, [x0, #1112]
-str x1, [x0, #2456]
-ldr x1, [x0, #1120]
-str x1, [x0, #2464]
-ldr x1, [x0, #1128]
-str x1, [x0, #2472]
-ldr x1, [x0, #1136]
-str x1, [x0, #2480]
-ldr x1, [x0, #1144]
-str x1, [x0, #2488]
+str x1, [x0, #888]
 movz x1, #0, lsl #0
 movk x1, #0, lsl #16
 movk x1, #0, lsl #32
@@ -2521,177 +2430,54 @@ movk x1, #0, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 str x1, [x0, #1144]
-ldr x1, [x0, #2304]
-str x1, [x0, #2048]
-ldr x1, [x0, #2312]
-str x1, [x0, #2056]
-ldr x1, [x0, #2320]
-str x1, [x0, #2064]
-ldr x1, [x0, #2328]
-str x1, [x0, #2072]
-ldr x1, [x0, #2336]
-str x1, [x0, #2080]
-ldr x1, [x0, #2344]
-str x1, [x0, #2088]
-ldr x1, [x0, #2352]
-str x1, [x0, #2096]
-ldr x1, [x0, #2360]
-str x1, [x0, #2104]
-movz x1, #13737, lsl #0
-movk x1, #2689, lsl #16
-movk x1, #10860, lsl #32
-movk x1, #51409, lsl #48
-str x1, [x0, #832]
-movz x1, #18455, lsl #0
-movk x1, #33576, lsl #16
-movk x1, #11304, lsl #32
-movk x1, #55632, lsl #48
-str x1, [x0, #840]
-movz x1, #60695, lsl #0
-movk x1, #41457, lsl #16
-movk x1, #19415, lsl #32
-movk x1, #62837, lsl #48
-str x1, [x0, #848]
-movz x1, #53701, lsl #0
-movk x1, #11680, lsl #16
-movk x1, #63417, lsl #32
-movk x1, #55404, lsl #48
-str x1, [x0, #856]
-movz x1, #25641, lsl #0
-movk x1, #35379, lsl #16
-movk x1, #34913, lsl #32
-movk x1, #61756, lsl #48
-str x1, [x0, #864]
-movz x1, #46665, lsl #0
-movk x1, #37757, lsl #16
-movk x1, #31057, lsl #32
-movk x1, #39006, lsl #48
-str x1, [x0, #872]
-movz x1, #992, lsl #0
-movk x1, #61271, lsl #16
-movk x1, #20800, lsl #32
-movk x1, #60564, lsl #48
-str x1, [x0, #880]
-movz x1, #59242, lsl #0
-movk x1, #63857, lsl #16
-movk x1, #25955, lsl #32
-movk x1, #37890, lsl #48
-str x1, [x0, #888]
-ldr x1, [x0, #2496]
-str x1, [x0, #960]
-ldr x1, [x0, #2504]
-str x1, [x0, #968]
-ldr x1, [x0, #2512]
-str x1, [x0, #976]
-ldr x1, [x0, #2520]
-str x1, [x0, #984]
-ldr x1, [x0, #2528]
-str x1, [x0, #992]
-ldr x1, [x0, #2536]
-str x1, [x0, #1000]
-ldr x1, [x0, #2544]
-str x1, [x0, #1008]
-ldr x1, [x0, #2552]
-str x1, [x0, #1016]
-ldr x1, [x0, #2816]
-str x1, [x0, #1024]
-ldr x1, [x0, #2824]
-str x1, [x0, #1032]
-ldr x1, [x0, #2832]
-str x1, [x0, #1040]
-ldr x1, [x0, #2840]
-str x1, [x0, #1048]
-ldr x1, [x0, #2848]
-str x1, [x0, #1056]
-ldr x1, [x0, #2856]
-str x1, [x0, #1064]
-ldr x1, [x0, #2864]
-str x1, [x0, #1072]
-ldr x1, [x0, #2872]
-str x1, [x0, #1080]
-movz x1, #13737, lsl #0
-movk x1, #2689, lsl #16
-movk x1, #10860, lsl #32
-movk x1, #51409, lsl #48
-str x1, [x0, #512]
-movz x1, #18455, lsl #0
-movk x1, #33576, lsl #16
-movk x1, #11304, lsl #32
-movk x1, #55632, lsl #48
-str x1, [x0, #520]
-movz x1, #60695, lsl #0
-movk x1, #41457, lsl #16
-movk x1, #19415, lsl #32
-movk x1, #62837, lsl #48
-str x1, [x0, #528]
-movz x1, #53701, lsl #0
-movk x1, #11680, lsl #16
-movk x1, #63417, lsl #32
-movk x1, #55404, lsl #48
-str x1, [x0, #536]
-movz x1, #25641, lsl #0
-movk x1, #35379, lsl #16
-movk x1, #34913, lsl #32
-movk x1, #61756, lsl #48
-str x1, [x0, #544]
-movz x1, #46665, lsl #0
-movk x1, #37757, lsl #16
-movk x1, #31057, lsl #32
-movk x1, #39006, lsl #48
-str x1, [x0, #552]
-movz x1, #992, lsl #0
-movk x1, #61271, lsl #16
-movk x1, #20800, lsl #32
-movk x1, #60564, lsl #48
-str x1, [x0, #560]
-movz x1, #59242, lsl #0
-movk x1, #63857, lsl #16
-movk x1, #25955, lsl #32
-movk x1, #37890, lsl #48
-str x1, [x0, #568]
-mov v29.d[0], x30
-bl {vg_brainpoolp512r1_mul}
-umov x30, v29.d[0]
-movz x1, #10804, lsl #0
-movk x1, #8425, lsl #16
-movk x1, #33686, lsl #32
-movk x1, #20606, lsl #48
-str x1, [x0, #512]
-movz x1, #23092, lsl #0
-movk x1, #58766, lsl #16
-movk x1, #25543, lsl #32
-movk x1, #155, lsl #48
-str x1, [x0, #520]
-movz x1, #9386, lsl #0
-movk x1, #11655, lsl #16
-movk x1, #42070, lsl #32
-movk x1, #57707, lsl #48
-str x1, [x0, #528]
-movz x1, #48642, lsl #0
-movk x1, #39031, lsl #16
-movk x1, #12520, lsl #32
-movk x1, #51006, lsl #48
-str x1, [x0, #536]
-movz x1, #9267, lsl #0
-movk x1, #65058, lsl #16
-movk x1, #3171, lsl #32
-movk x1, #38880, lsl #48
-str x1, [x0, #544]
-movz x1, #55325, lsl #0
-movk x1, #27927, lsl #16
-movk x1, #22444, lsl #32
-movk x1, #52186, lsl #48
-str x1, [x0, #552]
-movz x1, #43682, lsl #0
-movk x1, #2997, lsl #16
-movk x1, #4773, lsl #32
-movk x1, #25635, lsl #48
-str x1, [x0, #560]
-movz x1, #36519, lsl #0
-movk x1, #18206, lsl #16
-movk x1, #43956, lsl #32
-movk x1, #27210, lsl #48
-str x1, [x0, #568]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
 mov v29.d[0], x30
 movz x1, #1536, lsl #0
 movz x2, #2688, lsl #0
@@ -4193,22 +3979,27956 @@ ldr x1, [x0, #1328]
 str x1, [x0, #1136]
 ldr x1, [x0, #1336]
 str x1, [x0, #1144]
-ldr x1, [x0, #2624]
-str x1, [x0, #2048]
-ldr x1, [x0, #2632]
-str x1, [x0, #2056]
-ldr x1, [x0, #2640]
-str x1, [x0, #2064]
-ldr x1, [x0, #2648]
-str x1, [x0, #2072]
-ldr x1, [x0, #2656]
-str x1, [x0, #2080]
-ldr x1, [x0, #2664]
-str x1, [x0, #2088]
-ldr x1, [x0, #2672]
-str x1, [x0, #2096]
-ldr x1, [x0, #2680]
-str x1, [x0, #2104]
+ldr x1, [x0, #960]
+str x1, [x0, #5280]
+ldr x1, [x0, #968]
+str x1, [x0, #5288]
+ldr x1, [x0, #976]
+str x1, [x0, #5296]
+ldr x1, [x0, #984]
+str x1, [x0, #5304]
+ldr x1, [x0, #992]
+str x1, [x0, #5312]
+ldr x1, [x0, #1000]
+str x1, [x0, #5320]
+ldr x1, [x0, #1008]
+str x1, [x0, #5328]
+ldr x1, [x0, #1016]
+str x1, [x0, #5336]
+ldr x1, [x0, #1024]
+str x1, [x0, #5344]
+ldr x1, [x0, #1032]
+str x1, [x0, #5352]
+ldr x1, [x0, #1040]
+str x1, [x0, #5360]
+ldr x1, [x0, #1048]
+str x1, [x0, #5368]
+ldr x1, [x0, #1056]
+str x1, [x0, #5376]
+ldr x1, [x0, #1064]
+str x1, [x0, #5384]
+ldr x1, [x0, #1072]
+str x1, [x0, #5392]
+ldr x1, [x0, #1080]
+str x1, [x0, #5400]
+ldr x1, [x0, #1088]
+str x1, [x0, #5408]
+ldr x1, [x0, #1096]
+str x1, [x0, #5416]
+ldr x1, [x0, #1104]
+str x1, [x0, #5424]
+ldr x1, [x0, #1112]
+str x1, [x0, #5432]
+ldr x1, [x0, #1120]
+str x1, [x0, #5440]
+ldr x1, [x0, #1128]
+str x1, [x0, #5448]
+ldr x1, [x0, #1136]
+str x1, [x0, #5456]
+ldr x1, [x0, #1144]
+str x1, [x0, #5464]
+ldr x1, [x0, #5280]
+str x1, [x0, #960]
+ldr x1, [x0, #5288]
+str x1, [x0, #968]
+ldr x1, [x0, #5296]
+str x1, [x0, #976]
+ldr x1, [x0, #5304]
+str x1, [x0, #984]
+ldr x1, [x0, #5312]
+str x1, [x0, #992]
+ldr x1, [x0, #5320]
+str x1, [x0, #1000]
+ldr x1, [x0, #5328]
+str x1, [x0, #1008]
+ldr x1, [x0, #5336]
+str x1, [x0, #1016]
+ldr x1, [x0, #5344]
+str x1, [x0, #1024]
+ldr x1, [x0, #5352]
+str x1, [x0, #1032]
+ldr x1, [x0, #5360]
+str x1, [x0, #1040]
+ldr x1, [x0, #5368]
+str x1, [x0, #1048]
+ldr x1, [x0, #5376]
+str x1, [x0, #1056]
+ldr x1, [x0, #5384]
+str x1, [x0, #1064]
+ldr x1, [x0, #5392]
+str x1, [x0, #1072]
+ldr x1, [x0, #5400]
+str x1, [x0, #1080]
+ldr x1, [x0, #5408]
+str x1, [x0, #1088]
+ldr x1, [x0, #5416]
+str x1, [x0, #1096]
+ldr x1, [x0, #5424]
+str x1, [x0, #1104]
+ldr x1, [x0, #5432]
+str x1, [x0, #1112]
+ldr x1, [x0, #5440]
+str x1, [x0, #1120]
+ldr x1, [x0, #5448]
+str x1, [x0, #1128]
+ldr x1, [x0, #5456]
+str x1, [x0, #1136]
+ldr x1, [x0, #5464]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #5472]
+ldr x1, [x0, #968]
+str x1, [x0, #5480]
+ldr x1, [x0, #976]
+str x1, [x0, #5488]
+ldr x1, [x0, #984]
+str x1, [x0, #5496]
+ldr x1, [x0, #992]
+str x1, [x0, #5504]
+ldr x1, [x0, #1000]
+str x1, [x0, #5512]
+ldr x1, [x0, #1008]
+str x1, [x0, #5520]
+ldr x1, [x0, #1016]
+str x1, [x0, #5528]
+ldr x1, [x0, #1024]
+str x1, [x0, #5536]
+ldr x1, [x0, #1032]
+str x1, [x0, #5544]
+ldr x1, [x0, #1040]
+str x1, [x0, #5552]
+ldr x1, [x0, #1048]
+str x1, [x0, #5560]
+ldr x1, [x0, #1056]
+str x1, [x0, #5568]
+ldr x1, [x0, #1064]
+str x1, [x0, #5576]
+ldr x1, [x0, #1072]
+str x1, [x0, #5584]
+ldr x1, [x0, #1080]
+str x1, [x0, #5592]
+ldr x1, [x0, #1088]
+str x1, [x0, #5600]
+ldr x1, [x0, #1096]
+str x1, [x0, #5608]
+ldr x1, [x0, #1104]
+str x1, [x0, #5616]
+ldr x1, [x0, #1112]
+str x1, [x0, #5624]
+ldr x1, [x0, #1120]
+str x1, [x0, #5632]
+ldr x1, [x0, #1128]
+str x1, [x0, #5640]
+ldr x1, [x0, #1136]
+str x1, [x0, #5648]
+ldr x1, [x0, #1144]
+str x1, [x0, #5656]
+ldr x1, [x0, #5472]
+str x1, [x0, #960]
+ldr x1, [x0, #5480]
+str x1, [x0, #968]
+ldr x1, [x0, #5488]
+str x1, [x0, #976]
+ldr x1, [x0, #5496]
+str x1, [x0, #984]
+ldr x1, [x0, #5504]
+str x1, [x0, #992]
+ldr x1, [x0, #5512]
+str x1, [x0, #1000]
+ldr x1, [x0, #5520]
+str x1, [x0, #1008]
+ldr x1, [x0, #5528]
+str x1, [x0, #1016]
+ldr x1, [x0, #5536]
+str x1, [x0, #1024]
+ldr x1, [x0, #5544]
+str x1, [x0, #1032]
+ldr x1, [x0, #5552]
+str x1, [x0, #1040]
+ldr x1, [x0, #5560]
+str x1, [x0, #1048]
+ldr x1, [x0, #5568]
+str x1, [x0, #1056]
+ldr x1, [x0, #5576]
+str x1, [x0, #1064]
+ldr x1, [x0, #5584]
+str x1, [x0, #1072]
+ldr x1, [x0, #5592]
+str x1, [x0, #1080]
+ldr x1, [x0, #5600]
+str x1, [x0, #1088]
+ldr x1, [x0, #5608]
+str x1, [x0, #1096]
+ldr x1, [x0, #5616]
+str x1, [x0, #1104]
+ldr x1, [x0, #5624]
+str x1, [x0, #1112]
+ldr x1, [x0, #5632]
+str x1, [x0, #1120]
+ldr x1, [x0, #5640]
+str x1, [x0, #1128]
+ldr x1, [x0, #5648]
+str x1, [x0, #1136]
+ldr x1, [x0, #5656]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #5664]
+ldr x1, [x0, #968]
+str x1, [x0, #5672]
+ldr x1, [x0, #976]
+str x1, [x0, #5680]
+ldr x1, [x0, #984]
+str x1, [x0, #5688]
+ldr x1, [x0, #992]
+str x1, [x0, #5696]
+ldr x1, [x0, #1000]
+str x1, [x0, #5704]
+ldr x1, [x0, #1008]
+str x1, [x0, #5712]
+ldr x1, [x0, #1016]
+str x1, [x0, #5720]
+ldr x1, [x0, #1024]
+str x1, [x0, #5728]
+ldr x1, [x0, #1032]
+str x1, [x0, #5736]
+ldr x1, [x0, #1040]
+str x1, [x0, #5744]
+ldr x1, [x0, #1048]
+str x1, [x0, #5752]
+ldr x1, [x0, #1056]
+str x1, [x0, #5760]
+ldr x1, [x0, #1064]
+str x1, [x0, #5768]
+ldr x1, [x0, #1072]
+str x1, [x0, #5776]
+ldr x1, [x0, #1080]
+str x1, [x0, #5784]
+ldr x1, [x0, #1088]
+str x1, [x0, #5792]
+ldr x1, [x0, #1096]
+str x1, [x0, #5800]
+ldr x1, [x0, #1104]
+str x1, [x0, #5808]
+ldr x1, [x0, #1112]
+str x1, [x0, #5816]
+ldr x1, [x0, #1120]
+str x1, [x0, #5824]
+ldr x1, [x0, #1128]
+str x1, [x0, #5832]
+ldr x1, [x0, #1136]
+str x1, [x0, #5840]
+ldr x1, [x0, #1144]
+str x1, [x0, #5848]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #960]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #968]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #976]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #984]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #992]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1000]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1008]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1016]
+movz x1, #46861, lsl #0
+movk x1, #42949, lsl #16
+movk x1, #40873, lsl #32
+movk x1, #55125, lsl #48
+str x1, [x0, #1024]
+movz x1, #14714, lsl #0
+movk x1, #53885, lsl #16
+movk x1, #208, lsl #32
+movk x1, #55166, lsl #48
+str x1, [x0, #1032]
+movz x1, #32537, lsl #0
+movk x1, #6492, lsl #16
+movk x1, #24277, lsl #32
+movk x1, #20786, lsl #48
+str x1, [x0, #1040]
+movz x1, #38845, lsl #0
+movk x1, #25657, lsl #16
+movk x1, #25855, lsl #32
+movk x1, #33458, lsl #48
+str x1, [x0, #1048]
+movz x1, #63374, lsl #0
+movk x1, #36812, lsl #16
+movk x1, #25397, lsl #32
+movk x1, #10652, lsl #48
+str x1, [x0, #1056]
+movz x1, #11761, lsl #0
+movk x1, #19510, lsl #16
+movk x1, #29260, lsl #32
+movk x1, #13519, lsl #48
+str x1, [x0, #1064]
+movz x1, #1016, lsl #0
+movk x1, #52278, lsl #16
+movk x1, #6481, lsl #32
+movk x1, #49195, lsl #48
+str x1, [x0, #1072]
+movz x1, #15220, lsl #0
+movk x1, #9238, lsl #16
+movk x1, #25159, lsl #32
+movk x1, #21794, lsl #48
+str x1, [x0, #1080]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1088]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1096]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1104]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1112]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1120]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1128]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1136]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1144]
+ldr x1, [x0, #2496]
+str x1, [x0, #2688]
+ldr x1, [x0, #2504]
+str x1, [x0, #2696]
+ldr x1, [x0, #2512]
+str x1, [x0, #2704]
+ldr x1, [x0, #2520]
+str x1, [x0, #2712]
+ldr x1, [x0, #2528]
+str x1, [x0, #2720]
+ldr x1, [x0, #2536]
+str x1, [x0, #2728]
+ldr x1, [x0, #2544]
+str x1, [x0, #2736]
+ldr x1, [x0, #2552]
+str x1, [x0, #2744]
+ldr x1, [x0, #2816]
+str x1, [x0, #2752]
+ldr x1, [x0, #2824]
+str x1, [x0, #2760]
+ldr x1, [x0, #2832]
+str x1, [x0, #2768]
+ldr x1, [x0, #2840]
+str x1, [x0, #2776]
+ldr x1, [x0, #2848]
+str x1, [x0, #2784]
+ldr x1, [x0, #2856]
+str x1, [x0, #2792]
+ldr x1, [x0, #2864]
+str x1, [x0, #2800]
+ldr x1, [x0, #2872]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #5856]
+ldr x1, [x0, #968]
+str x1, [x0, #5864]
+ldr x1, [x0, #976]
+str x1, [x0, #5872]
+ldr x1, [x0, #984]
+str x1, [x0, #5880]
+ldr x1, [x0, #992]
+str x1, [x0, #5888]
+ldr x1, [x0, #1000]
+str x1, [x0, #5896]
+ldr x1, [x0, #1008]
+str x1, [x0, #5904]
+ldr x1, [x0, #1016]
+str x1, [x0, #5912]
+ldr x1, [x0, #1024]
+str x1, [x0, #5920]
+ldr x1, [x0, #1032]
+str x1, [x0, #5928]
+ldr x1, [x0, #1040]
+str x1, [x0, #5936]
+ldr x1, [x0, #1048]
+str x1, [x0, #5944]
+ldr x1, [x0, #1056]
+str x1, [x0, #5952]
+ldr x1, [x0, #1064]
+str x1, [x0, #5960]
+ldr x1, [x0, #1072]
+str x1, [x0, #5968]
+ldr x1, [x0, #1080]
+str x1, [x0, #5976]
+ldr x1, [x0, #1088]
+str x1, [x0, #5984]
+ldr x1, [x0, #1096]
+str x1, [x0, #5992]
+ldr x1, [x0, #1104]
+str x1, [x0, #6000]
+ldr x1, [x0, #1112]
+str x1, [x0, #6008]
+ldr x1, [x0, #1120]
+str x1, [x0, #6016]
+ldr x1, [x0, #1128]
+str x1, [x0, #6024]
+ldr x1, [x0, #1136]
+str x1, [x0, #6032]
+ldr x1, [x0, #1144]
+str x1, [x0, #6040]
+ldr x1, [x0, #5856]
+str x1, [x0, #960]
+ldr x1, [x0, #5864]
+str x1, [x0, #968]
+ldr x1, [x0, #5872]
+str x1, [x0, #976]
+ldr x1, [x0, #5880]
+str x1, [x0, #984]
+ldr x1, [x0, #5888]
+str x1, [x0, #992]
+ldr x1, [x0, #5896]
+str x1, [x0, #1000]
+ldr x1, [x0, #5904]
+str x1, [x0, #1008]
+ldr x1, [x0, #5912]
+str x1, [x0, #1016]
+ldr x1, [x0, #5920]
+str x1, [x0, #1024]
+ldr x1, [x0, #5928]
+str x1, [x0, #1032]
+ldr x1, [x0, #5936]
+str x1, [x0, #1040]
+ldr x1, [x0, #5944]
+str x1, [x0, #1048]
+ldr x1, [x0, #5952]
+str x1, [x0, #1056]
+ldr x1, [x0, #5960]
+str x1, [x0, #1064]
+ldr x1, [x0, #5968]
+str x1, [x0, #1072]
+ldr x1, [x0, #5976]
+str x1, [x0, #1080]
+ldr x1, [x0, #5984]
+str x1, [x0, #1088]
+ldr x1, [x0, #5992]
+str x1, [x0, #1096]
+ldr x1, [x0, #6000]
+str x1, [x0, #1104]
+ldr x1, [x0, #6008]
+str x1, [x0, #1112]
+ldr x1, [x0, #6016]
+str x1, [x0, #1120]
+ldr x1, [x0, #6024]
+str x1, [x0, #1128]
+ldr x1, [x0, #6032]
+str x1, [x0, #1136]
+ldr x1, [x0, #6040]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #6048]
+ldr x1, [x0, #968]
+str x1, [x0, #6056]
+ldr x1, [x0, #976]
+str x1, [x0, #6064]
+ldr x1, [x0, #984]
+str x1, [x0, #6072]
+ldr x1, [x0, #992]
+str x1, [x0, #6080]
+ldr x1, [x0, #1000]
+str x1, [x0, #6088]
+ldr x1, [x0, #1008]
+str x1, [x0, #6096]
+ldr x1, [x0, #1016]
+str x1, [x0, #6104]
+ldr x1, [x0, #1024]
+str x1, [x0, #6112]
+ldr x1, [x0, #1032]
+str x1, [x0, #6120]
+ldr x1, [x0, #1040]
+str x1, [x0, #6128]
+ldr x1, [x0, #1048]
+str x1, [x0, #6136]
+ldr x1, [x0, #1056]
+str x1, [x0, #6144]
+ldr x1, [x0, #1064]
+str x1, [x0, #6152]
+ldr x1, [x0, #1072]
+str x1, [x0, #6160]
+ldr x1, [x0, #1080]
+str x1, [x0, #6168]
+ldr x1, [x0, #1088]
+str x1, [x0, #6176]
+ldr x1, [x0, #1096]
+str x1, [x0, #6184]
+ldr x1, [x0, #1104]
+str x1, [x0, #6192]
+ldr x1, [x0, #1112]
+str x1, [x0, #6200]
+ldr x1, [x0, #1120]
+str x1, [x0, #6208]
+ldr x1, [x0, #1128]
+str x1, [x0, #6216]
+ldr x1, [x0, #1136]
+str x1, [x0, #6224]
+ldr x1, [x0, #1144]
+str x1, [x0, #6232]
+ldr x1, [x0, #6048]
+str x1, [x0, #960]
+ldr x1, [x0, #6056]
+str x1, [x0, #968]
+ldr x1, [x0, #6064]
+str x1, [x0, #976]
+ldr x1, [x0, #6072]
+str x1, [x0, #984]
+ldr x1, [x0, #6080]
+str x1, [x0, #992]
+ldr x1, [x0, #6088]
+str x1, [x0, #1000]
+ldr x1, [x0, #6096]
+str x1, [x0, #1008]
+ldr x1, [x0, #6104]
+str x1, [x0, #1016]
+ldr x1, [x0, #6112]
+str x1, [x0, #1024]
+ldr x1, [x0, #6120]
+str x1, [x0, #1032]
+ldr x1, [x0, #6128]
+str x1, [x0, #1040]
+ldr x1, [x0, #6136]
+str x1, [x0, #1048]
+ldr x1, [x0, #6144]
+str x1, [x0, #1056]
+ldr x1, [x0, #6152]
+str x1, [x0, #1064]
+ldr x1, [x0, #6160]
+str x1, [x0, #1072]
+ldr x1, [x0, #6168]
+str x1, [x0, #1080]
+ldr x1, [x0, #6176]
+str x1, [x0, #1088]
+ldr x1, [x0, #6184]
+str x1, [x0, #1096]
+ldr x1, [x0, #6192]
+str x1, [x0, #1104]
+ldr x1, [x0, #6200]
+str x1, [x0, #1112]
+ldr x1, [x0, #6208]
+str x1, [x0, #1120]
+ldr x1, [x0, #6216]
+str x1, [x0, #1128]
+ldr x1, [x0, #6224]
+str x1, [x0, #1136]
+ldr x1, [x0, #6232]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #6240]
+ldr x1, [x0, #968]
+str x1, [x0, #6248]
+ldr x1, [x0, #976]
+str x1, [x0, #6256]
+ldr x1, [x0, #984]
+str x1, [x0, #6264]
+ldr x1, [x0, #992]
+str x1, [x0, #6272]
+ldr x1, [x0, #1000]
+str x1, [x0, #6280]
+ldr x1, [x0, #1008]
+str x1, [x0, #6288]
+ldr x1, [x0, #1016]
+str x1, [x0, #6296]
+ldr x1, [x0, #1024]
+str x1, [x0, #6304]
+ldr x1, [x0, #1032]
+str x1, [x0, #6312]
+ldr x1, [x0, #1040]
+str x1, [x0, #6320]
+ldr x1, [x0, #1048]
+str x1, [x0, #6328]
+ldr x1, [x0, #1056]
+str x1, [x0, #6336]
+ldr x1, [x0, #1064]
+str x1, [x0, #6344]
+ldr x1, [x0, #1072]
+str x1, [x0, #6352]
+ldr x1, [x0, #1080]
+str x1, [x0, #6360]
+ldr x1, [x0, #1088]
+str x1, [x0, #6368]
+ldr x1, [x0, #1096]
+str x1, [x0, #6376]
+ldr x1, [x0, #1104]
+str x1, [x0, #6384]
+ldr x1, [x0, #1112]
+str x1, [x0, #6392]
+ldr x1, [x0, #1120]
+str x1, [x0, #6400]
+ldr x1, [x0, #1128]
+str x1, [x0, #6408]
+ldr x1, [x0, #1136]
+str x1, [x0, #6416]
+ldr x1, [x0, #1144]
+str x1, [x0, #6424]
+ldr x1, [x0, #6240]
+str x1, [x0, #960]
+ldr x1, [x0, #6248]
+str x1, [x0, #968]
+ldr x1, [x0, #6256]
+str x1, [x0, #976]
+ldr x1, [x0, #6264]
+str x1, [x0, #984]
+ldr x1, [x0, #6272]
+str x1, [x0, #992]
+ldr x1, [x0, #6280]
+str x1, [x0, #1000]
+ldr x1, [x0, #6288]
+str x1, [x0, #1008]
+ldr x1, [x0, #6296]
+str x1, [x0, #1016]
+ldr x1, [x0, #6304]
+str x1, [x0, #1024]
+ldr x1, [x0, #6312]
+str x1, [x0, #1032]
+ldr x1, [x0, #6320]
+str x1, [x0, #1040]
+ldr x1, [x0, #6328]
+str x1, [x0, #1048]
+ldr x1, [x0, #6336]
+str x1, [x0, #1056]
+ldr x1, [x0, #6344]
+str x1, [x0, #1064]
+ldr x1, [x0, #6352]
+str x1, [x0, #1072]
+ldr x1, [x0, #6360]
+str x1, [x0, #1080]
+ldr x1, [x0, #6368]
+str x1, [x0, #1088]
+ldr x1, [x0, #6376]
+str x1, [x0, #1096]
+ldr x1, [x0, #6384]
+str x1, [x0, #1104]
+ldr x1, [x0, #6392]
+str x1, [x0, #1112]
+ldr x1, [x0, #6400]
+str x1, [x0, #1120]
+ldr x1, [x0, #6408]
+str x1, [x0, #1128]
+ldr x1, [x0, #6416]
+str x1, [x0, #1136]
+ldr x1, [x0, #6424]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #6432]
+ldr x1, [x0, #968]
+str x1, [x0, #6440]
+ldr x1, [x0, #976]
+str x1, [x0, #6448]
+ldr x1, [x0, #984]
+str x1, [x0, #6456]
+ldr x1, [x0, #992]
+str x1, [x0, #6464]
+ldr x1, [x0, #1000]
+str x1, [x0, #6472]
+ldr x1, [x0, #1008]
+str x1, [x0, #6480]
+ldr x1, [x0, #1016]
+str x1, [x0, #6488]
+ldr x1, [x0, #1024]
+str x1, [x0, #6496]
+ldr x1, [x0, #1032]
+str x1, [x0, #6504]
+ldr x1, [x0, #1040]
+str x1, [x0, #6512]
+ldr x1, [x0, #1048]
+str x1, [x0, #6520]
+ldr x1, [x0, #1056]
+str x1, [x0, #6528]
+ldr x1, [x0, #1064]
+str x1, [x0, #6536]
+ldr x1, [x0, #1072]
+str x1, [x0, #6544]
+ldr x1, [x0, #1080]
+str x1, [x0, #6552]
+ldr x1, [x0, #1088]
+str x1, [x0, #6560]
+ldr x1, [x0, #1096]
+str x1, [x0, #6568]
+ldr x1, [x0, #1104]
+str x1, [x0, #6576]
+ldr x1, [x0, #1112]
+str x1, [x0, #6584]
+ldr x1, [x0, #1120]
+str x1, [x0, #6592]
+ldr x1, [x0, #1128]
+str x1, [x0, #6600]
+ldr x1, [x0, #1136]
+str x1, [x0, #6608]
+ldr x1, [x0, #1144]
+str x1, [x0, #6616]
+ldr x1, [x0, #5856]
+str x1, [x0, #960]
+ldr x1, [x0, #5864]
+str x1, [x0, #968]
+ldr x1, [x0, #5872]
+str x1, [x0, #976]
+ldr x1, [x0, #5880]
+str x1, [x0, #984]
+ldr x1, [x0, #5888]
+str x1, [x0, #992]
+ldr x1, [x0, #5896]
+str x1, [x0, #1000]
+ldr x1, [x0, #5904]
+str x1, [x0, #1008]
+ldr x1, [x0, #5912]
+str x1, [x0, #1016]
+ldr x1, [x0, #5920]
+str x1, [x0, #1024]
+ldr x1, [x0, #5928]
+str x1, [x0, #1032]
+ldr x1, [x0, #5936]
+str x1, [x0, #1040]
+ldr x1, [x0, #5944]
+str x1, [x0, #1048]
+ldr x1, [x0, #5952]
+str x1, [x0, #1056]
+ldr x1, [x0, #5960]
+str x1, [x0, #1064]
+ldr x1, [x0, #5968]
+str x1, [x0, #1072]
+ldr x1, [x0, #5976]
+str x1, [x0, #1080]
+ldr x1, [x0, #5984]
+str x1, [x0, #1088]
+ldr x1, [x0, #5992]
+str x1, [x0, #1096]
+ldr x1, [x0, #6000]
+str x1, [x0, #1104]
+ldr x1, [x0, #6008]
+str x1, [x0, #1112]
+ldr x1, [x0, #6016]
+str x1, [x0, #1120]
+ldr x1, [x0, #6024]
+str x1, [x0, #1128]
+ldr x1, [x0, #6032]
+str x1, [x0, #1136]
+ldr x1, [x0, #6040]
+str x1, [x0, #1144]
+ldr x1, [x0, #2496]
+str x1, [x0, #2688]
+ldr x1, [x0, #2504]
+str x1, [x0, #2696]
+ldr x1, [x0, #2512]
+str x1, [x0, #2704]
+ldr x1, [x0, #2520]
+str x1, [x0, #2712]
+ldr x1, [x0, #2528]
+str x1, [x0, #2720]
+ldr x1, [x0, #2536]
+str x1, [x0, #2728]
+ldr x1, [x0, #2544]
+str x1, [x0, #2736]
+ldr x1, [x0, #2552]
+str x1, [x0, #2744]
+ldr x1, [x0, #2816]
+str x1, [x0, #2752]
+ldr x1, [x0, #2824]
+str x1, [x0, #2760]
+ldr x1, [x0, #2832]
+str x1, [x0, #2768]
+ldr x1, [x0, #2840]
+str x1, [x0, #2776]
+ldr x1, [x0, #2848]
+str x1, [x0, #2784]
+ldr x1, [x0, #2856]
+str x1, [x0, #2792]
+ldr x1, [x0, #2864]
+str x1, [x0, #2800]
+ldr x1, [x0, #2872]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #6624]
+ldr x1, [x0, #968]
+str x1, [x0, #6632]
+ldr x1, [x0, #976]
+str x1, [x0, #6640]
+ldr x1, [x0, #984]
+str x1, [x0, #6648]
+ldr x1, [x0, #992]
+str x1, [x0, #6656]
+ldr x1, [x0, #1000]
+str x1, [x0, #6664]
+ldr x1, [x0, #1008]
+str x1, [x0, #6672]
+ldr x1, [x0, #1016]
+str x1, [x0, #6680]
+ldr x1, [x0, #1024]
+str x1, [x0, #6688]
+ldr x1, [x0, #1032]
+str x1, [x0, #6696]
+ldr x1, [x0, #1040]
+str x1, [x0, #6704]
+ldr x1, [x0, #1048]
+str x1, [x0, #6712]
+ldr x1, [x0, #1056]
+str x1, [x0, #6720]
+ldr x1, [x0, #1064]
+str x1, [x0, #6728]
+ldr x1, [x0, #1072]
+str x1, [x0, #6736]
+ldr x1, [x0, #1080]
+str x1, [x0, #6744]
+ldr x1, [x0, #1088]
+str x1, [x0, #6752]
+ldr x1, [x0, #1096]
+str x1, [x0, #6760]
+ldr x1, [x0, #1104]
+str x1, [x0, #6768]
+ldr x1, [x0, #1112]
+str x1, [x0, #6776]
+ldr x1, [x0, #1120]
+str x1, [x0, #6784]
+ldr x1, [x0, #1128]
+str x1, [x0, #6792]
+ldr x1, [x0, #1136]
+str x1, [x0, #6800]
+ldr x1, [x0, #1144]
+str x1, [x0, #6808]
+ldr x1, [x0, #6624]
+str x1, [x0, #960]
+ldr x1, [x0, #6632]
+str x1, [x0, #968]
+ldr x1, [x0, #6640]
+str x1, [x0, #976]
+ldr x1, [x0, #6648]
+str x1, [x0, #984]
+ldr x1, [x0, #6656]
+str x1, [x0, #992]
+ldr x1, [x0, #6664]
+str x1, [x0, #1000]
+ldr x1, [x0, #6672]
+str x1, [x0, #1008]
+ldr x1, [x0, #6680]
+str x1, [x0, #1016]
+ldr x1, [x0, #6688]
+str x1, [x0, #1024]
+ldr x1, [x0, #6696]
+str x1, [x0, #1032]
+ldr x1, [x0, #6704]
+str x1, [x0, #1040]
+ldr x1, [x0, #6712]
+str x1, [x0, #1048]
+ldr x1, [x0, #6720]
+str x1, [x0, #1056]
+ldr x1, [x0, #6728]
+str x1, [x0, #1064]
+ldr x1, [x0, #6736]
+str x1, [x0, #1072]
+ldr x1, [x0, #6744]
+str x1, [x0, #1080]
+ldr x1, [x0, #6752]
+str x1, [x0, #1088]
+ldr x1, [x0, #6760]
+str x1, [x0, #1096]
+ldr x1, [x0, #6768]
+str x1, [x0, #1104]
+ldr x1, [x0, #6776]
+str x1, [x0, #1112]
+ldr x1, [x0, #6784]
+str x1, [x0, #1120]
+ldr x1, [x0, #6792]
+str x1, [x0, #1128]
+ldr x1, [x0, #6800]
+str x1, [x0, #1136]
+ldr x1, [x0, #6808]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #6816]
+ldr x1, [x0, #968]
+str x1, [x0, #6824]
+ldr x1, [x0, #976]
+str x1, [x0, #6832]
+ldr x1, [x0, #984]
+str x1, [x0, #6840]
+ldr x1, [x0, #992]
+str x1, [x0, #6848]
+ldr x1, [x0, #1000]
+str x1, [x0, #6856]
+ldr x1, [x0, #1008]
+str x1, [x0, #6864]
+ldr x1, [x0, #1016]
+str x1, [x0, #6872]
+ldr x1, [x0, #1024]
+str x1, [x0, #6880]
+ldr x1, [x0, #1032]
+str x1, [x0, #6888]
+ldr x1, [x0, #1040]
+str x1, [x0, #6896]
+ldr x1, [x0, #1048]
+str x1, [x0, #6904]
+ldr x1, [x0, #1056]
+str x1, [x0, #6912]
+ldr x1, [x0, #1064]
+str x1, [x0, #6920]
+ldr x1, [x0, #1072]
+str x1, [x0, #6928]
+ldr x1, [x0, #1080]
+str x1, [x0, #6936]
+ldr x1, [x0, #1088]
+str x1, [x0, #6944]
+ldr x1, [x0, #1096]
+str x1, [x0, #6952]
+ldr x1, [x0, #1104]
+str x1, [x0, #6960]
+ldr x1, [x0, #1112]
+str x1, [x0, #6968]
+ldr x1, [x0, #1120]
+str x1, [x0, #6976]
+ldr x1, [x0, #1128]
+str x1, [x0, #6984]
+ldr x1, [x0, #1136]
+str x1, [x0, #6992]
+ldr x1, [x0, #1144]
+str x1, [x0, #7000]
+ldr x1, [x0, #6816]
+str x1, [x0, #960]
+ldr x1, [x0, #6824]
+str x1, [x0, #968]
+ldr x1, [x0, #6832]
+str x1, [x0, #976]
+ldr x1, [x0, #6840]
+str x1, [x0, #984]
+ldr x1, [x0, #6848]
+str x1, [x0, #992]
+ldr x1, [x0, #6856]
+str x1, [x0, #1000]
+ldr x1, [x0, #6864]
+str x1, [x0, #1008]
+ldr x1, [x0, #6872]
+str x1, [x0, #1016]
+ldr x1, [x0, #6880]
+str x1, [x0, #1024]
+ldr x1, [x0, #6888]
+str x1, [x0, #1032]
+ldr x1, [x0, #6896]
+str x1, [x0, #1040]
+ldr x1, [x0, #6904]
+str x1, [x0, #1048]
+ldr x1, [x0, #6912]
+str x1, [x0, #1056]
+ldr x1, [x0, #6920]
+str x1, [x0, #1064]
+ldr x1, [x0, #6928]
+str x1, [x0, #1072]
+ldr x1, [x0, #6936]
+str x1, [x0, #1080]
+ldr x1, [x0, #6944]
+str x1, [x0, #1088]
+ldr x1, [x0, #6952]
+str x1, [x0, #1096]
+ldr x1, [x0, #6960]
+str x1, [x0, #1104]
+ldr x1, [x0, #6968]
+str x1, [x0, #1112]
+ldr x1, [x0, #6976]
+str x1, [x0, #1120]
+ldr x1, [x0, #6984]
+str x1, [x0, #1128]
+ldr x1, [x0, #6992]
+str x1, [x0, #1136]
+ldr x1, [x0, #7000]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #7008]
+ldr x1, [x0, #968]
+str x1, [x0, #7016]
+ldr x1, [x0, #976]
+str x1, [x0, #7024]
+ldr x1, [x0, #984]
+str x1, [x0, #7032]
+ldr x1, [x0, #992]
+str x1, [x0, #7040]
+ldr x1, [x0, #1000]
+str x1, [x0, #7048]
+ldr x1, [x0, #1008]
+str x1, [x0, #7056]
+ldr x1, [x0, #1016]
+str x1, [x0, #7064]
+ldr x1, [x0, #1024]
+str x1, [x0, #7072]
+ldr x1, [x0, #1032]
+str x1, [x0, #7080]
+ldr x1, [x0, #1040]
+str x1, [x0, #7088]
+ldr x1, [x0, #1048]
+str x1, [x0, #7096]
+ldr x1, [x0, #1056]
+str x1, [x0, #7104]
+ldr x1, [x0, #1064]
+str x1, [x0, #7112]
+ldr x1, [x0, #1072]
+str x1, [x0, #7120]
+ldr x1, [x0, #1080]
+str x1, [x0, #7128]
+ldr x1, [x0, #1088]
+str x1, [x0, #7136]
+ldr x1, [x0, #1096]
+str x1, [x0, #7144]
+ldr x1, [x0, #1104]
+str x1, [x0, #7152]
+ldr x1, [x0, #1112]
+str x1, [x0, #7160]
+ldr x1, [x0, #1120]
+str x1, [x0, #7168]
+ldr x1, [x0, #1128]
+str x1, [x0, #7176]
+ldr x1, [x0, #1136]
+str x1, [x0, #7184]
+ldr x1, [x0, #1144]
+str x1, [x0, #7192]
+ldr x1, [x0, #7008]
+str x1, [x0, #960]
+ldr x1, [x0, #7016]
+str x1, [x0, #968]
+ldr x1, [x0, #7024]
+str x1, [x0, #976]
+ldr x1, [x0, #7032]
+str x1, [x0, #984]
+ldr x1, [x0, #7040]
+str x1, [x0, #992]
+ldr x1, [x0, #7048]
+str x1, [x0, #1000]
+ldr x1, [x0, #7056]
+str x1, [x0, #1008]
+ldr x1, [x0, #7064]
+str x1, [x0, #1016]
+ldr x1, [x0, #7072]
+str x1, [x0, #1024]
+ldr x1, [x0, #7080]
+str x1, [x0, #1032]
+ldr x1, [x0, #7088]
+str x1, [x0, #1040]
+ldr x1, [x0, #7096]
+str x1, [x0, #1048]
+ldr x1, [x0, #7104]
+str x1, [x0, #1056]
+ldr x1, [x0, #7112]
+str x1, [x0, #1064]
+ldr x1, [x0, #7120]
+str x1, [x0, #1072]
+ldr x1, [x0, #7128]
+str x1, [x0, #1080]
+ldr x1, [x0, #7136]
+str x1, [x0, #1088]
+ldr x1, [x0, #7144]
+str x1, [x0, #1096]
+ldr x1, [x0, #7152]
+str x1, [x0, #1104]
+ldr x1, [x0, #7160]
+str x1, [x0, #1112]
+ldr x1, [x0, #7168]
+str x1, [x0, #1120]
+ldr x1, [x0, #7176]
+str x1, [x0, #1128]
+ldr x1, [x0, #7184]
+str x1, [x0, #1136]
+ldr x1, [x0, #7192]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #7200]
+ldr x1, [x0, #968]
+str x1, [x0, #7208]
+ldr x1, [x0, #976]
+str x1, [x0, #7216]
+ldr x1, [x0, #984]
+str x1, [x0, #7224]
+ldr x1, [x0, #992]
+str x1, [x0, #7232]
+ldr x1, [x0, #1000]
+str x1, [x0, #7240]
+ldr x1, [x0, #1008]
+str x1, [x0, #7248]
+ldr x1, [x0, #1016]
+str x1, [x0, #7256]
+ldr x1, [x0, #1024]
+str x1, [x0, #7264]
+ldr x1, [x0, #1032]
+str x1, [x0, #7272]
+ldr x1, [x0, #1040]
+str x1, [x0, #7280]
+ldr x1, [x0, #1048]
+str x1, [x0, #7288]
+ldr x1, [x0, #1056]
+str x1, [x0, #7296]
+ldr x1, [x0, #1064]
+str x1, [x0, #7304]
+ldr x1, [x0, #1072]
+str x1, [x0, #7312]
+ldr x1, [x0, #1080]
+str x1, [x0, #7320]
+ldr x1, [x0, #1088]
+str x1, [x0, #7328]
+ldr x1, [x0, #1096]
+str x1, [x0, #7336]
+ldr x1, [x0, #1104]
+str x1, [x0, #7344]
+ldr x1, [x0, #1112]
+str x1, [x0, #7352]
+ldr x1, [x0, #1120]
+str x1, [x0, #7360]
+ldr x1, [x0, #1128]
+str x1, [x0, #7368]
+ldr x1, [x0, #1136]
+str x1, [x0, #7376]
+ldr x1, [x0, #1144]
+str x1, [x0, #7384]
+ldr x1, [x0, #6624]
+str x1, [x0, #960]
+ldr x1, [x0, #6632]
+str x1, [x0, #968]
+ldr x1, [x0, #6640]
+str x1, [x0, #976]
+ldr x1, [x0, #6648]
+str x1, [x0, #984]
+ldr x1, [x0, #6656]
+str x1, [x0, #992]
+ldr x1, [x0, #6664]
+str x1, [x0, #1000]
+ldr x1, [x0, #6672]
+str x1, [x0, #1008]
+ldr x1, [x0, #6680]
+str x1, [x0, #1016]
+ldr x1, [x0, #6688]
+str x1, [x0, #1024]
+ldr x1, [x0, #6696]
+str x1, [x0, #1032]
+ldr x1, [x0, #6704]
+str x1, [x0, #1040]
+ldr x1, [x0, #6712]
+str x1, [x0, #1048]
+ldr x1, [x0, #6720]
+str x1, [x0, #1056]
+ldr x1, [x0, #6728]
+str x1, [x0, #1064]
+ldr x1, [x0, #6736]
+str x1, [x0, #1072]
+ldr x1, [x0, #6744]
+str x1, [x0, #1080]
+ldr x1, [x0, #6752]
+str x1, [x0, #1088]
+ldr x1, [x0, #6760]
+str x1, [x0, #1096]
+ldr x1, [x0, #6768]
+str x1, [x0, #1104]
+ldr x1, [x0, #6776]
+str x1, [x0, #1112]
+ldr x1, [x0, #6784]
+str x1, [x0, #1120]
+ldr x1, [x0, #6792]
+str x1, [x0, #1128]
+ldr x1, [x0, #6800]
+str x1, [x0, #1136]
+ldr x1, [x0, #6808]
+str x1, [x0, #1144]
+ldr x1, [x0, #2496]
+str x1, [x0, #2688]
+ldr x1, [x0, #2504]
+str x1, [x0, #2696]
+ldr x1, [x0, #2512]
+str x1, [x0, #2704]
+ldr x1, [x0, #2520]
+str x1, [x0, #2712]
+ldr x1, [x0, #2528]
+str x1, [x0, #2720]
+ldr x1, [x0, #2536]
+str x1, [x0, #2728]
+ldr x1, [x0, #2544]
+str x1, [x0, #2736]
+ldr x1, [x0, #2552]
+str x1, [x0, #2744]
+ldr x1, [x0, #2816]
+str x1, [x0, #2752]
+ldr x1, [x0, #2824]
+str x1, [x0, #2760]
+ldr x1, [x0, #2832]
+str x1, [x0, #2768]
+ldr x1, [x0, #2840]
+str x1, [x0, #2776]
+ldr x1, [x0, #2848]
+str x1, [x0, #2784]
+ldr x1, [x0, #2856]
+str x1, [x0, #2792]
+ldr x1, [x0, #2864]
+str x1, [x0, #2800]
+ldr x1, [x0, #2872]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #7392]
+ldr x1, [x0, #968]
+str x1, [x0, #7400]
+ldr x1, [x0, #976]
+str x1, [x0, #7408]
+ldr x1, [x0, #984]
+str x1, [x0, #7416]
+ldr x1, [x0, #992]
+str x1, [x0, #7424]
+ldr x1, [x0, #1000]
+str x1, [x0, #7432]
+ldr x1, [x0, #1008]
+str x1, [x0, #7440]
+ldr x1, [x0, #1016]
+str x1, [x0, #7448]
+ldr x1, [x0, #1024]
+str x1, [x0, #7456]
+ldr x1, [x0, #1032]
+str x1, [x0, #7464]
+ldr x1, [x0, #1040]
+str x1, [x0, #7472]
+ldr x1, [x0, #1048]
+str x1, [x0, #7480]
+ldr x1, [x0, #1056]
+str x1, [x0, #7488]
+ldr x1, [x0, #1064]
+str x1, [x0, #7496]
+ldr x1, [x0, #1072]
+str x1, [x0, #7504]
+ldr x1, [x0, #1080]
+str x1, [x0, #7512]
+ldr x1, [x0, #1088]
+str x1, [x0, #7520]
+ldr x1, [x0, #1096]
+str x1, [x0, #7528]
+ldr x1, [x0, #1104]
+str x1, [x0, #7536]
+ldr x1, [x0, #1112]
+str x1, [x0, #7544]
+ldr x1, [x0, #1120]
+str x1, [x0, #7552]
+ldr x1, [x0, #1128]
+str x1, [x0, #7560]
+ldr x1, [x0, #1136]
+str x1, [x0, #7568]
+ldr x1, [x0, #1144]
+str x1, [x0, #7576]
+ldr x1, [x0, #7392]
+str x1, [x0, #960]
+ldr x1, [x0, #7400]
+str x1, [x0, #968]
+ldr x1, [x0, #7408]
+str x1, [x0, #976]
+ldr x1, [x0, #7416]
+str x1, [x0, #984]
+ldr x1, [x0, #7424]
+str x1, [x0, #992]
+ldr x1, [x0, #7432]
+str x1, [x0, #1000]
+ldr x1, [x0, #7440]
+str x1, [x0, #1008]
+ldr x1, [x0, #7448]
+str x1, [x0, #1016]
+ldr x1, [x0, #7456]
+str x1, [x0, #1024]
+ldr x1, [x0, #7464]
+str x1, [x0, #1032]
+ldr x1, [x0, #7472]
+str x1, [x0, #1040]
+ldr x1, [x0, #7480]
+str x1, [x0, #1048]
+ldr x1, [x0, #7488]
+str x1, [x0, #1056]
+ldr x1, [x0, #7496]
+str x1, [x0, #1064]
+ldr x1, [x0, #7504]
+str x1, [x0, #1072]
+ldr x1, [x0, #7512]
+str x1, [x0, #1080]
+ldr x1, [x0, #7520]
+str x1, [x0, #1088]
+ldr x1, [x0, #7528]
+str x1, [x0, #1096]
+ldr x1, [x0, #7536]
+str x1, [x0, #1104]
+ldr x1, [x0, #7544]
+str x1, [x0, #1112]
+ldr x1, [x0, #7552]
+str x1, [x0, #1120]
+ldr x1, [x0, #7560]
+str x1, [x0, #1128]
+ldr x1, [x0, #7568]
+str x1, [x0, #1136]
+ldr x1, [x0, #7576]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #7584]
+ldr x1, [x0, #968]
+str x1, [x0, #7592]
+ldr x1, [x0, #976]
+str x1, [x0, #7600]
+ldr x1, [x0, #984]
+str x1, [x0, #7608]
+ldr x1, [x0, #992]
+str x1, [x0, #7616]
+ldr x1, [x0, #1000]
+str x1, [x0, #7624]
+ldr x1, [x0, #1008]
+str x1, [x0, #7632]
+ldr x1, [x0, #1016]
+str x1, [x0, #7640]
+ldr x1, [x0, #1024]
+str x1, [x0, #7648]
+ldr x1, [x0, #1032]
+str x1, [x0, #7656]
+ldr x1, [x0, #1040]
+str x1, [x0, #7664]
+ldr x1, [x0, #1048]
+str x1, [x0, #7672]
+ldr x1, [x0, #1056]
+str x1, [x0, #7680]
+ldr x1, [x0, #1064]
+str x1, [x0, #7688]
+ldr x1, [x0, #1072]
+str x1, [x0, #7696]
+ldr x1, [x0, #1080]
+str x1, [x0, #7704]
+ldr x1, [x0, #1088]
+str x1, [x0, #7712]
+ldr x1, [x0, #1096]
+str x1, [x0, #7720]
+ldr x1, [x0, #1104]
+str x1, [x0, #7728]
+ldr x1, [x0, #1112]
+str x1, [x0, #7736]
+ldr x1, [x0, #1120]
+str x1, [x0, #7744]
+ldr x1, [x0, #1128]
+str x1, [x0, #7752]
+ldr x1, [x0, #1136]
+str x1, [x0, #7760]
+ldr x1, [x0, #1144]
+str x1, [x0, #7768]
+ldr x1, [x0, #7584]
+str x1, [x0, #960]
+ldr x1, [x0, #7592]
+str x1, [x0, #968]
+ldr x1, [x0, #7600]
+str x1, [x0, #976]
+ldr x1, [x0, #7608]
+str x1, [x0, #984]
+ldr x1, [x0, #7616]
+str x1, [x0, #992]
+ldr x1, [x0, #7624]
+str x1, [x0, #1000]
+ldr x1, [x0, #7632]
+str x1, [x0, #1008]
+ldr x1, [x0, #7640]
+str x1, [x0, #1016]
+ldr x1, [x0, #7648]
+str x1, [x0, #1024]
+ldr x1, [x0, #7656]
+str x1, [x0, #1032]
+ldr x1, [x0, #7664]
+str x1, [x0, #1040]
+ldr x1, [x0, #7672]
+str x1, [x0, #1048]
+ldr x1, [x0, #7680]
+str x1, [x0, #1056]
+ldr x1, [x0, #7688]
+str x1, [x0, #1064]
+ldr x1, [x0, #7696]
+str x1, [x0, #1072]
+ldr x1, [x0, #7704]
+str x1, [x0, #1080]
+ldr x1, [x0, #7712]
+str x1, [x0, #1088]
+ldr x1, [x0, #7720]
+str x1, [x0, #1096]
+ldr x1, [x0, #7728]
+str x1, [x0, #1104]
+ldr x1, [x0, #7736]
+str x1, [x0, #1112]
+ldr x1, [x0, #7744]
+str x1, [x0, #1120]
+ldr x1, [x0, #7752]
+str x1, [x0, #1128]
+ldr x1, [x0, #7760]
+str x1, [x0, #1136]
+ldr x1, [x0, #7768]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #7776]
+ldr x1, [x0, #968]
+str x1, [x0, #7784]
+ldr x1, [x0, #976]
+str x1, [x0, #7792]
+ldr x1, [x0, #984]
+str x1, [x0, #7800]
+ldr x1, [x0, #992]
+str x1, [x0, #7808]
+ldr x1, [x0, #1000]
+str x1, [x0, #7816]
+ldr x1, [x0, #1008]
+str x1, [x0, #7824]
+ldr x1, [x0, #1016]
+str x1, [x0, #7832]
+ldr x1, [x0, #1024]
+str x1, [x0, #7840]
+ldr x1, [x0, #1032]
+str x1, [x0, #7848]
+ldr x1, [x0, #1040]
+str x1, [x0, #7856]
+ldr x1, [x0, #1048]
+str x1, [x0, #7864]
+ldr x1, [x0, #1056]
+str x1, [x0, #7872]
+ldr x1, [x0, #1064]
+str x1, [x0, #7880]
+ldr x1, [x0, #1072]
+str x1, [x0, #7888]
+ldr x1, [x0, #1080]
+str x1, [x0, #7896]
+ldr x1, [x0, #1088]
+str x1, [x0, #7904]
+ldr x1, [x0, #1096]
+str x1, [x0, #7912]
+ldr x1, [x0, #1104]
+str x1, [x0, #7920]
+ldr x1, [x0, #1112]
+str x1, [x0, #7928]
+ldr x1, [x0, #1120]
+str x1, [x0, #7936]
+ldr x1, [x0, #1128]
+str x1, [x0, #7944]
+ldr x1, [x0, #1136]
+str x1, [x0, #7952]
+ldr x1, [x0, #1144]
+str x1, [x0, #7960]
+ldr x1, [x0, #7776]
+str x1, [x0, #960]
+ldr x1, [x0, #7784]
+str x1, [x0, #968]
+ldr x1, [x0, #7792]
+str x1, [x0, #976]
+ldr x1, [x0, #7800]
+str x1, [x0, #984]
+ldr x1, [x0, #7808]
+str x1, [x0, #992]
+ldr x1, [x0, #7816]
+str x1, [x0, #1000]
+ldr x1, [x0, #7824]
+str x1, [x0, #1008]
+ldr x1, [x0, #7832]
+str x1, [x0, #1016]
+ldr x1, [x0, #7840]
+str x1, [x0, #1024]
+ldr x1, [x0, #7848]
+str x1, [x0, #1032]
+ldr x1, [x0, #7856]
+str x1, [x0, #1040]
+ldr x1, [x0, #7864]
+str x1, [x0, #1048]
+ldr x1, [x0, #7872]
+str x1, [x0, #1056]
+ldr x1, [x0, #7880]
+str x1, [x0, #1064]
+ldr x1, [x0, #7888]
+str x1, [x0, #1072]
+ldr x1, [x0, #7896]
+str x1, [x0, #1080]
+ldr x1, [x0, #7904]
+str x1, [x0, #1088]
+ldr x1, [x0, #7912]
+str x1, [x0, #1096]
+ldr x1, [x0, #7920]
+str x1, [x0, #1104]
+ldr x1, [x0, #7928]
+str x1, [x0, #1112]
+ldr x1, [x0, #7936]
+str x1, [x0, #1120]
+ldr x1, [x0, #7944]
+str x1, [x0, #1128]
+ldr x1, [x0, #7952]
+str x1, [x0, #1136]
+ldr x1, [x0, #7960]
+str x1, [x0, #1144]
+ldr x1, [x0, #576]
+str x1, [x0, #2688]
+ldr x1, [x0, #584]
+str x1, [x0, #2696]
+ldr x1, [x0, #592]
+str x1, [x0, #2704]
+ldr x1, [x0, #600]
+str x1, [x0, #2712]
+ldr x1, [x0, #608]
+str x1, [x0, #2720]
+ldr x1, [x0, #616]
+str x1, [x0, #2728]
+ldr x1, [x0, #624]
+str x1, [x0, #2736]
+ldr x1, [x0, #632]
+str x1, [x0, #2744]
+ldr x1, [x0, #640]
+str x1, [x0, #2752]
+ldr x1, [x0, #648]
+str x1, [x0, #2760]
+ldr x1, [x0, #656]
+str x1, [x0, #2768]
+ldr x1, [x0, #664]
+str x1, [x0, #2776]
+ldr x1, [x0, #672]
+str x1, [x0, #2784]
+ldr x1, [x0, #680]
+str x1, [x0, #2792]
+ldr x1, [x0, #688]
+str x1, [x0, #2800]
+ldr x1, [x0, #696]
+str x1, [x0, #2808]
+ldr x1, [x0, #384]
+str x1, [x0, #2432]
+ldr x1, [x0, #392]
+str x1, [x0, #2440]
+ldr x1, [x0, #400]
+str x1, [x0, #2448]
+ldr x1, [x0, #408]
+str x1, [x0, #2456]
+ldr x1, [x0, #416]
+str x1, [x0, #2464]
+ldr x1, [x0, #424]
+str x1, [x0, #2472]
+ldr x1, [x0, #432]
+str x1, [x0, #2480]
+ldr x1, [x0, #440]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #7968]
+ldr x1, [x0, #968]
+str x1, [x0, #7976]
+ldr x1, [x0, #976]
+str x1, [x0, #7984]
+ldr x1, [x0, #984]
+str x1, [x0, #7992]
+ldr x1, [x0, #992]
+str x1, [x0, #8000]
+ldr x1, [x0, #1000]
+str x1, [x0, #8008]
+ldr x1, [x0, #1008]
+str x1, [x0, #8016]
+ldr x1, [x0, #1016]
+str x1, [x0, #8024]
+ldr x1, [x0, #1024]
+str x1, [x0, #8032]
+ldr x1, [x0, #1032]
+str x1, [x0, #8040]
+ldr x1, [x0, #1040]
+str x1, [x0, #8048]
+ldr x1, [x0, #1048]
+str x1, [x0, #8056]
+ldr x1, [x0, #1056]
+str x1, [x0, #8064]
+ldr x1, [x0, #1064]
+str x1, [x0, #8072]
+ldr x1, [x0, #1072]
+str x1, [x0, #8080]
+ldr x1, [x0, #1080]
+str x1, [x0, #8088]
+ldr x1, [x0, #1088]
+str x1, [x0, #8096]
+ldr x1, [x0, #1096]
+str x1, [x0, #8104]
+ldr x1, [x0, #1104]
+str x1, [x0, #8112]
+ldr x1, [x0, #1112]
+str x1, [x0, #8120]
+ldr x1, [x0, #1120]
+str x1, [x0, #8128]
+ldr x1, [x0, #1128]
+str x1, [x0, #8136]
+ldr x1, [x0, #1136]
+str x1, [x0, #8144]
+ldr x1, [x0, #1144]
+str x1, [x0, #8152]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #960]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #968]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #976]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #984]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #992]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1000]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1008]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1016]
+movz x1, #46861, lsl #0
+movk x1, #42949, lsl #16
+movk x1, #40873, lsl #32
+movk x1, #55125, lsl #48
+str x1, [x0, #1024]
+movz x1, #14714, lsl #0
+movk x1, #53885, lsl #16
+movk x1, #208, lsl #32
+movk x1, #55166, lsl #48
+str x1, [x0, #1032]
+movz x1, #32537, lsl #0
+movk x1, #6492, lsl #16
+movk x1, #24277, lsl #32
+movk x1, #20786, lsl #48
+str x1, [x0, #1040]
+movz x1, #38845, lsl #0
+movk x1, #25657, lsl #16
+movk x1, #25855, lsl #32
+movk x1, #33458, lsl #48
+str x1, [x0, #1048]
+movz x1, #63374, lsl #0
+movk x1, #36812, lsl #16
+movk x1, #25397, lsl #32
+movk x1, #10652, lsl #48
+str x1, [x0, #1056]
+movz x1, #11761, lsl #0
+movk x1, #19510, lsl #16
+movk x1, #29260, lsl #32
+movk x1, #13519, lsl #48
+str x1, [x0, #1064]
+movz x1, #1016, lsl #0
+movk x1, #52278, lsl #16
+movk x1, #6481, lsl #32
+movk x1, #49195, lsl #48
+str x1, [x0, #1072]
+movz x1, #15220, lsl #0
+movk x1, #9238, lsl #16
+movk x1, #25159, lsl #32
+movk x1, #21794, lsl #48
+str x1, [x0, #1080]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1088]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1096]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1104]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1112]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1120]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1128]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1136]
+movz x1, #0, lsl #0
+movk x1, #0, lsl #16
+movk x1, #0, lsl #32
+movk x1, #0, lsl #48
+str x1, [x0, #1144]
+movz x19, #256, lsl #0
+23:
+sub x19, x19, #1
+ldr x1, [x0, #960]
+str x1, [x0, #2688]
+ldr x1, [x0, #968]
+str x1, [x0, #2696]
+ldr x1, [x0, #976]
+str x1, [x0, #2704]
+ldr x1, [x0, #984]
+str x1, [x0, #2712]
+ldr x1, [x0, #992]
+str x1, [x0, #2720]
+ldr x1, [x0, #1000]
+str x1, [x0, #2728]
+ldr x1, [x0, #1008]
+str x1, [x0, #2736]
+ldr x1, [x0, #1016]
+str x1, [x0, #2744]
+ldr x1, [x0, #1024]
+str x1, [x0, #2752]
+ldr x1, [x0, #1032]
+str x1, [x0, #2760]
+ldr x1, [x0, #1040]
+str x1, [x0, #2768]
+ldr x1, [x0, #1048]
+str x1, [x0, #2776]
+ldr x1, [x0, #1056]
+str x1, [x0, #2784]
+ldr x1, [x0, #1064]
+str x1, [x0, #2792]
+ldr x1, [x0, #1072]
+str x1, [x0, #2800]
+ldr x1, [x0, #1080]
+str x1, [x0, #2808]
+ldr x1, [x0, #1088]
+str x1, [x0, #2432]
+ldr x1, [x0, #1096]
+str x1, [x0, #2440]
+ldr x1, [x0, #1104]
+str x1, [x0, #2448]
+ldr x1, [x0, #1112]
+str x1, [x0, #2456]
+ldr x1, [x0, #1120]
+str x1, [x0, #2464]
+ldr x1, [x0, #1128]
+str x1, [x0, #2472]
+ldr x1, [x0, #1136]
+str x1, [x0, #2480]
+ldr x1, [x0, #1144]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+ldr x1, [x0, #960]
+str x1, [x0, #2688]
+ldr x1, [x0, #968]
+str x1, [x0, #2696]
+ldr x1, [x0, #976]
+str x1, [x0, #2704]
+ldr x1, [x0, #984]
+str x1, [x0, #2712]
+ldr x1, [x0, #992]
+str x1, [x0, #2720]
+ldr x1, [x0, #1000]
+str x1, [x0, #2728]
+ldr x1, [x0, #1008]
+str x1, [x0, #2736]
+ldr x1, [x0, #1016]
+str x1, [x0, #2744]
+ldr x1, [x0, #1024]
+str x1, [x0, #2752]
+ldr x1, [x0, #1032]
+str x1, [x0, #2760]
+ldr x1, [x0, #1040]
+str x1, [x0, #2768]
+ldr x1, [x0, #1048]
+str x1, [x0, #2776]
+ldr x1, [x0, #1056]
+str x1, [x0, #2784]
+ldr x1, [x0, #1064]
+str x1, [x0, #2792]
+ldr x1, [x0, #1072]
+str x1, [x0, #2800]
+ldr x1, [x0, #1080]
+str x1, [x0, #2808]
+ldr x1, [x0, #1088]
+str x1, [x0, #2432]
+ldr x1, [x0, #1096]
+str x1, [x0, #2440]
+ldr x1, [x0, #1104]
+str x1, [x0, #2448]
+ldr x1, [x0, #1112]
+str x1, [x0, #2456]
+ldr x1, [x0, #1120]
+str x1, [x0, #2464]
+ldr x1, [x0, #1128]
+str x1, [x0, #2472]
+ldr x1, [x0, #1136]
+str x1, [x0, #2480]
+ldr x1, [x0, #1144]
+str x1, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+lsl x16, x19, #1
+add x16, x0, x16
+movz x2, #0, lsl #0
+add x2, x2, x2
+ldrb w4, [x16, #2945]
+add x2, x2, x4
+add x2, x2, x2
+ldrb w4, [x16, #2944]
+add x2, x2, x4
+add x6, x2, #0
+movz x2, #0, lsl #0
+add x2, x2, x2
+ldrb w4, [x16, #3457]
+add x2, x2, x4
+add x2, x2, x2
+ldrb w4, [x16, #3456]
+add x2, x2, x4
+lsl x2, x2, #2
+add x2, x2, x6
+cbz x2, 24f
+sub x2, x2, #1
+movz x17, #192, lsl #0
+mul x2, x2, x17
+movz x16, #5280, lsl #0
+add x16, x0, x16
+add x16, x16, x2
+ldr x4, [x16, #0]
+str x4, [x0, #2688]
+ldr x4, [x16, #8]
+str x4, [x0, #2696]
+ldr x4, [x16, #16]
+str x4, [x0, #2704]
+ldr x4, [x16, #24]
+str x4, [x0, #2712]
+ldr x4, [x16, #32]
+str x4, [x0, #2720]
+ldr x4, [x16, #40]
+str x4, [x0, #2728]
+ldr x4, [x16, #48]
+str x4, [x0, #2736]
+ldr x4, [x16, #56]
+str x4, [x0, #2744]
+ldr x4, [x16, #64]
+str x4, [x0, #2752]
+ldr x4, [x16, #72]
+str x4, [x0, #2760]
+ldr x4, [x16, #80]
+str x4, [x0, #2768]
+ldr x4, [x16, #88]
+str x4, [x0, #2776]
+ldr x4, [x16, #96]
+str x4, [x0, #2784]
+ldr x4, [x16, #104]
+str x4, [x0, #2792]
+ldr x4, [x16, #112]
+str x4, [x0, #2800]
+ldr x4, [x16, #120]
+str x4, [x0, #2808]
+ldr x4, [x16, #128]
+str x4, [x0, #2432]
+ldr x4, [x16, #136]
+str x4, [x0, #2440]
+ldr x4, [x16, #144]
+str x4, [x0, #2448]
+ldr x4, [x16, #152]
+str x4, [x0, #2456]
+ldr x4, [x16, #160]
+str x4, [x0, #2464]
+ldr x4, [x16, #168]
+str x4, [x0, #2472]
+ldr x4, [x16, #176]
+str x4, [x0, #2480]
+ldr x4, [x16, #184]
+str x4, [x0, #2488]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #2688, lsl #0
+movz x3, #960, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1600, lsl #0
+movz x2, #2752, lsl #0
+movz x3, #1024, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #2432, lsl #0
+movz x3, #1088, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2752]
+adds x8, x8, x2
+ldr x2, [x0, #2760]
+adcs x9, x9, x2
+ldr x2, [x0, #2768]
+adcs x10, x10, x2
+ldr x2, [x0, #2776]
+adcs x11, x11, x2
+ldr x2, [x0, #2784]
+adcs x12, x12, x2
+ldr x2, [x0, #2792]
+adcs x13, x13, x2
+ldr x2, [x0, #2800]
+adcs x14, x14, x2
+ldr x2, [x0, #2808]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1024]
+adds x8, x8, x2
+ldr x2, [x0, #1032]
+adcs x9, x9, x2
+ldr x2, [x0, #1040]
+adcs x10, x10, x2
+ldr x2, [x0, #1048]
+adcs x11, x11, x2
+ldr x2, [x0, #1056]
+adcs x12, x12, x2
+ldr x2, [x0, #1064]
+adcs x13, x13, x2
+ldr x2, [x0, #1072]
+adcs x14, x14, x2
+ldr x2, [x0, #1080]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1728, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1600]
+adds x8, x8, x2
+ldr x2, [x0, #1608]
+adcs x9, x9, x2
+ldr x2, [x0, #1616]
+adcs x10, x10, x2
+ldr x2, [x0, #1624]
+adcs x11, x11, x2
+ldr x2, [x0, #1632]
+adcs x12, x12, x2
+ldr x2, [x0, #1640]
+adcs x13, x13, x2
+ldr x2, [x0, #1648]
+adcs x14, x14, x2
+ldr x2, [x0, #1656]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1728]
+ldr x9, [x0, #1736]
+ldr x10, [x0, #1744]
+ldr x11, [x0, #1752]
+ldr x12, [x0, #1760]
+ldr x13, [x0, #1768]
+ldr x14, [x0, #1776]
+ldr x15, [x0, #1784]
+ldr x2, [x0, #1792]
+subs x8, x8, x2
+ldr x2, [x0, #1800]
+sbcs x9, x9, x2
+ldr x2, [x0, #1808]
+sbcs x10, x10, x2
+ldr x2, [x0, #1816]
+sbcs x11, x11, x2
+ldr x2, [x0, #1824]
+sbcs x12, x12, x2
+ldr x2, [x0, #1832]
+sbcs x13, x13, x2
+ldr x2, [x0, #1840]
+sbcs x14, x14, x2
+ldr x2, [x0, #1848]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1728]
+str x9, [x0, #1736]
+str x10, [x0, #1744]
+str x11, [x0, #1752]
+str x12, [x0, #1760]
+str x13, [x0, #1768]
+str x14, [x0, #1776]
+str x15, [x0, #1784]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2688]
+ldr x9, [x0, #2696]
+ldr x10, [x0, #2704]
+ldr x11, [x0, #2712]
+ldr x12, [x0, #2720]
+ldr x13, [x0, #2728]
+ldr x14, [x0, #2736]
+ldr x15, [x0, #2744]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #960]
+ldr x9, [x0, #968]
+ldr x10, [x0, #976]
+ldr x11, [x0, #984]
+ldr x12, [x0, #992]
+ldr x13, [x0, #1000]
+ldr x14, [x0, #1008]
+ldr x15, [x0, #1016]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #1792, lsl #0
+movz x3, #1856, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1856]
+subs x8, x8, x2
+ldr x2, [x0, #1864]
+sbcs x9, x9, x2
+ldr x2, [x0, #1872]
+sbcs x10, x10, x2
+ldr x2, [x0, #1880]
+sbcs x11, x11, x2
+ldr x2, [x0, #1888]
+sbcs x12, x12, x2
+ldr x2, [x0, #1896]
+sbcs x13, x13, x2
+ldr x2, [x0, #1904]
+sbcs x14, x14, x2
+ldr x2, [x0, #1912]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+movz x7, #0, lsl #0
+ldr x8, [x0, #2752]
+ldr x9, [x0, #2760]
+ldr x10, [x0, #2768]
+ldr x11, [x0, #2776]
+ldr x12, [x0, #2784]
+ldr x13, [x0, #2792]
+ldr x14, [x0, #2800]
+ldr x15, [x0, #2808]
+ldr x2, [x0, #2432]
+adds x8, x8, x2
+ldr x2, [x0, #2440]
+adcs x9, x9, x2
+ldr x2, [x0, #2448]
+adcs x10, x10, x2
+ldr x2, [x0, #2456]
+adcs x11, x11, x2
+ldr x2, [x0, #2464]
+adcs x12, x12, x2
+ldr x2, [x0, #2472]
+adcs x13, x13, x2
+ldr x2, [x0, #2480]
+adcs x14, x14, x2
+ldr x2, [x0, #2488]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1024]
+ldr x9, [x0, #1032]
+ldr x10, [x0, #1040]
+ldr x11, [x0, #1048]
+ldr x12, [x0, #1056]
+ldr x13, [x0, #1064]
+ldr x14, [x0, #1072]
+ldr x15, [x0, #1080]
+ldr x2, [x0, #1088]
+adds x8, x8, x2
+ldr x2, [x0, #1096]
+adcs x9, x9, x2
+ldr x2, [x0, #1104]
+adcs x10, x10, x2
+ldr x2, [x0, #1112]
+adcs x11, x11, x2
+ldr x2, [x0, #1120]
+adcs x12, x12, x2
+ldr x2, [x0, #1128]
+adcs x13, x13, x2
+ldr x2, [x0, #1136]
+adcs x14, x14, x2
+ldr x2, [x0, #1144]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1856, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1856]
+ldr x9, [x0, #1864]
+ldr x10, [x0, #1872]
+ldr x11, [x0, #1880]
+ldr x12, [x0, #1888]
+ldr x13, [x0, #1896]
+ldr x14, [x0, #1904]
+ldr x15, [x0, #1912]
+ldr x2, [x0, #1152]
+subs x8, x8, x2
+ldr x2, [x0, #1160]
+sbcs x9, x9, x2
+ldr x2, [x0, #1168]
+sbcs x10, x10, x2
+ldr x2, [x0, #1176]
+sbcs x11, x11, x2
+ldr x2, [x0, #1184]
+sbcs x12, x12, x2
+ldr x2, [x0, #1192]
+sbcs x13, x13, x2
+ldr x2, [x0, #1200]
+sbcs x14, x14, x2
+ldr x2, [x0, #1208]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1856]
+str x9, [x0, #1864]
+str x10, [x0, #1872]
+str x11, [x0, #1880]
+str x12, [x0, #1888]
+str x13, [x0, #1896]
+str x14, [x0, #1904]
+str x15, [x0, #1912]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+subs x8, x8, x2
+ldr x2, [x0, #1288]
+sbcs x9, x9, x2
+ldr x2, [x0, #1296]
+sbcs x10, x10, x2
+ldr x2, [x0, #1304]
+sbcs x11, x11, x2
+ldr x2, [x0, #1312]
+sbcs x12, x12, x2
+ldr x2, [x0, #1320]
+sbcs x13, x13, x2
+ldr x2, [x0, #1328]
+sbcs x14, x14, x2
+ldr x2, [x0, #1336]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1280]
+adds x8, x8, x2
+ldr x2, [x0, #1288]
+adcs x9, x9, x2
+ldr x2, [x0, #1296]
+adcs x10, x10, x2
+ldr x2, [x0, #1304]
+adcs x11, x11, x2
+ldr x2, [x0, #1312]
+adcs x12, x12, x2
+ldr x2, [x0, #1320]
+adcs x13, x13, x2
+ldr x2, [x0, #1328]
+adcs x14, x14, x2
+ldr x2, [x0, #1336]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1152, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1792, lsl #0
+movz x2, #832, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1600]
+ldr x9, [x0, #1608]
+ldr x10, [x0, #1616]
+ldr x11, [x0, #1624]
+ldr x12, [x0, #1632]
+ldr x13, [x0, #1640]
+ldr x14, [x0, #1648]
+ldr x15, [x0, #1656]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1600]
+str x9, [x0, #1608]
+str x10, [x0, #1616]
+str x11, [x0, #1624]
+str x12, [x0, #1632]
+str x13, [x0, #1640]
+str x14, [x0, #1648]
+str x15, [x0, #1656]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1536]
+ldr x9, [x0, #1544]
+ldr x10, [x0, #1552]
+ldr x11, [x0, #1560]
+ldr x12, [x0, #1568]
+ldr x13, [x0, #1576]
+ldr x14, [x0, #1584]
+ldr x15, [x0, #1592]
+ldr x2, [x0, #1664]
+subs x8, x8, x2
+ldr x2, [x0, #1672]
+sbcs x9, x9, x2
+ldr x2, [x0, #1680]
+sbcs x10, x10, x2
+ldr x2, [x0, #1688]
+sbcs x11, x11, x2
+ldr x2, [x0, #1696]
+sbcs x12, x12, x2
+ldr x2, [x0, #1704]
+sbcs x13, x13, x2
+ldr x2, [x0, #1712]
+sbcs x14, x14, x2
+ldr x2, [x0, #1720]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1664]
+str x9, [x0, #1672]
+str x10, [x0, #1680]
+str x11, [x0, #1688]
+str x12, [x0, #1696]
+str x13, [x0, #1704]
+str x14, [x0, #1712]
+str x15, [x0, #1720]
+mov v29.d[0], x30
+movz x1, #1664, lsl #0
+movz x2, #448, lsl #0
+movz x3, #1664, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1792]
+ldr x9, [x0, #1800]
+ldr x10, [x0, #1808]
+ldr x11, [x0, #1816]
+ldr x12, [x0, #1824]
+ldr x13, [x0, #1832]
+ldr x14, [x0, #1840]
+ldr x15, [x0, #1848]
+ldr x2, [x0, #1664]
+adds x8, x8, x2
+ldr x2, [x0, #1672]
+adcs x9, x9, x2
+ldr x2, [x0, #1680]
+adcs x10, x10, x2
+ldr x2, [x0, #1688]
+adcs x11, x11, x2
+ldr x2, [x0, #1696]
+adcs x12, x12, x2
+ldr x2, [x0, #1704]
+adcs x13, x13, x2
+ldr x2, [x0, #1712]
+adcs x14, x14, x2
+ldr x2, [x0, #1720]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1792]
+str x9, [x0, #1800]
+str x10, [x0, #1808]
+str x11, [x0, #1816]
+str x12, [x0, #1824]
+str x13, [x0, #1832]
+str x14, [x0, #1840]
+str x15, [x0, #1848]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1600, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1216]
+ldr x9, [x0, #1224]
+ldr x10, [x0, #1232]
+ldr x11, [x0, #1240]
+ldr x12, [x0, #1248]
+ldr x13, [x0, #1256]
+ldr x14, [x0, #1264]
+ldr x15, [x0, #1272]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1216]
+str x9, [x0, #1224]
+str x10, [x0, #1232]
+str x11, [x0, #1240]
+str x12, [x0, #1248]
+str x13, [x0, #1256]
+str x14, [x0, #1264]
+str x15, [x0, #1272]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1792, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1152, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1152, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1152]
+ldr x9, [x0, #1160]
+ldr x10, [x0, #1168]
+ldr x11, [x0, #1176]
+ldr x12, [x0, #1184]
+ldr x13, [x0, #1192]
+ldr x14, [x0, #1200]
+ldr x15, [x0, #1208]
+ldr x2, [x0, #1536]
+subs x8, x8, x2
+ldr x2, [x0, #1544]
+sbcs x9, x9, x2
+ldr x2, [x0, #1552]
+sbcs x10, x10, x2
+ldr x2, [x0, #1560]
+sbcs x11, x11, x2
+ldr x2, [x0, #1568]
+sbcs x12, x12, x2
+ldr x2, [x0, #1576]
+sbcs x13, x13, x2
+ldr x2, [x0, #1584]
+sbcs x14, x14, x2
+ldr x2, [x0, #1592]
+sbcs x15, x15, x2
+sbc x17, x7, x7
+ldr x2, [x0, #64]
+and x2, x2, x17
+adds x8, x8, x2
+ldr x2, [x0, #72]
+and x2, x2, x17
+adcs x9, x9, x2
+ldr x2, [x0, #80]
+and x2, x2, x17
+adcs x10, x10, x2
+ldr x2, [x0, #88]
+and x2, x2, x17
+adcs x11, x11, x2
+ldr x2, [x0, #96]
+and x2, x2, x17
+adcs x12, x12, x2
+ldr x2, [x0, #104]
+and x2, x2, x17
+adcs x13, x13, x2
+ldr x2, [x0, #112]
+and x2, x2, x17
+adcs x14, x14, x2
+ldr x2, [x0, #120]
+and x2, x2, x17
+adcs x15, x15, x2
+str x8, [x0, #1152]
+str x9, [x0, #1160]
+str x10, [x0, #1168]
+str x11, [x0, #1176]
+str x12, [x0, #1184]
+str x13, [x0, #1192]
+str x14, [x0, #1200]
+str x15, [x0, #1208]
+mov v29.d[0], x30
+movz x1, #1536, lsl #0
+movz x2, #1728, lsl #0
+movz x3, #1600, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1280, lsl #0
+movz x2, #1856, lsl #0
+movz x3, #1280, lsl #0
+bl {vg_brainpoolp512r1_mul_mod_p}
+umov x30, v29.d[0]
+movz x7, #0, lsl #0
+ldr x8, [x0, #1280]
+ldr x9, [x0, #1288]
+ldr x10, [x0, #1296]
+ldr x11, [x0, #1304]
+ldr x12, [x0, #1312]
+ldr x13, [x0, #1320]
+ldr x14, [x0, #1328]
+ldr x15, [x0, #1336]
+ldr x2, [x0, #1536]
+adds x8, x8, x2
+ldr x2, [x0, #1544]
+adcs x9, x9, x2
+ldr x2, [x0, #1552]
+adcs x10, x10, x2
+ldr x2, [x0, #1560]
+adcs x11, x11, x2
+ldr x2, [x0, #1568]
+adcs x12, x12, x2
+ldr x2, [x0, #1576]
+adcs x13, x13, x2
+ldr x2, [x0, #1584]
+adcs x14, x14, x2
+ldr x2, [x0, #1592]
+adcs x15, x15, x2
+adc x21, x7, x7
+ldr x2, [x0, #64]
+subs x1, x8, x2
+ldr x2, [x0, #72]
+sbcs x3, x9, x2
+ldr x2, [x0, #80]
+sbcs x4, x10, x2
+ldr x2, [x0, #88]
+sbcs x5, x11, x2
+ldr x2, [x0, #96]
+sbcs x6, x12, x2
+ldr x2, [x0, #104]
+sbcs x16, x13, x2
+ldr x2, [x0, #112]
+sbcs x17, x14, x2
+ldr x2, [x0, #120]
+sbcs x24, x15, x2
+sbcs x2, x21, x7
+csel x8, x1, x8, hs
+csel x9, x3, x9, hs
+csel x10, x4, x10, hs
+csel x11, x5, x11, hs
+csel x12, x6, x12, hs
+csel x13, x16, x13, hs
+csel x14, x17, x14, hs
+csel x15, x24, x15, hs
+str x8, [x0, #1280]
+str x9, [x0, #1288]
+str x10, [x0, #1296]
+str x11, [x0, #1304]
+str x12, [x0, #1312]
+str x13, [x0, #1320]
+str x14, [x0, #1328]
+str x15, [x0, #1336]
+ldr x1, [x0, #1152]
+str x1, [x0, #960]
+ldr x1, [x0, #1160]
+str x1, [x0, #968]
+ldr x1, [x0, #1168]
+str x1, [x0, #976]
+ldr x1, [x0, #1176]
+str x1, [x0, #984]
+ldr x1, [x0, #1184]
+str x1, [x0, #992]
+ldr x1, [x0, #1192]
+str x1, [x0, #1000]
+ldr x1, [x0, #1200]
+str x1, [x0, #1008]
+ldr x1, [x0, #1208]
+str x1, [x0, #1016]
+ldr x1, [x0, #1216]
+str x1, [x0, #1024]
+ldr x1, [x0, #1224]
+str x1, [x0, #1032]
+ldr x1, [x0, #1232]
+str x1, [x0, #1040]
+ldr x1, [x0, #1240]
+str x1, [x0, #1048]
+ldr x1, [x0, #1248]
+str x1, [x0, #1056]
+ldr x1, [x0, #1256]
+str x1, [x0, #1064]
+ldr x1, [x0, #1264]
+str x1, [x0, #1072]
+ldr x1, [x0, #1272]
+str x1, [x0, #1080]
+ldr x1, [x0, #1280]
+str x1, [x0, #1088]
+ldr x1, [x0, #1288]
+str x1, [x0, #1096]
+ldr x1, [x0, #1296]
+str x1, [x0, #1104]
+ldr x1, [x0, #1304]
+str x1, [x0, #1112]
+ldr x1, [x0, #1312]
+str x1, [x0, #1120]
+ldr x1, [x0, #1320]
+str x1, [x0, #1128]
+ldr x1, [x0, #1328]
+str x1, [x0, #1136]
+ldr x1, [x0, #1336]
+str x1, [x0, #1144]
+b 25f
+24:
+25:
+cbnz x19, 23b
 movz x1, #61957, lsl #0
 movk x1, #24920, lsl #16
 movk x1, #5194, lsl #32
@@ -4630,7 +32350,6 @@ ret
         vg_brainpoolp512r1_check_point = sym super::brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
         vg_brainpoolp512r1_mul_mod_n = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_n,
         vg_brainpoolp512r1_inv_mod_n = sym super::brainpoolp512r1_inverse::vg_brainpoolp512r1_inv_mod_n,
-        vg_brainpoolp512r1_mul = sym super::brainpoolp512r1_mul::vg_brainpoolp512r1_mul,
         vg_brainpoolp512r1_mul_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_p,
     )
 }
