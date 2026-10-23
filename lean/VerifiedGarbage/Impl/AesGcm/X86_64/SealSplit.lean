@@ -167,21 +167,21 @@ def copySrc : Prog isa :=
 
 /-! ## One to three whole blocks, without calls but `vg_aes_ctr32`
 
-`prefixS` takes the texts whose first slice holds one to three whole blocks
-(`sTest`), for which a call of `fTo` costs more than its work: it copies the
-slice to `dst` (`copySrc`), encrypts its whole blocks there in place by a call
-of `vg_aes_ctr32` (`sCtr`) from the counter block, and absorbs them into `Y`
-at once (`sGh`): the products of the blocks, `Y` added to the first, with the
-prepared powers `H'ᵏ` … `H'` of the key context, added and reduced once. The
-others take `prefixN`. -/
+`prefixS` is `prefixN` with `prefixF` in place of `prefix`. `prefixF` takes
+the texts whose first slice holds one to three whole blocks, for which a call
+of `fTo` costs more than its work: it copies the slice to `dst` (`copySrc`),
+encrypts its whole blocks there in place by a call of `vg_aes_ctr32`
+(`sCtrArgs`) from the counter block, and absorbs them into `Y` at once
+(`sGh`): the products of the blocks, `Y` added to the first, with the
+prepared powers `H'ᵏ` … `H'` of the key context, added and reduced once. It
+tells them apart by `prefix`'s own test of the number of blocks (`preTest4`),
+so the others run what `prefix` runs. -/
 
-/-- The bytes past the first block that `prefixS` takes: up to three whole
-blocks. -/
-def sLim : Nat := 48
-
-/-- `CF` if `src` holds one to three whole blocks: `src_len - 16 < sLim`. -/
-def sTest : List Instr :=
-  [.mov .rax (.mem (at_ .r15 tlenO)), .alu .sub .rax (imm 16), .alu .cmp .rax (imm sLim)]
+/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than four:
+`preTest` with `cmp` in place of `test`, so that the texts of four blocks or
+more run as many instructions as `prefix` would. -/
+def preTest4 : List Instr :=
+  [.mov .rax (.mem (at_ .r15 tlenO)), .shift .shr .rax 4, .alu .cmp .rax (imm 4)]
 
 /-- The arguments of `vg_aes_ctr32(ctx, rounds, counter, data, n, scratch)`
 for the whole blocks at `dst`, and, kept across the call for `sGh`, their
@@ -223,14 +223,29 @@ def sGh : Prog isa :=
       (.seq (.seq (.block [.alu .cmp .rbp (imm 2)]) (.ite .b (.block []) (.block (sGhStep 2))))
         (.block sGhPost)))
 
-/-- `prefixN fTo encN`, but for the texts `sTest` takes: `src` copied to
-`dst`, its whole blocks encrypted there by `ctr` and absorbed at once, and
-the data from them on kept. -/
-def prefixS (ctr fTo : Fn) (encN : Prog isa) : Prog isa :=
-  .seq (.block sTest)
+/-- After `prefix`'s test, the bytes of `src` after its whole blocks copied,
+and `rest`. -/
+def preTail : Prog isa :=
+  .seq (.block copyArgs) (.seq (.ite .e (.block []) copyLoop) (.block rest))
+
+/-- `prefix fTo`, but for the texts of one to three whole blocks: `src`
+copied to `dst`, its whole blocks encrypted there by `ctr` and absorbed at
+once, and the data from them on kept. -/
+def prefixF (ctr fTo : Fn) : Prog isa :=
+  .seq (.block preTest4)
     (.ite .b
-      (.seq copySrc (.seq (.block sCtrArgs) (.seq (.call ctr.name ctr.code) (.seq sGh (.block rest)))))
-      (prefixN fTo encN))
+      (.seq (.block [.alu .test .rax (.reg .rax)])
+        (.ite .e preTail
+          (.seq copySrc (.seq (.block sCtrArgs) (.seq (.call ctr.name ctr.code) (.seq sGh (.block rest)))))))
+      (.seq (.seq (.block preArgs) (.frame (.push [.rax, .r10, .r11]) (.call fTo.name fTo.code) (.pop .rax 3)))
+        preTail))
+
+/-- `prefixN fTo encN` with `prefixF ctr fTo` in place of `prefix fTo`. -/
+def prefixS (ctr fTo : Fn) (encN : Prog isa) : Prog isa :=
+  .seq (.block nTest)
+    (.ite .b
+      (.seq (.block nCopyArgs) (.seq SealGather.copy (.seq (.block nArgs) (.seq encN (.block nRest)))))
+      (prefixF ctr fTo))
 
 /-- After the entry, for the instances with `seal`'s short path: `run` but for
 the texts the short path takes, which it seals at `dst`, `src` copied there

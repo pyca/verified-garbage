@@ -18,13 +18,15 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 /-!
 # AES-GCM `seal_split` on x86-64: one to three whole blocks at `src`
 
-Untrusted: everything here is checked by Lean. `prefixS` takes the texts whose
-first slice holds one to three whole blocks (`sTest_ok`): it copies the
-slice to `dst` (`copySrc`), encrypts its whole blocks there with a call of
-`vg_aes_ctr32` from the counter block (`sCall_ok`), and absorbs them into
-`Y` at once with the prepared powers of the key context (`sGhK_ok`), then
-keeps the data from them on as `prefix` does; it meets `PreOk` with the
-number of blocks of `prefixN` (`prefixSOk`).
+Untrusted: everything here is checked by Lean. `prefixF` tells the texts
+whose first slice holds one to three whole blocks from the others by
+`prefix`'s count of them (`preTest4_ok`, `tst_ok`): those it copies to `dst`
+(`copySrc`), encrypts their whole blocks there with a call of
+`vg_aes_ctr32` from the counter block, and absorbs them into `Y` at once
+with the prepared powers of the key context (`sPath_ok`), then keeps the
+data from them on as `prefix` does; the others take `prefix`'s own steps
+(`tail_ok`, `call_ok`; `prefixF_ok`). `prefixS`, `prefixN` with `prefixF`,
+meets `PreOk` with the number of blocks of `prefixN` (`prefixSOk`).
 -/
 
 @[expose] public section
@@ -41,17 +43,6 @@ open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
-/-- `a - 16 < 48` unsigned: one to three whole blocks. -/
-theorem sub16_lt48 {a : Nat} (ha : a < 2 ^ 64) :
-    (BitVec.ofNat 64 a - 16#64).toNat < 48 ↔ 1 ≤ a / 16 ∧ a / 16 ≤ 3 := by
-  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha]
-  omega
-
-/-- The texts `sTest` takes hold one to three whole blocks. -/
-theorem sLim_sound {a : Nat} (ha : a < 2 ^ 64) (h : (BitVec.ofNat 64 a - 16#64).toNat < SealSplit.sLim) :
-    1 ≤ a / 16 ∧ a / 16 ≤ 3 :=
-  (sub16_lt48 ha).mp (Nat.lt_of_lt_of_le h (by decide))
-
 /-- `16 q`, by a shift. -/
 theorem shl4_ofNat (q : Nat) : BitVec.ofNat 64 q <<< 4 = BitVec.ofNat 64 (16 * q) := by
   apply BitVec.eq_of_toNat_eq
@@ -66,23 +57,36 @@ theorem add_ofInt_back (p : Addr) {a k : Nat} (h : k ≤ a) :
 section
 variable {Ctx W SP : Addr}
 
-/-- `CF` if `src` holds one to three whole blocks. -/
-theorem sTest_ok {sl : Nat} {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+/-- The number of whole blocks at `src` into `rax`, `CF` if fewer than four. -/
+theorem preTest4_ok {sl : Nat} (hsl : sl < 2 ^ 64) {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
     (hslot : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 sl) :
-    WP isa (.block SealSplit.sTest) s fun t =>
-      t.cf = some (decide ((BitVec.ofNat 64 sl - 16#64).toNat < SealSplit.sLim)) ∧
-      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+    WP isa (.block SealSplit.preTest4) s fun t => t.gpr .rax = BitVec.ofNat 64 (sl / 16) ∧
+      t.cf = some (decide (sl / 16 < 4)) ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have q₁ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
-  have i16 := imm_eq (n := 16) (by decide)
-  have iL := imm_eq (n := SealSplit.sLim) (by decide)
-  unfold SealSplit.sTest
+  have h4 := shr4 sl hsl
+  have i4 := imm_eq (n := 4) (by decide)
+  have hq : sl / 16 < 2 ^ 64 := by omega_arith
+  unfold SealSplit.preTest4
   apply WP.of_runBlock
-  refine ⟨_, by xrun [he.r15, q₁, hslot, i16, iL], ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [cf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, reduceCtorEq, ↓reduceIte,
-      Nat.reducePow, BitVec.toNat_ofNat, Nat.reduceMod, Nat.mod_eq_of_lt (show SealSplit.sLim < 2 ^ 64 by decide)]
-  · intro r ha; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, ha]
+  refine ⟨_, by xrun [he.r15, q₁, hslot, h4, i4], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, h4]
+  · simp only [cf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, reduceCtorEq, ↓reduceIte, h4,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt hq, Nat.reducePow, Nat.reduceMod]
+  · intro r hr; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, hr]
   all_goals simp [mem_arithFlags, mem_setReg, mem_setFlags, rd_arithFlags, rd_setReg, rd_setFlags, wr_arithFlags,
     wr_setReg, wr_setFlags]
+
+/-- `ZF` if `rax`, the number `q` of whole blocks, is zero. -/
+theorem tst_ok {q : Nat} (hq : q < 2 ^ 64) {s : State} (ax : s.gpr .rax = BitVec.ofNat 64 q) :
+    WP isa (.block [.alu .test .rax (.reg .rax)]) s fun t => t.zf = some (decide (q = 0)) ∧
+      (∀ r, t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have hz := and_self_beq hq
+  apply WP.of_runBlock
+  refine ⟨_, by xrun [ax], ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [zf_arithFlags, gpr_setFlags, ax, hz]
+  · intro r; simp [gpr_arithFlags, gpr_setFlags]
+  all_goals simp [mem_arithFlags, mem_setFlags, rd_arithFlags, rd_setFlags, wr_arithFlags, wr_setFlags]
 
 /-- `copySrc`'s arguments: `src`, `dst` and `src_len`. -/
 theorem sCopyArgs_ok {D S : Addr} {sl : Nat} {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
@@ -396,7 +400,7 @@ theorem sProd_congr (Y : Block) (X : List Block) {P Q : Nat → Block} (h : ∀ 
   | [_, _, _] => simp only [sProd, h1, h2, h3]
   | _ :: _ :: _ :: _ :: _ => rfl
 
-/-! ## The path of the texts `sTest` takes -/
+/-! ## The path of the texts of one to three whole blocks -/
 
 section
 variable (Ctx W SP D S : Addr) (R sl : Nat) (σ : State)
@@ -700,7 +704,7 @@ theorem sF_ok (hF : ShortFacts) {t₅ : State} (hE : SE Ctx W SP D S R sl s t₅
       · exact (h.data.ok.stk.sub_right subT).symm) (by omega), tl₂]
 
 include hq in
-/-- The texts `sTest` takes, from a state that `prefix` could start from but
+/-- The texts of one to three whole blocks, from a state that `prefix` could start from but
 for `rax` and the flags: the slice copied to `dst`, its whole blocks
 encrypted there by a call of `vg_aes_ctr32` and absorbed at once. -/
 theorem sPath_ok (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) {t : State}
@@ -712,10 +716,38 @@ theorem sPath_ok (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) {t : State}
     WP.seq (WP.mono (sC_ok h hB) fun _ hC => WP.seq (WP.mono (sD_ok v hC) fun _ hD =>
       WP.seq (WP.mono (sE_ok h hq hD) fun _ hE => sF_ok h hq hF hE)))))
 
+/-- `prefixF`: by `prefix`'s own steps for no whole block and for four or
+more, by the path above for one to three. -/
+theorem prefixF_ok (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) (T : BlkToFn (CtxMode.preparedN np hpn)) :
+    WP isa (SealSplit.prefixF ⟨v.callee.name, v.callee.code⟩ T.fn) s (PPost Ctx W SP D S R n sl s) := by
+  have hn := h.data.ok.lt
+  have hsl := h.sl_le
+  have he := h.env
+  unfold SealSplit.prefixF
+  refine WP.seq (WP.mono (preTest4_ok (sl := sl) (by omega) he h.slen) fun s₁ ⟨ax₁, cf₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
+  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
+  refine WP.ite (decide (sl / 16 < 4)) (by simp only [eval, cf₁]) (fun h4 => ?_) (fun _ => ?_)
+  · have h4' : sl / 16 < 4 := of_decide_eq_true h4
+    refine WP.seq (WP.mono (tst_ok (q := sl / 16) (by omega) ax₁) fun s₂ ⟨zf₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
+    have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun r _ => g₂ r) rd₂ wr₂
+    refine WP.ite (decide (sl / 16 = 0)) (by simp only [eval, zf₂]) (fun h0 => ?_) (fun h0 => ?_)
+    · have h0' : sl / 16 = 0 := of_decide_eq_true h0
+      refine tail_ok h ⟨he₂, rd₂.trans rd₁, wr₂.trans wr₁, by rw [m₂, m₁]; exact Frame.refl _ _, ?_, ?_, ?_⟩
+      · rw [h0']; rfl
+      · rw [h0', m₂, m₁]; rfl
+      · rw [h0', m₂, m₁]; rfl
+    · have h0' : sl / 16 ≠ 0 := of_decide_eq_false h0
+      exact sPath_ok h ⟨by omega, by omega⟩ hF v (fun r hr => (g₂ r).trans (g₁ r hr)) (m₂.trans m₁)
+        (rd₂.trans rd₁) (wr₂.trans wr₁)
+  · exact WP.seq (WP.mono (call_ok h T he₁ ax₁ m₁ rd₁ wr₁) fun _ H => tail_ok h H)
+
 end
 
 /-- `prefixS` meets `PreOk` with `prefixN`'s number of blocks: by the path
-above for the texts `sTest` takes, by `prefixN` for the others. -/
+above for the texts of one to three whole blocks (`prefixF_ok`), by `prefixN`'s
+steps for the others. -/
 theorem prefixSOk (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) {ctr : Fn}
     (hc : ctr = ⟨v.callee.name, v.callee.code⟩) {c : Prog isa} (hE : EncNOk np hpn c)
     (T : BlkToFn (CtxMode.preparedN np hpn)) :
@@ -724,17 +756,19 @@ theorem prefixSOk (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) {ctr : Fn}
   intro Ctx W SP D S R n sl s h
   subst hc
   unfold SealSplit.prefixS
-  refine WP.seq (WP.mono (sTest_ok (sl := sl) h.env h.slen)
+  refine WP.seq (WP.mono (nTest_ok (n := n) (sl := sl) h.data.ok.lt h.sl_le h.env h.slen h.len)
     fun t ⟨cf, g, tm, trd, twr⟩ => ?_)
-  refine WP.ite (decide ((BitVec.ofNat 64 sl - 16#64).toNat < SealSplit.sLim)) (by simp only [eval, cf])
-    (fun hs => ?_) (fun hs => ?_)
-  · have hs' := sLim_sound (by have := h.sl_le; have := h.data.ok.lt; omega) (of_decide_eq_true hs)
-    have : ¬ (1 ≤ sl / 256 ∧ sl / 256 < n / 256) := by omega
-    simp only [this, ↓reduceIte]
-    exact WP.mono (sPath_ok h hs' hF v g tm trd twr) fun _ Q => Q.toG h
+  refine WP.ite (decide (1 ≤ sl / 256 ∧ sl / 256 < n / 256)) (by simp only [eval, cf]) (fun hc => ?_) (fun hc => ?_)
+  · have hc' := of_decide_eq_true hc
+    simp only [hc', and_self, ↓reduceIte]
+    exact nPath_ok h hE hc' g tm trd twr
   · have he : Env Ctx (W + BitVec.ofNat 64 16) W SP t := h.env.keep (fun r hr => g r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> decide) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide)) trd twr
-    exact WP.mono (prefixNOk hE T (h.of_eq he tm trd twr)) fun _ P => P.of_eq tm trd twr
+    have hc' := of_decide_eq_false hc
+    simp only [hc', ↓reduceIte]
+    exact WP.mono (prefixF_ok (h.of_eq he tm trd twr) hF v T) fun _ P => (P.toG (h.of_eq he tm trd twr)).of_eq tm trd twr
 
 end VG.Proof.AesGcm.X86_64.Split
