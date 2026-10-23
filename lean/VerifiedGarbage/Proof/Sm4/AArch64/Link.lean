@@ -93,7 +93,8 @@ tactic_template "sm4_keeps_x30" : tactic => `(tactic| repeat (first
   | exact Modes.AArch64.keepsReg_of_regSafe (by decide)))
 
 theorem ctr_keeps_x30 : KeepsReg .x30 ctr := by sm4_keeps_x30
-theorem cbcEncryptChained_keeps_x30 : KeepsReg .x30 cbcEncryptChained := by sm4_keeps_x30
+theorem cbcEncryptChained_keeps_x30 : KeepsReg .x30 cbcEncryptChained :=
+  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
 theorem cbcDecryptChained_keeps_x30 : KeepsReg .x30 cbcDecryptChained := by sm4_keeps_x30
 theorem ofb_keeps_x30 : KeepsReg .x30 ofb := by sm4_keeps_x30
 theorem cfbEncrypt_keeps_x30 : KeepsReg .x30 cfbEncrypt := by sm4_keeps_x30
