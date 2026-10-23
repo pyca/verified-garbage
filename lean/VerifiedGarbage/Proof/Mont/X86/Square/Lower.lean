@@ -37,7 +37,7 @@ theorem lower_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} {N k :
       apply BitVec.eq_of_toNat_eq
       rw [len1, hN, BitVec.toNat_ofNat]
       congr 1
-      omega
+      omega_arith
     have si : t1.gpr .esi = BitVec.ofNat 32 (4*k) := (keep1.1 _ (by simp [Ne.symm rsi])).trans count
     refine wp_movS rfl fun t2 u2 _ => wp_addS rfl fun t3 u3 _ => wp_subS rfl fun t4 u4 cf => WP.block_nil ?_
     have e3 : t3.gpr .edx = BitVec.ofNat 32 (4*(k+1)) := by
@@ -51,7 +51,7 @@ theorem lower_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} {N k :
     · rw [u4.gpr, e3, er3]
     · rw [u4.other _ rdx, er3]
     · rw [cf, e3, er3, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
       simp only [Nat.mul_lt_mul_left (by decide : 0 < 4)]
     · rw [u4.mem, u3.mem, u2.mem, m1]
     · exact (keep1.mono (by simp)).trans ((u2.keeps.mono (by simp)).trans
@@ -64,15 +64,15 @@ theorem lower_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} {N k :
     have upd := VG.X86.Wp.Upd.setReg t .edx (0 : BitVec 32)
     have lt : k+1<N := of_decide_eq_true yes
     refine ⟨?_, by rw [upd.other _ rdx, er], by rw [upd.mem, mem], ?_, ?_⟩
-    · rw [upd.gpr, Nat.sub_eq_zero_of_le (by omega)]; rfl
+    · rw [upd.gpr, Nat.sub_eq_zero_of_le (by omega_arith)]; rfl
     · exact keep.trans (upd.keeps.mono (by simp))
     · exact xmm
   · intro no
     apply WP.block_nil
-    have ge : N ≤ k+1 := by have := of_decide_eq_false no; omega
+    have ge : N ≤ k+1 := by have := of_decide_eq_false no; omega_arith
     refine ⟨?_, er, mem, keep, xmm⟩
-    rw [ed, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+    rw [ed, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith)]
     congr 1
-    omega
+    omega_arith
 
 end VG.Proof.Mont.X86.Square

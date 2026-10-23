@@ -35,14 +35,14 @@ theorem subAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
   have nowrap := hw.nowrap
   unfold Compact.subM
   simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (WP.mono (arrayPtr_ok hw ha base (r := .esi) (j := 0) (by omega))
+  refine WP.seq (WP.block_append (WP.mono (arrayPtr_ok hw ha base (r := .esi) (j := 0) (by omega_arith))
     fun s₁ ⟨p₁, m₁, K₁⟩ => ?_))
   have ha₁ := ha.of_keeps K₁ (by decide) (by rw [m₁]; exact Outs.refl _ _ _)
   refine WP.block_append (WP.mono (operandPtr_ok (hw.of_keeps K₁) ha₁ base
-    (r := .ebx) (t := .edx) (i := 2) (by decide) (by decide) (by decide) (by omega))
+    (r := .ebx) (t := .edx) (i := 2) (by decide) (by decide) (by decide) (by omega_arith))
     fun s₂ ⟨p₂, m₂, K₂⟩ => ?_)
   have ha₂ := ha₁.of_keeps K₂ (by decide) (by rw [m₂]; exact Outs.refl _ _ _)
-  refine WP.block_append (WP.mono (lenTimes_ok ((hw.of_keeps K₁).of_keeps K₂) ha₂ base (by omega) 0)
+  refine WP.block_append (WP.mono (lenTimes_ok ((hw.of_keeps K₁).of_keeps K₂) ha₂ base (by omega_arith) 0)
     fun s₃ ⟨l₃, m₃, K₃⟩ => ?_)
   refine wp_movS rfl fun s₄ B _ => WP.block_nil ?_
   have K : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi] t s₄ :=
@@ -59,14 +59,14 @@ theorem subAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
   have di : (s₄.gpr .edi).toNat = 4 * N := by
     rw [B.other .edi (by decide), l₃, m₂, m₁, show 2 ^ (3 + 0) = 8 from rfl,
       V.width, Nat.mod_eq_of_lt hN32]
-  refine WP.seq (WP.mono (subLoop_ok (hw.of_keeps K) hN (by omega) modFit outFit
-    (by omega) outMod bp si bx di B.gpr) fun u₁ ⟨O, Q, P, K'⟩ => ?_)
+  refine WP.seq (WP.mono (subLoop_ok (hw.of_keeps K) hN (by omega_arith) modFit outFit
+    (by omega_arith) outMod bp si bx di B.gpr) fun u₁ ⟨O, Q, P, K'⟩ => ?_)
   have Kt : Keeps clob7 t u₁ := (K.mono (by decide)).trans K'
   have Ot : Outside W o (4 * N) t.mem u₁.mem := by rw [← M]; exact O
   have args := ha.of_keeps Kt (by decide)
-    (Outs.of_outside (Ot.mono (by omega) (by omega)) (List.mem_singleton_self _))
+    (Outs.of_outside (Ot.mono (by omega_arith) (by omega_arith)) (List.mem_singleton_self _))
   unfold Compact.scratchPtr
-  refine WP.mono (arrayPtr_ok (hw.of_keeps Kt) args base (r := .edi) (j := 2) (by omega)) ?_
+  refine WP.mono (arrayPtr_ok (hw.of_keeps Kt) args base (r := .edi) (j := 2) (by omega_arith)) ?_
   rintro u ⟨ptr, mem, keep⟩
   refine ⟨?_, ?_, ?_, ?_, Kt.trans (keep.mono (by decide))⟩
   · rw [mem]; exact Ot
@@ -74,7 +74,7 @@ theorem subAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
     refine ⟨c, by rw [keep.1 .ecx (by decide)]; exact C, ?_⟩
     rw [mem]; rw [M] at q; exact q
   · rw [PtrAt, keep.1 .ebp (by decide)]
-    rw [show S + Compact.accOff + 8 * N = S + Compact.accOff + 4 * N + 4 * N by omega]
+    rw [show S + Compact.accOff + 8 * N = S + Compact.accOff + 4 * N + 4 * N by omega_arith]
     exact P
   · rw [PtrAt, ptr]
     exact (V.keep Ot outHeader).scratch
