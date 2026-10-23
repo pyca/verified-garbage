@@ -6,13 +6,14 @@
 //! `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` (`VG.Spec.Cbc.aesEncryptContract`,
 //! `aesDecryptContract`) replace each block with its CBC encryption or
 //! decryption and the chaining value with the last ciphertext block, in
-//! constant time. They call `vg_aes_encrypt_blocks` or
-//! `vg_aes_decrypt_blocks` on one block at a time. This module checks the
+//! constant time. Decryption can decipher independent blocks in parallel;
+//! encryption processes one block at a time. This module checks the
 //! lengths, which the assembly does not, and holds the key schedule.
 //!
 //! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
 //! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
+//! AArch64, CPUs with AES and SHA3 use seven interleaved states for decryption;
+//! AES alone runs the `_aes` functions. Elsewhere, and on other CPUs, the
 //! constant-time bitsliced implementation runs.
 
 #![cfg(any(
@@ -30,8 +31,9 @@ use crate::arch::aes::vg_aes_expand_key_aes;
 use crate::arch::aes::vg_aes_expand_key_aesni;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes_cbc::{
-    VG_AES_CBC_DECRYPT_AES_FEATURES, VG_AES_CBC_ENCRYPT_AES_FEATURES, vg_aes_cbc_decrypt_aes,
-    vg_aes_cbc_encrypt_aes,
+    VG_AES_CBC_DECRYPT_AES_FEATURES, VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES,
+    VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN, VG_AES_CBC_ENCRYPT_AES_FEATURES,
+    vg_aes_cbc_decrypt_aes, vg_aes_cbc_decrypt_aes_sha3, vg_aes_cbc_encrypt_aes,
 };
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes_cbc::{
@@ -178,7 +180,7 @@ impl AesCbc {
             vg_aes_cbc_encrypt_vaes,
             vg_aes_cbc_encrypt_aes
         );
-        self.crypt(iv, buffer, f)
+        self.crypt(iv, buffer, f, 2176)
     }
 
     /// Decrypts whole 16-byte blocks in place, chained from `iv`, and
@@ -187,6 +189,16 @@ impl AesCbc {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     pub fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+        #[cfg(target_arch = "aarch64")]
+        if self.backend == Backend::Aes && detected().contains(VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES)
+        {
+            return self.crypt(
+                iv,
+                buffer,
+                vg_aes_cbc_decrypt_aes_sha3,
+                VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN,
+            );
+        }
         let f = instance!(
             self.backend,
             vg_aes_cbc_decrypt,
@@ -194,10 +206,16 @@ impl AesCbc {
             vg_aes_cbc_decrypt_vaes,
             vg_aes_cbc_decrypt_aes
         );
-        self.crypt(iv, buffer, f)
+        self.crypt(iv, buffer, f, 2176)
     }
 
-    fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], f: Cbc) -> Result<(), Error> {
+    fn crypt(
+        &self,
+        iv: &mut [u8; 16],
+        buffer: &mut [u8],
+        f: Cbc,
+        scratch_written: usize,
+    ) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(16) {
             return Err(Error::IncompleteBlock);
         }
@@ -218,8 +236,11 @@ impl AesCbc {
             );
         }
         // The scratch space may hold the key schedule, the data and our
-        // caller's registers.
-        zeroize(&mut scratch);
+        // caller's registers. The emitted, proved write bound permits the
+        // register-only decryption path to leave this initialized buffer alone.
+        if scratch_written != 0 {
+            zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
+        }
         Ok(())
     }
 }
