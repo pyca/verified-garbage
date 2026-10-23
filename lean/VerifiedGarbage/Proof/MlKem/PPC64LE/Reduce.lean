@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # ML-KEM on PPC64LE: Barrett reduction, the tables and the saved registers

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Ntt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
@@ -14,7 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Ntt
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic

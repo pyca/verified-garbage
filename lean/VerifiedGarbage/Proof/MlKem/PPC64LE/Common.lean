@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ML-KEM on PPC64LE: common lemmas
