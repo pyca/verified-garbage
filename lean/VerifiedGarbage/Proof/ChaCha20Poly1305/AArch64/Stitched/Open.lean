@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Wide
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.TailO.Rest
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `open`
@@ -74,51 +75,93 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     fun s₄ ⟨T, hc⟩ => ?_)
   have hle := hc.le
   have hpre : pre 0 false T = 512 * T := by simp [pre]
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-    (srcAt hp (p := pre 0 false T) (by rw [hpre]; omega)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x22 hc.x23) (by lit_decide))
-    fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
-  have i₅ := mac_inv0 hc.inv k₅
-  have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
-    intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-  refine WP.seq ((openRest_ok v hp (s := s₃') (P := 512 * T) (by omega) (by have := hc.lt; omega) (fun _ => by omega) i₅.x21
-    (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22, hpre])
-    (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23, hpre]) i₅.rd i₅.wr
-    (fun _ => by rw [stateAt_frame k₅.frame (by rdisj_all), hc.cnt,
-      show 512 * T / 64 = 0 / 64 + 8 * T by omega])
-    (fun k hk => by rw [data_frame k₅.frame hd₅ hk, hc.data k hk, Nat.zero_add])).mono
-    fun s₆ ⟨v₆, k₅₆, _, pt₆⟩ => ?_)
+  -- The rest: stitched from 65 to 256 bytes (`TailO.rest`), otherwise absorbed and then
+  -- decrypted (`openRest`).
+  have hr512 := hc.lt
+  refine WP.seq ((TailO.test_ok s₄ (r := L s₀ - 512 * T) (by omega)
+    (by rw [hc.x23, hpre])).mono fun s₄' ⟨e₄, k₄', g₄', v₄'⟩ => ?_)
+  have hc' := TailO.Crypted.keep hc k₄' g₄' v₄'
+  have hm₄ : s₄'.mem = s₄.mem := by funext x; exact k₄'.frame x fun r hr => by simp at hr
+  refine WP.seq (WP.mono (Q := fun (s₆ : State) =>
+    (∀ r ∈ preservedV, (s₆.v r).extractLsb' 0 64 = (s₄.v r).extractLsb' 0 64) ∧ Inv0 s₀ s₆ ∧
+    Frame [sub s₀ 16 16, sub s₀ 32 16, sub s₀ 64 512, sub s₀ 768 512, dR s₀] s₄.mem s₆.mem ∧
+    Repr s₆.mem (off (cx s₀) 448) (otk s₀) (([] ++ (bytesAt s₁.mem (ad s₀) (AL s₀) ++ pad16 (bytesAt s₁.mem (ad s₀) (AL s₀))) ++
+      bytesAt s₃'.mem (dp s₀) (512 * T)) ++
+      (bytesAt s₃'.mem (dp s₀ + BitVec.ofNat 64 (512 * T)) (L s₀ - 512 * T) ++
+        pad16 (bytesAt s₃'.mem (dp s₀ + BitVec.ofNat 64 (512 * T)) (L s₀ - 512 * T)))) ∧
+    bytesAt s₆.mem (dp s₀) (L s₀) =
+      Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s₃'.mem (dp s₀) (L s₀))) ?_ ?_)
+  · refine WP.ite (decide (65 ≤ L s₀ - 512 * T ∧ L s₀ - 512 * T ≤ 256)) e₄ (fun h => ?_) (fun h => ?_)
+    · have h' := of_decide_eq_true h
+      refine (TailO.rest_ok v.callee.sve hp hc' (by decide) (by simp only [Nat.zero_add]; omega)
+        (by simp only [Nat.zero_add]; omega)).mono fun s₆ ⟨v₆, i₆, f₆, r₆, pt₆⟩ => ?_
+      simp only [Nat.zero_add] at f₆ r₆ pt₆ v₆
+      refine ⟨fun r hr => (v₆ r hr).trans (v₄' r hr), i₆, ?_, r₆, pt₆⟩
+      rw [← hm₄]
+      exact f₆.sub fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
+    · refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
+        (srcAt hp (p := pre 0 false T) (by rw [hpre]; omega)) hc'.inv.x21 hc'.inv.rd hc'.inv.wr hc'.x22
+        hc'.x23) (by lit_decide))
+        fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
+      have i₅ := mac_inv0 hc'.inv k₅
+      have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
+        intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
+      refine (openRest_ok v hp (s := s₃') (P := 512 * T) (by omega) (by omega) (fun _ => by omega)
+        i₅.x21 (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc'.x22, hpre])
+        (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc'.x23, hpre]) i₅.rd i₅.wr
+        (fun _ => by rw [stateAt_frame k₅.frame (by rdisj_all), hc'.cnt,
+          show 512 * T / 64 = 0 / 64 + 8 * T by omega])
+        (fun k hk => by rw [data_frame k₅.frame hd₅ hk, hc'.data k hk, Nat.zero_add])).mono
+        fun s₆ ⟨v₆, k₅₆, _, pt₆⟩ => ?_
+      have i₆ : Inv0 s₀ s₆ := i₅.step k₅₆ (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl
+          · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
+          · exact ⟨dR s₀, by simp, fun _ h => h⟩
+          · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl
+          · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+          · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
+          · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+      have R₄ := hc'.mac
+      simp only [Bool.false_eq_true, ↓reduceIte] at R₄
+      have R₅ := r₅ _ _ R₄
+      rw [rest_orig hc', hpre] at R₅
+      refine ⟨fun r hr => (v₆ r hr).trans ((v₅ r hr).trans (v₄' r hr)), i₆, ?_,
+        Repr.frame k₅₆.frame (by rdisj_all) R₅, pt₆⟩
+      rw [← hm₄]
+      refine (k₅.frame.sub fun r hr => ?_).trans (k₅₆.frame.sub fun r hr => ?_)
+      · simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (by decide) (by decide) (by lit_omega)⟩
+        · exact ⟨sub s₀ 16 16, by simp, fun _ h => h⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (by decide) (by decide) (by lit_omega)⟩
+        · exact ⟨dR s₀, by simp, fun _ h => h⟩
+        · exact ⟨sub s₀ 768 512, by simp, fun _ h => h⟩
+  rintro s₆ ⟨v₆, i₆, f₆, R₆, pt₆⟩
   rw [D₃'] at pt₆
-  have i₆ : Inv0 s₀ s₆ := i₅.step k₅₆ (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
-      · exact ⟨dR s₀, by simp, fun _ h => h⟩
-      · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)
-    (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-      · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
-      · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
   refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 48) (by omega)) (by lit_decide))
     fun s₈ ⟨⟨k₈, tag₈⟩, v₈⟩ => ?_
   -- The tag computed.
-  have R₄ := hc.mac
-  simp only [Bool.false_eq_true, ↓reduceIte] at R₄
-  have R₅ := r₅ _ _ R₄
-  rw [rest_orig hc, List.append_assoc, split_pad (pre_mod (by decide) false T) (by rw [hpre]; omega), D₃'] at R₅
-  have T₈ := tag₈ _ _ (r₇ _ _ (Repr.frame k₅₆.frame (by rdisj_all) R₅))
+  have R₅ := R₆
+  rw [← hpre, List.append_assoc, split_pad (pre_mod (by decide) false T) (by rw [hpre]; omega), D₃'] at R₅
+  have T₈ := tag₈ _ _ (r₇ _ _ R₅)
   have L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
-    rw [bytesAt_frame k₅₆.frame (by rdisj_all) (by lit_omega),
-      bytesAt_frame k₅.frame (by rdisj_all) (by lit_omega),
+    rw [bytesAt_frame f₆ (by rdisj_all) (by lit_omega),
       bytesAt_frame hc.frame (by rdisj_all) (by lit_omega),
       bytesAt_frame k₃'.frame (by rdisj_all) (by lit_omega), len₃]
   rw [L₆, hA] at T₈
   refine ⟨i₇.step k₈ (fun r hr => ?_) (fun r hr => ?_), fun r hr => (v₈ r hr).trans ((v₇ r hr).trans
-      ((v₆ r hr).trans ((v₅ r hr).trans ((hc.vec r hr).trans ((v₃' r hr).trans
-      ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))))))), ?_, ?_⟩
+      ((v₆ r hr).trans ((hc.vec r hr).trans ((v₃' r hr).trans
+      ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr))))))), ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
