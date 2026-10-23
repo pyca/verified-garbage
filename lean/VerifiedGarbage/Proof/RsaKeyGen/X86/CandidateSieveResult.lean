@@ -18,10 +18,10 @@ def SieveOutputs (E : Environment) (e : Nat) (entropy : List Byte) (s : State) :
   else ExponentOutputs E e entropy s
 
 theorem sieve_result_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (D : Drawn E eBytes pBytes entropy s) (enough : E.length ≤ E.randLength) :
     WP isa (VG.Impl.RsaKeyGen.X86.Candidate.sieveCheck E.width montName mont roundName round) s fun t =>

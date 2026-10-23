@@ -48,7 +48,7 @@ abbrev randR (s : State) : Region := ⟨argumentPointer s 5, (arg s 6).toNat⟩
 abbrev wsR (s : State) : Region := ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
 abbrev argsR (s : State) : Region := ⟨argAddr s 0, 36⟩
 abbrev retR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-abbrev belowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩
+abbrev belowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩
 
 /-- What the contract gives `vg_ffdh_parameter_candidate_sieved(out, out_len, used, bits, generator,
 rand, rand_len, scratch, scratch_len)`. -/
@@ -123,11 +123,11 @@ theorem wrapABI {s : State} (A : CandABI s) : WrapABI Impl.Ffdh.X86.Candidate.ar
 /-- The 40 bytes below the frame, and the frame, below the caller's stack pointer. -/
 theorem frame_subs {s : State} (A : CandABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
-    Region.Sub (below sp 40) (belowR s) ∧ Region.Sub ⟨sp.setWidth 64, 76⟩ (belowR s) := by
+    Region.Sub (below sp 96) (belowR s) ∧ Region.Sub ⟨sp.setWidth 64, 76⟩ (belowR s) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega)
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
@@ -135,7 +135,7 @@ theorem frame_subs {s : State} (A : CandABI s) {sp : BitVec 32}
   · simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 40#64 = BitVec.ofNat 64 116 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
   · rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
     exact Offset.sub_below _ (by decide) (by decide)
@@ -196,7 +196,7 @@ structure Facts (Ex : List Region → List Region → Prop) (base : Addr) (bytes
   rg : readSrc f (.mem (argAt 19 4)) = some (BitVec.ofNat 32 g)
   ru : readSrc f (.mem (argAt 19 2)) = some up
   dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩
-  d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below sp 40)
+  d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below sp 96)
   TT : Table Tb sp f
   TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩
 
@@ -213,7 +213,7 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
       (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) (arg s 3).toNat (arg s 4).toNat f := by
   obtain ⟨sub40, subF⟩ := frame_subs A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl
   have fb : argsFrame = 76 := rfl
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
   have top := A.stackBound
@@ -275,7 +275,7 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
       ⟨wsBase Impl.Ffdh.X86.Candidate.args s, wsSize Impl.Ffdh.X86.Candidate.args s⟩ := fun j hj => by
     have : j < 9 := by simp at hj; omega
     rw [ea j this]; exact A.wsArgs.symm.sub_left (sub j this)
-  have d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below (s.gpr .esp - BitVec.ofNat 32 argsFrame) 40) := fun j hj => by
+  have d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below (s.gpr .esp - BitVec.ofNat 32 argsFrame) 96) := fun j hj => by
     have : j < 9 := by simp at hj; omega
     rw [ea j this]; exact (A.belowArgs.symm.sub_left (sub j this)).sub_right sub40
   -- RSA's table.

@@ -37,7 +37,7 @@ theorem Environment.Valid.sieveCandidateSub {E : Environment} (v : E.Valid) :
     omega)
 
 theorem Environment.Valid.sieveStackSub {E : Environment} (v : E.Valid) :
-    E.sieveGeometry.stackRegion.Sub (below E.p 96) :=
+    E.sieveGeometry.stackRegion.Sub (below E.p 136) :=
   below_sub (by decide) v.low
 
 theorem Environment.Valid.sieve_valid {E : Environment} (v : E.Valid) : E.sieveGeometry.Valid := by

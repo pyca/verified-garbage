@@ -76,7 +76,7 @@ structure PrivAt (Ex : List Region → List Region → Prop) (base : Addr) (byte
     (args : Nat → BitVec 32) (sp : BitVec 32) (D Yb : List Byte) (St : Nat) (u : State) : Prop where
   pub : PubAt Ex base bytes len dlen args sp D Yb u
   geo : XGeo args base bytes len xl u.rd u.wr
-  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
   st : Spec.Ffdh.privateStatus (Spec.Ffdh.domainOf len D) (Spec.Rsa.os2ip Yb) (xv u.mem args xl) = St
 
 theorem status_two {a : Spec.Ffdh.Parameters} {y x : Nat} :
@@ -95,7 +95,7 @@ abbrev RX (Ex : List Region → List Region → Prop) (base : Addr) (bytes len x
 /-- x's power: p's context by `ctxP_relCT`, the copy and x's load by the taint analysis, and the power
 over x's `xl` bytes by private CRT's windowed power. -/
 theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) :
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) :
     RelCT isa (Both (RX Ex base bytes len xl args sp)) (Impl.Ffdh.X86.powTop 10)
       (Both (Run Ex base bytes len args sp)) := by
   rw [powTop_eq]
@@ -115,10 +115,10 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
       fun _ W => lenCount_wst (by decide) hx.1 W).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
 
 theorem pair_trace {P : State → Prop}
-    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) :
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) :
     RelCT isa (Both P) Impl.Ffdh.X86.CheckPrivate.pair fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
-    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ?_
     obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
@@ -194,7 +194,7 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)) ∧
+    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) ∧
       Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.pub.dom.run.1 A.pub.dom.geo A.pub.geo A.geo
       (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.hb40) (by rw [A.pub.dom.run.2.2]; exact A.pub.hy40)

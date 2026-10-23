@@ -16,10 +16,10 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 open VG.Proof.RsaKeyGen
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State}
     (S : Scr s P.g.W P.g.L) (capacity : w32 s.mem P.g.W 40 = P.capacity)
     (privateEq : P.p = CandidateFrame.privateSp s)
@@ -31,13 +31,13 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand)
     (randLength : w32 s.mem P.g.W 32 = P.randLen)
     (used : w32 s.mem P.g.W 152 = P.start) (enough : P.start ≤ P.randLen)
-    (fit : 96 ≤ (s.gpr .esp).toNat)
-    (separate : (s.gpr .esp).toNat ≤ P.g.W.toNat ∨ P.g.W.toNat + P.g.L + 96 ≤ (s.gpr .esp).toNat)
+    (fit : 136 ≤ (s.gpr .esp).toNat)
+    (separate : (s.gpr .esp).toNat ≤ P.g.W.toNat ∨ P.g.W.toNat + P.g.L + 136 ≤ (s.gpr .esp).toNat)
     (randPrivateFar : (⟨P.rand.setWidth 64, P.randLen⟩ : Region).Disjoint (below (s.gpr .esp) 28)) :
     WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith P.seed P.checks P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       val32 t.mem P.g.W (P.g.array 0) P.g.words = P.candidate ∧ MillerRabinLoop.Result P t ∧
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
-      Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 96] s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith
   refine CandidateFrame.code_full_ok (CandidateNoSp.coreWith montNoSp roundNoSp P.seed P.checks P.bytes P.words P.g.w montName roundName) S v.geometry.headerFit capacity fit separate ?_
   intro a Sa Ca _ Fa Ka
@@ -70,12 +70,12 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (by rw [w32, Wa.read32 (by have := v.geometry.headerFit; omega) (by intro r mem; nomatch mem)]; exact randLength)
     (by rw [w32, Wa.read32 (by have := v.geometry.headerFit; omega) (by intro r mem; nomatch mem)]; exact used) enough)
     fun t ⟨T, result, Wt, Ft, Kt⟩ => ?_
-  have outerFrame : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 96] s.mem t.mem := by
-    have first : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 96] s.mem a.mem :=
+  have outerFrame : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem t.mem := by
+    have first : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem a.mem :=
       Fa.sub (by
         intro r mem; obtain rfl := List.mem_singleton.mp mem
         exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), below_sub (by decide) fit⟩)
-    have second : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 96] a.mem t.mem :=
+    have second : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] a.mem t.mem :=
       Ft.sub (by
         intro r mem
         simp only [List.mem_append, List.mem_singleton] at mem

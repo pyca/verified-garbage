@@ -53,8 +53,8 @@ theorem windowFour_relCT {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitV
   exact WP.mono (fourSquares_ok v S) fun _ R => ⟨R.1, math⟩
 
 theorem windowSquares_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (WindowFour g capacity p)) (squareLoop name code) (Two g (WindowSquared g capacity p)) := by
   have known : ∀ d ∈ [sSquares, sThreshold, sFlag], d ∈ sSquares :: sThreshold :: windowFields := by

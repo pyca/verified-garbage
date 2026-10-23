@@ -37,7 +37,7 @@ def satState : State where
   rd := [⟨0x4000, 64⟩, ⟨0x5000, 1⟩, ⟨0x6000, 1⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩, ⟨0x10000, 8448⟩, ⟨0x20004, 48⟩]
 
-theorem satisfiable : ∃ s, (Spec.Rsa.recoverPrimesContract abi 40).pre s := by
+theorem satisfiable : ∃ s, (Spec.Rsa.recoverPrimesContract abi 96).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 64 := by decide
   have a2 : arg satState 2 = 8192 := by decide

@@ -49,10 +49,10 @@ theorem YGeo.keep {rd wr : List Region} (Y : YGeo args base bytes len rd wr) {s 
 abbrev yv (m : Mem) (args : Nat → BitVec 32) (len : Nat) : Nat :=
   Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (byteAddr (args 8)) len)
 
-/-- Bytes apart from the working space and the 40 bytes below `sp`, after a stage. -/
+/-- Bytes apart from the working space and the 96 bytes below `sp`, after a stage. -/
 theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
     (apart : Region.Disjoint ⟨p, n⟩ ⟨base, bytes⟩) (hn : n ≤ 2 ^ 64) {sp : BitVec 32}
-    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 40)) {m m' : Mem} (F : Frame (frameR base sp (fR len)) m m') :
+    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameR base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
   have fit := fR_fit h
   have bl := h.bytes_lt
@@ -95,7 +95,7 @@ theorem body_eq : Impl.Ffdh.X86.CheckPublic.body = Prog.chain pubFront (.ite .e 
 /-- p, one, `p − 1` and y into slots 9, 14, 15 and 12, and ZF telling whether y is out of range. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr)
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40)) :
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96)) :
     WP isa (Prog.chain pubFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (¬ (yv s.mem args len < pm1 len (comp s.mem args len 0) ∧ 1 < yv s.mem args len)) ∧
       sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 12 = yv s.mem args len := by
@@ -129,8 +129,8 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
 /-- `vg_ffdh_check_public`'s body: a status, `expected` for a valid domain. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40)) :
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96)) :
     WP isa Impl.Ffdh.X86.CheckPublic.body s fun t => ∃ r, Res base len s r t ∧
       (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen s.mem args) := by
   have dl := G.dl

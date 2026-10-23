@@ -35,7 +35,7 @@ def Post (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec
     Spec.Rsa.written t.mem (byteAddr (args 0)) len (t.gpr .eax)
       (Spec.Rsa.publicOpChecked nB (Spec.Rsa.bytesAt mem (byteAddr (args 4)) (args 5).toNat)
         (Spec.Rsa.bytesAt mem (byteAddr (args 6)) len))) ∧
-  Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below sp 40] mem t.mem
+  Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below sp 96] mem t.mem
 
 theorem Post.of_old {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {sp : BitVec 32} {mem : Mem}
     {t : State} (P : PrecomputedPost base bytes len args mem t) : Post base bytes len args sp mem t :=

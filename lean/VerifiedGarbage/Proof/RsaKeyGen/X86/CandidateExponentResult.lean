@@ -17,10 +17,10 @@ def ExponentOutputs (E : Environment) (e : Nat) (entropy : List Byte) (s : State
   else Outputs E 3 E.length (List.replicate E.length 0) s
 
 theorem exponent_result_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (D : Drawn E eBytes pBytes entropy s) (enough : E.length ≤ E.randLength) :
     WP isa (VG.Impl.RsaKeyGen.X86.Candidate.exponentCheck E.width montName mont roundName round) s fun t =>

@@ -54,7 +54,7 @@ theorem sat_prepared : Spec.MillerRabin.Prepared Spec.MillerRabin.compact satMem
   unfold Spec.MillerRabin.Prepared
   decide +kernel
 
-theorem satisfiable : ∃ s, (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pre s := by
+theorem satisfiable : ∃ s, (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre s := by
   refine ⟨satState, ?_⟩
   sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sat_arg0, sat_arg1]

@@ -19,7 +19,7 @@
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `domain` nor `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -4754,7 +4754,7 @@ ret
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` or `y` (distinct Rust objects never do).
-/// * None of `domain`, `y` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `domain`, `y` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -8361,7 +8361,7 @@ ret
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y` or `x` (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -12440,7 +12440,7 @@ ret
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `domain`, `x` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -15946,7 +15946,7 @@ ret
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `y` and `scratch` must not overlap each other, `domain` or `x` (distinct Rust objects never do).
-/// * None of `y`, `domain`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `y`, `domain`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -20130,7 +20130,7 @@ ret
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `x`, `y` and `scratch` must not overlap each other, `domain` or `rand` (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `x`, `y`, `domain`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_key(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -27822,7 +27822,7 @@ ret
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain` or `rand` (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 164 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 220 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -28177,7 +28177,7 @@ ret
 /// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The contents of `scratch` on return are unspecified.
 /// * `out`, `used` and `scratch` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_parameter_candidate_sieved(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -42586,7 +42586,7 @@ ret
 /// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The last twelve controller words and the scratch contents are private workspace.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 156 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 212 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_parameters_sieved(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(

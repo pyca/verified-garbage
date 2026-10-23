@@ -29,7 +29,7 @@ theorem testWr_sp {E : Env} {t : State} (h : t.gpr .esp = E.sp) : testWr E t = t
   simp only [testWr, testWrSp, h]
 
 theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
-    (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 112)
+    (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 152)
     {E : Env} (v : E.Valid) (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords) :
     RelCT isa (Both (TPre E bits)) (test name callee) fun _ _ => True := by
   have sz := v.size_ge

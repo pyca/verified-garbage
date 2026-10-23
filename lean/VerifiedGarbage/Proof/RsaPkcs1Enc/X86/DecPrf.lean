@@ -128,15 +128,15 @@ theorem keep_sr {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) (hk : o + n �
            nb := h.fr_sc (by simp only [oNB, frameBytes]; decide) hn },
     h.fr_sc (by simp only [oI, frameBytes]; decide) hn⟩
 
-theorem keep_below {k : Nat} (hk : k ≤ 3392) (hi : i ≤ R.nb) :
+theorem keep_below {k : Nat} (hk : k ≤ 3448) (hi : i ≤ R.nb) :
     Keep P R i (below P.B k) ∧ Region.Disjoint ⟨P.lay.fr oI, 4⟩ (below P.B k) := by
   have hl := h.low_of hk
   exact ⟨{ safe := h.below_safe hk
            kdk := (h.low_sc (by decide)).symm.sub_right hl
            x := (h.low_sc (by have := R.x_hi; omega)).symm.sub_right hl
            blk := (h.low_sc (by have := R.dst_hi; omega)).symm.sub_right hl
-           nb := (Lay.fr_low (by simp only [oNB]; decide) (by show (3392 : Nat) ≤ 2 ^ 32; decide)).sub_right hl },
-    (Lay.fr_low (by simp only [oI]; decide) (by show (3392 : Nat) ≤ 2 ^ 32; decide)).sub_right hl⟩
+           nb := (Lay.fr_low (by simp only [oNB]; decide) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).sub_right hl },
+    (Lay.fr_low (by simp only [oI]; decide) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).sub_right hl⟩
 
 theorem keep_fr {d n : Nat} (hd : d + n ≤ frameBytes) (ho : d + n ≤ oR ∨ oR + 4 ≤ d)
     (hnb : d + n ≤ oNB ∨ oNB + 4 ≤ d) (hi : i ≤ R.nb) : Keep P R i ⟨P.lay.fr d, n⟩ where
@@ -149,7 +149,7 @@ theorem keep_fr {d n : Nat} (hd : d + n ≤ frameBytes) (ho : d + n ≤ oR ∨ o
 end In
 
 /-- Through a call. -/
-theorem CI.call (h : CI P R i σ s) {ws : List Region} {k : Nat} (c : Called s t ws k) (hk : k ≤ 3392)
+theorem CI.call (h : CI P R i σ s) {ws : List Region} {k : Nat} (c : Called s t ws k) (hk : k ≤ 3448)
     (hws : InScr P ws) (hkp : ∀ r ∈ ws, Keep P R i r ∧ Region.Disjoint ⟨P.lay.fr oI, 4⟩ r) :
     CI P R i σ t ∧ t.mem.readW (P.lay.fr oI) 32 = s.mem.readW (P.lay.fr oI) 32 := by
   have hs := h.S
@@ -277,7 +277,7 @@ theorem initArgs_vp : VP (B2 P R i) (.block (macInitArgs sKDK)) (B3 P R i) :=
 
 /-- The message, through a call that writes elsewhere. -/
 theorem msg_keep {σ s t : State} {ws : List Region} {k : Nat} (h : B2 P R i σ s) (c : Called s t ws k)
-    (hk : k ≤ 3392) (hd : ∀ r ∈ ws, (sr P sMsg R.tl).Disjoint r) :
+    (hk : k ≤ 3448) (hd : ∀ r ∈ ws, (sr P sMsg R.tl).Disjoint r) :
     Spec.Rsa.bytesAt t.mem (sc P sMsg R.tl).base R.tl = msgV i R.lab R.L := by
   have hs := h.1.1.S
   have := R.vs_len

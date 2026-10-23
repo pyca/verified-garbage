@@ -21,7 +21,7 @@ def artifacts (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Proof.Sha256.X86.Va
       verified separately. The three input tapes are public under the contract. Only 1024/160, \
       2048/256 and 3072/256 are generated."]
     code := Impl.Dsa.X86.Generation.code (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
-    stack := 176
+    stack := 216
     consts := Impl.RsaKeyGen.TrialTable32.consts
     verified := verified v1 v256 v
     spSafe := code_all v1 v256 v

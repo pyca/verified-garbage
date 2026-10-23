@@ -34,7 +34,7 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 theorem frameRt_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem} {g : Reg → BitVec 32}
     (F : Frame (rtBody base out bytes len sp) m m')
     (A : Region.Disjoint ⟨base, bytes⟩ ⟨out, len⟩) (low : 48 ≤ bytes) (high : bytes ≤ 2 ^ 64)
-    (Z : Region.Disjoint (VG.X86.below sp 40) ⟨base, bytes⟩)
+    (Z : Region.Disjoint (VG.X86.below sp 96) ⟨base, bytes⟩)
     (S : Saved m (off base) g CrtRt.savedRegisters) : Saved m' (off base) g CrtRt.savedRegisters := by
   intro p hp
   have B : 32 ≤ p.2 ∧ p.2 + 4 ≤ 48 := by
@@ -52,7 +52,7 @@ theorem frameRt_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m'
 
 theorem frameRt_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
     (F : Frame (rtBody base out bytes len sp) m m') (low : 48 ≤ bytes) :
-    Frame [⟨base, bytes⟩, ⟨out, len⟩, VG.X86.below sp 40] m m' := by
+    Frame [⟨base, bytes⟩, ⟨out, len⟩, VG.X86.below sp 96] m m' := by
   apply F.sub
   intro r hr
   simp only [rtBody, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -76,8 +76,8 @@ theorem restored_abi {s t u : State} (R : Restored t u s.gpr Crt.savedRegisters)
   · exact R.regs _ (by decide)
   · exact (R.other _ (by decide)).trans sp
 
-theorem ret_zone40 {sp : BitVec 32} (h : 40 ≤ sp.toNat) :
-    Region.Disjoint ⟨sp.setWidth 64, 4⟩ (below sp 40) := by
+theorem ret_zone40 {sp : BitVec 32} (h : 96 ≤ sp.toNat) :
+    Region.Disjoint ⟨sp.setWidth 64, 4⟩ (below sp 96) := by
   simp only [below]
   rw [VG.X86.Taint.sub_setWidth h]
   exact Offset.base_disjoint_below _ (by decide)
@@ -183,7 +183,7 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   rw [espu] at F
   have Whole : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩,
-      ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 40] s.mem v.mem := by
+      ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 96] s.mem v.mem := by
     have Start := VG.Proof.Bignum.outside_frame O (by omega)
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
@@ -222,9 +222,9 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   rw [Specs] at V
   exact V
 
-theorem correct (s : State) (h : (Spec.Rsa.privateCrtContract abi 40).pre s) :
+theorem correct (s : State) (h : (Spec.Rsa.privateCrtContract abi 96).pre s) :
     ∃ trace t, Exec isa CrtRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.privateCrtContract abi 40).post s t := by
+      (Spec.Rsa.privateCrtContract abi 96).post s t := by
   have A := crtABI_of h
   obtain ⟨trace, t, E, V, P⟩ := operation_ok A
   refine ⟨trace, t, E, P, ?_⟩

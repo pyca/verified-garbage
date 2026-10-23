@@ -16,9 +16,9 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MillerRabin.X86.Backend
 public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
-public import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 public import Init.Core
-public import VerifiedGarbage.Impl.Mont.X86.PreparedSquare
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -37,9 +37,9 @@ def artifacts (v : RoundImpl) : List Artifact := [
       One private call frame supplies the prepared multiplication capacity for the entire test. \
       Distance checks, witness selection, and retry behavior satisfy the shared candidate contract."]
     code := Impl.RsaKeyGen.X86.Candidate.code montName montCode v.name v.code
-    stack := 112
+    stack := 152
     consts := Impl.RsaKeyGen.TrialTable32.consts
-    verified := Proof.RsaKeyGen.X86.Candidate.verified Proof.Mont.X86.PreparedSquare.verified compact_noSp compact_stack
+    verified := Proof.RsaKeyGen.X86.Candidate.verified Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack
         v.verified v.noSp v.stack
     spSafe := Proof.RsaKeyGen.X86.Candidate.code_all compact_noSp v.noSp montName v.name
     features := v.features }]

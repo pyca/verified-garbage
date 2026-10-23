@@ -24,7 +24,7 @@
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e` or `d` (distinct Rust objects never do).
-/// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -152489,7 +152489,7 @@ ret
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `input`, `p`, `q`, `dp`, `dq` or `qinv` (distinct Rust objects never do).
-/// * None of `out`, `n`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -170006,7 +170006,7 @@ ret
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `pre`, `e` or `input` (distinct Rust objects never do).
-/// * None of `out`, `pre`, `e`, `input` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `pre`, `e`, `input` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -215026,7 +215026,7 @@ ret
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e` or `input` (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `input` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `input` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_public_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -215806,7 +215806,7 @@ ret
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq` or `qinv` (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 3388 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 3444 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(

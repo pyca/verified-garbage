@@ -53,13 +53,13 @@ structure GenerateKeyABI (s : State) : Prop where
   retRand : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
   retArgs : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argAddr s 0, 44⟩
-  belowX : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
-  belowY : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 4, (arg s 5).toNat⟩
-  belowRand : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 4, (arg s 5).toNat⟩
+  belowRand : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
     ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
-  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argAddr s 0, 44⟩
+  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argAddr s 0, 44⟩
   xBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   yBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   domBound : (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32
@@ -116,12 +116,12 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
 /-- The 40 bytes below the frame, and the frame, below the caller's stack pointer. -/
 theorem frame_subs {s : State} (A : GenerateKeyABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
-    Region.Sub (below sp 40) ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ ∧
-      Region.Sub ⟨sp.setWidth 64, 76⟩ ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ := by
+    Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ∧
+      Region.Sub ⟨sp.setWidth 64, 76⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega)
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
@@ -129,7 +129,7 @@ theorem frame_subs {s : State} (A : GenerateKeyABI s) {sp : BitVec 32}
   · simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 40#64 = BitVec.ofNat 64 116 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
   · rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
     exact Offset.sub_below _ (by decide) (by decide)
@@ -138,10 +138,10 @@ theorem frame_subs {s : State} (A : GenerateKeyABI s) {sp : BitVec 32}
 structure Geo (args : Nat → BitVec 32) (base : Addr) (bytes len dlen : Nat) (sp : BitVec 32) (rd wr : List Region) :
     Prop where
   dom : DomGeo args base bytes len dlen rd wr
-  dom40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 40)
+  dom40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
   cut : KeyCut.CutGeo base bytes len (args 10) (args 0) sp rd wr
   rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩
-  r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below sp 40)
+  r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below sp 96)
   domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩
   ox : OutAt args base bytes len 0 sp wr
   oy : OutAt args base bytes len 8 sp wr
@@ -210,11 +210,11 @@ theorem frame_keep {s : State} (A : GenerateKeyABI s) {m : Mem}
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.GenerateKey.args s, wsSize Impl.Ffdh.X86.GenerateKey.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase Impl.Ffdh.X86.GenerateKey.args s, wsSize Impl.Ffdh.X86.GenerateKey.args s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   exact frame_bytes Ft (fun r hr => by

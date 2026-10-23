@@ -61,9 +61,9 @@ structure Environment.Valid (E : Environment) : Prop where
   randLengthFit : E.randLength < 2 ^ 32
   usedFit : E.used.toNat + 8 ≤ 2 ^ 32
   tableFit : E.table.toNat + 8192 ≤ 2 ^ 32
-  low : 96 ≤ E.p.toNat
+  low : 136 ≤ E.p.toNat
   argsFit : E.p.toNat + 40 ≤ 2 ^ 32
-  workspaceStack : E.p.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 96 ≤ E.p.toNat
+  workspaceStack : E.p.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 136 ≤ E.p.toNat
   argsFar : (⟨(E.p + 20#32).setWidth 64, 20⟩ : Region).Disjoint E.workspaceRegion
   randWorkspace : E.randRegion.Disjoint E.workspaceRegion
   randUsed : E.randRegion.Disjoint E.usedRegion
@@ -73,7 +73,7 @@ structure Environment.Valid (E : Environment) : Prop where
   savedFar : ∀ r ∈ [E.workspaceRegion, E.randRegion, E.usedRegion, E.tableRegion],
     r.Disjoint ⟨E.p.setWidth 64, 16⟩
   stackFar : ∀ r ∈ [E.workspaceRegion, E.randRegion, E.usedRegion, E.tableRegion],
-    r.Disjoint (below E.p 96)
+    r.Disjoint (below E.p 136)
 
 /-- The bytes of the working space past the header and the arrays, which
 the test never changes. -/

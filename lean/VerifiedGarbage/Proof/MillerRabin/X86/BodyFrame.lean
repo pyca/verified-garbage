@@ -13,7 +13,7 @@ open VG.Impl.MillerRabin.X86
 theorem Entry.body {s : State} (E : Entry s) :
     WP isa (body montName montCode) (entered s) fun t =>
       Result s t ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] (entered s) t ∧
-      Frame ([⟨wsOf s, lenOf s⟩] ++ [below ((entered s).gpr .esp) 40]) (entered s).mem t.mem := by
+      Frame ([⟨wsOf s, lenOf s⟩] ++ [below ((entered s).gpr .esp) 80]) (entered s).mem t.mem := by
   have writable : Covers [⟨wsOf s, lenOf s⟩] (entered s).wr := by
     apply Covers.of_mem
     intro r mem

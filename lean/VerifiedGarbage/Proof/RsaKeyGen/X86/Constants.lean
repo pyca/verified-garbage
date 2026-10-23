@@ -20,8 +20,8 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (odd : c % 2 = 1) (positive : 0 < c)
     (r2 : val32 s.mem g.W (g.array 4) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c) :
@@ -29,7 +29,7 @@ theorem code_ok {mont : Prog isa} {name : String}
       Ready g c capacity p t ∧ val32 t.mem g.W (g.array 9) g.words = 2 ^ (64 * g.w) % c ∧
       val32 t.mem g.W (g.array 10) g.words = c - 2 ^ (64 * g.w) % c ∧
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem t.mem ∧ Keeps clob s t := by
+      Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps clob s t := by
   unfold VG.Impl.RsaKeyGen.X86.Constants.code
   rw [Prepared.slot_eq]
   refine WP.seq (WP.mono (plainOne_ok v S) fun a ⟨A, one, r2Same, Oa, Ka⟩ => ?_)
@@ -57,15 +57,15 @@ theorem code_ok {mont : Prog isa} {name : String}
   have Wt : WorkspaceFrame g (ranges g) d.mem t.mem :=
     WorkspaceFrame.of_outs D.scratch.nowrap (Outs.of_outside Ot
       (by simp [ranges]))
-  have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) s.mem a.mem :=
+  have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem a.mem :=
     (workspaceGlobalFrame (Outs.of_outside Oa (List.mem_singleton_self _))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact v.arrayFit (by decide))).mono
       (fun r mem => List.mem_append_left _ mem)
-  have Fd : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) b.mem d.mem :=
+  have Fd : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) b.mem d.mem :=
     (workspaceGlobalFrame (Outs.of_outside Od (List.mem_singleton_self _))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact v.arrayFit (by decide))).mono
       (fun r mem => List.mem_append_left _ mem)
-  have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 40]) d.mem t.mem :=
+  have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) d.mem t.mem :=
     (workspaceGlobalFrame (Outs.of_outside Ot (List.mem_singleton_self _))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact v.arrayFit (by decide))).mono
       (fun r mem => List.mem_append_left _ mem)

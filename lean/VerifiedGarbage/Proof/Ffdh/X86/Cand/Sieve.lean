@@ -48,7 +48,7 @@ structure Table (T : BitVec 32) (sp : BitVec 32) (s : State) : Prop where
   words : ∀ i < 1024, s.mem.readW (T.setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 =
     BitVec.ofNat 64 (VG.Impl.RsaKeyGen.TrialTable32.entry i)
   fit : T.toNat + 8192 ≤ 2 ^ 32
-  far : Region.Disjoint ⟨T.setWidth 64, 8192⟩ (below sp 40)
+  far : Region.Disjoint ⟨T.setWidth 64, 8192⟩ (below sp 96)
 
 /-- The count computed from `bits` in `edx`. -/
 theorem countBlock_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes len args s) {bits : Nat}
@@ -89,16 +89,16 @@ theorem trialPrefix_sieveCount {c bits : Nat} (hc : 8161 < c) :
     simp only [sieveCount, small, ↓reduceIte, this]
     exact oc _ _ (by simp only [Spec.RsaKeyGen.trialPrimes]; split <;> split <;> omega)
 
-/-- The stack below `sp − 20`, for four bytes, within the 40 below `sp`. -/
-theorem below_frames {sp : BitVec 32} (low : 40 ≤ sp.toNat) :
-    Region.Sub (below (sp - BitVec.ofNat 32 20) 4) (below sp 40) ∧
-      Region.Sub ⟨(sp - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below sp 40) := by
+/-- The stack below `sp − 20`, for four bytes, within the 96 below `sp`. -/
+theorem below_frames {sp : BitVec 32} (low : 96 ≤ sp.toNat) :
+    Region.Sub (below (sp - BitVec.ofNat 32 20) 4) (below sp 96) ∧
+      Region.Sub ⟨(sp - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below sp 96) := by
   have e24 : (sp - BitVec.ofNat 32 20 - BitVec.ofNat 32 4).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 24 := by
     rw [BitVec.sub_sub, show BitVec.ofNat 32 20 + BitVec.ofNat 32 4 = BitVec.ofNat 32 24 from rfl]
     exact VG.X86.Taint.sub_setWidth (by omega)
   have e20 : (sp - BitVec.ofNat 32 20).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 20 :=
     VG.X86.Taint.sub_setWidth (by omega)
-  have e40 : (sp - BitVec.ofNat 32 40).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 40 :=
+  have e40 : (sp - BitVec.ofNat 32 96).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 96 :=
     VG.X86.Taint.sub_setWidth (by omega)
   simp only [below]
   rw [e24, e20, e40]
@@ -110,7 +110,7 @@ abbrev sieveGeo (sp P T : BitVec 32) (len bits : Nat) : Geometry := ⟨sp - BitV
 theorem sieveGeo_valid (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T P : BitVec 32}
     (TT : Table T (s.gpr .esp) s) (au : P.toNat = base.toNat + lo len (.slot .wide j)) (bits : Nat) :
     (sieveGeo (s.gpr .esp) P T len bits).Valid ∧
-      (sieveGeo (s.gpr .esp) P T len bits).candidateRegion.Disjoint (below (s.gpr .esp) 40) := by
+      (sieveGeo (s.gpr .esp) P T len bits).candidateRegion.Disjoint (below (s.gpr .esp) 96) := by
   have bl := h.bytes_lt
   have f := slot_fit1 h hj
   rw [cb1] at f
@@ -127,7 +127,7 @@ theorem sieveGeo_valid (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 2
     simp only [byteAddr, off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, au]
     have := base.isLt
     omega
-  have wsFar : Region.Disjoint (sieveGeo (s.gpr .esp) P T len bits).candidateRegion (below (s.gpr .esp) 40) := by
+  have wsFar : Region.Disjoint (sieveGeo (s.gpr .esp) P T len bits).candidateRegion (below (s.gpr .esp) 96) := by
     have sub : Region.Sub (sieveGeo (s.gpr .esp) P T len bits).candidateRegion ⟨base, bytes⟩ := by
       show Region.Sub ⟨P.setWidth 64, 8 * mw len⟩ _
       rw [show P.setWidth 64 = byteAddr P from rfl, PA]
@@ -151,7 +151,7 @@ theorem sieveSetup_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27
       StateAt (sieveGeo (s.gpr .esp) P T len bits) (sv s.mem base len .wide j) 0 (sieveCount bits) c₂ ∧
       c₂.gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 ∧ c₂.rd = s.rd ∧
       c₂.wr = ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ :: s.wr ∧
-      Frame [below (s.gpr .esp) 40] s.mem c₂.mem := by
+      Frame [below (s.gpr .esp) 96] s.mem c₂.mem := by
   have bl := h.bytes_lt
   have f := slot_fit1 h hj
   rw [cb1] at f
@@ -270,13 +270,13 @@ theorem sieveSetup_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27
   · rw [Kc.1 _ (by decide), R.gpr _ (by decide), Kb.1 _ (by decide), sa]
   · rw [Kc.2.1, R.rd, Kb.2.1, allocFrame_rd, rdU]
   · rw [Kc.2.2, R.wr, Kb.2.2, allocFrame_wr, spU, wrU]
-  · have toBelow : ∀ {m m' : Mem}, Frame [g.stackRegion] m m' → Frame [below (s.gpr .esp) 40] m m' :=
+  · have toBelow : ∀ {m m' : Mem}, Frame [g.stackRegion] m m' → Frame [below (s.gpr .esp) 96] m m' :=
       fun F => F.sub fun r hr => by
         obtain rfl := List.mem_singleton.mp hr; exact ⟨_, List.mem_singleton_self _, frames.2⟩
-    have F₁ : Frame [below (s.gpr .esp) 40] s.mem b.mem := by
+    have F₁ : Frame [below (s.gpr .esp) 96] s.mem b.mem := by
       have := toBelow (VG.Proof.RsaKeyGen.X86.Sieve.outsideStack_frame Ob)
       rw [allocFrame_mem, mU] at this; exact this
-    have F₂ : Frame [below (s.gpr .esp) 40] b.mem b'.mem := by
+    have F₂ : Frame [below (s.gpr .esp) 96] b.mem b'.mem := by
       have := R.frame
       rw [Cb.stack.sp] at this
       exact this.sub fun r hr => by
@@ -324,7 +324,7 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
   refine WP.seq (VG.X86.WP.mono_syms pre fun u' ⟨P, au, eaU, ecU, du', Ku', mU⟩ Su => ?_)
   have spU : u'.gpr .esp = s.gpr .esp := Ku'.1 _ (by decide)
   refine WP.seq (WP.mono (WP.frameAlloc (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
-      t.wr = s.wr ∧ Frame [below (s.gpr .esp) 40] s.mem t.mem ∧
+      t.wr = s.wr ∧ Frame [below (s.gpr .esp) 96] s.mem t.mem ∧
       t.gpr .eax = BitVec.ofNat 32
         (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t) (by decide) (by decide)
@@ -336,7 +336,7 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
     have spT : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 := by rw [Kt.1 _ (by decide), spc]
     have rdT : t.rd = s.rd := by rw [Kt.2.1, rdc]
     have wrT : t.wr = ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ :: s.wr := by rw [Kt.2.2, wrc]
-    have Fall : Frame [below (s.gpr .esp) 40] s.mem t.mem := by
+    have Fall : Frame [below (s.gpr .esp) 96] s.mem t.mem := by
       refine Fc.trans ((VG.Proof.RsaKeyGen.X86.Sieve.outsideStack_frame Ot).sub fun r hr => ?_)
       obtain rfl := List.mem_singleton.mp hr; exact ⟨_, List.mem_singleton_self _, (below_frames low).2⟩
     refine ⟨?_, ?_, ?_, Fall, ?_, ?_⟩

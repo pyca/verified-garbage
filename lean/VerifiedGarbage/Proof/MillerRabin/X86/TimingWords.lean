@@ -44,8 +44,8 @@ theorem WordInput.load {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitV
     ⟨St, math.1, math.2.1, math.2.2.1, math.2.2.2.1, math.2.2.2.2⟩, rfl, by decide⟩
 
 theorem wordStep_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
     RelCT isa (fun s t => Pair g [.edi] s t ∧ WordInput g capacity p q s ∧ WordInput g capacity p q t)
@@ -61,8 +61,8 @@ theorem wordStep_trace {code : Prog isa} {name : String}
   · exact (checkedBlockInvariant rfl rfl).mono (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem WordInput.step {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32} {s : State}
     (I : WordInput g capacity p q s) (length : g.L = 8 * capacity) (positive : 0 < q) :
     WP isa (wordStep name code) s fun t => WordInput g capacity p (q - 1) t ∧ t.zf = some (decide (q = 1)) := by
@@ -84,8 +84,8 @@ theorem WordInput.step {code : Prog isa} {name : String}
     exact tableLt j digit
 
 theorem wordLoop_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
     RelCT isa (fun s t => Pair g [.edi] s t ∧ WordInput g capacity p q s ∧ WordInput g capacity p q t)

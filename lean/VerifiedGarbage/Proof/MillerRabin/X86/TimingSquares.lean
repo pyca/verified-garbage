@@ -32,8 +32,8 @@ theorem SquareInput.mulInput {g : Geometry} {capacity q : Nat} {p : BitVec 32} {
   exact lt
 
 theorem SquareInput.step {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32} {s : State}
     (I : SquareInput g capacity p q s) (length : g.L = 8 * capacity) (positive : 0 < q) :
     WP isa (squareStep name code) s fun t => SquareInput g capacity p (q - 1) t ∧ t.zf = some (decide (q = 1)) := by

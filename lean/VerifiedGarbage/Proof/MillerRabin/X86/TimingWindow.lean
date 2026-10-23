@@ -22,8 +22,8 @@ theorem WindowScanned.mulInput {g : Geometry} {capacity : Nat} {p : BitVec 32}
   exact H.2.2.2.2.1 (windowDigit σ.V) (digit_lt _)
 
 theorem window_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (WindowStart g capacity p)) (window name code) (VG.X86.Taint.Agree (roundTaint [.edi])) := by
   change RelCT isa _ (.seq (.block fourSquares) (.seq (squareLoop name code) (.seq scan
@@ -46,8 +46,8 @@ theorem WindowInput.context {g : Geometry} {capacity q : Nat} {p : BitVec 32} {s
   exact S.data.context
 
 theorem WindowInput.step {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32} {s : State}
     (I : WindowInput g capacity p q s) (length : g.L = 8 * capacity) (positive : 0 < q) :
     WP isa (window name code) s fun t => WindowInput g capacity p (q - 1) t ∧ t.zf = some (decide (q = 1)) := by
@@ -68,8 +68,8 @@ theorem WindowInput.step {code : Prog isa} {name : String}
     exact tableLt j digit
 
 theorem windowLoop_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
     RelCT isa (fun s t => Pair g [.edi] s t ∧ WindowInput g capacity p q s ∧ WindowInput g capacity p q t)

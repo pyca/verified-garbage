@@ -59,13 +59,13 @@ theorem Entry.length_sub {s : State} (E : Entry s) :
 
 theorem Entry.caller {s : State} (E : Entry s) :
     Caller (geometry s) (arg s 1).toNat ((entered s).gpr .esp) (entered s) := by
-  have sub : Region.Sub (below ((entered s).gpr .esp) 40) (below (s.gpr .esp) 56) := by
+  have sub : Region.Sub (below ((entered s).gpr .esp) 80) (below (s.gpr .esp) 96) := by
     rw [entered, Compact.entered, pushed_esp]
-    exact below_inner (by decide : 40 + 16 ≤ 56) E.stackFit
+    exact below_inner (by decide : 80 + 16 ≤ 96) E.stackFit
   refine ⟨rfl, ?_, E.stackSeparate'.symm.sub_right sub,
     E.argSeparate.symm.sub_left E.length_sub, E.stackArgsSeparate'.symm.sub_left E.length_sub |>.sub_right sub, ?_⟩
   · rw [entered, Compact.entered, pushed_esp]
-    change 40 ≤ (s.gpr .esp - 16#32).toNat
+    change 80 ≤ (s.gpr .esp - 16#32).toNat
     rw [sub_toNat (by have := E.stackFit; omega)]
     have := E.stackFit
     omega

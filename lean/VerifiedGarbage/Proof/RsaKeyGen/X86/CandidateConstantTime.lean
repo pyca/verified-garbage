@@ -16,10 +16,10 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86
 
 theorem constantTime {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56) :
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) :
     ConstantTime isa contract.pre contract.pub (VG.Impl.RsaKeyGen.X86.Candidate.code montName mont roundName round) := by
   apply RelCT.constantTime
   intro s t tr ur u z ⟨HS, HT, HP⟩ A B

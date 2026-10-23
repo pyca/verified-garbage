@@ -38,9 +38,9 @@ theorem KS.arg {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       simp only [stackAddress, VG.X86.addr, VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, BitVec.toNat_add,
         BitVec.toNat_ofNat, esp0]
       omega
-    have eb : ((g.sp - BitVec.ofNat 32 40).setWidth 64).toNat = g.sp.toNat - 40 := by
+    have eb : ((g.sp - BitVec.ofNat 32 96).setWidth 64).toNat = g.sp.toNat - 96 := by
       rw [VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
-    exact (Region.disjoint_of_le (r₁ := below g.sp 40) (.inl (by dsimp only; rw [eb, ea]; omega))
+    exact (Region.disjoint_of_le (r₁ := below g.sp 96) (.inl (by dsimp only; rw [eb, ea]; omega))
       (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
   · refine arg.stack.apart.sub_right ?_
     have := Offset.sub g.B (d := 16) (n := g.Z - 16) (e := 0) (k := g.Z) (Nat.zero_le _)

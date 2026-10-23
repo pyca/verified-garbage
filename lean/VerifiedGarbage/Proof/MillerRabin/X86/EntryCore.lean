@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.ResultMath
 public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
 import VerifiedGarbage.Proof.MillerRabin.X86.EntryMarker
 import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
-import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
+import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
@@ -39,7 +39,7 @@ theorem Entry.narrowed_body {s : State} (E : Entry s) :
   have Olt : initialValues s aOne < initialValues s 0 := by
     rw [one]
     exact Nat.mod_lt _ (by omega)
-  refine WP.mono (core_ok PreparedSquare.verified compact_noSp compact_stack E.valid S
+  refine WP.mono (core_ok VG.Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack E.valid S
     (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega) odd Xlt Olt (Nat.mod_lt _ (by decide)) marker.1 marker.2)
     fun u ⟨value, frame, keep⟩ => ?_
   refine ⟨⟨?_, ?_⟩, (K.mono (by decide)).widen keep⟩

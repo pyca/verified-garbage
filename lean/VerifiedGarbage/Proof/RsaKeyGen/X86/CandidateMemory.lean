@@ -23,7 +23,7 @@ theorem Environment.Valid.readFit {E : Environment} (v : E.Valid) {r : Region} (
     decide
 
 theorem Environment.Valid.readWorkFar {E : Environment} (v : E.Valid) {R : Region} (mem : R ∈ E.readRegions) :
-    ∀ r ∈ [E.workspaceRegion, below E.p 96], R.Disjoint r := by
+    ∀ r ∈ [E.workspaceRegion, below E.p 136], R.Disjoint r := by
   intro r member
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
   rcases member with rfl | rfl
@@ -35,7 +35,7 @@ theorem WorkFrame.bytes {E : Environment} (v : E.Valid) {m m' : Mem} (F : WorkFr
   VG.Proof.RsaKeyGen.frame_bytesAt F (v.readWorkFar mem) (v.readFit mem)
 
 theorem Environment.Valid.readMutableFar {E : Environment} (v : E.Valid) {R : Region} (mem : R ∈ E.readRegions) :
-    ∀ r ∈ E.writeRegions ++ [below E.p 96], R.Disjoint r := by
+    ∀ r ∈ E.writeRegions ++ [below E.p 136], R.Disjoint r := by
   intro r member
   rcases List.mem_append.mp member with member | member
   · exact v.readWrite R mem r member

@@ -52,16 +52,16 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
   fun rd wr => InRegions (rd ++ wr) (argumentPointer s 0) (arg s 1).toNat
 
 /-- The domain and its components, as the synthetic arguments give them, for permissions that read it,
-apart from the 40 bytes below the frame. -/
+apart from the 96 bytes below the frame. -/
 theorem frame_geo {s : State} (A : CheckDomainABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
     DomGeo (synth Impl.Ffdh.X86.CheckDomain.args (arg s)) (wsBase Impl.Ffdh.X86.CheckDomain.args s)
       (wsSize Impl.Ffdh.X86.CheckDomain.args s) (pLenOf Impl.Ffdh.X86.CheckDomain.args s) (arg s 1).toNat rd wr ∧
-    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckDomain.args (arg s) 2), (arg s 1).toNat⟩ (below sp 40) := by
+    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckDomain.args (arg s) 2), (arg s 1).toNat⟩ (below sp 96) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega)
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
@@ -73,7 +73,7 @@ theorem frame_geo {s : State} (A : CheckDomainABI s) {sp : BitVec 32}
   simp only [below]
   rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
     show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-    ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 40#64 = BitVec.ofNat 64 116 from rfl]
+    ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
   exact Region.sub_prefix (by decide)
 
 /-- The domain's bytes, kept by the entry and the frame's filling. -/
@@ -83,7 +83,7 @@ theorem frame_dom {s : State} (A : CheckDomainABI s) {m : Mem}
     domBytes m (synth Impl.Ffdh.X86.CheckDomain.args (arg s)) (arg s 1).toNat = entryDom s := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   have frameDom : Region.Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩ ⟨frameAt s, argsFrame⟩ := by

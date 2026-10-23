@@ -48,10 +48,10 @@ structure Parameters.Valid (P : Parameters) : Prop where
   randLenFit : P.randLen < 2 ^ 32
   entropyLength : P.entropy.length = P.randLen
   randSeparate : (⟨P.rand.setWidth 64, P.randLen⟩ : Region).Disjoint ⟨P.g.W, P.g.L⟩
-  randStackFar : (⟨P.rand.setWidth 64, P.randLen⟩ : Region).Disjoint (below P.p 68)
-  low : 68 ≤ P.p.toNat
-  stackFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below P.p 68)
-  lengthFar : (lengthRegion P.p).Disjoint (below P.p 68)
+  randStackFar : (⟨P.rand.setWidth 64, P.randLen⟩ : Region).Disjoint (below P.p 108)
+  low : 108 ≤ P.p.toNat
+  stackFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below P.p 108)
+  lengthFar : (lengthRegion P.p).Disjoint (below P.p 108)
   odd : P.candidate % 2 = 1
   large : 3 < P.candidate
   shape : Spec.RsaKeyGen.bitLength (P.candidate - 1) = 32 * P.words

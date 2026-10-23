@@ -167,7 +167,7 @@ theorem sized_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat → B
       let x := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 6)) len)
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (if x < m then x ^ e % m else 0) len ∧
       t.gpr .eax = BitVec.ofNat 32 (decide (x < m)).toNat ∧
-      Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40] s.mem t.mem ∧
+      Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96] s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have hP := h
   replace h := h.rt
@@ -220,16 +220,16 @@ theorem sized_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat → B
     rw [Ax, a₈]
     cases decide (x < m) <;> rfl
   · have G₆ := ((outside_frame S₆ (by omega)).mono (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩,
-      below (s.gpr .esp) 40]) (by simp))
-    have G₇ : Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40] u₆.mem u₇.mem := by
+      below (s.gpr .esp) 96]) (by simp))
+    have G₇ : Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96] u₆.mem u₇.mem := by
       refine F₇.sub fun r hr => ?_
       simp only [Chg, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., sub_off (by omega) (by omega)⟩
       · exact ⟨_, List.mem_cons_self .., sub_off (by omega) (by omega)⟩
-      · exact ⟨below (s.gpr .esp) 40, by simp, fun _ h => h⟩
+      · exact ⟨below (s.gpr .esp) 96, by simp, fun _ h => h⟩
     have G₈ := ((outside_frame (O₈.mono (o' := 16) (n' := bytes - 16) (by omega) (by omega)) (by omega)).mono
-      (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40]) (by simp))
+      (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96]) (by simp))
     exact ((G₆.trans G₇).trans G₈).trans (Ft.mono (by simp))
   · exact ((K₁₆.trans K₇).trans (K₈.mono (by decide))).trans (Kt.mono (by decide))
 

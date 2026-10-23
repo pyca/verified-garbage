@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `KS.frameStep`: a step that keeps the registers a stage keeps and changes
 memory only in ranges `ws` of the working space past its header's first 16
-bytes and in the 40 bytes below `sp` (a call of `vg_rsa_mont_mul_at`) keeps
+bytes and in the 96 bytes below `sp` (a call of `vg_rsa_mont_mul_at`) keeps
 the stage's arrays and header words apart from the ranges, and its arguments.
 -/
 
@@ -22,7 +22,7 @@ open VG.Proof.Rsa.X86.Keys
 open VG.Proof.Bignum.X86.CrtRt (frameR frameR_val32)
 open VG.Proof.Dsa.X86 (stackAddress)
 
-/-- An argument through a step that changes ranges of the working space and the 40 bytes below `esp`. -/
+/-- An argument through a step that changes ranges of the working space and the 96 bytes below `esp`. -/
 theorem _root_.VG.Proof.Bignum.X86.CallArgument.throughFrame {s t : State} {base : Addr} {bytes i : Nat} {v : BitVec 32} {regs : List Reg}
     (h : CallArgument s base bytes i v) (R : CallRoom (s.gpr .esp) base bytes) (K : Keeps regs s t)
     (sp : .esp ∉ regs) {ws : List (Nat × Nat)} (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem)
@@ -36,9 +36,9 @@ theorem _root_.VG.Proof.Bignum.X86.CallArgument.throughFrame {s t : State} {base
       simp only [stackAddress, VG.X86.addr, VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, BitVec.toNat_add,
         BitVec.toNat_ofNat]
       omega
-    have eb : ((s.gpr .esp - BitVec.ofNat 32 40).setWidth 64).toNat = (s.gpr .esp).toNat - 40 := by
+    have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
       rw [VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
-    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 40) (.inl (by dsimp only; rw [eb, ea]; omega))
+    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
       (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
   · refine h.stack.apart.sub_right ?_
     have := hfit p hp

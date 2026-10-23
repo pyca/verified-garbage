@@ -17,18 +17,18 @@ open VG.Impl.RsaKeyGen.X86.MillerRabinLoop
 def ranges (g : Geometry) : List (Nat × Nat) := WitnessChecks.ranges ++ WitnessStep.ranges g
 
 theorem loop_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
     WP isa (.loop (stepAt P.bytes P.words P.g.w montName mont roundName round) .e) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Result P t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   let Inv : Nat → State → Prop := fun q t => ∃ i j, q = j + 1 ∧ StateAt P i j t ∧
     WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
-    Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t
+    Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t
   have initial : Inv (n + 1) s := ⟨k, n, rfl, S, WorkspaceFrame.refl _ _ _, Frame.refl _ _, Keeps.refl _ _⟩
   refine WP.loop (M := isa) Inv ?_ (n + 1) s initial
   rintro q a ⟨i, j, rfl, A, Wa, Fa, Ka⟩
@@ -39,10 +39,10 @@ theorem loop_ok {mont round : Prog isa} {montName roundName : String}
   · exact Or.inr ⟨again, j, by omega, i + 1, j - 1, by omega, next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State}
     (S : Prepare.Data P.g P.candidate P.capacity P.p s)
     (readable : InRegions (s.rd ++ s.wr) (P.rand.setWidth 64) P.randLen)
@@ -53,7 +53,7 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     WP isa (codeWith P.checks P.bytes P.words P.g.w montName mont roundName round) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Result P t ∧
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   unfold codeWith
   refine WP.seq (WP.mono (init_ok v S readable entropy randPtr randLength used enough)
     fun a ⟨A, Wa, Fa, Ka⟩ => ?_)

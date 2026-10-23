@@ -13,10 +13,10 @@ namespace VG.Proof.RsaKeyGen.X86.MillerRabinLoop
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.RsaKeyGen
 
 theorem draw_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
     WP isa (VG.Impl.RsaKeyGen.X86.WitnessStep.codeAt P.bytes P.words P.g.w montName mont roundName round) s fun t =>
@@ -29,7 +29,7 @@ theorem draw_ok {mont round : Prog isa} {montName roundName : String}
           if goS P.checks (mrSB P.candidate P.bytes P.start P.entropy (k + 1)) then 4 else 1
         else 3) ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   have counts := S.countFit v
   refine WP.mono (WitnessStep.codeAt_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v.geometry
     v.two v.narrow v.wide v.four

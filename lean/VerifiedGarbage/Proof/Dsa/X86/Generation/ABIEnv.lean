@@ -66,7 +66,7 @@ theorem CallFacts.rd {s : State} (F : CallFacts s) :
   rw [← List.take_append_drop (s.rd.length - 1) s.rd, F.rdPrefix, F.rdTable, ProbablePrime.table_regions]
   rfl
 
-theorem CallFacts.reserved {s : State} (F : CallFacts s) : reservedRegion s = below (s.gpr .esp) 176 := by
+theorem CallFacts.reserved {s : State} (F : CallFacts s) : reservedRegion s = below (s.gpr .esp) 216 := by
   unfold reservedRegion below
   rw [Taint.sub_setWidth F.low]
 
@@ -78,15 +78,15 @@ theorem CallFacts.spNat {s : State} (F : CallFacts s) : (callEnv s).sp.toNat = (
   sub_toNat (by have := F.low; omega)
 
 theorem CallFacts.reservedNat {s : State} (F : CallFacts s) :
-    ((s.gpr .esp).setWidth 64 - 176#64).toNat = (s.gpr .esp).toNat - 176 := by
+    ((s.gpr .esp).setWidth 64 - 216#64).toNat = (s.gpr .esp).toNat - 216 := by
   change (reservedRegion s).base.toNat = _
   rw [F.reserved]
-  change ((s.gpr .esp - BitVec.ofNat 32 176).setWidth 64).toNat = _
+  change ((s.gpr .esp - BitVec.ofNat 32 216).setWidth 64).toNat = _
   rw [toNat_wide, sub_toNat F.low]
 
 /-- `scratch` lies below the reserved stack or above the return address. -/
 theorem CallFacts.scratchNat {s : State} (F : CallFacts s) :
-    (arg s 10).toNat + (arg s 11).toNat * 8 ≤ (s.gpr .esp).toNat - 176 ∨
+    (arg s 10).toNat + (arg s 11).toNat * 8 ≤ (s.gpr .esp).toNat - 216 ∨
       (s.gpr .esp).toNat + 4 ≤ (arg s 10).toNat := by
   have room := F.room
   unfold Spec.Dsa.generationScratchWords at room
@@ -103,7 +103,7 @@ theorem CallFacts.scratchNat {s : State} (F : CallFacts s) :
 
 /-- `out` lies below the reserved stack or above the return address. -/
 theorem CallFacts.outNat {s : State} (F : CallFacts s) :
-    (arg s 0).toNat + (arg s 1).toNat ≤ (s.gpr .esp).toNat - 176 ∨
+    (arg s 0).toNat + (arg s 1).toNat ≤ (s.gpr .esp).toNat - 216 ∨
       (s.gpr .esp).toNat + 4 ≤ (arg s 0).toNat := by
   have pos : 0 < (arg s 1).toNat := by
     rw [F.outLen]; rcases F.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
@@ -153,7 +153,7 @@ theorem CallFacts.valid {s : State} (F : CallFacts s) : (callEnv s).Valid := by
     by rw [F.outRegion]; exact F.stackOut.symm.sub_right F.stackSub,
     by rw [ws]; exact F.stackScr.symm.sub_right F.stackSub, ?_, ?_, ?_, ?_⟩
   · change (callEnv s).sp.toNat ≤ ((arg s 10).setWidth 64).toNat ∨
-      ((arg s 10).setWidth 64).toNat + (arg s 11).toNat * 8 + 160 ≤ (callEnv s).sp.toNat
+      ((arg s 10).setWidth 64).toNat + (arg s 11).toNat * 8 + 200 ≤ (callEnv s).sp.toNat
     rw [spNat, toNat_wide]
     omega
   · have := T.1

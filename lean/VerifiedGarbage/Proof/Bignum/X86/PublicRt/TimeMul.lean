@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 
 /-! # The trace of a multiplication by a call, in public RSA at a run-time width
 
@@ -26,7 +27,7 @@ def MulIn (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (b : Nat) (
 /-- The state of the call: the callee's precondition, its arguments and the regions it is given. -/
 def CallOk (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (o a b : Nat)
     (g : State) : Prop :=
-  RtABI (calleeOf g base bytes) ∧ g.gpr .esp = sp - BitVec.ofNat 32 36 ∧
+  (Spec.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) ∧ g.gpr .esp = sp - BitVec.ofNat 32 36 ∧
     (∀ i < 9, arg (calleeOf g base bytes) i = mulArg len o a b (BitVec.ofNat 32 base.toNat) (args 9) i) ∧
     (⟨(g.gpr .esp).setWidth 64, 36⟩ : Region) ∈ g.wr ∧ (⟨base, bytes⟩ : Region) ∈ g.wr
 
@@ -57,7 +58,8 @@ theorem mulArgs_call {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
   have edi : s.gpr .edi = BitVec.ofNat 32 base.toNat := by
     apply BitVec.eq_of_toNat_eq
     rw [h.scratch.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega)]
-  refine ⟨callee_abi h hbytes R ho ha hb ho0 gEsp hFg hread hinv (by rw [E.mod]; exact hB), by rw [gEsp, hsp],
+  refine ⟨callee_pre (callee_abi h hbytes R ho ha hb ho0 gEsp hFg hread hinv (by rw [E.mod]; exact hB)) R gEsp,
+    by rw [gEsp, hsp],
     fun i hi => ?_, ?_, ?_⟩
   · rw [callee_arg (base := base) (bytes := bytes) low gEsp hread hi, edi]
   · rw [Kg.2.2, allocFrame_wr, gEsp]; exact List.mem_cons_self ..
@@ -65,7 +67,7 @@ theorem mulArgs_call {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- The callee's public data from its stack pointer and its arguments. -/
 theorem rtPub_of {s t : State} (sp : s.gpr .esp = t.gpr .esp) (args : ∀ i < 9, arg s i = arg t i) :
-    (Spec.Rsa.MontMul.mulContract abi 0).pub s t := by
+    (Spec.Rsa.MontMul.mulContract abi 56).pub s t := by
   have a0 := args 0 (by decide); have a1 := args 1 (by decide); have a2 := args 2 (by decide)
   have a3 := args 3 (by decide); have a4 := args 4 (by decide); have a5 := args 5 (by decide)
   have a6 := args 6 (by decide); have a7 := args 7 (by decide); have a8 := args 8 (by decide)
@@ -99,14 +101,15 @@ theorem mul_relCT {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} (hb
       subst q₁ q₂
       exact ⟨mulArgs_call hbytes ho ha hb ho0 I₁ e₁, mulArgs_call hbytes ho ha hb ho0 I₂ e₂⟩)
   refine VG.RelCT.seq blk ?_
-  refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 0) rt_correct rt_constantTime
+  refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
+    VG.Proof.Mont.X86.Sse2.at_constantTime
     [⟨(sp - BitVec.ofNat 32 36).setWidth 64, 36⟩] [⟨base, bytes⟩] ?_
   rintro g₁ g₂ ⟨-, ⟨A₁, sp₁, arg₁, fr₁, sc₁⟩, ⟨A₂, sp₂, arg₂, fr₂, sc₂⟩⟩
   have c₁ := calleeOf_eq (base := base) (bytes := bytes) sp₁
   have c₂ := calleeOf_eq (base := base) (bytes := bytes) sp₂
   rw [sp₁] at fr₁
   rw [sp₂] at fr₂
-  refine ⟨c₁ ▸ rtPre_of A₁, c₂ ▸ rtPre_of A₂, ?_, Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_,
+  refine ⟨c₁ ▸ A₁, c₂ ▸ A₂, ?_, Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_,
     Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_, by rw [sp₁, sp₂]⟩
   · rw [← c₁, ← c₂]
     refine rtPub_of ?_ fun i hi => (arg₁ i hi).trans (arg₂ i hi).symm

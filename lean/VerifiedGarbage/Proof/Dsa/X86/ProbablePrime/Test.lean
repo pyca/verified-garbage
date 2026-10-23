@@ -30,10 +30,10 @@ theorem Memory.entropyLength {E : Environment} {c : Nat} {entropy : List Byte} {
   exact VG.Proof.Bignum.bytesAt_length _ _ _
 
 theorem tested_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
     WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith (E.bits - 1) (Spec.Dsa.primeChecks E.bits)
@@ -49,7 +49,7 @@ theorem tested_ok {mont round : Prog isa} {montName roundName : String}
   have scratchEq : E.geometry.array 28 = E.scratch :=
     (VG.Proof.RsaKeyGen.X86.Prepared.slot_eq E.geometry 28).symm
   have gL : (E.parameters c entropy).g.L = E.size := rfl
-  have inner : (below (s.gpr .esp) 28).Sub (below E.p 96) := by
+  have inner : (below (s.gpr .esp) 28).Sub (below E.p 136) := by
     rw [L.input.stack]; exact below_sub (by decide) v.low
   change WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith (E.parameters c entropy).seed
     (E.parameters c entropy).checks (E.parameters c entropy).bytes (E.parameters c entropy).words
@@ -96,10 +96,10 @@ theorem tested_ok {mont round : Prog isa} {montName roundName : String}
   exact ⟨Ia, tagged.1, tagged.2, WF, T, K⟩
 
 theorem test_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
     WP isa (test E.bits montName mont roundName round) s fun t =>

@@ -115,7 +115,7 @@ theorem powTop_eq (b : Nat) :
 
 /-- p's context, the number in slot `b` in slot 5, and x at the top of slot 8. -/
 theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) {P b : Nat} (hb9 : 9 ≤ b)
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) {P b : Nat} (hb9 : 9 ≤ b)
     (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa (Prog.chain (topFront b) (.block [])) s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧ sv u.mem base len .wide 3 = 1 ∧
@@ -156,7 +156,7 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
 
 /-- The number in slot `b` to the power of x, raised over x's `xl` bytes from the top of slot 8. -/
 theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) {P b : Nat} (hb9 : 9 ≤ b)
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) {P b : Nat} (hb9 : 9 ≤ b)
     (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa (Impl.Ffdh.X86.powTop b) s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧
@@ -324,9 +324,9 @@ theorem scalar_iff {p q x : Nat} {a : Spec.Ffdh.Parameters} (hp : a.p = p) {dlen
 invalid scalar. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) :
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
     WP isa (Prog.chain privFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (Spec.Ffdh.privateValid (params s.mem args len dlen) (xv s.mem args xl) = false) ∧
       sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 10 = comp s.mem args len 1 ∧
@@ -401,7 +401,7 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
 /-- y in range and `g^x mod M = y`, as a status. -/
 theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h12 : sv s.mem base len .wide 12 = y)
-    (X : XGeo args base bytes len xl s.rd s.wr) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40))
+    (X : XGeo args base bytes len xl s.rd s.wr) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96))
     (hx : xv s.mem args xl = x) (h14 : sv s.mem base len .wide 14 = 1)
     (h15 : sv s.mem base len .wide 15 = pm1 len p) :
     WP isa Impl.Ffdh.X86.CheckPrivate.pair s (Res base len s
@@ -443,9 +443,9 @@ abbrev expected (len dlen xl : Nat) (m : Mem) (args : Nat → BitVec 32) : Nat :
 /-- `vg_ffdh_check_private`'s body: a status, `expected` for a valid domain. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) :
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
     WP isa Impl.Ffdh.X86.CheckPrivate.body s fun t => ∃ r, Res base len s r t ∧
       (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen xl s.mem args) := by
   have dl := G.dl

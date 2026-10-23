@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.RsaPss.X86
 
 As on ARMv7 (`Proof/RsaOaep/Arm/DecBase.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths and the public key's bytes
-`nB` and `eB`), and its layout (`EP.lay`), with the 3392 bytes below the
+`nB` and `eB`), and its layout (`EP.lay`), with the 3448 bytes below the
 frame that the call of `vg_rsa_private_checked` uses (the streaming
 functions' frames use less). `In P σ`: the state `σ` the body starts from
 (`in_of_pre`).
@@ -84,7 +84,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := P.ro
   rw := P.rw
-  C := 3392
+  C := 3448
 
 end EP
 
@@ -121,14 +121,14 @@ theorem geo : Geo P.lay P.scr := by
   rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega)] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
   exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩,
-    by show 48 ≤ 3392; decide⟩
+    by show 48 ≤ 3448; decide⟩
 
 end In
 
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 16 + frameBytes + 3392
+abbrev stackBytes : Nat := 16 + frameBytes + 3448
 
 /-- The shared contract, with that stack. -/
 abbrev spec (H G : Spec.Mgf1.Hash) : Contract isa := Spec.RsaOaep.decryptContract H G abi stackBytes
@@ -158,7 +158,7 @@ def ep (s : State) : EP where
   eB := Spec.Rsa.bytesAt s.mem ((arg s 5).setWidth 64) (arg s 6).toNat
 
 theorem ep_lay (s : State) :
-    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 3392 := rfl
+    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 3448 := rfl
 
 theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     In (ep s) (entered frameBytes s) := by
@@ -186,7 +186,7 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3552, 3552⟩ := by
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3608, 3608⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
     rw [Taint.sub_setWidth (by omega)]
     exact Offset.sub_below _ (by omega) (by omega)
@@ -202,7 +202,7 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
         (by show (arg s 6).toNat ≤ 2 ^ 64; omega) }
   rw [ep_lay]
-  refine ok_entered (S := 3552) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr

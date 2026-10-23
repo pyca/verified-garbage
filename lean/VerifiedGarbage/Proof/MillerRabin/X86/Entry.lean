@@ -18,19 +18,19 @@ abbrev lenOf (s : State) : Nat := (arg s 1).toNat * 8
 def geometry (s : State) : Geometry := ⟨wsOf s, lenOf s, wOf s.mem (wsOf s)⟩
 
 structure Entry (s : State) : Prop where
-  stackFit : 56 ≤ (s.gpr .esp).toNat
+  stackFit : 96 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32
   rd : s.rd = [⟨argAddr s 0, 8⟩]
   wr : s.wr = [⟨wsOf s, lenOf s⟩]
   bound : (arg s 0).toNat + lenOf s ≤ 2 ^ 32
-  stackSeparate : (⟨(s.gpr .esp).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨wsOf s, lenOf s⟩
-  stackArgsSeparate : (⟨(s.gpr .esp).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨argAddr s 0, 8⟩
+  stackSeparate : (⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩ : Region).Disjoint ⟨wsOf s, lenOf s⟩
+  stackArgsSeparate : (⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩ : Region).Disjoint ⟨argAddr s 0, 8⟩
   argSeparate : (⟨wsOf s, lenOf s⟩ : Region).Disjoint ⟨argAddr s 0, 8⟩
   returnSeparate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨wsOf s, lenOf s⟩
   layout : Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem (wsOf s) (arg s 1).toNat
   prepared : Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem (wsOf s)
 
-theorem entry_of {s : State} (h : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pre s) : Entry s := by
+theorem entry_of {s : State} (h : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre s) : Entry s := by
   sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> first

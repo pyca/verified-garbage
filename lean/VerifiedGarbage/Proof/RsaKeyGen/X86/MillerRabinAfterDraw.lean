@@ -20,23 +20,23 @@ def Outcome (P : Parameters) (k n : Nat) (t : State) : Prop :=
     (isa.eval .e t = some true ∧ 0 < n ∧ StateAt P (k + 1) (n - 1) t)
 
 theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
     WP isa (.seq (VG.Impl.RsaKeyGen.X86.WitnessStep.codeAt P.bytes P.words P.g.w montName mont roundName round) (.block again)) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   refine WP.seq (WP.mono (draw_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v S enough)
     fun a ⟨A, usedA, roundsA, uniformA, statusA, Wa, Fa, Ka⟩ => ?_)
   refine WP.mono (again_ok v.geometry A.ready.scratch) fun t ⟨Z, mem, Kt⟩ => ?_
   have T := A.keepHeader v.geometry (d := 128) (bytes := 0) (by decide) (by decide)
     (show Outside P.g.W 128 0 a.mem t.mem from by rw [mem]; exact Outside.refl _ _ _ _) Kt (by decide) (by decide)
   have W : WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem := by rw [mem]; exact Wa
-  have F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem := by rw [mem]; exact Fa
+  have F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem := by rw [mem]; exact Fa
   refine ⟨T, ?_, W, F, Ka.widen Kt⟩
   have ev : isa.eval .e t = some (decide (w32 a.mem P.g.W 168 = 4)) := Z
   cases passed : Spec.RsaKeyGen.mrIteration P.candidate P.twos.1 P.twos.2

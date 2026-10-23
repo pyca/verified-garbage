@@ -84,8 +84,8 @@ theorem body_eq : Impl.Ffdh.X86.Exchange.body =
 /-- p's context, with y in slot 5 and x in 8. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) :
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
     WP isa (Prog.chain exFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       CtxOk Ex base bytes len args .wide (safeM (comp s.mem args len 0)) u ∧ sv u.mem base len .wide 3 = 1 ∧
       sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % safeM (comp s.mem args len 0) ∧
@@ -148,8 +148,8 @@ abbrev acc (m : Mem) (args : Nat → BitVec 32) (len xl : Nat) : Bool :=
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
     (O : OutGeo args base bytes len s.wr)
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 40))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) :
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
     WP isa Impl.Ffdh.X86.Exchange.body s fun t =>
       t.gpr .eax = BitVec.ofNat 32 (acc s.mem args len xl).toNat ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =

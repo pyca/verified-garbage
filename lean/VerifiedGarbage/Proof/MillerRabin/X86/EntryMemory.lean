@@ -13,13 +13,13 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 abbrev entered (s : State) : State := Compact.entered s
 
 theorem Entry.stackSeparate' {s : State} (E : Entry s) :
-    (below (s.gpr .esp) 56).Disjoint ⟨wsOf s, lenOf s⟩ := by
+    (below (s.gpr .esp) 96).Disjoint ⟨wsOf s, lenOf s⟩ := by
   unfold below
   rw [Taint.sub_setWidth E.stackFit]
   exact E.stackSeparate
 
 theorem Entry.stackArgsSeparate' {s : State} (E : Entry s) :
-    (below (s.gpr .esp) 56).Disjoint ⟨argAddr s 0, 8⟩ := by
+    (below (s.gpr .esp) 96).Disjoint ⟨argAddr s 0, 8⟩ := by
   unfold below
   rw [Taint.sub_setWidth E.stackFit]
   exact E.stackArgsSeparate

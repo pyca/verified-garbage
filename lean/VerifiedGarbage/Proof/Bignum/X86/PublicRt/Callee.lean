@@ -25,8 +25,12 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt V
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Spec.Rsa.MontMul (Apart scratchBytes)
 
-/-- The callee's precondition from its facts (`rtAbi_of`'s converse). -/
-theorem rtPre_of {s : State} (A : RtABI s) : (Spec.Rsa.MontMul.mulContract abi 0).pre s := by
+/-- The callee's precondition from its facts and the 56 bytes of stack below
+its `esp`, apart from the working space and the arguments. -/
+theorem rtPre_of {s : State} (A : RtABI s) (stackLo : 56 ≤ (s.gpr .esp).toNat)
+    (stkScratch : (⟨(s.gpr .esp).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨wsOf s, lenOf s⟩)
+    (stkArgs : (⟨(s.gpr .esp).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩) :
+    (Spec.Rsa.MontMul.mulContract abi 56).pre s := by
   cases A
   sig_pre [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
@@ -92,14 +96,14 @@ theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat →
     have F₁ : Frame [below (g.gpr .esp) 4] g.mem g.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_top (Nat.le_refl 4) (by omega) (by decide))
     refine (hFg.sub fun r hr => ?_).trans (F₁.sub fun r hr => ?_)
-    · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, below_sub (by decide) low⟩
+    · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, below_sub (by decide) (by omega)⟩
     · rw [List.mem_singleton.mp hr, hesp]
-      exact ⟨_, List.mem_singleton_self _, below_inner (by decide) low⟩
+      exact ⟨_, List.mem_singleton_self _, below_inner (by decide) (by omega)⟩
   have numc : ∀ d k, d + k ≤ bytes → Spec.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
       Spec.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
     unfold Spec.Rsa.MontMul.numAt
     rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega))
-      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart.symm) (by omega)]
+      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega)]
   have argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
     show argAddr g.callEntry 0 = _
     rw [argAddr_callEntry]; simp
@@ -122,7 +126,7 @@ theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat →
   · show (g.gpr .esp - 4).toNat + 4 + 36 ≤ 2 ^ 32
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_toNat (by omega)]; omega
   · rw [ws, ln, argAddr0, hesp]; exact (R.apart.sub_left (below_sub (by decide) low)).symm
-  · rw [retBase, ws, ln, hesp]; exact R.apart.sub_left (below_inner (a := 4) (k := 36) (b := 40) (by decide) low)
+  · rw [retBase, ws, ln, hesp]; exact R.apart.sub_left (below_inner (a := 4) (k := 36) (b := 96) (by decide) low)
   · rw [retBase, argAddr0]
     refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat] <;>
       (try rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_toNat (by omega)]) <;> omega
@@ -147,5 +151,38 @@ theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat →
     exact hinv
   · rw [ws, v8', v3, v2, numc _ _ (by omega), numc _ _ (by rw [← n0]; omega), numAt_val32, numAt_val32]
     exact hB
+
+/-- The callee's precondition, at a call 36 bytes below `esp`: its 56 bytes
+of stack are among the 96 of the call's room. -/
+theorem callee_pre {s g : State} {base : Addr} {bytes : Nat} (A : RtABI (calleeOf g base bytes))
+    (R : CallRoom (s.gpr .esp) base bytes) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36) :
+    (Spec.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) := by
+  have low := R.low
+  have hsp := (s.gpr .esp).isLt
+  have eW : (⟨wsOf (calleeOf g base bytes), lenOf (calleeOf g base bytes)⟩ : Region) = ⟨base, bytes⟩ := by
+    have h := A.wr
+    simp only [calleeOf, State.withRegions_wr, List.cons.injEq, and_true] at h
+    exact h.symm
+  have e : (calleeOf g base bytes).gpr .esp = s.gpr .esp - BitVec.ofNat 32 40 := by
+    show g.callEntry.gpr .esp = _
+    rw [State.callEntry_esp, hesp, BitVec.sub_sub]; rfl
+  have e40 : (s.gpr .esp - BitVec.ofNat 32 40).toNat = (s.gpr .esp).toNat - 40 := sub_toNat (by omega)
+  have e56 : ((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64 =
+      (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).setWidth 64 := by
+    rw [e]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega
+  have sub : Region.Sub ⟨((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64, 56⟩ (below (s.gpr .esp) 96) := by
+    rw [e56]; exact below_inner (a := 56) (k := 40) (b := 96) (by decide) low
+  refine rtPre_of A (by rw [e, e40]; omega) (by rw [eW]; exact R.apart.sub_left sub) ?_
+  have argA : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
+    show argAddr g.callEntry 0 = _
+    rw [argAddr_callEntry]; simp
+  have e96 : (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).toNat = (s.gpr .esp).toNat - 96 := by
+    rw [sub_toNat (by rw [e40]; omega), e40]; omega
+  have e36 : (s.gpr .esp - BitVec.ofNat 32 36).toNat = (s.gpr .esp).toNat - 36 := sub_toNat (by omega)
+  rw [argA, e56, hesp]
+  refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat, e96, e36] <;> omega
 
 end VG.Proof.Bignum.X86.PublicRt

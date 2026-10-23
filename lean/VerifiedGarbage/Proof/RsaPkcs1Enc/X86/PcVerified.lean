@@ -55,8 +55,8 @@ theorem code_ok (c : Ver.PublicImpl) {s : State} (h : spec.pre s) :
     (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
-    rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 44) hsp,
-      ret_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 44) hsp]
+    rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 100) hsp,
+      ret_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 100) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
   · have ok := hin.ok
     rw [ep_lay] at ok

@@ -48,8 +48,8 @@ theorem body_eq : DerivePublic.body = Prog.chain dFront (.ite .e DerivePublic.fa
 scalar. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (X : XGeo args base bytes len xl s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40)) :
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
     WP isa (Prog.chain dFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (Spec.Ffdh.privateValid (params s.mem args len dlen) (xv s.mem args xl) = false) ∧
       sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 10 = comp s.mem args len 1 ∧
@@ -134,7 +134,7 @@ abbrev accept (len p y : Nat) : Bool := decide (y < pm1 len p) && decide (1 < y)
 /-- The tail: y over x's `xl` bytes, its range as the acceptance, y written (zeros unless accepted), and
 `3 − 2 flag`. -/
 theorem tail_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96))
     (O : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (h1 : args 1 = BitVec.ofNat 32 len)
     {p g x P : Nat} (h9 : sv s.mem base len .wide 9 = p) (hP : safeM p = P) (h10 : sv s.mem base len .wide 10 = g)
     (hx : xv s.mem args xl = x) (h14 : sv s.mem base len .wide 14 = 1)
@@ -196,8 +196,8 @@ def DerivePost (len dlen xl : Nat) (m : Mem) (args : Nat → BitVec 32) (r : Nat
 
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (X : XGeo args base bytes len xl s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 40))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 40))
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96))
     (O : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (h1 : args 1 = BitVec.ofNat 32 len) :
     WP isa DerivePublic.body s fun t => ∃ r, t.gpr .eax = BitVec.ofNat 32 r ∧
       Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧

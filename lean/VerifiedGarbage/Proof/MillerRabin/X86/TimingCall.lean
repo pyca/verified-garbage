@@ -22,7 +22,7 @@ theorem MulReady.entry_eq {g : Geometry} {capacity b : Nat} {p : BitVec 32}
   rfl
 
 theorem mulCall_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
     {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (right : Spec.Rsa.Mont.Operand b) :
     RelCT isa (fun s t => MulReady g capacity b p s ∧ MulReady g capacity b p t)

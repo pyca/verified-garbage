@@ -13,10 +13,10 @@ open VG VG.X86
 
 structure RoundImpl where
   code : Prog isa
-  verified : Verified target code (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56)
+  verified : Verified target code (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96)
   noSp : NoSp code
   spSafe : code.allInstrs (fun i => !isa.writesSp i) = true
-  stack : stackUse code ≤ 56
+  stack : stackUse code ≤ 96
   suffix : String
   features : List String
 

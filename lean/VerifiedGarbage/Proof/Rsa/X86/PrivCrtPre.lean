@@ -30,7 +30,7 @@ theorem crtArgs_values {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : CrtArgs g s) :
-    (Spec.Rsa.privateCrtContract abi 40).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
+    (Spec.Rsa.privateCrtContract abi 96).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
   have sa := fun {j} (hj : j < 18) => crtArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega
@@ -63,10 +63,10 @@ theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega)
   rw [low]
   have retSub : (⟨(g.stack - 4).setWidth 64, 4⟩ : Region).Sub g.calleeRegion :=
-    VG.X86.below_sub (by decide : 4 ≤ 44) h.valid.stackLow
-  have belowSub : (⟨(g.stack - 4).setWidth 64 - 40#64, 40⟩ : Region).Sub g.calleeRegion := by
-    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 40 ≤ (g.stack - 4).toNat)]
-    exact VG.X86.below_inner (by decide : 40 + 4 ≤ 44) h.valid.stackLow
+    VG.X86.below_sub (by decide : 4 ≤ 100) h.valid.stackLow
+  have belowSub : (⟨(g.stack - 4).setWidth 64 - 96#64, 96⟩ : Region).Sub g.calleeRegion := by
+    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 96 ≤ (g.stack - 4).toNat)]
+    exact VG.X86.below_inner (by decide : 96 + 4 ≤ 100) h.valid.stackLow
   have retTemp := (h.valid.calleeInner.sub_right temporarySub).sub_left retSub
   have belowTemp := (h.valid.calleeInner.sub_right temporarySub).sub_left belowSub
   have retSources := fun i => (calleeSources i).sub_left retSub

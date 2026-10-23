@@ -82,10 +82,10 @@ theorem Loaded.capacityWord {E : Environment} (v : E.Valid) {c : Nat} {entropy :
   exact L.input.capacity
 
 theorem tested_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (LoadedPair E c entropy)
@@ -121,7 +121,7 @@ theorem tested_trace {mont round : Prog isa} {montName roundName : String}
             cases bodyB with
             | seq storeB coreB =>
               have separate (q : State) (D : Loaded E c entropy q) :
-                  (q.gpr .esp).toNat ≤ E.geometry.W.toNat ∨ E.geometry.W.toNat + E.geometry.L + 96 ≤ (q.gpr .esp).toNat := by
+                  (q.gpr .esp).toNat ≤ E.geometry.W.toNat ∨ E.geometry.W.toNat + E.geometry.L + 136 ≤ (q.gpr .esp).toNat := by
                 rw [D.input.stack]; rcases v.workspaceStack with h | h; exact Or.inl h; exact Or.inr h
               obtain ⟨Sa, Ca, _, Fa, Ka⟩ := wp_result (CandidateFrame.slot_ok (g := E.geometry) (capacity := E.capacity)
                 Da.input.scratch (by rw [Da.input.stack]; exact v.low) (separate _ Da) capA) storeA
@@ -217,10 +217,10 @@ theorem finish_trace {E : Environment} (v : E.Valid) :
     · exact (CandidateFinish.used_trace space 2).mono (fun _ _ P => pair P.1) (fun _ _ _ => trivial)
 
 theorem test_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (LoadedPair E c entropy) (VG.Impl.Dsa.X86.ProbablePrime.test E.bits montName mont roundName round)

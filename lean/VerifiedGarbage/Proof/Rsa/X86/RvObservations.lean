@@ -15,7 +15,7 @@ namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem arguments_eq {s t : State} (h : (Spec.Rsa.recoverPrimesContract abi 40).pub s t) :
+theorem arguments_eq {s t : State} (h : (Spec.Rsa.recoverPrimesContract abi 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 12, arg s i = arg t i := by
   sig_pub [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes] at h
   sig_split h
@@ -27,7 +27,7 @@ theorem arguments_eq {s t : State} (h : (Spec.Rsa.recoverPrimesContract abi 40).
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem observations_eq {s t : State} (h : (Spec.Rsa.recoverPrimesContract abi 40).pub s t) :
+theorem observations_eq {s t : State} (h : (Spec.Rsa.recoverPrimesContract abi 96).pub s t) :
     inputBytes (caller s) s.mem 0 = inputBytes (caller t) t.mem 0 ∧
       (calculated (caller s) s.mem).2 = (calculated (caller t) t.mem).2 := by
   have args := (arguments_eq h).2

@@ -59,8 +59,8 @@ def CoreFinal (g : Geometry) (capacity : Nat) (p : BitVec 32) (σ : CoreSecret) 
   Stage g capacity σ.c p (endA g σ) runArrays (finalV g σ) ([sThreshold, sSquares] ++ wordFields) s ∧ CoreMath g σ
 
 theorem CoreStart.prepare {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {σ : CoreSecret} {s : State}
     (H : CoreStart g capacity p σ s) (length : g.L = 8 * capacity) :
     WP isa (.seq (table name code) (.seq (copy aY aOne) (.block initWindows))) s (CoreRun g capacity p σ) := by
@@ -84,8 +84,8 @@ theorem CoreRun.wordInput {g : Geometry} {capacity : Nat} {p : BitVec 32} {σ : 
   ⟨⟨σ.c, runValues σ.A σ.c g.w, runV g σ, false⟩, H.1, H.2.1.run_window, rfl, Nat.le_refl _⟩
 
 theorem CoreRun.words {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {σ : CoreSecret} {s : State}
     (H : CoreRun g capacity p σ s) (length : g.L = 8 * capacity) :
     WP isa (.loop (wordStep name code) .ne) s (CoreWords g capacity p σ) := by

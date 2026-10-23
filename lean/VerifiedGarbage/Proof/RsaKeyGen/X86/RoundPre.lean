@@ -21,14 +21,14 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s)
     (A : Arguments g capacity s) (odd : c % 2 = 1) (large : 3 ≤ c)
     (witness : val32 s.mem g.W (g.array 5) g.words = b % c * 2 ^ (64 * g.w) % c)
-    (fit : 68 ≤ (s.gpr .esp).toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 68)) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pre (entry g s) := by
+    (fit : 108 ≤ (s.gpr .esp).toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 108)) :
+    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre (entry g s) := by
   have sa := fun {i} (hi : i < 2) => entry_arg A (by omega) hi
   have capBound : capacity < 2 ^ 32 := by have := S.ready.scratch.nowrap; omega
   have ptrBound : g.W.toNat < 2 ^ 32 := by have := S.ready.scratch.nowrap; have := v.headerFit; omega
   have F := entry_frame (by omega : 12 ≤ (s.gpr .esp).toNat) S.ready.scratch.nowrap
-    (far.sub_right (below_sub (by decide : 12 ≤ 68) fit))
+    (far.sub_right (below_sub (by decide : 12 ≤ 108) fit))
   have Mu := S.ready.modulus.keep v F (by simp) (by simp)
   have lu : Spec.MillerRabin.Layout Spec.MillerRabin.compact (entry g s).mem g.W capacity := by
     unfold Spec.MillerRabin.Layout
@@ -78,23 +78,23 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
   have nat12 : ((s.gpr .esp - 12#32).setWidth 64).toNat = (s.gpr .esp).toNat - 12 := by
     rw [BitVec.toNat_setWidth, sp12]
     exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
-  have saved : (s.gpr .esp - 12#32).setWidth 64 - 56#64 = (s.gpr .esp - 68#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [sp12]; omega : 56 ≤ (s.gpr .esp - 12#32).toNat)]
+  have saved : (s.gpr .esp - 12#32).setWidth 64 - 96#64 = (s.gpr .esp - 108#32).setWidth 64 := by
+    rw [← Taint.sub_setWidth (by rw [sp12]; omega : 96 ≤ (s.gpr .esp - 12#32).toNat)]
     congr 1
     rw [BitVec.sub_sub]
     rfl
-  have nat68 : ((s.gpr .esp - 68#32).setWidth 64).toNat = (s.gpr .esp).toNat - 68 := by
+  have nat68 : ((s.gpr .esp - 108#32).setWidth 64).toNat = (s.gpr .esp).toNat - 108 := by
     rw [BitVec.toNat_setWidth, sub_toNat fit]
     exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
-  have argSub : (⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ : Region).Sub (below (s.gpr .esp) 68) := below_sub (by decide) fit
-  have retSub : (⟨(s.gpr .esp - 12#32).setWidth 64, 4⟩ : Region).Sub (below (s.gpr .esp) 68) :=
-    fun x hx => below_sub (by decide : 12 ≤ 68) fit x ((Region.sub_prefix (by decide : 4 ≤ 12)) x hx)
-  have saveSub : (⟨(s.gpr .esp - 12#32).setWidth 64 - 56#64, 56⟩ : Region).Sub (below (s.gpr .esp) 68) := by
+  have argSub : (⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ : Region).Sub (below (s.gpr .esp) 108) := below_sub (by decide) fit
+  have retSub : (⟨(s.gpr .esp - 12#32).setWidth 64, 4⟩ : Region).Sub (below (s.gpr .esp) 108) :=
+    fun x hx => below_sub (by decide : 12 ≤ 108) fit x ((Region.sub_prefix (by decide : 4 ≤ 12)) x hx)
+  have saveSub : (⟨(s.gpr .esp - 12#32).setWidth 64 - 96#64, 96⟩ : Region).Sub (below (s.gpr .esp) 108) := by
     rw [saved]
-    exact Region.sub_prefix (by decide : 56 ≤ 68)
+    exact Region.sub_prefix (by decide : 96 ≤ 108)
   have retArgs : (⟨(s.gpr .esp - 12#32).setWidth 64, 4⟩ : Region).Disjoint ⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ :=
     Offset.disjoint_of_le (by simp only [nat12, nat8]; omega) (by simp only [nat8]; have := (s.gpr .esp).isLt; omega)
-  have saveArgs : (⟨(s.gpr .esp - 12#32).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ := by
+  have saveArgs : (⟨(s.gpr .esp - 12#32).setWidth 64 - 96#64, 96⟩ : Region).Disjoint ⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ := by
     rw [saved]
     exact Offset.disjoint_of_le (by simp only [nat68, nat8]; omega) (by simp only [nat8]; have := (s.gpr .esp).isLt; omega)
   exact ⟨by rw [sp12]; omega, by rw [sp12]; have := (s.gpr .esp).isLt; omega,

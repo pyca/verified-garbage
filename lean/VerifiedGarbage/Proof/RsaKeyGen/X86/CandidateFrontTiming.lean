@@ -56,10 +56,10 @@ theorem guardArgs_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rB
     P.keepMem v memU memZ KU KZ (by decide) (by decide) symU symZ, flagU, flagZ⟩
 
 theorem front_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (rLength : rBytes.length = E.randLength) (sLength : sBytes.length = E.randLength)
     (leak : SameLeak E eBytes pBytes qBytes rBytes sBytes) :

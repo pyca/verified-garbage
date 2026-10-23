@@ -35,8 +35,8 @@ theorem savedRegion_separate {g : Geometry} (h : g.Valid) :
   · exact h.innerSaved.symm
   · unfold Geometry.savedRegion Geometry.calleeRegion VG.X86.below
     rw [h.stackBase, Offset.add_add]
-    exact Offset.disjoint_base _ (by decide : 44 ≤ 44 + VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes)
-      (by decide : 44 + VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 16 ≤ 2 ^ 64)
+    exact Offset.disjoint_base _ (by decide : 100 ≤ 100 + VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes)
+      (by decide : 100 + VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 16 ≤ 2 ^ 64)
   · exact h.stackOutput.sub_left h.savedSub
   · exact h.stackWorkspace.sub_left h.savedSub
 

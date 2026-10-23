@@ -16,7 +16,7 @@ theorem exhausted_again_ok {P : Parameters} (v : P.Valid) {s : State} {k n : Nat
     WP isa (.seq (.block exhausted) (.block again)) s fun t =>
       Prepare.Data P.g P.candidate P.capacity P.p t ∧ Outcome P k n t ∧
       WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   have failed := S.noEntropy v short
   refine WP.seq (WP.mono (exhausted_ok v.geometry S.prepared) fun a ⟨A, statusA, Oa, Ka⟩ => ?_)
   refine WP.mono (again_ok v.geometry A.ready.scratch) fun t ⟨Z, mem, Kt⟩ => ?_
@@ -27,7 +27,7 @@ theorem exhausted_again_ok {P : Parameters} (v : P.Valid) {s : State} {k n : Nat
   have W : WorkspaceFrame P.g (WitnessStep.ranges P.g) s.mem t.mem :=
     WorkspaceFrame.of_outs S.prepared.ready.scratch.nowrap (Outs.of_outside Ot
       (by simp [WitnessStep.ranges, WitnessCount.ranges, VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset]))
-  have F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 68]) s.mem t.mem :=
+  have F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem :=
     (workspaceGlobalFrame (Outs.of_outside Ot (List.mem_singleton_self _))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.geometry.headerFit; omega)).mono
       (fun r mem => List.mem_append_left _ mem)
