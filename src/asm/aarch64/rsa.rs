@@ -28124,13 +28124,16 @@ add x17, x17, #8
 sub x14, x14, #1
 cbnz x14, 260b
 mov v31.d[0], x30
-bl {vg_rsa_mul_1_1_6}
+bl {vg_rsa_square_6_6}
 umov x30, v31.d[0]
 ldr x12, [x0, #48]
 ldr x11, [x0, #224]
 movz x9, #0, lsl #0
 add x14, x12, #0
 add x16, x11, #0
+add x16, x16, x16
+add x16, x16, x11
+add x16, x16, x16
 add x16, x16, x0
 add x16, x16, #256
 add x17, x11, #0
@@ -28161,6 +28164,9 @@ ldr x11, [x0, #224]
 movz x9, #0, lsl #0
 add x14, x12, #0
 add x16, x11, #0
+add x16, x16, x16
+add x16, x16, x11
+add x16, x16, x16
 add x16, x16, x0
 add x16, x16, #256
 add x17, x11, #0
@@ -28215,9 +28221,9 @@ str x3, [x0, #240]
 ldr x3, [x0, #248]
 orr x3, x3, x13
 str x3, [x0, #248]
+eor x5, x5, x4
 orr x3, x2, x10
-eor x3, x3, x4
-and x15, x5, x3
+orr x15, x5, x3
 ldr x12, [x0, #48]
 ldr x11, [x0, #224]
 add x16, x11, #0
@@ -29007,7 +29013,6 @@ ret
         vg_rsa_mul_5_1_4 = sym super::rsa::vg_rsa_mul_5_1_4,
         vg_rsa_square_6_6 = sym super::rsa::vg_rsa_square_6_6,
         vg_rsa_mul_6_6_5 = sym super::rsa::vg_rsa_mul_6_6_5,
-        vg_rsa_mul_1_1_6 = sym super::rsa::vg_rsa_mul_1_1_6,
         vg_rsa_mul_6_6_7 = sym super::rsa::vg_rsa_mul_6_6_7,
     )
 }
