@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
+public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on x86-64 -/
@@ -60,9 +60,10 @@ def artifacts : List Artifact := [
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_pclmul_avx"
-    notes := ["Uses PCLMULQDQ on 128-bit registers: `H'`–`H'⁸` as the eight-block loops compute \
-        them, already prepared, then each times `H'⁸`, eight independent multiplications, for \
-        `H'⁹`–`H'¹⁶`, stored as the first 8 pairs. No calls and no stack."]
+    notes := ["Uses PCLMULQDQ on 128-bit registers: `H'` as the eight-block loops compute it, then \
+        `H'²`–`H'¹⁶` in four rounds of independent products, each stored as it is computed: the \
+        even powers squares, of two carry-less products each rather than four, and the odd ones \
+        summed straight into their accumulators. No calls and no stack."]
     code := Impl.Gcm.X86_64.PrepareAvx.prepare16
     verified := Proof.Gcm.X86_64.PrepareAvx.prepare16_verified
     features := ["avx", "pclmulqdq"] }]

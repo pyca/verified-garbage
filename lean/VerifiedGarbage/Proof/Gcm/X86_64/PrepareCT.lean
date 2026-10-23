@@ -32,7 +32,7 @@ address affects timing; and `verified_of`, which proves `Verified` for any
 code that writes the prepared powers and nothing else (`PrepOk`); likewise
 for `vg_aes_gcm_prepare16` (`prepare16X86_64`, `verified_ofW`). The field,
 where each implementation's powers are proven, is in `Stitch/Ok.lean`,
-`StitchAvx8/Ok.lean` and `PrepareZ.lean`, so that its algebra reaches no new
+`PrepareAvx/Ok.lean` and `PrepareZ.lean`, so that its algebra reaches no new
 module.
 -/
 
