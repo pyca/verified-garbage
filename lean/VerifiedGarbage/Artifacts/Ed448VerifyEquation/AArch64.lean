@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Verified
 public import VerifiedGarbage.Proof.Ed448.Facts
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
@@ -25,20 +25,18 @@ namespace VG.Artifacts.Ed448VerifyEquation.AArch64
 
 def artifacts : List Artifact := [
   Spec.Ed448.verifyEquationApi.artifact AArch64.target {
-    notes := ["Uses baseline integer instructions, \
-      and runs the same operations whatever the inputs: the checks (the encodings of A and R, \
-      S < L, and the comparison) are accumulated in `x20`, 0 exactly when all pass. Decodes A \
-      with RFC 8032's square root (X448's addition chain up to z^(2^223 - 1), then 223 \
-      squarings) and negates it. Computes [S]B with `vg_ed448_scalar_base`'s comb of 57 tables \
-      (a call of `vg_ed448_r56_comb_base`, and `16 A + B` by calls of `vg_ed448_r56_point_add`), \
-      and [k](-A) with 4-bit windows of k from the top: four doublings, then the addition of \
-      [n](-A) for the window's digit n, selected with masks from all 16 entries of a table built \
-      in `scratch`. Then compares [4]([S]B + [k](-A)) with [4]R projectively. Field elements \
-      are eight 56-bit limbs, multiplied as `vg_x448`'s are; comparisons and low bits use the \
-      fully reduced value. The function copies the challenge into `scratch`, and saves its \
-      caller's callee-saved registers there."]
-    consts := Impl.X448.AArch64.Base.combConsts
-    code := Impl.Ed448.AArch64.verifyEquation
-    verified := Proof.Ed448.AArch64.verifyEquation_verified Proof.Ed448.recover_ok }]
+    notes := ["Uses baseline integer instructions and NEON field arithmetic. Accumulates \
+      encoding, canonical scalar and equation checks in x20. Decodes A and R with the \
+      existing square-root chain, and computes [S]B + [k](-A) with a shared doubling loop: \
+      width-eight signed digits select 64 odd affine base multiples from an 8 KiB static, \
+      and width-five signed digits select eight odd projective key multiples built in \
+      scratch. Zero digits skip additions; leading zero pairs skip doublings. These \
+      branches and direct table addresses depend only on the public verification scalars. \
+      Both full 456-bit inputs are retained. Compares the four cofactored projective cross \
+      products with [4]R, preserving the existing invalid-input behavior and 8192-byte \
+      scratch contract. Saves and restores callee-saved registers in scratch."]
+    consts := Impl.Ed448.AArch64.Sparse.baseConsts
+    code := Impl.Ed448.AArch64.Sparse.verifyEquation
+    verified := Proof.Ed448.AArch64.Sparse.verifyEquation_verified Proof.Ed448.recover_ok }]
 
 end VG.Artifacts.Ed448VerifyEquation.AArch64

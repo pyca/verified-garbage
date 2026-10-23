@@ -32,15 +32,17 @@ structure Env where
   outs : List Region
   ls : List (Nat × BitVec 64)
   T : Addr
+  sym : String := VG.Impl.X448.AArch64.Base.combSym
+  words : List (BitVec 64) := VG.Impl.X448.AArch64.Base.combWords
 
 open VG.Impl.X448.AArch64.Base (combSym combWords)
 
 /-- The comb's tables at `T`. -/
-abbrev TBL (T : Addr) : Region := ⟨T, 8 * combWords.length⟩
+abbrev TBL (T : Addr) (words:List (BitVec 64):=combWords) : Region := ⟨T,8*words.length⟩
 
 /-- The comb's words at `T` in `m`. -/
-def TblWords (T : Addr) (m : Mem) : Prop :=
-  ∀ i < combWords.length, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
+def TblWords (T : Addr) (m : Mem) (words:List (BitVec 64):=combWords) : Prop :=
+  ∀ i < words.length,m.readW (T+BitVec.ofNat 64 (8*i)) 64=words.getD i 0
 
 /-- A kept word's region. -/
 abbrev slot (E : Addr) (d : Nat) : Region := ⟨E + BitVec.ofNat 64 d, 8⟩
@@ -52,15 +54,15 @@ structure Env.Ok (V : Env) : Prop where
   fo : ∀ R ∈ V.outs, (FR V.E).Disjoint R
   co : ∀ R ∈ V.outs, (CK V.E).Disjoint R
   e16 : 16 ≤ V.E.toNat
-  tin : TBL V.T ∈ V.ins
-  tfr : (TBL V.T).Disjoint (FR V.E)
-  tck : (TBL V.T).Disjoint (CK V.E)
-  tout : ∀ R ∈ V.outs, (TBL V.T).Disjoint R
-  tfit : V.T.toNat + 8 * combWords.length ≤ 2 ^ 64
+  tin : TBL V.T V.words ∈ V.ins
+  tfr : (TBL V.T V.words).Disjoint (FR V.E)
+  tck : (TBL V.T V.words).Disjoint (CK V.E)
+  tout : ∀ R ∈ V.outs, (TBL V.T V.words).Disjoint R
+  tfit : V.T.toNat + 8 * V.words.length ≤ 2 ^ 64
 
 abbrev WCtx (V : Env) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) : Prop :=
   VG.Proof.Ed25519.AArch64.Whole.Ctx V.E g vec m₀ V.ins V.outs t ∧ Kept V.E t.mem V.ls ∧
-    t.syms combSym = V.T
+    t.syms V.sym = V.T
 
 variable {V : Env} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t u : State}
 
@@ -106,11 +108,11 @@ theorem WCtx.regs (h : WCtx V g vec m₀ t)
   ⟨h.1.regs hrd hwr hsp hcs hvs hm, hm ▸ h.2.1, by rw [hsy]; exact h.2.2⟩
 
 /-- The comb's words, as on entry: no write reaches them. -/
-theorem WCtx.tbl (hV : V.Ok) (h : WCtx V g vec m₀ t) (hm : TblWords V.T m₀) : TblWords V.T t.mem :=
+theorem WCtx.tbl (hV : V.Ok) (h : WCtx V g vec m₀ t) (hm : TblWords V.T m₀ V.words) : TblWords V.T t.mem V.words :=
   fun i hi => by
     have := hV.tfit
     rw [← hm i hi]
-    refine h.1.frame.readW (r := TBL V.T) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    refine h.1.frame.readW (r := TBL V.T V.words) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
     intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact hV.tout r hr

@@ -47,6 +47,8 @@ open VG.Proof.Ed448.AArch64.Whole (Two WCtx srcValue zeroSt_ct kabs_ct kpad_ct k
   mulAdd_ct block_ct ofNat_toNat64 st_within ks_within)
 open VG.Proof.Ed25519.AArch64.Whole (Within FR CK ck_frame)
 
+attribute [local irreducible] VG.Impl.X448.AArch64.Base.combWords
+
 variable {L : Lay} {g₁ g₂ : Reg → Addr} {v₁ v₂ : VReg → BitVec 128} {m₁ m₂ : Mem}
 
 /-- The positions of the sponge after each absorption. -/
@@ -224,7 +226,7 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.B
     (by decide) (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
     (outS_writable L) (scr_writable L) (Q := fun _ => True)
     (fun hm hc _ => WP.mono (reduceR_step hL hc hm) fun _ hu => ⟨hu.1, trivial⟩)
-  have bs := base_ct hb hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := baseArgs)
+  have bs := base_ct hb hV ⟨rfl,rfl⟩ ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := baseArgs)
     (by decide) (by simp [baseArgs, aOut, aR, VG.Proof.Ed448.AArch64.Whole.srcValid,
       VG.Proof.Ed25519.AArch64.Whole.valid, fScr]) rfl (by decide)
     (by decide) (by taint_decide) (P := fun _ => True) (baseVal L)

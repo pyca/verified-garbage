@@ -96,6 +96,8 @@ def env : Env where
   outs := [L.OUT, L.SCR]
   ls := [(fLen, L.len), (fScr, L.scr), (fHdr, sigWord), (fHdr + 8, L.ctxLen <<< 8)]
   T := L.T
+  sym := VG.Impl.X448.AArch64.Base.combSym
+  words := VG.Impl.X448.AArch64.Base.combWords
 
 structure Ok : Prop where
   os : L.OUT.Disjoint L.SEED
@@ -134,6 +136,8 @@ structure Ok : Prop where
 end Lay
 
 theorem frame_sub (L : Lay) : Region.Sub (FR L.E) L.STK := Region.sub_prefix (by decide : 256 ≤ 336)
+
+attribute [local irreducible] VG.Impl.X448.AArch64.Base.combWords
 
 theorem env_ok {L : Lay} (hL : L.Ok) : L.env.Ok where
   args := by simp [Lay.env]

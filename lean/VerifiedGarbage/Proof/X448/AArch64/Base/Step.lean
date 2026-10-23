@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.X448.AArch64.Base.Add
+
 import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
 import VerifiedGarbage.Proof.Framework.AArch64.Inline

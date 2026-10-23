@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
@@ -52,7 +52,7 @@ theorem lsr_ok (s : State) : WP isa (.block [.lsr .x .x9 .x2 8]) s (LsrPost s) :
 
 theorem lsr_pre {s t : State} (h : vLocal.pre s) (ht : LsrPost s t) : vLocal.pre t := by
   obtain ⟨_, e, tm, trd, twr, tsp, _, tsy⟩ := ht
-  simp only [vLocal, VG.Proof.X448.AArch64.Base.CombHeld, e _ (by decide : Reg.x0 ≠ .x9),
+  simp only [vLocal, VG.Proof.Ed448.AArch64.Sparse.BaseHeld, e _ (by decide : Reg.x0 ≠ .x9),
     e _ (by decide : Reg.x1 ≠ .x9),
     e _ (by decide : Reg.x2 ≠ .x9), e _ (by decide : Reg.x3 ≠ .x9), e _ (by decide : Reg.x4 ≠ .x9),
     e _ (by decide : Reg.x5 ≠ .x9), e _ (by decide : Reg.x6 ≠ .x9), trd, twr, tsp, tm, tsy]
@@ -60,9 +60,9 @@ theorem lsr_pre {s t : State} (h : vLocal.pre s) (ht : LsrPost s t) : vLocal.pre
 
 theorem lsr_pub {s₁ s₂ t₁ t₂ : State} (h : vLocal.pub s₁ s₂) (h₁ : LsrPost s₁ t₁) (h₂ : LsrPost s₂ t₂) :
     vLocal.pub t₁ t₂ := by
-  obtain ⟨_, e₁, _, _, _, sp₁, _, sy₁⟩ := h₁
-  obtain ⟨_, e₂, _, _, _, sp₂, _, sy₂⟩ := h₂
-  simp only [vLocal, e₁ _ (by decide : Reg.x0 ≠ .x9), e₁ _ (by decide : Reg.x1 ≠ .x9),
+  obtain ⟨_, e₁, mem₁, _, _, sp₁, _, sy₁⟩ := h₁
+  obtain ⟨_, e₂, mem₂, _, _, sp₂, _, sy₂⟩ := h₂
+  simp only [vLocal,PublicBytes,mem₁,mem₂, e₁ _ (by decide : Reg.x0 ≠ .x9), e₁ _ (by decide : Reg.x1 ≠ .x9),
     e₁ _ (by decide : Reg.x2 ≠ .x9), e₁ _ (by decide : Reg.x3 ≠ .x9), e₁ _ (by decide : Reg.x4 ≠ .x9),
     e₁ _ (by decide : Reg.x5 ≠ .x9), e₁ _ (by decide : Reg.x6 ≠ .x9),
     e₂ _ (by decide : Reg.x0 ≠ .x9), e₂ _ (by decide : Reg.x1 ≠ .x9),
@@ -98,7 +98,7 @@ theorem body_depth (v : Proof.Sha3.AArch64.Permutation) : (body v.callee).aarch6
   have hp := v.pad_depth
   have hs := v.squeeze_depth
   have hr := VG.Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames VG.Proof.Ed448.AArch64.Whole.reduce_noFrames
-  have he := VG.Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames VG.Proof.Ed448.AArch64.Whole.equation_noFrames
+  have he := VG.Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames VG.Proof.Ed448.AArch64.Sparse.verifyEquation_noFrames
   simp only [body, Impl.Ed448.AArch64.Verify.hash, Impl.Ed448.AArch64.Whole.zeroSt,
     Impl.Ed448.AArch64.Whole.kabs, Impl.Ed448.AArch64.Whole.kpad, Impl.Ed448.AArch64.Whole.ksqz,
     Impl.Ed448.AArch64.Whole.callS, Code.aarch64Depth, Nat.max_le, ha, hp, hs, hr, he]
@@ -144,14 +144,14 @@ theorem entry_args {s p : State} (h : vLocal.pre s)
   · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
     have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
     rw [← held i hi]
-    refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms Impl.X448.AArch64.Base.combSym))
+    refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms Impl.Ed448.AArch64.Sparse.baseSym) Impl.Ed448.AArch64.Sparse.baseWords)
       (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
     rw [List.mem_singleton.mp hr]
     exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
 
 theorem entry_syms {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
-    (p.withRegions (bodyRd s) (bodyWr s)).syms Impl.X448.AArch64.Base.combSym = (lay s).T :=
-  congrFun hp.step.syms Impl.X448.AArch64.Base.combSym
+    (p.withRegions (bodyRd s) (bodyWr s)).syms Impl.Ed448.AArch64.Sparse.baseSym = (lay s).T :=
+  congrFun hp.step.syms Impl.Ed448.AArch64.Sparse.baseSym
 
 theorem entry_x6 {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
     (p.withRegions (bodyRd s) (bodyWr s)).gpr .x6 = (lay s).scr :=
@@ -163,7 +163,7 @@ theorem body_ctx {s p u : State} (h : vLocal.pre s) (hu : Ctx0 (lay s) s.gpr s.v
   simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.PK, Lay.CTX, Lay.MSG,
     Lay.SIG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hu
 
-theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk)
+theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.Sparse.EqOk)
     {s : State} (h : vLocal.pre s) :
     WP isa (verifyWith v.callee) s fun u => abiPreserved s u ∧ vLocal.post s u := by
   refine WP.seq (WP.mono (lsr_ok s) fun t ht => ?_)

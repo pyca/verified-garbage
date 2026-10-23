@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Verified
 public import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
@@ -85,10 +85,10 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
       frame (the hash and k) is not cleared: verification has no secrets. The function saves \
       `x30` and its arguments on the stack, and the functions it calls use 16 bytes below its \
       frame."]
-    consts := Impl.X448.AArch64.Base.combConsts
+    consts := Impl.Ed448.AArch64.Sparse.baseConsts
     code := Impl.Ed448.AArch64.Verify.verifyWith v.callee
     stack := 352
     verified := Proof.Ed448.AArch64.Verify.verify_verified v
-      (Proof.Ed448.AArch64.verifyEquation_eqOk Proof.Ed448.recover_ok) }]
+      (Proof.Ed448.AArch64.Sparse.verified_eqOk Proof.Ed448.recover_ok) }]
 
 end VG.Generic.Keccak.AArch64.Ed448Verify

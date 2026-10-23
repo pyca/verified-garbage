@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
-public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 
 /-!
@@ -22,7 +22,8 @@ kept in the locals at 248 and the first ten bytes of `dom4(0, context)` at 0:
 * `k`, the hash reduced modulo `L` (`vg_ed448_scalar_reduce`), at 136;
 * the result of `vg_ed448_verify_equation(pk, signature, k, scratch)`, in `x0`.
 
-Every address and branch depends only on the pointers and the lengths.
+Hashing addresses and branches depend only on pointers and lengths. The equation
+selector additionally depends on the public signature and challenge scalars.
 -/
 
 @[expose] public section
@@ -67,7 +68,7 @@ def equationArgs : List (Reg × Src) :=
 def body (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (.block entry) <| .seq (hash c) <|
     .seq (callS reduceArgs "vg_ed448_scalar_reduce" scalarReduce)
-      (callS equationArgs "vg_ed448_verify_equation" verifyEquation)
+      (callS equationArgs "vg_ed448_verify_equation" Sparse.verifyEquation)
 
 /-- `vg_ed448_verify`, with the permutation `c`. -/
 def verifyWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=

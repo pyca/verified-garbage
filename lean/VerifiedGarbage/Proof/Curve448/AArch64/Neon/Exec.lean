@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Mem
+
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
@@ -99,5 +101,10 @@ tactic_template "vred" : tactic =>
 tactic_template "scr" : tactic =>
   `(tactic| plain_simp_names exact scr_of (by assumption) (by simp only [RegUpd.gpr_setV, setMem_gpr])
                      (by simp only [RegUpd.wr_setV, setMem_wr]))
+
+theorem read16_write (m : Mem) (p : Addr) (v : BitVec 128) : (m.write p 16 v).read p 16 = v := by
+  have := Mem.readW_writeW_self m p 16 v (by decide)
+  simpa [Mem.readW, Mem.writeW] using this
+
 
 end VG.Proof.Curve448.AArch64.Neon
