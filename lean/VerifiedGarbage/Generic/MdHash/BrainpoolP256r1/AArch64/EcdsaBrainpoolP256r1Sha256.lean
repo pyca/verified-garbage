@@ -40,6 +40,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
       notes := [signNotes (cfgOf (pack h.law h.inv c)).H 32
           Spec.Ecdsa.BrainpoolP256r1.signApi.name]
       code := (cfgOf (pack h.law h.inv c)).sign
+      consts := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts
       stack := 256
       verified := sign_verified h.law h.inv c
       features := c.features }]
