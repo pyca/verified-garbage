@@ -158,7 +158,7 @@ def ghashWith (pro pow : List Instr) : Prog isa :=
         (.seq (.block pow) (.seq (.loop (.block (body 8)) (.nonzero .x .x5)) tail)))
       (.block epilogue))
 
-def ghash : Prog isa := ghashWith prologue powers
+
 
 /-! ## With the prepared powers
 
@@ -220,8 +220,69 @@ def prologueW : List Instr :=
 
 def ghashW : Prog isa := ghashAll prologueW []
 
-/-- `pw` kept in `x8`, then `vg_ghash_aes`'s prologue and powers. -/
-def prologueS : List Instr := ([.addImm .x .x8 .x5 0] : List Instr) ++ prologue ++ powers
+/-! The powers of `vg_ghash_store_powers_aes`, which computes them for the
+key setup of AES-GCM (`AesGcm::new`), with fewer instructions on the chain
+that waits for `H`: the products are written rather than added to a cleared
+product (`accD`), and the squares `H'²`, `H'⁴`, `H'⁶`, `H'⁸` take two
+products, not four: the middle ones, `pmull(t₁, t₀)` and `pmull(t₀, t₁)`,
+cancel (`sqr`). -/
+
+/-- The four products of `acc`, of `a` and the key `t`, into `lo`, `mid` and
+`hi`, written rather than added. -/
+def accD (a s t : VReg) : List Instr :=
+  [.vop (.pmull false HI a s), .vop (.pmull true LO a s),
+   .vop (.pmull false MID a t), .vop (.pmull true T a t), .vop (.logic .eor MID MID T)]
+
+/-- `mul`, from `accD`. -/
+def mulD (d a s t : VReg) : List Instr := accD a s t ++ reduce d
+
+/-- `reduce` of a product whose `mid` is zero. -/
+def reduceS (d : VReg) : List Instr :=
+  [.vop (.pmull false T LO C), .vop (.ext LO LO LO 8), .vop (.logic .eor MID LO T),
+   .vop (.pmull false T MID C), .vop (.ext HI HI HI 8), .vop (.logic .eor HI HI MID),
+   .vop (.ext T T T 8), .vop (.logic .eor d HI T)]
+
+/-- `d ← mul(t, t)` with its halves swapped, `s` the halves of `t` swapped
+(and the block as loaded): `lo` and `hi`, the middle products cancelling. -/
+def sqr (d s : VReg) : List Instr :=
+  ([.vop (.pmull false HI s s), .vop (.pmull true LO s s)] : List Instr) ++ reduceS d
+
+/-- `H'ᵏ = mul(H'ⁱ, H'ʲ)`, a square if `i = j`, and its halves swapped. -/
+def powS (k i j : Nat) : List Instr :=
+  (if i = j then sqr (sReg k) (sReg i) else mulD (sReg k) (sReg i) (sReg j) (tReg j)) ++
+    ([.vop (.ext (tReg k) (sReg k) (sReg k) 8)] : List Instr)
+
+/-- `H'²` to `H'⁸`, four of them squares. -/
+def powersS : List Instr :=
+  powS 2 1 1 ++ powS 3 2 1 ++ powS 4 2 2 ++ powS 5 3 2 ++ powS 6 3 3 ++ powS 7 4 3 ++ powS 8 4 4
+
+/-- `d ← H' = H · x⁻¹` from `H` as loaded in `A`, with its halves swapped, by
+a shift rather than `mul(H, x⁻²)`: dividing by `x` moves each coefficient
+down by one, which shifts each doubleword up by one bit (`shl`) and moves the
+top bit of each into the bottom of the other (`ushr`, `ext`); the coefficient
+of `x⁰` that drops out, the top bit of the low doubleword, adds
+`x⁻¹ = x¹²⁷ + x⁶ + x + 1`: its `x¹²⁷` is the bit moved into the high
+doubleword, the rest `0xc2 · 2⁵⁶` in the low one (the `pmull` of the bit by
+the reduction constant). -/
+def twist (d : VReg) : List Instr :=
+  [.vop (.shift .ushr .d2 T A 63), .vop (.shift .shl .d2 LO A 1), .vop (.ext MID T T 8),
+   .vop (.logic .eor LO LO MID), .vop (.pmull false HI T C), .vop (.logic .eor d LO HI)]
+
+/-- The reduction constant in both halves of `v1`. -/
+def constC : List Instr := [.movz .x .x5 0xc200 3, .vop (.dup .d2 C .x5)]
+
+/-- `vg_ghash_aes`'s prologue, with `H'` by `twist`. -/
+def prologueT : List Instr :=
+  loadRev A .x0 0 ++ constC ++ twist (sReg 1) ++
+  ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr) ++ loadRev Y .x1 0 ++
+    ([.lsr .x .x5 .x3 3] : List Instr)
+
+/-- `pw` kept in `x8`, then the prologue, and the powers. -/
+def prologueS : List Instr := ([.addImm .x .x8 .x5 0] : List Instr) ++ prologueT ++ powersS
+
+/-- `vg_ghash_aes`, with `H'` by `twist` and the powers by `powersS`
+(defined below). -/
+def ghash : Prog isa := ghashWith prologueT powersS
 
 /-- `H'ᵏ` stored to `pw` (`x8`). -/
 def storePw (k : Nat) : List Instr := [.strq (tReg k) .x8 (pwOff k)]
