@@ -25,7 +25,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.InvBatch
  VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv
 
 
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
  theorem virtualMod_odd {m : Nat} (odd : m%2=1) : virtualMod m%2=1 := by
   unfold virtualMod; split_ifs <;> omega
@@ -46,7 +46,7 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
       (by apart) (by apart) (by apart)) fun s1 ⟨V1,K1,O1⟩ => ?_)))))
   rw [hm] at V1
   have hs1 := hs.of_keeps K1 (by decide)
-  refine WP.mono (virtualize_ok hs1 (M:=offset w 2) (n:=n) (by omega) (by apart)) fun s2 ⟨V2,K2,O2⟩ => ?_
+  refine WP.mono (virtualize_ok hs1 (M:=offset w 2) (n:=n) (by omega_arith) (by apart)) fun s2 ⟨V2,K2,O2⟩ => ?_
   rw [V1] at V2
   change val32 s2.mem base (offset w 2) n=virtualMod m at V2
   have hs2 := hs1.of_keeps K2 (by decide)
@@ -63,19 +63,19 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
   refine WP.mono (inverseSetup_ok hs4 hn hw hz M4 (virtualMod_odd odd)) fun s5 ⟨inv,K5,O5⟩ => ?_
   have hs5 := hs4.of_keeps K5 (by decide)
   let iv := w32 s5.mem base (offset w 3+28)
-  have power : 1<2^(32*n) := Nat.one_lt_two_pow (by omega)
+  have power : 1<2^(32*n) := Nat.one_lt_two_pow (by omega_arith)
   have aLow : val32 s4.mem base (offset w 6) n=0 := by
-    rw [val32_succ] at A4; omega
+    rw [val32_succ] at A4; omega_arith
   have aTop : w32 s4.mem base (offset w 6+4*n)=0 := by
     rw [val32_succ] at A4
     by_contra h
-    have bound := Nat.mul_le_mul_left (2^(32*n)) (show 1≤w32 s4.mem base (offset w 6+4*n) by omega)
-    omega
+    have bound := Nat.mul_le_mul_left (2^(32*n)) (show 1≤w32 s4.mem base (offset w 6+4*n) by omega_arith)
+    omega_arith
   have bTop : w32 s4.mem base (offset w 7+4*n)=0 := by
     rw [val32_succ] at B4
     by_contra h
-    have bound := Nat.mul_le_mul_left (2^(32*n)) (show 1≤w32 s4.mem base (offset w 7+4*n) by omega)
-    omega
+    have bound := Nat.mul_le_mul_left (2^(32*n)) (show 1≤w32 s4.mem base (offset w 7+4*n) by omega_arith)
+    omega_arith
   have bLow : val32 s4.mem base (offset w 7) n=1 := by
     rw [val32_succ,bTop,Nat.mul_zero,Nat.add_zero] at B4; exact B4
   have I5 : StateAt w n base (virtualMod m) iv
@@ -94,7 +94,7 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
   refine WP.mono (setWord_ok (dst:=100) (BitVec.ofNat 32 (3*(n+1))) hs5 (by apart)) fun z ⟨C6,K6,O6⟩ => ?_
   have I6 := I5.keep_counter hs5 hn hw hz O6
   refine ⟨iv,I6,inv,?_,?_,?_⟩
-  · rw [C6,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+  · rw [C6,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith)]
   · exact (((((K1.mono (by decide)).trans (K2.mono (by decide))).trans (K3.mono (by decide))).trans
       (K4.mono (by decide))).trans (K5.mono (by decide))).trans (K6.mono (by decide))
   · intro y hy
