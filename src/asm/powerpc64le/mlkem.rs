@@ -1089,3 +1089,137 @@ bne %cr0, 20b
 blr",
     )
 }
+
+/// `SamplePolyCBD₂` (FIPS 203 Algorithm 8 with `η` = 2): writes the polynomial sampled from the 128 bytes `*b` to `*f` (256 coefficients less than `q` = 3329).
+///
+/// Contract: `VG.Spec.MlKem.cbd2Contract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `b` must be valid for reads of 128 bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `f` must not overlap `b` (distinct Rust objects never do).
+/// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"li %r5, 128
+li %r8, 3329
+20:
+lbz %r6, 0(%r3)
+rldicr %r6, %r6, 62, 1
+rldicl %r6, %r6, 2, 62
+rldicl %r9, %r6, 63, 1
+subf %r6, %r9, %r6
+lbz %r7, 0(%r3)
+rldicr %r7, %r7, 60, 3
+rldicl %r7, %r7, 2, 62
+rldicl %r9, %r7, 63, 1
+subf %r7, %r9, %r7
+subf %r6, %r7, %r6
+rldicl %r7, %r6, 1, 63
+mulld %r7, %r7, %r8
+add %r6, %r6, %r7
+stw %r6, 0(%r4)
+lbz %r6, 0(%r3)
+rldicr %r6, %r6, 58, 5
+rldicl %r6, %r6, 2, 62
+rldicl %r9, %r6, 63, 1
+subf %r6, %r9, %r6
+lbz %r7, 0(%r3)
+rldicr %r7, %r7, 56, 7
+rldicl %r7, %r7, 2, 62
+rldicl %r9, %r7, 63, 1
+subf %r7, %r9, %r7
+subf %r6, %r7, %r6
+rldicl %r7, %r6, 1, 63
+mulld %r7, %r7, %r8
+add %r6, %r6, %r7
+stw %r6, 4(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 8
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 20b
+blr",
+    )
+}
+
+/// `ByteEncode₁₂` (FIPS 203 Algorithm 5): writes the 256 coefficients of `*f`, each less than `q` = 3329, to `*out` as 12-bit little-endian fields.
+///
+/// Contract: `VG.Spec.MlKem.encode12Contract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 384 bytes.
+/// * Each of the 256 `u32`s of `f` must be less than 3329.
+/// * `out` must not overlap `f` (distinct Rust objects never do).
+/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
+    core::arch::naked_asm!(
+        r"li %r5, 128
+20:
+lwz %r6, 0(%r3)
+lwz %r7, 4(%r3)
+stb %r6, 0(%r4)
+rldicl %r6, %r6, 56, 8
+rldicr %r8, %r7, 4, 59
+add %r6, %r6, %r8
+stb %r6, 1(%r4)
+rldicl %r7, %r7, 60, 4
+stb %r7, 2(%r4)
+addi %r3, %r3, 8
+addi %r4, %r4, 3
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 20b
+blr",
+    )
+}
+
+/// `ByteDecode₁₂` (FIPS 203 Algorithm 6): writes the 256 12-bit little-endian fields of `*b`, each reduced modulo `q` = 3329, to `*f`.
+///
+/// Contract: `VG.Spec.MlKem.decode12Contract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `b` must be valid for reads of 384 bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `f` must not overlap `b` (distinct Rust objects never do).
+/// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"li %r5, 128
+li %r8, 3329
+20:
+lbz %r6, 0(%r3)
+lbz %r7, 1(%r3)
+rldicr %r7, %r7, 60, 3
+rldicl %r7, %r7, 12, 52
+add %r6, %r6, %r7
+subf %r6, %r8, %r6
+rldicl %r7, %r6, 1, 63
+mulld %r7, %r7, %r8
+add %r6, %r6, %r7
+stw %r6, 0(%r4)
+lbz %r6, 1(%r3)
+rldicl %r6, %r6, 60, 4
+lbz %r7, 2(%r3)
+rldicr %r7, %r7, 4, 59
+add %r6, %r6, %r7
+subf %r6, %r8, %r6
+rldicl %r7, %r6, 1, 63
+mulld %r7, %r7, %r8
+add %r6, %r6, %r7
+stw %r6, 4(%r4)
+addi %r3, %r3, 3
+addi %r4, %r4, 8
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 20b
+blr",
+    )
+}
