@@ -211,20 +211,20 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     gkeep_arrs G v L.keep h₀ h₁ h₂
   have n32 : g.n32 = g.pLen / 4 := rfl
   simp only [seqs]
-  refine WP.seq (cmpF_end L.keep.base.scr (o := fHLeft) (v := 0) (by simp only [fHLeft, hdr]; omega) L.left
-    (by omega) (by decide) fun t₁ g₁ m₁ rd₁ wr₁ sy₁ z₁ => ?_)
+  refine WP.seq (cmpF_end L.keep.base.scr (o := fHLeft) (v := 0) (by simp only [fHLeft, hdr]; omega_arith) L.left
+    (by omega_arith) (by decide) fun t₁ g₁ m₁ rd₁ wr₁ sy₁ z₁ => ?_)
   have K₁ := L.keep.mem m₁ (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ sy₁
-  refine WP.seq (WP.ite _ z₁ (fun hz => stImm_end K₁.base.scr (o := fG) (v := 2) (by simp only [fG, hdr]; omega)
+  refine WP.seq (WP.ite _ z₁ (fun hz => stImm_end K₁.base.scr (o := fG) (v := 2) (by simp only [fG, hdr]; omega_arith)
     fun t₂ g₂ m₂ rd₂ wr₂ sy₂ => ?_) (fun hz => ?_))
   · -- No `h` left.
     have h0 : E.hsLen - j * E.pLen = 0 := of_decide_eq_true hz
     have K₂ := K₁.store G v (d := fG) (by simp [gRanges, wRanges]) _ m₂ (g₂ _ (by decide)) (g₂ _ (by decide)) rd₂ wr₂
       sy₂
-    refine cmpF_end K₂.base.scr (o := fG) (v := 4) (w := 2) (by simp only [fG, hdr]; omega)
+    refine cmpF_end K₂.base.scr (o := fG) (v := 4) (w := 2) (by simp only [fG, hdr]; omega_arith)
       (by rw [m₂, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ z₃ => ?_
     refine .inl ⟨z₃, by simp [gCont, h0], K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, ?_⟩
     have hN : E.hT.length / E.pLen ≤ j := by
-      rw [hl]; exact Nat.div_le_of_le_mul (by rw [Nat.mul_comm]; omega)
+      rw [hl]; exact Nat.div_le_of_le_mul (by rw [Nat.mul_comm]; omega_arith)
     have hR : Rg = none := by
       rw [← L.spec, List.drop_eq_nil_of_le (by rw [hList_length]; exact hN)]
       rfl
@@ -232,70 +232,70 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   · -- `h` number `j`.
     have hne : E.hsLen - j * E.pLen ≠ 0 := of_decide_eq_false hz
     have hj1 : (j + 1) * E.pLen ≤ E.hsLen := by
-      have hlt : j * E.pLen < E.hsLen / E.pLen * E.pLen := by omega
+      have hlt : j * E.pLen < E.hsLen / E.pLen * E.pLen := by omega_arith
       have := Nat.lt_of_mul_lt_mul_right hlt
-      have := Nat.mul_le_mul_right E.pLen (show j + 1 ≤ E.hsLen / E.pLen by omega)
-      omega
+      have := Nat.mul_le_mul_right E.pLen (show j + 1 ≤ E.hsLen / E.pLen by omega_arith)
+      omega_arith
     have hjN : j < E.hT.length / E.pLen := by
-      rw [hl]; exact Nat.lt_of_mul_lt_mul_right (a := E.pLen) (by rw [Nat.succ_mul] at hj1; omega)
+      rw [hl]; exact Nat.lt_of_mul_lt_mul_right (a := E.pLen) (by rw [Nat.succ_mul] at hj1; omega_arith)
     refine WP.seq (WP.mono (gStep_ok G v hp K₁.base (j := j) (p := p) (x := x) (F := 4) hj1
       (by rw [m₁]; exact L.fh)
-      (by rw [m₁, arrK (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega),
+      (by rw [m₁, arrK (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith) (by simp only [aOne, arr]; omega_arith),
         hone])
-      (by rw [m₁, arrK (by simp only [aPm1, arr]; omega) (by simp only [aPm1, arr]; omega) (by simp only [aPm1, arr]; omega),
+      (by rw [m₁, arrK (by simp only [aPm1, arr]; omega_arith) (by simp only [aPm1, arr]; omega_arith) (by simp only [aPm1, arr]; omega_arith),
         hpm1])
-      (by rw [m₁, arrK (by simp only [aP, arr]; omega) (by simp only [aP, arr]; omega) (by simp only [aP, arr]; omega), hP])
-      (by rw [m₁, arrK (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega), hE])
+      (by rw [m₁, arrK (by simp only [aP, arr]; omega_arith) (by simp only [aP, arr]; omega_arith) (by simp only [aP, arr]; omega_arith), hP])
+      (by rw [m₁, arrK (by simp only [aE, arr]; omega_arith) (by simp only [aE, arr]; omega_arith) (by simp only [aE, arr]; omega_arith), hE])
       hxl hp1 hodd hplt (by rw [m₁]; exact L.fg)) fun t₂ S => ?_)
     have K₂ : GKeep E g s t₂ := ⟨S.base, K₁.chg.trans (S.chg.widen fun o ho => ⟨o, List.mem_append_left _ ho,
       Nat.le_refl _, Nat.le_refl _⟩), by rw [S.rd, K₁.rd], by rw [S.wr, K₁.wr], by rw [S.syms, K₁.syms]⟩
     have word₂ : ∀ d, hdr ≤ d → d + 4 ≤ fG →
         t₂.mem.readW (off E.base d) 32 = t₁.mem.readW (off E.base d) 32 :=
-      fun d hd' hd => Env.Chg.word v S.chg (by simp only [fG, hdr] at hd; omega) fun o ho => ⟨by
+      fun d hd' hd => Env.Chg.word v S.chg (by simp only [fG, hdr] at hd; omega_arith) fun o ho => ⟨by
         rcases List.mem_append.mp ho with h | h
         · exact (rRanges_apart v o h).1
         · exact (wRanges_apart G v o h).1, by
         simp only [rRanges, wRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
           or_false] at ho
         rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [aTmp, aH, arr, fLo, sPk, fG, hdr] at hd hd' ⊢ <;> omega⟩
+          simp only [aTmp, aH, arr, fLo, sPk, fG, hdr] at hd hd' ⊢ <;> omega_arith⟩
     -- The next `h`.
-    refine ld_ok K₂.base.scr (d := fH) (by simp only [fH, hdr]; omega) fun t₃ u₃ => wp_addi fun t₄ u₄ =>
+    refine ld_ok K₂.base.scr (d := fH) (by simp only [fH, hdr]; omega_arith) fun t₃ u₃ => wp_addi fun t₄ u₄ =>
       st_ok (Scr.of_eq K₂.base.scr (by rw [u₄.other _ (by decide), u₃.other _ (by decide)])
         (by rw [u₄.other _ (by decide), u₃.other _ (by decide)]) (by rw [u₄.wr, u₃.wr])) (d := fH)
-        (by simp only [fH, hdr]; omega) fun t₅ M₅ => ?_
+        (by simp only [fH, hdr]; omega_arith) fun t₅ M₅ => ?_
     have m₅ : t₅.mem = t₂.mem.writeW (off E.base fH) ((E.hs + BitVec.ofNat 64 ((j + 1) * E.pLen)).setWidth 32) := by
-      rw [M₅.mem, u₄.mem, u₃.mem, u₄.gpr, u₃.gpr, word₂ fH (by simp only [fH, hdr]; omega) (by simp only [fH, fG, hdr]; omega), m₁, L.fh, ← hp,
+      rw [M₅.mem, u₄.mem, u₃.mem, u₄.gpr, u₃.gpr, word₂ fH (by simp only [fH, hdr]; omega_arith) (by simp only [fH, fG, hdr]; omega_arith), m₁, L.fh, ← hp,
         ptr_add, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.succ_mul]
     have K₅ := K₂.store G v (d := fH) (by simp [gRanges]) _ m₅
       (by rw [M₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide)])
       (by rw [M₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide)]) (by rw [M₅.rd, u₄.rd, u₃.rd])
       (by rw [M₅.wr, u₄.wr, u₃.wr]) (by rw [M₅.syms, u₄.syms, u₃.syms])
-    refine ld_ok K₅.base.scr (d := fHLeft) (by simp only [fHLeft, hdr]; omega) fun t₆ u₆ => wp_subi fun t₇ u₇ _ _ =>
+    refine ld_ok K₅.base.scr (d := fHLeft) (by simp only [fHLeft, hdr]; omega_arith) fun t₆ u₆ => wp_subi fun t₇ u₇ _ _ =>
       st_ok (Scr.of_eq K₅.base.scr (by rw [u₇.other _ (by decide), u₆.other _ (by decide)])
         (by rw [u₇.other _ (by decide), u₆.other _ (by decide)]) (by rw [u₇.wr, u₆.wr])) (d := fHLeft)
-        (by simp only [fHLeft, hdr]; omega) fun t₈ M₈ => WP.block_nil ?_
+        (by simp only [fHLeft, hdr]; omega_arith) fun t₈ M₈ => WP.block_nil ?_
     have ws : ∀ (m : Mem) {d e : Nat}, d + 4 ≤ sState → e + 4 ≤ sState → (d + 4 ≤ e ∨ e + 4 ≤ d) → ∀ y,
         (m.writeW (off E.base e) y).readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
-      fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega)
-        (by simp only [sState] at h₂; omega) h y
+      fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega_arith)
+        (by simp only [sState] at h₂; omega_arith) h y
     have m₈ : t₈.mem = t₅.mem.writeW (off E.base fHLeft) (BitVec.ofNat 32 (E.hsLen - (j + 1) * E.pLen)) := by
-      rw [M₈.mem, u₇.mem, u₆.mem, u₇.gpr, u₆.gpr, m₅, ws _ (by simp only [fHLeft, sState, hdr]; omega)
-        (by simp only [fH, sState, hdr]; omega) (by simp only [fH, fHLeft, hdr]; omega),
-        word₂ fHLeft (by simp only [fHLeft, hdr]; omega) (by simp only [fHLeft, fG, hdr]; omega), m₁, L.left, ← hp,
-        sub_ofNat (by rw [hp] at hj1 ⊢; rw [Nat.succ_mul] at hj1; omega), Nat.succ_mul, Nat.sub_sub]
+      rw [M₈.mem, u₇.mem, u₆.mem, u₇.gpr, u₆.gpr, m₅, ws _ (by simp only [fHLeft, sState, hdr]; omega_arith)
+        (by simp only [fH, sState, hdr]; omega_arith) (by simp only [fH, fHLeft, hdr]; omega_arith),
+        word₂ fHLeft (by simp only [fHLeft, hdr]; omega_arith) (by simp only [fHLeft, fG, hdr]; omega_arith), m₁, L.left, ← hp,
+        sub_ofNat (by rw [hp] at hj1 ⊢; rw [Nat.succ_mul] at hj1; omega_arith), Nat.succ_mul, Nat.sub_sub]
     have K₈ := K₅.store G v (d := fHLeft) (by simp [gRanges]) _ m₈
       (by rw [M₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide)])
       (by rw [M₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide)]) (by rw [M₈.rd, u₇.rd, u₆.rd])
       (by rw [M₈.wr, u₇.wr, u₆.wr]) (by rw [M₈.syms, u₇.syms, u₆.syms])
     have fG₈ : t₈.mem.readW (off E.base fG) 32 =
         BitVec.ofNat 32 (if Found (Spec.Dsa.decodeBE (hChunk E j)) p x then 1 else 4) := by
-      rw [m₈, ws _ (by simp only [fG, sState, hdr]; omega) (by simp only [fHLeft, sState, hdr]; omega)
-        (by simp only [fG, fHLeft, hdr]; omega), m₅, ws _ (by simp only [fG, sState, hdr]; omega)
-        (by simp only [fH, sState, hdr]; omega) (by simp only [fG, fH, hdr]; omega), S.fg]
+      rw [m₈, ws _ (by simp only [fG, sState, hdr]; omega_arith) (by simp only [fHLeft, sState, hdr]; omega_arith)
+        (by simp only [fG, fHLeft, hdr]; omega_arith), m₅, ws _ (by simp only [fG, sState, hdr]; omega_arith)
+        (by simp only [fH, sState, hdr]; omega_arith) (by simp only [fG, fH, hdr]; omega_arith), S.fg]
     have spec := L.spec
     rw [hList_drop E hjN, VG.Proof.Dsa.Generation.generator_cons] at spec
-    refine cmpF_end K₈.base.scr (o := fG) (v := 4) (by simp only [fG, hdr]; omega) fG₈ (by split <;> omega)
+    refine cmpF_end K₈.base.scr (o := fG) (v := 4) (by simp only [fG, hdr]; omega_arith) fG₈ (by split <;> omega_arith)
       (by decide) fun t₉ g₉ m₉ rd₉ wr₉ sy₉ z₉ => ?_
     have K₉ := K₈.mem m₉ (g₉ _ (by decide)) (g₉ _ (by decide)) rd₉ wr₉ sy₉
     by_cases hf : Found (Spec.Dsa.decodeBE (hChunk E j)) p x
@@ -308,15 +308,15 @@ theorem gBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       rw [hR]
       refine ⟨by rw [m₉, fG₈]; simp only [hf, ↓reduceIte], ?_⟩
       rw [m₉, m₈, Env.Chg.scratch v ((Env.Chg.refl [(fHLeft, 4)] t₅.mem).store (List.mem_singleton_self _)
-        (by decide) _) (by simp only [sPk]; omega) (fun o ho => by
-          simp only [List.mem_singleton] at ho; subst ho; simp only [fHLeft, sPk, hdr]; omega), m₅,
+        (by decide) _) (by simp only [sPk]; omega_arith) (fun o ho => by
+          simp only [List.mem_singleton] at ho; subst ho; simp only [fHLeft, sPk, hdr]; omega_arith), m₅,
         Env.Chg.scratch v ((Env.Chg.refl [(fH, 4)] t₂.mem).store (List.mem_singleton_self _)
-        (by decide) _) (by simp only [sPk]; omega) (fun o ho => by
-          simp only [List.mem_singleton] at ho; subst ho; simp only [fH, sPk, hdr]; omega), S.gb hf]
+        (by decide) _) (by simp only [sPk]; omega_arith) (fun o ho => by
+          simp only [List.mem_singleton] at ho; subst ho; simp only [fH, sPk, hdr]; omega_arith), S.gb hf]
     · -- On to the next `h`.
       refine .inr ⟨by rw [show t₉.zf = _ from z₉]; simp [hf], by simp [gCont, hne, hf], hj1, K₉, ?_, ?_, ?_, hj1, ?_⟩
-      · rw [m₉, m₈, ws _ (by simp only [fH, sState, hdr]; omega) (by simp only [fHLeft, sState, hdr]; omega)
-          (by simp only [fH, fHLeft, hdr]; omega), m₅, Mem.readW_writeW_self32]
+      · rw [m₉, m₈, ws _ (by simp only [fH, sState, hdr]; omega_arith) (by simp only [fHLeft, sState, hdr]; omega_arith)
+          (by simp only [fH, fHLeft, hdr]; omega_arith), m₅, Mem.readW_writeW_self32]
       · rw [m₉, m₈, Mem.readW_writeW_self32]
       · rw [m₉, fG₈]; simp only [hf, ↓reduceIte]
       · rw [← spec]

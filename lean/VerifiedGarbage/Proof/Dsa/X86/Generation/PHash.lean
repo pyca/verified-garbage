@@ -60,22 +60,22 @@ theorem pHash_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   have nl := G.hash.N_le
   have bd := G.bounds
   have hN := G.N
-  have hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega)
+  have hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega_arith)
   have Ap := hRanges_apart G v hj
   unfold Geo.pHash
   simp only [seqs]
   refine WP.seq (VG.X86.WP.mono_syms (seedIn_ok G v hq B hk hS) fun t₁ ⟨S₁, F₁, K₁⟩ sy₁ => ?_)
   have C₁ : E.Chg (hRanges g j) s.mem t₁.mem := Env.Chg.of_frame F₁ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega) (by simp only [sState]; omega)
+    exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega_arith) (by simp only [sState]; omega_arith)
   have B₁ : Base E t₁ := B.keep v C₁ Ap (K₁.1 _ (by decide)) (K₁.1 _ (by decide)) K₁.2.1 K₁.2.2 sy₁
   have hO₁ : t₁.mem.readW (off E.base fOffset) 32 = BitVec.ofNat 32 offset := by
-    rw [Env.Chg.word v C₁ (by simp only [fOffset, hdr]; omega) (fun o ho => ⟨(Ap o ho).1, by
+    rw [Env.Chg.word v C₁ (by simp only [fOffset, hdr]; omega_arith) (fun o ho => ⟨(Ap o ho).1, by
       simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega⟩), hO]
+      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega_arith⟩), hO]
   refine WP.seq (scr_ok fun t₂ e₂ g₂ m₂ rd₂ wr₂ sy₂ =>
     ld_ok (Scr.of_eq B₁.scr (g₂ _ (by decide)) (g₂ _ (by decide)) wr₂) (d := fOffset)
-      (by simp only [fOffset, hdr]; omega) fun t₃ u₃ => wp_addi fun t₄ u₄ => WP.block_nil ?_)
+      (by simp only [fOffset, hdr]; omega_arith) fun t₃ u₃ => wp_addi fun t₄ u₄ => WP.block_nil ?_)
   have edi₄ : t₄.gpr .edi = t₁.gpr .edi := by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
   have esp₄ : t₄.gpr .esp = t₁.gpr .esp := by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
   have m₄ : t₄.mem = t₁.mem := by rw [u₄.mem, u₃.mem, m₂]
@@ -85,11 +85,11 @@ theorem pHash_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   have ecx₄ : t₄.gpr .ecx = BitVec.ofNat 32 (offset + j) := by
     rw [u₄.gpr, u₃.gpr, m₂, hO₁, BitVec.ofNat_add]
   refine WP.seq (VG.X86.WP.mono_syms (addBE_ok hs₄ (o := sState + g.H.N) (n := g.qLen) (c := offset + j)
-    (by omega) (by simp only [sState]; omega) hoj (by rw [edx₄]) ecx₄) fun t₅ ⟨S₅, F₅, K₅, _⟩ sy₅ => ?_)
+    (by omega_arith) (by simp only [sState]; omega_arith) hoj (by rw [edx₄]) ecx₄) fun t₅ ⟨S₅, F₅, K₅, _⟩ sy₅ => ?_)
   rw [m₄, S₁] at S₅
   have C₅ : E.Chg (hRanges g j) s.mem t₅.mem := C₁.trans (Env.Chg.of_frame (m₄ ▸ F₅) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega) (by simp only [sState]; omega))
+    exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega_arith) (by simp only [sState]; omega_arith))
   have rd₅ : t₅.rd = s.rd := by rw [K₅.2.1, u₄.rd, u₃.rd, rd₂, K₁.2.1]
   have wr₅ : t₅.wr = s.wr := by rw [K₅.2.2, u₄.wr, u₃.wr, wr₂, K₁.2.2]
   have sy₅s : t₅.syms = s.syms := by rw [sy₅, u₄.syms, u₃.syms, sy₂, sy₁]
@@ -99,14 +99,14 @@ theorem pHash_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   have sp₅ : t₅.gpr .esp = E.sp := B₅.sp
   have low := v.low
   have stk₅ : Region.Sub (VG.Proof.Pbkdf2.Stream.X86.stk t₅) E.stackRegion := by
-    simp only [VG.Proof.Pbkdf2.Stream.X86.stk, sp₅, Env.stackRegion]; exact below_sub (by decide) (by omega)
+    simp only [VG.Proof.Pbkdf2.Stream.X86.stk, sp₅, Env.stackRegion]; exact below_sub (by decide) (by omega_arith)
   have so := G.hash.ok.sizes.so
   have sW := G.hash.ok.sizes.W
   have hd : sX + g.pLen - (j + 1) * g.qLen = hashAt g j := rfl
   rw [hd, ← hN]
   refine VG.X86.WP.mono_syms (hash_ok G.hash B₅.scr (dst := hashAt g j)
-    (by simp only [sHScr]; omega) (by simp only [sHScr]; omega) (by simp only [hashAt, sX]; omega)
-    (by simp only [hashAt, sState, sX]; omega) (by simp only [hashAt, sHScr, sX]; omega) (by rw [sp₅]; omega)
+    (by simp only [sHScr]; omega_arith) (by simp only [sHScr]; omega_arith) (by simp only [hashAt, sX]; omega_arith)
+    (by simp only [hashAt, sState, sX]; omega_arith) (by simp only [hashAt, sHScr, sX]; omega_arith) (by rw [sp₅]; omega_arith)
     (v.scratchStack.symm.sub_left stk₅)) fun t₆ ⟨H₆, F₆, G₆, rd₆, wr₆⟩ sy₆ => ?_
   have bsEq : ∀ m p n, Spec.Sha256.bytesAt m p n = Spec.Rsa.bytesAt m p n := fun _ _ _ => rfl
   simp only [bsEq] at H₆
@@ -115,9 +115,9 @@ theorem pHash_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   have C₆ : E.Chg (hRanges g j) s.mem t₆.mem := C₅.trans (Env.Chg.of_frame F₆ fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega) (by omega)
-    · exact Env.in_range (o := (sHScr, 560)) (by simp [hRanges]) (by omega) (by omega)
-    · exact Env.in_range (o := (hashAt g j, g.qLen)) (by simp [hRanges]) (by omega) (by omega)
+    · exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega_arith) (by omega_arith)
+    · exact Env.in_range (o := (sHScr, 560)) (by simp [hRanges]) (by omega_arith) (by omega_arith)
+    · exact Env.in_range (o := (hashAt g j, g.qLen)) (by simp [hRanges]) (by omega_arith) (by omega_arith)
     · exact Env.in_stack stk₅)
   have edi₆ : t₆.gpr .edi = s.gpr .edi := by
     rw [G₆ _ (by decide) (by decide) (by decide) (by decide) (by decide), edi₅]
