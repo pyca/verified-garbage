@@ -15,9 +15,10 @@ the pointers and lengths are public (see `TCB/Sig.lean`); the contracts add
 the postconditions and which other arguments are public. `update` and
 `finalize` may overwrite their arguments passed in memory, where the calling
 convention allows it (`writeArgs`), to pass arguments to the code they
-inline.
+inline. `digest` (`digestApi`) computes the SHA-1 digest of a message in
+memory in one call, with no streaming state.
 
-`update` and `finalize` take the number of bytes of stack below the stack pointer that
+`update`, `finalize` and `digest` take the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
 one that uses none: it depends on the target, and on which functions the
 implementation calls. They keep their working space there; `update_scratch`
@@ -185,5 +186,32 @@ def finalizeScratchApi : Api where
   safety := [
     "The contents of `state` on return are unspecified.",
     "The contents of `scratch` on return are unspecified."]
+
+/-- `vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20])`: the
+whole computation in one call, with no streaming state. -/
+def digestSig : Sig where
+  params := [("data", .slice false .u8 "len"), ("out", .array true .u8 20)]
+
+/-- Writes the SHA-1 digest of the `len` bytes at `data` (20 bytes) to `out`.
+A message in memory is shorter than 2⁶⁴ bytes on every target. -/
+def digestPost (pb : Nat) : digestSig.Post pb :=
+  fun data len out m m' _ => bytesAt m' out 20 = hash (bytesAt m data len.toNat)
+
+/-- `digestPost`. The data is secret. -/
+def digestContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  digestSig.contract A (post := digestPost A.ptrBits) (stack := stack)
+
+/-- `vg_sha1_digest` on every target. -/
+def digestApi : Api where
+  module := "sha1"
+  name := "vg_sha1_digest"
+  sig := digestSig
+  contracts := some fun A stack => digestContract A stack
+  summary := "Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, \
+    `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, \
+    updating and finishing a SHA-1 computation with that message.\n\n\
+    Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may \
+    affect timing, not the data."
+  safety := []
 
 end VG.Spec.Sha1
