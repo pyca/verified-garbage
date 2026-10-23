@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The RSA public-key operation on PPC64LE: loading `pre`
@@ -123,5 +124,54 @@ theorem copyPre_ok {s : State} {B P : Addr} {Z w : Nat} (hs : Scr s B Z) (hP : P
   · rw [m1] at bout
     rw [m3] at tout
     exact (bout.mono (by omega) (by omega)).trans (tout.mono (by omega) (by omega))
+
+/-- `loadX`: the input's `k` bytes (`r9`) into array 4 as `2 w` digits, its
+digits `2 w` and `2 w + 1` := 0, and `r10` back to array 0. -/
+theorem loadX_ok {s : State} {B X : Addr} {Z w k : Nat} (hs : Scr s B Z) (h23 : s.gpr .r23 = B)
+    (h9 : s.gpr .r9 = X) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hk : 1 ≤ k) (hkw : k ≤ 8 * w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off X i) 1)
+    (hsep : ∀ i < k, ∀ x, ofs B x < Z → off X i ≠ x) :
+    WP isa loadX s fun t =>
+      (Mont.val32 t.mem B (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X k) ∧
+        word t.mem B (slot w 4 + 8 * w) = 0 ∧ Outside B (slot w 4) (8 * (w + 1)) s.mem t.mem ∧
+        t.gpr .r10 = off B (slot w 0)) ∧
+      Keep [.r0, .r6, .r10, .r12, .r14, .r15, .r16, .r17] s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e4 := e 4; have e5 := e 5; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  unfold loadX
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok (rd := .r10) (by decide) (by decide) h10 h29 4) fun s₁ ⟨⟨a10, m1⟩, k1⟩ => ?_
+  refine WP.mono (WP.keep [.r12, .r6] (Q := fun s₂ => s₂.gpr .r12 = off X 0 ∧
+    s₂.gpr .r6 = BitVec.ofNat 64 k ∧ s₂.mem = s₁.mem)
+    (by prun [(k1.gpr .r9 (by decide)).trans h9, (k1.gpr .r28 (by decide)).trans h28, BitVec.add_zero])
+    (by decide)) fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  refine WP.seq (WP.mono (loadN_ok (dA := slot w 4) (hs.congr k12.wr) ((k2.gpr _ (by decide)).trans a10)
+    a12 a6 ((k12.gpr _ (by decide)).trans h11) hk hkw hw' (by omega) (by omega)
+    (by rw [k12.rd, k12.wr]; exact hrd) (by intro i hi x hx; rw [m2, m1] at *; exact hsep i hi x hx))
+    fun s₃ ⟨hv, out₃, k3⟩ => ?_)
+  rw [m2, m1] at hv out₃
+  have k13 := k12.trans k3
+  refine WP.mono (WP.keep [.r14, .r0, .r10] (Q := fun t =>
+    t.mem = s₃.mem.writeW (off B (slot w 4 + 8 * w)) (0 : BitVec 64) ∧ t.gpr .r10 = off B (slot w 0))
+    ?_ (by decide)) fun t ⟨⟨tm, t10⟩, k4⟩ => ⟨⟨?_, ?_, ?_, t10⟩, (k13.trans k4).mono⟩
+  · have a10' : s₃.gpr .r10 = off B (slot w 4) := (k3.gpr _ (by decide)).trans ((k2.gpr _ (by decide)).trans a10)
+    have e16 : off B (slot w 4 + 8 * (w + 2)) - BitVec.ofNat 64 16 = off B (slot w 4 + 8 * w) := by
+      rw [off, VG.Offset.add_ofNat_sub B (show 16 ≤ slot w 4 + 8 * (w + 2) by omega)]; congr 2
+    prun [a10', (k13.gpr .r29 (by decide)).trans h29, (k13.gpr .r23 (by decide)).trans h23, off_add, e16, hh,
+      BitVec.add_zero, (hs.congr k13.wr).st (show slot w 4 + 8 * w + 8 ≤ Z by omega)]
+    exact ⟨rfl, by simp [off, slot, hh]⟩
+  · rw [tm, Mont.Outside.val32 (fun x hx => writeW_outside s₃.mem B (d := slot w 4 + 8 * w) 0 (by omega) x hx)
+      (by omega) (by omega)]
+    exact hv
+  · rw [tm]; exact word_writeW_self _ _ _ _
+  · rw [tm]
+    exact (out₃.mono (Nat.le_refl _) (by omega)).trans
+      ((writeW_outside s₃.mem B (d := slot w 4 + 8 * w) 0 (by omega)).mono (by omega) (by omega))
 
 end VG.Proof.Bignum.PPC64LE.Pub
