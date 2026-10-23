@@ -88,20 +88,15 @@ theorem ghash1_ok {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30)
     · crun [scrO, h29, h30, h31, hyo', ho, hP]
       exact ⟨by rw [← hP]; simp only [h30, h31], fun r a b c d e => by simp [a, b, c, d, e], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono hargs fun s₁ ⟨h3, h4, h5, h6, h7, hkeep, hk⟩ => ?_)
-  have he₁ : Env V sp s₁ := he.keep (fun r hr => by
-    simp only [frozen, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      exact hkeep _ (by decide) (by decide) (by decide) (by decide) (by decide))
-    hk.sp hk.rd hk.wr
+  have he₁ : Env V sp s₁ := he.keep (fun r hr => hkeep r (by revert r; decide) (by revert r; decide)
+    (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
   refine WP.mono (ghCall_ok L hyo he₁ (P := P) (n := 1) h3 h4 h5 h6 h7 (by decide)
     (by simpa using hpy) (by simpa using hpw) (by rw [hk.rd, hk.wr]; simpa using hpr)) fun s' h => ?_
   exact ⟨h.rd.trans hk.rd, h.wr.trans hk.wr, h.spk.trans hk.sp,
     fun r hr => by
       rw [h.saved r hr]
-      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl | rfl <;>
-        exact hkeep _ (by decide) (by decide) (by decide) (by decide) (by decide),
+      exact hkeep r (by revert r; decide) (by revert r; decide) (by revert r; decide)
+        (by revert r; decide) (by revert r; decide),
     hk.mem ▸ h.frame, by rw [h.out, blocksAt_one, hk.mem]⟩
 
 end VG.Proof.AesGcm.PPC64LE

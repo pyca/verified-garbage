@@ -87,10 +87,13 @@ structure Perm (c st w : Addr) (s : State) : Prop where
   st : Covers [⟨st, 80⟩] s.wr
   w : Covers [⟨w, 2560⟩] s.wr
 
-/-- The registers the pieces keep: the other arguments of the functions
-(`r19`–`r23`, `r27`), the rounds (`r28`), and the context, the state and
-`W` (`r29`–`r31`). -/
-def frozen : List Reg := [.r18, .r19, .r20, .r21, .r22, .r23, .r27, .r28, .r29, .r30, .r31]
+/-- The registers the pieces keep: our caller's `r2` and `r14`–`r17`
+(which only the functions called touch, and they preserve them), the
+nonce's length (`r18`), the other arguments of the functions (`r19`–`r23`,
+`r27`), the rounds (`r28`), and the context, the state and `W`
+(`r29`–`r31`): every nonvolatile register but `r24`–`r26`. -/
+def frozen : List Reg := [.r2, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r27, .r28,
+  .r29, .r30, .r31]
 
 /-- The registers `frozen` hold their values `V`, the stack pointer is `sp`,
 and the state may access the context, the state and `W` (at `V r29`,
