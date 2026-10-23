@@ -357,35 +357,35 @@ theorem widePower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 �
   have est := Lf.est
   have bw := bc_eq_cwc len .wide
   have bl := h.bytes_lt
-  have ho' : o ≤ 19 := by omega
+  have ho' : o ≤ 19 := by omega_arith
   have cb1 : cb len (one .wide) = bc len .wide := by simp [cb, one]
   have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
   unfold widePower
   refine WP.seq (WP.mono (copy_ok h (x := .slot .wide f) (d := .slot .wide 0) (one_ok .wide)
-    (by rw [cb1]; omega) (by rw [cb1, l0]; omega) (by rw [cb1, l0]; exact .inl (by omega)))
+    (by rw [cb1]; omega_arith) (by rw [cb1, l0]; omega_arith) (by rw [cb1, l0]; exact .inl (by omega_arith)))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   rw [cb1, l0] at O₁
   rw [cw1, l0, hp] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copy_ok h₁ (x := .slot .wide 15) (d := .slot .wide 5) (one_ok .wide)
-    (by rw [cb1, l15]; omega) (by rw [cb1, l5]; omega) (by rw [cb1, l5, l15]; exact .inl (by omega)))
+    (by rw [cb1, l15]; omega_arith) (by rw [cb1, l5]; omega_arith) (by rw [cb1, l5, l15]; exact .inl (by omega_arith)))
     fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   rw [cb1, l5] at O₂
-  rw [cw1, l5, O₁.val32 (d := lo len (.slot .wide 15)) (k := cwc len .wide) (.inr (by omega)) (by omega), hx] at V₂
-  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
+  rw [cw1, l5, O₁.val32 (d := lo len (.slot .wide 15)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith), hx] at V₂
+  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copy_ok h₂ (x := .slot .wide e) (d := .slot .wide 8) (one_ok .wide)
-    (by rw [cb1]; omega) (by rw [cb1, l8]; omega) (by rw [cb1, l8]; exact .inl (by omega)))
+    (by rw [cb1]; omega_arith) (by rw [cb1, l8]; omega_arith) (by rw [cb1, l8]; exact .inl (by omega_arith)))
     fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
   rw [cb1, l8] at O₃
-  rw [cw1, l8, O₂.val32 (d := lo len (.slot .wide e)) (k := cwc len .wide) (.inr (by omega)) (by omega),
-    O₁.val32 (d := lo len (.slot .wide e)) (k := cwc len .wide) (.inr (by omega)) (by omega), hd] at V₃
-  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega))
+  rw [cw1, l8, O₂.val32 (d := lo len (.slot .wide e)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith),
+    O₁.val32 (d := lo len (.slot .wide e)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith), hd] at V₃
+  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega_arith))
   have M₃ : sv u₃.mem base len .wide 0 = p := by
-    simp only [sv]; rw [l0, O₃.val32 (d := numBase) (k := cwc len .wide) (.inl (by omega)) (by omega),
-      O₂.val32 (d := numBase) (k := cwc len .wide) (.inl (by omega)) (by omega), V₁]
+    simp only [sv]; rw [l0, O₃.val32 (d := numBase) (k := cwc len .wide) (.inl (by omega_arith)) (by omega_arith),
+      O₂.val32 (d := numBase) (k := cwc len .wide) (.inl (by omega_arith)) (by omega_arith), V₁]
   have B₃ : sv u₃.mem base len .wide 5 = x := by
-    simp only [sv]; rw [l5, O₃.val32 (d := numBase + 5 * st len .wide) (k := cwc len .wide) (.inl (by omega))
-      (by omega), V₂]
+    simp only [sv]; rw [l5, O₃.val32 (d := numBase + 5 * st len .wide) (k := cwc len .wide) (.inl (by omega_arith))
+      (by omega_arith), V₂]
   have E₃ : sv u₃.mem base len .wide 8 = d := by simp only [sv]; rw [l8, V₃]
   refine WP.mono (powerTail_ok h₃ .wide ho16 ho M₃ B₃ E₃) fun u ⟨F, V, K⟩ => ⟨?_, V, ?_⟩
   · have i0 := slot_in h .wide (j := 0) (by decide)

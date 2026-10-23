@@ -297,7 +297,7 @@ theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len
   have po : prodOff = 256 := rfl
   have ma : mulAOff = 2312 := rfl
   have e11 : lo len (.slot .wide 11) = numBase + 11 * st len .wide := rfl
-  have split : cwc len .wide + cwc len .wide = 2 * cwc len .wide := by omega
+  have split : cwc len .wide + cwc len .wide = 2 * cwc len .wide := by omega_arith
   -- The coefficient.
   refine WP.seq (WP.mono (coefficient_ok h c.p (val32_low (b := cwc len .wide) (by rw [split]; exact hmp) hmpb)
     hmpl (val32_low (b := cwc len .wide) (by rw [split]; exact hmq) hmqb) c.qi) fun u₁ ⟨F₁, V₁, K₁⟩ => ?_)
@@ -306,27 +306,27 @@ theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len
       val32 u₁.mem base d k = val32 s.mem base d k := fun hd hk => coR_keep h F₁ h.room hd hk
   have a₁ := acc_keep h F₁ h.room (coR_fit h) (by
     intro q hq; simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl <;> dsimp only <;> omega)
+    rcases hq with rfl | rfl | rfl <;> dsimp only <;> omega_arith)
   -- `m_q + q h`.
   refine WP.seq (WP.mono (recombine_ok h₁ (q := componentValue m₀ args 8) (hc := (mp + safeM p - mq % safeM p) %
       safeM p * componentValue m₀ args 14 % safeM p) (mq := mq)
-    (by rw [k₁ (d := lo len (.slot .wide 11)) (k := cwc len .wide) (by omega) (by omega)]; exact c.q)
+    (by rw [k₁ (d := lo len (.slot .wide 11)) (k := cwc len .wide) (by omega_arith) (by omega_arith)]; exact c.q)
     (by simp only [sv] at V₁; exact V₁)
-    (by rw [k₁ (d := lo len (.slot .wide 17)) (k := 2 * cwc len .wide) (by omega) (by omega)]; exact hmq)) fun u₂ ⟨F₂, V₂, K₂⟩ => ?_)
+    (by rw [k₁ (d := lo len (.slot .wide 17)) (k := 2 * cwc len .wide) (by omega_arith) (by omega_arith)]; exact hmq)) fun u₂ ⟨F₂, V₂, K₂⟩ => ?_)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (by
     intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
+    rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith)
   rw [sp₁] at F₂
   have a₂ := acc_keep h F₂ h.room (by
     intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by
+    rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by
     intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl <;> simp only [multOff, prodOff, mulAOff] <;> omega)
+    rcases hq with rfl | rfl | rfl | rfl <;> simp only [multOff, prodOff, mulAOff] <;> omega_arith)
   -- The result cleared unless accepted, and written out.
   unfold exportResult
   refine maskResult_ok h₂ (c := cb) (by rw [a₂, a₁, hacc]) fun u₃ O₃ V₃ K₃ => ?_
-  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega))
+  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega_arith))
   refine WP.mono (writeResult_ok h₃ h₃.crt.outFit h₃.crt.outWrite h₃.crt.outApart) fun t ⟨B, A, F, Kt⟩ => ⟨fun fits => ?_, ?_, ?_, ?_⟩
   · cases cb
     · rw [V₃] at B
@@ -334,33 +334,33 @@ theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len
       exact B (Nat.two_pow_pos _)
     · have fits := fits rfl
       have r64 : r < 2 ^ (32 * (2 * cwc len .wide)) :=
-        Nat.lt_of_lt_of_le fits (Nat.pow_le_pow_right (by decide) (by omega))
+        Nat.lt_of_lt_of_le fits (Nat.pow_le_pow_right (by decide) (by omega_arith))
       have R₂ : val32 u₂.mem base (lo len (.slot .wide 19)) (cwc len .wide) = r :=
         val32_low (b := cwc len .wide) (by rw [split]; exact V₂ r64)
-          (Nat.lt_of_lt_of_le fits (Nat.pow_le_pow_right (by decide) (by omega)))
+          (Nat.lt_of_lt_of_le fits (Nat.pow_le_pow_right (by decide) (by omega_arith)))
       rw [V₃, R₂] at B
       simp only [↓reduceIte] at B ⊢
       exact B fits
   · have a₃ : u₃.mem.readW (off base accOff) 32 = cmask cb := by
       rw [show u₃.mem.readW (off base accOff) 32 = u₂.mem.readW (off base accOff) 32 from
-        BitVec.eq_of_toNat_eq (O₃.w32 (d := accOff) (.inl (by omega)) (by omega)), a₂, a₁, hacc]
+        BitVec.eq_of_toNat_eq (O₃.w32 (d := accOff) (.inl (by omega_arith)) (by omega_arith)), a₂, a₁, hacc]
     rw [A, a₃]; cases cb <;> rfl
   · have F₃ : Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) u₂.mem u₃.mem :=
-      body_of_outside O₃ (.inr ⟨by omega, by omega⟩) (by omega)
+      body_of_outside O₃ (.inr ⟨by omega_arith, by omega_arith⟩) (by omega_arith)
     have Ft : Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) u₃.mem t.mem :=
       F.mono (by intro r hr; rw [List.mem_singleton.mp hr]; simp [rtBody])
-    refine ((((toBody F₁ ?_ (by omega)).trans (toBody F₂ ?_ (by omega))).trans F₃).trans Ft)
+    refine ((((toBody F₁ ?_ (by omega_arith)).trans (toBody F₂ ?_ (by omega_arith))).trans F₃).trans Ft)
     · intro q hq; simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl
-      · exact .inl (show 0 + 4 ≤ 32 by omega)
-      · exact .inl (show 12 + 4 ≤ 32 by omega)
-      · exact .inr ⟨by dsimp only; omega, by have := coR_fit h _ (by simp : (numBase, 9 * st len .wide) ∈ coR len); exact this⟩
+      · exact .inl (show 0 + 4 ≤ 32 by omega_arith)
+      · exact .inl (show 12 + 4 ≤ 32 by omega_arith)
+      · exact .inr ⟨by dsimp only; omega_arith, by have := coR_fit h _ (by simp : (numBase, 9 * st len .wide) ∈ coR len); exact this⟩
     · intro q hq; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl
-      · exact .inr ⟨by simp only [multOff]; omega, by simp only [multOff]; omega⟩
-      · exact .inr ⟨by simp only [prodOff]; omega, by dsimp only; omega⟩
-      · exact .inr ⟨by simp only [mulAOff]; omega, by dsimp only; omega⟩
-      · exact .inr ⟨by dsimp only; omega, by dsimp only; omega⟩
+      · exact .inr ⟨by simp only [multOff]; omega_arith, by simp only [multOff]; omega_arith⟩
+      · exact .inr ⟨by simp only [prodOff]; omega_arith, by dsimp only; omega_arith⟩
+      · exact .inr ⟨by simp only [mulAOff]; omega_arith, by dsimp only; omega_arith⟩
+      · exact .inr ⟨by dsimp only; omega_arith, by dsimp only; omega_arith⟩
   · exact (((K₁.trans K₂).trans (K₃.mono (by decide))).trans (Kt.mono (by decide)))
 
 /-- Private CRT at a run-time width: the result written out, cleared unless the key and the input are
