@@ -718,7 +718,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 

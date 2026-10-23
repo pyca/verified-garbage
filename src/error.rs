@@ -17,33 +17,15 @@
 ///
 /// Every module whose constructor fails only on the length of the key
 /// returns this one type.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidKeyLength;
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-))]
 impl core::fmt::Display for InvalidKeyLength {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("invalid key length")
     }
 }
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-))]
 impl core::error::Error for InvalidKeyLength {}
 
 /// Implements `core::fmt::Display` for the error enum `$ty`, writing `$msg`
@@ -78,6 +60,7 @@ mod tests {
             };
         }
         check!(
+            super::InvalidKeyLength,
             crate::blowfish_ecb::Error::InvalidKeyLength,
             crate::blowfish_ecb::Error::IncompleteBlock,
             crate::blowfish_ecb::Error::OutputTooSmall,
@@ -99,7 +82,6 @@ mod tests {
             target_arch = "x86"
         ))]
         check!(
-            super::InvalidKeyLength,
             crate::aes_ccm::Error::InvalidKeyLength,
             crate::aes_ccm::Error::InvalidNonceLength,
             crate::aes_ccm::Error::InvalidTextLength,
