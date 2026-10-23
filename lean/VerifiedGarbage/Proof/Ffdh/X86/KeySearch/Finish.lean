@@ -50,9 +50,9 @@ theorem word64 {m : Mem} {a : Addr} {k : Nat} (hk : k < 2 ^ 32) (lo : m.readW a 
 
 /-- The return address, apart from every region the run writes. -/
 theorem ret_apart {o : State} (A : KeySearchABI o) : ∀ r ∈ frameR o, (retR o).Disjoint r := by
-  have h1 : 164 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 220 ≤ (o.gpr .esp).toNat := A.stackLow
   have hl : (retR o).Disjoint (lowR o) := by
-    show Region.Disjoint ⟨(o.gpr .esp).setWidth 64, 4⟩ ⟨(o.gpr .esp).setWidth 64 - BitVec.ofNat 64 164, 164⟩
+    show Region.Disjoint ⟨(o.gpr .esp).setWidth 64, 4⟩ ⟨(o.gpr .esp).setWidth 64 - BitVec.ofNat 64 220, 220⟩
     exact Offset.base_disjoint_below _ (by omega)
   exact apart A A.retX A.retY A.retU A.retB A.retS A.retA hl
 

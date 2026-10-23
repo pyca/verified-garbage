@@ -35,9 +35,9 @@ theorem sieve_pair {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byt
     RelCT isa (LoadedPair E c entropy) (VG.Impl.RsaKeyGen.X86.CandidateSieve.code E.width)
       (Candidate.WithFlag (LoadedPair E c entropy)
         (Spec.RsaKeyGen.obviouslyComposite (64 * E.width) c)) := by
-  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 96) := below_inner (by decide) v.low
-  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 96) := v.stackFar _ List.mem_cons_self
-  have tableFar : E.tableRegion.Disjoint (below E.p 96) := v.stackFar _
+  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 136) := below_inner (by decide) v.low
+  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 136) := v.stackFar _ List.mem_cons_self
+  have tableFar : E.tableRegion.Disjoint (below E.p 136) := v.stackFar _
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   intro s t tr ur u z P A B
   have trace := (CandidateSieve.code_trace v.sieve_valid (c := c) (d := c) (fun _ _ => rfl) rfl
@@ -56,10 +56,10 @@ theorem LoadedPair.keepFlags {E : Environment} (v : E.Valid) {c : Nat} {entropy 
       (by rw [Z.syms])).1⟩
 
 theorem sieved_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (LoadedPair E c entropy)
@@ -85,10 +85,10 @@ theorem sieved_trace {mont round : Prog isa} {montName roundName : String}
       (fun _ _ _ => trivial))
 
 theorem body_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (EntryPair E c entropy)
@@ -110,10 +110,10 @@ def FramedPair (E : Environment) (c : Nat) (entropy : List Byte) (s t : State) :
   EntryPair E c entropy (Compact.entered s) (Compact.entered t) ∧ s.gpr .esp = t.gpr .esp
 
 theorem framed_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (FramedPair E c entropy)

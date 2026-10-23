@@ -14,10 +14,10 @@ namespace VG.Proof.Dsa.X86.ProbablePrime
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem correct {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56) {bits : Nat} (b : Bits bits)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) {bits : Nat} (b : Bits bits)
     (s : State) (h : (contract bits).pre s) :
     ∃ trace t, Exec isa (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) s trace t ∧
       abiPreserved s t ∧ (contract bits).post s t := by

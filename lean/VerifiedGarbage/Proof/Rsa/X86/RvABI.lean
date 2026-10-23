@@ -23,10 +23,10 @@ abbrev bodyRegions (s : State) : List Region :=
   [⟨(caller s).B, (caller s).Z⟩, (caller s).buffer 0, (caller s).buffer 2]
 
 /-- The 40 bytes below `esp` the calls' frames use, as the contract states them. -/
-abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 40#64, 40⟩
+abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩
 
 structure ABI (s : State) : Prop where
-  stackLow : 40 ≤ (s.gpr .esp).toNat
+  stackLow : 96 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 52 ≤ 2 ^ 32
   rd : s.rd = [(caller s).buffer 4, (caller s).buffer 6, (caller s).buffer 8]
   wr : s.wr = [(caller s).buffer 0, (caller s).buffer 2,
@@ -51,7 +51,7 @@ structure ABI (s : State) : Prop where
   dBound : (arg s 9).toNat ≤ (arg s 5).toNat
   scratchLength : Spec.Rsa.scratchWords (arg s 5).toNat ≤ (arg s 11).toNat
 
-theorem abi_of {s : State} (h : (Spec.Rsa.recoverPrimesContract abi 40).pre s) : ABI s := by
+theorem abi_of {s : State} (h : (Spec.Rsa.recoverPrimesContract abi 96).pre s) : ABI s := by
   sig_pre [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have rd : s.rd = [(caller s).buffer 4, (caller s).buffer 6, (caller s).buffer 8] := by
@@ -69,8 +69,8 @@ theorem abi_of {s : State} (h : (Spec.Rsa.recoverPrimesContract abi 40).pre s) :
     exact Region.Disjoint.symm (by with_reducible assumption)
 
 /-- The stack below `esp`, in the contract's form. -/
-theorem below_eq {sp : BitVec 32} (h : 40 ≤ sp.toNat) :
-    below sp 40 = ⟨sp.setWidth 64 - 40#64, 40⟩ := by
+theorem below_eq {sp : BitVec 32} (h : 96 ≤ sp.toNat) :
+    below sp 96 = ⟨sp.setWidth 64 - 96#64, 96⟩ := by
   simp only [below]
   rw [VG.X86.Taint.sub_setWidth h]
 

@@ -38,15 +38,15 @@ theorem CallSeparation.readWriteAll {s : State} (A : CallLayout s) (D : CallSepa
 
 theorem CallLayout.savedSub {s : State} (A : CallLayout s) :
     (⟨(callEnvironment s).p.setWidth 64, 16⟩ : Region).Sub (reservedRegion s) := by
-  have reserved : reservedRegion s = below (s.gpr .esp) 112 := by
+  have reserved : reservedRegion s = below (s.gpr .esp) 152 := by
     unfold reservedRegion below
     rw [Taint.sub_setWidth A.low]
   rw [reserved]
   exact below_sub (by decide) A.low
 
 theorem CallLayout.bodyStackSub {s : State} (A : CallLayout s) :
-    (below (callEnvironment s).p 96).Sub (reservedRegion s) := by
-  have reserved : reservedRegion s = below (s.gpr .esp) 112 := by
+    (below (callEnvironment s).p 136).Sub (reservedRegion s) := by
+  have reserved : reservedRegion s = below (s.gpr .esp) 152 := by
     unfold reservedRegion below
     rw [Taint.sub_setWidth A.low]
   rw [reserved]

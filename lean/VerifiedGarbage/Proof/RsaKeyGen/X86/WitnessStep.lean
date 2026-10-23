@@ -28,10 +28,10 @@ theorem flag_value {x : BitVec 32} {b : Bool} (h : x.toNat = if b then 1 else 0)
   cases b <;> simpa using h
 
 theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity used randLen draw k : Nat} {p rand : BitVec 32}
     (two : 2 ≤ k) (narrow : 4 * k ≤ draw) (wide : draw ≤ 8 * g.w) (four : draw % 4 = 0)
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s)
@@ -42,8 +42,8 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     (separate : (⟨rand.setWidth 64, randLen⟩ : Region).Disjoint ⟨g.W, g.L⟩)
     (odd : c % 2 = 1) (large : 3 ≤ c) (shape : Spec.RsaKeyGen.bitLength (c - 1) = 32 * k)
     (roundsFit : w32 s.mem g.W 176 + 1 < 2 ^ 32) (uniformFit : w32 s.mem g.W 192 + 1 < 2 ^ 32)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     WP isa (codeAt draw k g.w montName mont roundName round) s fun t =>
       let sampled := Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) draw))
@@ -53,7 +53,7 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
       w32 t.mem g.W 168 = WitnessStatus.status (Spec.MillerRabin.round c sampled.1)
         (w32 s.mem g.W 176 + 1) (w32 s.mem g.W 192 + sampled.2.toNat) (w32 s.mem g.W 200) ∧
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem t.mem ∧ Keeps clob s t := by
+      Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps clob s t := by
   unfold codeAt
   refine WP.seq (WP.mono (WitnessAdvance.codeAt_ok (step := draw) v S source consumed (by omega))
     fun a ⟨A, sourceA, usedA, Oa, Ka⟩ => ?_)
@@ -113,11 +113,11 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
   have Wb' := Wb.mono (fun r mem => List.mem_append_left _ (List.mem_append_right _ mem) : ∀ r ∈ WitnessRound.ranges g, r ∈ ranges g)
   have Wt : WorkspaceFrame g (ranges g) b.mem t.mem := WorkspaceFrame.of_outs B.ready.scratch.nowrap
     (Ot.mono (fun r mem => List.mem_append_right _ mem))
-  have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem a.mem :=
+  have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem a.mem :=
     (workspaceGlobalFrame (Outs.of_outside Oa (List.mem_singleton_self _))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; unfold VG.Impl.RsaKeyGen.X86.WitnessAdvance.usedOffset; omega)).mono
       (fun r mem => List.mem_append_left _ mem)
-  have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 68]) b.mem t.mem :=
+  have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) b.mem t.mem :=
     (workspaceGlobalFrame Ot (fun r mem => by
       simp only [WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with (rfl | rfl) | rfl <;> have := v.headerFit <;>
@@ -128,10 +128,10 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     ((Ka.mono (by unfold clob; decide)).widen Kb).widen Kt⟩
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity used randLen : Nat} {p rand : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s)
     (source : s.mem.readW (off g.W 28) 32 = rand) (consumed : w32 s.mem g.W 152 = used)
@@ -141,8 +141,8 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (separate : (⟨rand.setWidth 64, randLen⟩ : Region).Disjoint ⟨g.W, g.L⟩)
     (odd : c % 2 = 1) (large : 3 ≤ c) (shape : Spec.RsaKeyGen.bitLength (c - 1) = 64 * g.w)
     (roundsFit : w32 s.mem g.W 176 + 1 < 2 ^ 32) (uniformFit : w32 s.mem g.W 192 + 1 < 2 ^ 32)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     WP isa (code g.w montName mont roundName round) s fun t =>
       let sampled := Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) (8 * g.w)))
@@ -152,7 +152,7 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
       w32 t.mem g.W 168 = WitnessStatus.status (Spec.MillerRabin.round c sampled.1)
         (w32 s.mem g.W 176 + 1) (w32 s.mem g.W 192 + sampled.2.toNat) (w32 s.mem g.W 200) ∧
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
-      Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem t.mem ∧ Keeps clob s t :=
+      Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps clob s t :=
   codeAt_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v
     (by have := v.minWidth; omega) (by omega) (by omega) (by omega) length S source consumed randFit randLenFit enough
     readable separate odd large (by rw [shape]; omega) roundsFit uniformFit fit far lengthFar

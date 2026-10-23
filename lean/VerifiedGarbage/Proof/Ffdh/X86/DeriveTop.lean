@@ -47,10 +47,10 @@ structure DerivePublicABI (s : State) : Prop where
   scratchArgs : (⟨argumentPointer s 7, (arg s 8).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩
   retOut : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
-  belowOut : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
-  belowX : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ : Region).Disjoint
+  belowOut : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
     ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
   outBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   domBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
@@ -106,9 +106,9 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
 structure Geo (args : Nat → BitVec 32) (base : Addr) (bytes len dlen xl : Nat) (sp : BitVec 32)
     (rd wr : List Region) : Prop where
   dom : DomGeo args base bytes len dlen rd wr
-  dom40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 40)
+  dom40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
   x : XGeo args base bytes len xl rd wr
-  x40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+  x40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
   out : OutAt args base bytes len 0 sp wr
   e1 : args 1 = BitVec.ofNat 32 len
 
@@ -120,17 +120,17 @@ theorem frame_geo {s : State} (A : DerivePublicABI s) {sp : BitVec 32}
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega)
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
-  have sub40 : Region.Sub (below sp 40) ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ := by
+  have sub40 : Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 40#64 = BitVec.ofNat 64 116 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
-  have subF : Region.Sub ⟨sp.setWidth 64, 76⟩ ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ := by
+  have subF : Region.Sub ⟨sp.setWidth 64, 76⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
     exact Offset.sub_below _ (by decide) (by decide)
   have oR : (arg s 1).toNat = pLenOf Impl.Ffdh.X86.DerivePublic.args s := A.outLen
@@ -156,11 +156,11 @@ theorem frame_keep {s : State} (A : DerivePublicABI s) {m : Mem}
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.DerivePublic.args s, wsSize Impl.Ffdh.X86.DerivePublic.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase Impl.Ffdh.X86.DerivePublic.args s, wsSize Impl.Ffdh.X86.DerivePublic.args s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 116#64, 116⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   exact frame_bytes Ft (fun r hr => by

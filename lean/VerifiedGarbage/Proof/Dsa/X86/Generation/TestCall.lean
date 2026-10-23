@@ -55,7 +55,7 @@ theorem readW_low (m : Mem) (a : Addr) : m.readW a 32 = (m.readW a 64).setWidth 
 word for `used`, and the stack. -/
 theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.gpr .esp = E.sp)
     (Fm : Frame [below E.sp 24] t.mem w.mem)
-    {k : Nat} (hk : k ≤ 160) (Fu : Frame (testWr E t ++ [below (t.gpr .esp) k]) t.mem u.mem)
+    {k : Nat} (hk : k ≤ 200) (Fu : Frame (testWr E t ++ [below (t.gpr .esp) k]) t.mem u.mem)
     (K : Spec.Dsa.ModPow.Keeps (off E.base sPP) ppWords
       [(0, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits))] w.mem u.mem) :
     E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
@@ -67,7 +67,7 @@ theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.g
   simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false, forall_eq_or_imp, forall_eq] at hx
   obtain ⟨hPP, hUO, hS⟩ := hx
-  have hS' : ∀ k ≤ 160, ¬ (below E.sp k).Contains x 1 := fun k hk h => hS (below_sub hk (by omega) x h)
+  have hS' : ∀ k ≤ 200, ¬ (below E.sp k).Contains x 1 := fun k hk h => hS (below_sub hk (by omega) x h)
   by_cases hw : (⟨off E.base sPP, 8 * ppWords⟩ : Region).Contains x 1
   · -- In the working space but not its scratch: the test kept it.
     have hi : (x - off E.base sPP).toNat < 8 * ppWords := by simp only [Region.Contains] at hw; omega
@@ -197,7 +197,7 @@ theorem testEntry_facts {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : 
 
 /-- The test's call. -/
 theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
-    (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 112)
+    (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 152)
     {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {used : Nat}
     (A : TestArgs E.base (E.wit.setWidth 32) E.witLen used s t) (hu : used ≤ E.witLen)
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords)
@@ -273,7 +273,7 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     omega
 
 theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
-    (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 112)
+    (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 152)
     {E : Env} (v : E.Valid) {s : State} (B : Base E s) {used : Nat}
     (hU : s.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used) (hu : used ≤ E.witLen)
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords)

@@ -21,7 +21,7 @@ include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Impl.Rsa.X86.Recover
 
-theorem verified : Verified target VG.Impl.Rsa.X86.RecoverRt.code (Spec.Rsa.recoverPrimesContract abi 40) :=
+theorem verified : Verified target VG.Impl.Rsa.X86.RecoverRt.code (Spec.Rsa.recoverPrimesContract abi 96) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Rsa.X86.Recover

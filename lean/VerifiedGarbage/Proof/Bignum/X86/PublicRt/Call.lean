@@ -1,9 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
-
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
+import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.ByteWords
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 `mul o a b` (`Impl/Bignum/X86/PublicRt.lean`): from the arguments' frame
 below `esp`, a call of `vg_rsa_mont_mul_at` writes the Montgomery product of
 numbers `a` and `b` into number `o`, changing only it, the callee's range
-and the 40 bytes of stack below `esp` (`mul_ok`).
+and the 96 bytes of stack below `esp` (`mul_ok`).
 -/
 
 @[expose] public section
@@ -29,7 +29,7 @@ section
 variable {s g : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 /-- The callee's arguments: the stored words of the frame. -/
-theorem callee_arg (low : 40 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
+theorem callee_arg (low : 96 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
     {o a b : Nat} (hread : ∀ i < 9, g.mem.readW ((g.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i)) 32 =
         mulArg len o a b (s.gpr .edi) (args 9) i) {i : Nat} (hi : i < 9) :
     arg (calleeOf g base bytes) i = mulArg len o a b (s.gpr .edi) (args 9) i := by
@@ -42,7 +42,7 @@ theorem callee_arg (low : 40 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr 
   rw [e, hread i hi]
 
 /-- The callee's memory is the caller's, but for the 40 bytes below `esp`. -/
-theorem callee_frame (low : 40 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
+theorem callee_frame (low : 96 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
     (hFg : Frame [below (s.gpr .esp) 36] s.mem g.mem) :
     Frame [below (s.gpr .esp) 40] s.mem (calleeOf g base bytes).mem := by
   have hsp := (s.gpr .esp).isLt
@@ -50,9 +50,9 @@ theorem callee_frame (low : 40 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gp
   have F₁ : Frame [below (g.gpr .esp) 4] g.mem g.callEntry.mem :=
     Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_top (Nat.le_refl 4) (by omega) (by decide))
   refine (hFg.sub fun r hr => ?_).trans (F₁.sub fun r hr => ?_)
-  · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, below_sub (by decide) low⟩
+  · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, below_sub (by decide) (by omega)⟩
   · rw [List.mem_singleton.mp hr, hesp]
-    exact ⟨_, List.mem_singleton_self _, below_inner (by decide) low⟩
+    exact ⟨_, List.mem_singleton_self _, below_inner (by decide) (by omega)⟩
 
 end
 
@@ -92,19 +92,19 @@ theorem ofs_in {base x : Addr} {k : Nat} (h : (⟨base, k⟩ : Region).Contains 
 theorem ofs_eq (base x : Addr) : x = base + BitVec.ofNat 64 (ofs base x) := by
   simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
 
-theorem rtBody_noSp : NoSp Rt.body := VG.Proof.Mont.X86.StaticSquare.body_NoSp
+theorem rtBody_noSp : NoSp Sse2.atBody := VG.Proof.Mont.X86.Sse2.atBody_NoSp
 
-theorem rtBody_stackUse : stackUse Rt.body = 0 := VG.Proof.Mont.X86.StaticSquare.body_stack
+theorem rtBody_stackUse : stackUse Sse2.atBody = 56 := VG.Proof.Mont.X86.Sse2.atBody_stack
 
 theorem mulBody_noSp (o a b : Nat) :
-    NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) := by
+    NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) := by
   apply NoSp.of_all
   have e : (!Taint.clobbers (Instr.alu AluOp.add Reg.eax (Src.reg Reg.edx)) Reg.esp) = true := rfl
   rw [Code.allInstrs_eq]
   simp only [instrs, mulArgs, widthB, offEax, List.all_append, List.all_cons, List.all_nil, List.all_replicate, e,
     ite_self]
   rw [← Code.allInstrs_eq]
-  rw [show Rt.body.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.StaticSquare.body_noSp]
+  rw [show Sse2.atBody.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.Sse2.atBody_allNoSp]
   rfl
 
 theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -114,13 +114,14 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
     (hB : val32 s.mem base (numAt len b) (nw len) < val32 s.mem base numOff (nw len)) :
     WP isa (PublicRt.mul o a b) s fun t =>
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 40]
+      Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 96]
         s.mem t.mem ∧
       val32 t.mem base (numAt len o) (nw len) < val32 s.mem base numOff (nw len) ∧
       val32 t.mem base (numAt len o) (nw len) * 2 ^ (32 * nw len) % val32 s.mem base numOff (nw len) =
         val32 s.mem base (numAt len a) (nw len) * val32 s.mem base (numAt len b) (nw len) %
           val32 s.mem base numOff (nw len) := by
   have low := R.low
+  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega
   have hsp := (s.gpr .esp).isLt
   have nwr := h.scratch.nowrap
   unfold PublicRt.mul
@@ -146,14 +147,16 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   have hscr : (⟨base, bytes⟩ : Region) ∈ g.wr := by
     rw [Kg.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.scratch.wr
   have argA : argAddr g.callEntry 0 = (g.gpr .esp).setWidth 64 := by rw [argAddr_callEntry]; simp
-  refine WP.call (k := Spec.Rsa.MontMul.mulContract abi 0) (rd := [⟨argAddr g.callEntry 0, 36⟩])
-    (wr := [⟨base, bytes⟩]) rt_correct rtBody_noSp (by rw [rtBody_stackUse]; omega) (rtPre_of A)
+  have low96 := R.low
+  refine WP.call (k := Spec.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
+    (wr := [⟨base, bytes⟩]) VG.Proof.Mont.X86.Sse2.at_correct rtBody_noSp (by rw [rtBody_stackUse]; omega)
+    (callee_pre A R gEsp)
     (Covers.of_mem fun r hr => ?_) (Covers.of_mem fun r hr => ?_) fun s' rd' wr' cs' F _ ⟨s₂, m₂, _, post⟩ => ?_
   · rcases List.mem_append.mp hr with hr | hr <;> rw [List.mem_singleton.mp hr]
     · rw [argA]; exact List.mem_append_right _ hframe
     · exact List.mem_append_right _ hscr
   · rw [List.mem_singleton.mp hr]; exact hscr
-  change (Spec.Rsa.MontMul.mulContract abi 0).post (calleeOf g base bytes) s₂ at post
+  change (Spec.Rsa.MontMul.mulContract abi 56).post (calleeOf g base bytes) s₂ at post
   sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at post
   obtain ⟨L₂, C₂, K₂⟩ := post
   have hw := wb_le h.upper
@@ -184,7 +187,7 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
         val32 s.mem base d (nw len) := fun d hd => by
     rw [← read_eq_val32, ← read_eq_val32, Fc'.read (r := ⟨base, bytes⟩)
       (Offset.contains_base _ (by rw [← wb_eq]; exact hd) (by omega))
-      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart.symm) (by simp only [nw]; omega)]
+      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by simp only [nw]; omega)]
   have f0 := (h.fits (j := 0) (by decide)).1
   have fa := (h.fits (j := a) (by omega)).1
   have fb := (h.fits (j := b) (by omega)).1
@@ -205,7 +208,8 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   · -- Memory: the callee's range and the result in the working space, the stack below `esp` outside it.
     have f5 := (h.fits (j := 5) (by decide)).2
     have fo := (h.fits (j := o) (by omega)).1
-    have nst : ¬ (below (s.gpr .esp) 40).Contains x 1 := hx _ (by simp)
+    have nst96 : ¬ (below (s.gpr .esp) 96).Contains x 1 := hx _ (by simp)
+    have nst : ¬ (below (s.gpr .esp) 40).Contains x 1 := fun hc => nst96 (below_sub (by decide) low96 x hc)
     have no5 : ¬ (⟨off base (numAt len 5), 3 * wb len + 56⟩ : Region).Contains x 1 := hx _ (by simp)
     have noo : ¬ (⟨off base (numAt len o), wb len⟩ : Region).Contains x 1 := hx _ (by simp)
     rw [freed_mem]
@@ -221,10 +225,10 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
       exact Fc' x fun r hr => by rw [List.mem_singleton.mp hr]; exact nst
     · rw [F x fun r hr => ?_]
       · exact hFg x fun r hr => by
-          rw [List.mem_singleton.mp hr]; exact fun hc => nst (below_sub (by decide) low x hc)
+          rw [List.mem_singleton.mp hr]; exact fun hc => nst (below_sub (by decide) low40 x hc)
       · rcases List.mem_append.mp hr with hr | hr <;> rw [List.mem_singleton.mp hr]
         · exact hin
         · rw [rtBody_stackUse, gEsp]
-          exact fun hc => nst (below_inner (a := 0 + 4) (k := 36) (b := 40) (by decide) low x hc)
+          exact fun hc => nst96 (below_inner (a := 56 + 4) (k := 36) (b := 96) (by decide) low96 x hc)
 
 end VG.Proof.Bignum.X86.PublicRt

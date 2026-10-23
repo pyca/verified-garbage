@@ -22,7 +22,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Dsa.X86.ProbablePrime
 
 def contract (bits : Nat) : Contract isa :=
-  Spec.Dsa.ProbablePrime.contract (layout bits) (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 112
+  Spec.Dsa.ProbablePrime.contract (layout bits) (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
 
 def callEnvironment (bits : Nat) (s : State) : Environment where
   bits := bits
@@ -36,14 +36,14 @@ def callEnvironment (bits : Nat) (s : State) : Environment where
 
 def callEntropy (s : State) : List Byte := Spec.Rsa.bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat
 
-def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 112#64, 112⟩
+def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 152#64, 152⟩
 
 def tableRegionOf (s : State) : Region :=
   ⟨(s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64, 8192⟩
 
 /-- What the precondition says, in the shape `sig_pre` leaves it. -/
 structure CallFacts (bits : Nat) (s : State) : Prop where
-  low : 112 ≤ (s.gpr .esp).toNat
+  low : 152 ≤ (s.gpr .esp).toNat
   argsFit : (s.gpr .esp).toNat + 4 + 20 ≤ 2 ^ 32
   rdTable : s.rd.drop (s.rd.length - 1) = Abi.constRegions (fun name => (s.syms name).setWidth 64)
     VG.Impl.RsaKeyGen.TrialTable32.consts

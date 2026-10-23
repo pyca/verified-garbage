@@ -131,7 +131,7 @@ theorem dividesS_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) 
       t.gpr .eax = BitVec.ofNat 32 (decide (sv s.mem base len .wide j % prime = 0)).toNat ∧
       Kept base len [] [] s.mem t.mem :=
   WP.mono (divides_ok h hj p3 p65 podd pinv invl) fun _ ⟨I, F, E, K⟩ =>
-    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 40) F h.room.apart.symm⟩
+    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
 
 /-- p's congruences for its generator `g` (2 or 5): `eax` its `generationShape`. -/
 theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : sv s.mem base len .wide 9 = p)
@@ -291,7 +291,7 @@ theorem sieveS_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T
       t.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧
       Kept base len [] [] s.mem t.mem :=
   WP.mono (sieve_ok h hj TT hb) fun _ ⟨I, F, E, K⟩ =>
-    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 40) F h.room.apart.symm⟩
+    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
 
 /-- p's checks and tests: the result of `sievedParameterCandidate` for a tape of at least `L`
 octets. -/

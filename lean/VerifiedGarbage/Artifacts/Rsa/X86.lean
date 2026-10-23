@@ -28,7 +28,7 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86.RecoverRt.code
     verified := Proof.Rsa.X86.Recover.verified
     spSafe := Proof.Rsa.X86.RtShape.recover_spSafe
-    stack := 40 },
+    stack := 96 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
       its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
@@ -64,7 +64,7 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.X86.CrtRt.code
     verified := Proof.Bignum.X86.CrtRt.verified
     spSafe := Proof.Rsa.X86.RtShape.privateCrt_spSafe
-    stack := 40 },
+    stack := 96 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
@@ -76,7 +76,7 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.X86.PrecomputedRt.code
     verified := Proof.Bignum.X86.PrecomputedRt.verified
     spSafe := Proof.Rsa.X86.RtShape.precomputed_spSafe
-    stack := 40 },
+    stack := 96 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     notes := ["The public modulus's high bit selects a reduced seed reached by n+1 modular \
       doublings; padded moduli use 65n doublings. Six Montgomery squares then produce R². \
@@ -96,6 +96,6 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.X86.PublicRt.code
     verified := Proof.Bignum.X86.PublicRt.verified
     spSafe := Proof.Rsa.X86.RtShape.public_spSafe
-    stack := 40 }]
+    stack := 96 }]
 
 end VG.Artifacts.Rsa.X86

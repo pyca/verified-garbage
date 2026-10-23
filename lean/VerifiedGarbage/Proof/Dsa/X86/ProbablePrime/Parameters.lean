@@ -58,8 +58,8 @@ theorem obviouslyComposite_eq {bits : Nat} (b : Bits bits) (c : Nat) :
   unfold Spec.RsaKeyGen.obviouslyComposite
   rw [trialPrimes_eq b]
 
-theorem lengthRegion_far {p : BitVec 32} (low : 96 ≤ p.toNat) (fit : p.toNat + 40 ≤ 2 ^ 32) :
-    (lengthRegion (p - 28#32)).Disjoint (below (p - 28#32) 68) := by
+theorem lengthRegion_far {p : BitVec 32} (low : 136 ≤ p.toNat) (fit : p.toNat + 40 ≤ 2 ^ 32) :
+    (lengthRegion (p - 28#32)).Disjoint (below (p - 28#32) 108) := by
   have privateNat : (p - 28#32).toNat = p.toNat - 28 := sub_toNat (by omega)
   have lengthNat : (lengthRegion (p - 28#32)).base.toNat = p.toNat - 4 := by
     change (((p - 28#32) + 24#32).setWidth 64).toNat = _
@@ -67,14 +67,14 @@ theorem lengthRegion_far {p : BitVec 32} (low : 96 ≤ p.toNat) (fit : p.toNat +
     change ((p.toNat - 28 + 24) % 2 ^ 32) % 2 ^ 64 = p.toNat - 4
     have := p.isLt
     omega
-  have belowNat : (below (p - 28#32) 68).base.toNat = p.toNat - 96 := by
-    change (((p - 28#32) - 68#32).setWidth 64).toNat = _
+  have belowNat : (below (p - 28#32) 108).base.toNat = p.toNat - 136 := by
+    change (((p - 28#32) - 108#32).setWidth 64).toNat = _
     rw [BitVec.toNat_setWidth, sub_toNat (by omega), privateNat]
     have := p.isLt
     omega
   apply Region.Disjoint.symm
   apply Offset.disjoint_of_le
-  · change (below (p - 28#32) 68).base.toNat + 68 ≤ (lengthRegion (p - 28#32)).base.toNat
+  · change (below (p - 28#32) 108).base.toNat + 108 ≤ (lengthRegion (p - 28#32)).base.toNat
     rw [belowNat, lengthNat]; omega
   · change (lengthRegion (p - 28#32)).base.toNat + 4 ≤ 2 ^ 64
     rw [lengthNat]; have := p.isLt; omega
@@ -85,11 +85,11 @@ theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) {c : 
   have b := v.bits
   have low := v.low
   have shape := candidate_shape odd length (by have := b.low; omega)
-  have inner : (below (E.p - 28#32) 68).Sub (below E.p 96) := below_inner (by decide) v.low
+  have inner : (below (E.p - 28#32) 108).Sub (below E.p 136) := below_inner (by decide) v.low
   have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := b.low; omega)
   refine ⟨v.geometry, rfl, v.randFit, v.randLengthFit, entropyLength, v.randWorkspace,
     (v.stackFar _ (List.mem_cons_of_mem _ List.mem_cons_self)).sub_right inner,
-    by change 68 ≤ (E.p - 28#32).toNat; rw [sub_toNat (by omega)]; omega,
+    by change 108 ≤ (E.p - 28#32).toNat; rw [sub_toNat (by omega)]; omega,
     (v.stackFar _ List.mem_cons_self).sub_right inner, lengthRegion_far v.low (by have := v.argsFit; omega),
     odd, by change 3 < c; omega, ?_, b.words_two, b.draw_ge, b.draw_le, by change 8 * _ % 4 = 0; omega,
     by change 1 ≤ E.bits - 1; have := b.low; omega, ?_, ?_, ?_⟩

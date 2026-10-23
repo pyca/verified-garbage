@@ -11,8 +11,8 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86
 
 theorem squareLoop_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp code) (stack : stackUse code ≤ 16)
+    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
     RelCT isa (fun s t => Pair g [.edi] s t ∧ SquareInput g capacity p q s ∧ SquareInput g capacity p q t)

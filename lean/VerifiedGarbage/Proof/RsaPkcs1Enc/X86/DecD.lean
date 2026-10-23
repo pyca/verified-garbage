@@ -72,7 +72,7 @@ theorem safe_sc {o n : Nat} (hn : o + n ≤ 8448) : Safe P (sc P o n) :=
 
 theorem safe_low : Safe P P.lay.LOW :=
   ⟨(h.ok.low_buf (R := P.OUT) (.inr (by simp))).symm, Lay.fr_low (by simp only [oR]; omega)
-    (by show (3392 : Nat) ≤ 2 ^ 32; decide)⟩
+    (by show (3448 : Nat) ≤ 2 ^ 32; decide)⟩
 
 theorem safe_fr {d n : Nat} (hd : d + n ≤ frameBytes) (ho : d + n ≤ oR ∨ oR + 4 ≤ d) :
     Safe P ⟨P.lay.fr d, n⟩ :=

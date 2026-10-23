@@ -62,8 +62,8 @@ structure ExAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
   y : YGeo args base bytes len u.rd u.wr
   x : XGeo args base bytes len xl u.rd u.wr
   out : OutGeo args base bytes len u.wr
-  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 40)
-  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 40)
+  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 96)
+  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
 
 /-- The body up to the power leaks the same traces: p and its copies by the taint analysis, p's
 context by `ctxP_relCT`. -/
@@ -144,7 +144,7 @@ theorem exAt_of {s f : State} (A : ExchangeABI s) (Bf : BodyAt (Rd s) Impl.Ffdh.
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.Exchange.args s, wsSize Impl.Ffdh.X86.Exchange.args s⟩
   obtain ⟨G, Y, X, O, hy, hxx⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have low := A.stackLow
-  have st' : stack = 116 := rfl
+  have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
   exact ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [outR s]) fun r hr => by

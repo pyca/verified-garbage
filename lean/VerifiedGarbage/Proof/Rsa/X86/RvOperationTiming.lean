@@ -100,8 +100,8 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
           have eq3 := (publicRestore_relCT _ _ _ _ _ _ next.workspace e3 f3).1
           rw [eq1, eq2, eq3]
 
-theorem constantTime : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 40).pre
-    (Spec.Rsa.recoverPrimesContract abi 40).pub VG.Impl.Rsa.X86.RecoverRt.code := by
+theorem constantTime : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 96).pre
+    (Spec.Rsa.recoverPrimesContract abi 96).pub VG.Impl.Rsa.X86.RecoverRt.code := by
   intro s t tr ur sf tf hs ht h es et
   have args := arguments_eq h
   obtain ⟨modulus, attempts⟩ := observations_eq h

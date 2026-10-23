@@ -29,12 +29,12 @@ structure Ready (P : MillerRabinLoop.Parameters) (s : State) : Prop where
   used : w32 s.mem P.g.W 152 = P.start
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State} (I : Input P s) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt P.seed P.g.w name mont) s fun t =>
       Ready P t ∧ WorkspaceFrame P.g (Prepare.ranges P.g) s.mem t.mem ∧
-      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 40]) s.mem t.mem ∧ Keeps Prepare.clob s t := by
+      Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 80]) s.mem t.mem ∧ Keeps Prepare.clob s t := by
   refine WP.mono (Prepare.code_full_okAt verified noSp stack v.geometry bound v.length I.prepare v.seedPos v.seedLt)
     fun t ⟨T, F, K, W⟩ => ?_
   refine ⟨⟨T, ?_, ?_, ?_, ?_, ?_⟩, W, F, K⟩

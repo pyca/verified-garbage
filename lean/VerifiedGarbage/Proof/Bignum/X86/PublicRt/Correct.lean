@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicResources
 /-! # Functional correctness and cdecl preservation of public RSA at a run-time width
 
 From the entry, which saves the callee-saved registers in the working
-space, through `body_ok` to their restore, with the 40 bytes of stack
+space, through `body_ok` to their restore, with the 96 bytes of stack
 below `esp` that the calls use.
 -/
 
@@ -23,9 +23,9 @@ open VG.Proof.Bignum.X86.PublicContext
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 theorem frame_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem} {g : Reg → BitVec 32}
-    (F : Frame [⟨off base 16, bytes - 16⟩, ⟨out, len⟩, below sp 40] m m')
+    (F : Frame [⟨off base 16, bytes - 16⟩, ⟨out, len⟩, below sp 96] m m')
     (A : Region.Disjoint ⟨base, bytes⟩ ⟨out, len⟩) (low : 16 ≤ bytes) (high : bytes ≤ 2 ^ 64)
-    (Z : Region.Disjoint (below sp 40) ⟨base, bytes⟩)
+    (Z : Region.Disjoint (below sp 96) ⟨base, bytes⟩)
     (S : Saved m (off base) g PublicFn.savedRegisters) : Saved m' (off base) g PublicFn.savedRegisters := by
   intro p hp
   have B : p.2 + 4 ≤ 16 := by
@@ -40,8 +40,8 @@ theorem frame_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' :
   · exact (Z.sub_right (Region.sub_prefix (by omega))).symm
 
 theorem frame_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
-    (F : Frame [⟨off base 16, bytes - 16⟩, ⟨out, len⟩, below sp 40] m m') (low : 16 ≤ bytes) :
-    Frame [⟨base, bytes⟩, ⟨out, len⟩, below sp 40] m m' := by
+    (F : Frame [⟨off base 16, bytes - 16⟩, ⟨out, len⟩, below sp 96] m m') (low : 16 ≤ bytes) :
+    Frame [⟨base, bytes⟩, ⟨out, len⟩, below sp 96] m m' := by
   apply F.sub
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -51,8 +51,8 @@ theorem frame_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : 
   · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- The return address lies above the stack the calls use. -/
-theorem ret_below {sp : BitVec 32} (h : 40 ≤ sp.toNat) :
-    Region.Disjoint ⟨sp.setWidth 64, 4⟩ (below sp 40) := by
+theorem ret_below {sp : BitVec 32} (h : 96 ≤ sp.toNat) :
+    Region.Disjoint ⟨sp.setWidth 64, 4⟩ (below sp 96) := by
   simp only [below]
   rw [VG.X86.Taint.sub_setWidth h]
   exact Offset.base_disjoint_below _ (by decide)
@@ -77,7 +77,7 @@ theorem operation_ok {s : State} (A : TopABI s) :
   rw [espu] at F
   have Saved := frame_saved F I.outApart low high A.room.apart S
   have Whole : Frame [⟨argumentPointer s 8, (arg s 9).toNat * 8⟩,
-      ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 40] s.mem v.mem := by
+      ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 96] s.mem v.mem := by
     have Start := outside_frame O (by omega)
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
@@ -105,9 +105,9 @@ theorem operation_ok {s : State} (A : TopABI s) :
   rw [N, E, X] at V
   exact V
 
-theorem correct (s : State) (h : (Spec.Rsa.publicCheckedContract abi 40).pre s) :
+theorem correct (s : State) (h : (Spec.Rsa.publicCheckedContract abi 96).pre s) :
     ∃ trace t, Exec isa PublicRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicCheckedContract abi 40).post s t := by
+      (Spec.Rsa.publicCheckedContract abi 96).post s t := by
   obtain ⟨trace, t, E, V, A⟩ := operation_ok (topABI_of h)
   refine ⟨trace, t, E, A, ?_⟩
   sig_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argSlots, argVal, argBytes]

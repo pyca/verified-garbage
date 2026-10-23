@@ -19,7 +19,7 @@ theorem mulPost {g : Geometry} {s t : State} {capacity b c : Nat}
     (a0 : arg s 0 = BitVec.ofNat 32 g.W.toNat) (a1 : arg s 1 = BitVec.ofNat 32 capacity)
     (a2 : arg s 2 = 6#32) (a3 : arg s 3 = 6#32) (a4 : arg s 4 = BitVec.ofNat 32 b)
     (M : Modulus g c s.mem) (odd : c % 2 = 1)
-    (post : (Spec.Rsa.Mont.mulContract abi 16).post s t) :
+    (post : (Spec.Rsa.Mont.mulContract abi 56).post s t) :
     val32 t.mem g.W (g.array 6) g.words = Word32.mm c g.w
       (val32 s.mem g.W (g.array 6) g.words) (val32 s.mem g.W (g.array b) g.words) ∧
     Spec.Rsa.Mont.Keeps g.W capacity g.w 6 s.mem t.mem := by

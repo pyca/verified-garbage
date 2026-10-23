@@ -41,7 +41,7 @@ theorem bytesAt_offset (m : Mem) (p : Addr) {a b n : Nat} (h : a + b ≤ n) :
   simp [Spec.Rsa.bytesAt, BitVec.add_assoc, BitVec.ofNat_add]
 
 /-- Where the tape lies: `n` octets at synthetic argument 2, `n` in argument 12, readable, apart
-from the working space and the 40 bytes below `sp`. -/
+from the working space and the 96 bytes below `sp`. -/
 structure TapeGeo (Ex : List Region → List Region → Prop) (args : Nat → BitVec 32) (base : Addr) (bytes : Nat)
     (sp : BitVec 32) (n : Nat) : Prop where
   len : args 12 = BitVec.ofNat 32 n
@@ -49,7 +49,7 @@ structure TapeGeo (Ex : List Region → List Region → Prop) (args : Nat → Bi
   fit : (args 2).toNat + n ≤ 2 ^ 32
   rd : ∀ rd wr, Ex rd wr → InRegions (rd ++ wr) (byteAddr (args 2)) n
   apart : Region.Disjoint ⟨byteAddr (args 2), n⟩ ⟨base, bytes⟩
-  far : Region.Disjoint ⟨byteAddr (args 2), n⟩ (below sp 40)
+  far : Region.Disjoint ⟨byteAddr (args 2), n⟩ (below sp 96)
 
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
   {args : Nat → BitVec 32}

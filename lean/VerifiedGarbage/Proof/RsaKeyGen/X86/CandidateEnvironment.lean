@@ -72,16 +72,16 @@ structure Environment.Valid (E : Environment) : Prop where
   randFit : E.rand.toNat + E.randLength ≤ 2 ^ 32
   randLengthFit : E.randLength < 2 ^ 32
   tableFit : E.table.toNat + 8192 ≤ 2 ^ 32
-  low : 96 ≤ E.p.toNat
+  low : 136 ≤ E.p.toNat
   argsFit : E.p.toNat + 64 ≤ 2 ^ 32
-  workspaceStack : E.p.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 96 ≤ E.p.toNat
+  workspaceStack : E.p.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 136 ≤ E.p.toNat
   savedFar : ∀ r ∈ E.writeRegions ++ E.readRegions, r.Disjoint ⟨E.p.setWidth 64, 16⟩
   argsFar : (⟨(E.p + 20#32).setWidth 64, 44⟩ : Region).Disjoint E.workspaceRegion
   outUsed : E.outRegion.Disjoint E.usedRegion
   outWorkspace : E.outRegion.Disjoint E.workspaceRegion
   usedWorkspace : E.usedRegion.Disjoint E.workspaceRegion
   readWrite : ∀ r ∈ E.readRegions, ∀ R ∈ E.writeRegions, r.Disjoint R
-  stackFar : ∀ r ∈ E.writeRegions ++ E.readRegions, r.Disjoint (below E.p 96)
+  stackFar : ∀ r ∈ E.writeRegions ++ E.readRegions, r.Disjoint (below E.p 136)
 
 theorem Environment.Valid.geometry {E : Environment} (v : E.Valid) : E.geometry.Valid :=
   CandidateGeometry.geometry_valid v.length v.capacity
@@ -101,9 +101,9 @@ theorem Environment.Valid.readWorkspace {E : Environment} (v : E.Valid) {r : Reg
     r.Disjoint E.workspaceRegion := v.readWrite r mem _
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
 
-def MutableFrame (E : Environment) (m m' : Mem) : Prop := Frame (E.writeRegions ++ [below E.p 96]) m m'
+def MutableFrame (E : Environment) (m m' : Mem) : Prop := Frame (E.writeRegions ++ [below E.p 136]) m m'
 
-def WorkFrame (E : Environment) (m m' : Mem) : Prop := Frame [E.workspaceRegion, below E.p 96] m m'
+def WorkFrame (E : Environment) (m m' : Mem) : Prop := Frame [E.workspaceRegion, below E.p 136] m m'
 
 structure MemoryFacts (E : Environment) (eBytes pBytes entropy : List Byte) (s : State) : Prop where
   exponentRead : InRegions (s.rd ++ s.wr) (E.exponent.setWidth 64) E.exponentLength

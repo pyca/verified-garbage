@@ -16,10 +16,10 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86
 
 theorem verified {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56) :
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) :
     Verified target (VG.Impl.RsaKeyGen.X86.Candidate.code montName mont roundName round) contract :=
   ⟨correct montVerified montNoSp montStack roundVerified roundNoSp roundStack,
     constantTime montVerified montNoSp montStack roundVerified roundNoSp roundStack, satisfiable⟩

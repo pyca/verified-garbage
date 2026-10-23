@@ -16,7 +16,7 @@ theorem PrivContext.callFrame {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
     (h : PrivContext g bs s) : Frame [g.calleeRegion] s.mem s.callEntry.mem := by
   rw [State.callEntry_mem, h.sp]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-    (VG.X86.below_top (by decide : 4 ≤ 44) h.valid.stackLow (by decide : 4 ≤ 4))
+    (VG.X86.below_top (by decide : 4 ≤ 100) h.valid.stackLow (by decide : 4 ≤ 4))
 
 theorem PrivContext.callTemporary {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) :

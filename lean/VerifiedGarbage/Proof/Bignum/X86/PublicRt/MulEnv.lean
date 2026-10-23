@@ -45,7 +45,7 @@ theorem Outside.chg {base : Addr} {len bytes d n : Nat} {sp : BitVec 32} {m m' :
 /-- A multiplication's changes are within `Chg`. -/
 theorem mulFrame_chg {base : Addr} {len bytes o : Nat} {sp : BitVec 32} {m m' : Mem} (ho : 1 ≤ o)
     (hb : numAt len 5 + (3 * wb len + 56) ≤ bytes)
-    (F : Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below sp 40] m m')
+    (F : Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below sp 96] m m')
     (ho4 : numAt len o + wb len ≤ bytes) :
     Frame (Chg base len bytes sp) m m' := by
   have : numAt len 1 ≤ numAt len o := by
@@ -56,12 +56,12 @@ theorem mulFrame_chg {base : Addr} {len bytes o : Nat} {sp : BitVec 32} {m m' : 
   rcases hr with rfl | rfl | rfl
   · exact ⟨⟨off base (numAt len 1), bytes - numAt len 1⟩, by simp [Chg], sub_off (by omega) (by omega)⟩
   · exact ⟨⟨off base (numAt len 1), bytes - numAt len 1⟩, by simp [Chg], sub_off (by omega) (by omega)⟩
-  · exact ⟨below sp 40, by simp [Chg], fun _ h => h⟩
+  · exact ⟨below sp 96, by simp [Chg], fun _ h => h⟩
 
 /-- A number apart from a multiplication's changes keeps its value. -/
 theorem mulFrame_val32 {base : Addr} {len bytes o d : Nat} {sp : BitVec 32} {m m' : Mem}
     (R : CallRoom sp base bytes) (hn : base.toNat + bytes ≤ 2 ^ 32)
-    (F : Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below sp 40] m m')
+    (F : Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below sp 96] m m')
     (hd : d + 4 * nw len ≤ numAt len o ∨ numAt len o + wb len ≤ d) (h5 : d + 4 * nw len ≤ numAt len 5)
     (hdb : d + 4 * nw len ≤ bytes) (ho : numAt len o + wb len ≤ bytes)
     (h5b : numAt len 5 + (3 * wb len + 56) ≤ bytes) :
@@ -80,7 +80,7 @@ theorem mulFrame_val32 {base : Addr} {len bytes o d : Nat} {sp : BitVec 32} {m m
 /-- The header keeps its bytes across a multiplication. -/
 theorem mulFrame_hdr {base : Addr} {len bytes o d k : Nat} {sp : BitVec 32} {m m' : Mem}
     (R : CallRoom sp base bytes) (hn : base.toNat + bytes ≤ 2 ^ 32)
-    (F : Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below sp 40] m m')
+    (F : Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below sp 96] m m')
     (hd : d + k ≤ numOff) (hdb : d + k ≤ bytes) (ho : numAt len o + wb len ≤ bytes)
     (h5b : numAt len 5 + (3 * wb len + 56) ≤ bytes) :
     m'.read (off base d) k = m.read (off base d) k := by
@@ -113,7 +113,7 @@ theorem mulRaw_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
     WP isa (PublicRt.mul o a b) s fun t =>
       Env base bytes len args M t ∧ Frame (Chg base len bytes (s.gpr .esp)) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx] s t ∧
-      Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 40]
+      Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 96]
         s.mem t.mem ∧
       val32 t.mem base (numAt len o) (nw len) < M ∧
       val32 t.mem base (numAt len o) (nw len) * 2 ^ (32 * nw len) % M =
@@ -137,7 +137,7 @@ theorem mulEnv_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
     WP isa (PublicRt.mul o a b) s fun t =>
       Env base bytes len args M t ∧ Frame (Chg base len bytes (s.gpr .esp)) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx] s t ∧
-      Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 40]
+      Frame [⟨off base (numAt len o), wb len⟩, ⟨off base (numAt len 5), 3 * wb len + 56⟩, below (s.gpr .esp) 96]
         s.mem t.mem ∧
       val32 t.mem base (numAt len o) (nw len) = x * y * 2 ^ (32 * nw len) % M := by
   have h := E.pi

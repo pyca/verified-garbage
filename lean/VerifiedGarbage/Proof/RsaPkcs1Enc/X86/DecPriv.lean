@@ -119,7 +119,7 @@ theorem In.fit {σ : State} (h : In P σ) : P.B.toNat + 216 ≤ 2 ^ 32 := by
   simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, frameBytes] at this
   omega
 
-theorem In.BC {σ : State} (h : In P σ) : 3392 ≤ P.B.toNat := h.ok.BC
+theorem In.BC {σ : State} (h : In P σ) : 3448 ≤ P.B.toNat := h.ok.BC
 
 theorem R1.privArgs {σ s : State} (h : R1 P σ s) :
     PrivArgs s P.out P.n P.e P.inp P.p P.q P.dp P.dq P.qinv P.scr P.K P.el P.pl P.ql P.sl := by
@@ -185,7 +185,7 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.low_buf (R := P.OUT) (.inr (by simp))
       · exact ok.low_buf (R := P.SCR) (.inr (by simp))
-      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3392 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).symm
       all_goals exact ok.low_buf (.inl (by simp))
     · intro r hr
       simp only [privWr, privRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -249,7 +249,7 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     obtain ⟨s₂, m₂, g₂, po⟩ := po
     have := priv_post hh.privArgs po
     rw [m₂, g₂ .eax (by decide)] at this
-    have ro := fun {R : Region} (hR : R ∈ P.lay.ro) => hs.2.callEntry_ro (by show 4 ≤ 3392; decide) hR
+    have ro := fun {R : Region} (hR : R ∈ P.lay.ro) => hs.2.callEntry_ro (by show 4 ≤ 3448; decide) hR
     rw [ro (R := P.N) (by simp), hs.1.nB, ro (R := P.E) (by simp), hs.1.eB, ro (R := P.INP) (by simp),
       ro (R := P.PP) (by simp), ro (R := P.QQ) (by simp), ro (R := P.DP) (by simp), ro (R := P.DQ) (by simp),
       ro (R := P.QI) (by simp)] at this

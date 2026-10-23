@@ -53,7 +53,7 @@ def seedsRegion : Region := ⟨E.seeds, E.seedsLen⟩
 def hsRegion : Region := ⟨E.hs, E.hsLen⟩
 def witRegion : Region := ⟨E.wit, E.witLen⟩
 /-- The stack below the saved registers that the calls use. -/
-def stackRegion : Region := below E.sp 160
+def stackRegion : Region := below E.sp 200
 
 def tableRegion : Region := ⟨E.table, 8192⟩
 
@@ -79,8 +79,8 @@ structure Env.Valid (E : Env) : Prop where
   witFit : E.wit.toNat + E.witLen ≤ 2 ^ 32
   seedsWhole : E.seedsLen % E.qLen = 0
   hsWhole : E.hsLen % E.pLen = 0
-  low : 160 ≤ E.sp.toNat
-  stackScratch : E.sp.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 160 ≤ E.sp.toNat
+  low : 200 ≤ E.sp.toNat
+  stackScratch : E.sp.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 200 ≤ E.sp.toNat
   outScratch : E.outRegion.Disjoint E.scratchRegion
   tapesFar : ∀ r ∈ [E.seedsRegion, E.hsRegion, E.witRegion],
     r.Disjoint E.scratchRegion ∧ r.Disjoint E.outRegion ∧ r.Disjoint E.stackRegion

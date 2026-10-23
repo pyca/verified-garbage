@@ -132,14 +132,14 @@ theorem divides_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {
   rw [hP] at au cu
   have s20 : (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20 :=
     VG.X86.Taint.sub_setWidth (by omega)
-  have s40 : (s.gpr .esp - BitVec.ofNat 32 40).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 40 :=
+  have s40 : (s.gpr .esp - BitVec.ofNat 32 96).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 96 :=
     VG.X86.Taint.sub_setWidth (by omega)
   have addrA : addr (s.gpr .esp - BitVec.ofNat 32 20) 4 = A := by
     rw [addr_eq (by rw [VG.X86.sub_toNat (by omega)]; omega), s20, hA]
     rw [show (4 : Nat) = 20 - 16 from rfl, ← VG.Offset.sub_ofNat_eq _ (by decide : 16 ≤ 20)]
   have inFrame : (⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ : Region).Contains A 4 := by
     rw [s20, hA]; exact Offset.contains_below _ (by decide) (by decide) (by decide)
-  have inBelow : (below (s.gpr .esp) 40).Contains A (32 / 8) := by
+  have inBelow : (below (s.gpr .esp) 96).Contains A (32 / 8) := by
     simp only [below]; rw [s40, hA]; exact Offset.contains_below _ (by decide) (by decide) (by decide)
   have PA : byteAddr P = off base (lo len (.slot .wide j)) := by
     apply BitVec.eq_of_toNat_eq

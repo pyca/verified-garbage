@@ -9,7 +9,7 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86
 
 def inputRegions (E : Environment) : List Region := [E.exponentRegion, E.otherRegion, E.randRegion]
-def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 112#64, 112⟩
+def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 152#64, 152⟩
 
 structure CallSeparation (s : State) : Prop where
   outUsed : (callEnvironment s).outRegion.Disjoint (callEnvironment s).usedRegion

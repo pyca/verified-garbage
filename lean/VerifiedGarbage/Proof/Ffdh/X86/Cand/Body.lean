@@ -27,11 +27,11 @@ open VG.Impl.Bignum.X86.PublicRt (argAt)
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
   {args : Nat → BitVec 32}
 
-/-- A word read through `esp`, apart from the working space and the 40 bytes below `esp`, after a
+/-- A word read through `esp`, apart from the working space and the 96 bytes below `esp`, after a
 stage. -/
 theorem readArg_step {m : MemOp} (hm : m.base = .esp) {v : BitVec 32} (hr : readSrc s (.mem m) = some v)
     {t : State} (S : Step Ex base bytes len args s t) (dws : Region.Disjoint ⟨s.ea m, 4⟩ ⟨base, bytes⟩)
-    (d40 : Region.Disjoint ⟨s.ea m, 4⟩ (below (s.gpr .esp) 40)) : readSrc t (.mem m) = some v := by
+    (d40 : Region.Disjoint ⟨s.ea m, 4⟩ (below (s.gpr .esp) 96)) : readSrc t (.mem m) = some v := by
   have h := S.inp
   have fit := fR_fit h
   have bl := h.bytes_lt
@@ -56,7 +56,7 @@ theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = 
     (rg : readSrc s (.mem (argAt 19 4)) = some (BitVec.ofNat 32 g))
     (ru : readSrc s (.mem (argAt 19 2)) = some up)
     (dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩)
-    (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 40))
+    (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 96))
     (hb2 : bits ≤ 8192) (hg25 : g = 2 ∨ g = 5) :
     WP isa (.block (entryWords ++ ([.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))] : List Instr))) s fun t =>
       Step Ex base bytes len args s t ∧ w32 t.mem base bitsOff = bits ∧ w32 t.mem base genOff = g ∧
@@ -109,7 +109,7 @@ theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
     (rg : readSrc s (.mem (argAt 19 4)) = some (BitVec.ofNat 32 g))
     (ru : readSrc s (.mem (argAt 19 2)) = some up)
     (dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩)
-    (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 40))
+    (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 96))
     (hbl : len = (bits + 7) / 8) (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hg25 : g = 2 ∨ g = 5)
     {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s)
     (TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩) :

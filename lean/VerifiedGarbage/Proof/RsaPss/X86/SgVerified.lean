@@ -87,8 +87,8 @@ theorem code_ok (v : CrtImpl) {s : State} (hs : (spec h.G).pre s) :
     (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
-    rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro h.D) (rw := (ep s).rw) (C := 3392) hsp,
-      ret_eq (argv := (ep s).argv) (ro := (ep s).ro h.D) (rw := (ep s).rw) (C := 3392) hsp]
+    rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro h.D) (rw := (ep s).rw) (C := 3448) hsp,
+      ret_eq (argv := (ep s).argv) (ro := (ep s).ro h.D) (rw := (ep s).rw) (C := 3448) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
   · have ok := hin.ok
     rw [ep_lay] at ok

@@ -38,8 +38,8 @@ theorem Ready.entry_eq {g : Geometry} {capacity : Nat} {p : BitVec 32} {s : Stat
 
 theorem Ready.callPre {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {s : State}
     (R : Ready g capacity p s) (length : g.L = 8 * capacity)
-    (fit : 68 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68)) :
-    CallPre (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) args [below p 8] [⟨g.W, g.L⟩] s := by
+    (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
+    CallPre (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96) args [below p 8] [⟨g.W, g.L⟩] s := by
   obtain ⟨c, b, S, odd, large, witness⟩ := R.1
   refine ⟨?_, ?_, ?_⟩
   · rw [R.entry_eq]
@@ -57,18 +57,18 @@ theorem Ready.callPre {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 
     exact List.mem_cons_of_mem _ S.ready.context.ws.wr
 
 theorem Ready.width {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {s : State}
-    (R : Ready g capacity p s) (fit : 68 ≤ p.toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68)) :
+    (R : Ready g capacity p s) (fit : 108 ≤ p.toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
     Spec.Rsa.Mont.wOf (entry g s).mem g.W = g.w := by
   obtain ⟨c, b, S, _, _, _⟩ := R.1
   have F := entry_frame (by rw [R.sp]; omega) S.ready.scratch.nowrap
-    (by rw [R.sp]; exact far.sub_right (below_sub (by decide : 12 ≤ 68) fit))
+    (by rw [R.sp]; exact far.sub_right (below_sub (by decide : 12 ≤ 108) fit))
   exact (S.ready.modulus.keep v F (by simp) (by simp)).width
 
 theorem Ready.publicInputs {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {s t : State}
-    (S : Ready g capacity p s) (T : Ready g capacity p t) (fit : 68 ≤ p.toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68)) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pub (entry g s) (entry g t) := by
+    (S : Ready g capacity p s) (T : Ready g capacity p t) (fit : 108 ≤ p.toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
+    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pub (entry g s) (entry g t) := by
   have sa := fun {i} (hi : i < 2) => entry_arg S.2 (by rw [S.sp]; omega) hi
   have ta := fun {i} (hi : i < 2) => entry_arg T.2 (by rw [T.sp]; omega) hi
   obtain ⟨c, b, D, _, _, _⟩ := S.1

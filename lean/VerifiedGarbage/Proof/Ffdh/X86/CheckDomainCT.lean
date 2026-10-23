@@ -77,7 +77,7 @@ structure DomAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes
     (args : Nat → BitVec 32) (sp : BitVec 32) (D : List Byte) (u : State) : Prop where
   run : Run Ex base bytes len args sp u
   geo : DomGeo args base bytes len dlen u.rd u.wr
-  hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 40)
+  hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
   dom : domBytes u.mem args dlen = D
 
 theorem DomAt.step {u v : State} (A : DomAt Ex base bytes len dlen args sp D u)

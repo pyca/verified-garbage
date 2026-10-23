@@ -21,8 +21,8 @@ def SquarePair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) : P
   Pair g [.edi] s t ∧ SquareInput g capacity p s ∧ SquareInput g capacity p t
 
 theorem square_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (SquarePair g capacity p) (VG.Impl.MillerRabin.X86.mulY name mont 6)
       (SquarePair g capacity p) := by
@@ -41,8 +41,8 @@ theorem square_pair {mont : Prog isa} {name : String}
   exact ⟨trace, pair, wp_result (post S) E, wp_result (post T) G⟩
 
 theorem squares_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity)
     (n : Nat) :
     RelCT isa (SquarePair g capacity p)

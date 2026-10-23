@@ -20,13 +20,13 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 /-- The contract, as the registration gives it. -/
 abbrev genContract : Contract isa := Spec.Dsa.generateParametersContract
-  (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 176
+  (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 216
 
-def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 176#64, 176⟩
+def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 216#64, 216⟩
 
 /-- What the precondition says, in the shape `sig_pre` leaves it. -/
 structure CallFacts (s : State) : Prop where
-  low : 176 ≤ (s.gpr .esp).toNat
+  low : 216 ≤ (s.gpr .esp).toNat
   argsFit : (s.gpr .esp).toNat + 4 + 48 ≤ 2 ^ 32
   rdTable : s.rd.drop (s.rd.length - 1) = Abi.constRegions (fun name => (s.syms name).setWidth 64)
     VG.Impl.RsaKeyGen.TrialTable32.consts

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import Mathlib.Data.Int.ModEq
@@ -33,7 +33,7 @@ open VG.Proof.Bignum.X86.PublicRt (argAt_alloc)
 open VG.Spec.Rsa.MontMul (Apart scratchBytes)
 
 theorem mulBody_noSp (o a b : Nat) :
-    NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body) : Prog isa) := by
+    NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa) := by
   apply NoSp.of_all
   have e : (!Taint.clobbers (Instr.alu AluOp.add Reg.eax (Src.reg Reg.edx)) Reg.esp) = true := rfl
   rw [Code.allInstrs_eq]
@@ -41,7 +41,7 @@ theorem mulBody_noSp (o a b : Nat) :
     VG.Impl.Bignum.X86.PublicRt.widthB, VG.Impl.Rsa.X86.RecoverRt.offIn, List.all_append, List.all_cons,
     List.all_nil, List.all_replicate, e, ite_self]
   rw [← Code.allInstrs_eq]
-  rw [show Rt.body.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.StaticSquare.body_noSp]
+  rw [show Sse2.atBody.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.Sse2.atBody_allNoSp]
   rfl
 
 /-- The callee's offsets: the operands apart from its range, the result apart from the modulus. -/
@@ -87,7 +87,8 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 /-- A call of `vg_rsa_mont_mul_at` for `mmul o a b`, its arguments pushed: the callee's precondition,
 its arguments, and the regions it is given. -/
 def CallOk (g : Geo) (o a b : Nat) (x : State) : Prop :=
-  RtABI (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) ∧ x.gpr .esp = g.sp - BitVec.ofNat 32 36 ∧
+  (Spec.Rsa.MontMul.mulContract abi 56).pre (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) ∧
+    x.gpr .esp = g.sp - BitVec.ofNat 32 36 ∧
     (∀ i < 9, arg (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) i =
       callArg (BitVec.ofNat 32 g.B.toNat) (BitVec.ofNat 32 (g.Z / 8)) g.n (arr g.w mBase) sInv
         (arr g.w mAcc) (arr g.w o) (arr g.w a) (arr g.w b) i) ∧
@@ -120,7 +121,7 @@ theorem KS.callOk {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g 
     rw [e]
     exact argAt_alloc r5
   have hr11 := argAt_alloc h.wsLen.readSrc
-  have lowS : 40 ≤ (s.gpr .esp).toNat := by rw [esp]; exact low
+  have lowS : 96 ≤ (s.gpr .esp).toNat := by rw [esp]; exact low
   have edi : s.gpr .edi = BitVec.ofNat 32 g.B.toNat := by
     apply BitVec.eq_of_toNat_eq
     have header := h.ws.hdr_le
@@ -137,8 +138,8 @@ theorem KS.callOk {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g 
       callArg (s.gpr .edi) (BitVec.ofNat 32 (g.Z / 8)) g.n (arr g.w mBase) sInv (arr g.w mAcc) (arr g.w o)
         (arr g.w a) (arr g.w b) i := by
     intro i hi; rw [Kx.1 _ (by decide), Rx i hi]
-  refine ⟨callee_abi h.ws.workspace wsl R (mont_offs fits ho ha hb ho0 pos) xEsp hFx hread
-    (by rw [vm]; exact mr.inverse) (by rw [vb, vm]; exact hB), by rw [xEsp, esp], fun i hi => ?_, ?_, ?_⟩
+  refine ⟨VG.Proof.Bignum.X86.PublicRt.callee_pre (callee_abi h.ws.workspace wsl R (mont_offs fits ho ha hb ho0 pos) xEsp hFx hread
+    (by rw [vm]; exact mr.inverse) (by rw [vb, vm]; exact hB)) R xEsp, by rw [xEsp, esp], fun i hi => ?_, ?_, ?_⟩
   · rw [callee_arg (base := g.B) (bytes := g.Z) lowS xEsp hread hi, edi]
   · rw [Kx.2.2, allocFrame_wr, xEsp]; exact List.mem_cons_self ..
   · rw [Kx.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.ws.workspace.wr
@@ -178,7 +179,7 @@ theorem KS.mmulCall {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR 
     rw [e]
     exact argAt_alloc r5
   have hr11 := argAt_alloc h.wsLen.readSrc
-  have lowS : 40 ≤ (s.gpr .esp).toNat := by rw [esp]; exact low
+  have lowS : 96 ≤ (s.gpr .esp).toNat := by rw [esp]; exact low
   have C := call_ok (is := mulArgs o a b) h.ws.workspace wsl R (mont_offs fits ho ha hb ho0 pos)
     (by rw [vm]; exact mr.inverse) (by rw [vb, vm]; exact hB) (mulBody_noSp o a b) (by
       have := mulArgs_ok (f := allocFrame 36 s) (n := g.n) (o := o) (a := a) (b := b) hl5 up hr11 ho.1 ha.1 hb.1

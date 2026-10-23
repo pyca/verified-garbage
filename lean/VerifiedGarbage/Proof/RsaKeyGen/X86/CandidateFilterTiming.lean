@@ -55,10 +55,10 @@ theorem sieve_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes
     (pattern : Sieve.SamePattern E.sieveGeometry (candidateValue E rBytes) (candidateValue E sBytes)) :
     RelCT isa (DrawnPair E eBytes pBytes qBytes rBytes sBytes)
       (VG.Impl.RsaKeyGen.X86.CandidateSieve.code E.width) (fun _ _ => True) := by
-  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 96) := below_inner (by decide) v.low
-  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 96) := v.stackFar E.workspaceRegion
+  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 136) := below_inner (by decide) v.low
+  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 136) := v.stackFar E.workspaceRegion
     (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
-  have tableFar : E.tableRegion.Disjoint (below E.p 96) := v.stackFar E.tableRegion
+  have tableFar : E.tableRegion.Disjoint (below E.p 136) := v.stackFar E.tableRegion
     (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))))
   exact (CandidateSieve.code_trace v.sieve_valid pattern rfl
     (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega)]; have := v.low; omega)

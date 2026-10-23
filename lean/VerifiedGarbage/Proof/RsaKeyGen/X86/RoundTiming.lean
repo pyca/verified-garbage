@@ -18,10 +18,10 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof
 open VG.Impl.RsaKeyGen.X86.RoundCall VG.Impl.Mont.X86
 
 theorem call_trace {round : Prog isa} {name : String}
-    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
+    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (fit : 68 ≤ p.toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68)) :
+    (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
     RelCT isa (fun s t => Ready g capacity p s ∧ Ready g capacity p t) (call name round) (fun _ _ => True) := by
   refine VG.X86.RelCT.callWithReturn verified.1 verified.2.1 [below p 8] [⟨g.W, g.L⟩] ?_
   intro s t ⟨S, T⟩
@@ -50,12 +50,12 @@ def InputPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) : Pr
   Pair g [.edi] s t ∧ Input g capacity p s ∧ Input g capacity p t
 
 theorem code_trace {round : Prog isa} {name : String}
-    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (noSp : NoSp round) (stack : stackUse round ≤ 56)
+    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (noSp : NoSp round) (stack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (fit : 68 ≤ p.toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 68))
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) :
+    (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)
+    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
     RelCT isa (InputPair g capacity p) (code name round) (Pair g [.edi]) := by
   have raw : RelCT isa (InputPair g capacity p) (code name round) (fun _ _ => True) := by
     unfold code

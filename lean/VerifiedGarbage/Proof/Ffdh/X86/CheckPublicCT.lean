@@ -55,7 +55,7 @@ structure PubAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes
     (args : Nat → BitVec 32) (sp : BitVec 32) (D Yb : List Byte) (u : State) : Prop where
   dom : DomAt Ex base bytes len dlen args sp D u
   geo : YGeo args base bytes len u.rd u.wr
-  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 40)
+  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 96)
   y : Spec.Rsa.bytesAt u.mem (byteAddr (args 8)) len = Yb
 
 theorem PubAt.yv {u : State} (A : PubAt Ex base bytes len dlen args sp D Yb u) :

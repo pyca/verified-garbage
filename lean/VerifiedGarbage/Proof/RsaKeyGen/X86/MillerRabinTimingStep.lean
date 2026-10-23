@@ -19,10 +19,10 @@ theorem again_raw : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block a
     (VG.X86.Taint.Agree (roundTaint [.edi])) := checkedBlockInvariant rfl rfl
 
 theorem branch_raw {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
     RelCT isa (AvailablePair P other entropy k n)
@@ -47,10 +47,10 @@ theorem branch_raw {mont round : Prog isa} {montName roundName : String}
   exact ⟨trace, pair.2.2⟩
 
 theorem step_raw {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
     RelCT isa (LoopPair P other entropy k n) (stepAt P.bytes P.words P.g.w montName mont roundName round)
@@ -60,10 +60,10 @@ theorem step_raw {mont round : Prog isa} {montName roundName : String}
     (RelCT.seq (branch_raw montVerified montNoSp montStack roundVerified roundNoSp roundStack v w k n) again_raw)
 
 theorem step_pair {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
     RelCT isa (LoopPair P other entropy k n) (stepAt P.bytes P.words P.g.w montName mont roundName round)

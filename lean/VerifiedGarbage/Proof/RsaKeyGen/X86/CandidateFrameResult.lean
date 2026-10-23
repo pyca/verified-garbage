@@ -29,13 +29,13 @@ theorem StepOutputs.keep {E : Environment} {entropy : List Byte}
     cases candidate <;> simpa only [StepOutputs, Outputs, eax, mem] using R
 
 theorem framed_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : EntryInput E eBytes pBytes entropy (Compact.entered s))
-    (fit : 112 ≤ (s.gpr .esp).toNat)
+    (fit : 152 ≤ (s.gpr .esp).toNat)
     (returnFar : ∀ r ∈ E.writeRegions, (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r) :
     WP isa (VG.Impl.RsaKeyGen.X86.Candidate.code montName mont roundName round) s fun t =>
       abiPreserved s t ∧ StepOutputs E entropy (Spec.RsaKeyGen.candidateOp E.length eBytes pBytes entropy) t := by

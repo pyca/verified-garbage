@@ -88093,7 +88093,7 @@ ret
 /// * `rand` must contain independent uniform random octets for the probabilistic interpretation. They are not secret under this contract.
 /// * The bytes 0..1600 of `ws` are unspecified on return.
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_160(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
@@ -88883,7 +88883,7 @@ ret
 /// * `rand` must contain independent uniform random octets for the probabilistic interpretation. They are not secret under this contract.
 /// * The bytes 0..1600 of `ws` are unspecified on return.
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_256(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
@@ -89661,7 +89661,7 @@ ret
 /// * `rand` must contain independent uniform random octets for the probabilistic interpretation. They are not secret under this contract.
 /// * The bytes 0..4288 of `ws` are unspecified on return.
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_1024(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
@@ -90559,7 +90559,7 @@ ret
 /// * `rand` must contain independent uniform random octets for the probabilistic interpretation. They are not secret under this contract.
 /// * The bytes 0..7872 of `ws` are unspecified on return.
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_2048(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
@@ -91617,7 +91617,7 @@ ret
 /// * `rand` must contain independent uniform random octets for the probabilistic interpretation. They are not secret under this contract.
 /// * The bytes 0..11456 of `ws` are unspecified on return.
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ws`, `rand` and `used` may overlap the arguments on the stack, overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_3072(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
@@ -92835,7 +92835,7 @@ ret
 /// * scratch_len must be at least 64*p_len + 1024 words.
 /// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs` or `witnesses` (distinct Rust objects never do).
-/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -97987,7 +97987,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES: crate::cpu::F
 /// * scratch_len must be at least 64*p_len + 1024 words.
 /// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs` or `witnesses` (distinct Rust objects never do).
-/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -103140,7 +103140,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES: crate::cpu::Fea
 /// * scratch_len must be at least 64*p_len + 1024 words.
 /// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs` or `witnesses` (distinct Rust objects never do).
-/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters_sha1_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -108293,7 +108293,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES: cr
 /// * scratch_len must be at least 64*p_len + 1024 words.
 /// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs` or `witnesses` (distinct Rust objects never do).
-/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters_sha1_shani_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {

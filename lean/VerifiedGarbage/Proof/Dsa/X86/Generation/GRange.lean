@@ -52,7 +52,7 @@ theorem Env.Chg.of_stackOuts {E : Env} (v : E.Valid) {rs : List (Nat × Nat)} {m
     change (x - off E.base r.1).toNat < r.2 ↔ r.1 ≤ ofs E.base x ∧ ofs E.base x < r.1 + r.2 at I
     omega
   · exact hx E.stackRegion (List.mem_append_right _ (List.mem_singleton_self _))
-      (below_sub (by decide : 32 ≤ 160) v.low x (show (below E.sp 32).Contains x 1 from hc))
+      (below_sub (by decide : 32 ≤ 200) v.low x (show (below E.sp 32).Contains x 1 from hc))
 
 /-- The range check's ranges: the temporary, `h` and the word of the first
 borrow. -/

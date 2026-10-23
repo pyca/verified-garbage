@@ -18,14 +18,14 @@ structure MulReady (g : Geometry) (capacity b : Nat) (p : BitVec 32) (s : State)
   context : Context g s
   modulus : ∃ c, Modulus g c s.mem ∧ val32 s.mem g.W (g.array b) g.words < c
   args : MulArguments g capacity b s
-  low : 40 ≤ (s.gpr .esp).toNat
-  far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 40)
+  low : 80 ≤ (s.gpr .esp).toNat
+  far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 80)
   sp : s.gpr .esp = p
 
 theorem MulReady.callPre {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
     {s : State} (R : MulReady g capacity b p s) (length : g.L = 8 * capacity)
     (right : Spec.Rsa.Mont.Operand b) :
-    CallPre (Spec.Rsa.Mont.mulContract abi 16) mulArgs [below p 20] [⟨g.W, g.L⟩] s := by
+    CallPre (Spec.Rsa.Mont.mulContract abi 56) mulArgs [below p 20] [⟨g.W, g.L⟩] s := by
   obtain ⟨c, M, lt⟩ := R.modulus
   have rd : [below p 20] = [⟨argAddr (pushed mulArgs s).callEntry 0, 20⟩] := by
     rw [callEntry_argAddr0, R.sp]
@@ -48,14 +48,14 @@ theorem MulReady.callPre {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : Bi
 theorem MulReady.width {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
     {s : State} (S : MulReady g capacity b p s) : Spec.Rsa.Mont.wOf (mulEntry g s).mem g.W = g.w := by
   obtain ⟨c, M, _⟩ := S.modulus
-  have far := S.far.sub_right (below_sub (by decide : 24 ≤ 40) S.low)
+  have far := S.far.sub_right (below_sub (by decide : 24 ≤ 80) S.low)
   have frame := mulEntry_frame (by have := S.low; omega) S.context.ws.nowrap far
   exact (M.keep v frame (by simp) (by simp)).width
 
 
 theorem MulReady.publicInputs {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
     {s t : State} (S : MulReady g capacity b p s) (T : MulReady g capacity b p t) :
-    (Spec.Rsa.Mont.mulContract abi 16).pub (mulEntry g s) (mulEntry g t) := by
+    (Spec.Rsa.Mont.mulContract abi 56).pub (mulEntry g s) (mulEntry g t) := by
   have sa := fun {i} (hi : i < 5) => mulEntry_arg S.args (by have := S.low; omega) hi
   have ta := fun {i} (hi : i < 5) => mulEntry_arg T.args (by have := T.low; omega) hi
   have bound : g.W.toNat < 2 ^ 32 := by

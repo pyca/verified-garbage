@@ -35,7 +35,7 @@ structure UsedAt (base : Addr) (bytes : Nat) (up sp : BitVec 32) (out : Region) 
   wr : InRegions wr (byteAddr up) 8
   apart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr up, 8⟩
   frame : Region.Disjoint ⟨sp.setWidth 64, 76⟩ ⟨byteAddr up, 8⟩
-  below : Region.Disjoint ⟨byteAddr up, 8⟩ (below sp 40)
+  below : Region.Disjoint ⟨byteAddr up, 8⟩ (below sp 96)
   out : Region.Disjoint out ⟨byteAddr up, 8⟩
 
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}

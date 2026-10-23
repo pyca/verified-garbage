@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 /-! # The key search on i686: what its cdecl contract supplies
 
 `vg_ffdh_generate_key_search(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len,
-scratch, scratch_len, state)`: thirteen arguments on the stack. The controller uses 164 bytes of
-stack: its attempt's frame of 44, the call's return address and the callee's own 116.
+scratch, scratch_len, state)`: thirteen arguments on the stack. The controller uses 220 bytes of
+stack: its attempt's frame of 44, the call's return address and the callee's own 172.
 -/
 
 @[expose] public section
@@ -18,7 +18,7 @@ open VG VG.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The bytes of stack the controller uses. -/
-abbrev stack : Nat := 164
+abbrev stack : Nat := 220
 
 /-- The arguments' regions: `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state`. -/
 abbrev xR (s : State) : Region := ⟨argumentPointer s 0, (arg s 1).toNat⟩
@@ -32,7 +32,7 @@ abbrev sR (s : State) : Region := ⟨argumentPointer s 12, 128⟩
 abbrev aR (s : State) : Region := ⟨argAddr s 0, 52⟩
 /-- The return address and the stack below it. -/
 abbrev retR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 164#64, 164⟩
+abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 220#64, 220⟩
 
 structure KeySearchABI (s : State) : Prop where
   stackLow : stack ≤ (s.gpr .esp).toNat

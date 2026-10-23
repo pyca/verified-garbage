@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.TimingEntry
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCore
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
-import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
+import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 
@@ -22,7 +22,7 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem publicInputs {s t : State}
-    (H : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pub s t) :
+    (H : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧
       Spec.Rsa.Mont.wOf s.mem (wsOf s) = Spec.Rsa.Mont.wOf t.mem (wsOf t) := by
   sig_pub [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes] at H
@@ -50,8 +50,8 @@ private theorem pair_of_context {g : Geometry} {s t : State}
   · exact ptr_agree S.base T.base
 
 theorem constantTime : ConstantTime isa
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pre
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56).pub (code montName montCode) := by
+    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre
+    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pub (code montName montCode) := by
   apply RelCT.constantTime
   unfold code
   refine VG.X86.RelCT.frame (rs := Compact.savedRegisters) (R := fun _ _ => True)
@@ -84,7 +84,7 @@ theorem constantTime : ConstantTime isa
           have pair := pair_of_context startS.1.data.context startT'.1.data.context (by
             rw [keepS.1 .esp (by decide), keepT.1 .esp (by decide)]
             exact enteredSp)
-          obtain ⟨coreTrace, after⟩ := core_trace PreparedSquare.verified compact_noSp compact_stack S.valid
+          obtain ⟨coreTrace, after⟩ := core_trace VG.Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack S.valid
             (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega) _ _ _ _ _ _
             ⟨pair, ⟨entrySecret s, startS⟩, ⟨entrySecret t, startT'⟩⟩ coreS coreT
           have restoreTrace := (restore_trace _ _ _ _ _ _ after restoreS restoreT).1

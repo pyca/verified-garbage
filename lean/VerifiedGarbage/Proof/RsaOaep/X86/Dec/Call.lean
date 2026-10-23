@@ -315,7 +315,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact (ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sI
       · exact (ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sS'
-      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3392 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).symm
       all_goals exact ok.low_buf (.inl (by simp))
     · intro r hr
       have hg := hi.geo
@@ -357,7 +357,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       ((hro P.QQ (by simp)).cons ((hro P.DP (by simp)).cons ((hro P.DQ (by simp)).cons
       ((hro P.QI (by simp)).cons Covers.nil)))))))
   · rw [hr.1.st.sp]
-    have : 3392 ≤ P.B.toNat := hr.2.1.ok.BC
+    have : 3448 ≤ P.B.toNat := hr.2.1.ok.BC
     simp only [Proof.Rsa.X86.PrivChecked.stackBytes] at hst
     show _ ≤ P.B.toNat
     omega
@@ -391,7 +391,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     obtain ⟨s₂, m₂, g₂, po⟩ := po
     have := priv_post pa po
     rw [m₂, g₂ .eax (by decide)] at this
-    have ro := fun {R : Region} (hR : R ∈ P.lay.ro) => hs.callEntry_ro (by show 4 ≤ 3392; decide) hR
+    have ro := fun {R : Region} (hR : R ∈ P.lay.ro) => hs.callEntry_ro (by show 4 ≤ 3448; decide) hR
     rw [ro (R := P.N) (by simp), hi.nB, ro (R := P.E) (by simp), hi.eB, ro (R := P.CT) (by simp),
       ro (R := P.PP) (by simp), ro (R := P.QQ) (by simp), ro (R := P.DP) (by simp), ro (R := P.DQ) (by simp),
       ro (R := P.QI) (by simp)] at this

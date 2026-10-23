@@ -26,8 +26,8 @@ theorem input_mul {g : Geometry} {capacity : Nat} {p : BitVec 32} {s : State}
   exact ⟨A.ready.context, ⟨c, A.ready.modulus, odd, by rw [A.r2]; exact Nat.mod_lt _ positive⟩, A.ready.caller⟩
 
 theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 16)
+    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.WitnessMont.code name mont)
       (Pair g [.edi]) := by

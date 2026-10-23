@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
-public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
-public import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery multiplication at offsets of a working space, on baseline i686
+/-! # Montgomery multiplication on i686 with SSE2
 
-One function for every width, `vg_rsa_mont_mul_at`, which the RSA functions call. -/
+`vg_rsa_mont_mul_at`, at offsets of a working space, which the RSA functions
+call, and `vg_rsa_mont_mul`, in the prepared working space, which the
+Miller–Rabin rounds call: one kernel, each with its own parameters. -/
 
 @[expose] public section
 
@@ -16,26 +17,25 @@ namespace VG.Artifacts.RsaMont.X86
 
 def runtime : Artifact :=
   Spec.Rsa.MontMul.mulApi.artifact X86.target {
-    notes := ["Equal public input offsets select a symmetric product-scanning square. At 1024, 1536, 2048, 3072 and 4096 bits, \
-      fixed scalar MUL columns use 96-bit accumulators; other widths retain SSE2 low/high sums. Other \
-      products use coarsely integrated operand scanning. Pointers address the working \
-      space; byte counts and pointer comparisons control the loops. Every public value is in a register or \
-      computed from the arguments, which are read-only. The callee-saved registers, the rows' multiplier, \
-      the product and the subtraction's temporary are in the function's range; the result is selected \
-      into `o` by a mask."]
-    code := Impl.Mont.X86.Rt.body
-    verified := Proof.Mont.X86.Rt.rt_verified
-    spSafe := Proof.Mont.X86.StaticSquare.body_spSafe }
+    stack := 56
+    notes := ["Product scanning with SSE2: PMULUDQ multiplies two pairs of 32-bit words at once and \
+      PADDQ accumulates each column's products and their high halves in 64-bit lanes, in an MCDT frame \
+      (Intel's MXCSR prologue and epilogue). Each column folds the lanes, adds the carry, and stores a \
+      quotient digit or a word of the result; equal operand offsets select a square's half of the \
+      products, doubled, and the diagonal. The final subtraction's result is selected by a mask. \
+      Pointers, counts and the column index control the loops; they are in registers or in a frame of \
+      28 bytes of parameters, computed from the arguments."]
+    code := Impl.Mont.X86.Sse2.atBody
+    verified := Proof.Mont.X86.Sse2.at_verified }
 
 def prepared : Artifact :=
   Spec.Rsa.Mont.mulApi.artifact X86.target {
-    stack := 16
-    notes := ["Equal public operand indices select symmetric product-scanning squares with scalar MUL and \
-      independent SSE2 low/high sums; other products use paired-word CIOS. Arrays 2 and 3 hold \
-      the saved registers and product. Public pointers and width use a 16-byte stack cache. \
-      The prepared modulus and inverse are reused across Miller–Rabin products without operand copies."]
-    code := Impl.Mont.X86.PreparedSquare.dispatch
-    verified := Proof.Mont.X86.PreparedSquare.verified }
+    stack := 56
+    notes := ["The kernel of `vg_rsa_mont_mul_at` (product scanning with SSE2 PMULUDQ in an MCDT \
+      frame), its parameters from the header: the arrays' addresses, `-m⁻¹ mod 2³²` and `w`. Arrays 2 and \
+      3 hold the columns' sums, carry, quotient digits and product."]
+    code := Impl.Mont.X86.Sse2.preparedBody
+    verified := Proof.Mont.X86.Sse2.prepared_verified }
 
 def artifacts : List Artifact := [runtime, prepared]
 

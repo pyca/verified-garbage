@@ -33,8 +33,8 @@ theorem Context.keepRound {g : Geometry} (v : g.Valid) {s t : State} (C : Contex
 theorem data_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat} {p : BitVec 32}
     (S : Prepare.Data g c capacity p s) (K : Keeps [.eax, .ecx, .edx] s t)
     (F : WorkspaceFrame g (roundWrites g) s.mem t.mem)
-    (G : Frame ([⟨g.W, g.L⟩] ++ [below p 68]) s.mem t.mem)
-    (lengthFar : (lengthRegion p).Disjoint (below p 68)) : Prepare.Data g c capacity p t := by
+    (G : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem)
+    (lengthFar : (lengthRegion p).Disjoint (below p 108)) : Prepare.Data g c capacity p t := by
   have arrays {j : Nat} (index : j = 0 ∨ j = 4 ∨ j = 9 ∨ j = 10 ∨ j = 27) :
       ∀ r ∈ roundWrites g, g.array j + 4 * g.words ≤ r.1 ∨ r.1 + r.2 ≤ g.array j := by
     intro r mem

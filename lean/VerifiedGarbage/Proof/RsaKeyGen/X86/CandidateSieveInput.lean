@@ -85,10 +85,10 @@ theorem sieve_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List B
       t.gpr .eax = BitVec.ofNat 32 (Spec.RsaKeyGen.obviouslyComposite (8 * E.length) (candidateValue E entropy)).toNat ∧
       WorkFrame E s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have space : 256 ≤ E.size := v.geometry.headerFit
-  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 96) := below_inner (by decide) v.low
-  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 96) :=
+  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 136) := below_inner (by decide) v.low
+  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 136) :=
     v.stackFar E.workspaceRegion (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
-  have tableFar : E.tableRegion.Disjoint (below E.p 96) :=
+  have tableFar : E.tableRegion.Disjoint (below E.p 136) :=
     v.stackFar E.tableRegion (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))))
   have pointer : s.gpr .edi = E.workspace := by
     apply BitVec.eq_of_toNat_eq
@@ -103,7 +103,7 @@ theorem sieve_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List B
     (candidate_large v entropy)) fun t ⟨result, F, K⟩ syms => ?_
   change t.gpr .eax = BitVec.ofNat 32 (Spec.RsaKeyGen.obviouslyComposite (64 * E.width) (candidateValue E entropy)).toNat at result
   rw [show 64 * E.width = 8 * E.length by have := v.length_eq; omega] at result
-  have stackFrame : Frame [below E.p 96] s.mem t.mem := F.sub (by
+  have stackFrame : Frame [below E.p 136] s.mem t.mem := F.sub (by
     intro r mem
     simp only [Sieve.setupWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Chain
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Impl.Mont.X86.RepeatSquares
@@ -213,7 +213,7 @@ def mulArgs (c : Ctx) (o a b : Nat) : List Instr :=
 `c`, by a call of `vg_rsa_mont_mul_at` in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (c : Ctx) (o a b : Nat) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block (mulArgs c o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36)
+  .frame (.alloc 36) (.seq (.block (mulArgs c o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
 
 /-- `T = 2 T mod M` for `T` in slot 4: the sum into slot 1 with its carry in the
 word after it, the sum minus `M` into slot 4, and the sum back where it is

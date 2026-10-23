@@ -303,7 +303,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.low_buf (R := P.OUT) (.inr (by simp))
       · exact (ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sS'
-      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3392 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).symm
       · exact ok.low_buf (.inl (by simp))
       · exact ok.low_buf (.inl (by simp))
       · exact (ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sI
@@ -352,7 +352,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       ((hro P.QQ (by simp)).cons ((hro P.DP (by simp)).cons ((hro P.DQ (by simp)).cons
       ((hro P.QI (by simp)).cons Covers.nil)))))))
   · rw [hr.1.st.sp]
-    have : 3392 ≤ P.B.toNat := hr.2.1.1.ok.BC
+    have : 3448 ≤ P.B.toNat := hr.2.1.1.ok.BC
     simp only [Proof.Rsa.X86.PrivChecked.stackBytes] at hst
     show _ ≤ P.B.toNat
     omega
@@ -388,11 +388,11 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     obtain ⟨s₂, m₂, g₂, po⟩ := po
     have := priv_post pa po
     rw [m₂, g₂ .eax (by decide)] at this
-    have ro := fun {R : Region} (hR : R ∈ (P.lay h.D).ro) => hs.callEntry_ro (by show 4 ≤ 3392; decide) hR
+    have ro := fun {R : Region} (hR : R ∈ (P.lay h.D).ro) => hs.callEntry_ro (by show 4 ≤ 3448; decide) hR
     have hg := hi.geo
     have em : Spec.Rsa.bytesAt s.callEntry.mem ((P.scr + BitVec.ofNat 32 oEm).setWidth 64) P.K =
         (List.range P.K).map (emF h P σ) := by
-      rw [RsaPkcs1Sig.bytesAt_frame (hs.callEntry_frame (by show 4 ≤ 3392; decide)) (fun r hr => by
+      rw [RsaPkcs1Sig.bytesAt_frame (hs.callEntry_frame (by show 4 ≤ 3448; decide)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (ok.low_buf (R := P.SCR) (.inr (by simp))).symm.sub_left sI)
         (by omega)]
       unfold Spec.Rsa.bytesAt

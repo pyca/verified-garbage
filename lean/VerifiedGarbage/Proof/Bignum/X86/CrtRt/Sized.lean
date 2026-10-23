@@ -27,7 +27,7 @@ open VG.Proof.Bignum.X86.Crt (componentValue componentArguments accepted outputV
 /-- What private CRT at a run-time width writes: the working space but its saved registers, the
 output and the zone below `sp` its calls write. -/
 def rtBody (base out : Addr) (bytes len : Nat) (sp : BitVec 32) : List Region :=
-  [⟨base, 32⟩, ⟨off base 48, bytes - 48⟩, ⟨out, len⟩, below sp 40]
+  [⟨base, 32⟩, ⟨off base 48, bytes - 48⟩, ⟨out, len⟩, below sp 96]
 
 /-- A range of the working space but its saved registers. -/
 abbrev Body (bytes : Nat) (p : Nat × Nat) : Prop := p.1 + p.2 ≤ 32 ∨ (48 ≤ p.1 ∧ p.1 + p.2 ≤ bytes)

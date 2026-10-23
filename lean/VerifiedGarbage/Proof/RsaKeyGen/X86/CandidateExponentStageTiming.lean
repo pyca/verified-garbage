@@ -37,10 +37,10 @@ theorem exponent_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qByte
   exact ⟨trace, ⟨⟨DU, DZ⟩, saveU, saveZ⟩, flagU, by rw [same]; exact flagZ⟩
 
 theorem exponent_stage_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 16))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 16)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 56)
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
     (same : decide (Nat.gcd (candidateValue E rBytes - 1) (Spec.Rsa.os2ip eBytes) = 1) =

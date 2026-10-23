@@ -104,7 +104,7 @@ theorem In.fit {σ : State} (h : In P σ) : P.B.toNat + frameBytes + 76 ≤ 2 ^ 
   simp only [Lay.A, EP.argv, List.length_cons, List.length_nil] at this
   omega
 
-theorem In.BC {σ : State} (h : In P σ) : 44 ≤ P.B.toNat := h.ok.BC
+theorem In.BC {σ : State} (h : In P σ) : 100 ≤ P.B.toNat := h.ok.BC
 
 /-- `EM`, as the call reads it. -/
 theorem In.emA {σ : State} (h : In P σ) : (P.B + BitVec.ofNat 32 oEM).setWidth 64 = P.lay.fr oEM :=
@@ -149,7 +149,7 @@ theorem S.callPw {σ s : State} (hs : S P σ s) :
   have ok := hs.1.ok
   have hR : P.PRE ∈ P.lay.ro := by simp
   have hf : (P.pre.setWidth 64).toNat + P.rl * 8 ≤ 2 ^ 32 := ok.fits P.PRE (List.mem_append_left _ hR)
-  refine (Proof.RsaPkcs1Sig.wordsAt_frame' (hs.2.callEntry_frame (by show 4 ≤ 44; decide)) (fun r hr => ?_)
+  refine (Proof.RsaPkcs1Sig.wordsAt_frame' (hs.2.callEntry_frame (by show 4 ≤ 100; decide)) (fun r hr => ?_)
     (by omega)).trans hs.pw
   simp only [List.mem_singleton] at hr; subst hr
   exact ((ok.stk P.PRE (List.mem_append_left _ hR)).sub_left Lay.low_stk).symm
@@ -201,16 +201,16 @@ theorem call_vp (c : Ver.PublicImpl) : VP (G7 P) (.call c.name c.code) (G8 P) :=
       · rw [ar]; exact ⟨(ok.stk_fr (R := P.SCR) (d := 0) (n := 40) (.inr (by simp))
           (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega)).symm, fun _ h => h.elim⟩
     · intro r hr
-      rw [show below P.B 44 = P.lay.LOW from ok.low_eq]
+      rw [show below P.B 100 = P.lay.LOW from ok.low_eq]
       simp only [pubWr, pubRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
         or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.low_buf (R := P.OUT) (.inr (by simp))
       · exact ok.low_buf (R := P.SCR) (.inr (by simp))
-      · rw [ar]; exact (Lay.fr_low (by omega) (by show (44 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [ar]; exact (Lay.fr_low (by omega) (by show (100 : Nat) ≤ 2 ^ 32; decide)).symm
       · exact ok.low_buf (R := P.PRE) (.inl (by simp))
       · exact ok.low_buf (R := P.E) (.inl (by simp))
-      · rw [em]; exact (Lay.fr_low (by simp only [oEM]; omega) (by show (44 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [em]; exact (Lay.fr_low (by simp only [oEM]; omega) (by show (100 : Nat) ≤ 2 ^ 32; decide)).symm
     · intro r hr
       simp only [pubWr, pubRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
         or_false] at hr
@@ -249,9 +249,9 @@ theorem call_vp (c : Ver.PublicImpl) : VP (G7 P) (.call c.name c.code) (G8 P) :=
   · refine pub_pub h₁.pubArgs h₂.pubArgs (by rw [h₁.1.1.2.sp, h₂.1.1.2.sp]) ?_ ?_ ?_ ?_ _ _
     · rw [h₁.1.1.pw, h₂.1.1.pw]
     · rw [h₁.1.1.eB, h₂.1.1.eB]
-    · rw [h₁.1.1.2.sp, show below P.lay.B 44 = P.lay.LOW from h₁.1.1.1.ok.low_eq]
+    · rw [h₁.1.1.2.sp, show below P.lay.B 100 = P.lay.LOW from h₁.1.1.1.ok.low_eq]
       exact h₁.1.1.1.ok.low_buf (R := P.PRE) (.inl (by simp))
-    · rw [h₁.1.1.2.sp, show below P.lay.B 44 = P.lay.LOW from h₁.1.1.1.ok.low_eq]
+    · rw [h₁.1.1.2.sp, show below P.lay.B 100 = P.lay.LOW from h₁.1.1.1.ok.low_eq]
       exact h₁.1.1.1.ok.low_buf (R := P.E) (.inl (by simp))
   · -- After the call.
     have hh := h
@@ -263,7 +263,7 @@ theorem call_vp (c : Ver.PublicImpl) : VP (G7 P) (.call c.name c.code) (G8 P) :=
     have ar := argsA P
     have low : Region.Sub (below (s.gpr .esp) (stackUse c.code + 4)) P.lay.LOW := by
       rw [hsp, ← ok.low_eq]
-      exact below_sub (by have := c.stack; show _ ≤ 44; omega) ok.BC
+      exact below_sub (by have := c.stack; show _ ≤ 100; omega) ok.BC
     have hw : ∀ r ∈ pubWr P.B P.out P.scr P.K P.sl ++ [below (s.gpr .esp) (stackUse c.code + 4)],
         ∃ R ∈ P.lay.W, Region.Sub r R := fun r hr => by
       simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -283,7 +283,7 @@ theorem call_vp (c : Ver.PublicImpl) : VP (G7 P) (.call c.name c.code) (G8 P) :=
       · exact ok.stk_fr (.inr (by simp)) (by show _ ≤ frameBytes + 16; omega)
       · rw [ar]; exact Lay.fr_sep (by omega) (by simp only [frameBytes] at hd; omega) (by decide)
       · exact (Lay.fr_low (by simp only [frameBytes] at hd; omega)
-          (by show (44 : Nat) ≤ 2 ^ 32; decide)).sub_right low
+          (by show (100 : Nat) ≤ 2 ^ 32; decide)).sub_right low
     refine ⟨⟨hs.1, st⟩, ?_, fun nB hn hp => ?_⟩
     · rw [Zs, fr.readW (r := ⟨P.lay.fr oZ, 4⟩) (Region.contains_self _ _)
         (apart (by simp only [oZ]; omega) (by simp only [oZ, frameBytes]; omega)) (by decide)]
@@ -292,13 +292,13 @@ theorem call_vp (c : Ver.PublicImpl) : VP (G7 P) (.call c.name c.code) (G8 P) :=
       have := pub_post hh.pubArgs po nB hn (by rw [hs.callPw]; exact hp)
       rw [m₂, g₂ .eax (by decide)] at this
       have eE : Spec.Rsa.bytesAt s.callEntry.mem (P.e.setWidth 64) P.el = P.eB :=
-        (hs.2.callEntry_ro (by show 4 ≤ 44; decide) (R := P.E) (by simp)).trans hs.1.eB
+        (hs.2.callEntry_ro (by show 4 ≤ 100; decide) (R := P.E) (by simp)).trans hs.1.eB
       have eM : Spec.Rsa.bytesAt s.callEntry.mem ((P.B + BitVec.ofNat 32 oEM).setWidth 64) P.K = enc P σ := by
         rw [hs.1.emA]
-        refine (Proof.RsaPkcs1Sig.bytesAt_frame (hs.2.callEntry_frame (by show 4 ≤ 44; decide)) (fun r hr => ?_)
+        refine (Proof.RsaPkcs1Sig.bytesAt_frame (hs.2.callEntry_frame (by show 4 ≤ 100; decide)) (fun r hr => ?_)
           (by omega)).trans (emk.bytes hpl)
         simp only [List.mem_singleton] at hr; subst hr
-        exact Lay.fr_low (by simp only [oEM]; omega) (by show (44 : Nat) ≤ 2 ^ 32; decide)
+        exact Lay.fr_low (by simp only [oEM]; omega) (by show (100 : Nat) ≤ 2 ^ 32; decide)
       rw [eE, eM] at this
       exact this
 

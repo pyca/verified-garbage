@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Rsa.X86.RvArguments
@@ -31,7 +32,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Impl.Rsa.X86.RecoverRt (mmul mulArgs clrTop)
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Bignum.X86.PublicRt (calleeOf argByte_alloc calleeOf_eq rtPub_of rtPre_of)
+open VG.Proof.Bignum.X86.PublicRt (calleeOf argByte_alloc calleeOf_eq rtPub_of)
 
 /-- The return address and the arguments lie apart from every writable region. -/
 def ArgsOk (s : State) : Prop :=
@@ -207,14 +208,15 @@ theorem mmul_relCT {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha 
         obtain ⟨_, _, _, _, _, _, _, _, h₂, mr₂, _, hb₂, _, hB₂, _⟩ := I₂
         exact ⟨h₁.callOk mr₁ ho ha hb ho0 hb₁ hB₁, h₂.callOk mr₂ ho ha hb ho0 hb₂ hB₂⟩)
     refine VG.RelCT.seq blk ?_
-    refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 0) rt_correct rt_constantTime
+    refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
+      VG.Proof.Mont.X86.Sse2.at_constantTime
       [⟨(g.sp - BitVec.ofNat 32 36).setWidth 64, 36⟩] [⟨g.B, g.Z⟩] ?_
     rintro g₁ g₂ ⟨-, ⟨A₁, sp₁, arg₁, fr₁, sc₁⟩, ⟨A₂, sp₂, arg₂, fr₂, sc₂⟩⟩
     have c₁ := calleeOf_eq (base := g.B) (bytes := g.Z) sp₁
     have c₂ := calleeOf_eq (base := g.B) (bytes := g.Z) sp₂
     rw [sp₁] at fr₁
     rw [sp₂] at fr₂
-    refine ⟨c₁ ▸ rtPre_of A₁, c₂ ▸ rtPre_of A₂, ?_, Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_,
+    refine ⟨c₁ ▸ A₁, c₂ ▸ A₂, ?_, Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_,
       Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_, by rw [sp₁, sp₂]⟩
     · rw [← c₁, ← c₂]
       refine rtPub_of ?_ fun i hi => (arg₁ i hi).trans (arg₂ i hi).symm
