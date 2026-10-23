@@ -35,6 +35,11 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Pbkdf2.Whole.PPC64LE.pbkFrame Spec.Hmac.sha256I) .r10
       Proof.Pbkdf2.Whole.PPC64LE.Sha256.F.pbkdf2
     stack := Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I + 144 + Proof.Pbkdf2.Whole.PPC64LE.pbkFrame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Whole.PPC64LE.Sha256.pbkdf2 }]
+    verified := Proof.Pbkdf2.Whole.PPC64LE.Sha256.pbkdf2 },
+  -- Scrypt's code calls `pbkdf2` with its own working space.
+  Spec.Hmac.sha256I.pbkdf2ScratchApi.artifact PPC64LE.target {
+    code := Proof.Pbkdf2.Whole.PPC64LE.Sha256.F.pbkdf2
+    stack := Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I + 144
+    verified := Proof.Pbkdf2.Whole.PPC64LE.Sha256.scratch }]
 
 end VG.Artifacts.Pbkdf2Sha256.PPC64LE
