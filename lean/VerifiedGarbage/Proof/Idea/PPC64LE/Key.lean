@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Linear
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Impl.Idea.PPC64LE
 public import VerifiedGarbage.Spec.Idea.Contract
@@ -30,13 +30,16 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-!
 # IDEA key expansion on PPC64LE
 
 Each schedule doubleword (`expandWord q`) is a fixed bit permutation of the
 key's two doublewords, checked by evaluation over the lane domain
-(`expand_check`, `Straight.linear_ok`): bit `p` of `r10` is the key bit
+(`expand_check`, `StraightK.linear_ok`): bit `p` of `r10` is the key bit
 `expandSrc q p`. The doublewords are stored in turn (`words_run`), and every
 subkey bit is then the key bit `Spec.Idea.expandKey` takes
 (`expandKey_getLsbD`).
@@ -46,7 +49,7 @@ subkey bit is then the key bit `Spec.Idea.expandKey` takes
 
 namespace VG.Proof.Idea.PPC64LE
 
-open VG VG.PPC64LE VG.PPC64LE.Straight VG.Bitslice VG.Impl.Idea.PPC64LE VG.Impl.Idea
+open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Bitslice VG.Impl.Idea.PPC64LE VG.Impl.Idea
 
 theorem runBlock_append (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
@@ -89,7 +92,7 @@ theorem expandWord_run (q : Nat) (hq : q < 13) (s : State)
       (∀ r ∈ [Reg.r3, .r4], s'.gpr r = s.gpr r) := by
   have hok : Ok eCfg s := ⟨fun k hk' => absurd hk' (by simp [eCfg]), fun k hk' => hk k hk',
     by decide, fun k hk' => absurd hk' (by simp [eCfg])⟩
-  obtain ⟨s', hs', hout, hrd, hwr, -, hoth, hfr⟩ := linear_ok (expand_check q hq) hok
+  obtain ⟨s', hs', hout, hrd, hwr, hoth, hfr⟩ := linear_ok (expand_check q hq) hok
     (fun i => s.mem.readW (s.gpr .r3 + BitVec.ofNat 64 (8 * i)) 64)
     (fun r i h => by simp at h) (fun j hj => by
       have hj' : j < 2 := hj
