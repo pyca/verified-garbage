@@ -40,11 +40,24 @@ fn ed25519_test() {
         assert_eq!(group.params.public_key.curve, "edwards25519");
         let public: [u8; 32] = group.params.public_key.pk.0.clone().try_into().unwrap();
         let key = VerifyingKey::from_bytes(&public);
-        assert_ne!(test.result, Expectation::Acceptable, "tcId {}", test.tc_id);
-        let expected = if test.result == Expectation::Valid {
-            Ok(())
-        } else {
-            Err(Error::InvalidSignature)
+        let expected = match test.result {
+            Expectation::Valid => Ok(()),
+            // Signatures under small-order and mixed-order public keys, which
+            // Wycheproof allows either way: `VerifyingKey::verify` rejects no
+            // key for its order (RFC 8032 §5.1.7 requires no such check), so
+            // it accepts them.
+            Expectation::Acceptable => {
+                assert!(
+                    test.flags
+                        .iter()
+                        .all(|f| f == "SmallOrderPublicKey" || f == "MixedOrderPublicKey"),
+                    "tcId {}: {:?}",
+                    test.tc_id,
+                    test.flags
+                );
+                Ok(())
+            }
+            Expectation::Invalid => Err(Error::InvalidSignature),
         };
         let actual = key.verify(&test.case.msg.0, &test.case.sig.0);
         assert_eq!(actual, expected, "tcId {}", test.tc_id);
