@@ -1381,19 +1381,29 @@ theorem pwOff_le : ∀ k < 9, pwOff k + 16 ≤ 128 := by
   unfold Impl.Gcm.AArch64.Pmull.pwOff
   split <;> omega
 
-/-- The powers below `K` stored at `pw`, the block at `y` kept. -/
+/-- A byte outside a write is kept. -/
+theorem write_byte_sep {m : Mem} {x b : Addr} {k : Nat} {v : BitVec (8 * k)} (h : Mem.Sep x 1 b k) :
+    m.write b k v x = m x :=
+  Mem.write_apply (h x (by simp))
+
+/-- The bytes of `scratch` (`x4`) as they were in `s₀`. -/
+def ScratchKept (s₀ s : State) : Prop :=
+  ∀ x, Region.Contains ⟨s₀.gpr .x4, 256⟩ x 1 → s.mem x = s₀.mem x
+
+/-- The powers below `K` stored at `pw`, the block at `y` kept, `scratch` untouched. -/
 structure SW (s₀ : State) (yv : BitVec 128) (K : Nat) (s : State) : Prop where
   x8 : s.gpr .x8 = s₀.gpr .x5
   wr : s.wr = s₀.wr
   t : ∀ k, 1 ≤ k → k ≤ 8 → s.v (tReg k) = pp (H₀ s₀) k
   pw : ∀ k, 1 ≤ k → k ≤ K → s.mem.read (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff k)) 16 = pp (H₀ s₀) k
   y : s.mem.read (yp s₀) 16 = yv
+  sc : ScratchKept s₀ s
 
 /-- `H'ᴷ⁺¹` stored. -/
 theorem storeI_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {yv : BitVec 128} {K : Nat}
     (hK : K + 1 ≤ 8) {s : State} (hS : SW s₀ yv K s) :
     WP isa (.block (Impl.Gcm.AArch64.Pmull.storePw (K + 1))) s (SW s₀ yv (K + 1)) := by
-  obtain ⟨-, hwr, -, -, -, -, -, hyp, -, -, -⟩ := h
+  obtain ⟨-, hwr, -, -, -, -, -, hyp, -, -, hsp⟩ := h
   have hc : ∀ k, k ≤ 8 → Region.Contains ⟨s₀.gpr .x5, 128⟩ (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff k)) 16 :=
     fun k hk => contains_offset (by have := pwOff_le k (by omega); omega)
       (by have := pwOff_le k (by omega); omega)
@@ -1401,7 +1411,7 @@ theorem storeI_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {yv 
     rw [hS.wr, hwr, hS.x8]; exact ⟨⟨s₀.gpr .x5, 128⟩, by simp, hc (K + 1) hK⟩
   have ho' : pwOff (K + 1) < 4096 * 16 := by have := pwOff_le (K + 1) (by omega); omega
   refine WP.block_cons_iff.mpr ⟨_, exec_strq (pwOff_mod (K + 1)) ho' hout, WP.block_nil ?_⟩
-  refine ⟨hS.x8, hS.wr, hS.t, fun k hk hkK => ?_, ?_⟩
+  refine ⟨hS.x8, hS.wr, hS.t, fun k hk hkK => ?_, ?_, fun x hx => ?_⟩
   · show (s.mem.write (s.gpr .x8 + BitVec.ofNat 64 (pwOff (K + 1))) 16 (s.v (tReg (K + 1)))).read _ 16 = _
     rw [hS.x8]
     rcases (by omega : k = K + 1 ∨ k ≤ K) with rfl | hkK'
@@ -1415,13 +1425,17 @@ theorem storeI_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {yv 
       have := contains_offset (base := s₀.gpr .x1) (len := 16) (off := 0) (n := 16) (by decide) (by decide)
       rwa [add_ofNat_zero] at this
     rw [hS.x8, Mem.read_write_sep (Region.Disjoint.sep hyp hcy (hc (K + 1) hK)) (by decide), hS.y]
+  · show (s.mem.write (s.gpr .x8 + BitVec.ofNat 64 (pwOff (K + 1))) 16 (s.v (tReg (K + 1)))) x = _
+    rw [hS.x8, write_byte_sep (Region.Disjoint.sep hsp hx (hc (K + 1) hK)), hS.sc x hx]
 
 /-- The epilogue, then the eight powers stored. -/
 theorem epiS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {s : State}
     (hI : Inv s₀ 8 (nb s₀) s) (h8 : s.gpr .x8 = s₀.gpr .x5) :
     WP isa (.block (Impl.Gcm.AArch64.Pmull.epilogue ++ Impl.Gcm.AArch64.Pmull.storesS)) s fun s' =>
-      Proof.Gcm.ghashAArch64.post s₀ s' ∧ Spec.Gcm.Powers8Repr s'.mem (s₀.gpr .x5) (H₀ s₀) := by
+      Proof.Gcm.ghashAArch64.post s₀ s' ∧ Spec.Gcm.Powers8Repr s'.mem (s₀.gpr .x5) (H₀ s₀) ∧
+        ScratchKept s₀ s' := by
   have hp := pm_of_store h
+  have hys := h.2.2.2.2.2.2.1
   have hout : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 0) 16 := by
     rw [hI.wr, hI.x1]
     exact ⟨yR s₀, hp.y_in, contains_offset (by decide) (by decide)⟩
@@ -1435,11 +1449,17 @@ theorem epiS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {s : S
   have hye : blockAt se.mem (yp s₀) = Ys s₀ (nb s₀) := by
     apply φ_inj
     simp only [se, mem_setV, gpr_setV, v_setV, ↓reduceIte, hI.x1, add_ofNat_zero, φ_store, hI.y]
+  have hsc0 : ScratchKept s₀ se := fun x hx => by
+    have hcy : Region.Contains ⟨s₀.gpr .x1, 16⟩ (s₀.gpr .x1) 16 := by
+      have := contains_offset (base := s₀.gpr .x1) (len := 16) (off := 0) (n := 16) (by decide) (by decide)
+      rwa [add_ofNat_zero] at this
+    simp only [se, mem_setV, gpr_setV, hI.x1, add_ofNat_zero]
+    rw [write_byte_sep (Region.Disjoint.sep hys.symm hx hcy), hI.mem]
   have hS0 : SW s₀ (se.mem.read (yp s₀) 16) 0 se :=
     ⟨by simp only [se, gpr_setV, h8], by simp only [se, wr_setV, hI.wr],
       fun k hk1 hk8 => by
         simp only [se, v_setV, (ne_tReg (r := Y) k).symm, ite_false]; exact tReg_pp hI hk1 hk8,
-      fun _ _ h => absurd h (by omega), rfl⟩
+      fun _ _ h => absurd h (by omega), rfl, hsc0⟩
   show WP isa (.block Impl.Gcm.AArch64.Pmull.storesS) se _
   simp only [Impl.Gcm.AArch64.Pmull.storesS, List.append_assoc]
   rw [WP.block_append_iff]
@@ -1456,7 +1476,7 @@ theorem epiS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {s : S
   refine WP.mono (storeI_ok h (K := 5) (by decide) h₅) fun s₆ h₆ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (storeI_ok h (K := 6) (by decide) h₆) fun s₇ h₇ => ?_
-  refine WP.mono (storeI_ok h (K := 7) (by decide) h₇) fun s' h' => ⟨?_, ?_⟩
+  refine WP.mono (storeI_ok h (K := 7) (by decide) h₇) fun s' h' => ⟨?_, ?_, h'.sc⟩
   · show blockAt s'.mem (yp s₀) = Ys s₀ (nb s₀)
     rw [← hye]
     apply φ_inj
@@ -1476,20 +1496,22 @@ theorem epiS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {s : S
 
 theorem correctS {s₀ : State} (hs : Proof.Gcm.ghashStoreAArch64.pre s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghashS s₀ fun s' =>
-      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashStoreAArch64.post s₀ s' := by
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashStoreAArch64.post s₀ s' ∧
+        ScratchKept s₀ s' := by
   have hp := pm_of_store hs
-  have hw : WP isa Impl.Gcm.AArch64.Pmull.ghashS s₀ (Proof.Gcm.ghashStoreAArch64.post s₀) := by
+  have hw : WP isa Impl.Gcm.AArch64.Pmull.ghashS s₀ fun s' =>
+      Proof.Gcm.ghashStoreAArch64.post s₀ s' ∧ ScratchKept s₀ s' := by
     refine WP.seq (WP.mono (prologueS_ok hs) fun s₁ ⟨hI₁, h8₁⟩ => ?_)
     refine WP.seq (WP.mono (WP.gprs (rs := [.x8]) (loopsPart_ok hp hI₁) (by decide +kernel)
       (by decide +kernel)) fun s₂ ⟨hI₂, g₂⟩ => ?_)
-    exact epiS_ok hs hI₂ (by rw [g₂ .x8 (by simp), h8₁])
+    exact WP.mono (epiS_ok hs hI₂ (by rw [g₂ .x8 (by simp), h8₁])) fun _ ⟨a, b, c⟩ => ⟨⟨a, b⟩, c⟩
   exact WP.mono (WP.gprs (rs := preserved) hw (by decide +kernel) (by decide +kernel))
-    fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
+    fun _ ⟨⟨h₁, h₃⟩, h₂⟩ => ⟨h₂, h₁, h₃⟩
 
 theorem ghashS_correct (s : State) (hs : Proof.Gcm.ghashStoreAArch64.pre s) :
     ∃ t s', Exec isa Impl.Gcm.AArch64.Pmull.ghashS s t s' ∧ abiPreserved s s' ∧
       Proof.Gcm.ghashStoreAArch64.post s s' := by
-  obtain ⟨t, s', he, h₁, h₂⟩ := correctS hs
+  obtain ⟨t, s', he, h₁, h₂, -⟩ := correctS hs
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem ghashS_ct : ConstantTime isa Proof.Gcm.ghashStoreAArch64.pre Proof.Gcm.ghashStoreAArch64.pub
@@ -1513,9 +1535,8 @@ def satStateS : State :=
     gpr := fun r => if r = .x5 then 0x6000 else Proof.Gcm.AArch64.satState.gpr r
     wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩, ⟨0x6000, 128⟩] }
 
-theorem ghashS_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashS (Spec.Gcm.ghashStorePowersContract AArch64.abi) :=
-  Verified.of_correct ghashS_correct ghashS_ct
+private theorem ghashS_implies :
+    Proof.Gcm.ghashStoreAArch64.Implies (Spec.Gcm.ghashStorePowersContract AArch64.abi) :=
     { pre := by
         sig_implies_pre [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
           Spec.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
@@ -1537,5 +1558,22 @@ theorem ghashS_verified :
           | rfl
           | decide
           | exact Region.disjoint_of_sep (by decide)⟩ }
+
+theorem ghashS_verified :
+    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashS (Spec.Gcm.ghashStorePowersContract AArch64.abi) :=
+  Verified.of_correct ghashS_correct ghashS_ct ghashS_implies
+
+/-- `vg_ghash_store_powers` never writes `scratch`: its caller need not wipe it. -/
+theorem ghashS_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Spec.Gcm.ghashStorePowersContract AArch64.abi).pre s)
+    (he : Exec isa Impl.Gcm.AArch64.Pmull.ghashS s t s') :
+    Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Gcm.ghashStorePowersSig [("scratch", 0)] s s' := by
+  obtain ⟨t', s'', he', -, -, hsc⟩ := correctS (ghashS_implies.pre s hs)
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Gcm.ghashStorePowersSig,
+    Spec.Gcm.ghashSig, Spec.Gcm.storePowersParam, Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  intro i hi
+  have hi' : i < 256 := by simpa [Elem.size] using hi
+  exact hsc _ (Offset.contains_base _ (by omega) (by omega))
 
 end VG.Proof.Gcm.AArch64.Pmull

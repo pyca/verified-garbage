@@ -40,9 +40,11 @@ def artifacts : List Artifact := [
   Spec.Gcm.ghashStorePowersApi.artifact AArch64.target {
     suffix := "_aes"
     notes := ["Uses PMULL as `vg_ghash_aes` does, computing `H'` to `H'⁸` on every call and storing them \
-        to `pw` after the hash."]
+        to `pw` after the hash. `scratch` is not used."]
+    written := [("scratch", 0)]
     code := Impl.Gcm.AArch64.Pmull.ghashS
     verified := Proof.Gcm.AArch64.Pmull.ghashS_verified
+    writtenOk := Proof.Gcm.AArch64.Pmull.ghashS_written
     features := ["aes"] }]
 
 end VG.Artifacts.Gcm.AArch64
