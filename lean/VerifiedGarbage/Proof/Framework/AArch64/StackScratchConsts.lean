@@ -269,21 +269,19 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     have hsp₃ : s₃.sp = s.sp - BitVec.ofNat 64 bytes := ha.2.1.trans (narrow_sp s)
     have hwr₃ : s₃.wr = (narrow sig e n bytes s).wr := (Exec.rdwr he).2.1
     have h0 := sp_of_preK hk hb.1 hs
-    obtain ⟨m', hblk, hfr⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ s₃ words
+    obtain ⟨u', hblk, ⟨g, m', rfl, hg⟩, hfr⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ s₃ words
       (by rw [hwr₃, narrow_wr]; simp) (by have := hb.2.2.2; omega)
       (fun k hk' => by
         rw [hsp₃]; exact Offset.contains_base _ (by omega) (by have := hb.2.2.2; omega))
     have he' := Exec.seq he (Exec.block hblk)
-    have ha' : abiPreserved (narrow sig e n bytes s) { ((s₃.write .x .x16 (s₃.sp + BitVec.ofNat 64 0)).write
-        .x .x17 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) with mem := m' } := by
+    have ha' : abiPreserved (narrow sig e n bytes s) { s₃ with gpr := g, mem := m' } := by
       refine ⟨fun q hq => ?_, ha.2.1, ha.2.2⟩
       have h16 : q ≠ .x16 := by rintro rfl; simp [preserved] at hq
       have h17 : q ≠ .x17 := by rintro rfl; simp [preserved] at hq
-      simp only [State.write, h16, h17, ↓reduceIte]
-      exact ha.1 q hq
-    obtain ⟨hex, habi, hm, hg⟩ := withStackScratchK_run hk hb h0 he' ha'
+      exact (hg q h16 h17).trans (ha.1 q hq)
+    obtain ⟨hex, habi, hm, hgp⟩ := withStackScratchK_run hk hb h0 he' ha'
     refine ⟨t, s₃, _, he, hq, hfr, hsp₃, hex, habi, hm, ?_⟩
-    rw [hg]; simp [State.write]
+    rw [hgp]; exact hg .x0 (by decide) (by decide)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hx0⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩

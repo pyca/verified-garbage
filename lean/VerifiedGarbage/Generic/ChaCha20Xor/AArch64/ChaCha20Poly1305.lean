@@ -65,7 +65,7 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
     suffix := v.callee.suffix
     features := v.features
     notes := sealNotes v
-    code := Impl.StackScratch.AArch64.withStackScratchWipedPairs 1280 .x7 48
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96
       (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
     stack := 1280
     verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v },
@@ -73,7 +73,7 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
     suffix := v.callee.suffix
     features := v.features
     notes := openNotes v
-    code := Impl.StackScratch.AArch64.withStackScratchWipedPairs 1280 .x7 48
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96
       (Impl.ChaCha20Poly1305.AArch64.openCode v.callee v.stitched)
     stack := 1280
     verified := Proof.ChaCha20Poly1305.AArch64.open_framed v },
