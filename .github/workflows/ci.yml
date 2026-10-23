@@ -366,10 +366,16 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event.merge_group.base_sha }}
         run: |
+          # The commits whose files ci/rust_arches.py reads, for the
+          # modules' `cfg`s (fetched at once: the clone has no file contents).
           case "$EVENT" in
-            pull_request) git diff --name-only --no-renames HEAD^1 HEAD ;;
-            merge_group) git diff --name-only --no-renames "$BASE" HEAD ;;
-          esac | python3 ci/rust_arches.py "$EVENT" | tee -a "$GITHUB_OUTPUT"
+            pull_request) revs="HEAD^1 HEAD" ;;
+            merge_group) revs="$BASE HEAD" ;;
+            *) revs= ;;
+          esac
+          if [ -n "$revs" ]; then
+            git diff --name-only --no-renames $revs
+          fi | python3 ci/rust_arches.py "$EVENT" $revs | tee -a "$GITHUB_OUTPUT"
 
   # Every test, with coverage, on each platform of ci/rust_matrix.toml's
   # `rust`, and the lints.
