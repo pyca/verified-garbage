@@ -9,14 +9,13 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Round
 
 /-!
 # ChaCha20-Poly1305 on AArch64, the rest when decrypting
