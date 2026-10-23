@@ -84,6 +84,8 @@ mod tests {
             crate::x25519::Error::Randomness,
             crate::aes_ecb::Error::InvalidKeyLength,
             crate::aes_ecb::Error::IncompleteBlock,
+            crate::aes_cbc::Error::InvalidKeyLength,
+            crate::aes_cbc::Error::IncompleteBlock,
         );
         #[cfg(any(
             target_arch = "x86_64",
@@ -93,8 +95,6 @@ mod tests {
         ))]
         check!(
             super::InvalidKeyLength,
-            crate::aes_cbc::Error::InvalidKeyLength,
-            crate::aes_cbc::Error::IncompleteBlock,
             crate::aes_ccm::Error::InvalidKeyLength,
             crate::aes_ccm::Error::InvalidNonceLength,
             crate::aes_ccm::Error::InvalidTextLength,
