@@ -157,25 +157,25 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat} (hs : 
   have hP : P.toNat = (s.gpr .r11).toNat := VG.Proof.X25519.Arm.addr_toNat _
   unfold loadComponent
   refine WP.seq (wp_movw fun s₀ u₀ => wp_dp (op2_reg _ _) fun s₁ u₁ =>
-    wp_ptr (d := .r10) (by decide) (by omega) fun s₂ u₂ => wp_ptr (d := .r9) (by decide) (by omega) fun t u₃ =>
+    wp_ptr (d := .r10) (by decide) (by omega_arith) fun s₂ u₂ => wp_ptr (d := .r9) (by decide) (by omega_arith) fun t u₃ =>
     WP.block_nil ?_)
   have R : Rest [.r4, .r8, .r9, .r10] s t := ((u₀.rest (by decide)).trans (u₁.rest (by decide))).trans
     ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
   have mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem, u₀.mem]
   have r8 : t.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4) := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte, VG.Proof.X25519.Arm.dpVal]
-    rw [movw_ofNat (by omega)]
+    rw [movw_ofNat (by omega_arith)]
   have p10 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 out := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte]
   have p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 out + BitVec.ofNat 32 (4 * (len / 4)) := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte, Offset.add_add]
-    rw [show 4 * (len / 4) = len by omega]
+    rw [show 4 * (len / 4) = len by omega_arith]
   clear u₀ u₁ u₂ u₃
   refine WP.seq (ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 out) (step := 4) (k := len / 4)
     (fun j u => Ws u base size ∧ Rest [.r4, .r8, .r9, .r10] s u ∧
       u.gpr .r8 + BitVec.ofNat 32 (4 * j) = s.gpr .r11 + BitVec.ofNat 32 (len - 4) ∧
       Outside base out (4 * j) s.mem u.mem ∧ ∀ i < j, w32 u.mem base (out + 4 * i) = VG.Proof.Weierstrass.ldWord32 s.mem P len i)
-    (by decide) (by omega) (by omega)
+    (by decide) (by omega_arith) (by omega_arith)
     (fun j u u' ⟨a, b, c, d, e⟩ F => ⟨a.of_fupd F, b.trans (F.rest _), by rw [F.gpr]; exact c,
       by rw [F.mem]; exact d, by rw [F.mem]; exact e⟩)
     ⟨hs.of_rest R (by decide), R, by rw [r8, Nat.mul_zero]; exact BitVec.add_zero _,
@@ -183,38 +183,38 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat} (hs : 
     p10 p9 ?_ fun u I pu => ?_)
   · intro j hj u ⟨wu, Ru, e8, Ou, Vu⟩ pu p9u
     have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
-    have r8u : u.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4 * (j + 1)) := r8_at e8 (by omega)
+    have r8u : u.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4 * (j + 1)) := r8_at e8 (by omega_arith)
     have ha : State.addr (u.gpr .r8 + BitVec.ofNat 32 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := by
-      rw [BitVec.add_zero, r8u]; exact VG.Arm.addr_add (by omega)
+      rw [BitVec.add_zero, r8u]; exact VG.Arm.addr_add (by omega_arith)
     have hrd : InRegions (u.rd ++ u.wr) (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
-      rw [Ru.rd, Ru.wr]; exact hr _ (by omega)
+      rw [Ru.rd, Ru.wr]; exact hr _ (by omega_arith)
     have hkeep : u.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 =
         s.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 :=
-      readW32_keep fun i hi => VG.Proof.Weierstrass.keep_of_disjoint (Ou.mono (Nat.le_refl _) (by omega)) hd
-        (by omega) (by omega) (by omega)
+      readW32_keep fun i hi => VG.Proof.Weierstrass.keep_of_disjoint (Ou.mono (Nat.le_refl _) (by omega_arith)) hd
+        (by omega_arith) (by omega_arith) (by omega_arith)
     refine wp_ldr (by decide) ha hrd fun u₁ v₁ => wp_rev fun u₂ v₂ => ?_
     have w₂ := (wu.of_upd v₁ (by decide)).of_upd v₂ (by decide)
     refine wp_str (by decide) (w₂.ea (K := out + 4 * j) (d := 0) (at_ptr (by
       rw [v₂.other .r10 (by decide), v₁.other .r10 (by decide)]; exact pu)
-      (by rw [v₂.other .r12 (by decide), v₁.other .r12 (by decide)]; exact e12)) (by omega))
-      (w₂.write (d := out + 4 * j + 0) (n := 4) (by omega)) fun u₃ m₃ => ?_
+      (by rw [v₂.other .r12 (by decide), v₁.other .r12 (by decide)]; exact e12)) (by omega_arith))
+      (w₂.write (d := out + 4 * j + 0) (n := 4) (by omega_arith)) fun u₃ m₃ => ?_
     refine wp_dp (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 4) (by decide))) fun u₄ v₄ =>
       wp_bump (by decide) fun u₅ v₅ => WP.block_nil ?_
     have O₂ : Outside base (out + 4 * j) 4 u.mem u₃.mem := by
-      rw [m₃.mem, v₂.mem, v₁.mem, Nat.add_zero]; exact writeW32_outside _ _ _ (by omega)
+      rw [m₃.mem, v₂.mem, v₁.mem, Nat.add_zero]; exact writeW32_outside _ _ _ (by omega_arith)
     have m₅ : u₅.mem = u₃.mem := by rw [v₅.mem, v₄.mem]
     refine ⟨⟨(((w₂.of_mupd m₃).of_upd v₄ (by decide)).of_upd v₅ (by decide)),
       Ru.trans ((((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (m₃.rest _)).trans
         ((v₄.rest (by decide)).trans (v₅.rest (by decide)))), ?_, ?_, fun i hi => ?_⟩, ?_, ?_⟩
     · rw [v₅.other .r8 (by decide), v₄.gpr, m₃.gpr, v₂.other .r8 (by decide), v₁.other .r8 (by decide)]
       exact r8_down e8
-    · rw [m₅]; exact (Ou.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
+    · rw [m₅]; exact (Ou.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
     · rw [m₅]
       rcases Nat.lt_or_ge i j with h | h
-      · rw [O₂.w32 (by omega) (by omega), Vu i h]
-      · obtain rfl : i = j := by omega
+      · rw [O₂.w32 (by omega_arith) (by omega_arith), Vu i h]
+      · obtain rfl : i = j := by omega_arith
         rw [m₃.mem, v₂.mem, v₁.mem, Nat.add_zero, w32_write_self, v₂.gpr, v₁.gpr, hkeep, VG.Proof.Weierstrass.ldWord32,
-          ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+          ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
     · rw [v₅.gpr, v₄.other .r10 (by decide), m₃.gpr, v₂.other .r10 (by decide), v₁.other .r10 (by decide)]
       exact ptr_step pu
     · rw [v₅.other .r9 (by decide), v₄.other .r9 (by decide), m₃.gpr, v₂.other .r9 (by decide),
@@ -223,15 +223,15 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat} (hs : 
   · obtain ⟨wu, Ru, _, Ou, Vu⟩ := I
     have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
     refine WP.mono (zeroPad_ok wu (o := out + len) (k := 2 * n - len / 4)
-      (by rw [pu, e12, Offset.add_add, show out + 4 * (len / 4) = out + len by omega]) (by omega) (by omega)) fun t ⟨wt, Z, R₂, O₂⟩ => ⟨wt, ?_, Ru.trans (R₂.mono (by decide)), ?_⟩
+      (by rw [pu, e12, Offset.add_add, show out + 4 * (len / 4) = out + len by omega_arith]) (by omega_arith) (by omega_arith)) fun t ⟨wt, Z, R₂, O₂⟩ => ⟨wt, ?_, Ru.trans (R₂.mono (by decide)), ?_⟩
     · rw [decodeBE_ofBytes, rsa_bytesAt]
-      refine VG.Proof.Weierstrass.val32_eq_ofBytes_len _ _ _ _ out (2 * n) len h4 (by omega) fun j hj => ?_
+      refine VG.Proof.Weierstrass.val32_eq_ofBytes_len _ _ _ _ out (2 * n) len h4 (by omega_arith) fun j hj => ?_
       rcases Nat.lt_or_ge j (len / 4) with h | h
-      · rw [O₂.w32 (by omega) (by omega), Vu j h]
-      · rw [show out + 4 * j = out + len + 4 * (j - len / 4) by omega, Z _ (by omega),
-          VG.Proof.Weierstrass.ldWord32, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
-    · exact (Ou.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
+      · rw [O₂.w32 (by omega_arith) (by omega_arith), Vu j h]
+      · rw [show out + 4 * j = out + len + 4 * (j - len / 4) by omega_arith, Z _ (by omega_arith),
+          VG.Proof.Weierstrass.ldWord32, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
+          ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
+    · exact (Ou.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
 
 theorem toBytes_encodeBE (n x : Nat) : Spec.Weierstrass.toBytes n x = Spec.Dsa.encodeBE n x := by
   apply List.ext_getElem

@@ -125,12 +125,12 @@ theorem pre_vp {V : Nat → BitVec 32} {LS : List Nat} {B N L : Nat} (md : MdStr
     fun σ s ⟨⟨gi, x⟩, r8⟩ => ?_
   have big := gi.scrBig
   have fit := gi.scrFit
-  have hn : G.qLen = 20 ∨ G.qLen = 32 := by omega
-  have hq32 : G.qLen ≤ 32 := by omega
-  have hl : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by omega
+  have hn : G.qLen = 20 ∨ G.qLen = 32 := by omega_arith
+  have hq32 : G.qLen ≤ 32 := by omega_arith
+  have hl : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by omega_arith
   have sk := sK_lt hl
-  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
-  have s64 : 64 ≤ sK G.pLen := by simp only [sK, sA]; omega
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
+  have s64 : 64 ≤ sK G.pLen := by simp only [sK, sA]; omega_arith
   show WP isa (.block (.movw .r12 (BitVec.ofNat 16 (sK G.pLen)) :: .dp .add .r8 .r8 (.reg .r12) ::
     .mov .r9 (.imm (BitVec.ofNat 32 (G.pLen / 4))) :: (VG.Impl.Rsa.Arm.Keys.stride ++ (scr G.pLen .r0 sMsg ++
       (.mov .r3 (.imm 0) :: (((List.range 16).map fun i => Instr.str .r3 .r0 (4 * i)) ++
@@ -140,34 +140,34 @@ theorem pre_vp {V : Nat → BitVec 32} {LS : List Nat} {B N L : Nat} (md : MdStr
   refine wp_movw fun s₁ u₁ => wp_dp (op2_reg _ _) fun s₂ u₂ => ?_
   have kb : s₂.gpr .r8 = G.KB := by
     rw [u₂.gpr, dpVal, u₁.other _ (by decide), r8, u₁.gpr, setWidth_ofNat16 sk]
-  refine wp_mov (op2_imm (encodable_lt (show G.pLen / 4 < 256 by omega))) fun s₃ u₃ => ?_
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (w := G.w) (by simp only [GP.w]; omega) u₃.gpr fun s₄ e7 R₄ M₄ => ?_
+  refine wp_mov (op2_imm (encodable_lt (show G.pLen / 4 < 256 by omega_arith))) fun s₃ u₃ => ?_
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (w := G.w) (by simp only [GP.w]; omega_arith) u₃.gpr fun s₄ e7 R₄ M₄ => ?_
   have kb4 : s₄.gpr .r8 = G.KB := by rw [R₄.gpr _ (by decide), u₃.other _ (by decide), kb]
-  refine scr_ok (d := .r0) kb4 rfl hl (by simp only [sMsg]; omega) fun s₅ v₅ R₅ M₅ => ?_
+  refine scr_ok (d := .r0) kb4 rfl hl (by simp only [sMsg]; omega_arith) fun s₅ v₅ R₅ M₅ => ?_
   refine wp_mov (op2_imm (encodable_lt (show 0 < 256 by decide))) fun s₆ u₆ => ?_
   have a0 : ∀ i, i < 64 → State.addr (s₆.gpr .r0 + BitVec.ofNat 32 i) = State.addr G.scr + BitVec.ofNat 64 i :=
     fun i hi => by
       rw [u₆.other _ (by decide), v₅, show sMsg = 0 from rfl, BitVec.add_zero]
-      exact gi.saddr (by omega)
+      exact gi.saddr (by omega_arith)
   have w6 : ∀ {o n : Nat}, o + n ≤ G.scrLen * 8 → InRegions s₆.wr (G.sa o) n := fun h => by
     rw [u₆.wr, R₅.wr, R₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact gi.inScr h
-  refine zeros_ok (s := s₆) (a := State.addr G.scr) (by rw [u₆.gpr]) (fun i hi => a0 _ (by omega))
-    (fun i hi => w6 (o := 4 * i) (n := 4) (by omega)) 16 (Nat.le_refl _) fun s₇ R₇ M₇ => ?_
+  refine zeros_ok (s := s₆) (a := State.addr G.scr) (by rw [u₆.gpr]) (fun i hi => a0 _ (by omega_arith))
+    (fun i hi => w6 (o := 4 * i) (n := 4) (by omega_arith)) 16 (Nat.le_refl _) fun s₇ R₇ M₇ => ?_
   have a7 : ∀ i, i < 64 → State.addr (s₇.gpr .r0 + BitVec.ofNat 32 i) = State.addr G.scr + BitVec.ofNat 64 i :=
     fun i hi => by rw [R₇.gpr _ (by simp)]; exact a0 i hi
   refine wp_mov (op2_imm (encodable_lt (show 0x80 < 256 by decide))) fun s₈ u₈ => ?_
-  refine wp_strb (a := State.addr G.scr + BitVec.ofNat 64 G.qLen) (by omega)
-    (by rw [u₈.other _ (by decide)]; exact a7 _ (by omega))
-    (by rw [u₈.wr, R₇.wr]; exact w6 (o := G.qLen) (n := 1) (by omega)) fun s₉ u₉ => ?_
-  refine wp_mov (op2_imm (encodable_lt (show 8 * G.qLen / 256 < 256 by omega))) fun s₁₀ u₁₀ => ?_
-  refine wp_strb (a := State.addr G.scr + BitVec.ofNat 64 62) (by omega)
-    (by rw [u₁₀.other _ (by decide), u₉.gpr, u₈.other _ (by decide)]; exact a7 _ (by omega))
-    (by rw [u₁₀.wr, u₉.wr, u₈.wr, R₇.wr]; exact w6 (o := 62) (n := 1) (by omega)) fun s₁₁ u₁₁ => ?_
-  refine wp_mov (op2_imm (encodable_lt (show 8 * G.qLen % 256 < 256 by omega))) fun s₁₂ u₁₂ => ?_
-  refine wp_strb (a := State.addr G.scr + BitVec.ofNat 64 63) (by omega)
+  refine wp_strb (a := State.addr G.scr + BitVec.ofNat 64 G.qLen) (by omega_arith)
+    (by rw [u₈.other _ (by decide)]; exact a7 _ (by omega_arith))
+    (by rw [u₈.wr, R₇.wr]; exact w6 (o := G.qLen) (n := 1) (by omega_arith)) fun s₉ u₉ => ?_
+  refine wp_mov (op2_imm (encodable_lt (show 8 * G.qLen / 256 < 256 by omega_arith))) fun s₁₀ u₁₀ => ?_
+  refine wp_strb (a := State.addr G.scr + BitVec.ofNat 64 62) (by omega_arith)
+    (by rw [u₁₀.other _ (by decide), u₉.gpr, u₈.other _ (by decide)]; exact a7 _ (by omega_arith))
+    (by rw [u₁₀.wr, u₉.wr, u₈.wr, R₇.wr]; exact w6 (o := 62) (n := 1) (by omega_arith)) fun s₁₁ u₁₁ => ?_
+  refine wp_mov (op2_imm (encodable_lt (show 8 * G.qLen % 256 < 256 by omega_arith))) fun s₁₂ u₁₂ => ?_
+  refine wp_strb (a := State.addr G.scr + BitVec.ofNat 64 63) (by omega_arith)
     (by rw [u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide), u₉.gpr, u₈.other _ (by decide)]
-        exact a7 _ (by omega))
-    (by rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, R₇.wr]; exact w6 (o := 63) (n := 1) (by omega))
+        exact a7 _ (by omega_arith))
+    (by rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, R₇.wr]; exact w6 (o := 63) (n := 1) (by omega_arith))
     fun t u₁₃ => WP.block_nil ?_
   have sw8 : ∀ x : Nat, (BitVec.ofNat 32 x).setWidth 8 = BitVec.ofNat 8 x := fun x => by
     apply BitVec.eq_of_toNat_eq
@@ -177,7 +177,7 @@ theorem pre_vp {V : Nat → BitVec 32} {LS : List Nat} {B N L : Nat} (md : MdStr
   have m6 : s₆.mem = s.mem := by rw [u₆.mem, M₅, M₄, u₃.mem, u₂.mem, u₁.mem]
   have mt : t.mem = writeBytes s.mem (State.addr G.scr) (padList G.qLen) := by
     rw [u₁₃.mem, u₁₂.gpr, u₁₂.mem, u₁₁.mem, u₁₀.gpr, u₁₀.mem, u₉.mem, u₈.gpr, u₈.mem, M₇, m6, sw8, sw8]
-    rw [writeBytes_set _ _ _ (by simp; omega) hl64, writeBytes_set _ _ _ (by simp) (by simp),
+    rw [writeBytes_set _ _ _ (by simp; omega_arith) hl64, writeBytes_set _ _ _ (by simp) (by simp),
       writeBytes_set _ _ _ (by simp) (by simp)]
     rfl
   have R : Rest [.r12, .r8, .r9, .r7, .r0, .r3, .r1] s t :=
@@ -189,13 +189,13 @@ theorem pre_vp {V : Nat → BitVec 32} {LS : List Nat} {B N L : Nat} (md : MdStr
     rw [mt]
     exact (writeBytes_frame _ _ _ (R := G.rScr) (by
       show (_ - _ : Addr).toNat + _ ≤ _
-      rw [BitVec.sub_self, BitVec.toNat_zero]; simp; omega)).mono (by simp)
+      rw [BitVec.sub_self, BitVec.toNat_zero]; simp; omega_arith)).mono (by simp)
   have g7 : ∀ r, r ∉ [Reg.r0, .r1, .r3, .r12] → t.gpr r = s₄.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₁₃.gpr, u₁₂.other _ hr.2.1, u₁₁.gpr, u₁₀.other _ hr.2.1, u₉.gpr,
       u₈.other _ hr.2.1, R₇.gpr _ (by simp), u₆.other _ hr.2.2.1,
       R₅.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hr.2.2.2, hr.1⟩)]
-  have pl := padTail_length md (n := G.qLen) (by omega) hL
+  have pl := padTail_length md (n := G.qLen) (by omega_arith) hL
   refine ⟨⟨gi.of_scr R f, ?_, ?_, ?_, fun y hy => ?_, fun y hy => ?_, fun j hj => absurd hj (by simp),
     fun j hj => absurd hj (by simp), fun d hd => absurd hd (by simp), fun d hd => absurd hd (by simp)⟩, x⟩
   · rw [g7 _ (by decide), e7]
@@ -203,10 +203,10 @@ theorem pre_vp {V : Nat → BitVec 32} {LS : List Nat} {B N L : Nat} (md : MdStr
   · rw [g7 _ (by decide), R₄.gpr _ (by decide), u₃.gpr]
   · simp only [List.mem_singleton] at hy; subst hy
     show Spec.Rsa.bytesAt t.mem (State.addr G.scr + BitVec.ofNat 64 G.qLen) (padTail md G.qLen).length = _
-    rw [mt, pl, bytesAt_writeBytes _ _ _ (by simp; omega) (by simp), padList_tail md hn hlb]
+    rw [mt, pl, bytesAt_writeBytes _ _ _ (by simp; omega_arith) (by simp), padList_tail md hn hlb]
   · simp only [List.mem_singleton] at hy; subst hy
     show G.qLen + (padTail md G.qLen).length ≤ _
-    rw [pl]; omega
+    rw [pl]; omega_arith
 
 end
 

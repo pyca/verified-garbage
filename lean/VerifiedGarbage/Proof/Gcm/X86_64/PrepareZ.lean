@@ -69,7 +69,7 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   set H := Spec.Gcm.ctxH s₀.mem C with hH
   have hk : InRegions (s₀.rd ++ s₀.wr) C 256 := by
     obtain ⟨r, hr, hc⟩ := hw
-    exact ⟨r, List.mem_append_right _ hr, by simp only [Region.Contains] at hc ⊢; omega⟩
+    exact ⟨r, List.mem_append_right _ hr, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
   simp only [prepare, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (setupG_ok' hk) fun s₁ ⟨_, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
@@ -77,8 +77,8 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   -- Pairs 0–7.
   rw [WP.block_append_iff]
   refine WP.mono (storesK_ok .rdi pregs.reverse 8 s₁
-    (fun k hk' => by rw [wr₁, r₁]; exact in_sub_int hw (by rw [pregs_rev_length] at hk'; omega))
-    (by rw [r₁, pregs_rev_length]; exact Nat.le_trans (by omega) hwrap))
+    (fun k hk' => by rw [wr₁, r₁]; exact in_sub_int hw (by rw [pregs_rev_length] at hk'; omega_arith))
+    (by rw [r₁, pregs_rev_length]; exact Nat.le_trans (by omega_arith) hwrap))
     fun s₂ ⟨sv₂, fr₂, g₂, rd₂, wr₂, ln₂⟩ => ?_
   rw [r₁] at sv₂ fr₂
   have P0 := stored (H := H) (j := 8) (d := 0) rfl (by decide) sv₂ (fun k hk l hl => by
@@ -86,7 +86,7 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   have P0' : ∀ i < 8, ∀ l < 2, s₂.mem.readW (C + BitVec.ofNat 64 (256 + 32 * i + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * i + 2 - l)) := fun i hi l hl => by
     have := P0 i hi l hl
-    rwa [show 8 - 8 + i = i by omega] at this
+    rwa [show 8 - 8 + i = i by omega_arith] at this
   -- The reduction constant in every lane of `zmm1`.
   rw [WP.block_append_iff]
   refine WP.mono (Proof.AesGcm.X86_64.Short.bcast_ok .xmm1 s₂) fun s₃ ⟨b₃, f₃⟩ => ?_
@@ -108,13 +108,13 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   -- The address of pair `i`, lane `l`, from `r11`.
   have addr : ∀ o i l : Nat, C + BitVec.ofNat 64 256 + BitVec.ofNat 64 (o + (32 * i + 16 * l)) =
       C + BitVec.ofNat 64 (256 + o + 32 * i + 16 * l) := fun o i l => by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
   -- The powers at `r11`, as `table_ok` reads them.
   have src₄ : ∀ k < 4, ∀ l < 4, StitchZ.pw16 s₄ k l =
       Spec.Gcm.preparedPower (hpow H (2 * (2 * k + l / 2) + 2 - l % 2)) := fun k hk l hl => by
-    have := P0' (2 * k + l / 2) (by omega) (l % 2) (by omega)
-    rw [StitchZ.pw16, q₄, mem₄, show 64 * k + 16 * l = 0 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega, addr]
-    rw [show 256 + 0 + 32 * (2 * k + l / 2) + 16 * (l % 2) = 256 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega]
+    have := P0' (2 * k + l / 2) (by omega_arith) (l % 2) (by omega_arith)
+    rw [StitchZ.pw16, q₄, mem₄, show 64 * k + 16 * l = 0 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega_arith, addr]
+    rw [show 256 + 0 + 32 * (2 * k + l / 2) + 16 * (l % 2) = 256 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_arith]
     exact this
   -- Pairs 8–15.
   rw [WP.block_append_iff]
@@ -128,9 +128,9 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   have T1 : ∀ k < 4, ∀ l < 4, s₅.mem.readW (C + BitVec.ofNat 64 (256 + 256 + 64 * k + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * (2 * k + l / 2) + 2 - l % 2 + 16)) := fun k hk l hl => by
     have := e₅ k hk l hl
-    rw [q₄, show 256 + 64 * k + 16 * l = 256 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega, addr,
+    rw [q₄, show 256 + 64 * k + 16 * l = 256 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega_arith, addr,
       src₄ k hk l hl, v16, prod_prepared rfl rfl] at this
-    rw [show 256 + 256 + 64 * k + 16 * l = 256 + 256 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega]
+    rw [show 256 + 256 + 64 * k + 16 * l = 256 + 256 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_arith]
     exact this
   -- Pairs 16–23.
   have q₅ : s₅.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [g₅, q₄]
@@ -142,7 +142,7 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   -- The first table kept the powers at `r11`.
   have src₅ : ∀ k < 4, ∀ l < 4, StitchZ.pw16 s₅ k l = StitchZ.pw16 s₄ k l := fun k hk l hl => by
     simp only [StitchZ.pw16, g₅]
-    exact StitchZ.keep256 f₅ (by omega) (by decide) (by omega)
+    exact StitchZ.keep256 f₅ (by omega_arith) (by decide) (by omega_arith)
   have v32 : s₅.mem.readW (C + BitVec.ofNat 64 256 + BitVec.ofNat 64 480) 128 =
       Spec.Gcm.preparedPower (hpow H 32) := by
     have := T1 3 (by decide) 2 (by decide)
@@ -151,9 +151,9 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   have T2 : ∀ k < 4, ∀ l < 4, s₆.mem.readW (C + BitVec.ofNat 64 (256 + 512 + 64 * k + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * (2 * k + l / 2) + 2 - l % 2 + 32)) := fun k hk l hl => by
     have := e₆ k hk l hl
-    rw [q₅, show 512 + 64 * k + 16 * l = 512 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega, addr,
+    rw [q₅, show 512 + 64 * k + 16 * l = 512 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega_arith, addr,
       src₅ k hk l hl, src₄ k hk l hl, v32, prod_prepared rfl rfl] at this
-    rw [show 256 + 512 + 64 * k + 16 * l = 256 + 512 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega]
+    rw [show 256 + 512 + 64 * k + 16 * l = 256 + 512 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_arith]
     exact this
   refine WP.mono (vzu_ok s₆) fun s ⟨g, m, rd, wr⟩ => ⟨fun k hk l hl => ?_, ?_, fun r hr h11 => ?_, ?_, ?_⟩
   · -- Each pair from its table, kept by the later one.
@@ -163,27 +163,27 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
         t'.mem.readW (C + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
           t.mem.readW (C + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 := fun {t t' o} f h ho => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add] at f
-      exact StitchZ.keep256 f (by omega) (by omega) (by omega)
+      exact StitchZ.keep256 f (by omega_arith) (by omega_arith) (by omega_arith)
     rw [q₅] at f₆
     rw [q₄] at f₅
-    rcases (by omega : k < 8 ∨ (8 ≤ k ∧ k < 16) ∨ 16 ≤ k) with h | ⟨h, h'⟩ | h
-    · rw [keep f₆ (by omega) (by decide), keep f₅ (by omega) (by decide), mem₄]
+    rcases (by omega_arith : k < 8 ∨ (8 ≤ k ∧ k < 16) ∨ 16 ≤ k) with h | ⟨h, h'⟩ | h
+    · rw [keep f₆ (by omega_arith) (by decide), keep f₅ (by omega_arith) (by decide), mem₄]
       exact P0' k h l hl
-    · rw [keep f₆ (by omega) (by decide)]
-      have := T1 ((k - 8) / 2) (by omega) (2 * ((k - 8) % 2) + l) (by omega)
-      rw [show 256 + 256 + 64 * ((k - 8) / 2) + 16 * (2 * ((k - 8) % 2) + l) = 256 + 32 * k + 16 * l by omega,
+    · rw [keep f₆ (by omega_arith) (by decide)]
+      have := T1 ((k - 8) / 2) (by omega_arith) (2 * ((k - 8) % 2) + l) (by omega_arith)
+      rw [show 256 + 256 + 64 * ((k - 8) / 2) + 16 * (2 * ((k - 8) % 2) + l) = 256 + 32 * k + 16 * l by omega_arith,
         show 2 * (2 * ((k - 8) / 2) + (2 * ((k - 8) % 2) + l) / 2) + 2 - (2 * ((k - 8) % 2) + l) % 2 + 16 =
-          2 * k + 2 - l by omega] at this
+          2 * k + 2 - l by omega_arith] at this
       exact this
-    · have := T2 ((k - 16) / 2) (by omega) (2 * ((k - 16) % 2) + l) (by omega)
-      rw [show 256 + 512 + 64 * ((k - 16) / 2) + 16 * (2 * ((k - 16) % 2) + l) = 256 + 32 * k + 16 * l by omega,
+    · have := T2 ((k - 16) / 2) (by omega_arith) (2 * ((k - 16) % 2) + l) (by omega_arith)
+      rw [show 256 + 512 + 64 * ((k - 16) / 2) + 16 * (2 * ((k - 16) % 2) + l) = 256 + 32 * k + 16 * l by omega_arith,
         show 2 * (2 * ((k - 16) / 2) + (2 * ((k - 16) % 2) + l) / 2) + 2 - (2 * ((k - 16) % 2) + l) % 2 + 32 =
-          2 * k + 2 - l by omega] at this
+          2 * k + 2 - l by omega_arith] at this
       exact this
   · rw [m]
     have sub : ∀ {a : Nat}, a + 256 ≤ 1024 → 256 ≤ a → ∀ r ∈ [(⟨C + BitVec.ofNat 64 a, 256⟩ : Region)],
         ∃ r' ∈ [(⟨C + BitVec.ofNat 64 256, 768⟩ : Region)], Region.Sub r r' := fun h h' r hr =>
-      ⟨_, List.mem_singleton_self _, by obtain rfl := List.mem_singleton.mp hr; exact Offset.sub C h' (by omega)⟩
+      ⟨_, List.mem_singleton_self _, by obtain rfl := List.mem_singleton.mp hr; exact Offset.sub C h' (by omega_arith)⟩
     have e5 : C + BitVec.ofNat 64 256 + BitVec.ofNat 64 256 = C + BitVec.ofNat 64 512 := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     have e6 : C + BitVec.ofNat 64 256 + BitVec.ofNat 64 512 = C + BitVec.ofNat 64 768 := by

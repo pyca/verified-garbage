@@ -68,10 +68,10 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
       s.gpr .r2 = 0 ∧ s.gpr .lr = BitVec.ofNat 32 h.B)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi, hs⟩ => ?_) ?_
   · prun [lenClr, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi, hs,
-      movw_val (show oLen < 2 ^ 16 by decide), movw_val (show h.B < 2 ^ 16 by omega)]
+      movw_val (show oLen < 2 ^ 16 by decide), movw_val (show h.B < 2 ^ 16 by omega_arith)]
     exact ⟨hi, hs⟩
-  refine VP.seq (VP.mono (zero_vp (hg.wbuf (o := oLen) (n := h.B) (by pomega) (by omega))
-    (by omega) hI₁) (fun _ _ h => h) fun _ _ h => h) ?_
+  refine VP.seq (VP.mono (zero_vp (hg.wbuf (o := oLen) (n := h.B) (by pomega) (by omega_arith))
+    (by omega_arith) hI₁) (fun _ _ h => h) fun _ _ h => h) ?_
   -- The length field.
   let I₂ : State → Mem → Prop := fun σ m => Inv σ m ∧ ∀ j < h.B - h.L, m (sa scr (oLen + j)) = 0
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ (Inv σ s.mem ∧ ∀ j < h.B, s.mem (sa scr (oLen + j)) = 0) ∧
@@ -87,7 +87,7 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
   have a0 : State.addr (s.gpr .r0) = sa scr (oLen - h.N) := by rw [r0, hg.addr (by pomega)]
   have e0 : State.addr (s.gpr .r0) + BitVec.ofNat 64 (h.N + (h.B - h.L)) = sa scr (oLen + (h.B - h.L)) := by
     rw [a0, sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    congr 2; unfold oLen; omega
+    congr 2; unfold oLen; omega_arith
   refine WP.mono (h.len s (by rw [r0, hg.scr_lt (by pomega)]; pomega)
     (by rw [e0]; exact hg.wr hc.st (by pomega))) fun t ⟨g, rd, wr, sp, m⟩ => ?_
   rw [e0, r4, r5, count0 (hℓ σ), h.md.lenOf_eq _ (h.lenAll _ (hℓ σ))] at m
@@ -97,9 +97,9 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     refine (Frame.refl _ _).trans ?_
     intro a ha
     simp only [List.mem_singleton, forall_eq, Region.Contains, VG.WriteBytes.writeBytes, hlen] at ha ⊢
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_arith)]
   have hsub : Region.Sub (sR scr (oLen + (h.B - h.L)) h.L) (sR scr oLen h.B) :=
-    Offset.sub _ (by omega) (by omega)
+    Offset.sub _ (by omega_arith) (by omega_arith)
   have fr' : Frame [sR scr oLen h.B] s.mem t.mem := fr.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, hsub⟩
   obtain ⟨σ', ok⟩ := hg.ok
@@ -115,8 +115,8 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
       have := (State.addr scr).isLt
       pomega
     by_cases hj' : j < h.B - h.L
-    · rw [ite_eq_left hj', ite_eq_right (by rw [e, BitVec.toNat_ofNat]; omega), hz j hj]
-    · rw [ite_eq_right hj', ite_eq_left (by rw [e, BitVec.toNat_ofNat]; omega), e, BitVec.toNat_ofNat]
-      congr 1; omega
+    · rw [ite_eq_left hj', ite_eq_right (by rw [e, BitVec.toNat_ofNat]; omega_arith), hz j hj]
+    · rw [ite_eq_right hj', ite_eq_left (by rw [e, BitVec.toNat_ofNat]; omega_arith), e, BitVec.toNat_ofNat]
+      congr 1; omega_arith
 
 end VG.Proof.RsaPss.Arm

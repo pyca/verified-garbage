@@ -179,8 +179,8 @@ theorem storeRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch 
         if w.val / 16 = i then qw s (vreg (w.val % 16 / 4)) (w.val % 4) else (working s.mem p)[w]) ∧
       Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ VKeep s t ∧ words t = words s ∧
       (Masks s → Masks t) := by
-  have w (k : Nat) (hk : k < 4) := hs.write (d := rowOff i k) (n := 32) (by unfold rowOff; omega)
-  have o (k : Nat) : rowOff i k = 1024 + 32 * (4 * i + k) := by unfold rowOff; omega
+  have w (k : Nat) (hk : k < 4) := hs.write (d := rowOff i k) (n := 32) (by unfold rowOff; omega_arith)
+  have o (k : Nat) : rowOff i k = 1024 + 32 * (4 * i + k) := by unfold rowOff; omega_arith
   apply WP.of_runBlock
   simp only [storeRow_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.store256_eq, ea_at,
     State.setMem_wr, State.setMem_gpr, State.setMem_mem, ymm_setMem, hs.reg, w 0 (by decide),
@@ -188,23 +188,23 @@ theorem storeRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch 
   simp only [o]
   refine ⟨fun x => ?_, ?_, ?_, ?_, fun h => ((((h.setMem _).setMem _).setMem _).setMem _)⟩
   · have hx := x.isLt
-    simp only [working_write256 _ p (show 4 * i + 3 < 32 by omega),
-      working_write256 _ p (show 4 * i + 2 < 32 by omega),
-      working_write256 _ p (show 4 * i + 1 < 32 by omega),
-      working_write256 _ p (show 4 * i + 0 < 32 by omega)]
+    simp only [working_write256 _ p (show 4 * i + 3 < 32 by omega_arith),
+      working_write256 _ p (show 4 * i + 2 < 32 by omega_arith),
+      working_write256 _ p (show 4 * i + 1 < 32 by omega_arith),
+      working_write256 _ p (show 4 * i + 0 < 32 by omega_arith)]
     have hq : x.val % 4 < 4 := Nat.mod_lt _ (by decide)
     by_cases h : x.val / 16 = i
     · have : x.val % 16 / 4 = 0 ∨ x.val % 16 / 4 = 1 ∨ x.val % 16 / 4 = 2 ∨ x.val % 16 / 4 = 3 := by
-        omega
+        omega_arith
       rcases this with e | e | e | e <;>
-        simp only [h, ite_true, e, vreg, show x.val / 4 = 4 * i + x.val % 16 / 4 by omega,
+        simp only [h, ite_true, e, vreg, show x.val / 4 = 4 * i + x.val % 16 / 4 by omega_arith,
           qword256_ymm _ _ hq] <;> simp
-    · simp only [h, ite_false, show x.val / 4 ≠ 4 * i + 3 by omega, show x.val / 4 ≠ 4 * i + 2 by omega,
-        show x.val / 4 ≠ 4 * i + 1 by omega, show x.val / 4 ≠ 4 * i + 0 by omega]
-  · exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (working_contains p (by omega))).writeW
-      (List.mem_singleton_self _) _ (working_contains p (by omega))).writeW
-      (List.mem_singleton_self _) _ (working_contains p (by omega))).writeW
-      (List.mem_singleton_self _) _ (working_contains p (by omega))
+    · simp only [h, ite_false, show x.val / 4 ≠ 4 * i + 3 by omega_arith, show x.val / 4 ≠ 4 * i + 2 by omega_arith,
+        show x.val / 4 ≠ 4 * i + 1 by omega_arith, show x.val / 4 ≠ 4 * i + 0 by omega_arith]
+  · exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (working_contains p (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (working_contains p (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (working_contains p (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (working_contains p (by omega_arith))
   · exact ((((setMem_vkeep _ _).trans (setMem_vkeep _ _)).trans (setMem_vkeep _ _)).trans
       (setMem_vkeep _ _))
   · apply Vector.ext; intro j hj
