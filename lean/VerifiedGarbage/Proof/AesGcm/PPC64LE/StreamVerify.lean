@@ -141,22 +141,22 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
     obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
     have hTr₃ : Covers [⟨s₁.gpr .r20, (s₀.gpr .r9).toNat⟩] (s₃.rd ++ s₃.wr) := by
       rw [k₃.rd, k₃.wr, h1.en.keeps.rd, h1.en.keeps.wr, h1.r20]; exact hTr
-    have hTd : (⟨s₁.gpr .r20, (s₀.gpr .r9).toNat⟩ : Region).Disjoint ⟨s₁.gpr .r31 + BitVec.ofNat 64 16, 16⟩ := by
+    have hTd : (⟨s₁.gpr .r20, (s₀.gpr .r9).toNat⟩ : Region).Disjoint ⟨s₁.gpr .r31 + BitVec.ofNat 64 256, 16⟩ := by
       rw [h1.r20, h1.r31]; exact dT (by decide)
     refine WP.seq (WP.mono (recv_ok he₃ tl19 t1 t16 hTr₃ hTd) fun s₄ ⟨hb₄, hf₄, g₄, k₄⟩ => ?_)
     have he₄ := he₃.keep (fun r hr => g₄ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide)) k₄.sp k₄.rd k₄.wr
     rw [h1.r31] at hf₄ hb₄
-    have f₀₄ : Frame [savedR (s₀.gpr .r10), ⟨s₀.gpr .r10 + BitVec.ofNat 64 16, 16⟩] s₀.mem s₄.mem :=
+    have f₀₄ : Frame [savedR (s₀.gpr .r10), ⟨s₀.gpr .r10 + BitVec.ofNat 64 256, 16⟩] s₀.mem s₄.mem :=
       (h1.en.frame.mono (by simp)).trans ((k₃.mem ▸ hf₄ : Frame _ s₁.mem s₄.mem).mono (by simp))
-    have dc₀₄ : ∀ r ∈ [savedR (s₀.gpr .r10), ⟨s₀.gpr .r10 + BitVec.ofNat 64 16, 16⟩],
+    have dc₀₄ : ∀ r ∈ [savedR (s₀.gpr .r10), ⟨s₀.gpr .r10 + BitVec.ofNat 64 256, 16⟩],
         (⟨s₀.gpr .r3, 256⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact L₀.cw'.sub_right (Lay.wSub (by decide))
       · exact L₀.cw'.sub_right (Lay.wSub (by decide))
-    have ds₀₄ : ∀ r ∈ [savedR (s₀.gpr .r10), ⟨s₀.gpr .r10 + BitVec.ofNat 64 16, 16⟩],
+    have ds₀₄ : ∀ r ∈ [savedR (s₀.gpr .r10), ⟨s₀.gpr .r10 + BitVec.ofNat 64 256, 16⟩],
         (⟨s₀.gpr .r5, 80⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -174,30 +174,30 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
     refine ⟨fo.env.keep (fun r hr => g₇ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide)) k₇.sp k₇.rd k₇.wr, ?_, fun iv hs hl => ?_⟩
     · have sv₅ := (sv₃.frame hf₄ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact saved_w (by decide) (.inl (by decide)))).frame fof
+        simp only [List.mem_singleton] at hr; subst hr; exact saved_w (by decide) (.inr (by decide)))).frame fof
         (saved_tagFrame L₀ (.inl rfl))
       rw [h1.r31] at hf₇
       exact sv₅.frame hf₇ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact saved_w (by decide) (.inl (by decide)))
+        simp only [List.mem_singleton] at hr; subst hr; exact saved_w (by decide) (.inr (by decide)))
     · have ht' : bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 0) 16 =
           fullTag (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat) (ctxH s₀.mem (s₀.gpr .r3)) iv a ct :=
         fin_out f₀₄ dc₀₄ ds₀₄ hR h1.r29 h1.r30 h1.r22 fo hs hl
-      have hrc : bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 16) 16 =
+      have hrc : bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 256) 16 =
           bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat ++ zeros (16 - (s₀.gpr .r9).toNat) := by
         rw [h1.r31, bytesAt_frame fof (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl | rfl | rfl
-            · exact ((dsw.sub_right (Lay.wSub (d := 16) (n := 16) (by decide))).sub_left
+            · exact ((dsw.sub_right (Lay.wSub (d := 256) (n := 16) (by decide))).sub_left
                 (Region.sub_prefix (by decide))).symm
-            · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-            · simpa using Lay.w_w (w := s₀.gpr .r10) (a := 16) (n := 16) (d := 0) (k := 16) (.inr (by decide))
+            · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+            · simpa using Lay.w_w (w := s₀.gpr .r10) (a := 256) (n := 16) (d := 0) (k := 16) (.inr (by decide))
                 (by decide) (by decide)
             · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide), hb₄, k₃.mem,
           ← h1.r20, bytesAt_frame h1.en.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]
             exact dT (d := 128) (k := 120) (by decide)) (by omega), h1.r20]
       have hX : (bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 0) (s₀.gpr .r9).toNat ++
-            zeros (16 - (s₀.gpr .r9).toNat) = bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 16) 16) ↔
+            zeros (16 - (s₀.gpr .r9).toNat) = bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 256) 16) ↔
           (fullTag (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat) (ctxH s₀.mem (s₀.gpr .r3)) iv a ct).take
             (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
         rw [bytesAt_take _ _ t16, ht', hrc, List.append_cancel_right_eq]

@@ -15,6 +15,9 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM on PPC64LE: `Verified`
@@ -59,6 +62,10 @@ theorem streamFinish_correct (s : State) (hs : streamFinishPPC64LE.pre s) :
 theorem streamVerify_correct (s : State) (hs : streamVerifyPPC64LE.pre s) :
     ∃ t s', Exec isa streamVerify s t s' ∧ abiPreserved s s' ∧ streamVerifyPPC64LE.post s s' :=
   streamVerify_wp hs
+
+theorem seal_correct (s : State) (hs : sealPPC64LE.pre s) :
+    ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
+  seal_wp hs
 
 /-! ## States satisfying the preconditions (with empty buffers) -/
 
@@ -165,5 +172,23 @@ theorem streamVerify_verified :
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
       Spec.Gcm.streamVerifyPre, Spec.Gcm.streamVerifyPost, streamVerifyPPC64LE, verPre, rounds, PPC64LE.abi,
       PPC64LE.argRegs] [verSat] using verSat)
+
+/-- `tag` at `0x5000` and the working space at `0x6000`, the stack arguments. -/
+def sealSat : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 10 | .r5 => 0x2000 | .r7 => 0x3000 | .r9 => 0x4000 | _ => 0
+  lr := 0
+  sp := 0x9000
+  mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9069 then 0x60 else 0
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 16⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
+
+theorem seal_verified :
+    Verified PPC64LE.target «seal» (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
+  Verified.of_correct seal_correct seal_ct (by
+    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+      Spec.Gcm.sealPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+      stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
 end VG.Proof.AesGcm.PPC64LE
