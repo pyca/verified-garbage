@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Fused
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
@@ -283,69 +284,55 @@ theorem cryptWith_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
 theorem sealMainWith_ok {crypt : Prog isa} {s₀ : State} (hp : APre true s₀) (hc : CryptOk s₀ crypt) :
     WP isa (sealMainWith crypt) s₀ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  have hAL := (Nat.le_of_lt (s₀.gpr .x3).isLt)
   unfold sealMainWith
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
-  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
-    bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.x21
-    h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
-    fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
-  have i₂ := mac_inv h₁.inv k₂
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
+  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ := bytesAt_frame h₁.inv.frame (by rdisj_all) hAL
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp h₁.inv) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
-    rw [stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
+    rw [stateAt_frame k₃.frame (by rdisj_all), h₁.st]
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
-    rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
-      bytesAt_frame h₁.fine (by rdisj_all) hL']
+    rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
   refine WP.seq (WP.mono (hc s₃ i₃ st₃) fun s₄ ⟨v₄, i₄, k₄, ct₄⟩ => ?_)
   rw [D₃] at ct₄
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₄.x21
-    i₄.rd i₄.wr i₄.x22 (by rw [i₄.x23]; exact hL s₀)) (by lit_decide))
-    fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
-  have i₅ := mac_inv i₄ k₅
-  refine WP.mono (WP.preservedV (absorbLengths_ok hp i₅) (by lit_decide)) fun s₆ ⟨⟨i₆, k₆, r₆⟩, v₆⟩ => ?_
-  have R₄ := Repr.frame k₄.frame (by rdisj_all) (Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly))
-  have R₆ := r₆ _ _ (r₅ _ _ R₄)
-  have L₅ : bytesAt s₅.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
-    rw [bytesAt_frame k₅.frame (by rdisj_all) (by lit_omega), bytesAt_frame k₄.frame (by rdisj_all) (by lit_omega),
-      len₃]
-  rw [L₅, ct₄, hA] at R₆
-  refine ⟨i₆.inv0, fun r hr => (v₆ r hr).trans ((v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans
-      ((v₂ r hr).trans (v₁ r hr))))), ?_, ?_⟩
+  refine WP.mono (WP.preservedV (Fused.macAll_ok hp (srcA hp) (srcD hp) i₄) (by lit_decide))
+    fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_
+  have i₆ := mac_inv i₄ k₆
+  have R₆ := r₆ (otk s₀) [] (Repr.frame k₄.frame (by rdisj_all) (Repr.frame k₃.frame (by rdisj_all) h₁.poly))
+  have A₄ : bytesAt s₄.mem (ad s₀) (AL s₀) = A s₀ := by
+    rw [bytesAt_frame k₄.frame (by rdisj_all) hAL, bytesAt_frame k₃.frame (by rdisj_all) hAL, hA]
+  have L₄ : bytesAt s₄.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
+    rw [bytesAt_frame k₄.frame (by rdisj_all) (by lit_omega), len₃]
+  rw [A₄, ct₄, L₄] at R₆
+  refine ⟨i₆.inv0, fun r hr => (v₆ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans (v₁ r hr))), ?_, ?_⟩
   · refine (congrArg (Repr s₆.mem (off (cx s₀) 448) (otk s₀)) ?_).mp R₆
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
-  · rw [bytesAt_frame k₆.frame (by rdisj_all) hL', bytesAt_frame k₅.frame (by rdisj_all) hL', ct₄]
+  · rw [bytesAt_frame k₆.frame (by rdisj_all) hL', ct₄]
 
 theorem openMainWith_ok {crypt : Prog isa} {s₀ : State} (hp : APre false s₀) (hc : CryptOk s₀ crypt) :
     WP isa (openMainWith crypt) s₀ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  have hAL := (Nat.le_of_lt (s₀.gpr .x3).isLt)
   unfold openMainWith
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
-  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
-    bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.x21
-    h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
-    fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
-  have i₂ := mac_inv h₁.inv k₂
+  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ := bytesAt_frame h₁.inv.frame (by rdisj_all) hAL
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp h₁.inv) (by lit_decide)) fun s₂ ⟨⟨i₂, k₂, len₂⟩, v₂⟩ => ?_)
   have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₂.frame (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₂.x21
-    i₂.rd i₂.wr i₂.x22 (by rw [i₂.x23]; exact hL s₀)) (by lit_decide))
-    fun s₃ ⟨⟨k₃, r₃⟩, v₃⟩ => ?_)
-  have i₃ := mac_inv i₂ k₃
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₃) (by lit_decide)) fun s₄ ⟨⟨i₄, k₄, len₄⟩, v₄⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok hp i₄) (by lit_decide)) fun s₅ ⟨⟨i₅, k₅, r₅⟩, v₅⟩ => ?_)
+  have A₂ : bytesAt s₂.mem (ad s₀) (AL s₀) = A s₀ := by rw [bytesAt_frame k₂.frame (by rdisj_all) hAL, hA]
+  refine WP.seq (WP.mono (WP.preservedV (Fused.macAll_ok hp (srcA hp) (srcD hp) i₂) (by lit_decide))
+    fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
+  have i₅ := mac_inv i₂ k₅
+  have R₅ := r₅ (otk s₀) [] (Repr.frame k₂.frame (by rdisj_all) h₁.poly)
+  rw [A₂, D₂, len₂] at R₅
   have st₅ : stateAt s₅.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
-    rw [stateAt_frame k₅.frame (by rdisj_all), stateAt_frame k₄.frame (by rdisj_all),
-      stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
+    rw [stateAt_frame k₅.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
   refine WP.seq (WP.mono (hc s₅ i₅ st₅) fun s₆ ⟨v₆, i₆, k₆, pt₆⟩ => ?_)
   refine WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (by omega)) (by lit_decide))
     fun s₇ ⟨⟨k₇, tag₇⟩, v₇⟩ => ?_
-  have R₃ := r₃ _ _ (r₂ (otk s₀) [] h₁.poly)
-  have T₇ := tag₇ _ _ (Repr.frame k₆.frame (by rdisj_all) (r₅ _ _ (Repr.frame k₄.frame (by rdisj_all) R₃)))
-  rw [len₄, D₂, hA] at T₇
+  have T₇ := tag₇ _ _ (Repr.frame k₆.frame (by rdisj_all) R₅)
   refine ⟨i₆.inv0.step k₇ (fun r hr => ?_) (fun r hr => ?_), fun r hr => (v₇ r hr).trans ((v₆ r hr).trans
-      ((v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))))), ?_, ?_⟩
+      ((v₅ r hr).trans ((v₂ r hr).trans (v₁ r hr)))), ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
@@ -354,8 +341,7 @@ theorem openMainWith_ok {crypt : Prog isa} {s₀ : State} (hp : APre false s₀)
     rcases hr with rfl | rfl <;> exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
   · rw [T₇]
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
-  · rw [bytesAt_frame k₇.frame (by rdisj_all) hL', pt₆, bytesAt_frame k₅.frame (by rdisj_all) hL',
-      bytesAt_frame k₄.frame (by rdisj_all) hL', bytesAt_frame k₃.frame (by rdisj_all) hL', D₂]
+  · rw [bytesAt_frame k₇.frame (by rdisj_all) hL', pt₆, bytesAt_frame k₅.frame (by rdisj_all) hL', D₂]
 
 theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
     WP isa (sealMain v.callee) s₀ (MainS s₀) :=

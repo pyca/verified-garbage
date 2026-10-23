@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Fused
 
 /-!
 # ChaCha20-Poly1305: AArch64, up to 256 bytes
