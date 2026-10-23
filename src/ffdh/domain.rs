@@ -154,12 +154,14 @@ impl Domain {
     /// The public value `g^x mod p` of the scalar `x` (1 to `p_len` bytes)
     /// into `y` (`p_len` bytes): 1, or 2 for a scalar out of range and 3 for
     /// a degenerate public value, with zeros (`vg_ffdh_derive_public`).
-    #[cfg(target_arch = "x86")]
+    #[cfg(any(target_arch = "x86", target_arch = "arm"))]
     pub(super) fn derive_public(&self, x: &[u8], y: &mut [u8]) -> u32 {
         assert!(!x.is_empty() && x.len() <= self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_derive_public,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_derive_public_umaal,
         };
         // SAFETY: `y` is `p_len` bytes, `x` 1 to `p_len`, the domain, `ws`
         // and the variant as in `check_public`; all are distinct objects.
