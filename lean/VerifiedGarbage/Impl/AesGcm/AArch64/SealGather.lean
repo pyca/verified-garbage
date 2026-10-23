@@ -15,8 +15,9 @@ after the other, to `dst`, and encrypts them there in place with a call of
 It allocates a frame of 16 bytes: `tag`, the call's stack argument, at
 `sp`, and our return address, which the call (`bl`) overwrites in `x30`, at
 `sp + 8`; our stack arguments are then at `sp + 16` … `sp + 32`. Each slice
-is copied 16 bytes at a time through `v0` (`copyBlocks`), then its last
-`len mod 16` bytes eight, then four, then one at a time (`copyW`), with
+is copied 64 bytes at a time through `v0` … `v3` (`copyChunks`), then 16
+bytes at a time through `v0` (`copyBlocks`), then its last `len mod 16`
+bytes eight, then four, then one at a time (`copyW`), with
 `x12` its address, `x13` its length and `x11` where it goes; `x6` and `x7`
 step through the descriptors. Every register the copy writes is
 caller-saved, and the branches are on `src_count` and the slices' lengths
@@ -45,12 +46,33 @@ def blocksArg : List Instr := [.lsr .x .x14 .x13 4]
 /-- The number of its last bytes, in `x13`. -/
 def bytesArg : List Instr := [.movz .x .x15 15 0, .logic .and .x .x13 .x13 .x15]
 
-/-- Copies the `x13` bytes at `x12` to `x11`, advancing `x11` past them. -/
-def copySlice : Prog isa :=
+/-- Copies the `x13` (fewer than 64) bytes at `x12` to `x11`, advancing
+`x11` past them. -/
+def copySlice16 : Prog isa :=
   .seq (.block blocksArg)
   (.seq (.ite (.zero .x .x14) (.block []) copyBlocks)
   (.seq (.block bytesArg)
     (.ite (.zero .x .x13) (.block []) copyW)))
+
+/-- Copies the `x14` (at least 1) chunks of 64 bytes at `x12` to `x11`,
+through `v0` … `v3`, at offsets from the two pointers. -/
+def copyChunks : Prog isa :=
+  .loop (.block [.ldrq .v0 .x12 0, .strq .v0 .x11 0, .ldrq .v1 .x12 16, .strq .v1 .x11 16,
+    .ldrq .v2 .x12 32, .strq .v2 .x11 32, .ldrq .v3 .x12 48, .strq .v3 .x11 48,
+    .addImm .x .x12 .x12 64, .addImm .x .x11 .x11 64, .subImm .x .x14 .x14 1]) (.nonzero .x .x14)
+
+/-- The number of whole chunks of 64 bytes of the slice, in `x14`. -/
+def chunksArg : List Instr := [.lsr .x .x14 .x13 6]
+
+/-- The number of its bytes after them, in `x13`. -/
+def restArg : List Instr := [.movz .x .x15 63 0, .logic .and .x .x13 .x13 .x15]
+
+/-- Copies the `x13` bytes at `x12` to `x11`, advancing `x11` past them: 64
+bytes at a time, then as `copySlice16`. -/
+def copySlice : Prog isa :=
+  .seq (.block chunksArg)
+  (.seq (.ite (.zero .x .x14) (.block []) copyChunks)
+  (.seq (.block restArg) copySlice16))
 
 /-- The next descriptor: the slice's address in `x12` and length in `x13`. -/
 def next : List Instr := [.ldr .x .x12 .x6 0, .ldr .x .x13 .x6 8, .addImm .x .x6 .x6 16]
