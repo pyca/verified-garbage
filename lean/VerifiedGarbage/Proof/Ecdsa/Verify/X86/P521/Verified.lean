@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P521
