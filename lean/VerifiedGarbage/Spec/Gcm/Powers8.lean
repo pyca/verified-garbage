@@ -220,37 +220,6 @@ def openWithPowersApi : Api where
   summary := withPowersSummary "vg_aes_gcm_open" "openWithPowersContract"
   safety := openApi.safety ++ [withPowersSafety]
 
-/-- `vg_aes_gcm_seal_gather_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16])`:
-`sealGatherSig` and the powers' buffer. -/
-def sealGatherWithPowersSig : Sig where
-  params := sealGatherSig.params ++ [withPowersParam]
-
-/-- `sealGatherPre`, and the powers of the key context's hash subkey at `pw`. -/
-def sealGatherWithPowersPre (pb : Nat) : Curry (sealGatherWithPowersSig.words pb) (Mem → Prop) :=
-  fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag pw m =>
-    sealGatherPre pb ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag m ∧
-      Powers8Repr m pw (ctxH m ctx)
-
-/-- `sealGatherPost`, which does not depend on `pw`. -/
-def sealGatherWithPowersPost (pb : Nat) : sealGatherWithPowersSig.Post pb :=
-  fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _pw m m' r =>
-    sealGatherPost pb ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag m m' r
-
-/-- `sealGatherWithPowersPre` and `sealGatherWithPowersPost`. -/
-def sealGatherWithPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherWithPowersSig.contract A (pre := sealGatherWithPowersPre A.ptrBits)
-    (post := sealGatherWithPowersPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_gather_with_powers` on every target. -/
-def sealGatherWithPowersApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_gather_with_powers"
-  sig := sealGatherWithPowersSig
-  writeArgs := true
-  contracts := some fun A stack => sealGatherWithPowersContract A stack
-  summary := withPowersSummary "vg_aes_gcm_seal_gather" "sealGatherWithPowersContract"
-  safety := sealGatherApi.safety ++ [withPowersSafety]
-
 /-! ## GHASH -/
 
 /-- `vg_ghash_store_powers(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *mut [u64; 16])`:
