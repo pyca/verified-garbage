@@ -53,7 +53,7 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   obtain ⟨hD, hF, hG, hFl, hGl, hUl, hVl, _, _, _⟩ := id h
   have hd30 : |(dsI x i).1| ≤ 2 ^ 30 := by
     have := dsI_d x i
-    have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega : 59 * i ≤ 59 * 9)
+    have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega_arith : 59 * i ≤ 59 * 9)
     linarith
   obtain ⟨bu, bv, bq, br⟩ := dsM_bnd x i
   simp only [batch, List.append_assoc]
@@ -67,7 +67,7 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
     fun b ⟨b1, b4, b5, b6, b7, kb⟩ => ?_
   have hsb : Scr b base large := (hs.of_keeps ka (by decide)).of_keeps kb (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (st_ok hsb (d := DSAVE) (by decide) (by simp only [DSAVE]; omega) .x1)
+  refine WP.mono (st_ok hsb (d := DSAVE) (by decide) (by simp only [DSAVE]; omega_arith) .x1)
     fun c ⟨mc, kc⟩ => ?_
   have hsc : Scr c base large := ⟨(kc.gpr _ (by decide)).trans hsb.x0, kc.wr ▸ hsb.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
@@ -84,13 +84,13 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   have od : Outside base 480 8 s.mem d.mem := by
     rw [mdm]; exact writeW_outside _ _ _ (by decide)
   have fd : ∀ o, o + 32 ≤ 480 → fe d.mem base o = fe s.mem base o := fun o ho =>
-    od.fe (Or.inl ho) (by omega)
+    od.fe (Or.inl ho) (by omega_arith)
   -- the rows
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hsd true (t := TF) (xo := oF) (yo := G) (by decide) (by decide) md.z
     (by rw [md.u]; exact absW_le bu) (by rw [md.v]; exact absW_le bv)
-    ⟨by decide, by simp only [TF]; omega⟩ ⟨by decide, by simp only [oF]; omega⟩
-    ⟨by decide, by simp only [G]; omega⟩ (by decide) (by decide)) fun e1 ⟨r1, o1, k1⟩ => ?_
+    ⟨by decide, by simp only [TF]; omega_arith⟩ ⟨by decide, by simp only [oF]; omega_arith⟩
+    ⟨by decide, by simp only [G]; omega_arith⟩ (by decide) (by decide)) fun e1 ⟨r1, o1, k1⟩ => ?_
   have hs1 : Scr e1 base large := ⟨(k1.gpr _ (by decide)).trans hsd.x0, k1.wr ▸ hsd.wr, hs.nowrap⟩
   have m1 := md.keep k1
   rw [md.u, md.su, md.v, md.sv', md.c0] at r1
@@ -98,8 +98,8 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs1 true (t := TG) (xo := oF) (yo := G) (by decide) (by decide) m1.z
     (by rw [m1.q]; exact absW_le bq) (by rw [m1.r]; exact absW_le br)
-    ⟨by decide, by simp only [TG]; omega⟩ ⟨by decide, by simp only [oF]; omega⟩
-    ⟨by decide, by simp only [G]; omega⟩ (by decide) (by decide)) fun e2 ⟨r2, o2, k2⟩ => ?_
+    ⟨by decide, by simp only [TG]; omega_arith⟩ ⟨by decide, by simp only [oF]; omega_arith⟩
+    ⟨by decide, by simp only [G]; omega_arith⟩ (by decide) (by decide)) fun e2 ⟨r2, o2, k2⟩ => ?_
   have hs2 : Scr e2 base large := ⟨(k2.gpr _ (by decide)).trans hs1.x0, k2.wr ▸ hs1.wr, hs.nowrap⟩
   have m2 := m1.keep k2
   rw [m1.q, m1.sq, m1.r, m1.sr, m1.c1] at r2
@@ -107,8 +107,8 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs2 false (t := TU) (xo := U) (yo := V) (by decide) (by decide) m2.z
     (by rw [m2.u]; exact absW_le bu) (by rw [m2.v]; exact absW_le bv)
-    ⟨by decide, by simp only [TU]; omega⟩ ⟨by decide, by simp only [U]; omega⟩
-    ⟨by decide, by simp only [V]; omega⟩ (by decide) (by decide)) fun e3 ⟨r3, o3, k3⟩ => ?_
+    ⟨by decide, by simp only [TU]; omega_arith⟩ ⟨by decide, by simp only [U]; omega_arith⟩
+    ⟨by decide, by simp only [V]; omega_arith⟩ (by decide) (by decide)) fun e3 ⟨r3, o3, k3⟩ => ?_
   have hs3 : Scr e3 base large := ⟨(k3.gpr _ (by decide)).trans hs2.x0, k3.wr ▸ hs2.wr, hs.nowrap⟩
   have m3 := m2.keep k3
   rw [m2.u, m2.su, m2.v, m2.sv', m2.c0] at r3
@@ -116,8 +116,8 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs3 false (t := TV) (xo := U) (yo := V) (by decide) (by decide) m3.z
     (by rw [m3.q]; exact absW_le bq) (by rw [m3.r]; exact absW_le br)
-    ⟨by decide, by simp only [TV]; omega⟩ ⟨by decide, by simp only [U]; omega⟩
-    ⟨by decide, by simp only [V]; omega⟩ (by decide) (by decide)) fun e4 ⟨r4, o4, k4⟩ => ?_
+    ⟨by decide, by simp only [TV]; omega_arith⟩ ⟨by decide, by simp only [U]; omega_arith⟩
+    ⟨by decide, by simp only [V]; omega_arith⟩ (by decide) (by decide)) fun e4 ⟨r4, o4, k4⟩ => ?_
   have hs4 : Scr e4 base large := ⟨(k4.gpr _ (by decide)).trans hs3.x0, k4.wr ▸ hs3.wr, hs.nowrap⟩
   have m4 := m3.keep k4
   rw [m3.q, m3.sq, m3.r, m3.sr, m3.c1] at r4
@@ -129,13 +129,13 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   refine WP.mono (outs_ok hs4 m4.z hi cnt4) fun t ⟨tF, tG, tU, tV, t20, tD, ot, kt⟩ => ?_
   -- what the rows read, as it was in `s`
   have f1 : ∀ o, o + 32 ≤ TF → fe e1.mem base o = fe s.mem base o := fun o ho => by
-    rw [o1.fe (Or.inl ho) (by simp only [TF] at ho; omega), fd o (by simp only [TF] at ho; omega)]
+    rw [o1.fe (Or.inl ho) (by simp only [TF] at ho; omega_arith), fd o (by simp only [TF] at ho; omega_arith)]
   have f2 : ∀ o, o + 32 ≤ TF → fe e2.mem base o = fe s.mem base o := fun o ho => by
-    rw [o2.fe (Or.inl (by simp only [TF, TG] at ho ⊢; omega)) (by simp only [TF] at ho; omega), f1 o ho]
+    rw [o2.fe (Or.inl (by simp only [TF, TG] at ho ⊢; omega_arith)) (by simp only [TF] at ho; omega_arith), f1 o ho]
   rw [f1 _ (by decide), f1 _ (by decide), hF, hG] at hWG
   rw [fd _ (by decide), fd _ (by decide), hF, hG] at hWF
   have f3 : ∀ o, o + 32 ≤ TF → fe e3.mem base o = fe s.mem base o := fun o ho => by
-    rw [o3.fe (Or.inl (by simp only [TF, TU] at ho ⊢; omega)) (by simp only [TF] at ho; omega), f2 o ho]
+    rw [o3.fe (Or.inl (by simp only [TF, TU] at ho ⊢; omega_arith)) (by simp only [TF] at ho; omega_arith), f2 o ho]
   rw [f2 _ (by decide), f2 _ (by decide)] at hWU
   rw [f3 _ (by decide), f3 _ (by decide)] at hWV
   -- the rows where the shifts and reductions read them

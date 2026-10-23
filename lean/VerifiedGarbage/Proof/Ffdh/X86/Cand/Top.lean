@@ -218,7 +218,7 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
   have low := A.stackLow
   have top := A.stackBound
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_arith)
   have frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ (belowR s) := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have ex := I.extra
@@ -238,7 +238,7 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
       (A.belowRand.sub_left sub40).symm⟩
   have hT : Spec.Rsa.bytesAt f.mem (byteAddr (synth Impl.Ffdh.X86.Candidate.args (arg s) 2)) (entryRand s).length =
       entryRand s := by
-    rw [Tlen]; exact keep A.randWs A.belowRand.symm (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega)
+    rw [Tlen]; exact keep A.randWs A.belowRand.symm (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega_arith)
   have Ox : OutAt (synth Impl.Ffdh.X86.Candidate.args (arg s)) (wsBase Impl.Ffdh.X86.Candidate.args s)
       (wsSize Impl.Ffdh.X86.Candidate.args s) (pLenOf Impl.Ffdh.X86.Candidate.args s) 0 (s.gpr .esp - BitVec.ofNat 32 argsFrame) f.wr :=
     ⟨A.outBound, ex.2.1, A.outWs.symm, (A.belowOut.sub_left subF), (A.belowOut.sub_left sub40).symm⟩
@@ -253,17 +253,17 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, argsFrame]
-    omega
+    omega_arith
   have aa : ∀ j, j < 9 → argAddr s j = argAddr s 0 + BitVec.ofNat 64 (4 * j) := by
     intro j hj
     rw [show argAddr s j = addr (s.gpr .esp) (4 + 4 * j) from rfl, show argAddr s 0 = addr (s.gpr .esp) (4 + 4 * 0) from rfl,
-      addr_eq (by omega), addr_eq (by omega), Offset.add_add]
+      addr_eq (by omega_arith), addr_eq (by omega_arith), Offset.add_add]
   have sub : ∀ j, j < 9 → Region.Sub ⟨argAddr s j, 4⟩ (argsR s) := fun j hj => by
-    rw [aa j hj]; exact Offset.sub_base _ (by omega)
+    rw [aa j hj]; exact Offset.sub_base _ (by omega_arith)
   have rd : ∀ j, j < 9 → readSrc f (.mem (argAt 19 j)) = some (arg s j) := by
     intro j hj
     have ir : InRegions (f.rd ++ f.wr) (argAddr s j) 4 := by
-      rw [aa j hj]; exact VG.CallLay.inRegions_sub ex.2.2.2.1 (by omega) (by decide)
+      rw [aa j hj]; exact VG.CallLay.inRegions_sub ex.2.2.2.1 (by omega_arith) (by decide)
     simp only [readSrc, State.load32, ea j hj]
     rw [ite_eq_left_of_eq_true _ _ (eq_true ir)]
     exact congrArg some (Ft.readW (r := ⟨argAddr s j, 4⟩) (Region.contains_self _ _) (fun q hq => by
@@ -273,10 +273,10 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
       · exact (A.belowArgs.symm.sub_left (sub j hj)).sub_right frameSub) (by decide))
   have dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩
       ⟨wsBase Impl.Ffdh.X86.Candidate.args s, wsSize Impl.Ffdh.X86.Candidate.args s⟩ := fun j hj => by
-    have : j < 9 := by simp at hj; omega
+    have : j < 9 := by simp at hj; omega_arith
     rw [ea j this]; exact A.wsArgs.symm.sub_left (sub j this)
   have d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below (s.gpr .esp - BitVec.ofNat 32 argsFrame) 96) := fun j hj => by
-    have : j < 9 := by simp at hj; omega
+    have : j < 9 := by simp at hj; omega_arith
     rw [ea j this]; exact (A.belowArgs.symm.sub_left (sub j this)).sub_right sub40
   -- RSA's table.
   have tf := A.tableFar (tableR s) (by rw [table_eq]; exact List.mem_singleton_self _)
@@ -284,20 +284,20 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
   have T32 := (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).isLt
   have tb : ((s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64).toNat =
       (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]
   have tfit : (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).toNat + 8192 ≤ 2 ^ 32 := by
     have : ((s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64).toNat + 8192 ≤ 2 ^ 32 := tf.1
-    omega
+    omega_arith
   have TT : Table (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) (s.gpr .esp - BitVec.ofNat 32 argsFrame) f := by
     refine ⟨by rw [syf], fun i hi d hd => ?_, fun i hi => ?_, tfit, tf.2.2.2.sub_right sub40⟩
-    · have hd4 : d ≤ 4 := by simp at hd; omega
+    · have hd4 : d ≤ 4 := by simp at hd; omega_arith
       have e : addr (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol + BitVec.ofNat 32 (8 * i)) d =
           (tableR s).base + BitVec.ofNat 64 (8 * i + d) := by
         apply BitVec.eq_of_toNat_eq
         simp only [addr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-        omega
-      rw [e]; exact VG.CallLay.inRegions_sub ex.2.2.2.2 (by omega) (by decide)
-    · rw [Ft.readW (r := tableR s) (Offset.contains_base _ (by omega : 8 * i + 8 ≤ 8192) (by omega)) (fun q hq => by
+        omega_arith
+      rw [e]; exact VG.CallLay.inRegions_sub ex.2.2.2.2 (by omega_arith) (by decide)
+    · rw [Ft.readW (r := tableR s) (Offset.contains_base _ (by omega_arith : 8 * i + 8 ≤ 8192) (by omega_arith)) (fun q hq => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
         rcases hq with rfl | rfl
         · exact tf.2.1 _ tw

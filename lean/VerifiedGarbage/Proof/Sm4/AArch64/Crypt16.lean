@@ -110,8 +110,8 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     (fun r i hri => by simp at hri)
     (fun j i hji => by
       obtain ⟨k, hk, rfl, rfl⟩ := stateIns_mem hji
-      exact ⟨by simp only [bsCfg, tableSlot_eq]; omega, by omega, by simp only [Nat.zero_add]; rfl⟩)
-    (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega, hc.masks kv hkv⟩)
+      exact ⟨by simp only [bsCfg, tableSlot_eq]; omega_arith, by omega_arith, by simp only [Nat.zero_add]; rfl⟩)
+    (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega_arith, hc.masks kv hkv⟩)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkp
   have hall : (layerKeep.all fun r => fromBs.all fun i => !clobbers i r) = true := by
@@ -122,7 +122,7 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     have hk' : k < 128 := by
       simp only [keyMaskSlots, stateSlots, keyMasks, List.mem_append, List.mem_map, List.mem_range,
         List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hk
-      rcases hk with ((h | h | h) | ⟨x, hx, rfl⟩) <;> (try subst h) <;> (try simp only [evenSlot, oddSlot, grpSlot]) <;> omega
+      rcases hk with ((h | h | h) | ⟨x, hx, rfl⟩) <;> (try subst h) <;> (try simp only [evenSlot, oddSlot, grpSlot]) <;> omega_arith
     rw [slotW, hb', hkp k hk (by rw [tableSlot_eq]; exact hk')]
   refine ⟨s', h', hc.bs rd' wr' hkeep f' (fun kv hkv => ?_), hkeep _ (by decide), ?_, fun b hb => ?_⟩
   · rw [keep kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv))]; exact hc.masks kv hkv
@@ -130,24 +130,24 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
       show slotW s' (stateSlot w j) = slotW s (stateSlot w j)
       exact keep _ (List.mem_append_right _ (by
         simp only [stateSlots, List.mem_map, List.mem_range]
-        exact ⟨8 * w + j, by omega, by simp only [stateSlot]; omega⟩))
+        exact ⟨8 * w + j, by omega_arith, by simp only [stateSlot]; omega_arith⟩))
   · apply Vector.ext
     intro k hk
     refine BitVec.eq_of_getLsbD_eq fun j hj => ?_
     rw [getLsbD_outBlock' (X b) hk hj]
-    have ht : 8 * (k % 8) + j < 64 := by omega
+    have ht : 8 * (k % 8) + j < 64 := by omega_arith
     have hmem := hso (tailSlot + (2 * b + k / 8)) (fromBsG (2 * b + k / 8)) (by
-        simp only [fromBsOuts, List.mem_map, List.mem_range]; exact ⟨2 * b + k / 8, by omega, rfl⟩)
-        (by rw [tableSlot_eq, tailSlot_eq]; omega) _ ht
-    rw [readW64_bit _ _ (by omega) hj, byte_addr _ rfl] at hmem
+        simp only [fromBsOuts, List.mem_map, List.mem_range]; exact ⟨2 * b + k / 8, by omega_arith, rfl⟩)
+        (by rw [tableSlot_eq, tailSlot_eq]; omega_arith) _ ht
+    rw [readW64_bit _ _ (by omega_arith) hj, byte_addr _ rfl] at hmem
     have e1 : 8 * (3 - (2 * ((2 * b + k / 8) % 2) + (8 * (k % 8) + j) / 32)) + (8 * (k % 8) + j) % 8 =
-        8 * (3 - k / 4) + j := by omega
-    have e2 : 16 * ((8 * (k % 8) + j) / 8 % 4) + (2 * b + k / 8) / 2 = 16 * (k % 4) + b := by omega
-    have hw : 3 - k / 4 < 4 := by omega
-    have hbit := hX (3 - k / 4) hw b hb (k % 4) (by omega) j hj
-    rw [fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false, e1, Nat.add_assoc, e2, bitOf_word _ _ _ (by omega)] at hmem
+        8 * (3 - k / 4) + j := by omega_arith
+    have e2 : 16 * ((8 * (k % 8) + j) / 8 % 4) + (2 * b + k / 8) / 2 = 16 * (k % 4) + b := by omega_arith
+    have hw : 3 - k / 4 < 4 := by omega_arith
+    have hbit := hX (3 - k / 4) hw b hb (k % 4) (by omega_arith) j hj
+    rw [fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false, e1, Nat.add_assoc, e2, bitOf_word _ _ _ (by omega_arith)] at hmem
     simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
-    rw [addr_add, show 8 * tailSlot + 16 * b + k = 8 * (tailSlot + (2 * b + k / 8)) + k % 8 by omega,
+    rw [addr_add, show 8 * tailSlot + 16 * b + k = 8 * (tailSlot + (2 * b + k / 8)) + k % 8 by omega_arith,
       hb', hmem, ← hbit, planes_eq]
 
 /-- `crypt16`: each block of the tail buffer becomes the output of SM4's 32

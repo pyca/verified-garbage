@@ -42,28 +42,28 @@ theorem redcStep_ok {s₀ t : State} {B : Addr} {Z w i : Nat} {minv : BitVec 64}
   have hn := hI.scr.nowrap
   have hA : slot w aAcc+16+16*w+16 ≤ Z := by
     have := slot_le (w := w) (show aTmp < 8 by decide)
-    unfold slot aAcc aTmp at *; omega
-  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
-  have hN := hI.out.wv (d := slot w aN) (k := w) (by omega) (by omega)
-  have hN0 := hI.out.word (d := slot w aN) (by omega) (by omega)
+    unfold slot aAcc aTmp at *; omega_arith
+  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_arith
+  have hN := hI.out.wv (d := slot w aN) (k := w) (by omega_arith) (by omega_arith)
+  have hN0 := hI.out.word (d := slot w aN) (by omega_arith) (by omega_arith)
   have kp := hI.keep
   refine WP.mono (redcRow_analyze (n := 2*w-i) hI.scr hI.x8
     ((kp.gpr .x10 (by decide)).trans h10) ((kp.gpr .x12 (by decide)).trans h12)
     ((kp.gpr .x15 (by decide)).trans h15) ((kp.gpr .x7 (by decide)).trans h7)
-    hw1 hw (by omega) (by omega) (by omega) (by omega))
+    hw1 hw (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t' ⟨u, hu, hv, hz, hc, ho, ht8, ht16, ht13, kt⟩ => ?_
   refine ⟨⟨hI.scr.congr kt.wr, (kp.trans kt).mono (by decide), ?_, ?_, hc hI.carry,
-    hI.out.trans (ho.mono (o' := slot w aAcc+16) (n' := 16*w) (by omega) (by omega)), ?_⟩, ht13⟩
+    hI.out.trans (ho.mono (o' := slot w aAcc+16) (n' := 16*w) (by omega_arith) (by omega_arith)), ?_⟩, ht13⟩
   · rw [ht8]; congr 1
   · intro _; rw [ht16]; congr 1
   · intro inv
     have invt : ((word t.mem B (slot w aN)).toNat*minv.toNat+1) % 2 ^ 64 = 0 := by
       rw [hN0]; exact inv
     have low := hz invt
-    rw [show 2*w-i = (2*w-i-1)+1 by omega, wv_low, low] at hv
+    rw [show 2*w-i = (2*w-i-1)+1 by omega_arith, wv_low, low] at hv
     simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_add] at hv
-    rw [hN, show slot w aAcc+16+8*i+8 = slot w aAcc+16+8*(i+1) by omega,
-      show 2*w-i-1 = 2*w-(i+1) by omega] at hv
+    rw [hN, show slot w aAcc+16+8*i+8 = slot w aAcc+16+8*(i+1) by omega_arith,
+      show 2*w-i-1 = 2*w-(i+1) by omega_arith] at hv
     obtain ⟨q, hq, heq⟩ := hI.val inv
     refine ⟨q+2 ^ (64*i)*u, ?_, ?_⟩
     · rw [pow64_succ]; exact digit_bound hq hu
