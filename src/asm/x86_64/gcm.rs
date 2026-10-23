@@ -1659,20 +1659,20 @@ ret
     )
 }
 
-/// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+/// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f"]);
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
-/// Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute them, two in each register, already prepared, then each pair times `H'¹⁶` twice, eight independent multiplications at a time, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack.
+/// Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute them, two in each register, already prepared, stored as the first 8 pairs; then those sixteen, four in each 512-bit register, times `H'¹⁶` and times `H'³²`, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack.
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of 1024 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
@@ -1895,375 +1895,116 @@ vmovdqu YMMWORD PTR [rdi+384], ymm6
 vmovdqu YMMWORD PTR [rdi+416], ymm5
 vmovdqu YMMWORD PTR [rdi+448], ymm4
 vmovdqu YMMWORD PTR [rdi+480], ymm3
-vinserti128 ymm7, ymm3, xmm3, 1
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm3, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm3, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm3, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm3, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm3, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm4, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm4, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm4, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm4, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm4, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm5, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm5, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm5, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm5, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm5, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm6, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm6, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm6, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm6, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm6, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm15, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm15, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm15, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm15, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm15, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm14, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm14, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm14, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm14, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm14, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm13, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm13, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm13, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm13, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm13, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm12, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm12, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm12, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm12, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm12, ymm10, ymm8
-vmovdqu YMMWORD PTR [rdi+512], ymm12
-vmovdqu YMMWORD PTR [rdi+544], ymm13
-vmovdqu YMMWORD PTR [rdi+576], ymm14
-vmovdqu YMMWORD PTR [rdi+608], ymm15
-vmovdqu YMMWORD PTR [rdi+640], ymm6
-vmovdqu YMMWORD PTR [rdi+672], ymm5
-vmovdqu YMMWORD PTR [rdi+704], ymm4
-vmovdqu YMMWORD PTR [rdi+736], ymm3
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm3, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm3, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm3, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm3, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm3, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm4, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm4, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm4, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm4, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm4, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm5, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm5, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm5, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm5, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm5, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm6, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm6, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm6, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm6, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm6, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm15, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm15, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm15, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm15, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm15, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm14, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm14, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm14, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm14, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm14, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm13, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm13, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm13, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm13, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm13, ymm10, ymm8
-vpxor ymm8, ymm8, ymm8
-vpxor ymm9, ymm9, ymm9
-vpxor ymm10, ymm10, ymm10
-vpclmulqdq ymm11, ymm12, ymm7, 0
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm12, ymm7, 17
-vpxor ymm10, ymm10, ymm11
-vpclmulqdq ymm11, ymm12, ymm7, 1
-vpxor ymm9, ymm9, ymm11
-vpclmulqdq ymm11, ymm12, ymm7, 16
-vpxor ymm9, ymm9, ymm11
-vpsrldq ymm11, ymm9, 8
-vpxor ymm10, ymm10, ymm11
-vpslldq ymm9, ymm9, 8
-vpxor ymm8, ymm8, ymm9
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpclmulqdq ymm11, ymm8, ymm1, 16
-vpshufd ymm8, ymm8, 78
-vpxor ymm8, ymm8, ymm11
-vpxor ymm12, ymm10, ymm8
-vmovdqu YMMWORD PTR [rdi+768], ymm12
-vmovdqu YMMWORD PTR [rdi+800], ymm13
-vmovdqu YMMWORD PTR [rdi+832], ymm14
-vmovdqu YMMWORD PTR [rdi+864], ymm15
-vmovdqu YMMWORD PTR [rdi+896], ymm6
-vmovdqu YMMWORD PTR [rdi+928], ymm5
-vmovdqu YMMWORD PTR [rdi+960], ymm4
-vmovdqu YMMWORD PTR [rdi+992], ymm3
+vinserti128 ymm1, ymm1, xmm1, 1
+vshufi32x4 zmm1, zmm1, zmm1, 68
+mov r11, rdi
+add r11, 256
+vbroadcasti32x4 zmm12, XMMWORD PTR [r11+224]
+vmovdqu32 zmm7, ZMMWORD PTR [r11]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+256], zmm10
+vmovdqu32 zmm7, ZMMWORD PTR [r11+64]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+320], zmm10
+vmovdqu32 zmm7, ZMMWORD PTR [r11+128]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+384], zmm10
+vmovdqu32 zmm7, ZMMWORD PTR [r11+192]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+448], zmm10
+vbroadcasti32x4 zmm12, XMMWORD PTR [r11+480]
+vmovdqu32 zmm7, ZMMWORD PTR [r11]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+512], zmm10
+vmovdqu32 zmm7, ZMMWORD PTR [r11+64]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+576], zmm10
+vmovdqu32 zmm7, ZMMWORD PTR [r11+128]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+640], zmm10
+vmovdqu32 zmm7, ZMMWORD PTR [r11+192]
+vpclmulqdq zmm8, zmm7, zmm12, 0
+vpclmulqdq zmm10, zmm7, zmm12, 17
+vpclmulqdq zmm9, zmm7, zmm12, 1
+vpclmulqdq zmm11, zmm7, zmm12, 16
+vpxord zmm9, zmm9, zmm11
+vpclmulqdq zmm11, zmm8, zmm1, 16
+vpshufd zmm8, zmm8, 78
+vpternlogd zmm9, zmm8, zmm11, 150
+vpclmulqdq zmm11, zmm9, zmm1, 16
+vpshufd zmm9, zmm9, 78
+vpternlogd zmm10, zmm9, zmm11, 150
+vmovdqu32 ZMMWORD PTR [r11+704], zmm10
 vzeroupper
 ret
 .p2align 6",
@@ -2276,7 +2017,7 @@ pub(crate) const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: crate::cpu::Features = c
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, a 16-power prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 7, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared16` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepare16Contract`: the first 256 bytes are kept and the context satisfies `PreparedPowers16Repr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
-/// Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute them, two in each register, already prepared, stored as the first 8 pairs: the first pass of `vg_aes_gcm_prepare_vpclmul`. No calls and no stack.
+/// Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute them, two in each register, already prepared, stored as the first 8 pairs, as `vg_aes_gcm_prepare_vpclmul_avx512` stores them first. No calls and no stack.
 ///
 /// # Safety
 ///
