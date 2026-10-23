@@ -11,6 +11,9 @@ pub(crate) mod blake2b;
 pub(crate) mod blake2s;
 
 #[rustfmt::skip]
+pub(crate) mod blowfish;
+
+#[rustfmt::skip]
 pub(crate) mod brainpoolp256r1_mont;
 
 #[rustfmt::skip]
