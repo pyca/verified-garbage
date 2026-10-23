@@ -131,8 +131,8 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
   have hshort : Short.sealAfter.noFrames = true := by decide +kernel
   have hxks : Short.xorKs.noFrames = true := by decide +kernel
   have hrest : (ShortRest.sealMain c).noFrames = true := by
-    simp only [ShortRest.sealMain, ShortRest.sealAfter, ShortRest.first, ShortRest.rest, macPad, absorbLengths,
-      padTail, Code.noFrames, hv, hpro, hshort, hxks, Bool.and_true, Bool.true_and]
+    simp only [ShortRest.sealMain, ShortRest.sealAfter, ShortRest.first, ShortRest.rest, Code.noFrames, hv, hpro,
+      hshort, hxks, Bool.and_true, Bool.true_and]
     decide +kernel
   have hpad : (Pad.sealRoute c).noFrames = true := by
     simp only [Pad.sealRoute, Pad.sealMain, Pad.cryptPad, sealMainWith, prologue, macPad, absorbLengths,

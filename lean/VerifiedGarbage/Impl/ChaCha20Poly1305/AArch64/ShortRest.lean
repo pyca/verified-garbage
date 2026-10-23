@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Fused
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Short
 
 /-!
@@ -21,7 +22,7 @@ counter 1 after a scalar block for the key (`../AArch64.lean`):
   space at `ctx + 128` (`rest`), as `cryptWith` does all of the data.
 
 Poly1305 absorbs the data as in `Short.lean`, after encrypting and before
-decrypting. `Short.lean`'s code for up to 256 bytes shares the prologue: the
+decrypting, in one pass (`Fused.macAll`). `Short.lean`'s code for up to 256 bytes shares the prologue: the
 code branches on the length after it (`split`), so that the prologue is
 emitted once. The branch on the length is the only one added, and the
 addresses are the context and the data plus constants: only the pointers
@@ -67,21 +68,17 @@ def sealAfter (c : XorCallee) : Prog isa :=
   .seq (.block stash)
   (.seq first
   (.seq (rest c)
-  (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq (macPad .x22 .x23)
-    absorbLengths)))))
+    Fused.macAll)))
 
 /-- `open` up to the tag computed, after the prologue. -/
 def openAfter (c : XorCallee) : Prog isa :=
   .seq (.block stash)
-  (.seq (macPad .x24 .x25)
-  (.seq (macPad .x22 .x23)
   (.seq (.block lengths)
-  (.seq absorbLengths
+  (.seq Fused.macAll
   (.seq first
   (.seq (rest c)
-    (finalizeTo 48)))))))
+    (finalizeTo 48)))))
 
 /-- `seal` but for the tag, for `lo ≤ len ≤ 511` (`Short.check`): the
 prologue, then `Short.lean`'s code up to 256 bytes and this file's above. -/

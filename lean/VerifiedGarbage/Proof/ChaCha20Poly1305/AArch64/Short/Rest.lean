@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Fused
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Stash
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
@@ -270,9 +271,9 @@ theorem sealAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (h
     (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
     WP isa (ShortRest.sealAfter v.callee) s₁ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  have hAL := (Nat.le_of_lt (s₀.gpr .x3).isLt)
   unfold ShortRest.sealAfter
-  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
-    bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
+  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ := bytesAt_frame h₁.inv.frame (by rdisj_all) hAL
   refine WP.seq (WP.mono (WP.preservedV (stash_ok hp h₁.inv h₁.st0) (by lit_decide))
     fun s₂ ⟨⟨i₂, k₂, st₂⟩, v₂⟩ => ?_)
   have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
@@ -286,16 +287,10 @@ theorem sealAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (h
     rw [stateAt_frame k₃.frame (by rdisj_all), st₂]
   refine WP.seq (WP.mono (rest_ok v hp i₃ hL₁ st₃) fun s₄ ⟨v₄, i₄, k₄, r₄⟩ => ?_)
   have ct₄ := ct_rest hp hL₁ D₂ K₂ x₃ f₃ r₄ k₄.frame
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) i₄.x21
-    i₄.rd i₄.wr i₄.x24 (by rw [i₄.x25]; exact hRDX s₀)) (by lit_decide))
-    fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
-  have i₅ := mac_inv i₄ k₅
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₅) (by lit_decide)) fun s₆ ⟨⟨i₆, k₆, len₆⟩, v₆⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₆.x21
-    i₆.rd i₆.wr i₆.x22 (by rw [i₆.x23]; exact hL s₀)) (by lit_decide))
-    fun s₇ ⟨⟨k₇, r₇⟩, v₇⟩ => ?_)
-  have i₇ := mac_inv i₆ k₇
-  refine WP.mono (WP.preservedV (absorbLengths_ok hp i₇) (by lit_decide)) fun s₈ ⟨⟨i₈, k₈, r₈⟩, v₈⟩ => ?_
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₄) (by lit_decide)) fun s₅ ⟨⟨i₅, k₅, len₅⟩, v₅⟩ => ?_)
+  refine WP.mono (WP.preservedV (Fused.macAll_ok hp (srcA hp) (srcD hp) i₅) (by lit_decide))
+    fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_
+  have i₆ := mac_inv i₅ k₆
   have hd4 : ∀ r ∈ streamR s₀, (sub s₀ 448 128).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -306,25 +301,23 @@ theorem sealAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (h
   have R₄ : Repr s₄.mem (off (cx s₀) 448) (otk s₀) [] :=
     Repr.frame k₄.frame hd4 (Repr.frame k₃.frame (by rdisj_all) (Repr.frame k₂.frame (by rdisj_all) h₁.poly))
   have A₄ : bytesAt s₄.mem (ad s₀) (AL s₀) = A s₀ := by
-    rw [bytesAt_frame k₄.frame (fun r hr => ?_) (Nat.le_of_lt (s₀.gpr .x3).isLt),
-      bytesAt_frame k₃.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt),
-      bytesAt_frame k₂.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt), hA]
+    rw [bytesAt_frame k₄.frame (fun r hr => ?_) hAL, bytesAt_frame k₃.frame (by rdisj_all) hAL,
+      bytesAt_frame k₂.frame (by rdisj_all) hAL, hA]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hp.c_a.symm.sub_right (sub_ctx s₀ (by lit_omega))
     · exact hp.a_d.sub_right (restR_sub hL₁)
     · exact hp.c_a.symm.sub_right (sub_ctx s₀ (by lit_omega))
-  have ct₆ : bytesAt s₆.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
-    rw [bytesAt_frame k₆.frame (by rdisj_all) hL', bytesAt_frame k₅.frame (by rdisj_all) hL', ct₄]
-  have L₇ : bytesAt s₇.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
-    rw [bytesAt_frame k₇.frame (by rdisj_all) (by lit_omega), len₆]
-  have R₈ := r₈ _ _ (r₇ _ _ (Repr.frame k₆.frame (by rdisj_all) (r₅ _ _ R₄)))
-  rw [L₇, ct₆, A₄] at R₈
-  refine ⟨i₈.inv0, fun r hr => (v₈ r hr).trans ((v₇ r hr).trans ((v₆ r hr).trans ((v₅ r hr).trans
-      ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr))))))), ?_, ?_⟩
-  · refine (congrArg (Repr s₈.mem (off (cx s₀) 448) (otk s₀)) ?_).mp R₈
+  have A₅ : bytesAt s₅.mem (ad s₀) (AL s₀) = A s₀ := by rw [bytesAt_frame k₅.frame (by rdisj_all) hAL, A₄]
+  have ct₅ : bytesAt s₅.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
+    rw [bytesAt_frame k₅.frame (by rdisj_all) hL', ct₄]
+  have R₆ := r₆ (otk s₀) [] (Repr.frame k₅.frame (by rdisj_all) R₄)
+  rw [A₅, ct₅, len₅] at R₆
+  refine ⟨i₆.inv0, fun r hr => (v₆ r hr).trans ((v₅ r hr).trans
+      ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr))))), ?_, ?_⟩
+  · refine (congrArg (Repr s₆.mem (off (cx s₀) 448) (otk s₀)) ?_).mp R₆
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
-  · rw [bytesAt_frame k₈.frame (by rdisj_all) hL', bytesAt_frame k₇.frame (by rdisj_all) hL', ct₆]
+  · rw [bytesAt_frame k₆.frame (by rdisj_all) hL', ct₅]
 
 /-- After the prologue. -/
 theorem openAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (hp : APre false s₀)
@@ -332,68 +325,56 @@ theorem openAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (h
     (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
     WP isa (ShortRest.openAfter v.callee) s₁ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  have hAL := (Nat.le_of_lt (s₀.gpr .x3).isLt)
   unfold ShortRest.openAfter
   refine WP.seq (WP.mono (WP.preservedV (stash_ok hp h₁.inv h₁.st0) (by lit_decide))
     fun s₂ ⟨⟨i₂, k₂, st₂⟩, v₂⟩ => ?_)
   have A₂ : bytesAt s₂.mem (ad s₀) (AL s₀) = A s₀ := by
-    rw [bytesAt_frame k₂.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt),
-      bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)]
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) i₂.x21
-    i₂.rd i₂.wr i₂.x24 (by rw [i₂.x25]; exact hRDX s₀)) (by lit_decide))
-    fun s₃ ⟨⟨k₃, r₃⟩, v₃⟩ => ?_)
-  have i₃ := mac_inv i₂ k₃
+    rw [bytesAt_frame k₂.frame (by rdisj_all) hAL, bytesAt_frame h₁.inv.frame (by rdisj_all) hAL]
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₃.x21
-    i₃.rd i₃.wr i₃.x22 (by rw [i₃.x23]; exact hL s₀)) (by lit_decide))
+  have A₃ : bytesAt s₃.mem (ad s₀) (AL s₀) = A s₀ := by rw [bytesAt_frame k₃.frame (by rdisj_all) hAL, A₂]
+  refine WP.seq (WP.mono (WP.preservedV (Fused.macAll_ok hp (srcA hp) (srcD hp) i₃) (by lit_decide))
     fun s₄ ⟨⟨k₄, r₄⟩, v₄⟩ => ?_)
   have i₄ := mac_inv i₃ k₄
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₄) (by lit_decide)) fun s₅ ⟨⟨i₅, k₅, len₅⟩, v₅⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok hp i₅) (by lit_decide)) fun s₆ ⟨⟨i₆, k₆, r₆⟩, v₆⟩ => ?_)
-  have D₆ : bytesAt s₆.mem (dp s₀) (L s₀) = D s₀ := by
-    rw [bytesAt_frame k₆.frame (by rdisj_all) hL', bytesAt_frame k₅.frame (by rdisj_all) hL',
-      bytesAt_frame k₄.frame (by rdisj_all) hL', D₃]
-  have K₆ : ∀ i < 256, s₆.mem (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := fun i hi => by
-    rw [Short.ks_frame k₆.frame (by rdisj_all) hi, Short.ks_frame k₅.frame (by rdisj_all) hi,
-      Short.ks_frame k₄.frame (by rdisj_all) hi, Short.ks_frame k₃.frame (by rdisj_all) hi,
+  have R₄ := r₄ (otk s₀) [] (Repr.frame k₃.frame (by rdisj_all) (Repr.frame k₂.frame (by rdisj_all) h₁.poly))
+  rw [A₃, D₃, len₃] at R₄
+  have D₄ : bytesAt s₄.mem (dp s₀) (L s₀) = D s₀ := by rw [bytesAt_frame k₄.frame (by rdisj_all) hL', D₃]
+  have K₄ : ∀ i < 256, s₄.mem (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := fun i hi => by
+    rw [Short.ks_frame k₄.frame (by rdisj_all) hi, Short.ks_frame k₃.frame (by rdisj_all) hi,
       Short.ks_frame k₂.frame (by rdisj_all) hi]
     exact Short.ks_post h₁.ks hi
-  have st₆ : stateAt s₆.mem (off (cx s₀) 64) = initState (K s₀) 5 (N s₀) := by
-    rw [stateAt_frame k₆.frame (by rdisj_all), stateAt_frame k₅.frame (by rdisj_all),
-      stateAt_frame k₄.frame (by rdisj_all), stateAt_frame k₃.frame (by rdisj_all), st₂]
-  refine WP.seq (WP.mono (WP.preservedV (first_ok hp i₆ hL₁) (by lit_decide))
-    fun s₇ ⟨⟨i₇, k₇, x₇, f₇⟩, v₇⟩ => ?_)
-  have st₇ : stateAt s₇.mem (off (cx s₀) 64) = initState (K s₀) 5 (N s₀) := by
-    rw [stateAt_frame k₇.frame (by rdisj_all), st₆]
-  refine WP.seq (WP.mono (rest_ok v hp i₇ hL₁ st₇) fun s₈ ⟨v₈, i₈, k₈, r₈⟩ => ?_)
-  have pt₈ := ct_rest hp hL₁ D₆ K₆ x₇ f₇ r₈ k₈.frame
-  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₈ (out := 48) (by omega)) (by lit_decide))
-    fun s₉ ⟨⟨k₉, tag₉⟩, v₉⟩ => ?_
-  have hd8 : ∀ r ∈ streamR s₀, (sub s₀ 448 128).Disjoint r := by
+  have st₄ : stateAt s₄.mem (off (cx s₀) 64) = initState (K s₀) 5 (N s₀) := by
+    rw [stateAt_frame k₄.frame (by rdisj_all), stateAt_frame k₃.frame (by rdisj_all), st₂]
+  refine WP.seq (WP.mono (WP.preservedV (first_ok hp i₄ hL₁) (by lit_decide))
+    fun s₅ ⟨⟨i₅, k₅, x₅, f₅⟩, v₅⟩ => ?_)
+  have st₅ : stateAt s₅.mem (off (cx s₀) 64) = initState (K s₀) 5 (N s₀) := by
+    rw [stateAt_frame k₅.frame (by rdisj_all), st₄]
+  refine WP.seq (WP.mono (rest_ok v hp i₅ hL₁ st₅) fun s₆ ⟨v₆, i₆, k₆, r₆⟩ => ?_)
+  have pt₆ := ct_rest hp hL₁ D₄ K₄ x₅ f₅ r₆ k₆.frame
+  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (by omega)) (by lit_decide))
+    fun s₇ ⟨⟨k₇, tag₇⟩, v₇⟩ => ?_
+  have hd6 : ∀ r ∈ streamR s₀, (sub s₀ 448 128).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
     · exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (restR_sub hL₁)
     · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-  have R₂ : Repr s₂.mem (off (cx s₀) 448) (otk s₀) [] := Repr.frame k₂.frame (by rdisj_all) h₁.poly
-  have R₄ := r₄ _ _ (r₃ _ _ R₂)
-  have T₉ := tag₉ _ _ (Repr.frame k₈.frame hd8 (Repr.frame k₇.frame (by rdisj_all)
-    (r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄))))
-  rw [len₅, D₃, A₂] at T₉
-  refine ⟨i₈.inv0.step k₉ (fun r hr => ?_) (fun r hr => ?_), fun r hr => (v₉ r hr).trans ((v₈ r hr).trans
-      ((v₇ r hr).trans ((v₆ r hr).trans ((v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans
-        ((v₂ r hr).trans (v₁ r hr)))))))), ?_, ?_⟩
+  have T₇ := tag₇ _ _ (Repr.frame k₆.frame hd6 (Repr.frame k₅.frame (by rdisj_all) R₄))
+  refine ⟨i₆.inv0.step k₇ (fun r hr => ?_) (fun r hr => ?_), fun r hr => (v₇ r hr).trans ((v₆ r hr).trans
+      ((v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))))), ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-  · rw [T₉]
+  · rw [T₇]
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
-  · rw [bytesAt_frame k₉.frame (by rdisj_all) hL', pt₈]
+  · rw [bytesAt_frame k₇.frame (by rdisj_all) hL', pt₆]
 
 /-! ## The branch on the length, after the prologue -/
 
