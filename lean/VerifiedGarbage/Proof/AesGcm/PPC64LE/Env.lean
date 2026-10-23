@@ -84,6 +84,11 @@ structure Lay (c st w : Addr) : Prop where
   sa : (⟨st, 80⟩ : Region).Disjoint ⟨w, 16⟩
   sb : (⟨st, 80⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 96, 2464⟩
 
+/-- The layout, for an environment's registers. -/
+theorem Lay.v {V : Reg → BitVec 64} {c st w : Addr} (L : Lay c st w) (h29 : V .r29 = c) (h30 : V .r30 = st)
+    (h31 : V .r31 = w) : Lay (V .r29) (V .r30) (V .r31) := by
+  rw [h29, h30, h31]; exact L
+
 /-- What a state may access. -/
 structure Perm (c st w : Addr) (s : State) : Prop where
   ctx : Covers [⟨c, 256⟩] (s.rd ++ s.wr)

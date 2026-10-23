@@ -50,10 +50,6 @@ theorem EnvC.pin {c st w sp : Addr} {s₁ s₂ : State} (h₁ : EnvC c st w sp s
 theorem EnvC.sp {c st w sp : Addr} {s : State} (h : EnvC c st w sp s) : s.sp = sp := by
   obtain ⟨_, _, _, _, e⟩ := h; exact e.sp
 
-theorem Lay.v {V : Reg → BitVec 64} {c st w : Addr} (L : Lay c st w) (h29 : V .r29 = c) (h30 : V .r30 = st)
-    (h31 : V .r31 = w) : Lay (V .r29) (V .r30) (V .r31) := by
-  rw [h29, h30, h31]; exact L
-
 /-- Before `ghash1 yo b o`, for the block at `P`. -/
 structure GhIn (c st w sp : Addr) (b : Reg) (o : Nat) (P : Addr) (s : State) : Prop where
   env : EnvC c st w sp s
