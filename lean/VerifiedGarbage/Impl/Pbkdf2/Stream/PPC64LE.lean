@@ -23,8 +23,8 @@ first, since `u` is read-only.
 caller's `r20`–`r25` (`Hash.saveAt`), then `st`, `dig` and `ub`. Our variables
 live in `r20`–`r23`, which none of the functions we call writes: `r20` =
 `key`, `r21` = `scratch`, `r22` = the steps left and `r23` = `t`. `n` is a
-32-bit argument whose other bits may be anything: it is zero-extended into
-`r22` first. Every address and branch depends only on the pointers and `n`.
+32-bit argument whose other bits may be anything: it is zero-extended first,
+before the frame. Every address and branch depends only on the pointers and `n`.
 -/
 
 @[expose] public section
@@ -89,18 +89,18 @@ end Iter
 
 variable (H : Hash)
 
-/-- `n` zero-extended into `r22`. -/
-def zextN : List Instr := [.lsl .r22 .r5 32, .lsr .d .r22 .r22 32]
+/-- `n` zero-extended (in `r5`). -/
+def zextN : List Instr := [.lsl .r5 .r5 32, .lsr .d .r5 .r5 32]
 
 /-- `iterate`, but for saving the link register. -/
 def iterateMain : Prog isa :=
-  .seq (.block (Hash.saveAt H.W .r7 ++ zextN ++ [mov .r20 .r3, mov .r21 .r7, mov .r23 .r6] ++
+  .seq (.block (Hash.saveAt H.W .r7 ++ [mov .r20 .r3, mov .r21 .r7, mov .r22 .r5, mov .r23 .r6] ++
       Iter.copyU H))
   (.seq (.ite (.zero .d .r22) (.block []) (.loop (Iter.step H) (.nonzero .d .r22)))
     (.block (Hash.restoreAt H.W)))
 
 /-- PBKDF2's `iterate` with its working space as an argument. -/
 def iterate : Prog isa :=
-  .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0) (iterateMain H) (.pop .r0)) (.block [.mtlr .r0]))
+  .seq (.block (.mflr .r0 :: zextN)) (.seq (.frame (.push .r0) (iterateMain H) (.pop .r0)) (.block [.mtlr .r0]))
 
 end VG.Impl.Pbkdf2.Stream.PPC64LE

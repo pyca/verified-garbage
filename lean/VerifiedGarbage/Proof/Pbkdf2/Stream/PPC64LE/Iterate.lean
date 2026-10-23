@@ -94,7 +94,7 @@ abbrev nn (s₀ : State) : Nat := ((s₀.gpr .r5).setWidth 32).toNat
 
 include hH in
 /-- `iterate` without its frame: the callee-saved registers are kept. -/
-theorem correctMain (hp : Pre H s₀) :
+theorem correctMain (hp : Pre H s₀) (h5 : s₀.gpr .r5 = BitVec.ofNat 64 (nn s₀)) :
     WP isa (VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain H) s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
       ∀ k0, Hyp hH s₀ k0 → bytesAt s'.mem (tp s₀) H.D =
@@ -119,28 +119,24 @@ theorem correctMain (hp : Pre H s₀) :
     (fun d hd₁ hd₂ => ⟨scR H s₀, scW, contains_offset
       (show d + 8 ≤ bytes H by have : d + 8 ≤ H.W + 48 := hd₂; rw [hbytes]; omega) (by omega)⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_)
-  refine wp_lsl (by decide) fun s₂ x₂ => wp_lsr (by decide) fun s₃ x₃ => wp_mov fun s₄ x₄ =>
-    wp_mov fun s₅ x₅ => wp_mov fun s₆ x₆ => ?_
+  refine wp_mov fun s₂ x₂ => wp_mov fun s₃ x₃ => wp_mov fun s₄ x₄ => wp_mov fun s₆ x₆ => ?_
   have r₆ : Regs s₀ s₆ :=
-    ⟨by rw [x₆.rd, x₅.rd, x₄.rd, x₃.rd, x₂.rd, rd₁], by rw [x₆.wr, x₅.wr, x₄.wr, x₃.wr, x₂.wr, wr₁],
-      by rw [x₆.sp, x₅.sp, x₄.sp, x₃.sp, x₂.sp, sp₁]⟩
+    ⟨by rw [x₆.rd, x₄.rd, x₃.rd, x₂.rd, rd₁], by rw [x₆.wr, x₄.wr, x₃.wr, x₂.wr, wr₁],
+      by rw [x₆.sp, x₄.sp, x₃.sp, x₂.sp, sp₁]⟩
   have m₆ : s₆.mem = saveMem H.W s₀.mem (scr s₀) s₀.gpr := by
-    rw [x₆.mem, x₅.mem, x₄.mem, x₃.mem, x₂.mem, m₁]
+    rw [x₆.mem, x₄.mem, x₃.mem, x₂.mem, m₁]
   have k₆ : ∀ r, r ≠ .r20 → r ≠ .r21 → r ≠ .r22 → r ≠ .r23 → s₆.gpr r = s₀.gpr r := fun r a b c d => by
-    rw [x₆.other r d, x₅.other r b, x₄.other r a, x₃.other r c, x₂.other r c, g₁]
+    rw [x₆.other r d, x₄.other r c, x₃.other r b, x₂.other r a, g₁]
   have h4 : s₆.gpr .r4 = up s₀ := k₆ _ (by decide) (by decide) (by decide) (by decide)
   have h21 : s₆.gpr .r21 = scr s₀ := by
-    rw [x₆.other _ (by decide), x₅.gpr, x₄.other _ (by decide), x₃.other _ (by decide),
-      x₂.other _ (by decide), g₁]
+    rw [x₆.other _ (by decide), x₄.other _ (by decide), x₃.gpr, x₂.other _ (by decide), g₁]
   have h22 : s₆.gpr .r22 = BitVec.ofNat 64 (nn s₀) := by
-    rw [x₆.other _ (by decide), x₅.other _ (by decide), x₄.other _ (by decide), x₃.gpr, x₂.gpr, g₁, zext32]
+    rw [x₆.other _ (by decide), x₄.gpr, x₃.other _ (by decide), x₂.other _ (by decide), g₁, h5]
   have v₆ : Vars s₀ s₆ := by
     refine ⟨?_, h21, ?_, fun r hr => k₆ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide)⟩
-    · rw [x₆.other _ (by decide), x₅.other _ (by decide), x₄.gpr, x₃.other _ (by decide),
-        x₂.other _ (by decide), g₁]
-    · rw [x₆.gpr, x₅.other _ (by decide), x₄.other _ (by decide), x₃.other _ (by decide),
-        x₂.other _ (by decide), g₁]
+    · rw [x₆.other _ (by decide), x₄.other _ (by decide), x₃.other _ (by decide), x₂.gpr, g₁]
+    · rw [x₆.gpr, x₄.other _ (by decide), x₃.other _ (by decide), x₂.other _ (by decide), g₁]
   have uR' : uR H s₀ ∈ s₆.rd ++ s₆.wr := List.mem_append_left _ (by rw [r₆.rd, hp.rd]; simp)
   have scW₆ : scR H s₀ ∈ s₆.wr := by rw [r₆.wr]; exact scW
   have ubS : Region.Sub ⟨ubp H s₀, H.D⟩ (scR H s₀) := ubD_sub hz _
@@ -225,63 +221,104 @@ theorem iterateMain_pf : pushFrames (VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain H
   simp [VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain, VG.Impl.Pbkdf2.Stream.PPC64LE.Iter.step, Hash.callFin,
     Hash.callUpd, pushFrames, hH.finPf, hH.updPf]
 
-open VG.Proof.Hmac.Stream.PPC64LE.Init (inner inner_bytes) in
-theorem pre_inner {s₀ : State} (hp : (iterG hH.SH (bytes H) 96).pre s₀) : Pre H (inner s₀) := by
+theorem pre_framed {s : State} (hp : (iterG hH.SH (bytes H) 96).pre s) : Pre H (framed .r0 s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hp
   rw [hH.hS, hH.hD] at *
-  have sub : Region.Sub (below (s₀.sp - 48) 48) (below s₀.sp 96) := below_body s₀.sp 48
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, by show 48 ≤ (s₀.sp - 48).toNat; bv_omega, h9.sub_left sub,
+  have sub : Region.Sub (below (s.sp - 48) 48) (below s.sp 96) := below_body s.sp 48
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, by show 48 ≤ (s.sp - 48).toNat; bv_omega, h9.sub_left sub,
     h10.sub_left sub, h11.sub_left sub, h12.sub_left sub⟩
 
-open VG.Proof.Hmac.Stream.PPC64LE.Init (inner inner_bytes) in
+/-- A byte of a region the frame is disjoint from is unchanged by the push. -/
+theorem framed_bytes {s : State} {R : Region} (hd : (below s.sp 48).Disjoint R) (hR : R.len < 2 ^ 64) {i : Nat}
+    (hi : i < R.len) : (framed .r0 s).mem (R.base + BitVec.ofNat 64 i) = s.mem (R.base + BitVec.ofNat 64 i) :=
+  Proof.MdStream.PPC64LE.write_frame_bytes hd hR hi
+
 /-- `iterate`, with its frame. -/
 theorem correct {s₀ : State} (hp : (iterG hH.SH (bytes H) 96).pre s₀) :
     WP isa (VG.Impl.Pbkdf2.Stream.PPC64LE.iterate H) s₀ fun s' =>
       abiPreserved s₀ s' ∧ (iterG hH.SH (bytes H) 96).post s₀ s' := by
-  have hpi := pre_inner hH hp
-  obtain ⟨h1, h2, _, _, _, _, _, h8, h9, h10, h11, h12⟩ := hp
-  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega) (by omega)
   have hz := sz hH
-  refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
-    fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := iterateMain_fdepth hH; omega) (iterateMain_pf hH)
-  · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
-    have hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 96) :=
-      fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)
+  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by have := hp.2.2.2.2.2.2.2.1; omega)
+    (by have := hp.2.2.2.2.2.2.2.1; omega)
+  unfold VG.Impl.Pbkdf2.Stream.PPC64LE.iterate VG.Impl.Pbkdf2.Stream.PPC64LE.zextN
+  refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (wp_lsl (by decide) fun s₁ x₁ =>
+    wp_lsr (by decide) fun s₂ x₂ => WP.block_nil (WP.seq ?_)))
+  have q₂ : ∀ r, r ≠ .r0 → r ≠ .r5 → s₂.gpr r = s₀.gpr r := fun r h0 h5 => by
+    rw [x₂.other r h5, x₁.other r h5]; simp only [State.write, h0, ite_false]
+  have rd₂ : s₂.rd = s₀.rd := by rw [x₂.rd, x₁.rd]; rfl
+  have wr₂ : s₂.wr = s₀.wr := by rw [x₂.wr, x₁.wr]; rfl
+  have sp₂ : s₂.sp = s₀.sp := by rw [x₂.sp, x₁.sp]; rfl
+  have mem₂ : s₂.mem = s₀.mem := by rw [x₂.mem, x₁.mem]; rfl
+  have hn₂ : nn (framed .r0 s₂) = nn s₀ := by
+    show ((s₂.gpr .r5).setWidth 32).toNat = _
+    rw [x₂.gpr, x₁.gpr, show (s₀.write .r0 s₀.lr).gpr .r5 = s₀.gpr .r5 from rfl, zext32, BitVec.toNat_setWidth,
+      BitVec.toNat_ofNat]
+    have := ((s₀.gpr .r5).setWidth 32).isLt
+    show _ = ((s₀.gpr .r5).setWidth 32).toNat
+    omega
+  have hp₂ : (iterG hH.SH (bytes H) 96).pre s₂ := by
+    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hp
+    simp only [iterG, rd₂, wr₂, sp₂, q₂ .r3 (by decide) (by decide), q₂ .r4 (by decide) (by decide),
+      q₂ .r6 (by decide) (by decide), q₂ .r7 (by decide) (by decide)]
+    exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+  have hpi := pre_framed hH hp₂
+  have h5 : (framed .r0 s₂).gpr .r5 = BitVec.ofNat 64 (nn (framed .r0 s₂)) := by
+    rw [hn₂]; show s₂.gpr .r5 = _
+    rw [x₂.gpr, x₁.gpr, show (s₀.write .r0 s₀.lr).gpr .r5 = s₀.gpr .r5 from rfl, zext32]
+  obtain ⟨h1, h2, _, _, _, _, _, h8, h9, h10, h11, h12⟩ := hp
+  refine WP.frameReg (by rw [sp₂]; show 48 ≤ s₀.sp.toNat; omega) (fun R hR => ?_)
+    (WP.mono (correctMain hH hpi h5) fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := iterateMain_fdepth hH; omega)
+    (iterateMain_pf hH)
+  · rw [wr₂, h2] at hR
+    have hf : Region.Sub ⟨s₂.sp - 48 + 32, 16⟩ (below s₀.sp 96) :=
+      fun a h => hsub a (by rw [← sp₂]; exact Proof.MdStream.PPC64LE.frame_sub s₂.sp a h)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
     · exact h11.sub_left hf
     · exact h12.sub_left hf
-  · refine Proof.MdStream.PPC64LE.WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
+  · refine Proof.MdStream.PPC64LE.WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, by rw [← sp₂], ?_⟩, ?_⟩)
     · have h0 : r ≠ .r0 := by revert r hr; decide
       simp only [State.write, h0, ite_false]
       rw [hk r hr]
-      simp only [framed, State.write, h0, ite_false]
-    · simp [State.write]
+      simp only [framed]
+      exact q₂ r h0 (by revert r hr; decide)
+    · simp only [State.write]
+      rw [x₂.other .r0 (by decide), x₁.other .r0 (by decide)]
+      simp [State.write]
     · intro k0 hk0 hI hO
       rw [hH.hD]
       have hS2 : 2 * H.S < 2 ^ 64 := by have := hz.S; omega
       have hDl : H.D < 2 ^ 64 := by have := hH.hD64; omega
-      have hu : U0 H (inner s₀) = bytesAt s₀.mem (s₀.gpr .r4) H.D := by
-        show bytesAt (inner s₀).mem (s₀.gpr .r4) H.D = _
+      have hsub₂ : Region.Sub (below s₂.sp 48) (below s₀.sp 96) := by rw [sp₂]; exact hsub
+      have hu : U0 H (framed .r0 s₂) = bytesAt s₀.mem (s₀.gpr .r4) H.D := by
+        show bytesAt (framed .r0 s₂).mem (s₂.gpr .r4) H.D = _
+        rw [q₂ .r4 (by decide) (by decide), ← mem₂]
         exact Proof.Sha256.Stream.bytesAt_congr fun i hi =>
-          inner_bytes (R := ⟨s₀.gpr .r4, H.D⟩) (by rw [← hH.hD]; exact h10.sub_left hsub) hDl hi
-      have ht : T0 H (inner s₀) = bytesAt s₀.mem (s₀.gpr .r6) H.D := by
-        show bytesAt (inner s₀).mem (s₀.gpr .r6) H.D = _
+          framed_bytes (R := ⟨s₀.gpr .r4, H.D⟩) (by rw [← hH.hD]; exact h10.sub_left hsub₂) hDl hi
+      have ht : T0 H (framed .r0 s₂) = bytesAt s₀.mem (s₀.gpr .r6) H.D := by
+        show bytesAt (framed .r0 s₂).mem (s₂.gpr .r6) H.D = _
+        rw [q₂ .r6 (by decide) (by decide), ← mem₂]
         exact Proof.Sha256.Stream.bytesAt_congr fun i hi =>
-          inner_bytes (R := ⟨s₀.gpr .r6, H.D⟩) (by rw [← hH.hD]; exact h11.sub_left hsub) hDl hi
-      have hI' : hH.SH.Repr (inner s₀).mem (kp (inner s₀)) (xorPad k0 ipad) := by
+          framed_bytes (R := ⟨s₀.gpr .r6, H.D⟩) (by rw [← hH.hD]; exact h11.sub_left hsub₂) hDl hi
+      have hI' : hH.SH.Repr (framed .r0 s₂).mem (kp (framed .r0 s₂)) (xorPad k0 ipad) := by
+        show hH.SH.Repr (framed .r0 s₂).mem (s₂.gpr .r3) _
+        rw [q₂ .r3 (by decide) (by decide)]
         refine hH.congr s₀.mem _ _ _ (fun i hi => ?_) hI
-        exact inner_bytes (R := ⟨s₀.gpr .r3, 2 * H.S⟩) (by rw [← hH.hS]; exact h9.sub_left hsub)
+        rw [← mem₂]
+        exact framed_bytes (R := ⟨s₀.gpr .r3, 2 * H.S⟩) (by rw [← hH.hS]; exact h9.sub_left hsub₂)
           hS2 (show i < 2 * H.S by omega)
-      have hO' : hH.SH.Repr (inner s₀).mem (kp (inner s₀) + BitVec.ofNat 64 H.S) (xorPad k0 opad) := by
+      have hO' : hH.SH.Repr (framed .r0 s₂).mem (kp (framed .r0 s₂) + BitVec.ofNat 64 H.S) (xorPad k0 opad) := by
+        show hH.SH.Repr (framed .r0 s₂).mem (s₂.gpr .r3 + BitVec.ofNat 64 H.S) _
+        rw [q₂ .r3 (by decide) (by decide)]
         rw [hH.hS] at hO
         refine hH.congr s₀.mem _ _ _ (fun i hi => ?_) hO
-        have := inner_bytes (s₀ := s₀) (R := ⟨s₀.gpr .r3, 2 * H.S⟩) (by rw [← hH.hS]; exact h9.sub_left hsub)
+        rw [← mem₂]
+        have := framed_bytes (s := s₂) (R := ⟨s₀.gpr .r3, 2 * H.S⟩) (by rw [← hH.hS]; exact h9.sub_left hsub₂)
           hS2 (i := H.S + i) (show H.S + i < 2 * H.S by omega)
         rwa [VG.Proof.Hmac.Stream.PPC64LE.add_off] at this
+      show bytesAt s'.mem (s₀.gpr .r6) H.D = _
+      rw [← q₂ .r6 (by decide) (by decide)]
       refine (hpost k0 ⟨by rw [hk0, hH.hB], hI', hO'⟩).trans ?_
-      rw [hu, ht]
-      rfl
+      rw [hu, ht, hn₂, q₂ .r6 (by decide) (by decide)]
 
 end VG.Proof.Pbkdf2.Stream.PPC64LE.Iter
