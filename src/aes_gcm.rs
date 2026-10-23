@@ -1398,6 +1398,7 @@ impl AesGcm {
         #[cfg(target_arch = "aarch64")]
         if out.len() > PLAIN_MAX
             && let Some(p) = self.fns.powers
+            && false
         {
             return Ok(self.seal_gather_prepared(p, nonce, aad, src, plaintext.len(), out));
         }
