@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Compress
@@ -32,6 +32,10 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_compress_encode`
@@ -446,7 +450,7 @@ theorem inv_zero {s₀ : State} {M : BitVec 64} {inS b N : Nat} {s : State} (h :
     fun k _ => by rw [m, ite_eq_right (by omega)]⟩
 
 theorem setup_li {s : State} {m n : Nat} (hm : m < 2 ^ 15) (hn : n < 2 ^ 15) :
-    WP isa (.block (biasConst ++ [.li .r9 m, .li .r11 n])) s fun s' =>
+    WP isa (.block (biasConst ++ ([.li .r9 m, .li .r11 n] : List Instr))) s fun s' =>
       s'.gpr .r9 = BitVec.ofNat 64 m ∧ s'.gpr .r10 = 262080 ∧ s'.gpr .r11 = BitVec.ofNat 64 n ∧
         s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r5 = s.gpr .r5 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
         s'.lr = s.lr ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem := by
@@ -455,7 +459,7 @@ theorem setup_li {s : State} {m n : Nat} (hm : m < 2 ^ 15) (hn : n < 2 ^ 15) :
   decide
 
 theorem setup_10 {s : State} :
-    WP isa (.block (biasConst ++ [.lis .r9 0x2, .ori .r9 .r9 0x75F7, .li .r11 64])) s fun s' =>
+    WP isa (.block (biasConst ++ ([.lis .r9 0x2, .ori .r9 .r9 0x75F7, .li .r11 64] : List Instr))) s fun s' =>
       s'.gpr .r9 = 161271 ∧ s'.gpr .r10 = 262080 ∧ s'.gpr .r11 = BitVec.ofNat 64 64 ∧
         s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r5 = s.gpr .r5 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
         s'.lr = s.lr ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem := by
@@ -464,7 +468,7 @@ theorem setup_10 {s : State} :
   decide
 
 theorem branch1 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 1) {s : State} (h : Start s₀ s) :
-    WP isa (.seq (.block (biasConst ++ [.li .r9 315, .li .r11 32])) (.loop (.block ce1Body) (.nonzero .d .r11)))
+    WP isa (.seq (.block (biasConst ++ ([.li .r9 315, .li .r11 32] : List Instr))) (.loop (.block ce1Body) (.nonzero .d .r11)))
       s (Fin s₀) := by
   refine WP.seq (WP.mono (setup_li (by decide) (by decide)) fun s₁ ⟨r9, r10, r11, r3, r5, rd, wr, sp, lr, pres, m⟩ =>
     ?_)
@@ -475,7 +479,7 @@ theorem branch1 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 1) {s : State} (h
       fun r hr => (pres r hr).trans (hpres r hr), m.trans hm⟩ r9 r10 r11)
 
 theorem branch4 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 4) {s : State} (h : Start s₀ s) :
-    WP isa (.seq (.block (biasConst ++ [.li .r9 2520, .li .r11 128])) (.loop (.block ce4Body) (.nonzero .d .r11)))
+    WP isa (.seq (.block (biasConst ++ ([.li .r9 2520, .li .r11 128] : List Instr))) (.loop (.block ce4Body) (.nonzero .d .r11)))
       s (Fin s₀) := by
   refine WP.seq (WP.mono (setup_li (by decide) (by decide)) fun s₁ ⟨r9, r10, r11, r3, r5, rd, wr, sp, lr, pres, m⟩ =>
     ?_)
@@ -486,7 +490,7 @@ theorem branch4 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 4) {s : State} (h
       fun r hr => (pres r hr).trans (hpres r hr), m.trans hm⟩ r9 r10 r11)
 
 theorem branch10 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 10) {s : State} (h : Start s₀ s) :
-    WP isa (.seq (.block (biasConst ++ [.lis .r9 0x2, .ori .r9 .r9 0x75F7, .li .r11 64]))
+    WP isa (.seq (.block (biasConst ++ ([.lis .r9 0x2, .ori .r9 .r9 0x75F7, .li .r11 64] : List Instr)))
       (.loop (.block ce10Body) (.nonzero .d .r11))) s (Fin s₀) := by
   refine WP.seq (WP.mono setup_10 fun s₁ ⟨r9, r10, r11, r3, r5, rd, wr, sp, lr, pres, m⟩ => ?_)
   obtain ⟨h3, h5, hrd, hwr, hsp, hlr, hpres, hm⟩ := h

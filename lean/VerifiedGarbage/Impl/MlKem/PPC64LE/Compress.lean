@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.PPC64LE.Poly
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ML-KEM on PPC64LE: `ByteEncode_d ∘ Compress_d` and `Decompress_d ∘ ByteDecode_d`
