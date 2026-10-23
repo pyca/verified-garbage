@@ -198,14 +198,11 @@ pub struct ChaCha20 {
     /// and the partly used block, then the working space of `apply`. Only
     /// the verified functions read or write it, and they read only bytes
     /// they have written, so it need not be initialized.
-    state: MaybeUninit<[u64; 96]>,
-    /// The key and the nonce of `new` (and `reset_nonce`), which `init`
-    /// reads while `pending`.
     key: [u8; 32],
     nonce: [u8; 16],
-    /// Whether `init` has yet to run: `state` holds nothing.
     pending: bool,
     backend: Backend,
+    state: MaybeUninit<[u64; 96]>,
 }
 
 impl Drop for ChaCha20 {
@@ -217,7 +214,10 @@ impl Drop for ChaCha20 {
         // object, so it does not overlap the callee's stack frame or wrap
         // around the end of the address space. It is not used after the
         // drop, so its fields need not stay valid.
-        unsafe { zeroize_raw((self as *mut Self).cast::<u8>(), size_of::<Self>()) };
+        // EMULATION (never merge): the 136-byte state's object, wiped whole.
+        unsafe {
+            zeroize_raw((self as *mut Self).cast::<u8>(), core::mem::offset_of!(ChaCha20, state) + 136)
+        };
     }
 }
 
@@ -300,6 +300,10 @@ impl ChaCha20 {
         // do not wrap around the end of the address space. The CPU has the
         // features of the implementation selected.
         let ok = unsafe { f(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        // EMULATION (never merge): the wipe of the 424 bytes of scratch that
+        // the shrunk apply writes.
+        let mut scratch = MaybeUninit::<[u64; 64]>::uninit();
+        unsafe { zeroize_raw(scratch.as_mut_ptr().cast::<u8>(), 424) };
         assert!(ok == 1, "ChaCha20 block counter would overflow");
     }
 }
