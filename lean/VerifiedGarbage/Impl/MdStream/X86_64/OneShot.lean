@@ -97,16 +97,66 @@ def copy1 : List Instr :=
   [.movzx8 .r8 { base := .r13 }, .store8 (blkByte P) .r8, .alu .add .r13 (.imm 1), .alu .add .r11 (.imm 1),
     .alu .sub .rax (.imm 1)]
 
+/-- Store `xmm1` as the 16 bytes of the block at `r11`. -/
+def storeChunk : Instr := .movdquStore (blkByte P) .xmm1
+
+/-- When the bytes left end at a multiple of 16: the 16 bytes at `r11` are
+`0x80` and zeros, one 16-byte store. -/
+def mark16 : List Instr := [.mov32 .r8 (.imm 0x80), .xop (.movq .xmm1 .r8), storeChunk P]
+
+/-- The last `r = rax` bytes left (at `r13`), `0 < r < 8`, then `0x80` and
+zeros, as the 16 bytes at `r11`: the 8 bytes of the message that end with
+them, shifted right by the `8 - r` before them, and `0x80` shifted to byte
+`r`, in `r8`, then zeros. (A message of at least 8 bytes has those 8.) -/
+def partLo : List Instr :=
+  [.mov .r8 (.mem { base := .r13, index := some .rax, disp := -8 }), .mov32 .rcx (.imm 8),
+    .alu .sub .rcx (.reg .rax), .shift .shl .rcx 3, .shiftCl .shr .r8,
+    .mov .rcx (.reg .rax), .shift .shl .rcx 3, .mov32 .r9 (.imm 0x80), .shiftCl .shl .r9,
+    .alu .or .r8 (.reg .r9), .xop (.movq .xmm1 .r8), storeChunk P]
+
+/-- As `partLo`, for `8 ≤ r < 16`: the first 8 bytes left in `r8`; in `r9`,
+the 8 bytes of the message that end with them, shifted right by the
+`16 - r` before the last `r - 8` (by `8 (15 - r)` then 8, so that `r = 8`
+leaves none), with `0x80` shifted to byte `r - 8`. -/
+def partHi : List Instr :=
+  [.mov .r8 (.mem { base := .r13 }), .mov .r9 (.mem { base := .r13, index := some .rax, disp := -8 }),
+    .mov32 .rcx (.imm 15), .alu .sub .rcx (.reg .rax), .shift .shl .rcx 3, .shiftCl .shr .r9,
+    .shift .shr .r9 8, .mov .rcx (.reg .rax), .alu .sub .rcx (.imm 8), .shift .shl .rcx 3,
+    .mov32 .rdx (.imm 0x80), .shiftCl .shl .rdx, .alu .or .r9 (.reg .rdx), .xop (.movq .xmm1 .r8),
+    .xop (.movq .xmm2 .r9), .xop (.bin .punpcklqdq .xmm1 .xmm2), storeChunk P]
+
+/-- Fewer than 8 bytes left in a message shorter than 8: one at a time
+(`rax` of them), then the `0x80` byte. -/
+def bytesTail : Prog isa :=
+  .seq (.block [.alu .test .rax (.reg .rax)])
+  (.seq (.ite .e (.block []) (.loop (.block (copy1 P)) .ne))
+    (.block [.mov32 .r8 (.imm 0x80), .store8 (blkByte P) .r8]))
+
 /-- Copy the `len mod B` bytes left (counted in `r10`) to the block, sixteen
-at a time (`r9` of them), then one at a time (`rax`), and append the `0x80`
-byte. -/
+at a time (`r9` of them), and the 16 bytes holding the last of them and the
+`0x80` byte with one 16-byte store (`mark16`, `partLo`, `partHi`): the
+compression function reads the block 16 bytes at a time, and a 16-byte load
+of bytes that narrower stores wrote cannot take them from those stores (it
+waits until they reach the cache). Only a message shorter than 8 bytes is
+copied a byte at a time (`bytesTail`). -/
 def copyTail : Prog isa :=
   .seq (.block [.mov .r10 (.reg .r12), .alu .and .r10 (.imm (BitVec.ofNat 32 (P.B - 1))), .mov32 .r11 (.imm 0),
       .mov .r9 (.reg .r10), .shift .shr .r9 4])
   (.seq (.ite .e (.block []) (.loop (.block (copy16 P)) .ne))
   (.seq (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 15)])
-  (.seq (.ite .e (.block []) (.loop (.block (copy1 P)) .ne))
-    (.block [.mov32 .r8 (.imm 0x80), .store8 (blkByte P) .r8]))))
+    (.ite .e (.block (mark16 P))
+      (.seq (.block [.alu .cmp .r12 (.imm 8)])
+        (.ite .b (bytesTail P)
+          (.seq (.block [.alu .cmp .rax (.imm 8)])
+            (.ite .b (.block (partLo P)) (.block (partHi P)))))))))
+
+/-- The length field, into the block's last 16 bytes, whose last `L` are
+zeros: `P.lenV` builds them in `xmm7`, or'd into those 16 bytes, loaded and
+stored again 16 at a time, so that both that load and the compression
+function's take them from a single 16-byte store. -/
+def lenVec : List Instr :=
+  P.lenV ++ [.movdquLoad .xmm0 (at_ .rbx (P.N + P.B - 16)), .xop (.bin .por .xmm0 .xmm7),
+    .movdquStore (at_ .rbx (P.N + P.B - 16)) .xmm0]
 
 /-- Whether the length field fits after the bytes left and `0x80`. -/
 def cmpLen : List Instr := [.alu .cmp .r10 (.imm (BitVec.ofNat 32 (P.B - P.L)))]
@@ -118,7 +168,7 @@ def tail (name : String) (code : Prog isa) : Prog isa :=
   (.seq (copyTail P)
   (.seq (.block (cmpLen P))
   (.seq (.ite .ae (.seq (.block (blkArg P)) (.seq (compressAt name code) (.block (zeroBuf P)))) (.block []))
-  (.seq (.block (P.len ++ blkArg P))
+  (.seq (.block (lenVec P ++ blkArg P))
     (compressAt name code)))))
 
 /-- Zero the hash value and the block, 16 bytes at a time, through `xmm0`. -/
