@@ -87,6 +87,10 @@ mod tests {
             crate::triple_des_ecb::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::InvalidKeyLength,
             crate::triple_des_cbc::Error::IncompleteBlock,
+            crate::aes_xts::Error::InvalidKeyLength,
+            crate::aes_xts::Error::EqualKeyHalves,
+            crate::aes_xts::Error::DataUnitTooShort,
+            crate::aes_xts::Error::DataUnitTooLong,
         );
         #[cfg(any(
             target_arch = "x86_64",
@@ -117,10 +121,6 @@ mod tests {
             crate::aes_siv::Error::InvalidKeyLength,
             crate::aes_siv::Error::TooManyComponents,
             crate::aes_siv::Error::TagMismatch,
-            crate::aes_xts::Error::InvalidKeyLength,
-            crate::aes_xts::Error::EqualKeyHalves,
-            crate::aes_xts::Error::DataUnitTooShort,
-            crate::aes_xts::Error::DataUnitTooLong,
             crate::blowfish_cbc::Error::InvalidKeyLength,
             crate::blowfish_cbc::Error::IncompleteBlock,
             crate::camellia_cbc::Error::InvalidKeyLength,

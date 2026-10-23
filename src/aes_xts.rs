@@ -30,7 +30,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::aes::Backend;
@@ -178,8 +179,8 @@ fn select_aes(f: Features) -> Backend {
     Backend::select_for(f, AES)
 }
 
-/// The only implementation of AES on ARMv7.
-#[cfg(target_arch = "arm")]
+/// The only implementation of AES on ARMv7 and PPC64LE.
+#[cfg(any(target_arch = "arm", target_arch = "powerpc64"))]
 fn select_aes(f: Features) -> Backend {
     Backend::select(f)
 }
@@ -239,7 +240,12 @@ type Unit = unsafe extern "sysv64" fn(
     *mut [u64; 304],
 );
 /// The signature of `vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 type Unit = unsafe extern "C" fn(
     *const [u8; 240],
     *const [u8; 240],
