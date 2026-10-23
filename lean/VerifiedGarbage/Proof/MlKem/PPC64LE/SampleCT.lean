@@ -13,6 +13,10 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
+meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
+meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
@@ -29,6 +33,7 @@ namespace VG.Proof.MlKem.PPC64LE.Sample
 
 open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE
 open VG.Spec.MlKem
+open VG.Spec.Sha3 (stateAt)
 
 theorem pre_of {s : State} (h : (Spec.MlKem.sampleNTTContract PPC64LE.abi 48).pre s) : Pre s := by
   sig_pre [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, PPC64LE.abi, PPC64LE.argRegs] at h
@@ -180,5 +185,162 @@ theorem loop_ct :
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
 end
+
+/-! ## The sponge -/
+
+/-- `absorb`'s arguments. -/
+abbrev FA (s₀ t : State) : Prop := SEnv s₀ t ∧ t.gpr .r3 = S s₀ ∧ t.gpr .r4 = BitVec.ofNat 64 168 ∧
+  t.gpr .r5 = BitVec.ofNat 64 0 ∧ t.gpr .r6 = SEED s₀ ∧ t.gpr .r7 = BitVec.ofNat 64 34 ∧
+  t.gpr .r8 = S s₀ + BitVec.ofNat 64 200
+
+/-- `pad`'s arguments. -/
+abbrev FP (s₀ t : State) : Prop := SEnv s₀ t ∧ t.gpr .r3 = S s₀ ∧ t.gpr .r4 = BitVec.ofNat 64 168 ∧
+  t.gpr .r5 = BitVec.ofNat 64 34 ∧ t.gpr .r6 = BitVec.ofNat 64 0x1f ∧ t.gpr .r7 = S s₀ + BitVec.ofNat 64 200
+
+/-- `squeeze`'s arguments. -/
+abbrev FS (s₀ t : State) : Prop := SEnv s₀ t ∧ t.gpr .r3 = S s₀ ∧ t.gpr .r4 = BitVec.ofNat 64 168 ∧
+  t.gpr .r5 = BitVec.ofNat 64 0 ∧ t.gpr .r6 = S s₀ + BitVec.ofNat 64 840 ∧ t.gpr .r7 = BitVec.ofNat 64 840 ∧
+  t.gpr .r8 = S s₀ + BitVec.ofNat 64 200
+
+section
+variable {s₁ s₂ : State} (h : Two s₁ s₂)
+include h
+
+theorem env_sp {a b : State} (ha : SEnv s₁ a) (hb : SEnv s₂ b) : a.sp = b.sp := by
+  rw [ha.sp, hb.sp, h.sp]
+
+theorem absorbPhase_ct :
+    RelCT isa (fun a b => (SEnv s₁ a ∧ stateAt a.mem (S s₁) = Spec.Sha3.zero) ∧
+      (SEnv s₂ b ∧ stateAt b.mem (S s₂) = Spec.Sha3.zero))
+      (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb_scratch" Impl.Sha3.PPC64LE.Stream.absorb))
+      fun _ _ => True := by
+  have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block absorbSeedArgs) s (FA s₀) := fun s₀ s hp hs =>
+    WP.mono (absorbArgs_ok hp hs) fun _ ⟨ht, _, g3, g4, g5, g6, g7, g8⟩ => ⟨ht, g3, g4, g5, g6, g7, g8⟩
+  refine RelCT.seq (R := fun a b => FA s₁ a ∧ FA s₂ b) (relct_wp ?_ fun a b hab =>
+    ⟨hw _ _ h.hp₁ hab.1.1, hw _ _ h.hp₂ hab.2.1⟩) ?_
+  · exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+      (by taint_decide)
+  refine call_ct h Proof.Sha3.PPC64LE.Stream.absorb_correct Proof.Sha3.PPC64LE.Stream.absorb_ct
+    (F := FA) (fun _ _ hf => hf.1) (fun s₀ => [⟨SEED s₀, 34⟩])
+    (fun s₀ => [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩])
+    (fun _ r hr => by rw [List.mem_singleton] at hr; exact hr) (fun _ r hr => wrS hr)
+    (fun _ _ hp ⟨ht, g3, g4, g5, g6, g7, g8⟩ => absorb_pre hp ht g3 g4 g5 g6 g7 g8)
+    (by simp only [SEED, h.seed]) (by simp only [S, h.scr]) fun a b ⟨ea, a3, a4, a5, a6, a7, a8⟩ ⟨eb, b3, b4, b5, b6, b7, b8⟩ => ?_
+  simp only [Proof.Sha3.absorbPPC64LE, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs), State.withRegions_sp, State.callEntry_sp,
+    a3, a4, a5, a6, a7, a8, b3, b4, b5, b6, b7, b8, S, SEED, h.scr, h.seed, env_sp h ea eb, and_self]
+
+theorem padPhase_ct :
+    RelCT isa (fun a b => (SEnv s₁ a ∧ Spec.Sha3.Repr a.mem (S s₁) 168 (B s₁) ∧ (a.gpr .r3).toNat = 34) ∧
+      (SEnv s₂ b ∧ Spec.Sha3.Repr b.mem (S s₂) 168 (B s₂) ∧ (b.gpr .r3).toNat = 34))
+      (.seq (.block padArgs) (.call "vg_keccak_pad_scratch" Impl.Sha3.PPC64LE.Stream.pad)) fun _ _ => True := by
+  have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → (s.gpr .r3).toNat = 34 → WP isa (.block padArgs) s (FP s₀) :=
+    fun s₀ s hp hs h3 => WP.mono (padArgs_ok hp hs h3) fun _ ⟨ht, _, g3, g4, g5, g6, g7⟩ => ⟨ht, g3, g4, g5, g6, g7⟩
+  refine RelCT.seq (R := fun a b => FP s₁ a ∧ FP s₂ b) (relct_wp ?_ fun a b hab =>
+    ⟨hw _ _ h.hp₁ hab.1.1 hab.1.2.2, hw _ _ h.hp₂ hab.2.1 hab.2.2.2⟩) ?_
+  · exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+      (by taint_decide)
+  refine call_ct h Proof.Sha3.PPC64LE.Stream.pad_correct Proof.Sha3.PPC64LE.Stream.pad_ct
+    (F := FP) (fun _ _ hf => hf.1) (fun _ => []) (fun s₀ => [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩])
+    (fun _ r hr => absurd hr List.not_mem_nil) (fun _ r hr => wrS hr)
+    (fun _ _ hp ⟨ht, g3, g4, g5, _, g7⟩ => pad_pre hp ht g3 g4 g5 g7)
+    rfl (by simp only [S, h.scr]) fun a b ⟨ea, a3, a4, a5, a6, a7⟩ ⟨eb, b3, b4, b5, b6, b7⟩ => ?_
+  simp only [Proof.Sha3.padPPC64LE, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs), State.withRegions_sp, State.callEntry_sp,
+    a3, a4, a5, a7, b3, b4, b5, b7, S, h.scr, env_sp h ea eb, and_self]
+
+theorem squeezePhase_ct :
+    RelCT isa (fun a b =>
+      (SEnv s₁ a ∧ stateAt a.mem (S s₁) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₁)) ∧
+      (SEnv s₂ b ∧ stateAt b.mem (S s₂) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₂)))
+      (.seq (.block squeezeArgs) (.call "vg_keccak_squeeze_scratch" Impl.Sha3.PPC64LE.Stream.squeeze))
+      fun _ _ => True := by
+  have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block squeezeArgs) s (FS s₀) := fun s₀ s hp hs =>
+    WP.mono (squeezeArgs_ok hp hs) fun _ ⟨ht, _, g3, g4, g5, g6, g7, g8⟩ => ⟨ht, g3, g4, g5, g6, g7, g8⟩
+  refine RelCT.seq (R := fun a b => FS s₁ a ∧ FS s₂ b) (relct_wp ?_ fun a b hab =>
+    ⟨hw _ _ h.hp₁ hab.1.1, hw _ _ h.hp₂ hab.2.1⟩) ?_
+  · exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+      (by taint_decide)
+  refine call_ct h Proof.Sha3.PPC64LE.Stream.squeeze_correct Proof.Sha3.PPC64LE.Stream.squeeze_ct
+    (F := FS) (fun _ _ hf => hf.1) (fun _ => [])
+    (fun s₀ => [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 840, 840⟩, ⟨S s₀ + BitVec.ofNat 64 200, 640⟩])
+    (fun _ r hr => absurd hr List.not_mem_nil) (fun _ r hr => wrSq hr)
+    (fun _ _ hp ⟨ht, g3, g4, g5, g6, g7, g8⟩ => squeeze_pre hp ht g3 g4 g5 g6 g7 g8)
+    rfl (by simp only [S, h.scr]) fun a b ⟨ea, a3, a4, a5, a6, a7, a8⟩ ⟨eb, b3, b4, b5, b6, b7, b8⟩ => ?_
+  simp only [Proof.Sha3.squeezePPC64LE, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs), State.withRegions_sp, State.callEntry_sp,
+    a3, a4, a5, a6, a7, a8, b3, b4, b5, b6, b7, b8, S, h.scr, env_sp h ea eb, and_self]
+
+/-! ## The whole function -/
+
+/-- What holds after each phase, in one run. -/
+abbrev E1 (s₀ s : State) : Prop := SEnv s₀ s ∧ stateAt s.mem (S s₀) = Spec.Sha3.zero
+abbrev E2 (s₀ s : State) : Prop := SEnv s₀ s ∧ Spec.Sha3.Repr s.mem (S s₀) 168 (B s₀) ∧ (s.gpr .r3).toNat = 34
+abbrev E3 (s₀ s : State) : Prop :=
+  SEnv s₀ s ∧ stateAt s.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀)
+abbrev E4 (s₀ s : State) : Prop :=
+  SEnv s₀ s ∧ Spec.Sha3.bytesAt s.mem (S s₀ + BitVec.ofNat 64 840) 840 = xof (B s₀) 840
+
+theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) sampleNTT fun _ _ => True := by
+  have hp₁ := h.hp₁
+  have hp₂ := h.hp₂
+  refine RelCT.seq (R := fun a b => E1 s₁ a ∧ E1 s₂ b) (relct_wp ?_ fun a b hab =>
+    ⟨by rw [hab.1]; exact setup_ok hp₁, by rw [hab.2]; exact setup_ok hp₂⟩) ?_
+  · exact taint_block [.r5] (fun a b hab => by rw [hab.1, hab.2]; exact h.sp) (fun a b hab r hr => by
+      rw [List.mem_singleton] at hr; subst hr; rw [hab.1, hab.2]; exact h.scr) (by taint_decide)
+  refine RelCT.seq (R := fun a b => E2 s₁ a ∧ E2 s₂ b) (relct_wp (absorbPhase_ct h) fun a b hab =>
+    ⟨absorb_phase hp₁ hab.1.1 hab.1.2, absorb_phase hp₂ hab.2.1 hab.2.2⟩) ?_
+  refine RelCT.seq (R := fun a b => E3 s₁ a ∧ E3 s₂ b) (relct_wp (padPhase_ct h) fun a b hab =>
+    ⟨pad_phase hp₁ hab.1.1 hab.1.2.1 hab.1.2.2, pad_phase hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
+  refine RelCT.seq (R := fun a b => E4 s₁ a ∧ E4 s₂ b) (relct_wp (squeezePhase_ct h) fun a b hab =>
+    ⟨squeeze_phase hp₁ hab.1.1 hab.1.2, squeeze_phase hp₂ hab.2.1 hab.2.2⟩) ?_
+  refine RelCT.seq (R := fun a b => Inv s₁ 0 a ∧ Inv s₂ 0 b) (relct_wp ?_ fun a b hab =>
+    ⟨init_ok hp₁ hab.1.1 hab.1.2, init_ok hp₂ hab.2.1 hab.2.2⟩) ?_
+  · exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+      (by taint_decide)
+  refine RelCT.seq (R := fun a b => Inv s₁ 280 a ∧ Inv s₂ 280 b) (loop_ct h) ?_
+  exact taint_block [.r31] (fun a b hab => env_sp h hab.1.ls.env hab.2.ls.env) (fun a b hab r hr => by
+    rw [List.mem_singleton] at hr; subst hr; rw [hab.1.ls.env.r31, hab.2.ls.env.r31, S, S, h.scr])
+    (by taint_decide)
+
+end
+
+/-! ## Verified -/
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | _ => 0
+  lr := 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 34⟩]
+  wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
+
+theorem verified :
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.sampleNTT (Spec.MlKem.sampleNTTContract PPC64LE.abi 48) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hd⟩ := correct (pre_of hs)
+    exact ⟨t, s', he, ⟨hd.pres, hd.sp, hd.lr⟩, post_of hd⟩
+  · have hp₁ := pre_of h₁
+    have hp₂ := pre_of h₂
+    sig_pub [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    obtain ⟨hsp, hb, h3, h4, h5⟩ := hpub
+    have two : Two s₁ s₂ := ⟨hp₁, hp₂, hsp, h3, h4, h5,
+      (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hb⟩
+    exact (all_ct two s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨satState, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, PPC64LE.abi, PPC64LE.argRegs]
+      sig_and_intros
+      all_goals first
+        | trivial
+        | decide +kernel
 
 end VG.Proof.MlKem.PPC64LE.Sample
