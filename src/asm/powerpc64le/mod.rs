@@ -239,6 +239,9 @@ pub(crate) mod secp256k1_mont;
 pub(crate) mod secp256k1_point;
 
 #[rustfmt::skip]
+pub(crate) mod seed;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]
