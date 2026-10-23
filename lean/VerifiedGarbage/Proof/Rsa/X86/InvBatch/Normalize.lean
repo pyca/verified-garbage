@@ -25,7 +25,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Rsa.X86.InvBatch
 
  def normal (p a : Nat) (f : Int) : Nat := if f<0 then (p-a)%p else a
  def normalWrites (w n : Nat) : List (Nat × Nat) := [(offset w 6,4*n),(offset w 12,4*n)]
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
  theorem normalize_ok {s : State} {base : Addr} {size w n p a : Nat} {f : Int}
     (hs : Scr s base size) (hn : 16≤n) (hw : w=2*n) (he : n%2=0) (hz : offset w 15≤size)
@@ -36,9 +36,9 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
       val32 z.mem base (offset w 6) n=normal p a f ∧ w32 z.mem base (offset w 6+4*n)=0 ∧
       Keeps wordClob s z ∧ Unch base (normalWrites w n) s.mem z.mem := by
   have nw := hs.nowrap
-  have en : n-1+1=n := by omega
+  have en : n-1+1=n := by omega_arith
   have pn : p<2^(32*n) := hm ▸ val32_lt _ _ _ _
-  have wn : words (config w n)=n := by simp only [config,words]; omega
+  have wn : words (config w n)=n := by simp only [config,words]; omega_arith
   unfold normalize
   refine WP.block_append (WP.block_append (WP.block_append (WP.block_append
     (WP.mono (VG.Proof.Weierstrass.X86.copy_ok n hs (o:=offset w 12) (a:=offset w 2)
@@ -53,7 +53,7 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
   rw [O1.val32 (by apart) (by apart),ha,V1] at V2
   have value2 : val32 s2.mem base (offset w 12) n=p-a := by
     have bound := val32_lt s2.mem base (offset w 12) n
-    cases borrow <;> simp only [Bool.toNat_false,Bool.toNat_true,Nat.mul_zero,Nat.mul_one,Nat.add_zero] at V2 <;> omega
+    cases borrow <;> simp only [Bool.toNat_false,Bool.toNat_true,Nat.mul_zero,Nat.mul_one,Nat.add_zero] at V2 <;> omega_arith
   have hs2 := hs1.of_keeps K2 (by decide)
   refine WP.mono (maskOf_ok hs2 (coefficient:=offset w 4+4*n) (by apart)) fun s3 ⟨C3,K3,M3⟩ => ?_
   rw [O2.w32 (by apart) (by apart),O1.w32 (by apart) (by apart)] at C3
@@ -72,10 +72,10 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
     change val32 s4.mem base (offset w 2) n=p
     rw [O4.val32 (by apart) (by apart),M3,O2.val32 (by apart) (by apart),O1.val32 (by apart) (by apart),hm]
   have hs4 := hs3.of_keeps K4 (by decide)
-  refine WP.mono (csub_forward_ok hs4 wn (by omega) (src:=offset w 6) (o:=offset w 6)
+  refine WP.mono (csub_forward_ok hs4 wn (by omega_arith) (src:=offset w 6) (o:=offset w 6)
     (by apart) (by apart) (by dsimp only [config]; apart) (by dsimp only [config]; apart)
     (by dsimp only [config]; apart) (by dsimp only [config]; apart) (by apart) (by dsimp only [config]; apart)
-    mod4 (by rw [full4]; split_ifs <;> omega)) fun z ⟨O5,V5,K5⟩ => ?_
+    mod4 (by rw [full4]; split_ifs <;> omega_arith)) fun z ⟨O5,V5,K5⟩ => ?_
   refine ⟨?_,?_,?_,?_⟩
   · rw [V5,full4]
     unfold normal

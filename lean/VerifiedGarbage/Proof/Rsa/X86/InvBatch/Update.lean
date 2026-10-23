@@ -20,7 +20,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv
 
  def updateWrites (w : Nat) : List (Nat × Nat) := rowWrites w++[(offset w 4,4*(4*w+8))]
 
- local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
  theorem update_ok {s : State} {base : Addr} {size w n p iv cap : Nat} {T : VG.Proof.Divstep.MSt}
     {st : VG.Proof.Divstep.W32.IState}
@@ -65,7 +65,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv
       w32 r.mem base d=w32 s.mem base d :=
     word_unch orr (by
       intro r hr; simp only [rowWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> dsimp only [offset] at * <;> omega) (by apart)
+      rcases hr with rfl | rfl <;> dsimp only [offset] at * <;> omega_arith) (by apart)
   refine ⟨⟨?_,?_,?_,?_,?_,?_,?_,?_,?_⟩,?_,?_⟩
   · apply BitVec.eq_of_toNat_eq
     change w32 z.mem base (offset w 3)=_
