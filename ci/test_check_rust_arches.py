@@ -13,7 +13,7 @@ import rust_arches
 
 CI = Path(__file__).resolve().parent
 WORKFLOW = CI.parent / ".github/workflows/ci.yml"
-ALL = ["aarch64", "arm", "x86", "x86_64"]
+ALL = ["aarch64", "arm", "powerpc64", "x86", "x86_64"]
 
 # The jobs that run or check the Rust tests.
 RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "cpu-features-times", "rust-cpu-features", "coverage")
@@ -31,6 +31,7 @@ class Arches(unittest.TestCase):
     def test_one_architecture(self):
         self.assertEqual(rust_arches.arches(["src/asm/x86_64/md5.rs"]), ["x86_64"])
         self.assertEqual(rust_arches.arches(["src/asm/x86/md5.rs"]), ["x86"])
+        self.assertEqual(rust_arches.arches(["src/asm/powerpc64le/sha256.rs"]), ["powerpc64"])
         self.assertEqual(
             rust_arches.arches(["src/asm/arm/md5.rs", "src/asm/aarch64/sha256.rs", "lean/X.lean"]),
             ["aarch64", "arm"],
@@ -156,6 +157,16 @@ class Workflow(unittest.TestCase):
                 self.assertIn(entry["arch"], ALL)
         for entry in matrix["cpu"]:
             self.assertIn(entry.get("arch", "x86_64"), ALL)
+
+    def test_rust_checkout_has_the_targets_functions(self):
+        # The `rust` job checks out only `src/asm/<asm or arch>/`: that must
+        # be the target directory whose architecture the entry tests.
+        matrix = tomllib.loads((CI / "rust_matrix.toml").read_text())
+        for entry in matrix["rust"]:
+            with self.subTest(entry=entry["name"]):
+                target = entry.get("asm", entry["arch"])
+                self.assertEqual(rust_arches.ARCHES.get(target), entry["arch"])
+        self.assertIn("/src/asm/${{ matrix.asm || matrix.arch }}/", job("rust"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

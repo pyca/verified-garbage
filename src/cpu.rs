@@ -27,6 +27,13 @@
 //! it is not faster there. ML-DSA and ML-KEM independently select their paired
 //! SHA3 implementations whenever the detected features support them.
 
+// No PPC64LE module chooses among implementations yet, so detection is only
+// used by the tests there.
+#![cfg_attr(
+    all(target_arch = "powerpc64", target_endian = "little"),
+    allow(dead_code)
+)]
+
 use core::sync::atomic::{AtomicU32, Ordering};
 
 /// The features detection knows, by their Rust `target_feature` names: bit
@@ -564,6 +571,16 @@ mod tests {
             ]),
             Features(0b11)
         );
+    }
+
+    #[test]
+    fn contains() {
+        let f = Features::of(&["sha", "ssse3"]);
+        assert!(f.contains(Features::of(&[])));
+        assert!(f.contains(Features::of(&["sha"])));
+        assert!(f.contains(f));
+        assert!(!f.contains(Features::of(&["sha", "avx"])));
+        assert!(!Features::of(&[]).contains(f));
     }
 
     /// Each name's bit is its index in `NAMES`.

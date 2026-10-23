@@ -41,6 +41,19 @@ arch = "arm"
 rust = "stable"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 
+# PPC64LE: pyca's ppc64le runner image, on a ppc64le runner (as
+# pyca/cryptography does). A fresh home avoids upgrading the image's
+# incomplete Rust installation. Its verified functions are in
+# src/asm/powerpc64le/, which `asm` names for the sparse checkout
+# (`arch` is the `target_arch`).
+[[rust]]
+name = "Linux, PPC64LE"
+os = "ubuntu-24.04-ppc64le"
+arch = "powerpc64"
+asm = "powerpc64le"
+rust = "stable"
+container = { image = "ghcr.io/pyca/cryptography-runner-ubuntu-rolling:ppc64le", options = "--env RUSTUP_HOME=/tmp/verified-garbage-rustup" }
+
 [[rust]]
 name = "macOS, AArch64"
 os = "macos-latest"

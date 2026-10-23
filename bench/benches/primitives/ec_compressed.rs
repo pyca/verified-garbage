@@ -15,6 +15,20 @@ pub const USES: &[&str] = &[
     "ec_brainpoolp512r1_compressed",
 ];
 
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+)))]
+pub fn bench(_: &mut Criterion) {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;

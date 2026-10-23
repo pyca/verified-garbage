@@ -1,5 +1,12 @@
 //! Differential checks of SEC 1 conversion against OpenSSL on every curve.
 
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+
 use openssl::bn::BigNumContext;
 use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
 use openssl::nid::Nid;
