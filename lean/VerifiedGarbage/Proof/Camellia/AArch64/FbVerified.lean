@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.ModeCore
 import VerifiedGarbage.Proof.Camellia.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -37,14 +37,12 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 `ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
 (`Proof.Modes.AArch64.fb_wp`) over Camellia encryption's core
-(`modeCoreSpec`), with the IV's address in `x19`, which the core keeps in
-`v31` around its code (`BlockSpec.viaV`, `keepsReg_viaV`), and the
+(`Serial.coreSpec`), with the IV's address retained in `x19`, and the
 specification's results (`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each
 is correct and constant time, by the taint analysis with public values in
 vector registers (`VectorTaint`): the pointers, `rounds`, `n` and the stack
 pointer are public, and so is everything the code computes from them, which
-it keeps in registers (the IV's address in `v31` across the core, which uses
-no vector instruction); the IV is secret. `ofb_framed`, … run them with
+it keeps in registers (the IV's address in `x19` across the core); the IV is secret. `ofb_framed`, … run them with
 their working space on the stack, zeroed on return: 3344 bytes, the 418
 words of the scratch buffer.
 -/
@@ -99,10 +97,8 @@ def cfbDecAArch64 : Contract isa where
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
-/-- Camellia encryption's core, with `x19` kept in `v31`. -/
-def fbCoreSpec : Modes.AArch64.BlockSpec fbCore :=
-  (modeCoreSpec.toBlock rfl).viaV .v31 (by decide) (by decide) (by decide) fun _ ⟨h1, h2, h3⟩ =>
-    ⟨h1, h2, by rw [RegUpd.gpr_write_of_ne _ _ _ (by decide)]; exact h3⟩
+/-- The serial encryption core for dependent feedback modes. -/
+def fbCoreSpec : Modes.AArch64.BlockSpec fbCore := Serial.blockSpec
 
 attribute [local irreducible] Spec.Camellia.cipher in
 /-- The core's cipher is the contract's, without unfolding it. -/
@@ -110,9 +106,9 @@ theorem fbCipher_eq (m : Mem) (p : Addr) (R : Nat) :
     fbCoreSpec.cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
-/-- The core keeps `x19`, where the modes keep the IV's address. -/
+/-- The serial core naturally preserves the feedback modes' IV pointer. -/
 theorem keeps_x19 : Modes.AArch64.KeepsReg .x19 fbCore.prepare ∧ Modes.AArch64.KeepsReg .x19 fbCore.crypt :=
-  Modes.AArch64.keepsReg_viaV (by decide +kernel) (by decide +kernel)
+  Serial.keeps_x19
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/

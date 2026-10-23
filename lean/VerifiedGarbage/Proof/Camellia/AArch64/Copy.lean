@@ -59,7 +59,7 @@ structure CopyInv (A B : Addr) (c : Nat) (s₀ : State) (j : Nat) (s : State) : 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem copyBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc8 : c ≤ 8)
+theorem copyBlocks_bounded_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hcBound : c ≤ 17)
     (hA : ∀ t < 2 * c, InRegions (s₀.rd ++ s₀.wr) (A + BitVec.ofNat 64 (8 * t)) 8)
     (hB : ∀ t < 2 * c, InRegions s₀.wr (B + BitVec.ofNat 64 (8 * t)) 8)
     (hsep : Region.Disjoint ⟨A, 16 * c⟩ ⟨B, 16 * c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
@@ -141,5 +141,13 @@ theorem copyBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc8 : 
       by rw [show j + 1 = c from hl] at hinv; exact hinv⟩
   · exact .inr ⟨(eval_nonzero s₅ .x17).trans (by rw [hz]; simp; omega_arith), c - (j + 1), by omega_arith, j + 1, rfl,
       by omega_arith, hinv⟩
+
+/-- The original eight-block interface used by the parallel block modes. -/
+theorem copyBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc8 : c ≤ 8)
+    (hA : ∀ t < 2*c, InRegions (s₀.rd ++ s₀.wr) (A+BitVec.ofNat 64 (8*t)) 8)
+    (hB : ∀ t < 2*c, InRegions s₀.wr (B+BitVec.ofNat 64 (8*t)) 8)
+    (hsep : Region.Disjoint ⟨A,16*c⟩ ⟨B,16*c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
+    WP isa copyBlocks s₀ (CopyInv A B c s₀ c) :=
+  copyBlocks_bounded_wp hc (by omega) hA hB hsep hs
 
 end VG.Proof.Camellia.AArch64

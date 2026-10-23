@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.ModeCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -86,6 +88,8 @@ theorem modeAbi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa 
 /-- `KeepsReg .x30` of a mode's code: its structure, down to the core's code
 and blocks that do not write `x30`. -/
 tactic_template "camellia_keeps_x30" : tactic => `(tactic| repeat (first
+  | with_reducible exact Serial.keeps_x30.1
+  | with_reducible exact Serial.keeps_x30.2
   | with_reducible exact crypt_keeps_x30 _
   | with_reducible exact prepare_keeps_x30 _
   | apply KeepsReg.seq

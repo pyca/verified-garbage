@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 /-!
-# Camellia-CBC, bitsliced, on AArch64
+# Camellia-CBC on AArch64
 
 `cbcEncryptChained` and `cbcDecryptChained(schedule = x0, rounds = x1, iv = x2, data = x3,
 n = x4, scratch = x5)`: `vg_camellia_cbc_encrypt_chained` and
@@ -12,8 +13,8 @@ n = x4, scratch = x5)`: `vg_camellia_cbc_encrypt_chained` and
 chaining value (`Impl/Modes/AArch64/CbcChained.lean`) over Camellia's core
 with its subkeys in the order of each direction (`dirCore`). Decryption
 transforms eight blocks at a time; encryption, which is sequential, one,
-with the IV's address in `x19`, which the core keeps in `v31` (`fbCore`, as
-for OFB and CFB).
+using the serial register-table core and retaining the IV address in `x19`
+(`fbCore`, as for OFB and CFB).
 -/
 
 @[expose] public section
