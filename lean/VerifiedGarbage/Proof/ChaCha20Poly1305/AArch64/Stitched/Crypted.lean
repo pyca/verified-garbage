@@ -427,7 +427,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
   have hL5 : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have hL' : L s₀ ≤ 2 ^ 64 := Nat.le_of_lt hL5
   have ho := E.le
-  have o16 : o % 16 = 0 := by have := E.o64; omega
+  have o16 : o % 16 = 0 := by have := E.o64; omega_arith
   have i₂ := E.inv.kept k₂
   let msg' := msg ++ bytesAt (if enc then w.mem else s.mem) (dp s₀) o
   have hr₂ : Repr s₂.mem (off (cx s₀) 448) key msg' := by rw [m₂]; exact E.mac
@@ -450,7 +450,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
     rw [e, BitVec.add_assoc, ← BitVec.ofNat_add]
   have hLB : VG.Proof.ChaCha20.AArch64.Xor.L (s₃.withRegions [] (streamR s₀ o)) = L s₀ - o := by
     simp only [VG.Proof.ChaCha20.AArch64.Xor.L, State.withRegions_gpr, x2₃, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (L s₀ - (o + 512 * T)) := by
     have e := hi.x2; simp only [State.withRegions_gpr, Stitch.L_rebase, hLB] at e
     rw [e, Nat.sub_sub]
@@ -458,7 +458,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
     have e := hi.x3; simp only [State.withRegions_gpr, Stitch.bp_rebase,
       VG.Proof.ChaCha20.AArch64.Xor.bp, x3₃] at e; exact e
   have le₄ : o + 512 * T ≤ L s₀ := by
-    have e := hi.le; simp only [Stitch.L_rebase, hLB] at e; omega
+    have e := hi.le; simp only [Stitch.L_rebase, hLB] at e; omega_arith
   refine (polyOut_ok hp enc x0₄ (by rw [rd₄, rd₃, i₂.rd]) (by rw [wr₄, wr₃, i₂.wr])).mono
     fun s₅ ⟨⟨hv₅, m₅, x21₅, x27₅, x28₅, x22₅, x23₅, g₅, rd₅, wr₅⟩, vv₅, sp₅, _, _⟩ => ⟨T, hB.pos, ?_⟩
   -- Memory.
@@ -498,23 +498,23 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
     rw [data_frame f₄₅ hd₄₅ hk]
     by_cases hko : k < o
     · rw [f₄.bytes (prefix_streamR hp ho) (Nat.le_trans ho hL') hko, d₀₃ k hk, E.data k hk, ite_eq_left hko,
-        ite_eq_left (by omega)]
-    · have hj : k - o < L s₀ - o := by omega
+        ite_eq_left (by omega_arith)]
+    · have hj : k - o < L s₀ - o := by omega_arith
       have e := hi.data (k - o) (by rw [Stitch.L_rebase, hLB]; exact hj)
       simp only [Stitch.dp_rebase, Stitch.D0_rebase, Stitch.KS_rebase] at e
       simp only [State.withRegions_mem, VG.Proof.ChaCha20.AArch64.Xor.D0, VG.Proof.ChaCha20.AArch64.Xor.KS,
         VG.Proof.ChaCha20.AArch64.Xor.S0, VG.Proof.ChaCha20.AArch64.Xor.dp,
         VG.Proof.ChaCha20.AArch64.Xor.st, State.withRegions_gpr, x0₃, x1₃, hLB, st₃] at e
       have ek : dp s₀ + BitVec.ofNat 64 o + BitVec.ofNat 64 (k - o) = dp s₀ + BitVec.ofNat 64 k := by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
-      have o64 : 64 * (o / 64) = o := by have := E.o64; omega
-      have ks := ks1_off s₀ (q := o / 64) (k := k - o) (by omega)
-      rw [o64, Nat.add_sub_cancel' (by omega)] at ks
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
+      have o64 : 64 * (o / 64) = o := by have := E.o64; omega_arith
+      have ks := ks1_off s₀ (q := o / 64) (k := k - o) (by omega_arith)
+      rw [o64, Nat.add_sub_cancel' (by omega_arith)] at ks
       rw [ek, d₀₃ k hk, E.data k hk, ite_eq_right hko, ks] at e
       rw [e]
       by_cases hkT : k - o < 512 * T
-      · rw [ite_eq_left hkT, ite_eq_left (by omega)]
-      · rw [ite_eq_right hkT, ite_eq_right (by omega)]
+      · rw [ite_eq_left hkT, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right hkT, ite_eq_right (by omega_arith)]
   have cnt₅ : stateAt s₅.mem (off (cx s₀) 64) =
       ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (o / 64 + 8 * T) := by
     have e := hi.cnt
@@ -558,7 +558,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
   have hr1 := hr₂.2.1
   rw [k24] at hr1
   have hm16 : msg.length % 16 = 0 := by
-    have := hr₂.1; simp only [msg', List.length_append, Poly1305.length_bytesAt] at this; omega
+    have := hr₂.1; simp only [msg', List.length_append, Poly1305.length_bytesAt] at this; omega_arith
   -- The bytes absorbed, in the order Poly1305 takes them.
   have habs : (msg ++ bytesAt (if enc then s₅.mem else s.mem) (dp s₀) (pre o enc T)) =
       msg' ++ (if enc then bytesAt s₄.mem (dp s₀ + BitVec.ofNat 64 o) (512 * (T - 1))
@@ -573,21 +573,21 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
       apply List.map_congr_left
       intro i hi
       have hi := List.mem_range.mp hi
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, d₀₃ (o + i) (by omega), E.data (o + i) (by omega),
-        ite_eq_right (by omega)]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, d₀₃ (o + i) (by omega_arith), E.data (o + i) (by omega_arith),
+        ite_eq_right (by omega_arith)]
     · simp only [ite_true, pre]
       have hP : Region.Sub ⟨dp s₀, o⟩ (dR s₀) := Region.sub_prefix ho
       have e1 : bytesAt s₅.mem (dp s₀) o = bytesAt w.mem (dp s₀) o := by
-        rw [bytesAt_frame f₄₅ (p := dp s₀) (n := o) (fun r hr => (hd₄₅ r hr).sub_left hP) (by omega),
-          bytesAt_frame f₄ (p := dp s₀) (n := o) (prefix_streamR hp ho) (by omega),
-          bytesAt_frame f₂₃ (p := dp s₀) (n := o) (fun r hr => (hd₂₃ r hr).sub_left hP) (by omega), m₂]
+        rw [bytesAt_frame f₄₅ (p := dp s₀) (n := o) (fun r hr => (hd₄₅ r hr).sub_left hP) (by omega_arith),
+          bytesAt_frame f₄ (p := dp s₀) (n := o) (prefix_streamR hp ho) (by omega_arith),
+          bytesAt_frame f₂₃ (p := dp s₀) (n := o) (fun r hr => (hd₂₃ r hr).sub_left hP) (by omega_arith), m₂]
       have e2 : bytesAt s₅.mem (dp s₀ + BitVec.ofNat 64 o) (512 * (T - 1)) =
           bytesAt s₄.mem (dp s₀ + BitVec.ofNat 64 o) (512 * (T - 1)) :=
-        bytesAt_frame f₄₅ (fun r hr => (hd₄₅ r hr).sub_left (Offset.sub_base _ (by omega))) (by omega)
+        bytesAt_frame f₄₅ (fun r hr => (hd₄₅ r hr).sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith)
       rw [Poly1305.bytesAt_add, e1, e2]
   refine ⟨⟨x21₅, un₅, by rw [sp₅, sp₄, sp₃, k₂.sp, E.inv.sp], by rw [rd₅, rd₄, rd₃, i₂.rd],
       by rw [wr₅, wr₄, wr₃, i₂.wr], E.inv.saved.frame hF₂ ?_, E.inv.frame.trans (hF₂.sub ?_)⟩,
-    le₄, by have e := hB.rest; rw [hLB] at e; omega, by rw [g₅ _ (by decide), x0₄],
+    le₄, by have e := hB.rest; rw [hLB] at e; omega_arith, by rw [g₅ _ (by decide), x0₄],
     by rw [g₅ _ (by decide), x1₄], by rw [g₅ _ (by decide), x2₄],
     by rw [g₅ _ (by decide), x3₄], by rw [x22₅, x1₄, x2₄, restP_eq enc _ hB.pos le₄],
     by rw [x23₅, x1₄, x2₄, restP_eq enc _ hB.pos le₄], cnt₅, data₅, hF₂, ⟨?_, ?_, ?_⟩, fun r hr => ?_⟩
@@ -602,7 +602,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {o : Nat} {s
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
     · exact ⟨dR s₀, by simp, fun _ h => h⟩
   · rw [List.length_append, Poly1305.length_bytesAt]
-    have := pre_mod o16 enc T; omega
+    have := pre_mod o16 enc T; omega_arith
   · rw [k24, bytesAt_frame hF₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

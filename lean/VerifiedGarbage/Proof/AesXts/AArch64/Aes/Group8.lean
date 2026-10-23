@@ -98,11 +98,11 @@ theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
   have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [hI.wr, hp.wr]
   have hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [hI.rd, hW, hp.rd]; rfl
   have eb : ∀ k, blk s₀ c + BitVec.ofNat 64 (16 * (0 + k)) = blk s₀ (c + k) := fun k =>
-    Offset.add_add_eq _ (by omega)
+    Offset.add_add_eq _ (by omega_arith)
   have ec : ∀ k, bank s₀ e + BitVec.ofNat 64 (16 * (0 + k)) = bank s₀ e + BitVec.ofNat 64 (16 * k) :=
     fun k => by rw [Nat.zero_add]
   have inD : ∀ k < 8, (dataR s₀).Contains (blk s₀ c + BitVec.ofNat 64 (16 * (0 + k))) 16 :=
-    fun k hk => by rw [eb]; exact Offset.contains_base _ (by omega) (by omega)
+    fun k hk => by rw [eb]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   -- The blocks loaded and the tweaks XORed in.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -113,8 +113,8 @@ theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
   -- The next group's tweaks, into the other bank.
   have hx8 : s₁.gpr .x8 = bank s₀ (128 - e) := by rw [g₁, hI.x8]
   have inN : ∀ d, d + 8 ≤ 128 → InRegions s₁.wr (bank s₀ (128 - e) + BitVec.ofNat 64 d) 8 := fun d hd =>
-    ⟨scrR s₀, by rw [wr₁, hW]; simp, by rw [bank, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
-  refine WP.mono (gen_ok .x8 (bank s₀ (128 - e)) (bank_toNat hp (by omega)) (by decide) (by decide) (by decide)
+    ⟨scrR s₀, by rw [wr₁, hW]; simp, by rw [bank, Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  refine WP.mono (gen_ok .x8 (bank s₀ (128 - e)) (bank_toNat hp (by omega_arith)) (by decide) (by decide) (by decide)
     (by decide) s₁ hx8 inN 8 (Nat.le_refl _)) fun s₂ ⟨e₂, f₂, t₂, g₂, v₂, sp₂, rd₂, wr₂⟩ => ?_
   have hK₂ : B.K (R s₀) (wK s₀) s₂ := by
     have hK₁ := B.of_v hI.keys hbr31 (fun r hr => o₁ r (fun h => hr (List.mem_append_left _ h))
@@ -134,60 +134,60 @@ theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
       rw [f₃.mem, f₂.readW (r := ⟨bank s₀ e + BitVec.ofNat 64 (16 * j), 16⟩) (Region.contains_self _ _)
         (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact (banks_disj he).sub_left (Offset.sub_base _ (by omega))) (by decide), m₁, hI.cur j hj]
+          exact (banks_disj he).sub_left (Offset.sub_base _ (by omega_arith))) (by decide), m₁, hI.cur j hj]
   -- The tweaks XORed in again, the blocks stored, and the advance and swap.
   rw [WP.block_append_iff]
   refine WP.mono (post_ok .x12 (blk s₀ c) (bank s₀ e) (bank_toNat hp he) regs8 0 s₃ hbr.1 h31 (by decide)
-    (by rw [hp.blk_toNat (k := c) (by omega)]; omega)
+    (by rw [hp.blk_toNat (k := c) (by omega_arith)]; omega_arith)
     (by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hI.x2])
     (by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hI.x12])
     (fun k hk => ⟨scrR s₀, by rw [hR₃]; simp, by rw [ec]; exact bank_slot he hk⟩)
     (fun k hk => ⟨dataR s₀, by rw [hW₃]; simp, inD k hk⟩)
-    (fun k hk => by rw [eb]; exact blk_bank hp he (by omega)))
+    (fun k hk => by rw [eb]; exact blk_bank hp he (by omega_arith)))
     fun s₄ ⟨d₄, f₄, o₄, g₄, sp₄, rd₄, wr₄⟩ => ?_
   have g₄' : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → s₄.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [g₄, g₃ r h1 h2 h3 h4]
   have tw₄ : tweakOf s₄ = twW (tw0 s₀) (c + 16) := by
     rw [tweakOf, g₄, f₃.gpr, ← tweakOf, t₂, tweakOf, g₁, ← tweakOf, hI.tw, twW_add]
-  have hsl : Region.Sub ⟨bank s₀ (128 - e), 128⟩ (scrR s₀) := bank_sub (by omega)
+  have hsl : Region.Sub ⟨bank s₀ (128 - e), 128⟩ (scrR s₀) := bank_sub (by omega_arith)
   have hdl : Region.Sub ⟨blk s₀ c + BitVec.ofNat 64 (16 * 0), 16 * regs8.length⟩ (dataR s₀) := by
     rw [Nat.mul_zero, BitVec.add_zero, blk]
-    exact Offset.sub_base _ (show 16 * c + 16 * 8 ≤ 16 * N s₀ by omega)
+    exact Offset.sub_base _ (show 16 * c + 16 * 8 ≤ 16 * N s₀ by omega_arith)
   -- The next bank, after the blocks are stored.
   have nxt : ∀ j < 8, s₄.mem.readW (bank s₀ (128 - e) + BitVec.ofNat 64 (16 * j)) 128 =
       twW (tw0 s₀) (c + 8 + j) := fun j hj => by
     rw [f₄.readW (r := ⟨bank s₀ (128 - e) + BitVec.ofNat 64 (16 * j), 16⟩) (Region.contains_self _ _)
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ((hp.data_scr.sub_left hdl).sub_right fun a h => hsl a (Offset.sub_base _ (by omega) a h)).symm)
+        exact ((hp.data_scr.sub_left hdl).sub_right fun a h => hsl a (Offset.sub_base _ (by omega_arith) a h)).symm)
       (by decide), f₃.mem, e₂ j hj, tweakOf, g₁, ← tweakOf, hI.tw, twW_add]
   -- The data blocks.
   have hdata : ∀ k < N s₀, bytesAt s₄.mem (blk s₀ k) 16 =
       if k < c + 8 then outB enc s₀ k else bytesAt s₀.mem (blk s₀ k) 16 := by
     intro k hk
     by_cases hin : c ≤ k ∧ k < c + 8
-    · obtain ⟨i, rfl⟩ : ∃ i, k = c + i := ⟨k - c, by omega⟩
-      have hi : i < regs8.length := by show i < 8; omega
+    · obtain ⟨i, rfl⟩ : ∃ i, k = c + i := ⟨k - c, by omega_arith⟩
+      have hi : i < regs8.length := by show i < 8; omega_arith
       have hd := d₄ i hi
       rw [eb] at hd
-      rw [bytesAt_b16, hd, ec, curB i (by omega)]
+      rw [bytesAt_b16, hd, ec, curB i (by omega_arith)]
       have vi := v₁ i hi
-      rw [eb, ec, hI.cur i (by omega)] at vi
+      rw [eb, ec, hI.cur i (by omega_arith)] at vi
       have hc' : st (s₃.v regs8[i]) = stF enc (R s₀) (wK s₀)
           (st (s.mem.readW (blk s₀ (c + i)) 128 ^^^ twW (tw0 s₀) (c + i))) := by
         rw [e₃ _ (List.getElem_mem hi), v₂, vi, hF]
       rw [xts_word enc (R s₀) (wK s₀) _ _ _ hc', b16_twW, ← iv0_b16, ← bytesAt_b16, hI.data _ hk]
-      simp only [show ¬ c + i < c by omega, ite_false, show c + i < c + 8 by omega, ite_true]
+      simp only [show ¬ c + i < c by omega_arith, ite_false, show c + i < c + 8 by omega_arith, ite_true]
     · rw [Proof.Cmac.bytesAt_frame16 f₄ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           rw [Nat.mul_zero, BitVec.add_zero, blk, blk]
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)),
+          exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)),
         f₃.mem, Proof.Cmac.bytesAt_frame16 f₂ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact blk_bank hp (by omega) hk), m₁, hI.data k hk]
+          exact blk_bank hp (by omega_arith) hk), m₁, hI.data k hk]
       by_cases hkc : k < c
-      · simp only [hkc, ite_true, show k < c + 8 by omega]
-      · simp only [hkc, ite_false, show ¬ k < c + 8 by omega]
+      · simp only [hkc, ite_true, show k < c + 8 by omega_arith]
+      · simp only [hkc, ite_false, show ¬ k < c + 8 by omega_arith]
   have fr : Frame [dataR s₀, scrR s₀] s₀.mem s₄.mem := by
     refine hI.frame.trans ((?_ : Frame [dataR s₀, scrR s₀] s.mem s₂.mem).trans ?_)
     · rw [← m₁]
@@ -196,7 +196,7 @@ theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
       exact f₄.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨dataR s₀, by simp, hdl⟩
   -- `add x2, 128`, `sub x3, 8`, `lsr x13`, and the banks swapped through `x10`.
   have h4 : BitVec.ofNat 64 (N s₀ - c) - BitVec.ofNat 64 8 = BitVec.ofNat 64 (N s₀ - (c + 8)) := by
-    rw [Offset.ofNat_sub_ofNat (by omega), show N s₀ - c - 8 = N s₀ - (c + 8) by omega]
+    rw [Offset.ofNat_sub_ofNat (by omega_arith), show N s₀ - c - 8 = N s₀ - (c + 8) by omega_arith]
   have x2₄ : s₄.gpr .x2 = blk s₀ c := by rw [g₄' _ (by decide) (by decide) (by decide) (by decide), hI.x2]
   have x3₄ : s₄.gpr .x3 = BitVec.ofNat 64 (N s₀ - c) := by
     rw [g₄' _ (by decide) (by decide) (by decide) (by decide), hI.x3]
@@ -209,14 +209,14 @@ theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
   rw [WP.block_cons_iff]; refine ⟨_, exec_addImm_x (imm := 0) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_addImm_x (imm := 0) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil ?_⟩
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, by omega, ?_, ?_, fun j hj => ?_, ?_, rd₄.trans (f₃.rd.trans (rd₂.trans
+  refine ⟨⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, by omega_arith, ?_, ?_, fun j hj => ?_, ?_, rd₄.trans (f₃.rd.trans (rd₂.trans
     (rd₁.trans hI.rd))), wr₄.trans (f₃.wr.trans (wr₂.trans (wr₁.trans hI.wr))), fr, hdata⟩, ?_⟩
   · exact B.of_v (B.of_v hK₂ hbr f₃.v (by rw [f₃.gpr]) (by rw [f₃.gpr])) hbr31
       (fun r hr => o₄ r (fun h => hr (List.mem_append_left _ h))
         (fun h => hr (h ▸ List.mem_append_right _ (List.mem_singleton_self _))))
       (by simp [State.write, g₄]) (by simp [State.write, g₄])
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, x2₄]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_arith)
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, x3₄]
     exact h4
   · simp only [State.write, reduceCtorEq, ite_false]
@@ -227,12 +227,12 @@ theorem blk8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
       BitVec.add_zero]
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, x12₄,
       BitVec.add_zero]
-    rw [show 128 - (128 - e) = e by omega]
+    rw [show 128 - (128 - e) = e by omega_arith]
   · show s₄.mem.readW _ 128 = _
     rw [nxt j hj, Nat.add_right_comm]
   · rw [tweakOf]; simp only [State.write, reduceCtorEq, ite_false]; rw [← tweakOf, tw₄]
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, x3₄]
-    rw [h4, ushr3 (by omega)]
+    rw [h4, ushr3 (by omega_arith)]
 
 /-- The banks set up, and the first group's tweaks stored. -/
 theorem start8_ok (B : BlockFn) (enc : Bool) {s₀ : State} (hp : UPre s₀) {s : State}

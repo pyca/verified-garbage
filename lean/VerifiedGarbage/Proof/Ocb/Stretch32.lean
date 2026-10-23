@@ -117,24 +117,24 @@ theorem stretch_words32 (k₀ k₁ k₂ k₃ : BitVec 32) :
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_xor, BitVec.getLsbD_extractLsb',
     BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight]
   rcases (show i < 8 ∨ (8 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨
-      (96 ≤ i ∧ i < 128) ∨ (128 ≤ i ∧ i < 160) ∨ 160 ≤ i by omega)
+      (96 ≤ i ∧ i < 128) ∨ (128 ≤ i ∧ i < 160) ∨ 160 ≤ i by omega_arith)
     with h | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | h
-  · simp (disch := omega) only [ite_pos, ite_neg, dec_pos, Bool.true_and,
-      show 64 + i - 32 - 32 = i by omega, show 56 + i - 32 = 24 + i by omega]
+  · simp (disch := omega_arith) only [ite_pos, ite_neg, dec_pos, Bool.true_and,
+      show 64 + i - 32 - 32 = i by omega_arith, show 56 + i - 32 = 24 + i by omega_arith]
     exact Bool.xor_comm _ _
-  · simp (disch := omega) only [ite_pos, ite_neg, dec_pos, dec_neg, Bool.true_and, Bool.not_true,
-      Bool.or_false, show 64 + i - 32 - 32 = i by omega, show 56 + i - 32 - 32 = i - 8 by omega,
+  · simp (disch := omega_arith) only [ite_pos, ite_neg, dec_pos, dec_neg, Bool.true_and, Bool.not_true,
+      Bool.or_false, show 64 + i - 32 - 32 = i by omega_arith, show 56 + i - 32 - 32 = i - 8 by omega_arith,
       getLsbD_ge32]
     exact Bool.xor_comm _ _
-  · simp (disch := omega) only [ite_pos, ite_neg, dec_pos, Bool.true_and,
-      show 64 + i - 32 - 32 - 32 = i - 32 by omega,
-      show 56 + i - 32 - 32 = i - 8 by omega, show 24 + (i - 32) = i - 8 by omega]
+  · simp (disch := omega_arith) only [ite_pos, ite_neg, dec_pos, Bool.true_and,
+      show 64 + i - 32 - 32 - 32 = i - 32 by omega_arith,
+      show 56 + i - 32 - 32 = i - 8 by omega_arith, show 24 + (i - 32) = i - 8 by omega_arith]
     exact Bool.xor_comm _ _
-  · simp (disch := omega) only [ite_pos, ite_neg, dec_pos, dec_neg, Bool.true_and, Bool.not_true,
-      Bool.or_false, show 64 + i - 32 - 32 - 32 = i - 32 by omega,
-      show 56 + i - 32 - 32 - 32 = i - 32 - 8 by omega, getLsbD_ge32]
+  · simp (disch := omega_arith) only [ite_pos, ite_neg, dec_pos, dec_neg, Bool.true_and, Bool.not_true,
+      Bool.or_false, show 64 + i - 32 - 32 - 32 = i - 32 by omega_arith,
+      show 56 + i - 32 - 32 - 32 = i - 32 - 8 by omega_arith, getLsbD_ge32]
     exact Bool.xor_comm _ _
-  all_goals simp (disch := omega) only [ite_pos, ite_neg, Nat.sub_sub, Nat.reduceAdd]
+  all_goals simp (disch := omega_arith) only [ite_pos, ite_neg, Nat.sub_sub, Nat.reduceAdd]
 
 /-- The top four of six words. -/
 theorem top4 (x₀ x₁ x₂ x₃ x₄ x₅ : BitVec 32) :
