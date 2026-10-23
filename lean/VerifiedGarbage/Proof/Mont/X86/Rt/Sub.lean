@@ -42,15 +42,15 @@ theorem subStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {src mo tmp 
       u.zf = some (decide (j + 1 = N)) ∧ Keeps clob7 t u := by
   have hn := hw.nowrap
   simp only [subBody, List.singleton_append, restore_eq]
-  refine wp_movS (readSrc_ptr hw hebp (d := 0) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_ptr hw hebp (d := 0) (by omega_arith)) fun s₁ u₁ _ => ?_
   refine wp_restore (by rw [u₁.other _ (by decide), hc]) fun s₂ u₂ c₂ => ?_
   have K₂ : Keeps [.eax, .edx] t s₂ := (u₁.keeps.mono (by decide)).widen u₂.keeps
   have hw₂ := hw.of_keeps K₂
   have esi₂ : PtrAt s₂ W .esi (mo + 4 * j) := by rw [PtrAt, K₂.1 _ (by decide)]; exact hesi
-  refine wp_sbbS (readSrc_ptr hw₂ esi₂ (d := 0) (by omega)) c₂ fun s₃ u₃ c₃ => ?_
+  refine wp_sbbS (readSrc_ptr hw₂ esi₂ (d := 0) (by omega_arith)) c₂ fun s₃ u₃ c₃ => ?_
   have hw₃ := hw₂.of_keeps u₃.keeps
   have ebx₃ : PtrAt s₃ W .ebx (tmp + 4 * j) := by rw [PtrAt, u₃.other _ (by decide), K₂.1 _ (by decide)]; exact hebx
-  refine wp_storeS (ea_ptr hw₃ ebx₃ (d := 0) (by omega)) (ws_write hw₃ (y := tmp + 4 * j + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw₃ ebx₃ (d := 0) (by omega_arith)) (ws_write hw₃ (y := tmp + 4 * j + 0) (n := 4) (by omega_arith))
     fun s₄ m₄ => wp_sbb_self (by rw [m₄.cf]; exact c₃) fun s₅ u₅ => ?_
   refine wp_addS rfl fun s₆ u₆ _ => ?_
   refine wp_addS rfl fun s₇ u₇ _ => ?_
@@ -69,13 +69,13 @@ theorem subStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {src mo tmp 
       eax₂, m₂, Nat.add_zero]
   · rw [PtrAt, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr,
       r₅ _ (.inl rfl), ptr_add hebp]
-    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega_arith
   · rw [PtrAt, u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide),
       r₅ _ (.inr (.inl rfl)), ptr_add hesi]
-    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega_arith
   · rw [PtrAt, u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide),
       r₅ _ (.inr (.inr (.inl rfl))), ptr_add hebx]
-    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega_arith
   · rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
       r₅ _ (.inr (.inr (.inr rfl)))]; exact c₁
   · rw [z₉, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),

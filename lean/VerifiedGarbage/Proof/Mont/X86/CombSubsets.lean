@@ -46,7 +46,7 @@ theorem subsetStep_ok {n context size m g bits a : Nat} {base : Addr} {s t : Sta
   have bound := L.bound
   have apart := L.apart
   have hdr := slot_header n 9
-  have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega
+  have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega_arith
   have nw := I.ctx.scr.nowrap
   have b5 := L.slot (i := 5) (by decide)
   have b6 := L.slot (i := 6) (by decide)
@@ -55,10 +55,10 @@ theorem subsetStep_ok {n context size m g bits a : Nat} {base : Addr} {s t : Sta
   have h6 := slot_header n 6
   have h7 := slot_header n 7
   obtain ⟨loPos,loLe,remLt,loTooth⟩ := VG.Proof.Rsa.FixedBaseComb.lowTooth_bounds a ha32 ha
-  have loLt : lowTooth a < 32 := by omega
+  have loLt : lowTooth a < 32 := by omega_arith
   unfold VG.Impl.Mont.X86.Comb.subsetStep VG.Impl.Mont.X86.Comb.seq
   simp only [List.foldr_cons,List.foldr_nil]
-  refine WP.seq (WP.mono (subsetIndices_ok I.ctx.scr (by omega) ha32 I.count) fun u ⟨Ou,Hu,Vu,Ku⟩ => ?_)
+  refine WP.seq (WP.mono (subsetIndices_ok I.ctx.scr (by omega_arith) ha32 I.count) fun u ⟨Ou,Hu,Vu,Ku⟩ => ?_)
   have Cu := I.ctx.outs_keep Ku (by decide) (by decide) Ou (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl <;> right <;> simp [slot]) (by
@@ -66,26 +66,26 @@ theorem subsetStep_ok {n context size m g bits a : Nat} {base : Addr} {s t : Sta
     rcases hr with rfl|rfl <;> decide)
   have Tu := I.table.outs L I.ctx.scr Ou (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl <;> left <;> omega)
+    rcases hr with rfl|rfl <;> left <;> omega_arith)
   refine WP.seq (WP.mono (select_table_ok L Cu Tu (o := 6) (by decide) (by decide)
-    (by rw [Vu]; omega) (by rw [Vu]; exact .inl remLt)) fun v ⟨Cv,Tv,Vv,Ov,Kv⟩ => ?_)
+    (by rw [Vu]; omega_arith) (by rw [Vu]; exact .inl remLt)) fun v ⟨Cv,Tv,Vv,Ov,Kv⟩ => ?_)
   rw [Vu] at Vv
-  have Hv : w32 v.mem base 28 = lowTooth a := (Ov.w32 (by omega) (by decide)).trans Hu
-  refine WP.seq (WP.mono (subsetLow_ok Cv.scr (by omega)) fun w ⟨Ow,Vw,Kw⟩ => ?_)
+  have Hv : w32 v.mem base 28 = lowTooth a := (Ov.w32 (by omega_arith) (by decide)).trans Hu
+  refine WP.seq (WP.mono (subsetLow_ok Cv.scr (by omega_arith)) fun w ⟨Ow,Vw,Kw⟩ => ?_)
   have Cw := Cv.outside_keep Kw (by decide) (by decide) Ow (.inr (by simp [slot])) (by decide)
-  have Tw := Tv.outside L Cv.scr Ow (.inl (by omega))
+  have Tw := Tv.outside L Cv.scr Ow (.inl (by omega_arith))
   have Vw' : w32 w.mem base 4 = lowTooth a := Vw.trans Hv
   have leftW : wordsVal w.mem base (slot n 6) n = tableValue n m g bits (a-lowTooth a) :=
-    (Ow.wordsVal (.inr (by omega)) (by omega)).trans Vv
+    (Ow.wordsVal (.inr (by omega_arith)) (by omega_arith)).trans Vv
   refine WP.seq (WP.mono (select_table_ok L Cw Tw (o := 5) (by decide) (by decide)
     (by rw [Vw']; exact loLt) (by rw [Vw']; exact .inr loTooth)) fun x ⟨Cx,Tx,Vx,Ox,Kx⟩ => ?_)
   rw [Vw'] at Vx
   have sep56 := slot_sep (n := n) (i := 6) (j := 5) (by decide)
   have leftX : wordsVal x.mem base (slot n 6) n = tableValue n m g bits (a-lowTooth a) :=
-    (Ox.wordsVal (by unfold stride at sep56; omega) (by omega)).trans leftW
+    (Ox.wordsVal (by unfold stride at sep56; omega_arith) (by omega_arith)).trans leftW
   refine WP.seq (WP.mono (context_mul_ok Cx (o := 7) (a := 6) (b := 5)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [Vx]; exact Nat.mod_lt _ (by have := Cx.gt_one; omega))) fun y ⟨Cy,Ky,lty,Vy⟩ => ?_)
+    (by rw [Vx]; exact Nat.mod_lt _ (by have := Cx.gt_one; omega_arith))) fun y ⟨Cy,Ky,lty,Vy⟩ => ?_)
   have Ty := Tx.op L Cx (by decide) Ky
   have value : wordsVal y.mem base (slot n 7) n = tableValue n m g bits a := by
     have product := VG.Proof.Rsa.FixedBaseComb.mont_product_encoded Cx.coprime lty leftX Vx Vy
@@ -94,25 +94,25 @@ theorem subsetStep_ok {n context size m g bits a : Nat} {base : Addr} {s t : Sta
     exact product
   have esiy : y.gpr .esi = BitVec.ofNat 32 a := by
     rw [Ky.gpr .esi (by decide),Kx.1 .esi (by decide),Kw.1 .esi (by decide),Kv.1 .esi (by decide),Ku.1 .esi (by decide),I.count]
-  have idx : (y.gpr .esi).toNat = a := by rw [esiy,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+  have idx : (y.gpr .esi).toNat = a := by rw [esiy,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith)]
   have ent := L.entry ha32
   have low : context+24*n ≤ entry n (context+16*n) a := by
     have := Nat.mul_le_mul_left (8*n) ha
     simp only [Nat.mul_one] at this
-    unfold entry; omega
-  refine WP.seq (WP.mono (copyToComb_ok Cy.scr L.positive (by omega) (by rw [idx]; omega)
-    (.inl (by rw [idx]; omega))) fun f ⟨Of,Vf,Kf⟩ => ?_)
+    unfold entry; omega_arith
+  refine WP.seq (WP.mono (copyToComb_ok Cy.scr L.positive (by omega_arith) (by rw [idx]; omega_arith)
+    (.inl (by rw [idx]; omega_arith))) fun f ⟨Of,Vf,Kf⟩ => ?_)
   rw [idx] at Of Vf
-  have Cf := outside_high_context L Cy Kf (by decide) (by decide) Of (by omega)
+  have Cf := outside_high_context L Cy Kf (by decide) (by decide) Of (by omega_arith)
   have Tf : TableAt n context m g bits base (knownSubset (a+1)) f.mem := by
     intro j hj hk
     by_cases same : j=a
     · subst j; exact Vf.trans value
     · have ej := L.entry hj
-      rw [Of.wordsVal (entry_apart n (context+16*n) same) (by omega)]
+      rw [Of.wordsVal (entry_apart n (context+16*n) same) (by omega_arith)]
       apply Ty j hj
       rcases hk with before | tooth
-      · left; omega
+      · left; omega_arith
       · right; exact tooth
   refine WP.seq (wp_addS rfl fun q U _ => wp_cmpS rfl fun z F Z => WP.block_nil (WP.block_nil ?_))
   have esif : f.gpr .esi = BitVec.ofNat 32 a := (Kf.1 .esi (by decide)).trans esiy
@@ -132,11 +132,11 @@ theorem subsetStep_ok {n context size m g bits a : Nat} {base : Addr} {s t : Sta
     have ox := Outs.of_outside Ox (rs := subsetRanges n context) (by simp [subsetRanges])
     have oy : Outs base (subsetRanges n context) x.mem y.mem := Ky.mem.mono (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl <;> simp [subsetRanges,contextMod,accLen,words] <;> omega)
+      rcases hr with rfl|rfl|rfl <;> simp [subsetRanges,contextMod,accLen,words] <;> omega_arith)
     have of : Outs base (subsetRanges n context) y.mem f.mem :=
       widen (Outs.of_outside Of (rs := [(entry n (context+16*n) a,8*n)]) (by simp)) (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact ⟨(context+24*n,248*n),by simp [subsetRanges],low,by omega⟩)
+        exact ⟨(context+24*n,248*n),by simp [subsetRanges],low,by omega_arith⟩)
     rw [M]
     exact ((((((I.mem.trans ou).trans ov).trans ow).trans ox).trans oy).trans of)
   · have k1 := I.keeps.trans (Ku.mono (by decide))

@@ -36,13 +36,13 @@ theorem oddSecond_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
   have Vv : num v.mem B n aV = num s.mem B n aV := by rw [Ov.num (by decide) (by simp) fv, Vu]
   have Tv : num v.mem B n aT1 = num s.mem B n aU := copied.trans Uu
   have flagV : slot v.mem B kFlag = slot u.mem B kFlag := Ov.slot hf (by simp)
-  have bitV : slot v.mem B kFlag ≤ 1 := by rw [flagV, flag]; split <;> omega
+  have bitV : slot v.mem B kFlag ≤ 1 := by rw [flagV, flag]; split <;> omega_arith
   refine WP.seq (WP.mono (sel_ok hv (by decide) (by decide) (by decide) hf bitV)
     fun w ⟨hw, Ow, selectedU, Kw⟩ => ?_)
   have Vw : num w.mem B n aV = num s.mem B n aV := by rw [Ow.num (by decide) (by simp) fv, Vv]
   have Tw : num w.mem B n aT1 = num s.mem B n aU := by rw [Ow.num (by decide) (by simp) ft, Tv]
   have flagW : slot w.mem B kFlag = slot u.mem B kFlag := by rw [Ow.slot hf (by simp), flagV]
-  have bitW : slot w.mem B kFlag ≤ 1 := by rw [flagW, flag]; split <;> omega
+  have bitW : slot w.mem B kFlag ≤ 1 := by rw [flagW, flag]; split <;> omega_arith
   refine WP.mono (sel_ok hw (by decide) (by decide) (by decide) hf bitW)
     fun t ⟨ht, Ot, selectedV, Kt⟩ => ?_
   have U : num t.mem B n aU = if slot u.mem B kFlag = 0 then num s.mem B n aU else num s.mem B n aV := by

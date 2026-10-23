@@ -31,28 +31,28 @@ theorem pairLoop_frame {s : State} {W : Addr} {L S bx w N : Nat}
     (fun m t => ∃ j, m = N - j ∧ j < N ∧ j % 2 = 0 ∧ I j t) ?_ N s
     ⟨0, rfl, positive, rfl, initial⟩) ?_
   · rintro m t ⟨j, rfl, index, pair, K, cx, bp, count, O⟩
-    have pairFit : j + 2 ≤ N := by omega
+    have pairFit : j + 2 ≤ N := by omega_arith
     have ht := hw.of_keeps K
     have di : PtrAt t W .edi S := by rw [PtrAt, K.1 .edi (by decide)]; exact hedi
     unfold Rt.pairStep
     rw [List.append_assoc]
     refine WP.block_append (WP.mono (macAt_ok (mo := Rt.multOff) (d := 0) ht di cx bp multFit
-      (by omega) (by omega)) fun a ⟨M₁, _, K₁⟩ => ?_)
+      (by omega_arith) (by omega_arith)) fun a ⟨M₁, _, K₁⟩ => ?_)
     have W₁ : Outside W (w + 4 * j) 4 t.mem a.mem := by
       rw [M₁, Nat.add_zero]
-      exact writeW32_outside _ _ _ (by omega)
+      exact writeW32_outside _ _ _ (by omega_arith)
     have O₁ : Outside W w (4 * (j + 1)) s.mem a.mem :=
-      (O.mono (by omega) (by omega)).trans (W₁.mono (by omega) (by omega))
+      (O.mono (by omega_arith) (by omega_arith)).trans (W₁.mono (by omega_arith) (by omega_arith))
     have di₁ : PtrAt a W .edi S := by rw [PtrAt, K₁.1 .edi (by decide)]; exact di
     have cx₁ : PtrAt a W .ecx (bx + 4 * j) := by rw [PtrAt, K₁.1 .ecx (by decide)]; exact cx
     have bp₁ : PtrAt a W .ebp (w + 4 * j) := by rw [PtrAt, K₁.1 .ebp (by decide)]; exact bp
     refine WP.block_append (WP.mono (macAt_ok (mo := Rt.multOff) (d := 4)
-      (ht.of_keeps K₁) di₁ cx₁ bp₁ multFit (by omega) (by omega)) fun b ⟨M₂, _, K₂⟩ => ?_)
+      (ht.of_keeps K₁) di₁ cx₁ bp₁ multFit (by omega_arith) (by omega_arith)) fun b ⟨M₂, _, K₂⟩ => ?_)
     have W₂ : Outside W (w + 4 * j + 4) 4 a.mem b.mem := by
       rw [M₂]
-      exact writeW32_outside _ _ _ (by omega)
+      exact writeW32_outside _ _ _ (by omega_arith)
     have O₂ : Outside W w (4 * (j + 2)) s.mem b.mem :=
-      (O₁.mono (by omega) (by omega)).trans (W₂.mono (by omega) (by omega))
+      (O₁.mono (by omega_arith) (by omega_arith)).trans (W₂.mono (by omega_arith) (by omega_arith))
     have Kab := K₁.trans K₂
     have cx₂ : PtrAt b W .ecx (bx + 4 * j) := by rw [PtrAt, Kab.1 .ecx (by decide)]; exact cx
     have bp₂ : PtrAt b W .ebp (w + 4 * j) := by rw [PtrAt, Kab.1 .ebp (by decide)]; exact bp
@@ -60,13 +60,13 @@ theorem pairLoop_frame {s : State} {W : Addr} {L S bx w N : Nat}
     refine WP.mono (pairCtl_ok cx₂ bp₂ count₂ pairFit) fun u ⟨Mu, cu, pu, su, zu, Ku⟩ => ?_
     have next : I (j + 2) u := by
       refine ⟨(K.trans (Kab.mono (by decide))).trans (Ku.mono (by decide)), ?_, ?_, su, ?_⟩
-      · rw [show bx + 4 * (j + 2) = bx + 4 * j + 8 by omega]; exact cu
-      · rw [show w + 4 * (j + 2) = w + 4 * j + 8 by omega]; exact pu
+      · rw [show bx + 4 * (j + 2) = bx + 4 * j + 8 by omega_arith]; exact cu
+      · rw [show w + 4 * (j + 2) = w + 4 * j + 8 by omega_arith]; exact pu
       · rw [Mu]; exact O₂
     by_cases done : j + 2 = N
     · exact Or.inl ⟨by simp only [eval, zu, done, decide_true, Option.map_some, Bool.not_true], done ▸ next⟩
     · exact Or.inr ⟨by simp only [eval, zu, decide_eq_false done, Option.map_some, Bool.not_false],
-        N - (j + 2), by omega, j + 2, rfl, by omega, by omega, next⟩
+        N - (j + 2), by omega_arith, j + 2, rfl, by omega_arith, by omega_arith, next⟩
   · rintro t ⟨K, C, P, Count, O⟩
     exact ⟨O, P, C, by simpa only [Nat.sub_self, Nat.mul_zero] using Count, K⟩
 

@@ -58,24 +58,24 @@ theorem core_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw : W
     Outs.widen Fdetail fun x hx r hr => by
       have outside := hx _ (List.mem_singleton_self _)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> dsimp only at * <;> omega
+      rcases hr with rfl | rfl <;> dsimp only at * <;> omega_arith
   have toL : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Outs W rs m m' → (∀ r ∈ rs, r.1 + r.2 ≤ L) →
       Outs W [(0, L)] m m' := fun O hr =>
     Outs.widen O fun y hy r hr' => by
       have := hy _ (List.mem_singleton_self _)
       have := hr r hr'
-      omega
+      omega_arith
   have hau : Compact.Args u W L A := ha.of_keeps Kfu (by decide) (toL Fout (by simp only [List.mem_singleton, forall_eq]; omega_using [hscr]))
   -- The modulus, apart from the function's range.
   have mou : val32 u.mem W mo N = val32 s.mem W mo N :=
     Fu.val32 hsmo (by omega_using [hmo, hn])
   have hM : val32 s.mem W mo N < 2 ^ (32 * N) := val32_lt _ _ _ _
   -- The subtraction.
-  have vu := V.keep Fu (by omega)
+  have vu := V.keep Fu (by omega_arith)
   have outPu : w32 u.mem W (64 + 8 * (A 2).toNat) = (W.toNat + o) % 2 ^ 32 := by
-    rw [Fu.w32 (by omega) (by omega), outPtr]
-  refine WP.seq (WP.mono (subAll_ok hwu hau base vu (by omega)
-    outIndex outPu hN hN32 (by omega) hL.mo_le ho outHeader (by omega) outMod ebpu) fun v ⟨Ov, ⟨c, ecv, Vv⟩, ebpv, ediv, Kv⟩ => ?_)
+    rw [Fu.w32 (by omega_arith) (by omega_arith), outPtr]
+  refine WP.seq (WP.mono (subAll_ok hwu hau base vu (by omega_arith)
+    outIndex outPu hN hN32 (by omega_arith) hL.mo_le ho outHeader (by omega_arith) outMod ebpu) fun v ⟨Ov, ⟨c, ecv, Vv⟩, ebpv, ediv, Kv⟩ => ?_)
   have hwv : Ws v W L := hwu.of_keeps Kv
   have hav : Compact.Args v W L A := hau.of_keeps Kv (by decide)
     (toL (Outs.of_outside Ov (List.mem_singleton_self _)) (by simp only [List.mem_singleton, forall_eq]; omega_using [ho]))
@@ -85,9 +85,9 @@ theorem core_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw : W
     Ov.w32 (by omega_using [hso, eacc]) (by omega_using [hscr, hn, eacc])
   -- The mask and the selection.
   have outPv : w32 v.mem W (64 + 8 * (A 2).toNat) = (W.toNat + o) % 2 ^ 32 := by
-    rw [Ov.w32 (by omega) (by omega), outPu]
+    rw [Ov.w32 (by omega_arith) (by omega_arith), outPu]
   refine WP.mono (selectAll_ok hwv hav base (vu.keep Ov outHeader).width
-    (by omega) outIndex outPv hN hN32 (by omega) ho (by omega) ebpv ecv)
+    (by omega_arith) outIndex outPv hN hN32 (by omega_arith) ho (by omega_arith) ebpv ecv)
     fun w ⟨Ow, Vw, Kw⟩ => ?_
   refine ⟨?_, ?_, ?_, Kfu.trans (Kv.trans Kw)⟩
   · have e₁ : Outs W [(S + 16, 8 * N + 16), (o, 4 * N)] s.mem u.mem := Fout.mono (by simp)

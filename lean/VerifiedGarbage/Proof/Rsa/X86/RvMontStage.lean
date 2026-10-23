@@ -162,12 +162,12 @@ theorem KS.mmulCall {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR 
   have up := h.upper
   have esp := h.sp
   have bnd := mr.bound
-  have S8 : S g.w = 8 * g.n + 16 := by simp only [S, Geo.w, width]; omega
+  have S8 : S g.w = 8 * g.n + 16 := by simp only [S, Geo.w, width]; omega_arith
   have vm : val32 s.mem g.B (arr g.w mBase) (2 * g.n) = m := num_prefix mr.modulus mr.bound
-  have va : val32 s.mem g.B (arr g.w a) (2 * g.n) = A a := num_prefix (h.arrs a hal) (by omega)
-  have vb : val32 s.mem g.B (arr g.w b) (2 * g.n) = A b := num_prefix (h.arrs b hbl) (by omega)
+  have va : val32 s.mem g.B (arr g.w a) (2 * g.n) = A a := num_prefix (h.arrs a hal) (by omega_arith)
+  have vb : val32 s.mem g.B (arr g.w b) (2 * g.n) = A b := num_prefix (h.arrs b hbl) (by omega_arith)
   have wsl : g.Z = (BitVec.ofNat 32 (g.Z / 8)).toNat * 8 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   have R : CallRoom (s.gpr .esp) g.B g.Z := by rw [esp]; exact h.room
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have hl5 : VG.Proof.Rsa.X86.KeyRt.LenSrc narF (allocFrame 36 s) (8 * g.n + 8) := by
@@ -182,7 +182,7 @@ theorem KS.mmulCall {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR 
   have C := call_ok (is := mulArgs o a b) h.ws.workspace wsl R (mont_offs fits ho ha hb ho0 pos)
     (by rw [vm]; exact mr.inverse) (by rw [vb, vm]; exact hB) (mulBody_noSp o a b) (by
       have := mulArgs_ok (f := allocFrame 36 s) (n := g.n) (o := o) (a := a) (b := b) hl5 up hr11 ho.1 ha.1 hb.1
-        (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
+        (by rw [fEsp, VG.X86.sub_toNat (by omega_arith)]; omega_arith) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
       rwa [show (allocFrame 36 s).gpr .edi = s.gpr .edi from allocFrame_gpr _ _ (by decide)] at this)
   refine WP.mono C fun u ⟨cs, rd, wr, F, L, Vv⟩ => ?_
   have Ku : Keeps opRegs s u :=
@@ -190,18 +190,18 @@ theorem KS.mmulCall {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR 
   have Fu : Frame (VG.Proof.Bignum.X86.CrtRt.frameR g.B g.sp [(arr g.w o, 8 * g.n), (arr g.w mAcc, scratchBytes g.n)])
       s.mem u.mem := by
     rw [← esp]; exact VG.Proof.Bignum.X86.CrtRt.frameR_of_mul F (by simp) (by simp)
-  have sb : scratchBytes g.n ≤ 4 * S g.w := by simp only [scratchBytes]; omega
-  have acc4 : arr g.w (mAcc + 4) = arr g.w mAcc + 4 * S g.w := by simp only [arr, mAcc]; omega
+  have sb : scratchBytes g.n ≤ 4 * S g.w := by simp only [scratchBytes]; omega_arith
+  have acc4 : arr g.w (mAcc + 4) = arr g.w mAcc + 4 * S g.w := by simp only [arr, mAcc]; omega_arith
   have fN : ∀ j, j < nArr → arr g.w j + S g.w ≤ g.Z := fun j hj => Nat.le_trans (arr_end hj) fits
   have lowA : ∀ j, hdr ≤ arr g.w j := fun j => Nat.le_add_right _ _
-  have w4 : 4 * g.w = 8 * g.n + 8 := by simp only [Geo.w, width]; omega
+  have w4 : 4 * g.w = 8 * g.n + 8 := by simp only [Geo.w, width]; omega_arith
   have apartN : ∀ j, j < nArr → j ≠ o → (j < mAcc ∨ mAcc + 4 ≤ j) →
       ∀ p ∈ [(arr g.w o, 8 * g.n), (arr g.w mAcc, scratchBytes g.n)], arr g.w j + 4 * g.w ≤ p.1 ∨ p.1 + p.2 ≤ arr g.w j := by
     intro j hj ne side p hp
     have d := arr_disj (w := g.w) ne
     have sj := side.elim (fun lt => Or.inl (arr_end (w := g.w) lt)) (fun ge => Or.inr (arr_mono (w := g.w) ge))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
   -- The stage at `u`, without `o`.
   have hu : KS g s0 A (live.filter (· ≠ o)) AW liveW V ls u := by
     have hf := h.mono (live' := live.filter (· ≠ o)) (fun j hj => ⟨(List.mem_filter.mp hj).1, rfl⟩)
@@ -210,55 +210,55 @@ theorem KS.mmulCall {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR 
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       have fo := fN o ho.1
       have fs := fN (mAcc + 3) (by decide)
-      have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega
-      rcases hp with rfl | rfl <;> dsimp only <;> have := lowA o <;> have := lowA mAcc <;> unfold hdr at * <;> omega
+      have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega_arith
+      rcases hp with rfl | rfl <;> dsimp only <;> have := lowA o <;> have := lowA mAcc <;> unfold hdr at * <;> omega_arith
     · obtain ⟨jl, jo⟩ := List.mem_filter.mp hj
       have jo' : j ≠ o := by simpa using jo
       have side := (hl j jl).resolve_left jo'
       simp only [montWrites, List.mem_cons, List.not_mem_nil, or_false, not_or] at side
-      exact apartN j (h.live_lt j jl) jo' (by unfold mAcc at *; omega)
+      exact apartN j (h.live_lt j jl) jo' (by unfold mAcc at *; omega_arith)
     · intro p hp
       have hw := hlW j hj
       simp only [montWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hw
       have jlt := h.liveW_lt j hj
       rw [show arr g.W j = arr g.w (2 * j) by rw [Geo.W, wide, arr_W]]
-      have W4 : 4 * g.W = 2 * S g.w - 8 := by simp only [S, Geo.W, Geo.w, wide, width]; omega
+      have W4 : 4 * g.W = 2 * S g.w - 8 := by simp only [S, Geo.W, Geo.w, wide, width]; omega_arith
       rw [W4]
-      have d0 := arr_disj (w := g.w) (j := 2 * j) (k := o) (by omega)
-      have d1 := arr_disj (w := g.w) (j := 2 * j + 1) (k := o) (by omega)
+      have d0 := arr_disj (w := g.w) (j := 2 * j) (k := o) (by omega_arith)
+      have d1 := arr_disj (w := g.w) (j := 2 * j + 1) (k := o) (by omega_arith)
       have s1 : arr g.w (2 * j + 1) = arr g.w (2 * j) + S g.w := arr_succ _ _
       have sj : arr g.w (2 * j + 1) + S g.w ≤ arr g.w mAcc ∨ arr g.w (mAcc + 4) ≤ arr g.w (2 * j) := by
         unfold mAcc at *
         by_cases lt : 2 * j + 1 < 16
         · exact .inl (arr_end lt)
-        · exact .inr (arr_mono (by omega))
+        · exact .inr (arr_mono (by omega_arith))
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
     · have ok := h.ls_ok d hd
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       unfold SlotOk at ok
-      rcases hp with rfl | rfl <;> dsimp only <;> have := lowA o <;> have := lowA mAcc <;> omega
+      rcases hp with rfl | rfl <;> dsimp only <;> have := lowA o <;> have := lowA mAcc <;> omega_arith
   -- The modulus and its inverse through the call.
   have mU : num u.mem g.B g.w mBase = num s.mem g.B g.w mBase := by
     have fm := fN mBase (by decide)
-    exact VG.Proof.Bignum.X86.CrtRt.frameR_val32 Fu h.room nw (by simp only [S] at fm; omega)
+    exact VG.Proof.Bignum.X86.CrtRt.frameR_val32 Fu h.room nw (by simp only [S] at fm; omega_arith)
       (apartN mBase (by decide) (Ne.symm ho0) (by decide)) (fun p hp => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
         have fo := fN o ho.1
         have fs := fN (mAcc + 3) (by decide)
-        have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega
-        rcases hp with rfl | rfl <;> dsimp only <;> omega)
+        have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega_arith
+        rcases hp with rfl | rfl <;> dsimp only <;> omega_arith)
   have iU : w32 u.mem g.B sInv = w32 s.mem g.B sInv := by
     have e := VG.Proof.Bignum.X86.CrtRt.frameR_val32 (d := sInv) (k := 1) Fu h.room nw
-      (by unfold sInv hdr at *; omega) (fun p hp => by
+      (by unfold sInv hdr at *; omega_arith) (fun p hp => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl <;> dsimp only <;> have := lowA o <;> have := lowA mAcc <;>
-          unfold sInv hdr at * <;> omega) (fun p hp => by
+          unfold sInv hdr at * <;> omega_arith) (fun p hp => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
         have fo := fN o ho.1
         have fs := fN (mAcc + 3) (by decide)
-        have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega
-        rcases hp with rfl | rfl <;> dsimp only <;> omega)
+        have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega_arith
+        rcases hp with rfl | rfl <;> dsimp only <;> omega_arith)
     simpa only [val32, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add] using e
   have mrU : MR g m u := mr.of_eq mU iU
   exact ⟨hu, mrU, Ku, cs _ (by decide), by rw [← vm]; exact L, by rw [← vm, ← va, ← vb]; exact Vv⟩

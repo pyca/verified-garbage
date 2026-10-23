@@ -32,7 +32,7 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
   have L : ProductGeometry Z 2 2 (arr 4 1) (arr n aV) (arr n aDen) := by
     refine ⟨⟨by decide, by decide, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
     all_goals simp only [arr, S, aV, aDen, hdr] at *
-    all_goals omega
+    all_goals omega_arith
   unfold correctionNumerator seqs
   refine WP.seq (WP.mono (product_ok (left := .exponent) (right := .exponent)
     (out := .array .correction 1) (a := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aV)
@@ -40,8 +40,8 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
   change Outs B [(kProduct, 28), (arr 4 1, 24)] s.mem u.mem at Ou
   change val32 u.mem B (arr 4 1) 6 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 at V
   have low : num u.mem B 4 1 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
-    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 4 ≤ 6) (by rw [V]; omega)).trans V
-  refine WP.seq (WP.mono (small_ok (j := 2) hu .correction 1 (by change 232 ≤ Z; omega))
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 4 ≤ 6) (by rw [V]; omega_arith)).trans V
+  refine WP.seq (WP.mono (small_ok (j := 2) hu .correction 1 (by change 232 ≤ Z; omega_arith))
     fun v ⟨hv, Ov, wideOne, Kv⟩ => ?_)
   change Outside B (arr 4 2) 24 u.mem v.mem at Ov
   change val32 v.mem B (arr 4 2) 6 = 1 at wideOne
@@ -52,7 +52,7 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
       val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
     (Ov.val32 (by decide) (by decide)).trans low
   refine WP.mono (chainAddW_ok hv.old.workspace (by decide : 0 < 4)
-    (by change 176 ≤ Z; omega) (by change 200 ≤ Z; omega) (by change 224 ≤ Z; omega)
+    (by change 176 ≤ Z; omega_arith) (by change 200 ≤ Z; omega_arith) (by change 224 ≤ Z; omega_arith)
     (by decide) (by decide)) fun t ⟨Ot, ⟨carry, _, sum⟩, Kt⟩ => ?_
   change Outside B (arr 4 0) 16 v.mem t.mem at Ot
   change val32 t.mem B (arr 4 0) 4 + 2 ^ 128 * carry.toNat =
@@ -62,7 +62,7 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
   rw [one] at sum
   have result : val32 t.mem B (arr 4 0) 4 =
       val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 := by
-    cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega
+    cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega_arith
   have rest := Ku.trans ((Kv.mono (by decide)).trans (Kt.mono (by decide)))
   have frame : Outs B correctionScratch s.mem t.mem := by
     have first : Outs B correctionScratch s.mem u.mem := VG.Proof.Rsa.outs_cover Ou (by
@@ -76,6 +76,6 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
   refine ⟨h.keep rest (VG.Proof.Rsa.X86.KeyRt.outs_outside frame ?_), frame, result, rest.mono (by decide)⟩
   intro region member
   simp only [correctionScratch, List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl <;> simp only [kProduct, hdr] <;> omega
+  rcases member with rfl | rfl <;> simp only [kProduct, hdr] <;> omega_arith
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

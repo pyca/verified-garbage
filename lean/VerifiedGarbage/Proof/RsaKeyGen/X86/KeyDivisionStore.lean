@@ -39,26 +39,26 @@ theorem divisionStore_ok {s : State} {B : Addr} {Z n quotient remainder : Nat}
   have sep := L.separate
   have sepQ : quotient = arr n 0 ∨ quotient + 4 * n ≤ arr n 0 ∨ arr n 0 + 4 * n ≤ quotient := by
     simp only [arr, S] at *
-    omega
+    omega_arith
   have sepR : remainder = arr n 1 ∨ remainder + 4 * n ≤ arr n 1 ∨ arr n 1 + 4 * n ≤ remainder := by
     simp only [arr, S] at *
-    omega
+    omega_arith
   have low : val32 s.mem B (arr n 1) n = (divisionGeometry B Z n).value s.mem 1 :=
-    VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : n ≤ n + 1) bound
+    VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_arith : n ≤ n + 1) bound
   unfold divisionStore
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Div.copyWords_ok h.workspace h.wpos
-    (by change arr n 0 + 4 * n ≤ Z; unfold S at f0; omega) qBound sepQ)
+    (by change arr n 0 + 4 * n ≤ Z; unfold S at f0; omega_arith) qBound sepQ)
     fun u ⟨Ou, Q, Ku⟩ => ?_)
   have hu := h.rest Ku
   have R : val32 u.mem B (arr n 1) n = (divisionGeometry B Z n).value s.mem 1 := by
-    rw [Ou.val32 (by simp only [arr, S] at qSep; unfold arr S; omega)
-      (by unfold S at f1; omega), low]
+    rw [Ou.val32 (by simp only [arr, S] at qSep; unfold arr S; omega_arith)
+      (by unfold S at f1; omega_arith), low]
   refine WP.mono (VG.Proof.Rsa.X86.Div.copyWords_ok hu.workspace h.wpos
-    (by change arr n 1 + 4 * n ≤ Z; unfold S at f1; omega) rBound sepR)
+    (by change arr n 1 + 4 * n ≤ Z; unfold S at f1; omega_arith) rBound sepR)
     fun t ⟨Ot, V, Kt⟩ => ?_
   refine ⟨hu.rest Kt, (Outs.of_outside Ou (by simp)).trans (Outs.of_outside Ot (by simp)), ?_, V.trans R,
     Ku.trans Kt⟩
-  rw [Ot.val32 sep (by omega), Q]
+  rw [Ot.val32 sep (by omega_arith), Q]
   rfl
 
 end VG.Proof.RsaKeyGen.X86.Key

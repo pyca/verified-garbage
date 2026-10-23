@@ -76,11 +76,11 @@ theorem divStep_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q 
   have hdrQb : ∀ e ∈ [sQb], e + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr := by simp; decide
   -- The powers of two.
   have P2 : 2 ^ (32 * kw len) = 2 * 2 ^ (32 * kw len - 1) := by
-    rw [← Nat.pow_succ']; congr 1; omega
+    rw [← Nat.pow_succ']; congr 1; omega_arith
   have PX : 2 ^ (32 * (kw len + 1)) = 2 ^ (32 * kw len) * 2 ^ 32 := by
     rw [← Nat.pow_add]; congr 1
   have PX2 : 2 * 2 ^ (32 * kw len) ≤ 2 ^ (32 * (kw len + 1)) := by
-    rw [PX]; omega
+    rw [PX]; omega_arith
   -- The divisor and the inputs.
   have Dlt : num s.mem B (kw len) d < 2 ^ (32 * kw len) := val32_lt s.mem B (arr (kw len) d) (kw len)
   have Qlt : num s.mem B (kw len) q < 2 ^ (32 * kw len) := val32_lt s.mem B (arr (kw len) q) (kw len)
@@ -148,22 +148,22 @@ theorem divStep_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q 
       k4.num (by simpa using hqr.symm) hdr0 fq, k3.num (by simpa using hqr.symm) hdr0 fq,
       k2.num (by simp) (by simpa using hCy) fq]
   have nq7 : num u7.mem B (kw len) q = num u1.mem B (kw len) q := by
-    rw [← nq6]; exact O7.val32 (by simp only [kk, Bool.toNat_true]; omega) (by simp only [S] at fq; omega)
+    rw [← nq6]; exact O7.val32 (by simp only [kk, Bool.toNat_true]; omega_arith) (by simp only [S] at fq; omega_arith)
   have evenQ : num u7.mem B (kw len) q % 2 = 0 := by
     rw [nq7]
     cases c with
-    | false => simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at v1'; omega
-    | true => simp only [Bool.toNat_true, Nat.mul_one, P2] at v1'; omega
+    | false => simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at v1'; omega_arith
+    | true => simp only [Bool.toNat_true, Nat.mul_one, P2] at v1'; omega_arith
   have qb6 : slot u6.mem B sQb = (!b).toNat := by rw [s6, ebx]
   have qb7 : slot u7.mem B sQb = (!b).toNat := by
     rw [← qb6]
-    exact O7.w32 (.inl (by unfold sQb; simp only [arr, VG.Impl.Rsa.X86.Keys.hdr]; omega)) (by unfold sQb; omega)
+    exact O7.w32 (.inl (by unfold sQb; simp only [arr, VG.Impl.Rsa.X86.Keys.hdr]; omega_arith)) (by unfold sQb; omega_arith)
   have bitQb : slot u7.mem B sQb ≤ 1 := by rw [qb7]; cases b <;> decide
   refine WP.block_append (WP.mono (addLow_ok h7 hq hQb) fun u8 ⟨h8, k8, v8, r8, _⟩ =>
     WP.mono (VG.Proof.Rsa.X86.Div.count_ok u8) fun u ⟨esi, zf, mu, ku⟩ => ?_)
   have wr8 : wide u8.mem B (kw len) r = wide u7.mem B (kw len) r := keep_wide k8 (by simpa using hqr) hdr0 fr
   have K7 : Keep B (kw len) [r] [] u6.mem u7.mem :=
-    Keep.of_arr (d := 0) (by simpa using O7) (by simp only [S, kk, Bool.toNat_true]; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa using O7) (by simp only [S, kk, Bool.toNat_true]; omega_arith) (by simp)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u :=
     (r1.mono (by decide)).trans (((U2a.keeps.trans U2b.keeps).mono (by decide)).trans ((r2.mono (by decide)).trans
       ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans ((r5.mono (by decide)).trans ((Ke.mono (by decide)).trans
@@ -181,24 +181,24 @@ theorem divStep_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q 
     exact ((((((((k1.mono).trans k2.mono).trans k3.mono).trans k4.mono).trans k5.mono).trans
       (by rw [← me]; exact k6.mono)).trans K7.mono).trans k8.mono)
   · intro less
-    have Rlt : wide s.mem B (kw len) r < 2 ^ (32 * kw len) := by omega
+    have Rlt : wide s.mem B (kw len) r < 2 ^ (32 * kw len) := by omega_arith
     have c'0 : c'.toNat = 0 := by
       cases c' with
       | false => rfl
       | true =>
         exfalso
         have : 2 ^ (32 * (kw len + 1)) * (true : Bool).toNat = 2 ^ (32 * (kw len + 1)) := by simp
-        omega
+        omega_arith
     rw [c'0, Nat.mul_zero, Nat.add_zero] at v3'
     -- Its low bit `c`.
     have numR3 : num u3.mem B (kw len) r = wide u3.mem B (kw len) r % 2 ^ (32 * kw len) := by
       rw [wide_eq, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (val32_lt _ _ _ _)]
     have even3 : num u3.mem B (kw len) r % 2 = 0 := by
-      rw [numR3, Nat.mod_mod_of_dvd _ (by rw [P2]; exact Nat.dvd_mul_right 2 _), v3']; omega
+      rw [numR3, Nat.mod_mod_of_dvd _ (by rw [P2]; exact Nat.dvd_mul_right 2 _), v3']; omega_arith
     have bitCy : slot u3.mem B sCy ≤ 1 := by rw [cy3]; cases c <;> decide
     have wr4 : wide u4.mem B (kw len) r = 2 * wide s.mem B (kw len) r + c.toNat := by
       have e3 := wide_eq u3.mem B (kw len) r
-      rw [wide_eq, v4 even3 bitCy, top4, cy3]; omega
+      rw [wide_eq, v4 even3 bitCy, top4, cy3]; omega_arith
     rw [wr4] at v5' v7'
     rw [mu, wr8, v8 evenQ bitQb, qb7, nq7]
     -- The quotient's top bit and the doubled quotient.
@@ -210,15 +210,15 @@ theorem divStep_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q 
       cases c with
       | false =>
         simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at v1'
-        refine ⟨Nat.div_eq_of_lt (by omega), ?_⟩
-        rw [Nat.mod_eq_of_lt (by omega)]; omega
+        refine ⟨Nat.div_eq_of_lt (by omega_arith), ?_⟩
+        rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
       | true =>
         simp only [Bool.toNat_true, Nat.mul_one] at v1'
         refine ⟨?_, ?_⟩
         · rw [show num s.mem B (kw len) q = (num s.mem B (kw len) q - 2 ^ (32 * kw len - 1)) + 2 ^ (32 * kw len - 1) by
-            omega, Nat.add_div_right _ (Nat.two_pow_pos _), Nat.div_eq_of_lt (by omega)]
+            omega_arith, Nat.add_div_right _ (Nat.two_pow_pos _), Nat.div_eq_of_lt (by omega_arith)]
           rfl
-        rw [show 2 * num s.mem B (kw len) q = num u1.mem B (kw len) q + 2 * 2 ^ (32 * kw len - 1) by omega,
+        rw [show 2 * num s.mem B (kw len) q = num u1.mem B (kw len) q + 2 * 2 ^ (32 * kw len - 1) by omega_arith,
           Nat.add_mod_right, Nat.mod_eq_of_lt q1lt]
     obtain ⟨qd, qm⟩ := qtop
     simp only [VG.Proof.Rsa.divStep, qd, qm]
@@ -226,9 +226,9 @@ theorem divStep_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q 
     cases b with
     | false =>
       simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero, Bool.not_false, ite_true] at v5' v7' ⊢
-      split <;> simp only [Prod.mk.injEq, Bool.toNat_true, and_true] <;> omega
+      split <;> simp only [Prod.mk.injEq, Bool.toNat_true, and_true] <;> omega_arith
     | true =>
       simp only [Bool.toNat_true, Nat.mul_one, Bool.not_true, Bool.false_eq_true, ite_false] at v5' v7' ⊢
-      split <;> simp only [Prod.mk.injEq, Bool.toNat_false, Nat.add_zero, and_true] <;> omega
+      split <;> simp only [Prod.mk.injEq, Bool.toNat_false, Nat.add_zero, and_true] <;> omega_arith
 
 end VG.Proof.Rsa.X86.KeyRt

@@ -126,7 +126,7 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat}
   refine WP.seq (wordLoop_ok (fun j t => Keeps [.eax, .ebx, .edx, .ebp] s t ∧
       t.gpr .ebx + BitVec.ofNat 32 (4 * j) = s.gpr .esi + BitVec.ofNat 32 (len - 4) ∧
       Outside base out (4 * j) s.mem t.mem ∧ ∀ i < j, w32 t.mem base (out + 4 * i) = ldWord32 s.mem P len i)
-    (by omega) (by omega)
+    (by omega_arith) (by omega_arith)
     (fun j u u' ⟨K, e, O, V⟩ ⟨hm, hr', hw, hg⟩ =>
       ⟨⟨fun r h => (hg r (by simp_all) (by simp_all)).trans (K.1 r h), hr'.trans K.2.1, hw.trans K.2.2⟩,
         by rw [hg _ (by decide) (by decide), e], hm ▸ O, fun i hi => hm ▸ V i hi⟩)
@@ -134,14 +134,14 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat}
       (by rw [u₁.mem, u₀.mem]; exact VG.Proof.Mont.Outside.refl _ _ _ _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
     (fun j hj t ⟨K, e, O, V⟩ ej => ?_) ?_)
   · have ht := hs.of_keeps K (by decide)
-    have ebx : t.gpr .ebx = s.gpr .esi + BitVec.ofNat 32 (len - 4 * (j + 1)) := ebx_at e (by omega)
-    have ha : t.ea (at_ .ebx 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := ea_ebx ebx (by omega)
+    have ebx : t.gpr .ebx = s.gpr .esi + BitVec.ofNat 32 (len - 4 * (j + 1)) := ebx_at e (by omega_arith)
+    have ha : t.ea (at_ .ebx 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := ea_ebx ebx (by omega_arith)
     have hrd : InRegions (t.rd ++ t.wr) (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
-      rw [K.2.1, K.2.2]; exact hr _ (by omega)
+      rw [K.2.1, K.2.2]; exact hr _ (by omega_arith)
     have hkeep : t.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 =
         s.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 :=
-      readW32_keep fun i hi => keep_of_disjoint (O.mono (Nat.le_refl _) (by omega)) hd (by omega)
-        (by omega) (by omega)
+      readW32_keep fun i hi => keep_of_disjoint (O.mono (Nat.le_refl _) (by omega_arith)) hd (by omega_arith)
+        (by omega_arith) (by omega_arith)
     refine wp_movS (show readSrc t (.mem (at_ .ebx 0)) = some _ by
       show t.load32 _ = _; rw [ha, State.load32, ite_eq_left_iff.mpr fun h => absurd hrd h]) fun s₂ u₂ _ => ?_
     refine wp_bswap fun s₃ u₃ => ?_
@@ -149,31 +149,31 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat}
     have hs₃ := ht.of_keeps k₃ (by decide)
     have ej₃ : s₃.gpr .ebp = s₃.gpr .edi + BitVec.ofNat 32 (4 * j) := by
       rw [k₃.1 _ (by decide), k₃.1 _ (by decide)]; exact ej
-    refine wp_storeS (hs₃.ea_at' ej₃ (d := out) (by omega)) (hs₃.write (d := out + 4 * j) (n := 4) (by omega))
+    refine wp_storeS (hs₃.ea_at' ej₃ (d := out) (by omega_arith)) (hs₃.write (d := out + 4 * j) (n := 4) (by omega_arith))
       fun s₄ m₄ => wp_subS rfl fun s₅ u₅ _ => WP.block_nil ?_
     have O₂ : Outside base (out + 4 * j) 4 t.mem s₄.mem := by
-      rw [m₄.mem, u₃.mem, u₂.mem]; exact writeW32_outside _ _ _ (by omega)
+      rw [m₄.mem, u₃.mem, u₂.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     have k₅ : Keeps [.eax, .ebx] t s₅ := ((k₃.mono (by decide)).widen (m₄.keeps [])).widen u₅.keeps
     refine ⟨⟨K.trans (k₅.mono (by decide)), ?_, ?_, fun i hi => ?_⟩, k₅.1 _ (by decide), k₅.1 _ (by decide)⟩
     · rw [u₅.gpr, m₄.gpr, k₃.1 _ (by decide)]; exact ebx_down e
-    · rw [u₅.mem]; exact (O.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
+    · rw [u₅.mem]; exact (O.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
     · rw [u₅.mem]
       rcases Nat.lt_or_ge i j with h | h
-      · rw [O₂.w32 (by omega) (by omega), V i h]
-      · obtain rfl : i = j := by omega
+      · rw [O₂.w32 (by omega_arith) (by omega_arith), V i h]
+      · obtain rfl : i = j := by omega_arith
         rw [m₄.mem, w32_write_self, u₃.gpr, u₂.gpr, hkeep, bswap_eq, ldWord32,
-          ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+          ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
   · intro t ⟨K, _, O, V⟩
     have ht := hs.of_keeps K (by decide)
-    refine WP.mono (zeroPad_ok ht (o := out + 4 * (len / 4)) (k := 2 * n - len / 4) (by omega))
+    refine WP.mono (zeroPad_ok ht (o := out + 4 * (len / 4)) (k := 2 * n - len / 4) (by omega_arith))
       fun u ⟨e, K₂, O₂⟩ => ⟨?_, K.trans (K₂.mono (by decide)), ?_⟩
     · rw [wordsVal_eq_val32]
-      refine VG.Proof.Weierstrass.val32_eq_ofBytes_len _ _ _ _ out (2 * n) len h4 (by omega) fun j hj => ?_
+      refine VG.Proof.Weierstrass.val32_eq_ofBytes_len _ _ _ _ out (2 * n) len h4 (by omega_arith) fun j hj => ?_
       rcases Nat.lt_or_ge j (len / 4) with h | h
-      · rw [O₂.w32 (by omega) (by omega), V j h]
-      · rw [show j = len / 4 + (j - len / 4) by omega, show out + 4 * (len / 4 + (j - len / 4)) = out + 4 * (len / 4) + 4 * (j - len / 4) by omega, e _ (by omega), ldWord32,
-          ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
-    · exact (O.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
+      · rw [O₂.w32 (by omega_arith) (by omega_arith), V j h]
+      · rw [show j = len / 4 + (j - len / 4) by omega_arith, show out + 4 * (len / 4 + (j - len / 4)) = out + 4 * (len / 4) + 4 * (j - len / 4) by omega_arith, e _ (by omega_arith), ldWord32,
+          ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
+    · exact (O.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
 
 theorem storeComponent_ok {s : State} {base : Addr} {size len n input : Nat}
     (hs : Scr s base size) (accepted : Bool)
@@ -196,13 +196,13 @@ theorem storeComponent_ok {s : State} {base : Addr} {size len n input : Nat}
   let mask : BitVec 32 := if accepted then BitVec.allOnes 32 else 0
   have hP : P.toNat + len ≤ 2 ^ 64 := by
     show ((s.gpr .esi).setWidth 64).toNat + len ≤ 2 ^ 64
-    rw [BitVec.toNat_setWidth]; have := (s.gpr .esi).isLt; omega
+    rw [BitVec.toNat_setWidth]; have := (s.gpr .esi).isLt; omega_arith
   refine wordLoop_ok (fun j t => Keeps [.eax, .ebx, .edx, .ebp] s t ∧
       t.gpr .ebx + BitVec.ofNat 32 (4 * j) = s.gpr .esi + BitVec.ofNat 32 (len - 4) ∧
       Outside P (len - 4 * j) (4 * j) s.mem t.mem ∧
       ∀ i < j, t.mem.readW (P + BitVec.ofNat 64 (len - 4 * (i + 1))) 32 =
         byteRev32 (s.mem.readW (off base (input + 4 * i)) 32 &&& mask))
-    (by omega) (by omega)
+    (by omega_arith) (by omega_arith)
     (fun j u u' ⟨K, e, O, V⟩ ⟨hm, hr', hw', hg⟩ =>
       ⟨⟨fun r h => (hg r (by simp_all) (by simp_all)).trans (K.1 r h), hr'.trans K.2.1, hw'.trans K.2.2⟩,
         by rw [hg _ (by decide) (by decide), e], hm ▸ O, fun i hi => hm ▸ V i hi⟩)
@@ -210,39 +210,39 @@ theorem storeComponent_ok {s : State} {base : Addr} {size len n input : Nat}
       (by rw [u₁.mem, u₀.mem]; exact VG.Proof.Mont.Outside.refl _ _ _ _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
     (fun j hj t ⟨K, e, O, V⟩ ej => ?_) (fun u ⟨K, _, O, V⟩ => ⟨?_, K, ?_⟩)
   · have ht := hs.of_keeps K (by decide)
-    have ebx : t.gpr .ebx = s.gpr .esi + BitVec.ofNat 32 (len - 4 * (j + 1)) := ebx_at e (by omega)
+    have ebx : t.gpr .ebx = s.gpr .esi + BitVec.ofNat 32 (len - 4 * (j + 1)) := ebx_at e (by omega_arith)
     have hword : t.mem.readW (off base (input + 4 * j)) 32 = s.mem.readW (off base (input + 4 * j)) 32 := by
       show t.mem.readW (base + BitVec.ofNat 64 (input + 4 * j)) 32 = s.mem.readW (base + BitVec.ofNat 64 (input + 4 * j)) 32
       rw [← Offset.add_add]
-      exact readW32_keep fun i hi => VG.Proof.Weierstrass.keep_of_disjoint' (O.mono (Nat.zero_le _) (by omega)) hd
-        (by omega) (by omega) (by omega)
-    refine wp_movS (readSrc_at' ht ej (d := input) (by omega)) fun s₂ u₂ _ => ?_
+      exact readW32_keep fun i hi => VG.Proof.Weierstrass.keep_of_disjoint' (O.mono (Nat.zero_le _) (by omega_arith)) hd
+        (by omega_arith) (by omega_arith) (by omega_arith)
+    refine wp_movS (readSrc_at' ht ej (d := input) (by omega_arith)) fun s₂ u₂ _ => ?_
     refine wp_logicS (.inl rfl) rfl fun s₃ u₃ => ?_
     refine wp_bswap fun s₄ u₄ => ?_
     have k₄ : Keeps [.eax] t s₄ := (u₂.keeps.trans u₃.keeps).trans u₄.keeps
     have ha₄ : s₄.ea (at_ .ebx 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) :=
-      ea_ebx (by rw [k₄.1 _ (by decide), ebx]) (by omega)
+      ea_ebx (by rw [k₄.1 _ (by decide), ebx]) (by omega_arith)
     have hw₄ : InRegions s₄.wr (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
-      rw [k₄.2.2, K.2.2]; exact hw _ _ (by omega)
+      rw [k₄.2.2, K.2.2]; exact hw _ _ (by omega_arith)
     refine wp_storeS ha₄ hw₄ fun s₅ m₅ => wp_subS rfl fun s₆ u₆ _ => WP.block_nil ?_
     have v₄ : s₄.gpr .eax = byteRev32 (s.mem.readW (off base (input + 4 * j)) 32 &&& mask) := by
       rw [u₄.gpr, u₃.gpr, u₂.gpr, u₂.other _ (by decide), K.1 _ (by decide), hc, hword, bswap_eq]
       simp only [ite_true, mask]
     have mem₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, u₂.mem]
     have O₂ : Outside P (len - 4 * (j + 1)) 4 t.mem s₅.mem := by
-      rw [m₅.mem, mem₄]; exact writeW32_outside _ _ _ (by omega)
+      rw [m₅.mem, mem₄]; exact writeW32_outside _ _ _ (by omega_arith)
     have k₆ : Keeps [.eax, .ebx] t s₆ := ((k₄.mono (by decide)).widen (m₅.keeps [])).widen u₆.keeps
     refine ⟨⟨K.trans (k₆.mono (by decide)), ?_, ?_, fun i hi => ?_⟩, k₆.1 _ (by decide), k₆.1 _ (by decide)⟩
     · rw [u₆.gpr, m₅.gpr, k₄.1 _ (by decide)]; exact ebx_down e
-    · rw [u₆.mem]; exact (O.mono (by omega) (by omega)).trans (O₂.mono (by omega) (by omega))
+    · rw [u₆.mem]; exact (O.mono (by omega_arith) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
     · rw [u₆.mem]
       rcases Nat.lt_or_ge i j with h | h
-      · rw [m₅.mem, mem₄, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), V i h]
-      · obtain rfl : i = j := by omega
+      · rw [m₅.mem, mem₄, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), V i h]
+      · obtain rfl : i = j := by omega_arith
         rw [m₅.mem, Mem.readW_writeW_self32, v₄]
   · rw [← toBytes_encodeBE, wordsVal_eq_val32]
-    refine VG.Proof.Weierstrass.bytesAt_eq_toBytes_len32 _ _ _ _ accepted (N := 2 * n) (by omega)
-      (fun j hj hj4 => V j (by omega)) fun k _ hk1 hk2 => absurd hk2 (by omega)
-  · rw [show len - 4 * (len / 4) = 0 by omega, show 4 * (len / 4) = len by omega] at O; exact O
+    refine VG.Proof.Weierstrass.bytesAt_eq_toBytes_len32 _ _ _ _ accepted (N := 2 * n) (by omega_arith)
+      (fun j hj hj4 => V j (by omega_arith)) fun k _ hk1 hk2 => absurd hk2 (by omega_arith)
+  · rw [show len - 4 * (len / 4) = 0 by omega_arith, show 4 * (len / 4) = len by omega_arith] at O; exact O
 
 end VG.Proof.Dsa.X86

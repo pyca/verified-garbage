@@ -20,7 +20,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.InvBatch
   VG.Proof.Rsa.X86.GcdBatch
   VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv
 
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
 def operandWrites (w : Nat) : List (Nat × Nat) :=
  [(offset w 3,3*(4*w+8)),(offset w 12,4*w+8)]
@@ -70,16 +70,16 @@ theorem operands_ok {s : State} {base : Addr} {size w n : Nat}
   have sumBound : val32 s.mem base (offset w 0) n +
       (if c then val32 s.mem base (offset w 2) n else 0) < 2^(32*(n+1)) := by
     rw [pow32_succ]
-    split <;> omega
+    split <;> omega_arith
   have carry0 : carry=false := by
     cases carry <;> simp_all only [Bool.toNat_true,Bool.toNat_false,Nat.mul_one,Nat.mul_zero,Nat.add_zero]
-    omega
+    omega_arith
   rw [carry0] at V₆
   simp only [Bool.toNat_false,Nat.mul_zero,Nat.add_zero] at V₆
   have inputLow : val32 s.mem base (offset w 0) n % 2 = w32 s.mem base (offset w 0)%2 := by
-    obtain ⟨k,hk⟩ : ∃ k,n=k+1 := ⟨n-1,by omega⟩
+    obtain ⟨k,hk⟩ : ∃ k,n=k+1 := ⟨n-1,by omega_arith⟩
     rw [hk,val32]
-    omega
+    omega_arith
   have hs₆ := hs₅.of_keeps K₆ (by decide)
   refine WP.mono (setWord_ok (dst:=offset w 3) 1 hs₆ (by apart)) fun z ⟨D₇,K₇,O₇⟩ => ?_
   refine ⟨?_,?_,D₇,?_,?_⟩

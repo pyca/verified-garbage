@@ -157,11 +157,11 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
   have room := v.room
   have wf := v.witFit
   have tf := v.tableFit
-  have fit : 4 * testRegs.length + 4 ≤ (s.gpr .esp).toNat := by rw [spU]; simp only [List.length_cons, List.length_nil]; omega
+  have fit : 4 * testRegs.length + 4 ≤ (s.gpr .esp).toNat := by rw [spU]; simp only [List.length_cons, List.length_nil]; omega_arith
   have hrs : Reg.esp ∉ testRegs := by decide
-  have nat24 : (s.gpr .esp - 24#32).toNat = E.sp.toNat - 24 := by rw [spU]; exact sub_toNat (by omega)
+  have nat24 : (s.gpr .esp - 24#32).toNat = E.sp.toNat - 24 := by rw [spU]; exact sub_toNat (by omega_arith)
   have nat20 : ((s.gpr .esp - 20#32).setWidth 64).toNat = E.sp.toNat - 20 := by
-    rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega)]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
   have uesp : (testEntry E used s).gpr .esp = s.gpr .esp - 24#32 := by
     change (pushed testRegs s).callEntry.gpr .esp = _
     exact callEntry_esp' testRegs s
@@ -191,19 +191,19 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
   have sz := v.size_ge
   have witLt := v.ptrs.2.2.2
   have lenLt := v.lens.2.2
-  have wsW := Scr.wide hs (d := sPP) (by simp only [sPP]; omega)
-  have uoW := Scr.wide hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega)
-  have wsN := Scr.toNat_add hs (d := sPP) (by simp only [sPP]; omega)
-  have uoN := Scr.toNat_add hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega)
+  have wsW := Scr.wide hs (d := sPP) (by simp only [sPP]; omega_arith)
+  have uoW := Scr.wide hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
+  have wsN := Scr.toNat_add hs (d := sPP) (by simp only [sPP]; omega_arith)
+  have uoN := Scr.toNat_add hs (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
   have randW := randPtr_wide v (used := used) hu
   have randN := randPtr_toNat v (used := used) hu
   have randFit := randAddr_fit v (used := used) hu
   have randSub := randAddr_sub (E := E) (used := used) hu
   have lenN : (BitVec.ofNat 32 (E.witLen - used)).toNat = E.witLen - used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have ppN : (BitVec.ofNat 32 ppWords).toNat = ppWords := by decide
   have callee : (s.gpr .esp - 24#32).setWidth 64 - 112#64 = (s.gpr .esp - 136#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [nat24]; omega : 112 ≤ (s.gpr .esp - 24#32).toNat), BitVec.sub_sub]; rfl
+    rw [← Taint.sub_setWidth (by rw [nat24]; omega_arith : 112 ≤ (s.gpr .esp - 24#32).toNat), BitVec.sub_sub]; rfl
   have sy₀ : s.syms = s₀.syms := A.syms
   have m₀ : s.mem = s₀.mem := A.mem
   simp only [a0, a1, a2, a3, a4, uesp, uarg0, urd, uwr, usy, testRd, testWr, wsW, uoW, randW, randN, lenN,
@@ -211,37 +211,37 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
     List.length_nil, List.drop, List.take, Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul]
   have symT : (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64 = E.table := by rw [sy₀]; exact B.syms
   have subWS : Region.Sub ⟨off E.base sPP, ppWords * 8⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [sPP, ppWords]; omega)
+    Offset.sub_base _ (by simp only [sPP, ppWords]; omega_arith)
   have subUO : Region.Sub ⟨off E.base fUsedOut, 8⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [fUsedOut, hdr]; omega)
+    Offset.sub_base _ (by simp only [fUsedOut, hdr]; omega_arith)
   have subArgs : Region.Sub ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ E.stackRegion := by
-    rw [spU]; exact below_sub (by decide) (by omega)
+    rw [spU]; exact below_sub (by decide) (by omega_arith)
   have subRet : Region.Sub ⟨(s.gpr .esp - 24#32).setWidth 64, 4⟩ E.stackRegion :=
-    sub_of_contains (by rw [spU]; exact below_top (k := 24) (by decide) (by omega) (by decide))
+    sub_of_contains (by rw [spU]; exact below_top (k := 24) (by decide) (by omega_arith) (by decide))
   have subCal : Region.Sub ⟨(s.gpr .esp - 136#32).setWidth 64, 112⟩ E.stackRegion :=
-    sub_of_contains (by rw [spU]; exact below_top (k := 136) (by decide) (by omega) (by decide))
+    sub_of_contains (by rw [spU]; exact below_top (k := 136) (by decide) (by omega_arith) (by decide))
   have subPush : Region.Sub (below (s.gpr .esp) (4 * testRegs.length + 4)) E.stackRegion := by
-    rw [spU]; exact below_sub (by decide) (by omega)
+    rw [spU]; exact below_sub (by decide) (by omega_arith)
   have ss := v.scratchStack
   have wf := v.tapesFar E.witRegion (by simp)
   have ws := wf.1; have wk := wf.2.2
   have ts := v.tableFar.1; have tk := v.tableFar.2.2
   have nat136 : ((s.gpr .esp - 136#32).setWidth 64).toNat = E.sp.toNat - 136 := by
-    rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega)]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, spU, sub_toNat (by omega_arith)]; exact Nat.mod_eq_of_lt (by omega_arith)
   have nat24' : ((s.gpr .esp - 24#32).setWidth 64).toNat = E.sp.toNat - 24 := by
-    rw [BitVec.toNat_setWidth, nat24]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, nat24]; exact Nat.mod_eq_of_lt (by omega_arith)
   have retArgs : Region.Disjoint ⟨(s.gpr .esp - 24#32).setWidth 64, 4⟩ ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ :=
-    Offset.disjoint_of_le (by simp only [nat24', nat20]; omega) (by simp only [nat20]; omega)
+    Offset.disjoint_of_le (by simp only [nat24', nat20]; omega_arith) (by simp only [nat20]; omega_arith)
   have calArgs : Region.Disjoint ⟨(s.gpr .esp - 136#32).setWidth 64, 112⟩ ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ :=
-    Offset.disjoint_of_le (by simp only [nat136, nat20]; omega) (by simp only [nat20]; omega)
+    Offset.disjoint_of_le (by simp only [nat136, nat20]; omega_arith) (by simp only [nat20]; omega_arith)
   have wsUO : Region.Disjoint ⟨off E.base sPP, ppWords * 8⟩ ⟨off E.base fUsedOut, 8⟩ :=
-    Offset.disjoint E.base (by simp only [sPP, ppWords, fUsedOut, hdr]; omega) (by simp only [sPP, ppWords]; omega)
-      (by simp only [fUsedOut, hdr]; omega)
+    Offset.disjoint E.base (by simp only [sPP, ppWords, fUsedOut, hdr]; omega_arith) (by simp only [sPP, ppWords]; omega_arith)
+      (by simp only [fUsedOut, hdr]; omega_arith)
   have candEq : ∀ m : Mem, Frame [below (s.gpr .esp) (4 * testRegs.length + 4)] s.mem m →
       Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) =
         Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) :=
     fun m F => cand_frame v lay (k := 24) (by decide) (by simpa [spU] using F)
-  refine ⟨by omega, by omega, by rw [symT]; rfl, ?_, ?_, trivial, by rw [Nat.mul_comm 8 ppWords],
+  refine ⟨by omega_arith, by omega_arith, by rw [symT]; rfl, ?_, ?_, trivial, by rw [Nat.mul_comm 8 ppWords],
     (ws.symm.sub_left subWS).sub_right randSub, wsUO, (ss.sub_left subWS).sub_right subArgs,
     (ws.sub_left randSub).sub_right subUO, (wk.sub_left randSub).sub_right subArgs,
     (ss.sub_left subUO).sub_right subArgs,
@@ -249,7 +249,7 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
     (ss.symm.sub_left subRet).sub_right subUO, retArgs,
     (ss.symm.sub_left subCal).sub_right subWS, (wk.symm.sub_left subCal).sub_right randSub,
     (ss.symm.sub_left subCal).sub_right subUO, calArgs,
-    by simp only [sPP, ppWords]; omega, randFit, by simp only [fUsedOut, hdr]; omega,
+    by simp only [sPP, ppWords]; omega_arith, randFit, by simp only [fUsedOut, hdr]; omega_arith,
     by simpa [VG.Impl.Dsa.X86.ProbablePrime.layout] using lay, by rw [candEq _ umem]; exact odd,
     by rw [candEq _ umem]; exact len⟩
   · intro c hc i hi
@@ -261,13 +261,13 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
     rw [← sy₀, symT] at h
     rw [← h, ← m₀]
     have len : i < 1024 := by simpa [packed_len] using hi
-    refine Frame.readW umem (r := E.tableRegion) (Offset.contains_base E.table (by omega) (by omega)) ?_ (by decide)
+    refine Frame.readW umem (r := E.tableRegion) (Offset.contains_base E.table (by omega_arith) (by omega_arith)) ?_ (by decide)
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact tk.sub_right subPush
   · intro t ht
     simp only [List.mem_singleton] at ht
     subst ht
     rw [symT]
-    refine ⟨by omega, ?_, tk.sub_right subRet, tk.sub_right subCal⟩
+    refine ⟨by omega_arith, ?_, tk.sub_right subRet, tk.sub_right subCal⟩
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

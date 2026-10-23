@@ -54,11 +54,11 @@ theorem copyLoop_ok {s : State} {W : Addr} {size x y sd dd N : Nat} {src dst : R
   have dst_eax : dst ≠ .eax := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl <;> decide
-  refine wp_movS (readSrc_ptr ht PS (d := sd) (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_ptr ht PS (d := sd) (by omega_arith)) fun u U _ => ?_
   have hu := ht.of_keeps U.keeps
   have PD' : PtrAt u W dst (y+4*i) := by rw [PtrAt, U.other dst dst_eax]; exact PD
-  refine wp_storeS (ea_ptr hu PD' (d := dd) (by omega))
-    (ws_write hu (y := y+4*i+dd) (n := 4) (by omega)) fun v M => ?_
+  refine wp_storeS (ea_ptr hu PD' (d := dd) (by omega_arith))
+    (ws_write hu (y := y+4*i+dd) (n := 4) (by omega_arith)) fun v M => ?_
   refine wp_addS rfl fun v₁ A _ => wp_addS rfl fun v₂ B _ => wp_subZ rfl fun v₃ D Z => WP.block_nil ?_
   have C' : v₂.gpr .ebx = t.gpr .ebx := by
     rw [B.other _ (by decide), A.other _ (by decide), M.gpr, U.other _ (by decide)]
@@ -77,15 +77,15 @@ theorem copyLoop_ok {s : State} {W : Addr} {size x y sd dd N : Nat} {src dst : R
   · rw [PtrAt, pointers dst hd]; exact ptr4 PD
   · rw [D.gpr, C']; exact newCount
   · rw [mem, U.mem]
-    exact (O.mono (Nat.le_refl _) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
-  · rw [mem, show y+4*i+dd = y+dd+4*i by omega, val32_store nw (by omega), U.mem, V, U.gpr]
+    exact (O.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
+  · rw [mem, show y+4*i+dd = y+dd+4*i by omega_arith, val32_store nw (by omega_arith), U.mem, V, U.gpr]
     rw [val32_succ]
     congr 1
     congr 1
     change w32 t.mem W (x+4*i+sd) = w32 s.mem W (x+sd+4*i)
-    rw [show x+4*i+sd = x+sd+4*i by omega]
-    exact O.w32 (by omega) (by omega)
+    rw [show x+4*i+sd = x+sd+4*i by omega_arith]
+    exact O.w32 (by omega_arith) (by omega_arith)
   · rw [Z, C', zero]
 
 /-- The same public pointer setup serves both table reads and table writes. -/

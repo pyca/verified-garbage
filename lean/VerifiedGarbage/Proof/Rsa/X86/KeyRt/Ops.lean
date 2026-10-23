@@ -167,13 +167,13 @@ theorem select3_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o < 
   unfold VG.Impl.Rsa.X86.KeyRt.select3
   rw [show count L .edx false = count L .edx false ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
-  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
+  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega_arith) fun u₁ K₁ m₁ p₁ _ => ?_)
   have hl₁ := hl.keep K₁ (by decide) m₁
   have edi₁ : (u₁.gpr .edi).toNat = B.toNat := by rw [K₁.1 _ (by decide)]; exact h.edi
-  refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega) fun u₂ K₂ m₂ p₂ _ => ?_
+  refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega_arith) fun u₂ K₂ m₂ p₂ _ => ?_
   have hl₂ := hl₁.keep K₂ (by decide) m₂
   have edi₂ : (u₂.gpr .edi).toNat = B.toNat := by rw [K₂.1 _ (by decide)]; exact edi₁
-  refine arrPtr_ok hl₂ hle edi₂ (by decide) (by decide) (by omega) fun u₃ K₃ m₃ p₃ _ => ?_
+  refine arrPtr_ok hl₂ hle edi₂ (by decide) (by decide) (by omega_arith) fun u₃ K₃ m₃ p₃ _ => ?_
   have hl₃ := hl₂.keep K₃ (by decide) m₃
   refine count_ok hl₃ hle fun u K₄ m₄ c₄ => WP.block_nil ?_
   have K : Keeps [.ebx, .edx, .ebp, .edi] s u :=
@@ -181,20 +181,20 @@ theorem select3_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o < 
   have m : u.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
   have ecx : u.gpr .ecx = cmask k := by rw [K.1 _ (by decide)]; exact hk
   refine WP.seq (WP.mono (select3Loop_ok (h.rt.of_keeps K) (x := arr (kw len) a) (y := arr (kw len) b)
-    (d := arr (kw len) o) (N := kw len) k wpos (by omega) (by omega) (by omega) (by omega) (by omega)
+    (d := arr (kw len) o) (N := kw len) k wpos (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide)]; exact p₂)
     (by rw [PtrAt, K₄.1 _ (by decide)]; exact p₃) (by rw [c₄]; simp) ecx) fun t ⟨O, V, Kt⟩ => ?_)
   rw [m] at O V
   have KK : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (K.mono (by decide)).trans Kt
-  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega)
+  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega_arith)
   unfold restoreEdi
   refine wp_movS (h.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
   have K' : Keeps [.eax, .ebx, .edx, .ebp] s t₁ :=
     VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .edx, .ebp])
       (KK.trans (U.keeps.mono (by decide))) (U.gpr.trans (RtWs.edi_eq h).symm)
   refine ⟨h.keep K' (by decide) (by decide) (by rw [U.mem]; exact O0),
-    Keep.of_arr (d := 0) (by rw [U.mem]; simpa using O) (by simp only [S]; omega) (by simp), ?_,
+    Keep.of_arr (d := 0) (by rw [U.mem]; simpa using O) (by simp only [S]; omega_arith) (by simp), ?_,
     K'.mono (by decide)⟩
   rw [num, U.mem, V]
 

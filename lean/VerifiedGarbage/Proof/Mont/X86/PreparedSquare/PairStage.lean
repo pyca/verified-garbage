@@ -41,14 +41,14 @@ theorem pairStage_ok {s : State} {W : Addr} {L a N k : Nat} {A : Nat → BitVec 
       t.mem = s.mem ∧ Keeps [.eax, .edx, .ecx, .ebp] s t := by
   let l := k+1-N
   let K := pairCount N k
-  have lp : l≤k := by dsimp [l]; omega
-  have ln : l<N := by dsimp [l]; omega
-  have kn : k-l<N := by dsimp [l]; omega
-  have kpos : 0<K ↔ 2*l<k := by dsimp [K, l, pairCount]; omega
-  have lK : l+K = (k+1)/2 := by dsimp [K, l, pairCount]; omega
-  have Kn : K≤k-l := by dsimp [K, l, pairCount]; omega
+  have lp : l≤k := by dsimp [l]; omega_arith
+  have ln : l<N := by dsimp [l]; omega_arith
+  have kn : k-l<N := by dsimp [l]; omega_arith
+  have kpos : 0<K ↔ 2*l<k := by dsimp [K, l, pairCount]; omega_arith
+  have lK : l+K = (k+1)/2 := by dsimp [K, l, pairCount]; omega_arith
+  have Kn : K≤k-l := by dsimp [K, l, pairCount]; omega_arith
   unfold pairStage
-  refine WP.seq (WP.mono (lower_ok ha (.inl rfl) hN h8 (by omega) si) fun t1 ⟨dx1, _, m1, K1, x1⟩ => ?_)
+  refine WP.seq (WP.mono (lower_ok ha (.inl rfl) hN h8 (by omega_arith) si) fun t1 ⟨dx1, _, m1, K1, x1⟩ => ?_)
   have ha1 := ha.of_keeps K1 (by decide) (by rw [m1]; exact Outs.refl _ _ _)
   have ws1 := hw.of_keeps K1
   have si1 : t1.gpr .esi = BitVec.ofNat 32 (4*k) := (K1.1 _ (by decide)).trans si
@@ -63,9 +63,9 @@ theorem pairStage_ok {s : State} {W : Addr} {L a N k : Nat} {A : Nat → BitVec 
     have Kp : 0<K := kpos.mpr (of_decide_eq_true pos)
     have cmp : ∀ j≤K, (W.toNat+(a+4*l)+4*j < W.toNat+(a+4*(k-l)-4*j)) ↔ j<K := by
       intro j hj
-      omega
+      omega_arith
     have d := dotLoop_ok (r := .ebp) (.inl rfl) (ws1.of_keeps K2) left right
-      (by rw [xmm]; exact z0) (by rw [xmm]; exact z1) Kp (by omega) (by omega) (by omega)
+      (by rw [xmm]; exact z0) (by rw [xmm]; exact z1) Kp (by omega_arith) (by omega_arith) (by omega_arith)
       (by simpa using cmp)
     change WP isa (.loop (.block (VG.Impl.Mont.X86.Rt.Square.prod ++ ctl .ebp)) .b) t2 _
     refine WP.mono d fun u du => ?_
@@ -75,7 +75,7 @@ theorem pairStage_ok {s : State} {W : Addr} {L a N k : Nat} {A : Nat → BitVec 
     · rw [du.c3, xmm]
     · rw [du.c7, xmm]
   · intro no
-    have Kz : K=0 := by have := of_decide_eq_false no; omega
+    have Kz : K=0 := by have := of_decide_eq_false no; omega_arith
     apply WP.block_nil
     refine ⟨?_, ?_, ?_, ?_, mem, before⟩
     · rw [xmm, z0]

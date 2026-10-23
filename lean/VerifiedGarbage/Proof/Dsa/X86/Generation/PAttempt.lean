@@ -262,33 +262,33 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
   have lay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).size ≤ 8 * ppWords := by
     rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> decide
   have candLe : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).candidate + g.pLen ≤ 8 * ppWords := by
-    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega
+    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega_arith
   have szT : VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width (8 * g.pLen)) ≤
-      8 * ppWords := by simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at candLe; omega
+      8 * ppWords := by simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at candLe; omega_arith
   refine WP.seq (VG.X86.WP.mono_syms (copyS_ok B₅.scr
     (dst := sPP + (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).candidate) (src := sPk) (n := g.pLen)
-    (by omega) (by simp only [sPP, ppWords] at candLe ⊢; omega) (by simp only [sPk]; omega)
-    (by right; simp only [sPP, sPk]; omega)) fun t₆ ⟨R₆, F₆, K₆⟩ sy₆ => ?_)
+    (by omega_arith) (by simp only [sPP, ppWords] at candLe ⊢; omega_arith) (by simp only [sPk]; omega_arith)
+    (by right; simp only [sPP, sPk]; omega_arith)) fun t₆ ⟨R₆, F₆, K₆⟩ sy₆ => ?_)
   have pp : (sPP, 8 * ppWords) ∈ paRanges g := by simp [paRanges]
   have C₆ : E.Chg [(sPP, 8 * ppWords)] s₅.mem t₆.mem := Env.Chg.of_frame F₆ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Env.in_range (List.mem_singleton_self _) (by omega) (by omega)
+    exact Env.in_range (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
   have App : E.Apart [(sPP, 8 * ppWords)] := fun o ho => Apa o (by simp only [List.mem_singleton] at ho; rw [ho]; exact pp)
   have B₆ : Base E t₆ := B₅.keep v C₆ App (K₆.1 _ (by decide)) (K₆.1 _ (by decide)) K₆.2.1 K₆.2.2 sy₆
   have hU₆ : t₆.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
-    rw [Env.Chg.word v C₆ (by simp only [fUsed, hdr]; omega) (fun o ho => by
-      simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fUsed, hdr]; omega), F.used]
+    rw [Env.Chg.word v C₆ (by simp only [fUsed, hdr]; omega_arith) (fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fUsed, hdr]; omega_arith), F.used]
   have hP₆ : t₆.mem.readW (off E.base fP) 32 = BitVec.ofNat 32 4 := by
-    rw [Env.Chg.word v C₆ (by simp only [fP, hdr]; omega) (fun o ho => by
-      simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fP, hdr]; omega), F.fp]
+    rw [Env.Chg.word v C₆ (by simp only [fP, hdr]; omega_arith) (fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fP, hdr]; omega_arith), F.fp]
   have cval : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)) t₆.mem
       (off E.base sPP) = pcand g E k offset Q := by
     unfold Spec.Dsa.ProbablePrime.candidateAt
     have b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).bits / 8 = g.pLen := by
-      show 8 * g.pLen / 8 = g.pLen; omega
+      show 8 * g.pLen / 8 = g.pLen; omega_arith
     rw [b8, VG.Offset.add_add, R₆, F.pk, decodeBE_encodeBE (by rw [e256]; exact pcLt)]
   have plen : Spec.Dsa.bitLength (pcand g E k offset Q) = 8 * g.pLen :=
-    (bitLength_iff_bounds (by omega)).mpr ⟨by omega, pcLt⟩
+    (bitLength_iff_bounds (by omega_arith)).mpr ⟨by omega_arith, pcLt⟩
   refine WP.seq (VG.X86.WP.mono_syms (test_ok G.pv G.pNoSp G.pStack v B₆ hU₆ hu lay (by rw [cval]; exact pcOdd)
     (by rw [cval]; exact plen)) fun t₇ P sy₇ => ?_)
   rw [cval] at P
@@ -302,51 +302,51 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
       Nat.le_refl _, Nat.le_refl _⟩)).trans (P.chg.widen fun o ho => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl
-    · exact ⟨_, pp, Nat.le_refl _, by omega⟩
+    · exact ⟨_, pp, Nat.le_refl _, by omega_arith⟩
     · exact ⟨_, by simp [paRanges], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [paRanges], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [paRanges], Nat.le_refl _, Nat.le_refl _⟩
   have testR : ∀ o ∈ [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width
       (8 * g.pLen))), (fRes, 4), (fUsed, 4), (fUsedOut, 8)], o.1 + o.2 ≤ E.size := fun o ho => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, ppWords, fRes, fUsed, fUsedOut, hdr] at szT ⊢ <;> omega
+    rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, ppWords, fRes, fUsed, fUsedOut, hdr] at szT ⊢ <;> omega_arith
   have keep7 : ∀ {d k : Nat}, d + 4 * k ≤ sPP → 7400 ≤ d →
       val32 t₇.mem E.base d k = val32 s₅.mem E.base d k := fun h₁ h₂ => by
-    rw [Env.Chg.val32 v P.chg (by simp only [sPP] at h₁; omega) fun o ho => ⟨testR o ho, by
+    rw [Env.Chg.val32 v P.chg (by simp only [sPP] at h₁; omega_arith) fun o ho => ⟨testR o ho, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, fRes, fUsed, fUsedOut, hdr] at h₁ h₂ ⊢ <;> omega⟩,
-      (outside_of_frame F₆ (by simp only [sPP, ppWords] at candLe ⊢; omega)).val32
-        (by left; simp only [sPP] at h₁ ⊢; omega) (by simp only [sPP] at h₁; omega)]
+      rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, fRes, fUsed, fUsedOut, hdr] at h₁ h₂ ⊢ <;> omega_arith⟩,
+      (outside_of_frame F₆ (by simp only [sPP, ppWords] at candLe ⊢; omega_arith)).val32
+        (by left; simp only [sPP] at h₁ ⊢; omega_arith) (by simp only [sPP] at h₁; omega_arith)]
   have fin : ∀ t : State, Base E t → E.Chg [(fP, 4)] t₇.mem t.mem →
       t.mem.readW (off E.base fP) 32 = BitVec.ofNat 32 (pCode r) → t.rd = t₇.rd → t.wr = t₇.wr →
       t.syms = t₇.syms → PAPost E g k offset Q used s t := by
     intro t Bt Ct fpt rdt wrt syt
     have fPR : ∀ {d n : Nat}, d + n ≤ fP ∨ fP + 4 ≤ d → d + n ≤ E.size →
         ∀ o ∈ [(fP, 4)], o.1 + o.2 ≤ E.size ∧ (o.1 + o.2 ≤ d ∨ d + n ≤ o.1) := fun h₁ h₂ o ho => by
-      simp only [List.mem_singleton] at ho; subst ho; simp only [fP, hdr] at h₁ ⊢; omega
+      simp only [List.mem_singleton] at ho; subst ho; simp only [fP, hdr] at h₁ ⊢; omega_arith
     have arrV : ∀ {d : Nat}, d + 4 * (g.pLen / 4) ≤ sPP → 7400 ≤ d →
         val32 t.mem E.base d (g.pLen / 4) = val32 s₅.mem E.base d (g.pLen / 4) := fun h₁ h₂ => by
-      rw [Env.Chg.val32 v Ct (by simp only [sPP] at h₁; omega) (fPR (by right; simp only [fP, hdr]; omega)
-        (by simp only [sPP] at h₁; omega)), keep7 h₁ h₂]
+      rw [Env.Chg.val32 v Ct (by simp only [sPP] at h₁; omega_arith) (fPR (by right; simp only [fP, hdr]; omega_arith)
+        (by simp only [sPP] at h₁; omega_arith)), keep7 h₁ h₂]
     refine ⟨Bt, ?_, ?_, ?_, ?_, ?_, ?_, ?_, Cp.trans (Ct.widen fun o ho => ⟨o, by
         simp only [List.mem_singleton] at ho; rw [ho]; simp [paRanges], Nat.le_refl _, Nat.le_refl _⟩),
       by rw [rdt, P.rd, K₆.2.1, F.rd], by rw [wrt, P.wr, K₆.2.2, F.wr],
       by rw [syt, P.syms, sy₆, F.syms]⟩
-    · rw [Env.Chg.scratch v Ct (by simp only [sPk]; omega) (fPR (by right; simp only [fP, sPk, hdr]; omega)
-        (by simp only [sPk]; omega)),
-        Env.Chg.scratch v P.chg (by simp only [sPk]; omega) (fun o ho => ⟨testR o ho, by
+    · rw [Env.Chg.scratch v Ct (by simp only [sPk]; omega_arith) (fPR (by right; simp only [fP, sPk, hdr]; omega_arith)
+        (by simp only [sPk]; omega_arith)),
+        Env.Chg.scratch v P.chg (by simp only [sPk]; omega_arith) (fun o ho => ⟨testR o ho, by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-          rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, sPk, fRes, fUsed, fUsedOut, hdr] <;> omega⟩),
-        frame_bytes F₆ (by right; simp only [sPP, sPk]; omega) (by simp only [sPP, ppWords] at candLe ⊢; omega)
-          (by simp only [sPk]; omega), F.pk]
-    · rw [arrV (by simp only [aPm1, arr, sPP]; omega) (by simp only [aPm1, arr]; omega), F.pm1]
-    · rw [arrV (by simp only [aE, arr, sPP]; omega) (by simp only [aE, arr]; omega), F.e]
-    · rw [arrV (by simp only [aP, arr, sPP]; omega) (by simp only [aP, arr]; omega), F.pv]
-    · rw [arrV (by simp only [aOne, arr, sPP]; omega) (by simp only [aOne, arr]; omega), F.one]
+          rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, sPk, fRes, fUsed, fUsedOut, hdr] <;> omega_arith⟩),
+        frame_bytes F₆ (by right; simp only [sPP, sPk]; omega_arith) (by simp only [sPP, ppWords] at candLe ⊢; omega_arith)
+          (by simp only [sPk]; omega_arith), F.pk]
+    · rw [arrV (by simp only [aPm1, arr, sPP]; omega_arith) (by simp only [aPm1, arr]; omega_arith), F.pm1]
+    · rw [arrV (by simp only [aE, arr, sPP]; omega_arith) (by simp only [aE, arr]; omega_arith), F.e]
+    · rw [arrV (by simp only [aP, arr, sPP]; omega_arith) (by simp only [aP, arr]; omega_arith), F.pv]
+    · rw [arrV (by simp only [aOne, arr, sPP]; omega_arith) (by simp only [aOne, arr]; omega_arith), F.one]
     · simp only [hge, ↓reduceIte, hr]; exact fpt
     · simp only [hge, ↓reduceIte, hr]
-      rw [Env.Chg.word v Ct (by simp only [fUsed, hdr]; omega) (fPR (by left; simp only [fUsed, fP, hdr]; omega)
-        (by simp only [fUsed, hdr]; omega)), used₇]
+      rw [Env.Chg.word v Ct (by simp only [fUsed, hdr]; omega_arith) (fPR (by left; simp only [fUsed, fP, hdr]; omega_arith)
+        (by simp only [fUsed, hdr]; omega_arith)), used₇]
   have Afp : E.Apart [(fP, 4)] := fun o ho => Apa o (by simp only [List.mem_singleton] at ho; rw [ho]; simp [paRanges])
   have store : ∀ (u u' : State) (c : Nat), Base E u → u.mem = t₇.mem →
       (∀ r, r ≠ .eax → u'.gpr r = u.gpr r) → u'.mem = u.mem.writeW (off E.base fP) (BitVec.ofNat 32 c) →
@@ -357,16 +357,16 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
       rw [mu', mu]; exact (Env.Chg.refl _ _).store (List.mem_singleton_self _) (by decide) _
     refine fin u' (Bu.keep v (by rw [mu]; exact Cu) Afp (gu _ (by decide)) (gu _ (by decide)) rdu wru syu) Cu
       (by rw [mu', Mem.readW_writeW_self32, hc]) (by rw [rdu, rdu₇]) (by rw [wru, wru₇]) (by rw [syu, syu₇])
-  refine WP.seq (cmpF_end P.base.scr (o := fRes) (v := 0) (by simp only [fRes, hdr]; omega) res₇ (status_lt r)
+  refine WP.seq (cmpF_end P.base.scr (o := fRes) (v := 0) (by simp only [fRes, hdr]; omega_arith) res₇ (status_lt r)
     (by decide) fun s₈ g₈ m₈ rd₈ wr₈ sy₈ z₈ => ?_)
   have B₈ : Base E s₈ := P.base.regs m₈ (g₈ _ (by decide)) (g₈ _ (by decide)) rd₈ wr₈ sy₈
-  refine WP.ite _ z₈ (fun h0 => stImm_end B₈.scr (o := fP) (v := 0) (by simp only [fP, hdr]; omega)
+  refine WP.ite _ z₈ (fun h0 => stImm_end B₈.scr (o := fP) (v := 0) (by simp only [fP, hdr]; omega_arith)
     fun s₉ g₉ m₉ rd₉ wr₉ sy₉ => store s₈ s₉ 0 B₈ m₈ g₉ m₉ rd₉ wr₉ sy₉ rd₈ wr₈ sy₈
       (pCode_zero (of_decide_eq_true h0)).symm) (fun h0 => ?_)
-  refine WP.seq (cmpF_end B₈.scr (o := fRes) (v := 1) (by simp only [fRes, hdr]; omega) (by rw [m₈]; exact res₇)
+  refine WP.seq (cmpF_end B₈.scr (o := fRes) (v := 1) (by simp only [fRes, hdr]; omega_arith) (by rw [m₈]; exact res₇)
     (status_lt r) (by decide) fun s₁₀ g₁₀ m₁₀ rd₁₀ wr₁₀ sy₁₀ z₁₀ => ?_)
   have B₁₀ : Base E s₁₀ := B₈.regs m₁₀ (g₁₀ _ (by decide)) (g₁₀ _ (by decide)) rd₁₀ wr₁₀ sy₁₀
-  refine WP.ite _ z₁₀ (fun h1 => stImm_end B₁₀.scr (o := fP) (v := 1) (by simp only [fP, hdr]; omega)
+  refine WP.ite _ z₁₀ (fun h1 => stImm_end B₁₀.scr (o := fP) (v := 1) (by simp only [fP, hdr]; omega_arith)
     fun s₁₁ g₁₁ m₁₁ rd₁₁ wr₁₁ sy₁₁ => store s₁₀ s₁₁ 1 B₁₀ (by rw [m₁₀, m₈]) g₁₁ m₁₁ rd₁₁ wr₁₁ sy₁₁
       (by rw [rd₁₀, rd₈]) (by rw [wr₁₀, wr₈]) (by rw [sy₁₀, sy₈]) (pCode_one (of_decide_eq_true h1)).symm)
     (fun h1 => WP.block_nil ?_)
@@ -375,8 +375,8 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
   refine fin s₁₀ B₁₀ (by rw [m]; exact Env.Chg.refl _ _) ?_ (by rw [rd₁₀, rd₈]) (by rw [wr₁₀, wr₈])
     (by rw [sy₁₀, sy₈])
   rw [pCode_other (of_decide_eq_false h0) (of_decide_eq_false h1), m,
-    Env.Chg.word v P.chg (by simp only [fP, hdr]; omega) (fun o ho => ⟨testR o ho, by
+    Env.Chg.word v P.chg (by simp only [fP, hdr]; omega_arith) (fun o ho => ⟨testR o ho, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, fRes, fUsed, fUsedOut, fP, hdr] <;> omega⟩), hP₆]
+      rcases ho with rfl | rfl | rfl | rfl <;> simp only [sPP, fRes, fUsed, fUsedOut, fP, hdr] <;> omega_arith⟩), hP₆]
 
 end VG.Proof.Dsa.X86.Generation

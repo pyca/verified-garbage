@@ -39,44 +39,44 @@ theorem inverseLoad_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo 
   have sepSource : (Loc.array w 0).offset n + 4 * w.words n ≤ src.offset n ∨
       src.offset n + 4 * w.words n ≤ (Loc.array w 0).offset n := by
     simp only [offset_array, arr, S] at *
-    omega
+    omega_arith
   have sepModulus : (Loc.array w aM).offset n + 4 * w.words n ≤ mo.offset n ∨
       mo.offset n + 4 * w.words n ≤ (Loc.array w aM).offset n := by
     simp only [offset_array, arr, S, aM] at *
-    omega
+    omega_arith
   unfold inverseLoad VG.Impl.Rsa.X86.Keys.seqs
   refine WP.seq (WP.mono (clear_ok h w hw (by decide) bound) fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
   have zeros (j : Nat) (hj : j < 15) : num u.mem B (w.words n) j = 0 := by
     have V := zero j hj
     rw [offset_array, val32_append] at V
     change val32 u.mem B (arr (w.words n) j) (w.words n) = 0
-    omega
+    omega_arith
   have source : val32 u.mem B (src.offset n) (w.words n) = val32 s.mem B (src.offset n) (w.words n) :=
-    Ou.val32 (by simp only [arr, S] at srcSep; omega) (by omega)
+    Ou.val32 (by simp only [arr, S] at srcSep; omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (copy_loc_ok hu w (.array w 0) src
-    (by simp only [offset_array]; unfold S at f0; omega) srcBound sepSource)
+    (by simp only [offset_array]; unfold S at f0; omega_arith) srcBound sepSource)
     fun v ⟨hv, Ov, input, Kv⟩ => ?_)
   rw [offset_array] at Ov input
   change num v.mem B (w.words n) 0 = val32 u.mem B (src.offset n) (w.words n) at input
   have vKeep : Keep B (w.words n) [0] [] u.mem v.mem :=
-    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ov) (by unfold S; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ov) (by unfold S; omega_arith) (by simp)
   have vFrame : Outside B hdr (4 * (15 * (w.words n + 2))) s.mem v.mem :=
-    Ou.trans (Ov.mono (by unfold arr; omega)
-      (by unfold arr S; omega))
+    Ou.trans (Ov.mono (by unfold arr; omega_arith)
+      (by unfold arr S; omega_arith))
   have modulus : val32 v.mem B (mo.offset n) (w.words n) = val32 s.mem B (mo.offset n) (w.words n) :=
-    vFrame.val32 (by simp only [arr, S] at moSep; omega) (by omega)
+    vFrame.val32 (by simp only [arr, S] at moSep; omega_arith) (by omega_arith)
   refine WP.mono (copy_loc_ok hv w (.array w aM) mo
-    (by simp only [offset_array]; unfold S at fm; omega) moBound sepModulus)
+    (by simp only [offset_array]; unfold S at fm; omega_arith) moBound sepModulus)
     fun t ⟨ht, Ot, valueM, Kt⟩ => ?_
   rw [offset_array] at Ot valueM
   change num t.mem B (w.words n) aM = val32 v.mem B (mo.offset n) (w.words n) at valueM
   have tKeep : Keep B (w.words n) [aM] [] v.mem t.mem :=
-    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ot) (by unfold S; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ot) (by unfold S; omega_arith) (by simp)
   have bankfit (j : Nat) (hj : j < 15) : arr (w.words n) j + S (w.words n) ≤ 2 ^ 64 := by
     have fit := H.ws.fit64 hj
     rwa [kw_words h.width] at fit
-  refine ⟨ht, vFrame.trans (Ot.mono (by unfold arr; omega)
-    (by unfold arr S aM; omega)), ?_, valueM.trans modulus, ?_,
+  refine ⟨ht, vFrame.trans (Ot.mono (by unfold arr; omega_arith)
+    (by unfold arr S aM; omega_arith)), ?_, valueM.trans modulus, ?_,
     (Ku.mono (by decide)).trans (Kv.trans Kt)⟩
   · rw [tKeep.num (by decide) (by simp) (bankfit _ (by decide)), input, source]
   · intro j hj j0 jm
