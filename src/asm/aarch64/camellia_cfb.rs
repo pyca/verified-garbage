@@ -1764,6 +1764,140 @@ pub(crate) unsafe extern "C" fn vg_camellia_cfb128_decrypt(schedule: *const [u8;
     core::arch::naked_asm!(
         r"sub sp, sp, #3344
 add x5, sp, #0
+lsr x13, x4, #2
+cbz x13, 20f
+add x5, x5, #0
+str x19, [x5, #3248]
+str x20, [x5, #3256]
+str x21, [x5, #3264]
+str x22, [x5, #3272]
+str x23, [x5, #3280]
+str x24, [x5, #3288]
+str x25, [x5, #3296]
+str x26, [x5, #3304]
+str x27, [x5, #3312]
+str x28, [x5, #3320]
+ldr x6, [x2, #0]
+str x6, [x5, #3328]
+ldr x6, [x2, #8]
+str x6, [x5, #3336]
+cbz x4, 22f
+sub x7, x4, #1
+lsl x7, x7, #4
+add x7, x7, x3
+ldr x6, [x7, #0]
+str x6, [x2, #0]
+ldr x6, [x7, #8]
+str x6, [x2, #8]
+b 23f
+22:
+23:
+add x23, x3, #0
+add x24, x4, #0
+dup v28.2d, x30
+dup v27.2d, x5
+dup v29.2d, x23
+dup v30.2d, x24
+dup v26.2d, x1
+movz x2, #0, lsl #0
+add x3, x5, #0
+movz x4, #406, lsl #0
+bl {vg_camellia_prepare_keys}
+umov x5, v27.d[0]
+umov x30, v28.d[0]
+umov x23, v29.d[0]
+umov x24, v30.d[0]
+umov x4, v26.d[0]
+cbz x24, 24f
+26:
+lsr x13, x24, #3
+cbnz x13, 27f
+add x16, x24, #0
+b 28f
+27:
+movz x16, #8, lsl #0
+28:
+ldr x8, [x5, #3328]
+str x8, [x5, #3024]
+ldr x8, [x5, #3336]
+str x8, [x5, #3032]
+add x14, x5, #3024
+add x14, x14, #16
+add x15, x23, #0
+sub x17, x16, #1
+cbz x17, 29f
+211:
+ldr x8, [x15, #0]
+str x8, [x14, #0]
+ldr x8, [x15, #8]
+str x8, [x14, #8]
+add x14, x14, #16
+add x15, x15, #16
+sub x17, x17, #1
+cbnz x17, 211b
+b 210f
+29:
+210:
+ldr x8, [x15, #0]
+str x8, [x5, #3328]
+ldr x8, [x15, #8]
+str x8, [x5, #3336]
+dup v28.2d, x30
+dup v27.2d, x5
+dup v29.2d, x23
+dup v30.2d, x24
+dup v26.2d, x4
+add x0, x4, #0
+add x1, x5, #0
+movz x2, #406, lsl #0
+bl {vg_camellia_crypt_prepared}
+umov x5, v27.d[0]
+umov x30, v28.d[0]
+umov x23, v29.d[0]
+umov x24, v30.d[0]
+umov x4, v26.d[0]
+lsr x13, x24, #3
+cbnz x13, 212f
+add x16, x24, #0
+b 213f
+212:
+movz x16, #8, lsl #0
+213:
+add x14, x5, #0
+add x14, x14, #3024
+add x15, x23, #0
+add x17, x16, #0
+214:
+ldr x8, [x14, #0]
+ldr x9, [x15, #0]
+eor x8, x8, x9
+str x8, [x15, #0]
+ldr x8, [x14, #8]
+ldr x9, [x15, #8]
+eor x8, x8, x9
+str x8, [x15, #8]
+add x14, x14, #16
+add x15, x15, #16
+sub x17, x17, #1
+cbnz x17, 214b
+add x23, x15, #0
+sub x24, x24, x16
+cbnz x24, 26b
+b 25f
+24:
+25:
+ldr x19, [x5, #3248]
+ldr x20, [x5, #3256]
+ldr x21, [x5, #3264]
+ldr x22, [x5, #3272]
+ldr x23, [x5, #3280]
+ldr x24, [x5, #3288]
+ldr x25, [x5, #3296]
+ldr x26, [x5, #3304]
+ldr x27, [x5, #3312]
+ldr x28, [x5, #3320]
+b 21f
+20:
 add x5, x5, #0
 str x19, [x5, #3152]
 str x20, [x5, #3160]
@@ -1941,7 +2075,7 @@ str x21, [x5, #248]
 add x14, x0, #0
 add x15, x5, #256
 movz x17, #17, lsl #0
-20:
+215:
 ldr x21, [x14, #0]
 str x21, [x15, #0]
 ldr x21, [x14, #8]
@@ -1949,13 +2083,13 @@ str x21, [x15, #8]
 add x14, x14, #16
 add x15, x15, #16
 sub x17, x17, #1
-cbnz x17, 20b
+cbnz x17, 215b
 ldr x6, [x19, #0]
 str x6, [x5, #768]
 ldr x6, [x19, #8]
 str x6, [x5, #776]
-cbz x24, 21f
-23:
+cbz x24, 216f
+218:
 ldr q16, [x5, #0]
 ldr q17, [x5, #16]
 ldr q18, [x5, #32]
@@ -2748,7 +2882,7 @@ lsl x10, x16, #32
 orr x10, x10, x12
 eor x6, x6, x10
 sub x8, x1, #18
-cbz x8, 24f
+cbz x8, 219f
 ldr x8, [x5, #448]
 rev x8, x8
 lsr x10, x6, #32
@@ -3017,8 +3151,8 @@ rev x7, x7
 rev x6, x6
 str x7, [x5, #768]
 str x6, [x5, #776]
-b 25f
-24:
+b 220f
+219:
 ldr x10, [x5, #448]
 rev x10, x10
 eor x7, x7, x10
@@ -3029,7 +3163,7 @@ rev x7, x7
 rev x6, x6
 str x7, [x5, #768]
 str x6, [x5, #776]
-25:
+220:
 ldr x6, [x23, #0]
 ldr x7, [x5, #768]
 eor x6, x6, x7
@@ -3048,10 +3182,10 @@ eor x6, x6, x7
 str x6, [x5, #776]
 add x23, x23, #16
 sub x24, x24, #1
-cbnz x24, 23b
-b 22f
-21:
-22:
+cbnz x24, 218b
+b 217f
+216:
+217:
 ldr x6, [x5, #768]
 str x6, [x19, #0]
 ldr x6, [x5, #776]
@@ -3066,6 +3200,7 @@ ldr x25, [x5, #3200]
 ldr x26, [x5, #3208]
 ldr x27, [x5, #3216]
 ldr x28, [x5, #3224]
+21:
 add x16, sp, #0
 movz x17, #0, lsl #0
 str x17, [x16, #0]
@@ -3489,5 +3624,7 @@ str x17, [x16, #3336]
 add sp, sp, #3344
 ret
 .p2align 6",
+        vg_camellia_prepare_keys = sym super::camellia::vg_camellia_prepare_keys,
+        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared,
     )
 }
