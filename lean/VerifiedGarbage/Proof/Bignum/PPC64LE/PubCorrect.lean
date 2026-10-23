@@ -44,7 +44,7 @@ theorem saved_ne11 : ∀ i < 16, PublicChecked.saved i ≠ .r11 := by decide
 theorem front_ok {s : State} (h : fnContract.pre s) :
     WP isa (.block (PublicChecked.save ++ setup)) s fun s₃ =>
       Mid (dataOf s) s₃ ∧ (∀ i < 16, s₃.mem.readW (off (savW (stackArg s 0)) (8 * i)) 64 = s.gpr (PublicChecked.saved i)) ∧
-        Keep ([.r11, .r23] ++ [.r10, .r11, .r27, .r28, .r29]) s s₃ ∧
+        Keep (([.r11, .r23] : List Reg) ++ ([.r10, .r11, .r27, .r28, .r29] : List Reg)) s s₃ ∧
         Frame [savR (savW (stackArg s 0))] s.mem s₃.mem := by
   obtain ⟨hsp, hrd, hwr, dOP, dOE, dOX, dOS, dOA, dPS, dES, dXS, dSA, nwO, nwP, nwE, nwX, nwS, ⟨hk, hk'⟩, hpl,
     hxl, hL1, hLk, hsl⟩ := h
