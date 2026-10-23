@@ -27,7 +27,26 @@ runs:
       working-directory: lean
       env:
         MODS: ${{ inputs.mods }}
-      run: lake exe cache get $MODS
+      run: |
+        # The cache tool downloads with `curl --parallel` and no bound on a
+        # stalled transfer (`--retry` only retries one that fails): a stalled
+        # connection to cache.mathlib.org once hung a shard with 178 of 2058
+        # files left until the run was cancelled. It normally takes about
+        # 35 s (most of it building the tool), so stop an attempt after 5
+        # minutes (`timeout` stops its whole process group, curl included)
+        # and try again. A stopped curl may leave a truncated file, which
+        # `get` would take as downloaded: a retry downloads every file again
+        # (`get!`), about 10 s.
+        cmd="get"
+        for attempt in 1 2 3; do
+          echo "lake exe cache $cmd (attempt $attempt)"
+          timeout --kill-after=30 300 lake exe cache "$cmd" $MODS && exit 0
+          status=$?
+          [ "$status" = 124 ] && echo "::warning::lake exe cache $cmd timed out." \
+            || echo "::warning::lake exe cache $cmd failed ($status)."
+          cmd="get!"
+        done
+        exit 1
     # Fail, rather than quietly build part of Mathlib from source, if the
     # cache left any of them (or what they import) unbuilt.
     - name: Check Mathlib is built for every import
