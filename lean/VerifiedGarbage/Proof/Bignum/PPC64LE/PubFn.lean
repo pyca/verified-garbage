@@ -53,10 +53,10 @@ def fnContract : Contract isa where
       s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
       s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
       stackArg s₁ 1 = stackArg s₂ 1 ∧
-      Spec.Rsa.wordsAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat =
-        Spec.Rsa.wordsAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat ∧
-      Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r7) (s₁.gpr .r8).toNat =
-        Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r7) (s₂.gpr .r8).toNat
+      (Spec.Rsa.wordsAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat).map (·.toNat) ++
+          (Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r7) (s₁.gpr .r8).toNat).map (·.toNat) =
+        (Spec.Rsa.wordsAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat).map (·.toNat) ++
+          (Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r7) (s₂.gpr .r8).toNat).map (·.toNat)
 
 theorem ofNat_add7_shr3 (k : Nat) (hk : k < 2 ^ 32) :
     (BitVec.ofNat 64 k + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((k + 7) / 8) := by
