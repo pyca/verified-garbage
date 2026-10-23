@@ -74,7 +74,7 @@ def GhashName.impl : GhashName → GhashImpl
   | .aes => .aes
 
 /-- The implementations a variant calls. -/
-def GcmVariant.impl (v : GcmVariant) : GcmImpl := ⟨v.ctr, v.key, v.gh.impl, v.stitch⟩
+def GcmVariant.impl (v : GcmVariant) : GcmImpl := ⟨v.ctr, v.key, v.gh.impl, v.stitch, v.aeseInit⟩
 
 end VG.Proof.AesGcm.AArch64
 

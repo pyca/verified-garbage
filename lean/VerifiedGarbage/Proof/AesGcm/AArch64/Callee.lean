@@ -417,6 +417,10 @@ structure GcmImpl where
   (`Impl/AesGcm/AArch64/Stitch.lean`), which need PMULL (`gh.pmull`) and
   `FEAT_SHA3` (`eor3`). -/
   stitch : Bool := false
+  /-- Whether `init` is the leaf of `Impl/AesGcm/AArch64/InitAese.lean`,
+  which computes the key schedule and the hash subkey with the AES
+  instructions itself rather than calling `key` and `ctr`. -/
+  aeseInit : Bool := false
 
 namespace GcmImpl
 
@@ -451,5 +455,7 @@ structure GcmVariant where
   gh : GhashName
   /-- `GcmImpl.stitch`. -/
   stitch : Bool := false
+  /-- `GcmImpl.aeseInit`. -/
+  aeseInit : Bool := false
 
 end VG.Proof.AesGcm.AArch64

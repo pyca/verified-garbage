@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+public import VerifiedGarbage.Proof.AesGcm.AArch64.InitImpl
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
@@ -134,6 +135,12 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
 
+/-- How `init` computes the key context. -/
+def initNote (v : GcmImpl) : List String :=
+  if v.aeseInit then ["This implementation computes the key schedule as `" ++ v.key.fn.name ++ "` does, \
+    and the hash subkey with the AES instructions, one round as soon as its round key is complete, \
+    without calls or stack."] else [note v]
+
 /-- How `seal` takes the records of TLS, for the implementations with PMULL. -/
 def fastNote (v : GcmImpl) : List String :=
   if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
@@ -159,10 +166,10 @@ def stitchNote (v : GcmImpl) : List String :=
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.initApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v]
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesGcm.AArch64.init v.callees)
-    stack := 2560
-    verified := init_framed v
+    notes := initNote v
+    code := initCode v
+    stack := initStack v
+    verified := initCode_verified v
     features := v.ctr.features },
   Spec.Gcm.sealApi.artifact AArch64.target {
     suffix := v.suffix

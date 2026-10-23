@@ -15,6 +15,6 @@ mode and GHASH eight blocks at a time (`GcmImpl.stitch`), which also need
 
 namespace VG.Variants.AesGcm.AArch64.AesSha3
 
-def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes, true⟩
+def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes, true, true⟩
 
 end VG.Variants.AesGcm.AArch64.AesSha3

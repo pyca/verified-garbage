@@ -279,20 +279,21 @@ end
 
 structure Pre (s₀ : State) : Prop where
   rd : s₀.rd = [keyR s₀]
-  wr : s₀.wr = [schR s₀, ⟨s₀.gpr .x3, 512⟩]
+  /-- The schedule is in a writable region (of at least 240 bytes). -/
+  wsch : ∃ L, 240 ≤ L ∧ (⟨schp s₀, L⟩ : Region) ∈ s₀.wr
   k_s : (keyR s₀).Disjoint (schR s₀)
   lens : klen s₀ = 16 ∨ klen s₀ = 24 ∨ klen s₀ = 32
 
 theorem pre_of {s₀ : State} (h : Proof.Aes.expandKeyAArch64.pre s₀) : Pre s₀ := by
   obtain ⟨h1, h2, h3, _, _, h6⟩ := h
-  exact ⟨h1, h2, h3, h6⟩
+  exact ⟨h1, ⟨240, Nat.le_refl _, by rw [h2]; simp⟩, h3, h6⟩
 
 /-- Words `0 … i − 1` are stored, and words `i − Nk … i − 1` are in their registers. -/
 structure KInv (s₀ : State) (nk i : Nat) (s : State) : Prop where
   x0 : s.gpr .x0 = kp s₀
   x2 : s.gpr .x2 = schp s₀
   v0 : s.v .v0 = 0
-  win : ∀ j < i, i ≤ j + nk → (s.gpr (wreg nk j)).setWidth 32 = Ws s₀ nk j
+  win : ∀ j < i, i ≤ j + nk → s.gpr (wreg nk j) = (Ws s₀ nk j).setWidth 64
   frame : Frame [schR s₀] s₀.mem s.mem
   good : Good s.mem (schp s₀) (Ws s₀ nk) i
   rd : s.rd = s₀.rd
@@ -343,17 +344,32 @@ theorem Fr.setV {gs : List Reg} {vs : List VReg} {s : State} {r : VReg} (hr : r 
 theorem write32 (s : State) (r : Reg) (v : BitVec 32) : ((s.write .w r v).gpr r).setWidth 32 = v := by
   simp [State.write]
 
+/-- A 32-bit write zeroes the upper half. -/
+theorem write_hi (s : State) (r : Reg) (v : BitVec 32) :
+    (s.write .w r v).gpr r = (((s.write .w r v).gpr r).setWidth 32).setWidth 64 := by
+  simp [State.write]
+
+theorem sw64 (v : BitVec 32) : (v.setWidth 64).setWidth 32 = v :=
+  BitVec.setWidth_setWidth_of_le _ (by decide)
+
+theorem KInv.win32 {s₀ : State} {nk i : Nat} {s : State} (h : KInv s₀ nk i s) {j : Nat} (h₁ : j < i)
+    (h₂ : i ≤ j + nk) : (s.gpr (wreg nk j)).setWidth 32 = Ws s₀ nk j := by
+  rw [h.win j h₁ h₂, sw64]
+
 theorem eor_ok (d n m : Reg) (s : State) :
     WP isa (.block [.logic .eor .w d n m]) s fun s' =>
-      (s'.gpr d).setWidth 32 = (s.gpr n).setWidth 32 ^^^ (s.gpr m).setWidth 32 ∧ Fr [d] [] s s' :=
+      (s'.gpr d).setWidth 32 = (s.gpr n).setWidth 32 ^^^ (s.gpr m).setWidth 32 ∧ Fr [d] [] s s' ∧
+        s'.gpr d = ((s'.gpr d).setWidth 32).setWidth 64 :=
   WP.of_runBlock ⟨s.write .w d (s.read .w n ^^^ s.read .w m), rfl, write32 _ _ _,
-    Fr.write (by simp) _⟩
+    Fr.write (by simp) _, write_hi _ _ _⟩
 
-theorem ror_ok (s : State) :
-    WP isa (.block [.ror .w .x9 .x9 8]) s fun s' =>
-      (s'.gpr .x9).setWidth 32 = ((s.gpr .x9).setWidth 32).rotateRight 8 ∧ Fr [.x9] [] s s' :=
-  WP.of_runBlock ⟨s.write .w .x9 ((s.read .w .x9).rotateRight 8), rfl, write32 _ _ _,
-    Fr.write (by simp) _⟩
+/-- `RotWord` and the round constant: `x9 ← w10 ⊕ (w9 ⋙ 8)`. -/
+theorem eorRor_ok (s : State) :
+    WP isa (.block [.logicRor .eor .w .x9 .x10 .x9 8]) s fun s' =>
+      (s'.gpr .x9).setWidth 32 = (s.gpr .x10).setWidth 32 ^^^ ((s.gpr .x9).setWidth 32).rotateRight 8 ∧
+        Fr [.x9] [] s s' :=
+  WP.of_runBlock ⟨s.write .w .x9 (s.read .w .x10 ^^^ (s.read .w .x9).rotateRight 8), rfl,
+    write32 _ _ _, Fr.write (by simp) _⟩
 
 theorem movz_ok (d : Reg) (imm : BitVec 16) (s : State) :
     WP isa (.block [.movz .w d imm 0]) s fun s' =>
@@ -381,21 +397,23 @@ theorem Pre.len_lt {s₀ : State} (_ : Pre s₀) : klen s₀ < 2 ^ 64 := (s₀.g
 /-- Storing word `i`, computed into its register. -/
 theorem store_ok {s₀ : State} (hp : Pre s₀) {nk i : Nat} (h8 : nk ≤ 8) (h0 : 0 < nk)
     (hi : 4 * i + 4 ≤ 240) {s s₁ : State} (hI : KInv s₀ nk i s)
-    (hf : Fr [wreg nk i, .x9, .x10] [.v1] s s₁) (hv : (s₁.gpr (wreg nk i)).setWidth 32 = Ws s₀ nk i) :
+    (hf : Fr [wreg nk i, .x9, .x10] [.v1] s s₁) (hv : (s₁.gpr (wreg nk i)).setWidth 32 = Ws s₀ nk i)
+    (hz : s₁.gpr (wreg nk i) = ((s₁.gpr (wreg nk i)).setWidth 32).setWidth 64) :
     WP isa (.block [.str .w (wreg nk i) .x2 (4 * i)]) s₁ (KInv s₀ nk (i + 1)) := by
   obtain ⟨n0, n2, n9, n10⟩ := wreg_ne h8 h0 i
   have g0 : s₁.gpr .x0 = kp s₀ := by rw [hf.gpr _ (by simp [Ne.symm n0]), hI.x0]
   have g2 : s₁.gpr .x2 = schp s₀ := by rw [hf.gpr _ (by simp [Ne.symm n2]), hI.x2]
   have hw : InRegions s₁.wr (s₁.gpr .x2 + BitVec.ofNat 64 (4 * i)) 4 :=
-    ⟨schR s₀, by rw [hf.wr, hI.wr, hp.wr]; simp, by rw [g2]; exact Offset.contains_base _ hi (by omega_arith)⟩
+    have ⟨L, hL, hm⟩ := hp.wsch
+    ⟨_, by rw [hf.wr, hI.wr]; exact hm, by rw [g2]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_str_w (by omega_arith) hw, runStep_some,
     runBlock_nil], ?_⟩
   rw [g2]
   refine ⟨g0, g2, by rw [show _ = s₁.v .v0 from rfl, hf.v _ (by simp)]; exact hI.v0,
     fun j hj1 hj2 => ?_, ?_, ?_, hf.rd.trans hI.rd, hf.wr.trans hI.wr⟩
-  · show (s₁.gpr (wreg nk j)).setWidth 32 = _
+  · show s₁.gpr (wreg nk j) = _
     by_cases hj : j = i
-    · subst hj; exact hv
+    · subst hj; rw [hz, hv]
     · obtain ⟨m0, m2, m9, m10⟩ := wreg_ne h8 h0 j
       rw [hf.gpr _ (by simp [wreg_inj h8 (show j < i by omega_arith) (by omega_arith), m9, m10])]
       exact hI.win j (by omega_arith) (by omega_arith)
@@ -418,7 +436,7 @@ theorem word_ok {s₀ : State} (hp : Pre s₀) {nk : Nat} (hnk : nk = 4 ∨ nk =
   have h8 : nk ≤ 8 := by omega_arith
   have h0 : 0 < nk := by omega_arith
   have h240 : 4 * i + 4 ≤ 240 := by omega_arith
-  have st := fun {s₁} hf hv => store_ok hp h8 h0 h240 (s₁ := s₁) hI hf hv
+  have st := fun {s₁} hf hv hz => store_ok hp h8 h0 h240 (s₁ := s₁) hI hf hv hz
   obtain ⟨n0, n2, n9, n10⟩ := wreg_ne h8 h0 i
   simp only [word]
   by_cases hk : i < nk
@@ -428,40 +446,40 @@ theorem word_ok {s₀ : State} (hp : Pre s₀) {nk : Nat} (hnk : nk = 4 ∨ nk =
       ⟨keyR s₀, by rw [hI.rd, hp.rd]; simp, by
         rw [hI.x0]; exact Offset.contains_base _ (by omega_arith) (by have := hp.len_lt; omega_arith)⟩
     refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_ldr_w (by omega_arith) hin, runStep_some,
-      runBlock_nil], st (Fr.write (by simp) _) ?_⟩
+      runBlock_nil], st (Fr.write (by simp) _) ?_ (write_hi _ _ _)⟩
     rw [write32, hI.x0, key_frame hp hI.frame (by omega_arith)]
     exact (W_lt hk).symm
   -- The other words: `w[i − Nk] ⊕ temp`, where `w[i − Nk]` is.
   rw [ite_eq_right hk]
   have hr : wreg nk i = wreg nk (i - nk) := wreg_mod (by omega_arith)
   have hA : (s.gpr (wreg nk i)).setWidth 32 = Ws s₀ nk (i - nk) := by
-    rw [hr]; exact hI.win _ (by omega_arith) (by omega_arith)
-  have hP : (s.gpr (wreg nk (i - 1))).setWidth 32 = Ws s₀ nk (i - 1) := hI.win _ (by omega_arith) (by omega_arith)
+    rw [hr]; exact hI.win32 (by omega_arith) (by omega_arith)
+  have hP : (s.gpr (wreg nk (i - 1))).setWidth 32 = Ws s₀ nk (i - 1) :=
+    hI.win32 (by omega_arith) (by omega_arith)
   have hW : Ws s₀ nk i = Ws s₀ nk (i - nk) ^^^ temp32 nk i (Ws s₀ nk (i - 1)) := W_ge h0 (by omega_arith)
   by_cases h1 : i % nk = 0
   · rw [ite_eq_left h1, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (subW_ok _ s hI.v0) fun s₁ ⟨e₁, f₁⟩ => ?_
-    refine wp_cons _ (ror_ok s₁) fun s₂ ⟨e₂, f₂⟩ => ?_
-    refine wp_cons _ (movz_ok .x10 _ s₂) fun s₃ ⟨e₃, f₃⟩ => ?_
-    refine wp_cons _ (eor_ok .x9 .x9 .x10 s₃) fun s₄ ⟨e₄, f₄⟩ => ?_
-    refine WP.mono (eor_ok _ _ .x9 s₄) fun s₅ ⟨e₅, f₅⟩ => ?_
+    refine wp_cons _ (movz_ok .x10 _ s₁) fun s₃ ⟨e₃, f₃⟩ => ?_
+    refine wp_cons _ (eorRor_ok s₃) fun s₄ ⟨e₄, f₄⟩ => ?_
+    refine WP.mono (eor_ok _ _ .x9 s₄) fun s₅ ⟨e₅, f₅, z₅⟩ => ?_
     have f : Fr [wreg nk i, .x9, .x10] [.v1] s s₅ :=
-      (((f₁.mono (by simp) (by simp)).trans (f₂.mono (by simp) (by simp))).trans
+      ((f₁.mono (by simp) (by simp)).trans
         ((f₃.mono (by simp) (by simp)).trans (f₄.mono (by simp) (by simp)))).trans
         (f₅.mono (by simp) (by simp))
-    refine st f ?_
-    rw [e₅, e₄, e₃, f₃.gpr .x9 (by simp), e₂, e₁, f₄.gpr _ (by simp [n9]), f₃.gpr _ (by simp [n10]),
-      f₂.gpr _ (by simp [n9]), f₁.gpr _ (by simp [n9]), hA, hW, temp32, ite_eq_left h1, hP,
-      BitVec.setWidth_setWidth (by omega_arith)]
+    refine st f ?_ z₅
+    rw [e₅, e₄, e₃, f₃.gpr .x9 (by simp), e₁, f₄.gpr _ (by simp [n9]), f₃.gpr _ (by simp [n10]),
+      f₁.gpr _ (by simp [n9]), hA, hW, temp32, ite_eq_left h1, hP,
+      BitVec.setWidth_setWidth (by omega_arith), BitVec.xor_comm ((rc (i / nk)).setWidth 32)]
   by_cases h2 : nk > 6 ∧ i % nk = 4
   · rw [ite_eq_right h1, ite_eq_left h2, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (subW_ok _ s hI.v0) fun s₁ ⟨e₁, f₁⟩ => ?_
-    refine WP.mono (eor_ok _ _ .x9 s₁) fun s₂ ⟨e₂, f₂⟩ => ?_
-    refine st ((f₁.mono (by simp) (by simp)).trans (f₂.mono (by simp) (by simp))) ?_
+    refine WP.mono (eor_ok _ _ .x9 s₁) fun s₂ ⟨e₂, f₂, z₂⟩ => ?_
+    refine st ((f₁.mono (by simp) (by simp)).trans (f₂.mono (by simp) (by simp))) ?_ z₂
     rw [e₂, e₁, f₁.gpr _ (by simp [n9]), hA, hW, temp32, ite_eq_right h1, ite_eq_left h2, hP]
   · rw [ite_eq_right h1, ite_eq_right h2, WP.block_append_iff]
-    refine WP.mono (eor_ok _ _ _ s) fun s₁ ⟨e₁, f₁⟩ => ?_
-    refine st (f₁.mono (by simp) (by simp)) ?_
+    refine WP.mono (eor_ok _ _ _ s) fun s₁ ⟨e₁, f₁, z₁⟩ => ?_
+    refine st (f₁.mono (by simp) (by simp)) ?_ z₁
     rw [e₁, hA, hP, hW, temp32, ite_eq_right h1, ite_eq_right h2]
 
 /-! ## The whole function -/
