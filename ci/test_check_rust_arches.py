@@ -13,7 +13,7 @@ import rust_arches
 
 CI = Path(__file__).resolve().parent
 WORKFLOW = CI.parent / ".github/workflows/ci.yml"
-ALL = ["aarch64", "arm", "x86", "x86_64"]
+ALL = ["aarch64", "arm", "powerpc64", "x86", "x86_64"]
 MATRIX = tomllib.loads((CI / "rust_matrix.toml").read_text())
 
 # The jobs that run or check the Rust tests.
@@ -33,6 +33,7 @@ class Arches(unittest.TestCase):
     def test_one_architecture(self):
         self.assertEqual(rust_arches.arches(["src/asm/x86_64/md5.rs"]), ["x86_64"])
         self.assertEqual(rust_arches.arches(["src/asm/x86/md5.rs"]), ["x86"])
+        self.assertEqual(rust_arches.arches(["src/asm/powerpc64le/sha256.rs"]), ["powerpc64"])
         self.assertEqual(
             rust_arches.arches(["src/asm/arm/md5.rs", "src/asm/aarch64/sha256.rs", "lean/X.lean"]),
             ["aarch64", "arm"],
@@ -133,7 +134,7 @@ class Output(unittest.TestCase):
         self.assertEqual((out["thumb"], out["cpu"]), ([], []))
         # The stable Linux entries of every architecture, linting only.
         self.assertEqual([e["name"] for e in out["rust"]],
-                         ["Linux, x86-64", "Linux, x86", "Linux, AArch64", "Linux, ARMv7"])
+                         ["Linux, x86-64", "Linux, x86", "Linux, AArch64", "Linux, ARMv7", "Linux, PPC64LE"])
         for e in out["rust"]:
             self.assertEqual((e["rust"], e["tests"], e["bench_only"]), ("stable", False, True))
         self.assertEqual({e["arch"] for e in out["rust"]}, set(ALL))
@@ -146,7 +147,7 @@ class Output(unittest.TestCase):
         self.assertEqual([e["name"] for e in tested], ["Linux, ARMv7"])
         self.assertTrue(all("bench_only" not in e for e in tested))
         # ARMv7's own entry lints the benchmarks already.
-        self.assertEqual(sorted(e["arch"] for e in linted), ["aarch64", "x86", "x86_64"])
+        self.assertEqual(sorted(e["arch"] for e in linted), ["aarch64", "powerpc64", "x86", "x86_64"])
         self.assertTrue(all(e["bench_only"] for e in linted))
 
     def test_benchmarks_with_every_architecture(self):
@@ -205,6 +206,16 @@ class Workflow(unittest.TestCase):
         for entry in matrix["cpu"]:
             self.assertIn(entry.get("arch", "x86_64"), ALL)
         self.assertEqual(sorted(e["arch"] for e in matrix["check"]), ALL)
+
+    def test_rust_checkout_has_the_targets_functions(self):
+        # The `rust` job checks out only `src/asm/<asm or arch>/`: that must
+        # be the target directory whose architecture the entry tests.
+        matrix = tomllib.loads((CI / "rust_matrix.toml").read_text())
+        for entry in matrix["rust"]:
+            with self.subTest(entry=entry["name"]):
+                target = entry.get("asm", entry["arch"])
+                self.assertEqual(rust_arches.ARCHES.get(target), entry["arch"])
+        self.assertIn("/src/asm/${{ matrix.asm || matrix.arch }}/", job("rust"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

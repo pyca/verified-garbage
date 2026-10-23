@@ -21,9 +21,9 @@ Then, with Montgomery multiplication `mul` (`[o] = [a] [b] R⁻¹ mod n`):
   1 and `-1`).
 * For the candidates `g = 2, 3, …`, until one gives the factors or 100 are
   tried (`candLoop`, whose number of iterations is the number of tries,
-  which the contract lets leak): `y = g^r` by a square and a multiplication
-  per bit of `r` (all `64 Bw` of them), the multiplicand `g` or 1 chosen by
-  a mask (`expLoop`); then `64 Bw` squarings under masks that stop at
+  which the contract lets leak): `y = g^r` by fixed two-bit windows over
+  all `64 Bw` bits, using two squares and one multiplication per window
+  and a masked four-entry table (`windowExp`); then `64 Bw` squarings under masks that stop at
   `y² = 1` (found), at `y² = -1` or after `t` of them (not found)
   (`sqBody`).
 * `p = gcd(y - 1, n)` by `inverse`, `q = n / p` by `divmod`, the larger
@@ -221,6 +221,48 @@ of `r`, most significant first. -/
 def expLoop : Prog isa :=
   .seq (.block expInit) (.loop (.seq (.block wordHead) (.seq (.loop (bitBody mul) .ne) (.block wordNext))) .ne)
 
+/-! ## Two-bit windows
+
+The exponent and Montgomery constants stay in their original arrays.
+Arrays 8 and 9, no longer needed after `d e` has been computed, hold the
+second and third powers of the candidate. Every selection reads all four
+powers at fixed addresses; neither the digits nor their leading zeros
+change the number of operations.
+-/
+
+/-- Prepare `G²` and `G³` in the former exponent input arrays. -/
+def windowPowers : Prog isa :=
+  seqs [copyA aXm aG, copyA aY aG, mul aY aY aY, copyA aE aY,
+    mul aY aY aXm, copyA aD aY, copyA aY aO]
+
+/-- Replace `Xm` by power `j` in array `a` if the next digit equals `j`. -/
+def windowPick (a j : Nat) : Prog isa :=
+  .seq (.block (ws ++ base aXm .r8 ++ base a .rsi ++
+    ([.mov .rax (.mem (hdr sC2)), .shift .shr .rax 62,
+      .alu .xor .rax (.imm (BitVec.ofNat 32 j)), .alu .cmp .rax (.imm 1),
+      .alu .sbb .rbp (.reg .rbp), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] : List Instr)))
+    (wordLoop 0 selBody)
+
+/-- Read the four powers, selecting the next two-bit digit by masks. -/
+def windowSelect : Prog isa :=
+  seqs [copyA aXm aO, windowPick aG 1, windowPick aE 2, windowPick aD 3]
+
+/-- Consume two bits, and finish the word after 32 windows. -/
+def windowNext : List Instr :=
+  [.mov .rax (.mem (hdr sC2)), .shift .shl .rax 2, .store (hdr sC2) .rax,
+    .mov .rax (.mem (hdr sC3)), .alu .sub .rax (.imm 2), .store (hdr sC3) .rax]
+
+/-- Two squares and one multiplication, for every two exponent bits. -/
+def windowBody : Prog isa :=
+  seqs [windowSelect, mul aY aY aY, mul aY aY aY, mul aY aY aXm, .block windowNext]
+
+/-- The same padded exponent as `expLoop`, in fixed two-bit windows. -/
+def windowLoop : Prog isa :=
+  .seq (.block expInit) (.loop (.seq (.block wordHead) (.seq (.loop (windowBody mul) .ne) (.block wordNext))) .ne)
+
+/-- Constant-time exponentiation with a four-entry table in the existing workspace. -/
+def windowExp : Prog isa := .seq (windowPowers mul) (windowLoop mul)
+
 /-- The mask of `rbp = 0` into a header slot. -/
 def eqStore (slot : Nat) : List Instr := [.alu .cmp .rbp (.imm 1), .alu .sbb .rax (.reg .rax), .store (hdr slot) .rax]
 
@@ -271,7 +313,7 @@ def candNext : List Instr :=
 /-- A candidate: `g R mod n`, `Y = g^r R mod n`, the check of `y = ±1`,
 and the squarings. -/
 def candBody : Prog isa :=
-  seqs ([.block gBlk, setWord aX .rcx, mul aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop mul] ++ eqA aY aO ++
+  seqs ([.block gBlk, setWord aX .rcx, mul aXm aX aR2, copyA aG aXm, copyA aY aO, windowExp mul] ++ eqA aY aO ++
     [.block (eqStore sC2)] ++ eqA aY aNg ++ [.block chkBlk, .loop (sqBody mul) .ne, .block candNext])
 
 /-- The candidates, from `sCand = 0`. -/

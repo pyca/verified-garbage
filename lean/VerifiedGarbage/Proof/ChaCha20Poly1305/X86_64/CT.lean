@@ -4126,27 +4126,29 @@ theorem _root_.VG.Region.Disjoint.dsymm {r₁ r₂ : Region} (h : r₁.Disjoint 
 
 /-- That two of the regions the parts use are disjoint: parts of the context
 at different offsets, the stack below the return address, and the data.
-(Matching only reducibly, so that a lemma that does not apply fails fast.) -/
+(Match conclusions reducibly before proving arithmetic side conditions, so
+that a lemma that does not apply fails before running `lit_omega`.) -/
 tactic_template "rdisj" : tactic => `(tactic| first
-  | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
-  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).dsymm
-  | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)
-  | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_d.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | (with_reducible refine sub_disj _ ?_ ?_ ?_ <;> lit_omega)
+  | (with_reducible refine (APre.stk_sub ‹APre _ _› ?_).dsymm <;> lit_omega)
+  | (with_reducible refine APre.stk_sub ‹APre _ _› ?_ <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_d.sub_left (sub_ctx _ ?_) <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_d.dsymm.sub_right (sub_ctx _ ?_) <;> lit_omega)
   | with_reducible exact (APre.stk_d' ‹APre _ _›).dsymm
-  | with_reducible exact (‹APre _ _›).c_a.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | (with_reducible refine (‹APre _ _›).c_a.dsymm.sub_right (sub_ctx _ ?_) <;> lit_omega)
   | with_reducible exact (APre.stk_a' ‹APre _ _›).dsymm
   | with_reducible exact (‹APre _ _›).a_d
-  | with_reducible exact (‹APre _ _›).ret_c.sub_right (sub_ctx _ (by lit_omega))
+  | (with_reducible refine (‹APre _ _›).ret_c.sub_right (sub_ctx _ ?_) <;> lit_omega)
   | with_reducible exact (‹APre _ _›).ret_d
   | with_reducible exact (‹APre _ _›).ret_t
-  | with_reducible exact (‹APre _ _›).c_t.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_t.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | (with_reducible refine (‹APre _ _›).c_t.sub_left (sub_ctx _ ?_) <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_t.dsymm.sub_right (sub_ctx _ ?_) <;> lit_omega)
   | with_reducible exact (‹APre _ _›).d_t
   | with_reducible exact (‹APre _ _›).d_t.dsymm
   | with_reducible exact APre.stk_t' ‹APre _ _›
   | with_reducible exact (APre.stk_t' ‹APre _ _›).dsymm
   | with_reducible exact ret_stk _)
+
 
 /-- A region is disjoint from each of a list of regions. -/
 tactic_template "rdisj_all" : tactic => `(tactic| (

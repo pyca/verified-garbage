@@ -412,9 +412,11 @@ def shortFnR (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.p
 
 /-! ## The `_prepared16` artifacts
 
-The 256-bit interleaved loops (`StitchName.vaes`) read only the first eight
-pairs of a prepared key context (`StitchR.stitchR_okN 8`); `stitchR16` and
-`stitchToR16` give them, with that proof, for the variants that name them,
+The 256-bit interleaved loops (`StitchName.vaes`) and the 128-bit ones
+(`StitchName.aesniAvx`, which read `H'⁹`–`H'¹⁵`) read only the first eight
+pairs of a prepared key context (`StitchR.stitchR_okN 8`,
+`StitchAvx8.stitchR_okN 8`); `stitchR16` and `stitchToR16` give them, with
+that proof, for the variants that name them,
 and `blkR16`, …, `shortFnR16` the instances of the functions their callers
 call, as `blkR`, …, `shortFnR` do for the 48 powers. -/
 
@@ -424,54 +426,67 @@ open Gcm.X86_64.Stitch (CtxMode)
 
 open Gcm.X86_64.Stitch (CtxMode)
 
-/-- The 256-bit loops, for a key context with the first 16 prepared powers. -/
-theorem StitchName.okR16 : (n : StitchName) → n = .vaes →
+/-- Whether a variant's interleaved loops read only the first 16 prepared
+powers: the 256-bit and the 128-bit ones. -/
+def StitchName.reads16 : StitchName → Bool
+  | .vaes => true
+  | .vaesAvx512 => false
+  | .aesniAvx => true
+
+/-- The loops that read only the first 16 powers, for a key context holding
+them. -/
+theorem StitchName.okR16 : (n : StitchName) → n.reads16 = true →
     Proof.Gcm.X86_64.Stitch.StitchOkM CtxMode.prepared16 n.encR n.decR
       (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16)
   | .vaes, _ => (Proof.Gcm.X86_64.StitchR.stitchR_okN 8).weaken (by decide) (by decide)
   | .vaesAvx512, h => by cases h
-  | .aesniAvx, h => by cases h
+  | .aesniAvx, _ => Proof.Gcm.X86_64.StitchAvx8.stitchR_okN 8
 
 /-- `okR16`'s loops on fewer than 16 blocks. -/
-theorem StitchName.okRS16 : (n : StitchName) → n = .vaes →
+theorem StitchName.okRS16 : (n : StitchName) → n.reads16 = true →
     Proof.Gcm.X86_64.Stitch.StitchOkSmall CtxMode.prepared16 n.encRS n.decRS
       (if n.smallR then 1 else 16) (if n.smallR then 1 else 16)
   | .vaes, _ => (Proof.Gcm.X86_64.StitchR.stitchR_okN 8).small
   | .vaesAvx512, h => by cases h
-  | .aesniAvx, h => by cases h
+  | .aesniAvx, _ => Proof.Gcm.X86_64.StitchAvx8.stitchRS_okN 8
 
-/-- The 256-bit loops of a variant naming them, for a key context of
-`vg_aes_gcm_prepare16`. -/
+/-- The loops of a variant naming ones that read only the first 16 powers,
+for a key context of `vg_aes_gcm_prepare16`. -/
 def GcmVariant.stitchR16 (v : GcmVariant) : Option (StitchCode CtxMode.prepared16 true) :=
-  v.stitch.bind fun p => match h : p.name with
-    | .vaes => p.pieceR.map fun q =>
+  v.stitch.bind fun p => if h : p.name.reads16 = true then p.pieceR.map fun q =>
       ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.smallR, p.name.smallR, p.name.small4R,
         p.name.encRS, p.name.decRS, p.name.okR16 h, p.name.okRS16 h, q.enc, q.dec,
         (p.name.pieceRS q).1, (p.name.pieceRS q).2⟩
-    | _ => none
+    else none
 
-/-- The 256-bit out-of-place loop, for a key context with the first 16
-prepared powers. -/
-theorem StitchToName.okR16 : (n : StitchToName) → n = .vaes →
+/-- Whether an out-of-place loop reads only the first 16 prepared powers. -/
+def StitchToName.reads16 : StitchToName → Bool
+  | .vaes => true
+  | .vaesAvx512 => false
+  | .aesniAvx => true
+
+/-- The out-of-place loops that read only the first 16 powers, for a key
+context holding them. -/
+theorem StitchToName.okR16 : (n : StitchToName) → n.reads16 = true →
     Proof.Gcm.X86_64.Stitch.StitchToOkM CtxMode.prepared16 n.encR (if n.fullR then 1 else 16)
   | .vaes, _ => Proof.Gcm.X86_64.StitchR.stitchTo_okN 8
   | .vaesAvx512, h => by cases h
-  | .aesniAvx, h => by cases h
+  | .aesniAvx, _ => Proof.Gcm.X86_64.StitchAvx8.stitchToR_okN 8
 
 def GcmVariant.stitchToR16 (v : GcmVariant) : Option (StitchToCode CtxMode.prepared16 true) :=
-  (v.stitch.bind (·.toPart)).bind fun p => match h : p.name with
-    | .vaes => p.pieceR.map fun q => ⟨p.name.encR, p.name.fullR, p.name.okR16 h, q.enc⟩
-    | _ => none
+  (v.stitch.bind (·.toPart)).bind fun p => if h : p.name.reads16 = true then
+      p.pieceR.map fun q => ⟨p.name.encR, p.name.fullR, p.name.okR16 h, q.enc⟩
+    else none
 
-/-- What the `_prepared16` instances of a variant need besides its 256-bit
-loops: no short path, whose table of powers is copied from all 48, and no
+/-- What the `_prepared16` instances of a variant need besides loops that
+read only the first 16 powers: no short path, whose table of powers is copied from all 48, and no
 one-pass loop that reads more than 16 (`StitchZHTo.encN`). -/
 structure R16 (v : GcmVariant) : Prop where
   short : v.impl.short = false
   onePass : ∀ n, v.impl.onePass = some n → n ≠ .z
 
 /-- Whether a variant's prepared instances read only the first 16 powers:
-its loops are the 256-bit ones (`stitchR16`), and `R16` holds. -/
+its loops read no other (`stitchR16`), and `R16` holds. -/
 def GcmVariant.r16 (v : GcmVariant) : Option (PLift (R16 v)) :=
   if h : v.stitchR16.isSome = true ∧ v.impl.short = false ∧ v.impl.onePass ≠ some .z then
     some ⟨⟨h.2.1, fun _ hn hz => h.2.2 (hz ▸ hn)⟩⟩

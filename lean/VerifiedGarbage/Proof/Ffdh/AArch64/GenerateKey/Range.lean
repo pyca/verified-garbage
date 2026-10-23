@@ -26,7 +26,6 @@ open VG.Impl.Rsa.AArch64.Crt (leave)
 open VG.Impl.Ffdh.AArch64.Domain
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Bignum.AArch64.WindowFive VG.Proof.Bignum.CrtWindowFive
 open VG.Proof.Ffdh
-open VG.Proof.Ffdh.AArch64.CheckPrivate (bit_iff)
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
 /-- The scalar is the attempt's. -/

@@ -34,8 +34,8 @@ theorem kstep {s₀ t : State} {c : Prog isa} {P Q : State → Prop} (hk : KX s�
 
 theorem main_eq (W : Window) (M : Mont) (S : Selector) :
     Exchange.main W.code S.code M.mm = seqs ((([.block head] : List (Prog isa)) ++ pSetup) ++ (r2Steps M.mm ++
-      (pow W.code S.code M.mm sY sK sX sXl ++ (range aY ++ ([.block finBlk, storeBE, .block [ldh .x0 sF]] : List (Prog isa)))))) := by
-  simp only [Exchange.main, List.append_assoc]
+      (pow W.code S.code M.mm sY sK sX sXl ++ (OutMask.outMask ++ ([.block [ldh .x0 sF]] : List (Prog isa)))))) :=
+  rfl
 
 /-- The public data of a state. -/
 def exOf (s : State) : ExP :=
@@ -86,10 +86,8 @@ theorem ex_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : exCon
   refine wp_seqs_append (by simp [pSetup]) (by simp [r2Steps]) (kstep k₂ (ce_in _ _ ce he) fun t₃ h₃ k₃ => ?_)
   refine wp_seqs_append (by simp [r2Steps]) (by simp [pow]) (kstep k₃ (x1_x2 M p xb t₃ ⟨h₃, (cr_dst p xb s hCR).keep k₃,
     hok⟩) fun t₄ h₄ k₄ => ?_)
-  refine wp_seqs_append (by simp [pow]) (by simp [range]) (kstep k₄ (x2_x3 W M S p xb t₄ h₄) fun t₅ h₅ k₅ => ?_)
-  refine wp_seqs_append (by simp [range]) (by simp) (kstep k₅ (x3_x4 p xb t₅ h₅) fun t₆ h₆ k₆ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₆ (x4_x5 p xb t₆ h₆) fun t₇ h₇ k₇ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₇ (x5_x6 p xb t₇ h₇) fun t₈ h₈ k₈ => ?_)
+  refine wp_seqs_append (by simp [pow]) (by simp) (kstep k₄ (x2_x3 W M S p xb t₄ h₄) fun t₅ h₅ k₅ => ?_)
+  refine wp_seqs_append (by simp [range]) (by simp) (kstep k₅ (x3_x6 p xb t₅ h₅) fun t₈ h₈ k₈ => ?_)
   rw [seqs_one]
   refine kstep k₈ (x6_x7 p xb t₈ h₈) fun t ⟨hbytes, h0⟩ k => ⟨abiPreserved_of_keep k, fun hv hpv => ?_⟩
   -- The value written.

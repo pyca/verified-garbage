@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Tail
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Stages
+import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
@@ -84,7 +84,7 @@ theorem t11_t12 (p : GkP) (rb : List Byte) (t : State) (h : T11 p rb t) :
   have hxl := xo_length p rb hb.bl_lt ho
   refine WP.mono (mBlk_ok hO.x0 hF (hO.ld (by decide))) fun u ⟨⟨h15, hm⟩, k⟩ =>
     ⟨⟨hz.out (by rw [hm]; exact Outside.refl _ _ _ _) k.wr (k.gpr .x0 (by decide)), by rw [hm]; exact hF,
-      by rw [h15, Exchange.bit_mask], fun i hi => ?_, fun i hi => ?_, ho, hpv⟩, k.mono (by decide)⟩
+      by rw [h15, bit_mask], fun i hi => ?_, fun i hi => ?_, ho, hpv⟩, k.mono (by decide)⟩
   · rw [hm, hx.val i (by rw [hxl]; exact hi)]
     simp only [↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [hxl]; exact hi),
       Option.getD_some]
@@ -137,14 +137,6 @@ theorem t13_t14 (p : GkP) (rb : List Byte) (t : State) (h : T13 p rb t) (hd : Ds
     fun i hi => ?_, fun i hi => ?_, ho, hpv⟩, k.mono (by decide)⟩
   · rw [hfr _ fun j hj => ne_of_disj gXY nX nY hi hj]; exact hX i hi
   · rw [hb i hi, hY i hi]; simp only [↓reduceIte]
-
-/-- The status from the flag. -/
-theorem fBlk_ok {t : State} {B : Addr} {f : BitVec 64} (h0 : t.gpr .x0 = B) (hF : word t.mem B (8 * sF) = f)
-    (hl : InRegions (t.rd ++ t.wr) (off B (8 * sF)) 8) :
-    WP isa (.block [ldh .x9 sF, movi .x0 3, .lsl .x .x9 .x9 1, .sub .x .x0 .x0 .x9]) t fun u =>
-      (u.gpr .x0 = BitVec.ofNat 64 3 - (f <<< 1) ∧ u.mem = t.mem) ∧ Keep [.x0, .x9] t u :=
-  WP.keep _ (by brun [h0, hdr_enc (show sF < 32 by decide), hl, hF]; rfl) (by decide) (by decide)
-    (by decide +kernel)
 
 /-- Zeros to x and y, and `r` returned. -/
 theorem fail_ok (p : GkP) (rb : List Byte) {r : Nat} (hr : r < 65536) (t : State) (hz : Fz p t) (hd : Dst p t)

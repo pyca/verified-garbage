@@ -7,8 +7,8 @@ public import VerifiedGarbage.TCB.Mem
 
 **Trusted.** Register, memory and flag definitions of the 32-bit x86 model,
 with legacy SSE's eight 128-bit XMM registers (Intel SDM Vol. 1 §10.2.1),
-all caller-saved in the System V i386 ABI, and the eight 64-bit MMX
-registers (SDM Vol. 1 §9.2.2).
+all caller-saved in the System V i386 ABI, the eight 64-bit MMX
+registers (SDM Vol. 1 §9.2.2), and MXCSR (SDM Vol. 1 §10.2.3).
 -/
 
 @[expose] public section
@@ -43,6 +43,13 @@ structure State where
   /-- Whether the code is inside an MMX frame (`Instr.mmxEnter` … `emms`,
   see `TCB/X86/Isa.lean`): the x87 registers hold MMX values. -/
   mmx : Bool := false
+  /-- MXCSR (SDM Vol. 1 §10.2.3) outside MCDT frames (`Instr.mcdtEnter` …
+  `mcdtLeave`, see `TCB/X86/Isa.lean`): inside one MXCSR holds `0x1FBF`,
+  and the outermost frame's pop restores this value. No instruction changes
+  it. -/
+  mxcsr : BitVec 32 := 0x1F80
+  /-- How many MCDT frames are open. -/
+  mcdt : Nat := 0
   mem : Mem
   /-- Regions the code may read (in addition to `wr`). -/
   rd : List Region

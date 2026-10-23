@@ -592,8 +592,8 @@ theorem setupGRS_ok (t : State)
   · rw [o₃.wr, o₁₂.wr]
 
 /-- What a prepared key context holds at `prepOff n`. -/
-theorem prep_val {m : Mem} {p : Addr} (hp : Spec.Gcm.PreparedPowersRepr m p) {n : Nat} (h1 : 1 ≤ n)
-    (h8 : n ≤ 15) : m.readW (p + BitVec.ofNat 64 (prepOff n)) 128 = hInvF (hpow (Spec.Gcm.ctxH m p) n) := by
+theorem prep_val {np : Nat} {m : Mem} {p : Addr} (hp : Stitch.PowersN np m p) (hnp : 8 ≤ np)
+    {n : Nat} (h1 : 1 ≤ n) (h8 : n ≤ 15) : m.readW (p + BitVec.ofNat 64 (prepOff n)) 128 = hInvF (hpow (Spec.Gcm.ctxH m p) n) := by
   by_cases he : n % 2 = 0
   · have h := StitchZR.pair_values hp (j := n - 1) (l := 0) (by omega) (by omega) (by decide)
     rw [show prepOff n = 240 + 16 * (n - 1) + 16 * 0 by simp only [prepOff, he, ite_true]; omega, h]
@@ -607,7 +607,7 @@ theorem x_φ_hInvF (H : Block) (n : Nat) : x * φ (hInvF (hpow H n)) = φ H ^ n 
   rw [hInvF, Pclmul.x_φ_hInv, φ_hpow]
 
 /-- `setupGR` leaves what `setupG` does, from a prepared key context. -/
-theorem setupGR_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) : WP isa (.block setupGR) s₀ (GPost s₀) := by
+theorem setupGR_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (hnp : 8 ≤ np) : WP isa (.block setupGR) s₀ (GPost s₀) := by
   have hin : ∀ i < 8, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((prepOff (i + 1) : Nat) : Int)) 16 :=
     fun i hi => by
       rw [BitVec.ofInt_natCast]
@@ -617,22 +617,22 @@ theorem setupGR_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) : WP is
   change x * φ ((t.proj 0).xmm (preg i)) = _
   rw [hl i hi, BitVec.ofInt_natCast]
   change x * φ (s₀.mem.readW (kp s₀ + BitVec.ofNat 64 (prepOff (i + 1))) 128) = _
-  rw [prep_val hp.pow (by omega) (by omega), x_φ_hInvF]
+  rw [prep_val hp.pow hnp (by omega) (by omega), x_φ_hInvF]
   rfl
 
 theorem setupR_split : setupR = setupGR ++ lows 8 ++ (setupC ++ metaCode ++ counterHead) ++ counterTail := by
   simp only [setupR, initCounter, metaCode, counterHead, counterTail, List.append_assoc,
     List.cons_append, List.nil_append]
 
-theorem setupR_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
+theorem setupR_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (hnp : 8 ≤ np) :
     WP isa (.block setupR) s₀ fun s => ∃ P : Nat → Block,
       Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k) := by
   rw [setupR_split]
-  exact setupWith_ok hp.base (setupGR_ok hp)
+  exact setupWith_ok hp.base (setupGR_ok hp hnp)
 
 /-- The powers `smallPow` of a prepared key context: the setup's up to
 `H'⁸`, the key context's above it. -/
-theorem smallLaw {s₀ : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo)
+theorem smallLaw {s₀ : State} {lo np : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo np) (hnp : 8 ≤ np)
     (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) : SmallLaw s₀ P := by
   intro r hr1 hr15 X y
   refine accLaw hr1 (fun j hj => ?_) X y
@@ -641,12 +641,13 @@ theorem smallLaw {s₀ : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrepare
     have := hP (8 - (r - j)) (by omega)
     rwa [show 8 - (8 - (r - j)) = r - j by omega] at this
   · simp only [smallPow, h8, ↓reduceIte]
-    rw [prep_val hp.pow (by omega) (by omega), x_φ_hInvF]
+    rw [prep_val hp.pow hnp (by omega) (by omega), x_φ_hInvF]
     rfl
 
 /-- Encryption with a prepared key context, of any number of blocks from 16 on. -/
-theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa encR s₀ (EPost s₀) := by
-  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
+theorem encR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 16 np) (hnp : 8 ≤ np) :
+    WP isa encR s₀ (EPost s₀) := by
+  refine dispatch_ok hp.base (setupR_ok hp hnp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
     have hw := encRest_ok hp.base (hR.rax ht) hP
@@ -654,40 +655,50 @@ theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa encR s₀ (EPos
     exact hw
 
 /-- Decryption with a prepared key context, of any number of blocks from 16 on. -/
-theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem decR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 16 np) (hnp : 8 ≤ np) :
     WP isa decR s₀ (DPost s₀) := by
-  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
+  refine dispatch_ok hp.base (setupR_ok hp hnp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
     have hw := decRest_ok hp.base (rem := true) (fun h => Bool.noConfusion h) (hR.rax ht) hP
     rw [hn] at hw
     exact hw
 
-theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 1 :=
-  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
+/-- Both in-place loops, for a prepared key context holding at least its
+first 8 pairs (they read `H'⁹`–`H'¹⁵` from it). -/
+theorem stitchR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) :
+    StitchOkM (CtxMode.preparedN np hn) encR decR 1 1 :=
+  ⟨fun _ hp _ => encR_ok hp.toPrepared hn.1, fun _ hp _ => decR_ok hp.toPrepared hn.1⟩
+
+theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 1 := stitchR_okN 24
 
 /-- Encryption with a prepared key context, of 1 to 15 blocks. -/
-theorem encRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) (h16 : nb s₀ < 16) :
-    WP isa encRS s₀ (EPost s₀) := by
-  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
+theorem encRS_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (hnp : 8 ≤ np) (h1 : 1 ≤ nb s₀)
+    (h16 : nb s₀ < 16) : WP isa encRS s₀ (EPost s₀) := by
+  refine dispatch_ok hp.base (setupR_ok hp hnp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
-    have hw := smallE_ok hp (smallLaw hp hP) (hR.rax ht) h1 h16
+    have hw := smallE_ok hp (smallLaw hp hnp hP) (hR.rax ht) h1 h16
     rw [hn] at hw
     exact hw
 
 /-- Decryption with a prepared key context, of 1 to 15 blocks. -/
-theorem decRS_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) (h1 : 1 ≤ nb s₀) (h16 : nb s₀ < 16) :
-    WP isa decRS s₀ (DPost s₀) := by
-  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
+theorem decRS_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (hnp : 8 ≤ np) (h1 : 1 ≤ nb s₀)
+    (h16 : nb s₀ < 16) : WP isa decRS s₀ (DPost s₀) := by
+  refine dispatch_ok hp.base (setupR_ok hp hnp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
-    have hw := smallD_ok hp (smallLaw hp hP) (hR.rax ht) h1 h16
+    have hw := smallD_ok hp (smallLaw hp hnp hP) (hR.rax ht) h1 h16
     rw [hn] at hw
     exact hw
 
-theorem stitchRS_ok : StitchOkSmall CtxMode.prepared encRS decRS 1 1 :=
-  ⟨fun _ hp h16 => encRS_ok hp.toPrepared hp.base.nb16 h16, fun _ hp h16 => decRS_ok hp.toPrepared hp.base.nb16 h16⟩
+/-- `stitchR_okN`'s loops on 1 to 15 blocks. -/
+theorem stitchRS_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) :
+    StitchOkSmall (CtxMode.preparedN np hn) encRS decRS 1 1 :=
+  ⟨fun _ hp h16 => encRS_ok hp.toPrepared hn.1 hp.base.nb16 h16,
+    fun _ hp h16 => decRS_ok hp.toPrepared hn.1 hp.base.nb16 h16⟩
+
+theorem stitchRS_ok : StitchOkSmall CtxMode.prepared encRS decRS 1 1 := stitchRS_okN 24
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -1089,18 +1100,21 @@ theorem stitchTo_ok (M : CtxMode) : StitchToOkM M encTo 1 :=
   encToWith_ok M fun _ hp => setup_ok hp.base
 
 /-- Out of place with a prepared key context. -/
-theorem stitchToR_ok : StitchToOkM CtxMode.prepared encToR 1 :=
-  encToWith_ok CtxMode.prepared fun _ hp => setupR_ok hp.toPrepared
+theorem stitchToR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) :
+    StitchToOkM (CtxMode.preparedN np hn) encToR 1 :=
+  encToWith_ok (CtxMode.preparedN np hn) fun _ hp => setupR_ok hp.toPrepared hn.1
+
+theorem stitchToR_ok : StitchToOkM CtxMode.prepared encToR 1 := stitchToR_okN 24
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
 /-!
-# `vg_aes_gcm_prepare` on 128-bit registers
+# `vg_aes_gcm_prepare16` on 128-bit registers
 
 `StitchAvx8.setupG` leaves `H'`–`H'⁸` prepared in `preg 0`–`preg 7`. Each
 round stores the eight at their places in the context and multiplies each by
-`H'⁸`, which `xmm7` holds. What follows `setupG` is proven on its SSE code
-(`WP.lane0`).
+`H'⁸`, which `xmm7` holds; `prepare16` makes one round. What follows `setupG`
+is proven on its SSE code (`WP.lane0`).
 -/
 
 namespace VG.Proof.Gcm.X86_64.PrepareAvx
@@ -1109,10 +1123,9 @@ open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (preg prepOff)
-open VG.Impl.Gcm.X86_64.PrepareAvx (stores times8 rounds prepare)
+open VG.Impl.Gcm.X86_64.PrepareAvx (stores times8 rounds)
 open VG.Proof.Gcm.X86_64.Pclmul (mul_ok Only eq_prepared)
 open VG.Proof.Gcm.X86_64.Stitch (in_sub in_sub_int)
-open VG.Proof.Gcm.X86_64.Prepare (PrepOk verified_of)
 open VG.Spec.Gcm (Block hpow)
 
 /-- The SSE code of `stores r`. -/
@@ -1177,9 +1190,10 @@ theorem lane0_rounds : ∀ n, lane0Block (rounds n) = some (roundsS n)
   | 0 => rfl
   | n + 1 => lane0Block_append (lane0Block_append (lane0_rounds n) lane0_times8) (lane0_stores (n + 1))
 
-theorem lane0_rest : lane0Block (stores 0 ++ (([.vop (.vmovdqa .l128 .xmm7 .xmm15)] : List Instr) ++ rounds 5)) =
-    some (storesS 0 ++ (([.xop (.bin .movdqa .xmm7 .xmm15)] : List Instr) ++ roundsS 5)) :=
-  lane0Block_append (lane0_stores 0) (lane0Block_append rfl (lane0_rounds 5))
+theorem lane0_restR (R : Nat) :
+    lane0Block (stores 0 ++ (([.vop (.vmovdqa .l128 .xmm7 .xmm15)] : List Instr) ++ rounds R)) =
+      some (storesS 0 ++ (([.xop (.bin .movdqa .xmm7 .xmm15)] : List Instr) ++ roundsS R)) :=
+  lane0Block_append (lane0_stores 0) (lane0Block_append rfl (lane0_rounds R))
 
 /-! ## The places of the powers -/
 
@@ -1331,11 +1345,13 @@ theorem roundsS_ok {H : Block} {C : Addr} {m₀ : Mem} (t : State) (hC : t.gpr .
     · rw [cx, bo.xmm _ (by decide)]; exact a1
     · rw [cx, bo.xmm _ (by decide)]; exact a7
 
-/-- What follows `setupG`, on its SSE code. -/
-theorem restS_ok {H : Block} {C : Addr} (t : State) (hC : t.gpr .rdi = C) (hw : InRegions t.wr C 1024)
+/-- What follows `setupG`, on its SSE code, with `R` rounds after the first
+stores: `H'`–`H'⁸ᴿ⁺⁸` in their places. -/
+theorem restS_ok {H : Block} {C : Addr} (R : Nat) (hR : R ≤ 5) (t : State) (hC : t.gpr .rdi = C)
+    (hw : InRegions t.wr C 1024)
     (h1 : t.xmm .xmm1 = poly) (hp : ∀ i < 8, x * φ (t.xmm (preg i)) = φ H ^ (i + 1)) :
-    WP isa (.block (storesS 0 ++ (([.xop (.bin .movdqa .xmm7 .xmm15)] : List Instr) ++ roundsS 5))) t fun t' =>
-      (∀ n, 1 ≤ n → n ≤ 48 →
+    WP isa (.block (storesS 0 ++ (([.xop (.bin .movdqa .xmm7 .xmm15)] : List Instr) ++ roundsS R))) t fun t' =>
+      (∀ n, 1 ≤ n → n ≤ 8 * R + 8 →
         t'.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n)) ∧
       Frame [⟨C + BitVec.ofNat 64 256, 768⟩] t.mem t'.mem ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
       t'.rd = t.rd ∧ t'.wr = t.wr := by
@@ -1350,21 +1366,23 @@ theorem restS_ok {H : Block} {C : Addr} (t : State) (hC : t.gpr .rdi = C) (hw : 
     rw [o₂.xmm _ (by simp [(preg_ne i hi).2.1]), x₁]; exact hp0 i hi
   refine WP.mono (roundsS_ok t₂ (by rw [o₂.gpr _ (by decide), g₁, hC]) (by rw [o₂.wr, wr₁]; exact hw)
     (by rw [o₂.xmm _ (by decide), x₁]; exact h1) (by rw [m₂, x₁]; exact hp 7 (by decide)) p₂
-    (fun n a b => by rw [o₂.mem]; exact s₁ n a (by omega)) (by rw [o₂.mem]; exact f₁) 5 (by decide))
+    (fun n a b => by rw [o₂.mem]; exact s₁ n a (by omega)) (by rw [o₂.mem]; exact f₁) R hR)
     fun t' ⟨_, _, _, cs, cf, cg, crd, cwr⟩ => ⟨fun n a b => cs n a (by omega), cf,
       fun q hq => by rw [cg q hq, o₂.gpr q hq, g₁], by rw [crd, o₂.rd, rd₁], by rw [cwr, o₂.wr, wr₁]⟩
 
-/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
-pairs 0–23 of the context at `C`, nothing else written. -/
-theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
-    WP isa prepare s₀ (PrepOk s₀) := by
+/-- `prepare16`: the first 16 prepared powers of the hash subkey at `C + 240`
+into pairs 0–7 of the context at `C`, nothing outside bytes 256–1023 of it
+written. -/
+theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
+    WP isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s₀ (Prepare16.PrepOk16W s₀) := by
   have hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofNat 64 240) 16 := by
     obtain ⟨r, hr, hc⟩ := in_sub (off := 240) (n := 16) hw (by decide)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  simp only [prepare, List.append_assoc]
+  simp only [Impl.Gcm.X86_64.PrepareAvx.prepare16, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (StitchAvx8.setupG_ok s₀ hin) fun s₁ ⟨_, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (WP.lane0 lane0_rest (restS_ok (H := Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (C := s₀.gpr .rdi) (s₁.proj 0)
+  refine WP.mono (WP.lane0 (lane0_restR 1) (restS_ok (H := Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (C := s₀.gpr .rdi) 1
+    (by decide) (s₁.proj 0)
     (by rw [State.proj_gpr, g₁ _ (by decide)]) (by rw [State.proj_wr, wr₁]; exact hw)
     (by rw [State.proj_xmm]; exact l1) (fun i hi => by rw [State.proj_xmm]; exact pw i hi)))
     fun s ⟨⟨ps, pf, pg, prd, pwr⟩, _, _⟩ => ⟨fun k hk l hl => ?_, ?_, fun r hr => ?_, ?_, ?_⟩
@@ -1376,7 +1394,8 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) 
   · rw [← State.proj_rd s 0, prd, State.proj_rd, rd₁]
   · rw [← State.proj_wr s 0, pwr, State.proj_wr, wr₁]
 
-theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
-  verified_of prepare (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare.prepareAvx_ct
+theorem prepare16_verified :
+    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=
+  Prepare16.verified_ofW _ (fun _ hw _ => prepare16_ok hw) (by decide +kernel) Prepare16.prepare16Avx_ct
 
 end VG.Proof.Gcm.X86_64.PrepareAvx

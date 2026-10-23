@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
@@ -44,6 +45,18 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     code := Proof.Ffdh.X86_64.CheckPrivate.privateCode v
     verified := Proof.Ffdh.X86_64.CheckPrivate.privateCode_verified v
     spSafe := Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v
+    features := v.features },
+  Spec.Ffdh.derivePublicApi.artifact X86_64.target {
+    suffix := v.suffix
+    stack := 8
+    notes := ["The output is zeroed first; the scalar's range, as `vg_ffdh_check_private` checks \
+        it, is the one branch on x. Powers of a checked generator remain in its q subgroup, so \
+        the power needs only its range check, which masks the output, as in \
+        `vg_ffdh_generate_key`. Fixed four-bit windows over all `x_len` scalar bytes use the \
+        selected Montgomery backend."]
+    code := Proof.Ffdh.X86_64.DerivePublic.deriveCode v
+    verified := Proof.Ffdh.X86_64.DerivePublic.deriveCode_verified v
+    spSafe := Proof.Ffdh.X86_64.DerivePublic.deriveCode_sp v
     features := v.features },
   Spec.Ffdh.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix

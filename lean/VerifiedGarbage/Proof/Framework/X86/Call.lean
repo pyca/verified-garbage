@@ -27,6 +27,7 @@ def frameBytes : Instr → Nat
   | .push rs => 4 * rs.length
   | .alloc bytes => bytes
   | .symPush .. => 4
+  | .mcdtEnter _ => 12
   | _ => 0
 
 /-- The bytes below `esp` that the calls and frames of `c`, and of the
@@ -114,6 +115,7 @@ theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = so
   case pop => split at h <;> cases h; exact (popReg_rest _ _ _).1
   case free => split at h <;> cases h; rfl
   case emms => split at h <;> cases h; rfl
+  case mcdtLeave => split at h <;> cases h; rfl
 
 @[simp] theorem pushed_rd (rs : List Reg) (s : State) : (pushed rs s).rd = s.rd :=
   (pushRegs_eq s rs).1
@@ -173,27 +175,40 @@ theorem arg_callEntry {s : State} {j : Nat} (h₁ : 4 ≤ (s.gpr .esp).toNat)
     rw [Taint.sub_setWidth h₁] at hx'
     exact Offset.disjoint_below_above _ (m := 4) (a := 4 * j) (l := 4) (by omega) x hx' hx
 
-/-- A frame's push takes `frameBytes i` bytes below `esp`, which become the
-head of the writable regions, and stores only within them. -/
+/-- A frame's push takes `frameBytes i` bytes below `esp`, among which is the
+new head of the writable regions (all of them but for an MCDT frame), and
+stores only within them. -/
 theorem push_frame {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     s₁.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (frameBytes i) ∧
-      s₁.wr = below (s.gpr .esp) (frameBytes i) :: s.wr ∧ frameBytes i ≤ (s.gpr .esp).toNat ∧
+      (∃ f, s₁.wr = f :: s.wr ∧ Region.Sub f (below (s.gpr .esp) (frameBytes i))) ∧
+      frameBytes i ≤ (s.gpr .esp).toNat ∧
       Frame [below (s.gpr .esp) (frameBytes i)] s.mem s₁.mem := by
   cases i <;> simp only [isa, push, reduceCtorEq] at h
   case push rs =>
     obtain ⟨-, hrs, hn, rfl⟩ := push_some (rs := rs) (by simpa only [isa, push] using h)
-    exact ⟨pushed_esp rs s, pushed_wr rs s, hn, pushed_frame hrs hn⟩
+    exact ⟨pushed_esp rs s, ⟨_, pushed_wr rs s, fun _ h => h⟩, hn, pushed_frame hrs hn⟩
   case alloc bytes =>
     split at h <;> cases h
     rename_i hc
-    exact ⟨by simp [State.setReg, frameBytes], rfl, hc.2.2.2, Frame.refl _ _⟩
+    exact ⟨by simp [State.setReg, frameBytes], ⟨_, rfl, fun _ h => h⟩, hc.2.2.2, Frame.refl _ _⟩
   case mmxEnter =>
     split at h <;> cases h
-    exact ⟨by simp [frameBytes], by simp [below, frameBytes], by simp [frameBytes], Frame.refl _ _⟩
+    exact ⟨by simp [frameBytes], ⟨_, by simp [below, frameBytes], fun _ h => h⟩, by simp [frameBytes],
+      Frame.refl _ _⟩
+  case mcdtEnter d =>
+    split at h <;> cases h
+    rename_i hc
+    have hb : below (s.gpr .esp - BitVec.ofNat 32 3) 9 = ⟨(s.gpr .esp - 12).setWidth 64, 9⟩ := by
+      simp only [below, BitVec.sub_sub]; rfl
+    refine ⟨by simp [frameBytes, State.setReg, Ne.symm hc.1], ⟨_, rfl, ?_⟩, hc.2, ?_⟩
+    · rw [← hb]; exact below_inner (by simp [frameBytes]) hc.2
+    · exact Frame.writeW (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
+          (below_top (by decide) hc.2 (by decide)))
+        (List.mem_singleton_self _) _ (below_top (Nat.le_refl 12) hc.2 (by decide))
   case symPush dst name =>
     split at h <;> cases h
     rename_i hc
-    refine ⟨?_, rfl, hc.2, ?_⟩
+    refine ⟨?_, ⟨_, rfl, fun _ h => h⟩, hc.2, ?_⟩
     · simp [frameBytes, State.setReg, arithFlags, Ne.symm hc.1]
     · exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
         (below_top (Nat.le_refl 4) hc.2 (by decide))
@@ -251,7 +266,7 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
         below_inner (k := 4) (Nat.le_refl _) hd⟩
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
-    obtain ⟨e₁, w₁, hn, f₀⟩ := push_frame hp
+    obtain ⟨e₁, ⟨f, w₁, hf⟩, hn, f₀⟩ := push_frame hp
     simp only [stackUse] at hd ⊢
     rw [pop_mem hq]
     have hc' : NoSp b := fun i hi => hc i (by simp [instrs, hi])
@@ -263,7 +278,8 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
         (below_sub (by omega) hd _ hc)
     · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | hr | rfl
-      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega) hd⟩
+      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+          fun a h => below_sub (by omega) hd a (hf a h)⟩
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
           below_inner (by omega) hd⟩

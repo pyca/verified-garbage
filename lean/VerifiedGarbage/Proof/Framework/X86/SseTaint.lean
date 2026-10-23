@@ -46,7 +46,7 @@ def step (τ : T) : Instr → Option T
   | .movdquStore m _ => storeStepK τ m 16 false []
   | .movqLoad _ m => if memPub τ m then some τ else none
   | .movqStore m _ => storeStepK τ m 8 false []
-  | .xop _ => some τ
+  | .xop _ | .pmuludq .. => some τ
   | .mop op => if mopOk τ op then some τ else none
   | .mmxStore m _ => storeStepK τ m 8 false []
   | i => Taint.stepK τ i
@@ -123,7 +123,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     cases e₁; cases e₂
     exact ha.store (n := 8) hm (by decide) (fun hp => by cases hp) h₁ h₂
       (fun _ h => (List.not_mem_nil h).elim) (fun _ h => (List.not_mem_nil h).elim)
-  | mmxEnter | emms => simp only [step, Taint.stepK_eq, Taint.step, reduceCtorEq] at hs
+  | mmxEnter | emms | mcdtEnter | mcdtLeave =>
+    simp only [step, Taint.stepK_eq, Taint.step, reduceCtorEq] at hs
+  | pmuludq d r =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ⟨rfl, agree_withXmm ha _ _⟩
   | xop op =>
     simp only [step, Option.some.injEq] at hs
     subst hs

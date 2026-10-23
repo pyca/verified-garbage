@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
@@ -119,25 +120,28 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86_64.Instances.crtValues_verified },
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
-        the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
-        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by \
-        Montgomery multiplication (by calls of `vg_rsa_mont_mul`) over all the bits of `r`, a square and a multiplication by `g` or \
-        1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
-        candidates stop at the first that finds the factors, which is the only branch on the key. \
-        `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \
-        `64 w` steps of bit-serial division."]
-    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.base.mm
+        the trailing-zero count of `d e - 1` run over `64 Bw` steps for `Bw` words, whatever \
+        their values. Set `sigma` to 1 or 2 so `t - sigma` is even. Each candidate scans \
+        `(d e - 1) / 2^sigma` over all padded two-bit windows, with two squares and one \
+        multiplication per window, by calls of `vg_rsa_mont_mul`. The four powers are read \
+        by masked selections. Squarings also capture a root in a separate buffer, resetting \
+        the capture masks after nonzero digits. Two fixed final squares complete recovery; \
+        the second capture is enabled only when `sigma = 2`. Candidates stop at the first \
+        that finds the factors, which is the only branch on the key. `gcd(y - 1, n)` is \
+        `128 w` steps of the binary extended Euclidean algorithm, and `n / p` `64 w` steps \
+        of bit-serial division."]
+    code := Impl.Rsa.X86_64.Keys.Recover.Folded.code Proof.Rsa.X86_64.CallMont.base.mm
     stack := 8
-    verified := Proof.Rsa.X86_64.Instances.recover_verified },
+    verified := Proof.Rsa.X86_64.RecoveryFolded.base_verified },
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_recover_primes`'s code, with Montgomery multiplication by calls of \
         `vg_rsa_mont_mul_adx`. The repeated squarings pass the same operand index twice, \
         using the triangular square tiles when the word count is a multiple of 8, \
         without copying the operand."]
-    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.adx.mm
+    code := Impl.Rsa.X86_64.Keys.Recover.Folded.code Proof.Rsa.X86_64.CallMont.adx.mm
     stack := 8
-    verified := Proof.Rsa.X86_64.Instances.recoverAdx_verified
+    verified := Proof.Rsa.X86_64.RecoveryFolded.adx_verified
     features := ["bmi2", "adx"] },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_precomputed_checked` checks it and \

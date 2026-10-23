@@ -40,7 +40,8 @@ structure Taints (P : Params) : Prop where
   copyTail : ∃ hc, (taint.check (Taint.ofRegs (.r13 :: pubRegs)) (copyTail P) hc).isSome = true
   cmpLen : ∃ hc, (taint.check (Taint.ofRegs (.r10 :: pubRegs)) (.block (cmpLen P)) hc).isSome = true
   blkArg : ∃ hc, (taint.check (Taint.ofRegs pubRegs) (.block (blkArg P)) hc).isSome = true
-  lenArg : ∃ hc, (taint.check (Taint.ofRegs pubRegs) (.block (P.len ++ Impl.MdStream.X86_64.OneShot.blkArg P)) hc).isSome = true
+  lenArg : ∃ hc, (taint.check (Taint.ofRegs pubRegs)
+    (.block (Impl.MdStream.X86_64.OneShot.lenVec P ++ Impl.MdStream.X86_64.OneShot.blkArg P)) hc).isSome = true
   finish : ∃ hc, (taint.check (Taint.ofRegs pubRegs) (.block (finish P)) hc).isSome = true
 
 /-- The public arguments are the same. -/
@@ -245,7 +246,7 @@ theorem body_rel {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {
       fun s₁ s₂ => Mid P s₀ s₁ ∧ Mid P s₀' s₂ :=
     piece tNil (fun _ _ _ _ _ hr => absurd hr List.not_mem_nil) (fun t h => WP.block_nil h)
       (fun t h => WP.block_nil h)
-  have rLen : RelCT isa (fun s₁ s₂ => Mid P s₀ s₁ ∧ Mid P s₀' s₂) (.block (P.len ++ blkArg P))
+  have rLen : RelCT isa (fun s₁ s₂ => Mid P s₀ s₁ ∧ Mid P s₀' s₂) (.block (lenVec P ++ blkArg P))
       fun s₁ s₂ => JA P s₀ s₁ ∧ JA P s₀' s₂ :=
     piece tLen (fun s₁ s₂ h h' => ag h h')
       (fun t h => (lenArg_ok hF hd hs hp h).mono fun _ ⟨m, hsi, _⟩ => ⟨m, hsi⟩)

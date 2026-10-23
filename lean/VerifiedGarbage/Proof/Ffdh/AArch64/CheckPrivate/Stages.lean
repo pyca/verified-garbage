@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRange
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Omega
@@ -190,17 +191,6 @@ abbrev KpP.Y (p : KpP) : Nat := Spec.Rsa.os2ip p.yb
 /-- The inner workspace's base. -/
 abbrev KpP.G (p : KpP) (xb : List Byte) : Addr := off (p.D xb).B (inner (p.D xb).w)
 
-/-- x below its bound, as the code compares. -/
-def xr (p : KpP) (xb : List Byte) : Prop :=
-  if p.dl = 3 * p.k then X xb < Spec.Rsa.os2ip (p.D xb).qb else 2 * (X xb / 2) + 1 < (p.D xb).P
-
-instance (p : KpP) (xb : List Byte) : Decidable (xr p xb) := by unfold xr; infer_instance
-
-theorem bit_iff {P Q : Prop} [Decidable P] [Decidable Q] (h : P ↔ Q) : bit P = bit Q := by
-  by_cases hp : P
-  · simp [bit, hp, h.mp hp]
-  · simp [bit, hp, mt h.mpr hp]
-
 /-- In the inner workspace. -/
 def K1 (p : KpP) (xb : List Byte) (t : State) : Prop := (∃ mi, In (p.D xb) mi t) ∧ Ok p xb
 
@@ -228,192 +218,16 @@ theorem k1_k2 (p : KpP) (xb : List Byte) (t : State) (h : K1 p xb t) :
     (hs.get (i := sX) (v := p.xp) (by simp [KpP.D])) (by rw [ho.1]; exact hs.get (i := sXl) (by simp [KpP.D]))
     hx (by rw [ho.1]; exact ho.2.1) (by rw [ho.1]; exact ho.2.2.1)) fun u ⟨⟨hu, hv, _⟩, k⟩ => ⟨⟨⟨mi, hu, hv⟩, ho⟩, k⟩
 
-/-- After the test of x against 0. -/
-def K3 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, In (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = X xb ∧
-    t.gpr .x9 = bit (¬ X xb < 1)) ∧ Ok p xb
-
-theorem k2_k3 (p : KpP) (xb : List Byte) (t : State) (h : K2 p xb t) :
-    WP isa (seqs (isNonzero aXm)) t fun u => K3 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hx⟩, ho⟩ := h
-  have hb := hI.1
-  have ew := hb.ew
-  have := hb.k1
-  have := hb.k2
-  exact WP.mono (geArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
-    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (show aOne < 8 by decide))
-    fun u ⟨h9, hm, k⟩ => ⟨⟨⟨mi, hI.keep hm k (by decide), by rw [hm]; exact hx, by rw [h9, hx, hI.2.2.1.one]⟩, ho⟩,
-      k.mono (by decide)⟩
-
-/-- Back in the outer workspace, with the test in `sF`. -/
-def K4 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Pa (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = X xb ∧
-    word t.mem (p.G xb) (8 * sF) = bit (¬ X xb < 1)) ∧ Ok p xb
-
-theorem k3_k4 (p : KpP) (xb : List Byte) (t : State) (h : K3 p xb t) :
-    WP isa (.block [sth .x9 sF, leave]) t fun u => K4 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hx, h9⟩, ho⟩ := h
-  have hG := hI.2.1.good.scr.nowrap
-  have sX := slot_le (w := (p.D xb).w) (show aXm < 8 by decide)
-  have hX0 := hdr_lt_slot (p.D xb).w aXm (show sF < 32 by decide)
-  exact WP.mono hI.stLeave fun u ⟨⟨hP, hF, o⟩, k⟩ => ⟨⟨⟨mi, hP, by rw [o.wv (Or.inr (by omega_arith)) (by omega_arith)]; exact hx,
-    by rw [hF, h9]⟩, ho⟩, k⟩
-
-/-- After the test of the domain's length. -/
-def K5 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Pa (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = X xb ∧
-    word t.mem (p.G xb) (8 * sF) = bit (¬ X xb < 1) ∧ t.gpr .x3 = BitVec.ofNat 64 (p.dl - 2 * p.k)) ∧ Ok p xb
-
-theorem k4_k5 (p : KpP) (xb : List Byte) (t : State) (h : K4 p xb t) :
-    WP isa (.block qTest) t fun u => K5 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hP, hx, hF⟩, ho⟩ := h
-  exact WP.mono hP.qtest fun u ⟨⟨h3, hm⟩, k⟩ => ⟨⟨⟨mi, hP.outside (o := 256) (n := 0) (by decide)
-    (by simp only [inner, slot, hdrBytes]; omega_arith) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
-      hP.2.2.2.2.2.2), by rw [hm]; exact hx, by rw [hm]; exact hF, h3⟩, ho⟩, k.mono (by decide)⟩
-
-theorem k5_eval {p : KpP} {xb : List Byte} {t : State} (h : K5 p xb t) :
-    isa.eval (.zero .x .x3) t = some (BitVec.ofNat 64 (p.dl - 2 * p.k) == 0) := by
-  obtain ⟨⟨_, _, _, _, h3⟩, _⟩ := h
-  rw [eval_zero, h3]
-
-/-- After the comparison with x's bound. -/
-def K6 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, In (p.D xb) mi t ∧ word t.mem (p.G xb) (8 * sF) = bit (¬ X xb < 1) ∧ t.gpr .x9 = bit (xr p xb)) ∧
-    Ok p xb
-
-/-- Back in the inner workspace, with x and the test in `sF`. -/
-def K5e (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, In (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = X xb ∧
-    word t.mem (p.G xb) (8 * sF) = bit (¬ X xb < 1)) ∧ Ok p xb
-
-theorem k5_e (p : KpP) (xb : List Byte) (t : State) (h : K5 p xb t) :
-    WP isa (.block [enter]) t fun u => K5e p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hP, hx, hF, -⟩, ho⟩ := h
-  exact WP.mono hP.enterM fun u ⟨⟨hI, hm⟩, k⟩ => ⟨⟨⟨mi, hI, by rw [hm]; exact hx, by rw [hm]; exact hF⟩, ho⟩, k⟩
-
-theorem e_k6n (p : KpP) (xb : List Byte) (t : State) (h : K5e p xb t) (h2 : p.dl = 2 * p.k) :
-    WP isa (seqs (ltP aXm)) t fun u => K6 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hx, hF⟩, ho⟩ := h
-  have hb := hI.1
-  have ew := hb.ew
-  have := hb.k1
-  have := hb.k2
-  have hT0 := hdr_lt_slot (p.D xb).w aTmp (show sF < 32 by decide)
-  have hG := hI.2.1.good.scr.nowrap
-  refine WP.mono (ltP_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
-    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (by decide)) fun v ⟨h9, o, k'⟩ => ?_
-  have hT := hdr_lt_slot (p.D xb).w aTmp (show 31 < 32 by decide)
-  refine ⟨⟨⟨mi, hI.step (rs := [(slot (p.D xb).w aTmp, 8 * (p.D xb).w)]) (Frm.of_outside o (by simp)) (fun r hr => by
-      rw [List.mem_singleton.mp hr]
-      have := slot_le (w := (p.D xb).w) (show aTmp < 8 by decide)
-      have s1 := slot_sep (w := (p.D xb).w) (show aTmp ≠ aN by decide)
-      have s2 := slot_sep (w := (p.D xb).w) (show aTmp ≠ aOne by decide)
-      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only <;> omega_arith) k'.rd k'.wr (k'.gpr .x0 (by decide)),
-    by rw [o.word (Or.inl hT0) (show 8 * sF + 8 ≤ 2 ^ 64 by decide), hF], ?_⟩, ho⟩, k'.mono (by decide)⟩
-  rw [h9, hx, hI.2.2.1.n]
-  refine bit_iff ?_
-  unfold xr
-  have hk1 : 64 ≤ p.k := hb.k1
-  rw [ite_eq_right (by omega_arith)]
-
-/-- With q in `aY`. -/
-def K5q (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, In (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = X xb ∧
-    word t.mem (p.G xb) (8 * sF) = bit (¬ X xb < 1) ∧
-    wv t.mem (p.G xb) (slot (p.D xb).w aY) (p.D xb).w = Spec.Rsa.os2ip (p.D xb).qb) ∧ Ok p xb ∧ p.dl = 3 * p.k
-
-theorem e_lpreQ (p : KpP) (xb : List Byte) (t : State) (h : K5e p xb t) (hq : p.dl = 3 * p.k) :
-    LPre aY sQ sK ((p.D xb).ld (p.dp + BitVec.ofNat 64 (2 * p.k)) p.k) t := by
-  obtain ⟨⟨mi, hI, -⟩, -⟩ := h
-  have hb := hI.1
-  have hs := hI.2.2.2.2.1
-  have hl := hb.qlen hq
-  have := hb.k1
-  have := hI.lpre (sp := sQ) (sl := sK) (show aY < 8 by decide) (by decide) (by decide)
-    (hs.get (i := sQ) (v := (p.D xb).dp + BitVec.ofNat 64 (2 * (p.D xb).k)) (by simp))
-    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega_arith) (by rw [hl])
-  rw [hl] at this
-  exact this
-
-theorem e_q (p : KpP) (xb : List Byte) (t : State) (h : K5e p xb t) (hq : p.dl = 3 * p.k) :
-    WP isa (seqs (Crt.loadArr aY sQ sK)) t fun u => K5q p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hx, hF⟩, ho⟩ := h
-  have hb := hI.1
-  have hs := hI.2.2.2.2.1
-  have hl := hb.qlen hq
-  have := hb.k1
-  refine WP.mono (hI.load (show aY < 8 by decide) (by decide) (by decide) (by decide) (by decide)
-    (hs.get (i := sQ) (v := (p.D xb).dp + BitVec.ofNat 64 (2 * (p.D xb).k)) (by simp))
-    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega_arith) (by rw [hl]))
-    fun v ⟨⟨hv, hQ, o⟩, k'⟩ => ?_
-  have hG := hI.2.1.good.scr.nowrap
-  have sY := slot_le (w := (p.D xb).w) (show aY < 8 by decide)
-  have sYX := slot_sep (w := (p.D xb).w) (show aY ≠ aXm by decide)
-  have hY0 := hdr_lt_slot (p.D xb).w aY (show sF < 32 by decide)
-  have sX := slot_le (w := (p.D xb).w) (show aXm < 8 by decide)
-  exact ⟨⟨⟨mi, hv, by rw [o.wv (by omega_arith) (by omega_arith), hx],
-    by rw [o.word (Or.inl hY0) (show 8 * sF + 8 ≤ 2 ^ 64 by decide), hF], hQ⟩, ho, hq⟩, k'⟩
-
-theorem q_k6 (p : KpP) (xb : List Byte) (t : State) (h : K5q p xb t) :
-    WP isa (seqs (ltArr aXm aY)) t fun u => K6 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hv, hx, hF, hQ⟩, ho, hq⟩ := h
-  have hb := hv.1
-  have ew := hb.ew
-  have := hb.k1
-  have := hb.k2
-  refine WP.mono (ltArr_ok hv.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
-    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (show aY < 8 by decide)) fun w' ⟨h9, hm', k''⟩ =>
-      ⟨⟨⟨mi, hv.keep hm' k'' (by decide), by rw [hm']; exact hF, ?_⟩, ho⟩, k''.mono (by decide)⟩
-  rw [h9, hx, hQ]
-  refine bit_iff ?_
-  unfold xr
-  rw [ite_eq_left hq]
-
-theorem k5_k6n (p : KpP) (xb : List Byte) (t : State) (h : K5 p xb t)
-    (he : isa.eval (.zero .x .x3) t = some true) :
-    WP isa (seqs (([.block [enter]] : List (Prog isa)) ++ ltP aXm)) t fun u => K6 p xb u ∧ KX t u := by
-  have h2 := h.1.choose_spec.1.1.noq (by rw [k5_eval h] at he; simpa using he)
-  exact wp_seqs_cons (by simp [ltP, Crt.copyArr]) (WP.mono (k5_e p xb t h) fun u ⟨hu, k⟩ =>
-    WP.mono (e_k6n p xb u hu h2) fun v ⟨hv, k'⟩ => ⟨hv, keep_trans k k'⟩)
-
-theorem k5_k6q (p : KpP) (xb : List Byte) (t : State) (h : K5 p xb t)
-    (he : isa.eval (.zero .x .x3) t = some false) :
-    WP isa (seqs (([.block [enter]] : List (Prog isa)) ++ Crt.loadArr aY sQ sK ++ ltArr aXm aY)) t fun u => K6 p xb u ∧ KX t u := by
-  have hq := h.1.choose_spec.1.1.q (by rw [k5_eval h] at he; simpa using he)
-  simp only [List.cons_append, List.nil_append]
-  exact wp_seqs_cons (by simp [Crt.loadArr]) (WP.mono (k5_e p xb t h) fun u ⟨hu, k⟩ =>
-    wp_seqs_append (by simp [Crt.loadArr]) (by simp [ltArr, cmpArr]) (WP.mono (e_q p xb u hu hq) fun v ⟨hv, k'⟩ =>
-      WP.mono (q_k6 p xb v hv) fun w' ⟨hw, k''⟩ => ⟨hw, keep_trans k (keep_trans k' k'')⟩))
-
-/-- x's range, as the code computes it. -/
-theorem xr_iff {p : KpP} {xb : List Byte} {t : State} (hb : Base (p.D xb) t) (hm : (p.D xb).mv = true) :
-    (xr p xb ∧ ¬ X xb < 1) ↔ Spec.Ffdh.privateValid p.a (X xb) = true := by
-  have hodd := (valid_facts hm hb.k1).1
-  have hdl : p.dom.length = p.dl := hb.doml
-  unfold xr Spec.Ffdh.privateValid
-  simp only [Bool.and_eq_true, decide_eq_true_eq, Spec.Ffdh.domainOf, hdl]
-  by_cases hq : p.dl = 3 * p.k
-  · rw [ite_eq_left hq, ite_eq_left hq]
-    simp only [Option.getD_some]
-    have e : Spec.Rsa.os2ip (p.D xb).qb = Spec.Rsa.os2ip (List.take p.k (List.drop (2 * p.k) p.dom)) := rfl
-    omega_arith
-  · rw [ite_eq_right hq, ite_eq_right hq]
-    simp only [Option.getD_none]
-    have := (lt_pm1 hodd (X xb))
-    constructor
-    · rintro ⟨a, b⟩; exact ⟨by omega_arith, this.mp a⟩
-    · rintro ⟨a, b⟩; exact ⟨this.mpr b, by omega_arith⟩
-
 /-- After the test of x's range. -/
 def K7 (p : KpP) (xb : List Byte) (t : State) : Prop :=
   (∃ mi, In (p.D xb) mi t ∧ t.gpr .x9 = bit (p.pv = true)) ∧ Ok p xb
 
-theorem k6_k7 (p : KpP) (xb : List Byte) (t : State) (h : K6 p xb t) :
-    WP isa (.block andF) t fun u => K7 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hF, h9⟩, ho⟩ := h
-  refine WP.mono hI.andFlag fun u ⟨hu, h9', _, _, k⟩ => ⟨⟨⟨mi, hu, ?_⟩, ho⟩, k⟩
-  rw [h9', h9, hF, bit_and, ho.2.2.2.2]
-  exact bit_iff ((xr_iff hI.1 hI.2.2.2.2.2).trans (by simp))
+/-- x's range test (`ScalarRange.scalarRange_ok`). -/
+theorem k2_k7 (p : KpP) (xb : List Byte) (t : State) (h : K2 p xb t) :
+    WP isa (seqs CheckPrivate.scalarRange) t fun u => K7 p xb u ∧ KX t u := by
+  obtain ⟨⟨mi, hI, hx⟩, ho⟩ := h
+  refine WP.mono (ScalarRange.scalarRange_ok ⟨mi, hI, hx⟩) fun u ⟨⟨mi', hu, h9⟩, k⟩ => ⟨⟨⟨mi', hu, ?_⟩, ho⟩, k⟩
+  rw [h9, ho.2.2.2.2]; rfl
 
 theorem k7_eval {p : KpP} {xb : List Byte} {t : State} (h : K7 p xb t) :
     isa.eval (.zero .x .x9) t = some (bit (p.pv = true) == 0) := by

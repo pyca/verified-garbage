@@ -21,10 +21,13 @@
     target_arch = "x86"
 ))]
 
+use core::mem::MaybeUninit;
+
 use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::{
-    VG_AES_DECRYPT_BLOCKS_AES_FEATURES, VG_AES_ENCRYPT_BLOCKS_AES_FEATURES,
+    VG_AES_DECRYPT_BLOCKS_AES_FEATURES, VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN,
+    VG_AES_ENCRYPT_BLOCKS_AES_FEATURES, VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN,
     vg_aes_decrypt_blocks_aes, vg_aes_encrypt_blocks_aes, vg_aes_expand_key_aes,
 };
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -34,17 +37,18 @@ use crate::arch::aes::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes::{
-    VG_AES_DECRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES,
+    VG_AES_DECRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN,
+    VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN,
     vg_aes_decrypt_blocks_vaes, vg_aes_encrypt_blocks_vaes,
 };
 use crate::arch::aes::{vg_aes_decrypt_blocks, vg_aes_encrypt_blocks, vg_aes_expand_key};
 use crate::cpu::{Features, detected};
-use crate::zeroize::zeroize;
+use crate::zeroize::{zeroize, zeroize_raw};
 
 /// The instance of a function for `backend`: the scalar one, x86-64's or
 /// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
+    ($backend:expr, $scalar:expr, $aesni:expr, $vaes:expr, $aes:expr) => {
         match $backend {
             Backend::Scalar => $scalar,
             #[cfg(target_arch = "x86_64")]
@@ -170,7 +174,14 @@ impl AesEcb {
             vg_aes_encrypt_blocks_vaes,
             vg_aes_encrypt_blocks_aes
         );
-        self.crypt(buffer, f)
+        let written = instance!(
+            self.backend,
+            SCRATCH,
+            ENCRYPT_AESNI_WRITTEN,
+            VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN,
+            VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN
+        );
+        self.crypt(buffer, f, written)
     }
 
     /// Decrypts whole 16-byte blocks in place. Empty input is valid.
@@ -184,14 +195,25 @@ impl AesEcb {
             vg_aes_decrypt_blocks_vaes,
             vg_aes_decrypt_blocks_aes
         );
-        self.crypt(buffer, f)
+        let written = instance!(
+            self.backend,
+            SCRATCH,
+            SCRATCH,
+            SCRATCH,
+            VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN
+        );
+        self.crypt(buffer, f, written)
     }
 
-    fn crypt(&self, buffer: &mut [u8], f: Blocks) -> Result<(), Error> {
+    /// Applies `f`, which writes at most the first `written` bytes of its
+    /// working space, to the blocks of `buffer`.
+    fn crypt(&self, buffer: &mut [u8], f: Blocks, written: usize) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(16) {
             return Err(Error::IncompleteBlock);
         }
-        let mut scratch = [0; 256];
+        // The contracts hold whatever the working space holds, so it need
+        // not be initialized.
+        let mut scratch = MaybeUninit::<[u64; 256]>::uninit();
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; the buffer holds `len / 16` whole blocks, and it, the
         // schedule and the scratch space are separate valid objects of the
@@ -202,14 +224,29 @@ impl AesEcb {
                 self.rounds,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
-                &mut scratch,
+                scratch.as_mut_ptr(),
             );
         }
-        // The scratch space may hold the key schedule and the data.
-        zeroize(&mut scratch);
+        // The scratch space may hold the key schedule and the data, in the
+        // bytes the function writes (`Artifact.written`).
+        // SAFETY: `written` is at most the 2048 bytes of `scratch`, a distinct
+        // object, valid for writes.
+        unsafe { zeroize_raw(scratch.as_mut_ptr().cast::<u8>(), written) };
         Ok(())
     }
 }
+
+/// The size of the working space of `vg_aes_encrypt_blocks` and
+/// `vg_aes_decrypt_blocks`, in bytes: the bytes a function without a smaller
+/// `Artifact.written` may write.
+const SCRATCH: usize = size_of::<[u64; 256]>();
+
+/// The bytes of the working space `vg_aes_encrypt_blocks_aesni` writes: none
+/// on x86-64; on x86, where it saves registers there, all of them.
+#[cfg(target_arch = "x86_64")]
+const ENCRYPT_AESNI_WRITTEN: usize = VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN;
+#[cfg(target_arch = "x86")]
+const ENCRYPT_AESNI_WRITTEN: usize = SCRATCH;
 
 /// The signature of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`.
 #[cfg(target_arch = "x86_64")]

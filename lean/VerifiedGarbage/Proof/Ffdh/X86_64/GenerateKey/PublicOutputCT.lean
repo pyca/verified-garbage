@@ -34,25 +34,26 @@ open VG.Impl.Ffdh.X86_64.Domain VG.Impl.Ffdh.X86_64.Domain.GenerateKey
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Rsa.X86_64.Crt (sLink ws)
 
-private def BV (p : GkP) (s : State) : Prop := ∃ rb,
-  CheckPrivate.Value p.kp (p.xb rb) s ∧ OutOk s p.B p.Z p.yp p.k
+/-- A generator power and a writable output, as private-key validation
+computes it: what the public output's timing depends on. -/
+def KBV (p : CheckPrivate.KpP) (s : State) : Prop := ∃ xb,
+  CheckPrivate.Value p xb s ∧ OutOk s p.B p.Z p.yp p.k
 
-private def EV (p : GkP) (s : State) : Prop := ∃ rb, Exchange.Value (outputP p.kp) (p.xb rb) s
-private def EC (p : GkP) (s : State) : Prop := ∃ rb, Exchange.Checked (outputP p.kp) (p.xb rb) s
+private def EV (p : CheckPrivate.KpP) (s : State) : Prop := ∃ xb, Exchange.Value (outputP p) xb s
+private def EC (p : CheckPrivate.KpP) (s : State) : Prop := ∃ xb, Exchange.Checked (outputP p) xb s
 
 private def bridgeRest : List Instr :=
   [.mov .rdx (.mem (ws .rax sY)), .store (ws .rax VG.Impl.Ffdh.X86_64.Domain.sOut) .rdx,
     .mov .rdx (.mem (ws .rax sG)), .store (ws .rax sY) .rdx]
 
-private theorem bridge_ptr (p : GkP) (s : State) (h : BV p s) :
+private theorem bridge_ptr (p : CheckPrivate.KpP) (s : State) (h : KBV p s) :
     WP isa (.block [.mov .rax (.mem (hdr sLink))]) s fun t => t.gpr .rax = p.B := by
   obtain ⟨_, ⟨⟨mi, _, hc, _⟩, _⟩, _⟩ := h
   have hld := hc.sub.good.scr.ld (hdr_lt_slot p.w 8 (show sLink < 32 by decide))
   xrun [State.ea, hdr, hc.sub.rdi, hdrOff, hld, hc.sub.link]
-  rfl
 
-private theorem bridge_ct : RelCT isa (Two BV) (.block bridge) (Two EV) := by
-  change RelCT isa (Two BV) (.block ([.mov .rax (.mem (hdr sLink))] ++ bridgeRest)) (Two EV)
+private theorem bridge_ct : RelCT isa (Two KBV) (.block bridge) (Two EV) := by
+  change RelCT isa (Two KBV) (.block ([.mov .rax (.mem (hdr sLink))] ++ bridgeRest)) (Two EV)
   refine RelCT.block_append (pin_ct [.rdi] [.rax] (fun p _ => p.B)
     (pins_rdiB (fun p => off p.B (inner p.w)) fun _ _ h => by
       obtain ⟨_, ⟨⟨_, _, hc, _⟩, _⟩, _⟩ := h; exact hc.sub.rdi)
@@ -61,30 +62,31 @@ private theorem bridge_ct : RelCT isa (Two BV) (.block bridge) (Two EV) := by
     exact WP.mono (bridge_ptr p s h) fun _ hh r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hh
   · intro p s h
-    obtain ⟨rb, hv, ho⟩ := h
+    obtain ⟨xb, hv, ho⟩ := h
     have hw : WP isa (.block bridge) s (EV p) :=
-      WP.mono (value_bridge hv ho) fun _ ⟨he, _⟩ => ⟨rb, he⟩
+      WP.mono (value_bridge hv ho) fun _ ⟨he, _⟩ => ⟨xb, he⟩
     change WP isa (.block ([.mov .rax (.mem (hdr sLink))] ++ bridgeRest)) s (EV p) at hw
     exact WP.seq_iff.mpr (WP.block_append_iff.mp hw)
 
-private theorem ev_good (p : GkP) (s : State) (h : EV p s) : GoodW1 (outputP p.kp).ws s := by
+private theorem ev_good (p : CheckPrivate.KpP) (s : State) (h : EV p s) : GoodW1 (outputP p).ws s := by
   obtain ⟨_, ⟨mi, _, hc⟩, _⟩ := h
   exact ⟨⟨mi, hc.sub.good, Nat.le_refl _⟩, Nat.le_trans (by decide) hc.w2,
     Nat.lt_trans hc.w28 (by decide)⟩
 
-private theorem ev_checked (p : GkP) (s : State) (h : EV p s) :
+private theorem ev_checked (p : CheckPrivate.KpP) (s : State) (h : EV p s) :
     WP isa (seqs (range aY)) s (EC p) := by
-  obtain ⟨rb, hv⟩ := h
-  exact WP.mono (Exchange.value_checked hv) fun _ ⟨hc, _⟩ => ⟨rb, hc⟩
+  obtain ⟨xb, hv⟩ := h
+  exact WP.mono (Exchange.value_checked hv) fun _ ⟨hc, _⟩ => ⟨xb, hc⟩
 
-private theorem public_ct : RelCT isa (Two BV) (seqs publicOutput) fun _ _ => True := by
+/-- The public output's timing depends only on the public parameters. -/
+theorem public_ct : RelCT isa (Two KBV) (seqs publicOutput) fun _ _ => True := by
   unfold publicOutput
   refine seqs_cons_ct (by simp [range]) (RelCT.seq bridge_ct ?_)
   refine RelCT.seqs_append (a := range aY) (by simp [range]) (by simp)
     (RelCT.seq (R := Two EC)
-      (two_post (two_map (fun p => (outputP p.kp).ws) ev_good
+      (two_post (two_map (fun p => (outputP p).ws) ev_good
         (range_ct (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide))) ev_checked) ?_)
-  exact two_map (fun p => outputP p.kp) (fun _ _ h => by obtain ⟨rb, hc⟩ := h; exact ⟨_, hc⟩) Exchange.output_ct
+  exact two_map outputP (fun _ _ h => by obtain ⟨xb, hc⟩ := h; exact ⟨_, hc⟩) Exchange.output_ct
 
 /-- A computed generator power with its full scalar and output buffers. -/
 def ValueIn (p : GkP) (s : State) : Prop := ∃ rb,
@@ -102,6 +104,6 @@ private theorem value_mask (p : GkP) (s : State) (h : ValueIn p s) :
   exact hax.trans (bit_eq_bool (p.fl rb))
 
 theorem public_mask_ct : RelCT isa (Two ValueIn) (seqs publicOutput) (Two MaskPre) :=
-  two_post (two_map id (fun _ _ h => by obtain ⟨rb, hv, hb⟩ := h; exact ⟨rb, hv, hb.oy⟩) public_ct) value_mask
+  two_post (two_map GkP.kp (fun _ _ h => by obtain ⟨rb, hv, hb⟩ := h; exact ⟨_, hv, hb.oy⟩) public_ct) value_mask
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

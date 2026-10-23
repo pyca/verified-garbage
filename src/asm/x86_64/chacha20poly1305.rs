@@ -19,13 +19,13 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: crate::cpu::Features =
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -30530,7 +30530,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 27:
 jne 211f
@@ -30652,13 +30652,13 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: crate::cpu::Features =
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -40664,7 +40664,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 29:
 jne 213f
@@ -40975,13 +40975,13 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -71842,7 +71842,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 29:
 jne 213f
@@ -72061,13 +72061,13 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -82438,7 +82438,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 29:
 jne 213f
@@ -86425,13 +86425,13 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: crate::cpu::Featur
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -113967,7 +113967,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 29:
 jne 213f
@@ -114185,13 +114185,13 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: crate::cpu::Featur
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -123283,7 +123283,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 29:
 jne 213f
@@ -127268,13 +127268,13 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features =
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -127666,7 +127666,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 27:
 jne 211f
@@ -127790,13 +127790,13 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features =
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -136883,7 +136883,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 29:
 jne 213f
@@ -140883,12 +140883,12 @@ jmp 2186b
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -141247,7 +141247,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 239:
 mov rsi, r13
@@ -141294,12 +141294,12 @@ jmp 240b
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1720]
-mov rax, QWORD PTR [rsp+1728]
+        r"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -141667,7 +141667,7 @@ movdqu XMMWORD PTR [rsp+632], xmm0
 movdqu XMMWORD PTR [rsp+648], xmm0
 movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
-lea rsp, [rsp+1720]
+lea rsp, [rsp+1728]
 ret
 210:
 mov rsi, r13

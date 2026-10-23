@@ -10394,11 +10394,16 @@ ret
 /// The CPU features `vg_aes_encrypt_blocks_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
+/// The bytes of `scratch` that `vg_aes_encrypt_blocks_aesni` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
+
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
 /// Uses AES-NI: eight blocks at a time, then one at a time.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -10953,11 +10958,16 @@ ret
 /// The CPU features `vg_aes_encrypt_blocks_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes"]);
 
+/// The bytes of `scratch` that `vg_aes_encrypt_blocks_vaes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
+
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
 /// Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///

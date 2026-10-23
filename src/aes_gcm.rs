@@ -72,15 +72,15 @@
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
 //!
-//! On x86-64, the `_vaes_vpclmul_avx512` and `_aesni_pclmul_avx` instances
-//! also have `_prepared` ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose
-//! interleaved loops read encoded pairs of powers `H¹ … H⁴⁸` from a larger
-//! key context, which `vg_aes_gcm_prepare` writes from the key context of
-//! `vg_aes_gcm_init`, instead of computing them on every call (`H¹ … H⁸` on
-//! 128-bit registers); the `_vaes_vpclmul` instances have `_prepared16` ones
-//! (`VG.Spec.Gcm.PreparedPowers16Repr`), which read only `H¹ … H¹⁶`, the
-//! first 512 bytes of the same context, which `vg_aes_gcm_prepare16` writes
-//! in less than half the time. The `_vaes_vpclmul_avx512` loops also
+//! On x86-64, the `_vaes_vpclmul_avx512` instances also have `_prepared`
+//! ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read
+//! encoded pairs of powers `H¹ … H⁴⁸` from a larger key context, which
+//! `vg_aes_gcm_prepare` writes from the key context of `vg_aes_gcm_init`,
+//! instead of computing them on every call; the `_vaes_vpclmul` and
+//! `_aesni_pclmul_avx` instances have `_prepared16` ones
+//! (`VG.Spec.Gcm.PreparedPowers16Repr`), which read only `H¹ … H¹⁶` (`H¹ …
+//! H¹⁵` on 128-bit registers), the first 512 bytes of the same context, which
+//! `vg_aes_gcm_prepare16` writes in a third of the time or less. The `_vaes_vpclmul_avx512` loops also
 //! load the AES round keys into `zmm16`–`zmm31` once per block call and
 //! reuse them across batches. A key computes the
 //! prepared context once, after it has encrypted or decrypted
@@ -124,19 +124,19 @@
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES, VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
-    VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES, vg_aes_gcm_open_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_open_prepared_vaes_vpclmul_avx512, vg_aes_gcm_open_prepared16_vaes_vpclmul,
-    vg_aes_gcm_prepare_pclmul_avx, vg_aes_gcm_prepare_vpclmul, vg_aes_gcm_prepare16_vpclmul,
-    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    VG_AES_GCM_PREPARE_VPCLMUL_FEATURES, VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
+    VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_prepared16_vaes_vpclmul,
+    vg_aes_gcm_prepare_vpclmul, vg_aes_gcm_prepare16_pclmul_avx, vg_aes_gcm_prepare16_vpclmul,
     vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_prepared16_vaes_vpclmul,
-    vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_prepared16_aesni_pclmul_avx, vg_aes_gcm_seal_prepared16_vaes_vpclmul,
     vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
     vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
-    vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
     vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
     vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
 };
 #[cfg(target_arch = "aarch64")]
@@ -611,13 +611,13 @@ static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
-    features: VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES,
-    seal: vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
-    open: vg_aes_gcm_open_prepared_aesni_pclmul_avx,
-    seal_gather: vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
-    prepare: vg_aes_gcm_prepare_pclmul_avx,
+    features: VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
+    seal: vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
+    open: vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
+    seal_gather: vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
+    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
+    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
+    prepare: vg_aes_gcm_prepare16_pclmul_avx,
 };
 
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -2096,13 +2096,13 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_SEAL_SPLIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_SEAL_SPLIT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
                     ][..],
                 ),
                 (
@@ -2535,9 +2535,9 @@ mod tests {
         }
     }
 
-    /// `vg_aes_gcm_prepare` on 128-bit registers makes the context it makes
-    /// on 256-bit ones, and `vg_aes_gcm_prepare16` its first 16 powers,
-    /// leaving the rest of the context as it was.
+    /// `vg_aes_gcm_prepare16`, on 128-bit and on 256-bit registers, makes the
+    /// first 16 powers of `vg_aes_gcm_prepare`'s context, leaving the rest of
+    /// the context as it was.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     #[test]
     fn prepare() {
@@ -2566,9 +2566,10 @@ mod tests {
                 (narrow.prepare)(&mut got);
                 (sixteen.prepare)(&mut first);
             }
-            assert_eq!(got, want);
-            assert_eq!(first[..64], want[..64]);
-            assert!(first[64..].iter().all(|&w| w == 0));
+            for ctx in [got, first] {
+                assert_eq!(ctx[..64], want[..64]);
+                assert!(ctx[64..].iter().all(|&w| w == 0));
+            }
         }
     }
 

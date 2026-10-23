@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Finish
+import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Data.Int.ModEq
@@ -78,15 +79,6 @@ def gkOf (s : State) : GkP :=
 theorem cr_of (s : State) (h : gkPre s) : CR (gkOf s) (gkRand s) s :=
   ⟨h, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-/-- Octets from their values. -/
-theorem bytesAt_of {m : Mem} {ptr : Addr} {n : Nat} {l : List Byte} (hl : l.length = n)
-    (h : ∀ i < n, m (ptr + BitVec.ofNat 64 i) = l.getD i 0) : Spec.Rsa.bytesAt m ptr n = l := by
-  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt, hl])
-  intro i h1 h2
-  simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-  rw [h i (by simpa [Spec.Rsa.bytesAt] using h1), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h2,
-    Option.getD_some]
-
 /-- The postcondition, from the results. -/
 theorem gk_post {p : GkP} {rb : List Byte} {s₀ u : State} (hc : CR p rb s₀) (hk : KX s₀ u) {r : Nat}
     (hr : r < 2 ^ 32) (h0 : u.gpr .x0 = BitVec.ofNat 64 r) {c : Bool} (hX : Xm p rb c u.mem) (hY : Ym p rb c u.mem)
@@ -147,11 +139,6 @@ theorem F_iff {p : GkP} {rb : List Byte} {D : FD} {t : State} (hb : Base D t) (h
 theorem y_eq {p : GkP} {rb : List Byte} {t : State} (hb : Base (p.D₁ rb) t) (hm : (p.D₁ rb).mv = true)
     (ho : Ok p rb) : p.y rb = p.a.g ^ p.s rb % p.a.p := by
   rw [GkP.y, x_eq hb hm ho]; rfl
-
-/-- The results' status. -/
-theorem fin_status (F : Prop) [Decidable F] :
-    ((BitVec.ofNat 64 3 - (bit F <<< 1)) = BitVec.ofNat 64 (if F then 1 else 3)) := by
-  by_cases h : F <;> simp [bit, h] <;> decide
 
 /-- The tail: with the scalar in range. -/
 theorem tail_ok (W : Window) (M : Mont) (S : Selector) {p : GkP} {rb : List Byte} {s₀ t : State} (hc : CR p rb s₀)

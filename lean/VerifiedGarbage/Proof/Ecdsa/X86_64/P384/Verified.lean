@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase

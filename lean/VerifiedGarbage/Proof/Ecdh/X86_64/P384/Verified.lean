@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
+
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified

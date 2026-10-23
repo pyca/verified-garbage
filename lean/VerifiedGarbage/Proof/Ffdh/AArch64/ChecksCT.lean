@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
@@ -26,7 +25,6 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
 meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset

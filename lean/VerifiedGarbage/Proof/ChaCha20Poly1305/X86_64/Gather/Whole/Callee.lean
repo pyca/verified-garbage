@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 Untrusted: everything here is checked by Lean. `vg_chacha20_poly1305_seal_gather`
 calls an instance of `vg_chacha20_poly1305_seal` as an artifact (`SealFn`),
 with its working space in a frame of its own, so what the proof needs of it
-is its shared contract (`Spec.ChaCha20Poly1305.sealContract`, with 1744
+is its shared contract (`Spec.ChaCha20Poly1305.sealContract`, with 1752
 bytes of stack): its precondition from the layout the call gives it
 (`callPre`, `sealSpec_pre`), its postcondition (`sealSpec_post`) and its
 public data (`sealSpec_pub`).
@@ -30,14 +30,14 @@ open VG.Spec.Poly1305 (bytesAt)
 open VG.Spec.ChaCha20Poly1305 (encrypt)
 
 /-- An instance of `vg_chacha20_poly1305_seal`, by its shared contract, which
-writes `rsp` only in its frames, whose frames and calls use at most the 1744
+writes `rsp` only in its frames, whose frames and calls use at most the 1752
 bytes below the stack pointer that the contract reserves. -/
 structure SealFn where
   name : String
   code : Prog isa
-  verified : Verified X86_64.target code (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744)
+  verified : Verified X86_64.target code (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1752)
   sp : SpSafe code
-  depth : code.x86_64Depth ≤ 1744
+  depth : code.x86_64Depth ≤ 1752
 
 /-- What a call of `vg_chacha20_poly1305_seal(key = rdi, nonce = rsi,
 aad = rdx, aad_len = rcx, data = r8, len = r9, tag = [rsp + 8])` needs. -/
@@ -49,8 +49,8 @@ def callPre (s : State) : Prop :=
   let tag : Region := ⟨stackArg s 0, 16⟩
   let args : Region := ⟨stackArgAddr s 0, 8⟩
   let ret : Region := ⟨s.gpr .rsp, 8⟩
-  let stk : Region := below (s.gpr .rsp) 1744
-  1744 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64 ∧
+  let stk : Region := below (s.gpr .rsp) 1752
+  1752 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64 ∧
     s.rd = [key, nonce, aad, args] ∧ s.wr = [data, tag] ∧
     key.Disjoint data ∧ key.Disjoint tag ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
     aad.Disjoint data ∧ aad.Disjoint tag ∧ data.Disjoint tag ∧ data.Disjoint args ∧ tag.Disjoint args ∧
@@ -63,7 +63,7 @@ def callPre (s : State) : Prop :=
     (stackArg s 0).toNat + 16 ≤ 2 ^ 64
 
 theorem sealSpec_pre {s : State} (h : callPre s) :
-    (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744).pre s := by
+    (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1752).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
     a₂₂, a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀⟩ := h
   sig_pre [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, X86_64.abi, X86_64.argRegs]
@@ -77,7 +77,7 @@ theorem sealSpec_pre {s : State} (h : callPre s) :
     | omega
     | exact Region.Disjoint.symm ‹_›
 
-theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744).post s s') :
+theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1752).post s s') :
     encrypt (bytesAt s.mem (s.gpr .rdi) 32) (bytesAt s.mem (s.gpr .rsi) 12)
         (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat) =
       (bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
@@ -90,7 +90,7 @@ theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract X8
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0) :
-    (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744).pub s₁ s₂ := by
+    (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1752).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
   sig_pub [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, X86_64.abi, X86_64.argRegs,

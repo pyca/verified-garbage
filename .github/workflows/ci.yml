@@ -409,7 +409,7 @@ jobs:
             !/lean/
             !/docs/
             !/src/asm/*/
-            /src/asm/${{ matrix.arch }}/
+            /src/asm/${{ matrix.asm || matrix.arch }}/
       - uses: ./.github/actions/runner-info
       # An entry with `bench_only` (`rust-arches`: a change to the benchmarks
       # alone) only lints the benchmarks.

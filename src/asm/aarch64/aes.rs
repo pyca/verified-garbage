@@ -8517,11 +8517,16 @@ ret
 /// The CPU features `vg_aes_encrypt_blocks_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
+/// The bytes of `scratch` that `vg_aes_encrypt_blocks_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
+
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
 /// Uses the Armv8 Cryptographic Extension (AESE, AESMC). The round keys stay in registers; eight blocks at a time, then one at a time. `scratch` is not used.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -8870,11 +8875,16 @@ ret
 /// The CPU features `vg_aes_decrypt_blocks_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
+/// The bytes of `scratch` that `vg_aes_decrypt_blocks_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
+
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
 /// Uses the Armv8 Cryptographic Extension (AESD, AESIMC): the equivalent inverse cipher (FIPS 197 §5.3.5), with the round keys of the middle rounds through AESIMC, kept in registers; eight blocks at a time, then one at a time. `scratch` is not used.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///

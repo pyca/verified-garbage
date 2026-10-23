@@ -1,10 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Verified
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Lit
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
@@ -12,9 +14,9 @@ import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Lit
 meta import Mathlib.Data.Finset.Attr
 meta import Mathlib.Tactic.SetLike
 meta import Mathlib.Tactic.Finiteness.Attr
@@ -41,19 +43,12 @@ theorem empty_disjoint (a : Addr) (r : Region) : Region.Disjoint ⟨a, 0⟩ r :=
   simp only [Region.Contains] at hx
   omega
 
-theorem coreK_brainpoolp256r1 : coreK Impl.Ecdsa.AArch64.brainpoolp256r1 =
-    Proof.Ecdsa.AArch64.BrainpoolP256r1.signAArch64 := by
-  have fit : (0 : Addr).toNat + 0 ≤ 2 ^ 64 := by decide
-  simp only [fit, coreK, tableRegions, tableAddr, TblOk, Impl.Ecdsa.AArch64.brainpoolp256r1,
-    Impl.Ecdsa.AArch64.Cfg.combWords, Impl.Weierstrass.tcombWords,
-    List.isEmpty_nil, ↓reduceIte, List.flatMap_nil, List.length_nil,
-    List.append_nil, Nat.mul_zero, Nat.not_lt_zero, false_implies, implies_true,
-    empty_disjoint, and_true, Proof.Ecdsa.AArch64.BrainpoolP256r1.signAArch64]
-  rfl
+theorem coreK_brainpoolp256r1 : coreK Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg =
+    Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.signAArch64 := by rfl
 
 /-- brainpoolp256r1, with the group law `hL`, the inversions' soundness `hI`. -/
 def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds) : RfcCurve where
-  E := Impl.Ecdsa.AArch64.brainpoolp256r1
+  E := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg
   inst := Spec.Ecdsa.BrainpoolP256r1.inst
   curve := rfl
   wide := false
@@ -62,9 +57,9 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weie
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.BrainpoolP256r1.brainpoolp256r1_sh
   coreN := Spec.Ecdsa.BrainpoolP256r1.signApi.name
-  coreC := Impl.Ecdsa.AArch64.signBrainpoolP256r1
-  coreX := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.AArch64.BrainpoolP256r1.sign_a64 hL hI
-  coreCT := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.AArch64.BrainpoolP256r1.sign_ct
+  coreC := Impl.Ecdsa.AArch64.BrainpoolP256r1.signComb
+  coreX := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_a64 hL hI
+  coreCT := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)

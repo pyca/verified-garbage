@@ -200,9 +200,21 @@ pub struct TestFile<P, T> {
 }
 
 /// Bytes, written in hex in the test vector files.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hex(pub Vec<u8>);
 
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 impl<'de> Deserialize<'de> for Hex {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let s = String::deserialize(d)?;
@@ -227,6 +239,12 @@ impl<P, T> TestFile<P, T> {
     }
 
     /// Calls `f` on every test, with its group, as [`par_each`] does.
+    #[cfg(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "x86"
+    ))]
     pub fn par_tests(&self, f: impl Fn(&TestGroup<P, T>, &Test<T>) + Sync)
     where
         P: Sync,
@@ -287,9 +305,21 @@ pub fn par_each<I: Sync>(items: &[I], f: impl Fn(&I) + Sync) {
 }
 
 /// A number of vectors, counted by the threads of [`par_each`].
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 #[derive(Default)]
 pub struct Count(AtomicUsize);
 
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 impl Count {
     /// Counts one more.
     pub fn add(&self) {

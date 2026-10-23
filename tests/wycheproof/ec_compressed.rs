@@ -1,6 +1,13 @@
 //! SEC 1 conversions of the public keys in Wycheproof's ECDSA groups,
 //! plus its compressed ECDH encodings, including malformed coordinates.
 
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+
 use serde::Deserialize;
 use verified_garbage::ecdh::{
     BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, PrivateKey,

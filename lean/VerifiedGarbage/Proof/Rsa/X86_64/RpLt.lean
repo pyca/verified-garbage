@@ -5,11 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Algebra.GroupWithZero.Nat
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Algebra.Order.ZeroLEOne
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules

@@ -91,16 +91,20 @@ def artifacts : List Artifact := [
     suffix := "_aes"
     notes := ["Uses the Armv8 Cryptographic Extension (AESE, AESMC). The round keys stay in \
         registers; eight blocks at a time, then one at a time. `scratch` is not used."]
+    written := [("scratch", 0)]
     code := Impl.Aes.AArch64.Aese.encryptBlocks
     verified := Proof.Aes.AArch64.Aese.encryptBlocks_verified
+    writtenOk := Proof.Aes.AArch64.Aese.encryptBlocks_written
     features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact AArch64.target {
     suffix := "_aes"
     notes := ["Uses the Armv8 Cryptographic Extension (AESD, AESIMC): the equivalent inverse \
         cipher (FIPS 197 §5.3.5), with the round keys of the middle rounds through AESIMC, kept \
         in registers; eight blocks at a time, then one at a time. `scratch` is not used."]
+    written := [("scratch", 0)]
     code := Impl.Aes.AArch64.Aese.decryptBlocks
     verified := Proof.Aes.AArch64.Aese.decryptBlocks_verified
+    writtenOk := Proof.Aes.AArch64.Aese.decryptBlocks_written
     features := ["aes"] }]
 
 end VG.Artifacts.Aes.AArch64
