@@ -31,10 +31,17 @@ theorem hashLabel_safe {H : Stream} (h : HashSafety H) (o : Nat) :
   repeat' apply generationSafe.seq
   all_goals first | exact h.init | exact h.update | exact h.finish | rfl
 
-theorem seedAdd_safe (n : Nat) : generationSafe (seedAdd n) := by
+private theorem seedAddUnrolled_safe (n : Nat) : generationSafe (seedAddUnrolled n) := by
   induction n with
   | zero => rfl
   | succ n ih => exact (show generationSafe (.block (seedAddByte n)) from rfl).seq ih
+
+theorem seedAdd_safe (n : Nat) : generationSafe (seedAdd n) := by
+  unfold seedAdd
+  split
+  · exact seedAddUnrolled_safe n
+  · unfold seedAddTail
+    split <;> rfl
 
 theorem seedHash_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) :
     generationSafe (seedHash H1 H256) := by

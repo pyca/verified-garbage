@@ -35,10 +35,17 @@ theorem hashLabel_depth {H : Stream} (h : HashDepth H) (o : Nat) :
   exact ⟨by decide, Nat.add_le_add_right h.init 8, by decide,
     Nat.add_le_add_right h.update 8, by decide, Nat.add_le_add_right h.finish 8⟩
 
-theorem seedAdd_depth (n : Nat) : generationDepth (seedAdd n) := by
+private theorem seedAddUnrolled_depth (n : Nat) : generationDepth (seedAddUnrolled n) := by
   induction n with
   | zero => exact generationDepth.block _
   | succ n ih => exact (generationDepth.block _).seq ih
+
+theorem seedAdd_depth (n : Nat) : generationDepth (seedAdd n) := by
+  unfold seedAdd
+  split
+  · exact seedAddUnrolled_depth n
+  · unfold seedAddTail
+    split <;> exact Nat.zero_le _
 
 theorem seedHash_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) :
     generationDepth (seedHash H1 H256) :=
