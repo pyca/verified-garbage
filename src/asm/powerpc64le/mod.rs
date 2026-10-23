@@ -44,6 +44,12 @@ pub(crate) mod chacha20poly1305;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p256;
+
+#[rustfmt::skip]
 pub(crate) mod ed25519;
 
 #[rustfmt::skip]

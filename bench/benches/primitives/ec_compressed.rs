@@ -36,10 +36,12 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::nid::Nid;
     use std::hint::black_box;
+    use verified_garbage::ecdh::{
+        BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, Secp256k1,
+    };
 
     macro_rules! curve {
         ($curve:ident, $name:literal, $len:literal, $nid:ident) => {{
-            use verified_garbage::ecdh::$curve;
             let group = EcGroup::from_curve_name(Nid::$nid).unwrap();
             let mut ctx = BigNumContext::new().unwrap();
             let scalar = BigNum::from_u32(7).unwrap();
