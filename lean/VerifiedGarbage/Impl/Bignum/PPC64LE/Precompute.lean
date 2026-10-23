@@ -23,7 +23,7 @@ doublings: the double into the accumulator (`n + 1` digits of 32 bits, as
 `n` is public: timing may depend on it, and the code branches on its
 validity.
 
-Registers: `r3` `pre`, `r6` `k`, `r12` `n`'s bytes, `r21` the working
+Registers: `r19` `pre` (`r3` is `subMod`'s), `r6` `k`, `r12` `n`'s bytes, `r21` the working
 space; `r10` `n`'s base, `r5` `x`'s, `r8` the accumulator's, `r9` the
 temporary's, `r11` `2 w`, `r4` the doublings left.
 -/
@@ -51,10 +51,10 @@ def restore : List Instr :=
 def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
   .loop (.block (body ++ ([.subi cnt cnt 1] : List Instr))) (.nonzero .d cnt)
 
-/-- `n`'s bytes into `r12`, `w = ⌈k / 8⌉` and `2 w` (`r11`), the arrays'
+/-- `pre` into `r19`, `n`'s bytes into `r12`, `w = ⌈k / 8⌉` and `2 w` (`r11`), the arrays'
 bases (each `w + 2` words: `8 w + 16` bytes, in `r4`) and the header's `w`. -/
 def setup : List Instr :=
-  [.addi .r12 .r5 0, .addi .r11 .r6 7, .lsr .d .r11 .r11 3, .store .d .r11 .r21 (8 * sW),
+  [.addi .r19 .r3 0, .addi .r12 .r5 0, .addi .r11 .r6 7, .lsr .d .r11 .r11 3, .store .d .r11 .r21 (8 * sW),
     .lsl .r4 .r11 3, .addi .r4 .r4 16, .addi .r10 .r21 hdrBytes, .add .r5 .r10 .r4,
     .add .r8 .r5 .r4, .add .r9 .r8 .r4, .lsl .r11 .r11 1]
 
@@ -107,18 +107,21 @@ def copyWords : Prog isa :=
 
 /-- `n` and `x` into `pre`. -/
 def write : Prog isa :=
-  .seq (.block [.addi .r14 .r3 0, .addi .r15 .r10 0]) (.seq copyWords
+  .seq (.block [.addi .r14 .r19 0, .addi .r15 .r10 0]) (.seq copyWords
     (.seq (.block [.addi .r15 .r5 0]) copyWords))
 
 /-- `pre`'s `2 w` words := 0. -/
 def zeroPre : Prog isa :=
-  .seq (.block [.addi .r14 .r3 0]) (.seq zeroWords zeroWords)
+  .seq (.block [.addi .r14 .r19 0]) (.seq zeroWords zeroWords)
+
+/-- Load and check `n`, then write `n` and `R² mod n` to `pre` and return 1,
+or zero `pre` and return 0. -/
+def core : Prog isa :=
+  .seq loadN (.seq check (.ite (.zero .d .r0) (.seq r2 (.seq write (.block [.li .r3 1])))
+    (.seq zeroPre (.block [.li .r3 0]))))
 
 /-- `vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len)`. -/
 def precompute : Prog isa :=
-  .seq (.block (save ++ setup)) (.seq loadN (.seq check
-    (.seq (.ite (.zero .d .r0) (.seq r2 (.seq write (.block [.li .r3 1])))
-        (.seq zeroPre (.block [.li .r3 0])))
-      (.block restore))))
+  .seq (.block (save ++ setup)) (.seq core (.block restore))
 
 end VG.Impl.Bignum.PPC64LE.Precompute

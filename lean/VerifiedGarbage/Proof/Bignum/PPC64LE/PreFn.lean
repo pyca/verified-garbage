@@ -36,18 +36,19 @@ theorem ofNat_shl1 (a : Nat) : BitVec.ofNat 64 a <<< 1 = BitVec.ofNat 64 (2 * a)
   omega
 
 /-- `setup`, `n` at `r5`, `k` in `r6` and the working space at `r21`. -/
-theorem setup_ok {s : State} {N S : Addr} {Z k : Nat} (hs : Scr s S Z) (h5 : s.gpr .r5 = N)
+theorem setup_ok {s : State} {P N S : Addr} {Z k : Nat} (hs : Scr s S Z) (h3 : s.gpr .r3 = P)
+    (h5 : s.gpr .r5 = N)
     (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (h21 : s.gpr .r21 = S) (hk : 1 ≤ k) (hk' : k ≤ 1024)
     (hZ : 56 ≤ Z) :
     WP isa (.block setup) s fun t =>
-      (t.gpr .r12 = N ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) ∧
+      (t.gpr .r19 = P ∧ t.gpr .r12 = N ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) ∧
         t.gpr .r10 = off S (slot ((k + 7) / 8) 0) ∧ t.gpr .r5 = off S (slot ((k + 7) / 8) 1) ∧
         t.gpr .r8 = off S (slot ((k + 7) / 8) 2) ∧ t.gpr .r9 = off S (slot ((k + 7) / 8) 3) ∧
         t.mem = s.mem.writeW (off S 48) (BitVec.ofNat 64 ((k + 7) / 8))) ∧
-      Keep [.r4, .r5, .r8, .r9, .r10, .r11, .r12] s t := by
+      Keep [.r4, .r5, .r8, .r9, .r10, .r11, .r12, .r19] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold setup
-  prun [h5, h6, h21, BitVec.add_zero, ofNat_add7_shr3 k (by omega), ofNat_shl3, ofNat_shl1, sW, hdrBytes, Nat.reduceMul, hs.st (d := 48) (n := 8) (by omega)]
+  prun [h3, h5, h6, h21, BitVec.add_zero, ofNat_add7_shr3 k (by omega), ofNat_shl3, ofNat_shl1, sW, hdrBytes, Nat.reduceMul, hs.st (d := 48) (n := 8) (by omega)]
   refine ⟨?_, ?_, ?_, ?_⟩ <;>
     simp only [off, slot, hdrBytes, BitVec.add_assoc, BitVec.ofNat_add_ofNat] <;>
     congr 2 <;> omega
