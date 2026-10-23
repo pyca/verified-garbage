@@ -1206,8 +1206,9 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         // On AArch64, the powers, through `seal_prepared`.
         #[cfg(target_arch = "aarch64")]
-        if let Some(p) = &self.fns.powers {
-            return Ok(self.seal_prepared(p, nonce, aad, data));
+        match &self.fns.powers {
+            Some(p) => return Ok(self.seal_prepared(p, nonce, aad, data)),
+            None => no_powers(),
         }
         let seal = self.fns.seal;
         let mut tag: Block = [0; 16];
@@ -1452,6 +1453,14 @@ impl AesGcm {
         })
     }
 }
+
+/// On AArch64, marks the path of a backend without `_with_powers`
+/// instances unlikely, so that the call of `seal_prepared` falls through
+/// (measured on Neoverse N2: a branch around it cost 1% at 15 bytes).
+#[cfg(target_arch = "aarch64")]
+#[cold]
+#[inline(never)]
+fn no_powers() {}
 
 /// On AArch64, the calls of the `_with_powers` instances.
 #[cfg(target_arch = "aarch64")]
