@@ -9,10 +9,8 @@ import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
-import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
