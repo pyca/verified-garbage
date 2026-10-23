@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Contract
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.Sha3.Stream
@@ -430,6 +431,121 @@ theorem squeeze_phase {s : State} (h : SEnv s₀ s)
       gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs), g3, g4, g5, g6, g7, hm, BitVec.toNat_ofNat, Nat.reducePow,
       Nat.reduceMod] at hpost
     rw [hpost.1, hst, VG.Proof.MlKem.xof_eq]
+
+end
+
+/-! ## The loop of Algorithm 7 -/
+
+/-- A candidate `d` accepted into `a` if `d < q` and there are fewer than
+256 coefficients. -/
+def accD (a : List Zq) (d : Nat) : List Zq := if d < q ∧ a.length < 256 then a ++ [ofNat d] else a
+
+theorem stepCap_eq {a : List Zq} (ha : a.length ≤ 256) (c₀ c₁ c₂ : Byte) :
+    sampleStepCap a c₀ c₁ c₂ =
+      accD (accD a (c₀.toNat + 256 * (c₁.toNat % 16))) (c₁.toNat / 16 + 16 * c₂.toNat) := by
+  unfold sampleStepCap sampleStep
+  rw [n_eq]
+  by_cases h : a.length = 256
+  · rw [ite_eq_left h]
+    have e : ∀ d, accD a d = a := fun d => by unfold accD; rw [ite_eq_right (by omega)]
+    rw [e, e]
+  · rw [ite_eq_right h]
+    have hl : a.length < 256 := by omega
+    have e1 : accD a (c₀.toNat + 256 * (c₁.toNat % 16)) = (if c₀.toNat + 256 * (c₁.toNat % 16) < q then
+        a ++ [ofNat (c₀.toNat + 256 * (c₁.toNat % 16))] else a) := by
+      unfold accD; simp only [hl, and_true]
+    rw [e1]; rfl
+
+/-- The loop's state, with the coefficients `L` sampled so far. -/
+structure LS (s₀ : State) (L : List Zq) (s : State) : Prop where
+  env : SEnv s₀ s
+  buf : Spec.Sha3.bytesAt s.mem (S s₀ + BitVec.ofNat 64 840) 840 = xof (B s₀) 840
+  r4 : s.gpr .r4 = A s₀ + BitVec.ofNat 64 (4 * L.length)
+  r5 : s.gpr .r5 = BitVec.ofNat 64 L.length
+  len : L.length ≤ 256
+  coeff : ∀ k < L.length, coeffAt s.mem (A s₀) k = BitVec.ofNat 32 (L.getD k 0).val
+
+/-- What a block of the loop keeps. -/
+structure Keep (s s' : State) : Prop where
+  r29 : s'.gpr .r29 = s.gpr .r29
+  r30 : s'.gpr .r30 = s.gpr .r30
+  r31 : s'.gpr .r31 = s.gpr .r31
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+
+theorem LS.keep {s₀ s s' : State} (hp : Pre s₀) {L : List Zq} (h : LS s₀ L s) (hk : Keep s s')
+    (h4 : s'.gpr .r4 = s.gpr .r4) (h5 : s'.gpr .r5 = s.gpr .r5) : LS s₀ L s' :=
+  ⟨h.env.regs hp hk.mem hk.r29 hk.r30 hk.r31 hk.rd hk.wr hk.sp, hk.mem ▸ h.buf, h4.trans h.r4, h5.trans h.r5,
+    h.len, fun k hk' => hk.mem ▸ h.coeff k hk'⟩
+
+/-- The first candidate of a chunk. -/
+def cand1 (b₀ b₁ : Byte) : BitVec 64 := b₀.setWidth 64 + (b₁.setWidth 64 <<< 60) >>> 52
+
+/-- The second candidate of a chunk. -/
+def cand2 (b₁ b₂ : Byte) : BitVec 64 := b₁.setWidth 64 >>> 4 + b₂.setWidth 64 <<< 4
+
+/-- Nonzero exactly when the candidate `d` is accepted, with `j` coefficients. -/
+def accR (d j : BitVec 64) : BitVec 64 := (d - BitVec.ofNat 64 3329) >>> 63 &&& (j - BitVec.ofNat 64 256) >>> 63
+
+theorem accR_eq {d j : BitVec 64} (hd : d.toNat < 4096) (hj : j.toNat ≤ 256) :
+    (accR d j == 0) = !decide (d.toNat < 3329 ∧ j.toNat < 256) := by
+  unfold accR
+  by_cases h1 : d.toNat < 3329 <;> by_cases h2 : j.toNat < 256
+  · have e1 : (d - BitVec.ofNat 64 3329) >>> 63 = 1 := by bv_omega
+    have e2 : (j - BitVec.ofNat 64 256) >>> 63 = 1 := by bv_omega
+    rw [e1, e2]; simp [h1, h2]
+  · have e2 : (j - BitVec.ofNat 64 256) >>> 63 = 0 := by bv_omega
+    rw [e2]; simp [h1, h2]
+  · have e1 : (d - BitVec.ofNat 64 3329) >>> 63 = 0 := by bv_omega
+    rw [e1]; simp [h1, h2]
+  · have e1 : (d - BitVec.ofNat 64 3329) >>> 63 = 0 := by bv_omega
+    rw [e1]; simp [h1, h2]
+
+theorem toNat_setWidth8 (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+
+theorem cand1_toNat (b₀ b₁ : Byte) : (cand1 b₀ b₁).toNat = b₀.toNat + 256 * (b₁.toNat % 16) := by
+  have := b₀.isLt; have := b₁.isLt
+  unfold cand1
+  rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, toNat_setWidth8, toNat_setWidth8,
+    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+  omega
+
+theorem cand2_toNat (b₁ b₂ : Byte) : (cand2 b₁ b₂).toNat = b₁.toNat / 16 + 16 * b₂.toNat := by
+  have := b₁.isLt; have := b₂.isLt
+  unfold cand2
+  rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, toNat_setWidth8, toNat_setWidth8,
+    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+  omega
+
+theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
+  simp only [Mem.read]
+  ext i hi
+  rw [BitVec.getElem_append]
+  simp only [show i < 8 by omega, dite_true]
+
+section
+variable {s : State} {x j d : BitVec 64}
+
+theorem blk1_ok (h3 : s.gpr .r3 = x) (h5 : s.gpr .r5 = j)
+    (i0 : InRegions (s.rd ++ s.wr) x 1) (i1 : InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 1) 1)
+    (i2 : InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 2) 1) :
+    WP isa (.block (candidates ++ acceptTest .r10)) s fun t =>
+      t.gpr .r10 = cand1 (s.mem x) (s.mem (x + BitVec.ofNat 64 1)) ∧
+      t.gpr .r11 = cand2 (s.mem (x + BitVec.ofNat 64 1)) (s.mem (x + BitVec.ofNat 64 2)) ∧
+      t.gpr .r12 = accR (cand1 (s.mem x) (s.mem (x + BitVec.ofNat 64 1))) j ∧
+      t.gpr .r3 = x ∧ t.gpr .r4 = s.gpr .r4 ∧ t.gpr .r5 = j ∧ t.gpr .r6 = s.gpr .r6 ∧ Keep s t := by
+  prun [candidates, acceptTest, List.cons_append, List.nil_append, exec_lbz, read_one, h3, h5, i0, i1, i2]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩ <;> first | exact trivial | rfl
+
+theorem blk2_ok (h5 : s.gpr .r5 = j) (h11 : s.gpr .r11 = d) :
+    WP isa (.block (acceptTest .r11)) s fun t =>
+      t.gpr .r12 = accR d j ∧ t.gpr .r3 = s.gpr .r3 ∧ t.gpr .r4 = s.gpr .r4 ∧ t.gpr .r5 = j ∧
+      t.gpr .r6 = s.gpr .r6 ∧ t.gpr .r11 = d ∧ Keep s t := by
+  prun [acceptTest, h5, h11]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩ <;> first | exact trivial | rfl
 
 end
 
