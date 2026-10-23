@@ -55,47 +55,47 @@ theorem recombine_ok (h : In Ex base bytes len args s) {q hc mq : Nat}
   have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
   have cb2 : cb len (two .wide) = 2 * bc len .wide := by simp [cb, two]
   have cw2 : cw len (two .wide) = 2 * cwc len .wide := by
-    have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega
+    have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega_arith
   have fitR : ∀ p ∈ reR len, p.1 + p.2 ≤ bytes := by
     intro p hp; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
   unfold recombine
   -- `q` into the multiplicand, and `q h`.
-  refine WP.seq (WP.mono (copy_ok h (x := .slot .wide 11) (d := mulA) (one_ok .wide) (by rw [cb1]; omega)
-    (by rw [cb1]; simp only [mulA, lo]; omega) (by rw [cb1]; simp only [mulA, lo]; exact .inl (by omega)))
+  refine WP.seq (WP.mono (copy_ok h (x := .slot .wide 11) (d := mulA) (one_ok .wide) (by rw [cb1]; omega_arith)
+    (by rw [cb1]; simp only [mulA, lo]; omega_arith) (by rw [cb1]; simp only [mulA, lo]; exact .inl (by omega_arith)))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   simp only [mulA, lo, cb1, cw1] at O₁ V₁
   rw [show numBase + 11 * st len .wide = lo len (.slot .wide 11) from rfl, hq] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
-  refine WP.seq (WP.mono (wideProduct_ok h₁ (b := .slot .wide 7) (by omega) (by simp only [lo]; omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  refine WP.seq (WP.mono (wideProduct_ok h₁ (b := .slot .wide 7) (by omega_arith) (by simp only [lo]; omega_arith))
     fun u₂ ⟨F₂, V₂, K₂⟩ => ?_)
-  rw [V₁, O₁.val32 (d := lo len (.slot .wide 7)) (k := cwc len .wide) (.inr (by omega)) (by omega), hh] at V₂
+  rw [V₁, O₁.val32 (d := lo len (.slot .wide 7)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith), hh] at V₂
   have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (prodR_fit h₁)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
   have M₂ : val32 u₂.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq := by
-    rw [prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega) (by omega),
-      O₁.val32 (.inr (by omega)) (by omega), hmq]
+    rw [prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega_arith) (by omega_arith),
+      O₁.val32 (.inr (by omega_arith)) (by omega_arith), hmq]
   -- `m_q + q h`.
   refine WP.mono (chainAdd_ok h₂ (o := .slot .wide 19) (a := prod) (b := .slot .wide 17) (two_ok .wide)
-    (by rw [cb2]; omega) (by rw [cb2]; simp only [prod, lo]; omega) (by rw [cb2]; omega)
-    (by rw [cb2]; simp only [prod, lo]; exact .inr (by omega)) (by rw [cb2]; exact .inr (by omega)))
+    (by rw [cb2]; omega_arith) (by rw [cb2]; simp only [prod, lo]; omega_arith) (by rw [cb2]; omega_arith)
+    (by rw [cb2]; simp only [prod, lo]; exact .inr (by omega_arith)) (by rw [cb2]; exact .inr (by omega_arith)))
     fun u ⟨O₃, _, ⟨c, _, V₃⟩, K₃⟩ => ⟨?_, fun fits => ?_, ?_⟩
   · rw [cb2] at O₃
-    have F₁ : Frame (frameR base (s.gpr .esp) (reR len)) s.mem u₁.mem := frameR_of_outside O₁ (by omega) (by simp)
+    have F₁ : Frame (frameR base (s.gpr .esp) (reR len)) s.mem u₁.mem := frameR_of_outside O₁ (by omega_arith) (by simp)
     have F₂' : Frame (frameR base (s.gpr .esp) (reR len)) u₁.mem u₂.mem :=
       frameR_mono F₂ fun p hp => by
         simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp; rcases hp with rfl | rfl <;> simp
-    exact (F₁.trans F₂').trans (frameR_of_outside O₃ (by omega) (by simp))
+    exact (F₁.trans F₂').trans (frameR_of_outside O₃ (by omega_arith) (by simp))
   · rw [cw2, show lo len prod = prodOff from rfl] at V₃
     rw [M₂] at V₃
     have pq : val32 u₂.mem base prodOff (2 * cwc len .wide) = q * hc :=
-      val32_low (b := 1) V₂ (by omega)
+      val32_low (b := 1) V₂ (by omega_arith)
     rw [pq] at V₃
     cases c
-    · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at V₃; omega
+    · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at V₃; omega_arith
     · have := val32_lt u.mem base (lo len (.slot .wide 19)) (2 * cwc len .wide)
-      simp only [Bool.toNat_true, Nat.mul_one] at V₃; omega
+      simp only [Bool.toNat_true, Nat.mul_one] at V₃; omega_arith
   · exact (((K₁.mono (by decide)).trans K₂).trans (K₃.mono (by decide)))
 
 end
