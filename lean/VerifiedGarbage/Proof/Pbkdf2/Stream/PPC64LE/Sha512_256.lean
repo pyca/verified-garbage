@@ -1,0 +1,30 @@
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Instance
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_256
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Instance
+meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_256
+
+/-!
+# PBKDF2-HMAC-SHA-512/256 on PPC64LE: `iterate`
+
+The constant time of `iterate`'s code over SHA-512/256's streaming functions, which
+the kernel checks, and `iterate` against the shared contract of
+`Spec.Hmac.sha512_256I`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.Stream.PPC64LE.Sha512_256
+
+open VG.PPC64LE
+open VG.Proof.Hmac.Stream.PPC64LE.Sha512_256 (hash ok)
+
+theorem iterate : Verified PPC64LE.target (VG.Impl.Pbkdf2.Stream.PPC64LE.iterate hash)
+    (Spec.Hmac.sha512_256I.iterateContract PPC64LE.abi 96) :=
+  Shared.iterate ok rfl (by decide) (Shared.ct _ _ (by taint_decide)) (by
+    inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+      Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, PPC64LE.abi, PPC64LE.argRegs]
+      using iterSat 192 32 1872)
+
+end VG.Proof.Pbkdf2.Stream.PPC64LE.Sha512_256
