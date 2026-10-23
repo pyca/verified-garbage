@@ -156,11 +156,11 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   -- `H'²ⁱ⁺¹`
   rw [WP.block_append_iff]
   have a₁ : s.gpr .x9 + BitVec.ofNat 64 16 = slot Ctx (2 * i + 1) := by
-    rw [hI.x9, Offset.add_add, slot_off Ctx (j := 2 * i + 1) (by omega)]
-  refine WP.mono (ld_ok 16 s (by decide) (by decide) (by rw [hI.x9, Offset.add_add]; exact in_off cr (by omega) (by decide)))
+    rw [hI.x9, Offset.add_add, slot_off Ctx (j := 2 * i + 1) (by omega_arith)]
+  refine WP.mono (ld_ok 16 s (by decide) (by decide) (by rw [hI.x9, Offset.add_add]; exact in_off cr (by omega_arith) (by decide)))
     fun s₁ ⟨l₁, w₁, o₁⟩ => ?_
   have p₁ : s₁.v PL = pp H (2 * i + 1) := by
-    rw [l₁, a₁, hI.slots _ (by omega) (by omega), slotPow, ifn (by omega)]
+    rw [l₁, a₁, hI.slots _ (by omega_arith) (by omega_arith), slotPow, ifn (by omega_arith)]
   have hk₁ : HKey H s₁ := hI.hk.of_vonly o₁ (by decide) (by decide) (by decide)
   -- `H'⁴ⁱ⁺²`
   rw [WP.block_append_iff]
@@ -174,34 +174,34 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   have hk₃ : HKey H s₃ := hk₂.of_vonly o₃ (by decide) (by decide) (by decide)
   have o₀₃ := (o₁.trans o₂).trans o₃
   have et₃ : s₃.v ET = pp H (4 * i + 2) := by
-    rw [o₃.v ET (by decide), t₂, show 2 * i + 1 + (2 * i + 1) = 4 * i + 2 by omega]
+    rw [o₃.v ET (by decide), t₂, show 2 * i + 1 + (2 * i + 1) = 4 * i + 2 by omega_arith]
   have g₃ : s₃.gpr = s.gpr := o₀₃.gpr
   -- the first two stores
   rw [WP.block_append_iff]
   have b₀ : s₃.gpr .x10 + BitVec.ofNat 64 0 = slot Ctx (4 * i) := by
-    rw [g₃, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i) (by omega)]
+    rw [g₃, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i) (by omega_arith)]
   have b₁ : s₃.gpr .x10 + BitVec.ofNat 64 (0 + 16) = slot Ctx (4 * i + 1) := by
-    rw [g₃, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 1) (by omega)]
+    rw [g₃, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 1) (by omega_arith)]
   have cw₃ : Covers [⟨Ctx, 384⟩] s₃.wr := by rw [o₀₃.wr]; exact cw
   refine WP.mono (st2_ok ET OT 0 s₃ (by decide) (by decide)
-      (by rw [b₀, slot]; exact in_off cw₃ (by omega) (by decide))
-      (by rw [b₁, slot]; exact in_off cw₃ (by omega) (by decide)))
+      (by rw [b₀, slot]; exact in_off cw₃ (by omega_arith) (by decide))
+      (by rw [b₁, slot]; exact in_off cw₃ (by omega_arith) (by decide)))
     fun s₄ ⟨m₄, v₄, g₄, rd₄, wr₄, sp₄⟩ => ?_
   rw [b₀, b₁] at m₄
   have hk₄ : HKey H s₄ := hk₃.of_v (by rw [v₄]) (by rw [v₄]) (by rw [v₄])
   -- `H'²ⁱ⁺²`, read after the stores
   rw [WP.block_append_iff]
   have a₅ : s₄.gpr .x9 + BitVec.ofNat 64 0 = slot Ctx (2 * i) := by
-    rw [g₄, g₃, hI.x9, Offset.add_add, slot_off Ctx (j := 2 * i) (by omega)]
+    rw [g₄, g₃, hI.x9, Offset.add_add, slot_off Ctx (j := 2 * i) (by omega_arith)]
   have cr₄ : Covers [⟨Ctx, 384⟩] (s₄.rd ++ s₄.wr) := by rw [rd₄, wr₄, o₀₃.rd, o₀₃.wr]; exact cr
-  refine WP.mono (ld_ok 0 s₄ (by decide) (by decide) (by rw [a₅, slot]; exact in_off cr₄ (by omega) (by decide)))
+  refine WP.mono (ld_ok 0 s₄ (by decide) (by decide) (by rw [a₅, slot]; exact in_off cr₄ (by omega_arith) (by decide)))
     fun s₅ ⟨l₅, w₅, o₅⟩ => ?_
   have p₅ : s₅.v PL = pp H (2 * i + 2) := by
-    rw [l₅, a₅, m₄, read_slot_write _ _ (by omega) (by omega), ifn (by omega),
-      read_slot_write _ _ (by omega) (by omega), o₀₃.mem]
+    rw [l₅, a₅, m₄, read_slot_write _ _ (by omega_arith) (by omega_arith), ifn (by omega_arith),
+      read_slot_write _ _ (by omega_arith) (by omega_arith), o₀₃.mem]
     by_cases h0 : 2 * i = 4 * i
-    · rw [ifp h0, et₃, show 4 * i + 2 = 2 * i + 2 by omega]
-    · rw [ifn h0, hI.slots _ (by omega) (by omega), slotPow, ifp (by omega)]
+    · rw [ifp h0, et₃, show 4 * i + 2 = 2 * i + 2 by omega_arith]
+    · rw [ifn h0, hI.slots _ (by omega_arith) (by omega_arith), slotPow, ifp (by omega_arith)]
   have hk₅ : HKey H s₅ := hk₄.of_vonly o₅ (by decide) (by decide) (by decide)
   -- `H'⁴ⁱ⁺⁴`
   rw [WP.block_append_iff]
@@ -209,27 +209,27 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   have hk₆ : HKey H s₆ := hk₅.of_vonly o₆ (by decide) (by decide) (by decide)
   have es₆ : s₆.v ES = ext8 (pp H (4 * i + 2)) (pp H (4 * i + 2)) := by
     rw [o₆.v ES (by decide), o₅.v ES (by decide), v₄, o₃.v ES (by decide), e₂,
-      show 2 * i + 1 + (2 * i + 1) = 4 * i + 2 by omega]
+      show 2 * i + 1 + (2 * i + 1) = 4 * i + 2 by omega_arith]
   -- `H'⁴ⁱ⁺³`
   rw [WP.block_append_iff]
   refine WP.mono (byH_ok hP s₆ (by unfold Free; decide) (by decide) hk₆ es₆) fun s₇ ⟨e₇, t₇, o₇⟩ => ?_
   have hk₇ : HKey H s₇ := hk₆.of_vonly o₇ (by decide) (by decide) (by decide)
   have o₅₇ := (o₅.trans o₆).trans o₇
   have et₇ : s₇.v ET = pp H (4 * i + 4) := by
-    rw [o₇.v ET (by decide), t₆, show 2 * i + 2 + (2 * i + 2) = 4 * i + 4 by omega]
+    rw [o₇.v ET (by decide), t₆, show 2 * i + 2 + (2 * i + 2) = 4 * i + 4 by omega_arith]
   have ks₇ : s₇.v KS = ext8 (pp H (4 * (i + 1))) (pp H (4 * (i + 1))) := by
-    rw [o₇.v KS (by decide), e₆, show 2 * i + 2 + (2 * i + 2) = 4 * (i + 1) by omega]
+    rw [o₇.v KS (by decide), e₆, show 2 * i + 2 + (2 * i + 2) = 4 * (i + 1) by omega_arith]
   have g₇ : s₇.gpr = s.gpr := by rw [o₅₇.gpr, g₄, g₃]
   have cw₇ : Covers [⟨Ctx, 384⟩] s₇.wr := by rw [o₅₇.wr, wr₄]; exact cw₃
   have c₀ : s₇.gpr .x10 + BitVec.ofNat 64 32 = slot Ctx (4 * i + 2) := by
-    rw [g₇, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 2) (by omega)]
+    rw [g₇, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 2) (by omega_arith)]
   have c₁ : s₇.gpr .x10 + BitVec.ofNat 64 48 = slot Ctx (4 * i + 3) := by
-    rw [g₇, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 3) (by omega)]
+    rw [g₇, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 3) (by omega_arith)]
   -- the last two stores and the pointers
   have hw₀ : InRegions s₇.wr (s₇.gpr .x10 + BitVec.ofNat 64 32) 16 := by
-    rw [c₀, slot]; exact in_off cw₇ (by omega) (by decide)
+    rw [c₀, slot]; exact in_off cw₇ (by omega_arith) (by decide)
   have hw₁ : InRegions s₇.wr (s₇.gpr .x10 + BitVec.ofNat 64 48) 16 := by
-    rw [c₁, slot]; exact in_off cw₇ (by omega) (by decide)
+    rw [c₁, slot]; exact in_off cw₇ (by omega_arith) (by decide)
   refine WP.block_cons_iff.mpr ⟨_, exec_strq (by decide) (by decide) hw₀, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_strq (t := OT) (n := .x10) (off := 48) (by decide) (by decide)
     (by exact hw₁), ?_⟩
@@ -237,13 +237,13 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   refine ⟨_, by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_addImm (show 32 < 4096 by decide),
       exec_addImm (show 64 < 4096 by decide), exec_subImm (show 1 < 4096 by decide)]; rfl, ?_⟩
-  refine ⟨by omega, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by omega_arith, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_write_x, reduceCtorEq, ite_false, ite_true, g₇, hI.x9, Offset.add_add]
-    rw [show 256 + 32 * i + 32 = 256 + 32 * (i + 1) by omega]
+    rw [show 256 + 32 * i + 32 = 256 + 32 * (i + 1) by omega_arith]
   · simp only [gpr_write_x, reduceCtorEq, ite_false, ite_true, g₇, hI.x10, Offset.add_add]
-    rw [show 256 + 64 * i + 64 = 256 + 64 * (i + 1) by omega]
+    rw [show 256 + 64 * i + 64 = 256 + 64 * (i + 1) by omega_arith]
   · simp only [gpr_write_x, reduceCtorEq, ite_false, ite_true, g₇, hI.x11]
-    rw [ofNat_sub_one (by omega) (by omega), show 2 - i - 1 = 2 - (i + 1) by omega]
+    rw [ofNat_sub_one (by omega_arith) (by omega_arith), show 2 - i - 1 = 2 - (i + 1) by omega_arith]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_write_x, hr.2.2.2.2.2.2, hr.2.2.2.2.2.1, hr.2.2.2.2.1, ite_false, g₇]
     exact hI.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)
@@ -251,25 +251,25 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   · exact ks₇
   · intro j hj hj'
     simp only [mem_write, c₀, c₁]
-    rw [read_slot_write _ _ hj (by omega), read_slot_write _ _ hj (by omega), o₅₇.mem, m₄,
-      read_slot_write _ _ hj (by omega), read_slot_write _ _ hj (by omega)]
+    rw [read_slot_write _ _ hj (by omega_arith), read_slot_write _ _ hj (by omega_arith), o₅₇.mem, m₄,
+      read_slot_write _ _ hj (by omega_arith), read_slot_write _ _ hj (by omega_arith)]
     by_cases h3 : j = 4 * i + 3
-    · rw [ifp h3, t₇, h3, slotPow, ifn (by omega)]
+    · rw [ifp h3, t₇, h3, slotPow, ifn (by omega_arith)]
     rw [ifn h3]
     by_cases h2 : j = 4 * i + 2
-    · rw [ifp h2, et₇, h2, slotPow, ifp (by omega)]
+    · rw [ifp h2, et₇, h2, slotPow, ifp (by omega_arith)]
     rw [ifn h2]
     by_cases h1 : j = 4 * i + 1
-    · rw [ifp h1, t₃, h1, slotPow, ifn (by omega)]
+    · rw [ifp h1, t₃, h1, slotPow, ifn (by omega_arith)]
     rw [ifn h1]
     by_cases h0 : j = 4 * i
-    · rw [ifp h0, et₃, h0, slotPow, ifp (by omega)]
+    · rw [ifp h0, et₃, h0, slotPow, ifp (by omega_arith)]
     rw [ifn h0, o₀₃.mem]
-    exact hI.slots j hj (by omega)
+    exact hI.slots j hj (by omega_arith)
   · simp only [mem_write, c₀, c₁]
     rw [o₅₇.mem, m₄, o₀₃.mem]
-    exact frame_slot (frame_slot (frame_slot (frame_slot hI.frame (by omega) _) (by omega) _) (by omega) _)
-      (by omega) _
+    exact frame_slot (frame_slot (frame_slot (frame_slot hI.frame (by omega_arith) _) (by omega_arith) _) (by omega_arith) _)
+      (by omega_arith) _
   · simp only [rd_write]; rw [o₅₇.rd, rd₄, o₀₃.rd, hI.rd]
   · simp only [wr_write]; rw [o₅₇.wr, wr₄, o₀₃.wr, hI.wr]
   · show s₇.sp = s₀.sp; rw [o₅₇.sp, sp₄, o₀₃.sp, hI.sp]
