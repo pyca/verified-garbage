@@ -28,7 +28,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.InvBatch VG.Impl.Weier
  def correctionCode (w n : Nat) : Prog isa := seqs [
  .block (normalize w n ++ [.mov .esi (.imm (BitVec.ofNat 32 (6*(n+1))))]),
  .loop (.block (twice w n ++ [decCounter,testCounter])) .ne,.block (finish w n)]
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
  theorem correction_ok {s : State} {base : Addr} {size w n p iv : Nat} {st : VG.Proof.Divstep.W32.IState}
     (hs : Scr s base size) (hn : 16≤n) (nl : n≤1024) (hw : w=2*n) (he : n%2=0) (hz : offset w 15≤size)
@@ -55,7 +55,7 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
       intro r hr; simp only [normalWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl <;> apart) (by apart),h.modulus]
   refine WP.seq (WP.mono (doubleLoop_ok hs2 hn hw he hz mod2 (by rw [U2.mem,V1]) (by rw [U2.mem,T1]) hp
-    (normal_range st.f hp small) (by omega) (by omega) U2.gpr) fun s3 ⟨V3,T3,M3,C3,K3,O3⟩ => ?_)
+    (normal_range st.f hp small) (by omega_arith) (by omega_arith) U2.gpr) fun s3 ⟨V3,T3,M3,C3,K3,O3⟩ => ?_)
   have hs3 := hs2.of_keeps K3 (by decide)
   have f3 : (val32 s3.mem base (offset w 4) (n+1) : Int)%2^(32*(n+1))=st.f%2^(32*(n+1)) := by
     rw [Outs.val32 O3 (by

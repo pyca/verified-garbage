@@ -21,7 +21,7 @@ namespace VG.Proof.Rsa.X86.InvBatch
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.InvBatch
   VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass.X86.Inv
 
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
 theorem absolute_low_ok {s : State} {base : Addr} {size w n : Nat} {f : Int}
     (hs : Scr s base size) (hn : 16 ≤ n) (hw : w=2*n) (hz : offset w 15 ≤ size)
@@ -33,13 +33,13 @@ theorem absolute_low_ok {s : State} {base : Addr} {size w n : Nat} {f : Int}
       val32 z.mem base (offset w 1+4*n) (w-n)=0 ∧
       Keeps [.eax,.ecx,.edx] s z ∧ Outside base (offset w 1) (4*w) s.mem z.mem := by
   have nowrap := hs.nowrap
-  have en : n-1+1=n := by omega
+  have en : n-1+1=n := by omega_arith
   unfold absolute
   refine WP.block_append (WP.block_append (WP.block_append (WP.mono
     (zeros_ok hs (acc:=offset w 1) (k:=w) (by apart)) fun s₁ ⟨O₁,V₁,K₁⟩ => ?_)))
   have split := val32_append s₁.mem base (offset w 1) n (w-n)
-  rw [show n+(w-n)=w by omega,V₁] at split
-  have lowZero : val32 s₁.mem base (offset w 1) n=0 := by omega
+  rw [show n+(w-n)=w by omega_arith,V₁] at split
+  have lowZero : val32 s₁.mem base (offset w 1) n=0 := by omega_arith
   have tailZero : val32 s₁.mem base (offset w 1+4*n) (w-n)=0 := by
     have pow := Nat.two_pow_pos (32*n)
     by_contra h

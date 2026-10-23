@@ -33,7 +33,7 @@ theorem loop_ok {g : Geometry} {s0 s : State} {D N : Nat}
   have positive := h.ctx.positive
   have bound := h.ctx.bound
   let I := fun k t => ∃ i, i + k = 32 * g.n ∧ 0 < k ∧ Invariant g s0 D N i t
-  refine WP.loop (M := isa) I ?_ (32 * g.n) s ⟨0, by omega, by omega, h⟩
+  refine WP.loop (M := isa) I ?_ (32 * g.n) s ⟨0, by omega_arith, by omega_arith, h⟩
   intro k t pre
   obtain ⟨i, sum, hk, inv⟩ := pre
   refine WP.mono (step_ok inv.ctx) ?_
@@ -41,19 +41,19 @@ theorem loop_ok {g : Geometry} {s0 s : State} {D N : Nat}
   have countU : u.gpr .esi = BitVec.ofNat 32 (32 * g.n - (i + 1)) := by
     rw [count, inv.count]
     change BitVec.ofNat 32 (32 * g.n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
     congr 1
   have zeroU : u.zf = some (decide (i + 1 = 32 * g.n)) := by
     rw [zero, inv.count]
     change some (BitVec.ofNat 32 (32 * g.n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show 32 * g.n - i - 1 = 0 ↔ i + 1 = 32 * g.n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    simp only [show 32 * g.n - i - 1 = 0 ↔ i + 1 = 32 * g.n by omega_arith]
   have next : Invariant g s0 D N (i + 1) u := by
-    refine ⟨ctxU, by omega, countU, inv.frame.trans frameU, inv.rest.trans restU,
+    refine ⟨ctxU, by omega_arith, countU, inv.frame.trans frameU, inv.rest.trans restU,
       (inv.ctx.divisor_frame frameU).trans inv.divisor, ?_⟩
     intro dPos dBound
     have previous := inv.value dPos dBound
-    obtain ⟨q, less, _, _, _⟩ := divIter_inv dPos boundN i (by omega)
+    obtain ⟨q, less, _, _, _⟩ := divIter_inv dPos boundN i (by omega_arith)
     rw [← previous] at less
     rw [inv.divisor] at valueU
     exact (valueU less dBound).trans (by rw [previous]; rfl)
@@ -63,7 +63,7 @@ theorem loop_ok {g : Geometry} {s0 s : State} {D N : Nat}
     change u.zf.map not = some false
     simp only [zeroU, done, decide_true, Option.map_some, Bool.not_true]
   · right
-    refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, next⟩
+    refine ⟨?_, k - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, next⟩
     change u.zf.map not = some true
     simp only [zeroU, done, decide_false, Option.map_some, Bool.not_false]
 
