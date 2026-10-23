@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
-public import VerifiedGarbage.Proof.AesGcm.AArch64.InitAese
+import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+import VerifiedGarbage.Proof.AesGcm.AArch64.InitAese
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.AesGcm.AArch64.InitAese
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # AES-GCM's key setup on AArch64, for each implementation
