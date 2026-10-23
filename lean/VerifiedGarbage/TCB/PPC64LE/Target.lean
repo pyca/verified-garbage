@@ -46,27 +46,57 @@ def argRegs : List Reg := [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
 Each integer or pointer argument takes the next of `r3`–`r10` (§2.2.4, "Up
 to eight arguments can be passed in general-purpose registers r3–r10"; a
 32-bit argument in the low half, whose upper half the model does not rely
-on). Arguments in memory (more than eight) are not modelled. The return
-address is in `LR`, not in memory; the integer result is in `r3` (§2.2.6).
+on). Further arguments are in memory, in the caller's Parameter Save Area
+(§2.2.3.3, "Parameter Save Area"), which "must always start at SP + 32" and
+"shall be at least 8 doublewords in length": the caller allocates it "for
+function calls unless a prototype is provided for the callee indicating that
+all parameters can be passed in registers", and it maps each simple integer
+type and each pointer "to a single doubleword". Its first eight doublewords
+stand for `r3`–`r10` ("The first 8 doublewords are located in general
+registers r3–r10. Any additional doublewords are located in the stack
+Parameter Save Area"), so the `i`-th (from 0) argument after the eighth is the
+doubleword at `sp + 32 + 8 * (8 + i)` on entry (`stackArg`). Only 64-bit
+arguments (pointers, `usize`, `u64`) are modelled there. `abi` only grants
+reading them, and assumes they do not wrap around the end of the address
+space. The return address is in `LR`, not in memory; the integer result is in
+`r3` (§2.2.6).
 -/
+
+/-- The address of the `i`-th (from 0) argument in memory, the one after the
+first eight, on entry: doubleword `8 + i` of the Parameter Save Area, at
+`sp + 32`. -/
+def stackArgAddr (s : State) (i : Nat) : Addr := s.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))
+
+/-- The `i`-th (from 0) argument in memory, on entry. -/
+def stackArg (s : State) (i : Nat) : BitVec 64 := s.mem.readW (stackArgAddr s i) 64
 
 def abi : Abi isa where
   ptrBits := 64
   args ws := if ws.length ≤ argRegs.length then
-    some fun s => (argRegs.take ws.length).map s.gpr else none
-  argArea _ _ := []
+    some fun s => (argRegs.take ws.length).map s.gpr
+  else if (ws.drop argRegs.length).all (· = 64) then
+    some fun s => argRegs.map s.gpr ++ (List.range (ws.length - argRegs.length)).map (stackArg s)
+  else none
+  argArea ws s := let n := ws.length - argRegs.length
+    if n = 0 then [] else [(⟨stackArgAddr s 0, 8 * n⟩, false)]
   reserved n s := stackBelow s.sp n
-  -- The stack the function's calls and frames use does not wrap around.
-  wf _ n s := match n with
-    | 0 => True
-    | n => n ≤ s.sp.toNat
+  -- The stack the function's calls and frames use, and its arguments in
+  -- memory, do not wrap around.
+  wf ws n s := if ws.length ≤ argRegs.length then
+      match n with
+      | 0 => True
+      | n => n ≤ s.sp.toNat
+    else
+      (match n with
+      | 0 => True
+      | n => n ≤ s.sp.toNat) ∧ s.sp.toNat + 32 + 8 * ws.length ≤ 2 ^ 64
   pub s₁ s₂ := s₁.sp = s₂.sp
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .r3
-  -- Every modelled argument is in a register.
-  argAreaDoc _ := none
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 abbrev target : Target where
