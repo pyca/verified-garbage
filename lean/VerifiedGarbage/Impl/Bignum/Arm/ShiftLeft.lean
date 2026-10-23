@@ -13,10 +13,10 @@ clobber it. This is the shift used by fixed-iteration RSA key division.
 namespace VG.Impl.Bignum.Arm
 open VG VG.Arm
 
+/-- The shifted word has a zero low bit, so OR inserts the incoming carry. -/
 def shiftLeftStep : List Instr :=
-  [.ldr .r3 .r0 0, .mov .r4 (.shifted .r3 .lsr 31),
-   .dp .add .r3 .r3 (.reg .r3), .dp .add .r3 .r3 (.reg .r11),
-   .mov .r11 (.reg .r4), .str .r3 .r0 0,
+  [.ldr .r4 .r0 0, .dp .orr .r3 .r11 (.shifted .r4 .lsl 1),
+   .mov .r11 (.shifted .r4 .lsr 31), .str .r3 .r0 0,
    .dp .add .r0 .r0 (.imm 4), .subs .lr .lr (.imm 1)]
 
 /-- Shift `lr` native words at `r0` left by one bit, inserting `r11` (0 or

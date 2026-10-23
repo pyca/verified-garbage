@@ -767,11 +767,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 233:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -1114,11 +1112,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 250:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -1461,11 +1457,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 267:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -1808,11 +1802,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 284:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -2155,11 +2147,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2101:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -2502,11 +2492,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2118:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -3411,11 +3399,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2161:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -5394,11 +5380,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 249:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -5741,11 +5725,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 266:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -6088,11 +6070,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 283:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -6435,11 +6415,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2100:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -6782,11 +6760,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2117:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -7129,11 +7105,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2134:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -8595,11 +8569,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2191:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -8942,11 +8914,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2208:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -9289,11 +9259,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2225:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -9636,11 +9604,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2242:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -9983,11 +9949,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2259:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -10330,11 +10294,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2276:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -11572,11 +11534,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2332:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -13323,11 +13283,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2399:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -13670,11 +13628,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2416:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -14017,11 +13973,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2433:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -14364,11 +14318,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2450:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -14711,11 +14663,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2467:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -15058,11 +15008,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2484:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -16524,11 +16472,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2541:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -16871,11 +16817,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2558:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -17218,11 +17162,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2575:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -17565,11 +17507,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2592:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -17912,11 +17852,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2609:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -18259,11 +18197,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2626:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -19501,11 +19437,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2682:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -23194,11 +23128,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 249:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -23507,11 +23439,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 266:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -23820,11 +23750,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 283:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -24133,11 +24061,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2100:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -24446,11 +24372,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2117:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -24759,11 +24683,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2134:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -26132,11 +26054,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2191:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -26445,11 +26365,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2208:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -26758,11 +26676,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2225:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -27071,11 +26987,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2242:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -27384,11 +27298,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2259:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -27697,11 +27609,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2276:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -29863,11 +29773,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2357:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -30176,11 +30084,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2374:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -30489,11 +30395,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2391:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -30802,11 +30706,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2408:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -31115,11 +31017,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2425:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -31428,11 +31328,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2442:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -32801,11 +32699,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2499:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -33114,11 +33010,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2516:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -33427,11 +33321,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2533:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -33740,11 +33632,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2550:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -34053,11 +33943,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2567:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -34366,11 +34254,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2584:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -37493,11 +37379,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 217:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -37506,11 +37390,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 218:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -38896,11 +38778,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 269:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -38909,11 +38789,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 270:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -39066,11 +38944,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 277:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -39079,11 +38955,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 278:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -39672,11 +39546,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 232:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -39685,11 +39557,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 233:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -41256,11 +41126,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 293:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -41269,11 +41137,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 294:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -41444,11 +41310,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 2102:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -41457,11 +41321,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 2103:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -41963,11 +41825,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 230:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -41976,11 +41836,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 231:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -44715,11 +44573,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 250:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -45062,11 +44918,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 267:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -45409,11 +45263,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 284:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -45756,11 +45608,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2101:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -46103,11 +45953,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2118:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -46450,11 +46298,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2135:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -47520,11 +47366,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2180:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -48735,11 +48579,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2230:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -49950,11 +49792,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2280:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -51165,11 +51005,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2330:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -52380,11 +52218,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2380:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -53595,11 +53431,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2430:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -54810,11 +54644,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2480:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -56025,11 +55857,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2530:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -58724,11 +58554,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 2633:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -58737,11 +58565,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 2634:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -60201,11 +60027,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 250:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -60514,11 +60338,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 267:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -60827,11 +60649,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 284:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -61140,11 +60960,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2101:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -61453,11 +61271,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2118:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -61766,11 +61582,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2135:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -62760,11 +62574,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2180:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -63920,11 +63732,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2230:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -65080,11 +64890,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2280:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -66240,11 +66048,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2330:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -67400,11 +67206,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2380:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -68560,11 +68364,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2430:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -69720,11 +69522,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2480:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -70880,11 +70680,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2530:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -73520,11 +73318,9 @@ ldr r0, [r8, #0]
 ldr lr, [r8, #16]
 mov r11, #0
 2633:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -73533,11 +73329,9 @@ ldr r0, [r8, #4]
 ldr lr, [r8, #16]
 add lr, lr, #1
 2634:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -74716,11 +74510,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 229:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -75063,11 +74855,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 246:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -75410,11 +75200,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 263:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -75757,11 +75545,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 280:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -76104,11 +75890,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 297:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -76451,11 +76235,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2114:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -77896,11 +77678,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 250:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -79629,11 +79409,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 229:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -79942,11 +79720,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 246:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -80255,11 +80031,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 263:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -80568,11 +80342,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 280:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -80881,11 +80653,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 297:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -81194,11 +80964,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 2114:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
@@ -82569,11 +82337,9 @@ lsl lr, lr, #1
 add r0, r0, #24
 mov r11, #0
 250:
-ldr r3, [r0, #0]
-lsr r4, r3, #31
-add r3, r3, r3
-add r3, r3, r11
-mov r11, r4
+ldr r4, [r0, #0]
+orr r3, r11, r4, lsl #1
+lsr r11, r4, #31
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
