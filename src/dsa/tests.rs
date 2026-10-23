@@ -482,3 +482,80 @@ fn legacy_2048_160_signatures() {
         }
     }
 }
+
+#[cfg(target_arch = "aarch64")]
+#[test]
+fn immutable_public_validation_cache() {
+    let (key, digest, nonce) = sample();
+    let mut signature = vec![0; 2 * key.public.q_len];
+    let mut scratch = Secret(vec![0u64; 16 * key.public.p_len]);
+    assert!(key.sign_once(&digest, &nonce, &mut signature, &mut scratch.0));
+    let public = key.public_key();
+    let unchecked = public.clone();
+    assert_eq!(unchecked.validated.load(Ordering::Relaxed), 0);
+    assert!(!public.verify(&digest, &signature[1..]));
+    assert_eq!(public.validated.load(Ordering::Relaxed), 0);
+    assert!(public.verify(&digest, &signature));
+    assert_eq!(public.validated.load(Ordering::Relaxed), 1);
+    let validated = public.clone();
+    assert_eq!(validated.validated.load(Ordering::Relaxed), 1);
+    assert!(validated.verify(&digest, &signature));
+    let mut bad_signature = signature.clone();
+    bad_signature[..public.q_len].fill(0);
+    assert!(!validated.verify(&digest, &bad_signature));
+    bad_signature.copy_from_slice(&signature);
+    bad_signature[public.q_len..].fill(0);
+    assert!(!validated.verify(&digest, &bad_signature));
+    assert!(validated.verify(&digest, &signature));
+
+    // Compare the cached public API against the original fully checked raw API.
+    for sig in [&signature, &bad_signature] {
+        // SAFETY: supported widths, unchanged packed key, exact signature width
+        // and separately allocated scratch with the required capacity.
+        let raw = unsafe {
+            vg_dsa_verify(
+                public.packed.as_ptr(),
+                public.packed.len(),
+                public.p_len,
+                public.q_len,
+                sig.as_ptr(),
+                sig.len(),
+                digest.as_ptr(),
+                digest.len(),
+                scratch.0.as_mut_ptr(),
+                scratch.0.len(),
+            )
+        };
+        assert_eq!(public.verify(&digest, sig), raw == 1);
+    }
+
+    let invalid =
+        PublicKey::from_components(&vec![0; 128], &vec![0; 20], &vec![0; 128], &vec![0; 128])
+            .unwrap();
+    assert!(!invalid.verify(&digest, &signature));
+    assert_eq!(invalid.validated.load(Ordering::Relaxed), 2);
+    assert!(!invalid.verify(&digest, &signature));
+    let rejected = invalid.clone();
+    assert_eq!(rejected.validated.load(Ordering::Relaxed), 2);
+    assert!(!rejected.verify(&digest, &signature));
+
+    // PublicKey remains Send + Sync; simultaneous first calls may each validate.
+    let shared = std::sync::Arc::new(unchecked);
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(4));
+    let threads: Vec<_> = (0..4)
+        .map(|_| {
+            let key = shared.clone();
+            let barrier = barrier.clone();
+            let digest = digest.clone();
+            let signature = signature.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                assert!(key.verify(&digest, &signature));
+            })
+        })
+        .collect();
+    for thread in threads {
+        thread.join().unwrap();
+    }
+    assert_eq!(shared.validated.load(Ordering::Relaxed), 1);
+}

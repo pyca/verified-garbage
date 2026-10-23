@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
@@ -30,6 +32,10 @@ structure Backend where
   features : List String
   signVerified : Verified target (SignVerify.sign mul) (Spec.Dsa.signContract abi stack)
   verifyVerified : Verified target (SignVerify.verify mul) (Spec.Dsa.verifyContract abi stack)
+  validateVerified : Verified target (Prevalidated.validate mul) (Spec.Dsa.validatePublicKeyContract abi stack)
+  prevalidatedVerified : Verified target (Prevalidated.verify mul) (Spec.Dsa.verifyPrevalidatedContract abi stack)
+  validateSp : (Prevalidated.validate mul).all (fun i => !isa.writesSp i) = true
+  prevalidatedSp : (Prevalidated.verify mul).all (fun i => !isa.writesSp i) = true
   parametersVerified : Verified target (Generate.checkParameters mul) (Spec.Dsa.checkParametersContract abi stack)
   deriveVerified : Verified target (Generate.deriveKey mul) (Spec.Dsa.deriveKeyContract abi stack)
   parametersSp : (Generate.checkParameters mul).all (fun i => !isa.writesSp i) = true
