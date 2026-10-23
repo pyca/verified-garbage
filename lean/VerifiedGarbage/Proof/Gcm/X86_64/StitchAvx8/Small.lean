@@ -174,7 +174,7 @@ theorem Env.lowPow {s₀ s : State} {P : Nat → Block} (h : Env s₀ P s) {k : 
 
 /-- The front of `small`, up to its loop `R`: from the state the setup
 leaves, `KsDone`. -/
-theorem smallFront_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo)
+theorem smallFront_ok {s₀ s : State} {lo np : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo np)
     (hR : Ready s₀ P s) (hlt : nb s₀ < 16) {R : Prog isa} {Q : State → Prop}
     (hk : ∀ u, KsDone s₀ P s u → WP isa R u Q) :
     WP isa (.seq (ksTail (nr s₀) 384) (.seq (.block [.alu .cmp .r9 (.imm 9)])
@@ -338,7 +338,7 @@ theorem ksAddr_small (p : Addr) (j : Nat) :
 /-! ## Encryption -/
 
 /-- Encryption of 1 to 15 blocks, from the state the setup leaves. -/
-theorem smallE_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo)
+theorem smallE_ok {s₀ s : State} {lo np : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo np)
     (hlaw : SmallLaw s₀ P) (hR : Ready s₀ P s) (h1 : 1 ≤ nb s₀) (hlt : nb s₀ < 16) :
     WP isa (small (nr s₀) false) s (EPost s₀) := by
   have hb := hp.base
@@ -474,7 +474,7 @@ theorem smallE_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrep
 /-! ## Decryption -/
 
 /-- Decryption of 1 to 15 blocks, from the state the setup leaves. -/
-theorem smallD_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo)
+theorem smallD_ok {s₀ s : State} {lo np : Nat} {P : Nat → Block} (hp : SPrePrepared s₀ lo np)
     (hlaw : SmallLaw s₀ P) (hR : Ready s₀ P s) (h1 : 1 ≤ nb s₀) (hlt : nb s₀ < 16) :
     WP isa (small (nr s₀) true) s (DPost s₀) := by
   have hb := hp.base
