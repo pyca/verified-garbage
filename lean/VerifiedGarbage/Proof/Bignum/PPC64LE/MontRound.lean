@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Bignum.Fios32
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.Words32
 
 @[expose] public section
 

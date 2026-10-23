@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
+public import VerifiedGarbage.Proof.Framework.Inline
 
 /-!
 # Montgomery multiplication on PPC64LE: the shared contract

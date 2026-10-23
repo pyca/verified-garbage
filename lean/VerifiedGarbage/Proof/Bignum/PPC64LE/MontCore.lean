@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Mont.Words32
 
 @[expose] public section
 

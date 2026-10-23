@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
 import VerifiedGarbage.Proof.Bignum.Fios32
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.Words32
 
 @[expose] public section
 

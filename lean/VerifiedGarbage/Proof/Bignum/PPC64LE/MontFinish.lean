@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-!
 # Montgomery multiplication on PPC64LE: zeroing, and the final subtraction

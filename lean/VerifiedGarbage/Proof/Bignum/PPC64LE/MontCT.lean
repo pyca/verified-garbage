@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+import VerifiedGarbage.Proof.Mont.Words32
 
 /-!
 # Montgomery multiplication on PPC64LE: constant time

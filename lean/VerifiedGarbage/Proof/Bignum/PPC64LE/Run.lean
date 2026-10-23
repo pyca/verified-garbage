@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-public import VerifiedGarbage.Proof.Mont.Words32
 public meta import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.Words
 
 /-!
 # Multiword arithmetic on PPC64LE: running blocks

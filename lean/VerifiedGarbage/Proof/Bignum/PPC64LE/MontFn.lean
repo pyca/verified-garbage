@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Bignum.Fios32
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-!
 # Montgomery multiplication on PPC64LE: the function
