@@ -16,14 +16,14 @@ namespace VG.Proof.Sha256.PPC64LE.Stream
 
 open VG VG.PPC64LE VG.Impl.Sha256.PPC64LE.Stream
 open VG.Proof.Sha256.PPC64LE (writeState stateAt_writeState contains_offset)
-open VG.Spec.Sha256 (stateAt H0)
+open VG.Spec.Sha256 (stateAt H0 H0_224 HashValue)
 
 /-- The three instructions storing the 32-bit word `x` at `off(r3)`. -/
 def word (x : BitVec 32) (off : Nat) : List Instr :=
   [.lis .r8 (x.extractLsb' 16 16), .ori .r8 .r8 (x.extractLsb' 0 16), .store .w .r8 .r3 off]
 
-theorem init_eq : init = .block (word H0[0] 0 ++ word H0[1] 4 ++ word H0[2] 8 ++ word H0[3] 12 ++
-    word H0[4] 16 ++ word H0[5] 20 ++ word H0[6] 24 ++ word H0[7] 28) := rfl
+theorem init_eq (iv : HashValue) : initWith iv = .block (word iv[0] 0 ++ word iv[1] 4 ++ word iv[2] 8 ++
+    word iv[3] 12 ++ word iv[4] 16 ++ word iv[5] 20 ++ word iv[6] 24 ++ word iv[7] 28) := rfl
 
 theorem word_ok {x : BitVec 32} {off : Nat} (ho : off < 2 ^ 15) {rest : List Instr}
     {s : State} {Q : State → Prop} (hout : InRegions s.wr (s.gpr .r3 + BitVec.ofNat 64 off) 4)
@@ -39,13 +39,13 @@ theorem word_ok {x : BitVec 32} {off : Nat} (ho : off < 2 ^ 15) {rest : List Ins
     congr 1
     exact lis_ori x
 
-theorem init_correct {s₀ : State} (hp : Proof.Sha256.initPPC64LE.pre s₀) :
-    WP isa init s₀ fun s' => ((∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp) ∧
-      Proof.Sha256.initPPC64LE.post s₀ s' := by
+theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha256.initFromPPC64LE iv).pre s₀) :
+    WP isa (initWith iv) s₀ fun s' => ((∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp) ∧
+      (Proof.Sha256.initFromPPC64LE iv).post s₀ s' := by
   obtain ⟨-, hwr⟩ := hp
   have o : ∀ k, k < 8 → InRegions s₀.wr (s₀.gpr .r3 + BitVec.ofNat 64 (4 * k)) 4 :=
     fun k hk => ⟨⟨s₀.gpr .r3, 96⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
-  rw [init_eq, ← List.append_nil (_ ++ word H0[7] 28)]
+  rw [init_eq, ← List.append_nil (_ ++ word iv[7] 28)]
   simp only [List.append_assoc]
   refine word_ok (by omega) (o 0 (by omega)) fun s1 g1 _ wr1 sp1 m1 => ?_
   refine word_ok (by omega) (by rw [wr1, g1 _ (by decide)]; exact o 1 (by omega))
@@ -70,7 +70,7 @@ theorem init_correct {s₀ : State} (hp : Proof.Sha256.initPPC64LE.pre s₀) :
     WP.block_nil ?_
   have k8 : ∀ r, r ≠ .r8 → s8.gpr r = s₀.gpr r := fun r h => by
     rw [g8 r h, g7 r h, g6 r h, g5 r h, k4 r h]
-  have hm : s8.mem = writeState s₀.mem (s₀.gpr .r3) H0 := by
+  have hm : s8.mem = writeState s₀.mem (s₀.gpr .r3) iv := by
     rw [m8, m7, m6, m5, m4, m3, m2, m1]
     simp only [g7 _ (show Reg.r3 ≠ .r8 by decide), g6 _ (show Reg.r3 ≠ .r8 by decide),
       g5 _ (show Reg.r3 ≠ .r8 by decide), k4 _ (show Reg.r3 ≠ .r8 by decide),
@@ -79,9 +79,9 @@ theorem init_correct {s₀ : State} (hp : Proof.Sha256.initPPC64LE.pre s₀) :
     rfl
   refine ⟨⟨fun r hr => k8 r ?_, by rw [sp8, sp7, sp6, sp5, sp4, sp3, sp2, sp1]⟩, ?_⟩
   · revert r; decide
-  · show Spec.Sha256.Repr s8.mem (s₀.gpr .r3) []
+  · show Spec.Sha256.ReprFrom iv s8.mem (s₀.gpr .r3) []
     rw [hm]
-    exact Proof.Sha256.Stream.repr_nil (stateAt_writeState _ _ _)
+    exact Proof.Sha256.Stream.reprFrom_nil (stateAt_writeState _ _ _)
 
 /-- A state satisfying the precondition. -/
 def initSat : State where
@@ -93,9 +93,21 @@ def initSat : State where
   rd := []
   wr := [⟨0x1000, 96⟩]
 
-theorem init_verified : Verified PPC64LE.target init Proof.Sha256.initPPC64LE := by
+theorem init_verified : Verified PPC64LE.target init (Proof.Sha256.initFromPPC64LE H0) := by
   refine ⟨fun s hs => ?_, ?_, ⟨initSat, rfl, rfl⟩⟩
-  · obtain ⟨t, s', he, ⟨hk, hsp⟩, h⟩ := init_correct hs
+  · obtain ⟨t, s', he, ⟨hk, hsp⟩, h⟩ := init_correct H0 hs
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
+      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ h
+    refine ⟨h.2, fun r hr => ?_⟩
+    simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h.1
+
+theorem init224_verified :
+    Verified PPC64LE.target init224 (Proof.Sha256.initFromPPC64LE H0_224) := by
+  refine ⟨fun s hs => ?_, ?_, ⟨initSat, rfl, rfl⟩⟩
+  · obtain ⟨t, s', he, ⟨hk, hsp⟩, h⟩ := init_correct H0_224 hs
     exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
       (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3]) ?_ (by taint_decide)
