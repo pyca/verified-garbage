@@ -15,7 +15,8 @@ after the other, to `dst`, and encrypts them there in place with a call of
 It allocates a frame of 16 bytes: `tag`, the call's stack argument, at
 `sp`, and our return address, which the call (`bl`) overwrites in `x30`, at
 `sp + 8`; our stack arguments are then at `sp + 16` … `sp + 32`. Each slice
-is copied 64 bytes at a time through `v0` … `v3` (`copyChunks`), then 16
+is copied, once its first 16 bytes have aligned where it goes to 16 bytes
+(`alignHead`), 64 bytes at a time through `v0` … `v3` (`copyChunks`), then 16
 bytes at a time through `v0` (`copyBlocks`), then its last `len mod 16`
 bytes eight, then four, then one at a time (`copyW`), with
 `x12` its address, `x13` its length and `x11` where it goes; `x6` and `x7`
@@ -69,10 +70,26 @@ def restArg : List Instr := [.movz .x .x15 63 0, .logic .and .x .x13 .x13 .x15]
 
 /-- Copies the `x13` bytes at `x12` to `x11`, advancing `x11` past them: 64
 bytes at a time, then as `copySlice16`. -/
-def copySlice : Prog isa :=
+def copySlice64 : Prog isa :=
   .seq (.block chunksArg)
   (.seq (.ite (.zero .x .x14) (.block []) copyChunks)
   (.seq (.block restArg) copySlice16))
+
+/-- The first 16 bytes, through `v0`, and the pointers and the length moved
+on by `16 - (x11 mod 16)` (1 to 16) bytes, so that `x11` is a multiple of 16:
+the later stores do not cross cache lines. The bytes moved past and not yet
+copied are copied again, the same. -/
+def alignHead : List Instr :=
+  [.ldrq .v0 .x12 0, .strq .v0 .x11 0, .movz .x .x15 15 0, .logic .and .x .x14 .x11 .x15,
+    .movz .x .x15 16 0, .sub .x .x14 .x15 .x14, .add .x .x12 .x12 .x14, .add .x .x11 .x11 .x14,
+    .sub .x .x13 .x13 .x14]
+
+/-- Copies the `x13` bytes at `x12` to `x11`, advancing `x11` past them: if
+there are at least 16, with `x11` aligned to 16 bytes after the first
+(`alignHead`), as `copySlice64`; otherwise as `copySlice16`. -/
+def copySlice : Prog isa :=
+  .seq (.block blocksArg)
+    (.ite (.zero .x .x14) copySlice16 (.seq (.block alignHead) copySlice64))
 
 /-- The next descriptor: the slice's address in `x12` and length in `x13`. -/
 def next : List Instr := [.ldr .x .x12 .x6 0, .ldr .x .x13 .x6 8, .addImm .x .x6 .x6 16]

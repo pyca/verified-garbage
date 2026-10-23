@@ -416,9 +416,9 @@ theorem restArg_ok (s : State) :
       ite_true, Size.bits],
     by simp [gpr_write, State.read], fun r h₁ h₂ => by simp [gpr_write, h₁, h₂], rfl, rfl, rfl, rfl⟩
 
-/-- `copySlice`: the `n` bytes at `S` to `D`, and `x11` past them. -/
-theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
-    WP isa copySlice s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+/-- `copySlice64`: the `n` bytes at `S` to `D`, and `x11` past them. -/
+theorem copySlice64_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
+    WP isa copySlice64 s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
       s'.gpr .x11 = D + BitVec.ofNat 64 n ∧ Keeps s s' := by
   have hn := h.lt
   have hqr : 64 * (n / 64) + n % 64 = n := Nat.div_add_mod n 64
@@ -480,5 +480,109 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
       by rw [wr₃, kp₂.wr]; exact covers_off h.wr (by omega) hn, (h.disj.sub_left hS).sub_right hD⟩
   refine WP.mono (copySlice16_wp s₃ sp) fun s₄ ⟨m₄, x11₄, kp₄⟩ => ⟨?_, by rw [x11₄, hend], kp₃.trans kp₄⟩
   rw [m₄, hrest, m₃, m₂, hall]
+
+/-! ## Aligning where the slice goes -/
+
+/-- Writing `ys` over a write of no more bytes at the same address. -/
+theorem writeBytes_over (m : Mem) (q : Addr) {xs ys : List Byte} (h : xs.length ≤ ys.length) :
+    writeBytes (writeBytes m q xs) q ys = writeBytes m q ys := by
+  funext a
+  simp only [writeBytes]
+  split
+  · rfl
+  · rename_i hy
+    simp only [show ¬ (a - q).toNat < xs.length by omega, ite_false]
+
+/-- The 16 bytes of the head, then the rest from `h` on, written over them:
+the `n` bytes. -/
+theorem head_rest {m : Mem} {S D : Addr} {h n : Nat} (hh : h ≤ 16) (hn : 16 ≤ n) (hL : n < 2 ^ 64) :
+    writeBytes (writeBytes m D (bytesAt m S 16)) (D + BitVec.ofNat 64 h) (bytesAt m (S + BitVec.ofNat 64 h) (n - h)) =
+      writeBytes m D (bytesAt m S n) := by
+  have e₁ : bytesAt m S 16 = bytesAt m S h ++ bytesAt m (S + BitVec.ofNat 64 h) (16 - h) := by
+    rw [← bytesAt_append, Nat.add_sub_cancel' hh]
+  have e₂ : bytesAt m S n = bytesAt m S h ++ bytesAt m (S + BitVec.ofNat 64 h) (n - h) := by
+    rw [← bytesAt_append, Nat.add_sub_cancel' (by omega)]
+  have lh : (bytesAt m S h).length = h := Proof.Cmac.bytesAt_length _ _ _
+  rw [e₁, e₂, ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega), lh,
+    writeBytes_over _ _ (by simp [Proof.Cmac.bytesAt_length]; omega),
+    ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega), lh]
+
+theorem sub_and15 (D : Addr) :
+    (16 : BitVec 64) - (D &&& 15) = BitVec.ofNat 64 (16 - D.toNat % 16) := by
+  apply BitVec.eq_of_toNat_eq
+  have ha : (D &&& 15).toNat = D.toNat % 16 := by
+    rw [show (15 : BitVec 64) = BitVec.ofNat 64 (2 ^ 4 - 1) from rfl, BitVec.toNat_and,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by decide), Nat.and_two_pow_sub_one_eq_mod]
+  have hm := Nat.mod_lt D.toNat (show 0 < 16 by decide)
+  rw [BitVec.toNat_sub, ha, show (16 : BitVec 64).toNat = 16 from rfl, BitVec.toNat_ofNat]
+  omega
+
+theorem alignHead_ok (s : State) {S D : Addr} (h12 : s.gpr .x12 = S) (h11 : s.gpr .x11 = D)
+    (r : InRegions (s.rd ++ s.wr) S 16) (w : InRegions s.wr D 16) :
+    ∃ s', runBlock isa alignHead s = some s' ∧ s'.mem = s.mem.write D 16 (s.mem.read S 16) ∧
+      s'.gpr .x12 = S + BitVec.ofNat 64 (16 - D.toNat % 16) ∧
+      s'.gpr .x11 = D + BitVec.ofNat 64 (16 - D.toNat % 16) ∧
+      s'.gpr .x13 = s.gpr .x13 - BitVec.ofNat 64 (16 - D.toNat % 16) ∧ Keeps s s' := by
+  have r' : InRegions (s.rd ++ s.wr) (s.gpr .x12 + BitVec.ofNat 64 0) 16 := by rw [h12, BitVec.add_zero]; exact r
+  have w' : InRegions s.wr (s.gpr .x11 + BitVec.ofNat 64 0) 16 := by rw [h11, BitVec.add_zero]; exact w
+  refine ⟨_, by
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, alignHead,
+      runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store, Size.bits, State.read,
+      gpr_write, mem_write, rd_write, wr_write, gpr_setV, mem_setV, rd_setV, wr_setV, v_setV_self,
+      Option.bind_some, Option.map_some, BitVec.setWidth_eq, r', w']
+    rfl, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ⟨fun r h => ?_, rfl, rfl, rfl⟩⟩
+  · simp only [mem_write, v_setV_self, h12, h11, BitVec.add_zero]
+  · simp [gpr_write, State.read, h11, h12]; exact sub_and15 D
+  · simp [gpr_write, State.read, h11]; exact sub_and15 D
+  · simp [gpr_write, State.read, h11]; exact sub_and15 D
+  · simp only [copyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
+    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := h
+    simp [gpr_write, h₁, h₂, h₃, h₄, h₅]
+
+/-- `copySlice`: the `n` bytes at `S` to `D`, and `x11` past them. -/
+theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
+    WP isa copySlice s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+      s'.gpr .x11 = D + BitVec.ofNat 64 n ∧ Keeps s s' := by
+  have hn := h.lt
+  obtain ⟨s₁, run₁, x14₁, g₁, m₁, sp₁, rd₁, wr₁⟩ := blocksArg_ok s
+  have x14₁' : s₁.gpr .x14 = BitVec.ofNat 64 (n / 16) := by rw [x14₁, h.x13, ofNat_lsr4 hn]
+  have kp₁ : Keeps s s₁ := ⟨fun r hr => g₁ r (by intro e; subst e; simp [copyRegs] at hr), sp₁, rd₁, wr₁⟩
+  have sp₁' : SlicePre s₁ S D n := ⟨by rw [g₁ _ (by decide), h.x12], by rw [g₁ _ (by decide), h.x11],
+    by rw [g₁ _ (by decide), h.x13], hn, by rw [rd₁, wr₁]; exact h.rd, by rw [wr₁]; exact h.wr, h.disj⟩
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (n / 16 = 0)) (eval_zero x14₁' (by omega)) (fun _ => ?_) (fun hf => ?_)
+  · refine WP.mono (copySlice16_wp s₁ sp₁') fun s₂ ⟨m₂, x11₂, kp₂⟩ => ⟨?_, x11₂, kp₁.trans kp₂⟩
+    rw [m₂, m₁]
+  · have h0 : n / 16 ≠ 0 := by simpa using hf
+    have h16 : 16 ≤ n := by omega
+    have hd := Nat.mod_lt D.toNat (show 0 < 16 by decide)
+    have hh1 : 16 - D.toNat % 16 ≤ 16 := by omega
+    obtain ⟨s₂, run₂, m₂, x12₂, x11₂, x13₂, kp₂⟩ := alignHead_ok s₁ sp₁'.x12 sp₁'.x11
+      (covers_prefix sp₁'.rd (by omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+      (covers_prefix sp₁'.wr (by omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+    refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+    have hS : (⟨S + BitVec.ofNat 64 (16 - D.toNat % 16), n - (16 - D.toNat % 16)⟩ : Region).Sub ⟨S, n⟩ :=
+      Offset.sub_base _ (by omega)
+    have hD : (⟨D + BitVec.ofNat 64 (16 - D.toNat % 16), n - (16 - D.toNat % 16)⟩ : Region).Sub ⟨D, n⟩ :=
+      Offset.sub_base _ (by omega)
+    have sp₂ : SlicePre s₂ (S + BitVec.ofNat 64 (16 - D.toNat % 16)) (D + BitVec.ofNat 64 (16 - D.toNat % 16))
+        (n - (16 - D.toNat % 16)) :=
+      ⟨x12₂, x11₂, by rw [x13₂, sp₁'.x13, Offset.ofNat_sub_ofNat (by omega)], by omega,
+        by rw [kp₂.rd, kp₂.wr]; exact covers_off sp₁'.rd (by omega) hn,
+        by rw [kp₂.wr]; exact covers_off sp₁'.wr (by omega) hn, (h.disj.sub_left hS).sub_right hD⟩
+    refine WP.mono (copySlice64_wp s₂ sp₂) fun s₃ ⟨m₃, x11₃, kp₃⟩ => ⟨?_, ?_, kp₁.trans (kp₂.trans kp₃)⟩
+    · -- The rest's bytes are what they were: the head wrote only at `D`.
+      have hrest : bytesAt s₂.mem (S + BitVec.ofNat 64 (16 - D.toNat % 16)) (n - (16 - D.toNat % 16)) =
+          bytesAt s.mem (S + BitVec.ofNat 64 (16 - D.toNat % 16)) (n - (16 - D.toNat % 16)) := by
+        rw [m₂, m₁, write_eq_writeBytes]
+        refine Proof.AesGcm.AArch64.bytesAt_frame (writeBytes_frame s.mem D _ (R := ⟨D, 16⟩)
+          (by simp only [List.length_map, List.length_range]; exact Region.contains_self _ _)) (fun r hr => ?_)
+          (by omega)
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (h.disj.sub_left hS).sub_right (Region.sub_prefix (by omega))
+      rw [m₃, hrest, m₂, m₁, write_eq_writeBytes, read16_bytes]
+      exact head_rest hh1 h16 hn
+    · rw [x11₃, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
 
 end VG.Proof.AesGcm.AArch64.Gather
