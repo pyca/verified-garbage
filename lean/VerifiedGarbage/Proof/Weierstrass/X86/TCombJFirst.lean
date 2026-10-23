@@ -36,7 +36,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   have hsl : ∀ x ∈ combSlots K.toComb, K.bits + K.kbytes + 4 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes :=
     fun x hx => hL.bits_sl x (List.mem_cons_of_mem _ hx)
   have hbz := hL.bits
-  have hzw : K.w * K.J ≤ K.kbytes + 4 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have hzw : K.w * K.J ≤ K.kbytes + 4 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_arith
   have hk : k < 2 ^ (K.w * K.J) :=
     Nat.lt_of_lt_of_le hF.k_lt (Nat.pow_le_pow_right (by decide) hL.kbytes)
   have hmo := tcombW_mo hL hM
@@ -63,30 +63,30 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     rw [m₃, ← k₁.2.1]; exact O₂.unch
   have U₃' : Unch base (tcombW K) s.mem s₃.mem := U₃.mono fun w hw => List.mem_append_right _ hw
   have hro : ∀ x ∈ combSlots K.toComb, wordsVal s₃.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
-    fun x hx => by rw [m₃, O₂.wordsVal (by have := hsl x hx; omega) (b64 x hx), k₁.2.1]
-  have hM₃ : ModOkW K.M size C.p s₃.mem base := hM.unch U₃' hmo (by omega)
+    fun x hx => by rw [m₃, O₂.wordsVal (by have := hsl x hx; omega_arith) (b64 x hx), k₁.2.1]
+  have hM₃ : ModOkW K.M size C.p s₃.mem base := hM.unch U₃' hmo (by omega_arith)
   have hz₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by rw [hro _ (by tcomb_mem)]; exact hF.zero
   have hbits₃ : ∀ t < K.w * K.J, s₃.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 := by
     intro t ht
     by_cases htk : t < K.kbytes
     · rw [U₃.byte (fun w hw => by
-        simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega)
+        simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega_arith)
         (by omega_using [hbz, hzw, ht, hn])]
       exact hF.bits t htk
-    · have := z₂ (t - K.kbytes) (by omega)
-      rw [show K.bits + K.kbytes + (t - K.kbytes) = K.bits + t by omega] at this
+    · have := z₂ (t - K.kbytes) (by omega_arith)
+      rw [show K.bits + K.kbytes + (t - K.kbytes) = K.bits + t by omega_arith] at this
       rw [m₃, this, Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hF.k_lt
-        (Nat.pow_le_pow_right (by decide) (by omega)))]
+        (Nat.pow_le_pow_right (by decide) (by omega_arith)))]
       rfl
   have hT₃ : (s₃.mem.readW (off base K.ptr) 32).setWidth 64 = T := by
-    rw [unch_read32 U₃ (by have := hL.ptr_le; omega) (fun w hw => by
+    rw [unch_read32 U₃ (by have := hL.ptr_le; omega_arith) (fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw
-      have := hL.ptr_bits; dsimp only; omega)]
+      have := hL.ptr_bits; dsimp only; omega_arith)]
     exact hF.tsym
   have hTM₃ : TblMem s₃ T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) :=
     TblMem.of_unch hF.tbl (by rw [k₃.2.2.1, k₃.2.2.2, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]) U₃
       (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; exact hL.bits) hF.out
-  refine WP.mono (tentryJ_ok hL hC hV hpn hs₃ hM₃ (i := 0) (by omega) b₃ hb1 (c := false)
+  refine WP.mono (tentryJ_ok hL hC hV hpn hs₃ hM₃ (i := 0) (by omega_arith) b₃ hb1 (c := false)
     (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃) fun s₄ h₄ => WP.seq (WP.mono h₄ fun s₅ E₅ => ?_)
   rw [WP.block_append_iff]
   have hAE : ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z], x ∈ combWs K.toComb := by
@@ -126,9 +126,9 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     rcases List.mem_append.mp hw with h | h
     · exact h
     · exact List.mem_append_left _ h
-  refine ⟨E₅.scr.of_keepRegs k₆ (by decide) |>.of_keeps k₇.keeps (by decide), b₇, ?_, UT, hM.unch UT hmo (by omega),
+  refine ⟨E₅.scr.of_keepRegs k₆ (by decide) |>.of_keeps k₇.keeps (by decide), b₇, ?_, UT, hM.unch UT hmo (by omega_arith),
     ?_, ?_, fun t ht => ?_, ?_, by
-      rw [unch_read32 UT (by have := hL.ptr_le; omega) (tcombW_ptr hL)]
+      rw [unch_read32 UT (by have := hL.ptr_le; omega_arith) (tcombW_ptr hL)]
       exact hF.tsym⟩
   · have c : ∀ r ∈ [Reg.eax], r ∈ powClob := by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [powClob, clob]

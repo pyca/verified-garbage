@@ -200,7 +200,7 @@ theorem square_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
     (Sk.of_upd [.ebx] u2 m2 x2)).trans (Sk.of_upd [.ebx] u3 m3 x3)).trans (Sk.of_upd [.ebx] u4 m4 x4)).trans
     (Sk.of_upd [.ebx] u5 m5 x5))
   have b5 : t5.gpr .ebx = BitVec.ofNat 32 (4 * ((k + 1) / 2)) := by
-    rw [u5.gpr, u4.gpr, u3.gpr, u2.gpr, u1.gpr, C.ecx]; exact half_val (by omega)
+    rw [u5.gpr, u4.gpr, u3.gpr, u2.gpr, u1.gpr, C.ecx]; exact half_val (by omega_arith)
   refine wp_movX (C.prm.readSk K5 (i := pA) (by decide)) fun t6 u6 m6 x6 => ?_
   have K6 := K5.trans (Sk.of_upd [.esi] u6 m6 x6)
   refine wp_movX (C.prm.readSk K6 (i := pA) (by decide)) fun t7 u7 m7 x7 => WP.block_nil ?_
@@ -209,13 +209,13 @@ theorem square_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
   have b7 : t7.gpr .ebx = BitVec.ofNat 32 (4 * ((k + 1) / 2)) := by
     rw [u7.other _ (by decide), u6.other _ (by decide), b5]
   refine WP.seq (WP.mono (dotAcc_ok C7 (x := a) (y := a) (e := (k + 1) / 2) (P := 0) (H := 0) (n := 0)
-    (ptr_of_param (by rw [u7.other _ (by decide), u6.gpr]) hA) (ptr_of_param u7.gpr hA) b7 (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by rw [K7.xmm]; exact A)) fun u ⟨A', K', mu, cu⟩ => ?_)
+    (ptr_of_param (by rw [u7.other _ (by decide), u6.gpr]) hA) (ptr_of_param u7.gpr hA) b7 (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by rw [K7.xmm]; exact A)) fun u ⟨A', K', mu, cu⟩ => ?_)
   rw [K7.mem, Nat.zero_add, Nat.zero_add, Nat.zero_add, lowSum_cross _ _ _ hk] at A'
   have hl := highSum_le s.mem W a a k (k + 1 - N) ((k + 1) / 2 - (k + 1 - N))
   refine WP.seq (WP.of_runBlock ⟨_, double_run u, ?_⟩)
   have Cu := C7.of_keeps K' mu cu
-  have Ad := A'.double (by omega)
+  have Ad := A'.double (by omega_arith)
   have bu : u.gpr .ebx = BitVec.ofNat 32 (4 * ((k + 1) / 2)) := by rw [K'.1 _ (by decide), b7]
   let v := (u.setXmm .xmm0 (XBinOp.eval .paddq (u.xmm .xmm0) (u.xmm .xmm0))).setXmm .xmm1
     (XBinOp.eval .paddq (u.xmm .xmm1) (u.xmm .xmm1))
@@ -236,7 +236,7 @@ theorem square_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
   refine WP.seq (wp_movX rfl fun w1 y1 n1 z1 => wp_addX rfl fun w2 y2 _ n2 z2 =>
     wp_cmpX rfl fun w3 f3 _ zf3 n3 z3 => WP.block_nil ?_)
   have e2 : w2.gpr .eax = BitVec.ofNat 32 (8 * ((k + 1) / 2)) := by
-    rw [y2.gpr, y1.gpr, show v.gpr .ebx = u.gpr .ebx from rfl, bu, ← BitVec.ofNat_add]; congr 1; omega
+    rw [y2.gpr, y1.gpr, show v.gpr .ebx = u.gpr .ebx from rfl, bu, ← BitVec.ofNat_add]; congr 1; omega_arith
   have c2 : w2.gpr .ecx = BitVec.ofNat 32 (4 * k) := by
     rw [y2.other _ (by decide), y1.other _ (by decide)]; exact Cv.ecx
   have K3 : Sk [.eax, .esi] v w3 := ((Sk.of_upd [.eax, .esi] y1 n1 z1).trans (Sk.of_upd [.eax] y2 n2 z2)).trans
@@ -245,7 +245,7 @@ theorem square_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
   by_cases hev : k % 2 = 0
   · refine WP.ite true (by
         show w3.zf = some true
-        rw [zf3, e2, c2, sub_beq (by omega) (by omega), decide_eq_true (by omega)])
+        rw [zf3, e2, c2, sub_beq (by omega_arith) (by omega_arith), decide_eq_true (by omega_arith)])
       (fun _ => ?_) (fun h => absurd h (by decide))
     rw [List.cons_append, List.cons_append, List.cons_append]
     have C3 := Cv.of_sk K3
@@ -254,30 +254,30 @@ theorem square_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
     have p5 : PtrAt w5 (W := W) .esi (a + 4 * (k / 2)) := by
       have := (V pA).isLt
       rw [PtrAt, y5.gpr, y4.gpr, y4.other _ (by decide), f3.gpr, y2.other _ (by decide), y1.other _ (by decide),
-        show v.gpr .ebx = u.gpr .ebx from rfl, bu, BitVec.toNat_add, hA, toNat_ofNat_lt (by omega)]
-      omega
+        show v.gpr .ebx = u.gpr .ebx from rfl, bu, BitVec.toNat_add, hA, toNat_ofNat_lt (by omega_arith)]
+      omega_arith
     have hw5 := C.ws.of_keeps (Kvs.trans (K5.keep.mono (by decide)))
-    refine wp_movX (readSrc_ptr hw5 p5 (d := 0) (by omega)) fun w6 y6 n6 z6 => ?_
+    refine wp_movX (readSrc_ptr hw5 p5 (d := 0) (by omega_arith)) fun w6 y6 n6 z6 => ?_
     have K6 : Sk [.eax, .esi] v w6 := K5.trans (Sk.of_upd [.eax] y6 n6 z6)
     obtain ⟨w7, run, g7, m7, rd7, wr7, mc7, a0, a1⟩ := sq_run w6 (by rw [K6.mcdt]; exact Cv.mcdt)
-    have Af := Ad.single (u := w6.gpr .eax) (v := w6.gpr .eax) (by omega)
+    have Af := Ad.single (u := w6.gpr .eax) (v := w6.gpr .eax) (by omega_arith)
     rw [← K6.xmm, ← a0, ← a1] at Af
     refine WP.of_runBlock ⟨w7, run, _, _, Af.of_eq' ?_, ?_, ?_, ?_, ?_⟩
-    · rw [← hcross, ite_eq_left ⟨hev, by omega⟩, y6.gpr, K5.mem, vm, mus]
+    · rw [← hcross, ite_eq_left ⟨hev, by omega_arith⟩, y6.gpr, K5.mem, vm, mus]
       simp only [digits, w32, Nat.add_zero]
-    · omega
+    · omega_arith
     · exact (Kvs.trans (K6.keep.mono (by decide))).trans ⟨fun r _ => by rw [g7], rd7, wr7⟩
     · rw [m7, K6.mem, vm, mus]
     · rw [mc7, K6.mcdt, vc, cus]
   · refine WP.ite false (by
         show w3.zf = some false
-        rw [zf3, e2, c2, sub_beq (by omega) (by omega), decide_eq_false (by omega)])
+        rw [zf3, e2, c2, sub_beq (by omega_arith) (by omega_arith), decide_eq_false (by omega_arith)])
       (fun h => absurd h (by decide)) (fun _ => WP.block_nil ?_)
     have Ao := Ad
     rw [← K3.xmm] at Ao
     refine ⟨_, _, Ao.of_eq' ?_, ?_, ?_, ?_, ?_⟩
-    · rw [← hcross, ite_eq_right (by omega), Nat.add_zero]
-    · omega
+    · rw [← hcross, ite_eq_right (by omega_arith), Nat.add_zero]
+    · omega_arith
     · exact Kvs.trans (K3.keep.mono (by decide))
     · rw [K3.mem, vm, mus]
     · rw [K3.mcdt, vc, cus]

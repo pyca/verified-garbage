@@ -62,7 +62,7 @@ theorem initWith_wp (v : GcmImpl) {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp 
   replace d_cs := d_cs.sub_left c256
   replace r_c := r_c.sub_right c256
   replace k_c := k_c.sub_right c256
-  replace wc : (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 := by omega
+  replace wc : (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 := by omega_arith
   generalize hK : s.gpr .rdi = K at *
   generalize hLn : (s.gpr .rsi).toNat = L at *
   generalize hCtx : s.gpr .rdx = Ctx at *
@@ -148,7 +148,7 @@ theorem initWith_wp (v : GcmImpl) {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp 
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Lay.wSub he)
   have dK0 : (⟨Ctx, 240⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_arith)
   have f₄ : Frame [⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 96, 16⟩] s₃.mem s₄.mem := by
     rw [hm₄]
     exact ((Cmac.frame_store2 _ _ _).mono (by simp)).trans ((Cmac.frame_store2 _ _ _).mono (by simp))
@@ -164,7 +164,7 @@ theorem initWith_wp (v : GcmImpl) {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dK0.sub_left (Region.sub_prefix hRb)
-        · exact (d_cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))) (by omega),
+        · exact (d_cs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))) (by omega_arith),
       ← hRd, g.out, hm₂, bytesAt_frame f₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact d_ks.sub_right (Lay.wSub (by decide)))
         (by rcases hL with rfl | rfl | rfl <;> decide)]
@@ -172,7 +172,7 @@ theorem initWith_wp (v : GcmImpl) {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp 
   have pW' : Covers [⟨W, 2560⟩] s₄.wr := by rw [wr₄]; exact pW
   have cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 := by
     refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, h8₄, h9₄, hR', ?_, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
     · simpa using dCW 0 240 (by decide) 96 16 (by decide)
     · simpa using dCW 0 240 (by decide) 512 2048 (by decide)
     · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
@@ -242,13 +242,13 @@ theorem initWith_wp (v : GcmImpl) {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp 
   have c13 : s₅.gpr .r13 = Ctx := by rw [c.saved .r13 (by decide), hg₄ .r13 (by decide), g13]
   refine ht s₅ ⟨c15, c13, by rw [c5sp, hSP], by rw [c.rd, rd₄], by rw [c.wr, wr₄], hsv₅, by rw [hSP, hret], ?_⟩
   refine ⟨?_, ?_⟩
-  · rw [length_bytesAt, hRd, bytesAt_frame cfr (fun r hr => ?_) (by omega), hk₄]
+  · rw [length_bytesAt, hRd, bytesAt_frame cfr (fun r hr => ?_) (by omega_arith), hk₄]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact (d_cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))
+    · exact (d_cs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))
     · exact dK0.sub_left (Region.sub_prefix hRb)
-    · exact (d_cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))
-    · exact (k_c.sub_right (Region.sub_prefix (by omega))).symm
+    · exact (d_cs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))
+    · exact (k_c.sub_right (Region.sub_prefix (by omega_arith))).symm
   · rw [ctxH_eq, gout.1, Spec.Gcm.aes, length_bytesAt, hRd]
     simp
 

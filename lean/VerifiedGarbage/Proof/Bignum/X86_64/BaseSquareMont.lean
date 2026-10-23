@@ -184,21 +184,21 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t ∧ (∀ x, x ∉ stashed → t.xmm x = s.xmm x) := by
   have hn := hs.nowrap
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have hAT : slot w aAcc + 16 + 8 * w = slot w aTmp := by unfold slot aAcc aTmp; omega
-  have hNA : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
+  have hAT : slot w aAcc + 16 + 8 * w = slot w aTmp := by unfold slot aAcc aTmp; omega_arith
+  have hNA : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_arith
   have hTs := sl aTmp (by decide)
-  have hN0 : 0 < wv s.mem B (slot w aN) w := wv_pos_of_inv (by omega) hinv
+  have hN0 : 0 < wv s.mem B (slot w aN) w := wv_pos_of_inv (by omega_arith) hinv
   have soX : slot w o + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w o := by
-    have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega
+    have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega_arith
   unfold square
   refine WP.seq (WP.mono (sqRaw_ok hs hZ hw hw' ha ha1 ha2 h9 h8 h12)
     fun s₁ ⟨hv₁, _, ho₁, h8₁, x14, x15, x0, x1, x2, x3, xo, k₁⟩ => ?_)
-  have hNw : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega) (by omega)
-  have hNv : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega) (by omega)
+  have hNw : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega_arith) (by omega_arith)
+  have hNv : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega_arith) (by omega_arith)
   -- The reduction.
   refine WP.seq (WP.mono (redc_ok (A := slot w aAcc + 16) (eN := slot w aN) (minv := minv)
     (hs.congr k₁.2.2) h8₁ (by rw [x0, h12]) (by rw [x2, h10]) (by rw [x15, h15]) (by rw [x3, hsi, hAT])
-    (by omega) (by omega) (by omega) hw' (by rw [hNw]; exact hinv))
+    (by omega_arith) (by omega_arith) (by omega_arith) hw' (by rw [hNw]; exact hinv))
     fun s₂ ⟨⟨q, hq, heq⟩, ho₂, h8₂, hx₂, k₂⟩ => ?_)
   rw [hAT, hv₁, hNv] at heq
   rw [hAT] at h8₂
@@ -210,20 +210,20 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     (by rw [hx₂, x14, hbx]))) fun s₃ ⟨⟨h12₃, hsi₃, h10₃, hbx₃, hm₃, k₃⟩, hx₃, _⟩ => ?_)
   have h8₃ : s₃.gpr .r8 = off B (slot w aTmp) := (k₃.gpr (by decide)).trans h8₂
   -- `T - m`.
-  refine WP.seq (WP.mono (WP.vecKeep (by decide) (subMod_ok (hs₂.congr k₃.2.2) h8₃ h10₃ hsi₃ h12₃ (by omega) hw' (by omega)
-    (by have := sl aN (by decide); omega) (by have := sl aAcc (by decide); omega) (by omega) (by omega)))
+  refine WP.seq (WP.mono (WP.vecKeep (by decide) (subMod_ok (hs₂.congr k₃.2.2) h8₃ h10₃ hsi₃ h12₃ (by omega_arith) hw' (by omega_arith)
+    (by have := sl aN (by decide); omega_arith) (by have := sl aAcc (by decide); omega_arith) (by omega_arith) (by omega_arith)))
     fun s₄ ⟨⟨c, lt, hbp, hlt, hD, ho₄, k₄⟩, hx₄, _⟩ => ?_)
   rw [hm₃] at hlt hD ho₄
   -- The selection.
   refine WP.mono (WP.vecKeep (by decide) (selectAcc_ok (hs₂.congr (k₃.trans k₄).2.2) ((k₄.gpr (by decide)).trans h8₃)
     ((k₄.gpr (by decide)).trans hsi₃) ((k₄.gpr (by decide)).trans hbx₃) ((k₄.gpr (by decide)).trans h12₃) hbp
-    (by omega) hw' (by omega) (by have := sl aAcc (by decide); omega) (by have := sl o ho; omega)
-    (by omega) (by omega))) fun t ⟨⟨hv, hot, k₅⟩, hx₅, _⟩ => ?_
+    (by omega_arith) hw' (by omega_arith) (by have := sl aAcc (by decide); omega_arith) (by have := sl o ho; omega_arith)
+    (by omega_arith) (by omega_arith))) fun t ⟨⟨hv, hot, k₅⟩, hx₅, _⟩ => ?_
   -- The words of `T` (at `aTmp`), as after the reduction.
   have hT₄ : wv s₄.mem B (slot w aTmp) w = wv s₂.mem B (slot w aTmp) w :=
-    ho₄.wv (by unfold slot aAcc aTmp; omega) (by omega)
+    ho₄.wv (by unfold slot aAcc aTmp; omega_arith) (by omega_arith)
   have hN₂ : wv s₂.mem B (slot w aN) w = wv s.mem B (slot w aN) w :=
-    (ho₂.wv (by omega) (by omega)).trans hNv
+    (ho₂.wv (by omega_arith) (by omega_arith)).trans hNv
   rw [hN₂] at hD
   have hsel : wv t.mem B (slot w o) w = if (word s₂.mem B (slot w aTmp + 8 * w)).toNat < c.toNat then
       wv s₂.mem B (slot w aTmp) w else wv s₄.mem B (slot w aAcc) w := by
@@ -236,7 +236,7 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
   have hTlt : wv s₂.mem B (slot w aTmp) w + 2 ^ (64 * w) * ((word s₂.mem B (slot w aTmp + 8 * w)).toNat +
       2 ^ 64 * (word s₂.mem B (slot w aTmp + 8 * w + 8)).toNat) < wv s.mem B (slot w aN) w + 2 ^ (64 * w) := by
     have := redc_lt_add hq (Nat.mul_lt_mul'' hAR hAR) heq
-    omega
+    omega_arith
   obtain ⟨hlz, hlm⟩ := VG.Proof.Bignum.csub_lazy (Tl := wv s₂.mem B (slot w aTmp) w)
       (Tw := (word s₂.mem B (slot w aTmp + 8 * w)).toNat)
       (Tw1 := (word s₂.mem B (slot w aTmp + 8 * w + 8)).toNat) (D := wv s₄.mem B (slot w aAcc) w)
@@ -256,7 +256,7 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
         rw [heq, Nat.mul_comm (wv s.mem B (slot w aN) w) (2 ^ (64 * w)) ] at *
         rw [show 2 ^ (64 * w) * (2 * wv s.mem B (slot w aN) w) =
           2 ^ (64 * w) * wv s.mem B (slot w aN) w + 2 ^ (64 * w) * wv s.mem B (slot w aN) w by grind]
-        omega
+        omega_arith
       exact Nat.lt_of_mul_lt_mul_left hb
     rw [hsel, VG.Proof.Bignum.csub_result (Tl := wv s₂.mem B (slot w aTmp) w)
       (Tw := (word s₂.mem B (slot w aTmp + 8 * w)).toNat)
@@ -269,8 +269,8 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     have h1 := hx aAcc (by simp)
     have h2 := hx aTmp (by simp)
     have h3 := hx o (by simp)
-    rw [hot x (by omega), ho₄ x (by unfold slot aAcc aTmp at *; omega)]
-    rw [ho₂ x (by unfold slot aAcc aTmp at *; omega), ho₁ x (by unfold slot aAcc aTmp at *; omega)]
+    rw [hot x (by omega_arith), ho₄ x (by unfold slot aAcc aTmp at *; omega_arith)]
+    rw [ho₂ x (by unfold slot aAcc aTmp at *; omega_arith), ho₁ x (by unfold slot aAcc aTmp at *; omega_arith)]
   · rw [hx₅, hx₄, hx₃, hx₂]; exact xo x hx
 
 /-- `cmp r11, r9`: ZF for the bases of `a` and `b`, so for `a = b`. -/
