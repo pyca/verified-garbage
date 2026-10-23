@@ -13,9 +13,8 @@ import VerifiedGarbage.Proof.Cmac.Spec
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/Loops.lean`): `copyLoop` copies `r5` bytes from `r3` to
-`r4`, and `xorLoop` XORs `r5` bytes at `r3` into those at `r4`, a byte at a
-time through advancing pointers, counting `r5` down to zero (`copyLoop_ok`,
-`xorLoop_ok`); the buffers do not overlap. `minLen` leaves
+`r4`, a byte at a time through advancing pointers, counting `r5` down to
+zero (`copyLoop_ok`); the buffers do not overlap. `minLen` leaves
 `min (16 - r26, r25)` in `r5` (`minLen_ok`).
 -/
 
@@ -136,78 +135,6 @@ theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
     refine ⟨by rw [ev]; simp [he], by rw [hmem, he], ⟨by rw [r3', he], by rw [r4', he], ?_,
       fun r h₀ h₃ h₄ h₅ _ => gg r h₀ h₃ h₄ h₅, by rw [rd', rd], by rw [wr', wr], by rw [sp', sp],
       by rw [lr', lr]⟩⟩
-    rw [r5', dec64 hi hn, he, Nat.sub_self]; rfl
-  · right
-    refine ⟨by rw [ev]; simp [he], n - (i + 1), by omega, i + 1, rfl, by omega, r3', r4',
-      by rw [r5', dec64 hi hn], hmem, gg, by rw [rd', rd], by rw [wr', wr], by rw [sp', sp],
-      by rw [lr', lr]⟩
-
-/-! ## `xorLoop` -/
-
-abbrev xorBody : List Instr :=
-  [.lbz .r0 .r4 0, .lbz .r6 .r3 0, .logic .xor .r0 .r0 .r6, .stb .r0 .r4 0,
-    .addi .r3 .r3 1, .addi .r4 .r4 1, .subi .r5 .r5 1]
-
-theorem xorStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .r3 = S + BitVec.ofNat 64 i)
-    (hd : s.gpr .r4 = D + BitVec.ofNat 64 i) (hn : s.gpr .r5 = BitVec.ofNat 64 (n - i))
-    (r : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 1)
-    (w : InRegions s.wr (D + BitVec.ofNat 64 i) 1) :
-    WP isa (.block xorBody) s fun s' =>
-      s'.mem = s.mem.writeW (D + BitVec.ofNat 64 i)
-        (s.mem (D + BitVec.ofNat 64 i) ^^^ s.mem (S + BitVec.ofNat 64 i)) ∧
-      s'.gpr .r3 = S + BitVec.ofNat 64 (i + 1) ∧ s'.gpr .r4 = D + BitVec.ofNat 64 (i + 1) ∧
-      s'.gpr .r5 = BitVec.ofNat 64 (n - i) - BitVec.ofNat 64 1 ∧
-      (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr := by
-  have w' : InRegions (s.rd ++ s.wr) (D + BitVec.ofNat 64 i) 1 := in_left w
-  crun [hs, hd, hn, r, w, w', rd8x, write1, add_ofNat_assoc]
-  intro r h₀ h₃ h₄ h₅ h₆; simp [h₀, h₃, h₄, h₅, h₆]
-
-/-- The bytes at `D` XORed with those at `S`. -/
-def xorBytes (m : Mem) (D S : Addr) (n : Nat) : List Byte :=
-  List.zipWith (· ^^^ ·) (bytesAt m D n) (bytesAt m S n)
-
-theorem xorBytes_succ (m : Mem) (D S : Addr) (i : Nat) :
-    xorBytes m D S (i + 1) = xorBytes m D S i ++ [m (D + BitVec.ofNat 64 i) ^^^ m (S + BitVec.ofNat 64 i)] := by
-  simp [xorBytes, bytesAt_succ, List.zipWith_append, Cmac.bytesAt_length]
-
-theorem length_xorBytes (m : Mem) (D S : Addr) (n : Nat) : (xorBytes m D S n).length = n := by
-  simp [xorBytes, Cmac.bytesAt_length]
-
-/-- Byte `i` of the destination, not yet written. -/
-theorem dst_kept {m : Mem} {D : Addr} {n i : Nat} (hi : i < n) (hn : n < 2 ^ 64) (xs : List Byte)
-    (hxs : xs.length = i) : writeBytes m D xs (D + BitVec.ofNat 64 i) = m (D + BitVec.ofNat 64 i) := by
-  simp only [writeBytes, hxs, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), Nat.lt_irrefl, ite_false]
-
-theorem xorLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
-    WP isa xorLoop s fun s' =>
-      s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧ LoopOut s S D n s' := by
-  have hn := h.lt
-  refine WP.loop (M := isa) (body := .block xorBody) (c := .nonzero .d .r5)
-    (fun (k : Nat) (t : State) => ∃ i, k = n - i ∧ i < n ∧ t.gpr .r3 = S + BitVec.ofNat 64 i ∧
-      t.gpr .r4 = D + BitVec.ofNat 64 i ∧ t.gpr .r5 = BitVec.ofNat 64 (n - i) ∧
-      t.mem = writeBytes s.mem D (xorBytes s.mem D S i) ∧
-      (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
-      t.wr = s.wr ∧ t.sp = s.sp ∧ t.lr = s.lr) ?_ (n - 0) _
-    ⟨0, rfl, h.pos, by rw [h.r3, BitVec.add_zero], by rw [h.r4, BitVec.add_zero], by rw [h.r5]; rfl,
-      by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ _ _ _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  rintro k t ⟨i, rfl, hi, r3, r4, r5, mem, g, rd, wr, sp, lr⟩
-  refine WP.mono (xorStep_ok t r3 r4 r5 (by rw [rd, wr]; exact in_of_covers h.rd hi hn)
-    (by rw [wr]; exact in_of_covers h.wr hi hn)) fun t' ⟨mem', r3', r4', r5', g', rd', wr', sp', lr'⟩ => ?_
-  have hlen := length_xorBytes s.mem D S i
-  have hmem : t'.mem = writeBytes s.mem D (xorBytes s.mem D S (i + 1)) := by
-    rw [mem', mem, src_kept h.disj hi hn _ hlen, dst_kept hi hn _ hlen, xorBytes_succ,
-      writeBytes_snoc s.mem _ _ _ (by rw [hlen]; omega), hlen]
-  have gg : ∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → t'.gpr r = s.gpr r :=
-    fun r h₀ h₃ h₄ h₅ h₆ => by rw [g' r h₀ h₃ h₄ h₅ h₆, g r h₀ h₃ h₄ h₅ h₆]
-  have ev : isa.eval (.nonzero .d .r5) t' = some !decide (i + 1 = n) := by
-    show some _ = _
-    simp only [State.read, Size.bits, BitVec.setWidth_eq, r5', dec64 hi hn, nz_dec hi hn]
-  by_cases he : i + 1 = n
-  · left
-    refine ⟨by rw [ev]; simp [he], by rw [hmem, he], ⟨by rw [r3', he], by rw [r4', he], ?_, gg,
-      by rw [rd', rd], by rw [wr', wr], by rw [sp', sp], by rw [lr', lr]⟩⟩
     rw [r5', dec64 hi hn, he, Nat.sub_self]; rfl
   · right
     refine ⟨by rw [ev]; simp [he], n - (i + 1), by omega, i + 1, rfl, by omega, r3', r4',
