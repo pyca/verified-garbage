@@ -227,7 +227,9 @@ blocks left, is not zero; at most sixteen, of twenty places), rather than
 absorbing the rest and then calling `vg_chacha20_xor` on it. Then the
 accumulator is stored, the rest's last partial block absorbed with its
 padding (`macPad`), and the rest XORed with its keystream (`Short.xorKs`).
-Shorter rests keep the stream's single scalar block (`openRest`).
+Shorter rests keep the stream's single scalar block (`openRest`). The
+stitched code is laid out after the function's return (`Code.iteCold`), so
+that the code the other lengths run keeps its addresses.
 
 The rest's address and length are kept in `x7` and `x2` through the kernel,
 and in `x24` and `x25` (free after the additional data) through `macPad`'s
@@ -304,7 +306,7 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (.block counterOne)
   (.seq (cryptStitched c.sve false)
   (.seq (.block TailO.test)
-  (.seq (.ite (.zero .x .x9) (TailO.rest c.sve) (.seq (macPad .x22 .x23) (openRest c)))
+  (.seq (Code.iteCold (.zero .x .x9) (TailO.rest c.sve) (.seq (macPad .x22 .x23) (openRest c)))
   (.seq absorbLengths
     (finalizeTo 48))))))))
 

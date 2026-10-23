@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.TailO.Rest
+import VerifiedGarbage.Proof.Framework.Cold
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `open`
@@ -91,7 +92,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
         pad16 (bytesAt s₃'.mem (dp s₀ + BitVec.ofNat 64 (512 * T)) (L s₀ - 512 * T)))) ∧
     bytesAt s₆.mem (dp s₀) (L s₀) =
       Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s₃'.mem (dp s₀) (L s₀))) ?_ ?_)
-  · refine WP.ite (decide (65 ≤ L s₀ - 512 * T ∧ L s₀ - 512 * T ≤ 256)) e₄ (fun h => ?_) (fun h => ?_)
+  · refine WP.iteCold_iff.mpr (WP.ite (decide (65 ≤ L s₀ - 512 * T ∧ L s₀ - 512 * T ≤ 256)) e₄ (fun h => ?_) (fun h => ?_))
     · have h' := of_decide_eq_true h
       refine (TailO.rest_ok v.callee.sve hp hc' (by decide) (by simp only [Nat.zero_add]; omega)
         (by simp only [Nat.zero_add]; omega)).mono fun s₆ ⟨v₆, i₆, f₆, r₆, pt₆⟩ => ?_
