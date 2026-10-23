@@ -186,19 +186,23 @@ theorem in_wr {s : State} {R : Region} (h : R ∈ s.wr) {a : Addr} {n : Nat} (hc
 theorem in_rdwr {s : State} {R : Region} (h : R ∈ s.rd ++ s.wr) {a : Addr} {n : Nat} (hc : R.Contains a n) :
     InRegions (s.rd ++ s.wr) a n := ⟨R, h, hc⟩
 
+/-- The hypotheses of `iterate`'s postcondition: the key states represent
+`K₀ ⊕ ipad` and `K₀ ⊕ opad`. -/
+def Hyp (s₀ : State) (k0 : List Byte) : Prop :=
+  k0.length = H.B ∧ hH.SH.Repr s₀.mem (kp s₀) (xorPad k0 ipad) ∧
+    hH.SH.Repr s₀.mem (kp s₀ + BitVec.ofNat 64 H.S) (xorPad k0 opad)
+
 include hH in
 /-- One step: `U ← HMAC (K₀, U)`, `T ← T ⊕ U`. -/
-theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
-    (hI : hH.SH.Repr s₀.mem (kp s₀) (xorPad k0 ipad))
-    (hO : hH.SH.Repr s₀.mem (kp s₀ + BitVec.ofNat 64 H.S) (xorPad k0 opad))
-    {s : State} (hr : Regs s₀ s) (hv : Vars s₀ s) (hf : Frame (all H s₀) s₀.mem s.mem)
+theorem step_ok (hp : Pre H s₀) {s : State} (hr : Regs s₀ s) (hv : Vars s₀ s) (hf : Frame (all H s₀) s₀.mem s.mem)
     (hsv : Saved H.W (scr s₀) s₀.gpr s.mem) :
     WP isa (VG.Impl.Pbkdf2.Stream.PPC64LE.Iter.step H) s fun s' => Regs s₀ s' ∧ Vars s₀ s' ∧
       s'.gpr .r22 = s.gpr .r22 - 1 ∧ Frame (all H s₀) s₀.mem s'.mem ∧ Saved H.W (scr s₀) s₀.gpr s'.mem ∧
-      bytesAt s'.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D =
-        hmacBlockKey hH.SH.H k0 (bytesAt s.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D) ∧
-      bytesAt s'.mem (tp s₀) H.D = xorBytes (bytesAt s.mem (tp s₀) H.D)
-        (hmacBlockKey hH.SH.H k0 (bytesAt s.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D)) := by
+      ∀ k0, Hyp hH s₀ k0 →
+        bytesAt s'.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D =
+          hmacBlockKey hH.SH.H k0 (bytesAt s.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D) ∧
+        bytesAt s'.mem (tp s₀) H.D = xorBytes (bytesAt s.mem (tp s₀) H.D)
+          (hmacBlockKey hH.SH.H k0 (bytesAt s.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D)) := by
   have hz := sz hH
   have hN : 0 < H.N ∧ H.N ≤ 64 := hH.dims.N
   have hW : H.W % 8 = 0 ∧ H.W ≤ 1024 := hH.dims.so
@@ -271,7 +275,8 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
   have u₁ : bytesAt s₁.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D = U :=
     keep fS₁ (by simp only [List.mem_singleton]; rintro r rfl; exact ((st_ub hz _).sub_right usub).symm)
       (by omega)
-  have hI₁ : hH.SH.Repr s₁.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 ipad) := by
+  have hI₁ : ∀ k0, Hyp hH s₀ k0 → hH.SH.Repr s₁.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 ipad) := by
+    intro k0 ⟨hk0, hI, _⟩
     refine hH.reloc s₀.mem s₁.mem (kp s₀) _ _ (by simp [xorPad, hk0]) (fun i hi => ?_) hI
     rw [m₁, VG.Proof.Hmac.Common.writeBytes_at _ _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length]; simp only [Hash.S]; omega)
       (by rw [VG.Proof.Hmac.Common.bytesAt_length]; have := hz.S; omega),
@@ -348,8 +353,10 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
     · exact sv_st hz _
     · exact (w_sv hz _).symm
     · exact (hp.ss.sub_right (sv_sub _)).symm)
-  have hI₇ : hH.SH.Repr s₇.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 ipad ++ U) := by
-    have := hup₇ _ (by rw [m₆]; exact hI₁)
+  have hI₇ : ∀ k0, Hyp hH s₀ k0 → hH.SH.Repr s₇.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 ipad ++ U) := by
+    intro k0 h
+    have hk0 := h.1
+    have := hup₇ _ (by rw [m₆]; exact hI₁ k0 h)
       (by rw [x₆.other _ (by decide), x₅.other _ (by decide), x₄.other _ (by decide), x₃.gpr]
           simp [xorPad, hk0])
     rwa [m₆, u₁] at this
@@ -425,10 +432,12 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
     · exact hp.st.symm
   have t₁₂ : bytesAt s₁₂.mem (tp s₀) H.D = bytesAt s.mem (tp s₀) H.D := by
     rw [keep f₁₂ tk₁₂ (by omega), m₁₁, t₇]
-  have hd₁₂ : bytesAt s₁₂.mem (scr s₀ + BitVec.ofNat 64 (dig H)) H.D =
+  have hd₁₂ : ∀ k0, Hyp hH s₀ k0 → bytesAt s₁₂.mem (scr s₀ + BitVec.ofNat 64 (dig H)) H.D =
       hH.SH.H.hash (xorPad k0 ipad ++ U) := by
+    intro k0 h
+    have hk0 := h.1
     have hl : (xorPad k0 ipad ++ U).length = H.B + H.D := by simp [xorPad, hk0, hU]
-    rw [VG.Proof.Hmac.Stream.PPC64LE.bytesAt_take _ _ hDF, hfin₁₂ _ (by rw [m₁₁]; exact hI₇)
+    rw [VG.Proof.Hmac.Stream.PPC64LE.bytesAt_take _ _ hDF, hfin₁₂ _ (by rw [m₁₁]; exact hI₇ k0 h)
       (by rw [hl]; omega)
       (by rw [x₁₁.other _ (by decide), x₁₀.other _ (by decide), x₉.gpr, hl]), hH.hashTake]
   -- The outer key state's hash value over `st`'s.
@@ -450,15 +459,18 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
     rw [m₁₃]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by
       rw [VG.Proof.Hmac.Common.bytesAt_length]; exact contains_start (by simp only [Hash.S]; omega))
   have v₁₃ : Vars s₀ s₁₃ := v₁₂.of_keep fun r _ _ _ _ _ h8 _ _ => g₁₃ r h8
-  have hO₁₃ : hH.SH.Repr s₁₃.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 opad) := by
+  have hO₁₃ : ∀ k0, Hyp hH s₀ k0 → hH.SH.Repr s₁₃.mem (scr s₀ + BitVec.ofNat 64 (st H)) (xorPad k0 opad) := by
+    intro k0 ⟨hk0, _, hO⟩
     refine hH.reloc s₀.mem s₁₃.mem (kp s₀ + BitVec.ofNat 64 H.S) _ _ (by simp [xorPad, hk0]) (fun i hi => ?_) hO
     rw [m₁₃, VG.Proof.Hmac.Common.writeBytes_at _ _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length]; exact hi)
       (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega),
       VG.Proof.Hmac.Common.bytesAt_getD' _ _ hi, ← add_off]
     exact key_keep _ f₁₂' (H.S + i) (by simp only [Hash.S] at *; omega)
-  have d₁₃ : bytesAt s₁₃.mem (scr s₀ + BitVec.ofNat 64 (dig H)) H.D = hH.SH.H.hash (xorPad k0 ipad ++ U) := by
+  have d₁₃ : ∀ k0, Hyp hH s₀ k0 →
+      bytesAt s₁₃.mem (scr s₀ + BitVec.ofNat 64 (dig H)) H.D = hH.SH.H.hash (xorPad k0 ipad ++ U) := by
+    intro k0 h
     rw [keep fS₁₃ (by simp only [List.mem_singleton]; rintro r rfl; exact ((st_dig hz _).sub_right dsub).symm)
-      (by omega), hd₁₂]
+      (by omega), hd₁₂ k0 h]
   -- `update` with the inner digest.
   refine wp_addi (by have := hz.W; show H.W + 48 < 2 ^ 15; omega) fun s₁₄ x₁₄ =>
     wp_li (by rcases hB with h | h <;> rw [h] <;> decide) fun s₁₅ x₁₅ =>
@@ -530,12 +542,14 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
   have t₁₉ : bytesAt s₁₉.mem (tp s₀) H.D = bytesAt s.mem (tp s₀) H.D := by
     rw [keep f₁₉ tk₁₉ (by omega), m₁₈, keep fS₁₃ (by
       simp only [List.mem_singleton]; rintro r rfl; exact hp.t_s.sub_right (st_sub _)) (by omega), t₁₂]
-  have hO₁₉ : hH.SH.Repr s₁₉.mem (scr s₀ + BitVec.ofNat 64 (st H))
+  have hO₁₉ : ∀ k0, Hyp hH s₀ k0 → hH.SH.Repr s₁₉.mem (scr s₀ + BitVec.ofNat 64 (st H))
       (xorPad k0 opad ++ hH.SH.H.hash (xorPad k0 ipad ++ U)) := by
-    have := hup₁₉ _ (by rw [m₁₈]; exact hO₁₃)
+    intro k0 h
+    have hk0 := h.1
+    have := hup₁₉ _ (by rw [m₁₈]; exact hO₁₃ k0 h)
       (by rw [x₁₈.other _ (by decide), x₁₇.other _ (by decide), x₁₆.other _ (by decide), x₁₅.gpr]
           simp [xorPad, hk0])
-    rwa [m₁₈, d₁₃] at this
+    rwa [m₁₈, d₁₃ k0 h] at this
   -- `finalize` into `ub`.
   refine WP.seq (wp_addi (by have := hz.W; show H.W + 48 < 2 ^ 15; omega) fun s₂₀ x₂₀ =>
     wp_li (by rcases hB with h | h <;> rw [h] <;> omega) fun s₂₁ x₂₁ =>
@@ -600,15 +614,19 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
       · exact hp.t_s.sub_right (ub_sub _)
       · exact hp.t_s.sub_right (w_sub _)
       · exact hp.st.symm) (by omega), m₂₃, t₁₉]
-  have hu₂₄ : bytesAt s₂₄.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D = hmacBlockKey hH.SH.H k0 U := by
+  have hu₂₄ : ∀ k0, Hyp hH s₀ k0 →
+      bytesAt s₂₄.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D = hmacBlockKey hH.SH.H k0 U := by
+    intro k0 h
+    have hk0 := h.1
     have hl : (xorPad k0 opad ++ hH.SH.H.hash (xorPad k0 ipad ++ U)).length = H.B + H.D := by
       simp [xorPad, hk0, hH.hashLen]
-    rw [VG.Proof.Hmac.Stream.PPC64LE.bytesAt_take _ _ hDF, hfin₂₄ _ (by rw [m₂₃]; exact hO₁₉)
+    rw [VG.Proof.Hmac.Stream.PPC64LE.bytesAt_take _ _ hDF, hfin₂₄ _ (by rw [m₂₃]; exact hO₁₉ k0 h)
       (by rw [hl]; omega)
       (by rw [x₂₃.other _ (by decide), x₂₂.other _ (by decide), x₂₁.gpr, hl]), ← hH.hashTake]
     rfl
   -- `T ← T ⊕ U`, and the steps left.
-  have hmacLen : (hmacBlockKey hH.SH.H k0 U).length = H.D := hH.hashLen _
+  have uLen : (bytesAt s₂₄.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D).length = H.D :=
+    VG.Proof.Hmac.Common.bytesAt_length _ _ _
   refine xor32_ok (src := .r21) (dst := .r23) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by decide)
     (by decide) (ub H) (H.D / 4)
     ⟨by have := hz.W; have := hz.S; have := hz.FD; show H.W + 48 + H.S + H.FD + 4 * (H.D / 4) ≤ 2 ^ 15; omega,
@@ -622,16 +640,16 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
       exact (hp.t_s.sub_right (ubD_sub hz _)).symm.sep (contains_start (Nat.le_refl _))
         (contains_start (Nat.le_refl _)))
     fun s₂₅ g₂₅ rd₂₅ wr₂₅ sp₂₅ m₂₅ => ?_
-  rw [v₂₄.r21, v₂₄.r23, hDq, t₂₄, hu₂₄] at m₂₅
+  rw [v₂₄.r21, v₂₄.r23, hDq, t₂₄] at m₂₅
   refine wp_subi (by decide) fun s₂₆ x₂₆ => WP.block_nil ?_
   have fT : Frame [tR H s₀] s₂₄.mem s₂₅.mem := by
     rw [m₂₅]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by
-      rw [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, hmacLen]),
+      rw [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, uLen]),
         VG.Proof.Hmac.Common.bytesAt_length]
       exact contains_start (Nat.le_refl _))
   refine ⟨⟨by rw [x₂₆.rd, rd₂₅, r₂₄.rd], by rw [x₂₆.wr, wr₂₅, r₂₄.wr], by rw [x₂₆.sp, sp₂₅, r₂₄.sp]⟩,
     (v₂₄.of_keep fun r _ _ _ _ _ h8 h9 _ => g₂₅ r h8 h9).of_keep fun r _ _ _ _ _ _ _ h22 => x₂₆.other r h22,
-    ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_⟩
   · rw [x₂₆.gpr, g₂₅ _ (by decide) (by decide), cs₂₄ _ (by decide), x₂₃.other _ (by decide),
       x₂₂.other _ (by decide), x₂₁.other _ (by decide), x₂₀.other _ (by decide), cs₁₉ _ (by decide),
       x₁₈.other _ (by decide), x₁₇.other _ (by decide), x₁₆.other _ (by decide), x₁₅.other _ (by decide),
@@ -646,14 +664,16 @@ theorem step_ok (hp : Pre H s₀) {k0 : List Byte} (hk0 : k0.length = H.B)
   · rw [x₂₆.mem]
     exact saved_keep sv₂₄ fT (by
       simp only [List.mem_singleton]; rintro r rfl; exact (hp.t_s.sub_right (sv_sub _)).symm)
-  · rw [x₂₆.mem, keep fT (by simp only [List.mem_singleton]; rintro r rfl; exact (hp.t_s.sub_right (ubD_sub hz _)).symm)
-      (by omega), hu₂₄]
-  · rw [x₂₆.mem, m₂₅]
-    have := VG.Proof.Hmac.Common.bytesAt_writeBytes_self s₂₄.mem (tp s₀)
-      (xorBytes (bytesAt s.mem (tp s₀) H.D) (hmacBlockKey hH.SH.H k0 U))
-      (by rw [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, hmacLen]),
-        VG.Proof.Hmac.Common.bytesAt_length]; omega)
-    rwa [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, hmacLen]),
-      VG.Proof.Hmac.Common.bytesAt_length] at this
+  · intro k0 h
+    refine ⟨?_, ?_⟩
+    · rw [x₂₆.mem, keep fT (by simp only [List.mem_singleton]; rintro r rfl; exact (hp.t_s.sub_right (ubD_sub hz _)).symm)
+        (by omega), hu₂₄ k0 h]
+    · rw [x₂₆.mem, m₂₅, ← hu₂₄ k0 h]
+      have := VG.Proof.Hmac.Common.bytesAt_writeBytes_self s₂₄.mem (tp s₀)
+        (xorBytes (bytesAt s.mem (tp s₀) H.D) (bytesAt s₂₄.mem (scr s₀ + BitVec.ofNat 64 (ub H)) H.D))
+        (by rw [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, uLen]),
+          VG.Proof.Hmac.Common.bytesAt_length]; omega)
+      rwa [xorBytes_length _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length, uLen]),
+        VG.Proof.Hmac.Common.bytesAt_length] at this
 
 end VG.Proof.Pbkdf2.Stream.PPC64LE.Iter
