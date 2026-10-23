@@ -24,6 +24,7 @@ theorem generatorPower_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog
   unfold generationDepth at hs hm ⊢
   unfold generatorPower Core.publicPow PublicPower.power PublicPower.powerCore
     PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
+    PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
     PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
     Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old
   repeat' first

@@ -36,4 +36,9 @@ theorem roundMul_depth (v : RoundImpl) (o a b : Nat) : generationDepth (v.mont.m
   rw [v.arithDepth]
   exact Nat.zero_le _
 
+theorem inlineMul_depth (v : RoundImpl) (o a b : Nat) : generationDepth (v.inlineMont.mm o a b) := by
+  unfold generationDepth
+  rw [v.inlineDepth]
+  exact Nat.zero_le _
+
 end VG.Proof.Dsa.X86_64.Generation

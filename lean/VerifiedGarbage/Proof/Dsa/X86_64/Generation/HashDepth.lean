@@ -51,6 +51,11 @@ theorem seedHash_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth 
     generationDepth (seedHash H1 H256) :=
   (generationDepth.block _).seq ((hashLabel_depth h1 _).ite (hashLabel_depth h256 _) _)
 
+theorem seedHashAt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
+    generationDepth (seedHashAt H1 H256 len) := by
+  unfold seedHashAt
+  split <;> first | exact hashLabel_depth h1 _ | exact hashLabel_depth h256 _
+
 theorem pHashOne_depth {H : Stream} (h : HashDepth H) (len count j : Nat) :
     generationDepth (pHashOne H len count j) :=
   ((generationDepth.block _).seq ((seedAdd_depth len).seq (hashLabel_depth h _))).seq

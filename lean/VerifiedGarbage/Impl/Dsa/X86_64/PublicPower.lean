@@ -28,9 +28,20 @@ def applyWindow (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (hdr Crt.sNib)), .alu .test .rax (.reg .rax)])
     (.ite .e (.block []) (.seq select (mul aY aY Crt.aT)))
 
+/-- Reuse the public digit slot as a four-squaring counter. The next
+window overwrites this slot with its digit before reading it. -/
+def squaresInit : List Instr :=
+  [.mov32 .rax (.imm 4), .store (hdr Crt.sNib) .rax]
+
+def squaresNext : List Instr :=
+  [.mov .rax (.mem (hdr Crt.sNib)), .alu .sub .rax (.imm 1), .store (hdr Crt.sNib) .rax]
+
+def squares (sq : Prog isa) : Prog isa :=
+  .seq (.block squaresInit) (.loop (.seq sq (.block squaresNext)) .ne)
+
 /-- Four squarings, the next public digit, and its optional product. -/
 def window (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  [sq, sq, sq, sq,
+  [squares sq,
     .block [.mov .rdx (.mem (hdr Crt.sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
       .store (hdr Crt.sV) .rax, .shift .shr .rdx 4, .alu .and .rdx (.imm 15),

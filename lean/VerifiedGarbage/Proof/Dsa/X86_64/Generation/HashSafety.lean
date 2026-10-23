@@ -48,6 +48,11 @@ theorem seedHash_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety
   exact (show generationSafe (.block hashTest) from rfl).seq
     ((hashLabel_safe h1 _).ite (hashLabel_safe h256 _) _)
 
+theorem seedHashAt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
+    generationSafe (seedHashAt H1 H256 len) := by
+  unfold seedHashAt
+  split <;> first | exact hashLabel_safe h1 _ | exact hashLabel_safe h256 _
+
 theorem pHashOne_safe {H : Stream} (h : HashSafety H) (len count j : Nat) :
     generationSafe (pHashOne H len count j) := by
   exact ((show generationSafe (.block (seedInputArgs j)) from rfl).seq

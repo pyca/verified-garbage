@@ -17,8 +17,8 @@ def qArgs : List Instr :=
   [.mov .rdi (.mem (sp 0)), .mov .rsi (.mem (sp sScr)), .alu .add .rsi (.imm oDig),
    .mov .rcx (.mem (sp sLabLen)), .mov .rdx (.reg .rcx), .shift .shl .rdx 3]
 
-def qCandidate (sha1 sha256 : Stream) : Prog isa :=
-  .seq (seedHash sha1 sha256)
+def qCandidate (sha1 sha256 : Stream) (len : Nat) : Prog isa :=
+  .seq (seedHashAt sha1 sha256 len)
     (.seq (.block qArgs) Ffdh.X86_64.ParameterCandidate.shape)
 
 end VG.Impl.Dsa.X86_64.Generation

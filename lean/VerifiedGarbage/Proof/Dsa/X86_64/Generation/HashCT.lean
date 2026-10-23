@@ -51,4 +51,14 @@ theorem seedHash_ct {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
   · exact (hashLabel_ct h256 n hn (Or.inl rfl)).mono
       (fun _ _ => two_mono fun _ _ h => h.1.1) (fun _ _ h => h)
 
+theorem seedHashAt_ct {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
+    (h1 : Calls.StreamOK G1) (h256 : Calls.StreamOK G256)
+    (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
+    RelCT isa (Two (LW n)) (Impl.Dsa.X86_64.Generation.seedHashAt G1 G256 len)
+      (fun _ _ => True) := by
+  unfold Impl.Dsa.X86_64.Generation.seedHashAt
+  split
+  · exact hashLabel_ct h1 n hn (Or.inl rfl)
+  · exact hashLabel_ct h256 n hn (Or.inl rfl)
+
 end VG.Proof.Dsa.X86_64.Generation

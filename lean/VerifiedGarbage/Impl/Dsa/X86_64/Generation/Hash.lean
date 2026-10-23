@@ -23,4 +23,8 @@ def seedHash (sha1 sha256 : Stream) : Prog isa :=
   .seq (.block hashTest)
     (.ite .e (hashLabel sha1 oDig) (hashLabel sha256 oDig))
 
+/-- The generator's reviewed width determines its hash before emission. -/
+def seedHashAt (sha1 sha256 : Stream) (len : Nat) : Prog isa :=
+  hashLabel (if len = 20 then sha1 else sha256) oDig
+
 end VG.Impl.Dsa.X86_64.Generation
