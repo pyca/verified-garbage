@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Finish
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Correct
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: constant time
@@ -232,15 +234,6 @@ theorem scalar_ct :
 
 /-- The outer workspace, with the outputs' regions. -/
 def FD' (p : GkP) (t : State) : Prop := Fz p t ∧ Dst p t
-
-/-- `zeroOut`'s first block. -/
-theorem zoBlk_ok {t : State} {B ptr : Addr} {k sPtr : Nat} (h0 : t.gpr .x0 = B) (hP : sPtr < 32)
-    (hO : word t.mem B (8 * sPtr) = ptr) (hK : word t.mem B (8 * sK) = BitVec.ofNat 64 k)
-    (hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8) :
-    WP isa (.block [ldh .x1 sPtr, ldh .x2 sK, movi .x3 0]) t fun u => u.gpr .x1 = ptr ∧ u.gpr .x2 = BitVec.ofNat 64 k :=
-  WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun u => u.gpr .x1 = ptr ∧ u.gpr .x2 = BitVec.ofNat 64 k)
-    (by brun [h0, hdr_enc hP, hdr_enc (show sK < 32 by decide), hl sPtr hP, hl sK (by decide), hO, hK])
-    rfl rfl rfl) fun _ h => h.1
 
 /-- `zeroOut sPtr sK`, to `x` or `y`. -/
 theorem zo_ct {sPtr : Nat} (ptr : GkP → Addr) (hP : sPtr < 32)

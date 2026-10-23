@@ -43,10 +43,6 @@ theorem tail_eq (W : Window) (M : Mont) (S : Selector) :
         (seqs (scan sQ ++ ([.block [enter]] : List (Prog isa)) ++ pow W.code S.code M.mm sY sK sEp sEl ++ isOne aY)),
        .ite (.zero .x .x9) (ret 0) (seqs (fin W M S))]) := rfl
 
-theorem scalarRange_eq : CheckPrivate.scalarRange = isNonzero aXm ++ (.block [sth .x9 sF, leave] ::
-    .block qTest :: [.ite (.zero .x .x3) (seqs (([.block [enter]] : List (Prog isa)) ++ ltP aXm))
-      (seqs (([.block [enter]] : List (Prog isa)) ++ Crt.loadArr aY sQ sK ++ ltArr aXm aY)), .block andF]) := rfl
-
 theorem main_eq (W : Window) (M : Mont) (S : Selector) :
     CheckPrivate.main W.code S.code M.mm = seqs ((([.block head] : List (Prog isa)) ++ pSetup) ++ (Crt.loadArr aXm sX sXl ++
       (CheckPrivate.scalarRange ++ ([.ite (.zero .x .x9) (ret 2) (seqs (Crt.loadArr aXm sY sK ++ (range aXm ++
@@ -82,13 +78,6 @@ theorem bit_false' {t : State} {P : Prop} [Decidable P] (h : isa.eval (.zero .x 
   rw [h] at he
   intro hp
   simp [bit, hp] at he
-
-/-- x's bound. -/
-theorem k5_k6 (p : KpP) (xb : List Byte) (t : State) (h : K5 p xb t) :
-    WP isa (.ite (.zero .x .x3) (seqs (([.block [enter]] : List (Prog isa)) ++ ltP aXm))
-      (seqs (([.block [enter]] : List (Prog isa)) ++ Crt.loadArr aY sQ sK ++ ltArr aXm aY))) t fun u => K6 p xb u ∧ KX t u :=
-  WP.ite (BitVec.ofNat 64 (p.dl - 2 * p.k) == 0) (k5_eval h) (fun hb => k5_k6n p xb t h (by rw [k5_eval h, hb]))
-    (fun hb => k5_k6q p xb t h (by rw [k5_eval h, hb]))
 
 /-- y's subgroup. -/
 theorem k12_k13 (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t) :
@@ -133,15 +122,8 @@ theorem kp_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : kpCon
   refine wp_seqs_append (by simp [pSetup]) (by simp [Crt.loadArr]) (kstep k₂ (ce_in _ _ ce he) fun t₃ h₃ k₃ => ?_)
   refine wp_seqs_append (by simp [Crt.loadArr]) (by simp [CheckPrivate.scalarRange]) (kstep k₃ (k1_k2 p xb t₃
     ⟨h₃, hok⟩) fun t₄ h₄ k₄ => ?_)
-  rw [scalarRange_eq, List.append_assoc]
-  refine wp_seqs_append (by simp [isNonzero, geArr, cmpArr]) (by simp) (kstep k₄ (k2_k3 p xb t₄ h₄)
-    fun t₅ h₅ k₅ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₅ (k3_k4 p xb t₅ h₅) fun t₆ h₆ k₆ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₆ (k4_k5 p xb t₆ h₆) fun t₇ h₇ k₇ => ?_)
-  simp only [List.cons_append]
-  refine wp_seqs_cons (by simp) (kstep k₇ (k5_k6 p xb t₇ h₇) fun t₈ h₈ k₈ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₈ (k6_k7 p xb t₈ h₈) fun t₉ h₉ k₉ => ?_)
-  simp only [List.append_eq, List.nil_append]
+  refine wp_seqs_append (by simp [CheckPrivate.scalarRange]) (by simp) (kstep k₄ (k2_k7 p xb t₄ h₄)
+    fun t₉ h₉ k₉ => ?_)
   rw [seqs_one]
   refine WP.ite (bit (p.pv = true) == 0) (k7_eval h₉) (fun hb => ?_) (fun hb => ?_)
   · -- x out of range.

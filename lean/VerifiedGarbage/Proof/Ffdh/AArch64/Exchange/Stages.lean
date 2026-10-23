@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
+public import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
 import VerifiedGarbage.Proof.Framework.Omega
@@ -265,132 +266,13 @@ theorem x2_ps0 (p : ExP) (xb : List Byte) (t : State) (h : X2 p xb t) : PS0 sY s
   rw [hyl, hxl] at this
   exact this
 
-/-- After z's range: its flag in `x9` and `sF`. -/
-def X4 (p : ExP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, In (p.D xb) mi t ∧ t.gpr .x9 = bit (fl p xb) ∧
-    word t.mem (off (p.D xb).B (inner (p.D xb).w)) (8 * sF) = bit (fl p xb) ∧
-    wv t.mem (off (p.D xb).B (inner (p.D xb).w)) (slot (p.D xb).w aY) (p.D xb).w = zv p xb) ∧ Dst p t ∧ Ok p xb
+/-- After z stored masked by its flag (`OutMask.outMask_ok`). -/
+abbrev X6 (p : ExP) (xb : List Byte) (t : State) : Prop := OutMask.O6 (p.D xb) p.op (zv p xb) t
 
-theorem x3_x4 (p : ExP) (xb : List Byte) (t : State) (h : X3 p xb t) :
-    WP isa (seqs (range aY)) t fun u => X4 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hM, hY⟩, hd, ho⟩ := h
-  have hI := hM.inn
-  have hG := hI.2.1.good.scr.nowrap
-  refine WP.mono (hI.range (show aY < 8 by decide) (by decide)) fun u ⟨⟨hu, h9, hF, f⟩, k⟩ =>
-    ⟨⟨⟨mi, hu, by rw [h9, hY], by rw [hF, h9, hY], ?_⟩, hd.keep k, ho⟩, k⟩
-  have sY := slot_le (w := (p.D xb).w) (show aY < 8 by decide)
-  have hY0 := hdr_lt_slot (p.D xb).w aY (show sF < 32 by decide)
-  have sT := slot_sep (w := (p.D xb).w) (show aTmp ≠ aY by decide)
-  rw [f.wv_eq (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)]
-  exact hY
-
-/-- The final block's loads, in the inner workspace `G` of the outer one `B`. -/
-theorem finBlk_ok {t : State} {G B : Addr} {w k : Nat} {a op f : BitVec 64} (h0 : t.gpr .x0 = G)
-    (hW : word t.mem G (8 * sW) = BitVec.ofNat 64 w) (hA : word t.mem G (8 * sArr aY) = a)
-    (hL : word t.mem G (8 * Crt.sLink) = B) (hO : word t.mem B (8 * VG.Impl.Ffdh.AArch64.Domain.sOut) = op)
-    (hK : word t.mem B (8 * sK) = BitVec.ofNat 64 k) (hF : word t.mem G (8 * sF) = f)
-    (hlG : ∀ i < 32, InRegions (t.rd ++ t.wr) (off G (8 * i)) 8)
-    (hlB : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8) :
-    WP isa (.block [ldh .x12 sW, ldh .x8 (sArr aY), ldh .x5 Crt.sLink, Crt.ldw .x1 .x5 VG.Impl.Ffdh.AArch64.Domain.sOut,
-        Crt.ldw .x9 .x5 sK, .add .x .x1 .x1 .x9, movi .x7 0, ldh .x3 sF, .sub .x .x15 .x7 .x3]) t fun u =>
-      (u.gpr .x8 = a ∧ u.gpr .x1 = op + BitVec.ofNat 64 k ∧ u.gpr .x9 = BitVec.ofNat 64 k ∧ u.gpr .x15 = 0 - f ∧
-        u.gpr .x5 = B ∧ u.mem = t.mem) ∧ Keep [.x1, .x3, .x5, .x7, .x8, .x9, .x12, .x15] t u := by
-  refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
-  brun [Crt.ldw, h0, hdr_enc (show sW < 32 by decide), hdr_enc (sArr_lt (show aY < 8 by decide)),
-    hdr_enc (show Crt.sLink < 32 by decide), hdr_enc (show VG.Impl.Ffdh.AArch64.Domain.sOut < 32 by decide),
-    hdr_enc (show sK < 32 by decide), hdr_enc (show sF < 32 by decide), hlG sW (by decide),
-    hlG (sArr aY) (sArr_lt (show aY < 8 by decide)), hlG Crt.sLink (by decide), hlG sF (by decide),
-    hlB VG.Impl.Ffdh.AArch64.Domain.sOut (by decide), hlB sK (by decide), hW, hA, hL, hO, hK, hF]
-  rfl
-
-/-- The final block's first loads: the bases. -/
-theorem finBlk1_ok {t : State} {G B : Addr} {a : BitVec 64} (h0 : t.gpr .x0 = G)
-    (hA : word t.mem G (8 * sArr aY) = a) (hL : word t.mem G (8 * Crt.sLink) = B)
-    (hlG : ∀ i < 32, InRegions (t.rd ++ t.wr) (off G (8 * i)) 8) :
-    WP isa (.block [ldh .x12 sW, ldh .x8 (sArr aY), ldh .x5 Crt.sLink]) t fun u =>
-      u.gpr .x0 = G ∧ u.gpr .x8 = a ∧ u.gpr .x5 = B :=
-  WP.mono (WP.keep [.x5, .x8, .x12] (Q := fun u => u.gpr .x8 = a ∧ u.gpr .x5 = B)
-    (by brun [h0, hdr_enc (show sW < 32 by decide), hdr_enc (sArr_lt (show aY < 8 by decide)),
-      hdr_enc (show Crt.sLink < 32 by decide), hlG sW (by decide), hlG (sArr aY) (sArr_lt (show aY < 8 by decide)),
-      hlG Crt.sLink (by decide), hA, hL]) (by decide) (by decide) (by decide +kernel))
-    fun u ⟨⟨h8, h5⟩, k⟩ => ⟨(k.gpr .x0 (by decide)).trans h0, h8, h5⟩
-
-theorem bit_mask (P : Prop) [Decidable P] : (0 : BitVec 64) - bit P = mask (decide P) := by
-  by_cases h : P <;> simp [bit, h, mask]
-
-/-- The inner workspace's base. -/
-abbrev ExP.G (p : ExP) (xb : List Byte) : Addr := off (p.D xb).B (inner (p.D xb).w)
-
-/-- The final block. -/
-abbrev finBlk : List Instr :=
-  [ldh .x12 sW, ldh .x8 (sArr aY), ldh .x5 Crt.sLink, Crt.ldw .x1 .x5 VG.Impl.Ffdh.AArch64.Domain.sOut,
-    Crt.ldw .x9 .x5 sK, .add .x .x1 .x1 .x9, movi .x7 0, ldh .x3 sF, .sub .x .x15 .x7 .x3]
-
-/-- `storeBE`'s operands. -/
-def X5 (p : ExP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, In (p.D xb) mi t ∧ word t.mem (p.G xb) (8 * sF) = bit (fl p xb) ∧
-    wv t.mem (p.G xb) (slot (p.D xb).w aY) (p.D xb).w = zv p xb) ∧
-  t.gpr .x8 = off (p.G xb) (slot (p.D xb).w aY) ∧ t.gpr .x1 = p.op + BitVec.ofNat 64 p.k ∧
-  t.gpr .x9 = BitVec.ofNat 64 p.k ∧ t.gpr .x15 = mask (decide (fl p xb)) ∧ Dst p t ∧ Ok p xb
-
-theorem _root_.VG.Proof.Ffdh.AArch64.In.hlG {D : FD} {mi : BitVec 64} {t : State} (h : In D mi t) :
-    ∀ i < 32, InRegions (t.rd ++ t.wr) (off (off D.B (inner D.w)) (8 * i)) 8 :=
-  fun _ hi => h.2.1.good.ld (Nat.le_refl _) hi
-
-theorem _root_.VG.Proof.Ffdh.AArch64.In.hlB {D : FD} {mi : BitVec 64} {t : State} (h : In D mi t) :
-    ∀ i < 32, InRegions (t.rd ++ t.wr) (off D.B (8 * i)) 8 :=
-  fun _ hi => h.1.scr.ld (by have := h.1.hZ; omega)
-
-theorem x4_x5 (p : ExP) (xb : List Byte) (t : State) (h : X4 p xb t) :
-    WP isa (.block finBlk) t fun u => X5 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, -, hF, hY⟩, hd, ho⟩ := h
-  have hc := hI.2.1
-  have hs := hI.2.2.2.2.1
-  refine WP.mono (finBlk_ok hc.x0 hc.hdr.hw (hc.hdr.harr aY (by decide)) hc.link
-    (hs.get (i := VG.Impl.Ffdh.AArch64.Domain.sOut) (v := p.op) (by simp [ExP.D]))
-    (hs.get (i := sK) (v := BitVec.ofNat 64 (p.D xb).k) (by simp)) hF hI.hlG hI.hlB)
-    fun u ⟨⟨h8, h1, h9, h15, _, hm⟩, k⟩ => ⟨⟨⟨mi, hI.keep hm k (by decide), by rw [hm]; exact hF,
-      by rw [hm]; exact hY⟩, h8, h1, h9, by rw [h15, bit_mask], hd.keep k, ho⟩, k.mono (by decide)⟩
-
-/-- After `storeBE`. -/
-def X6 (p : ExP) (xb : List Byte) (t : State) : Prop :=
-  Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.i2osp (if fl p xb then zv p xb else 0) p.k ∧
-    t.gpr .x0 = p.G xb ∧ word t.mem (p.G xb) (8 * sF) = bit (fl p xb) ∧
-    InRegions (t.rd ++ t.wr) (off (p.G xb) (8 * sF)) 8
-
-theorem x5_x6 (p : ExP) (xb : List Byte) (t : State) (h : X5 p xb t) :
-    WP isa storeBE t fun u => X6 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hF, hY⟩, h8, h1, h9, h15, hd, ho⟩ := h
-  have hb := hI.1
-  have hc := hI.2.1
-  have hn := hb.scr.nowrap
-  have hroom := hb.room
-  have ew := hb.ew
-  have hk1 : 64 ≤ p.k := hb.k1
-  have hk2 : p.k ≤ 1024 := hb.k2
-  have ew' : 8 * (p.D xb).w ≤ p.k + 7 ∧ p.k ≤ 8 * (p.D xb).w := hb.ew
-  have hsY := slot_le (w := (p.D xb).w) (show aY < 8 by decide)
-  have hiZ : inner (p.D xb).w + slot (p.D xb).w 8 ≤ (p.D xb).Z := by unfold tabBytes32 at hroom; omega
-  have h8' : t.gpr .x8 = off (p.D xb).B (inner (p.D xb).w + slot (p.D xb).w aY) := by rw [h8, off_off]
-  refine WP.mono (storeBE_ok (c := decide (fl p xb)) (w := (p.D xb).w) hb.scr h8' h1 h9 h15 (by omega) (by omega)
-    rfl (by omega) (fun j hj => (hd j hj).1) (fun j hj => (hd j hj).2)) fun u ⟨hb', hfr, hwr, hrd, k⟩ => ?_
-  have hF8 := hdr_lt_slot (p.D xb).w 8 (show sF < 32 by decide)
-  refine ⟨⟨?_, (k.gpr .x0 (by decide)).trans hc.x0, ?_, ?_⟩, k.mono (by decide)⟩
-  · show (List.range p.k).map (fun i => u.mem (p.op + BitVec.ofNat 64 i)) = _
-    rw [hb', ← wv_off, hY]
-    simp only [decide_eq_true_eq]
-  · rw [← hF]
-    refine Mem.readW_congr fun i hi => (hfr _ fun j hj he => ?_)
-    have h1 := (hd j hj).2
-    have h2 : ofs (p.D xb).B (off (p.G xb) (8 * sF) + BitVec.ofNat 64 i) = inner (p.D xb).w + 8 * sF + i := by
-      rw [off_off, ofs_off _ (by omega)]
-    rw [he] at h2
-    simp only [ExP.D_B] at h2 h1
-    have eZ : (p.D xb).Z = p.Z := rfl
-    omega
-  · rw [hwr, hrd]; exact hI.hlG sF (by decide)
+theorem x3_x6 (p : ExP) (xb : List Byte) (t : State) (h : X3 p xb t) :
+    WP isa (seqs OutMask.outMask) t fun u => X6 p xb u ∧ KX t u := by
+  obtain ⟨⟨mi, hM, hY⟩, hd, -⟩ := h
+  exact OutMask.outMask_ok ⟨⟨mi, hM.inn, hY⟩, List.mem_cons_self .., hd⟩
 
 /-- The flag returned. -/
 def X7 (p : ExP) (xb : List Byte) (t : State) : Prop :=

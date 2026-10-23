@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Correct
+import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Correct
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -108,23 +110,6 @@ abbrev ExP.ws (p : ExP) : Ws := ⟨off p.B (inner ((p.k + 7) / 8)), slot ((p.k +
 /-- The inner workspace's base. -/
 abbrev ExP.g (p : ExP) : Addr := off p.B (inner ((p.k + 7) / 8))
 
-/-- The final block's later part. -/
-abbrev finBlk2 : List Instr :=
-  [Crt.ldw .x1 .x5 VG.Impl.Ffdh.AArch64.Domain.sOut, Crt.ldw .x9 .x5 sK, .add .x .x1 .x1 .x9, movi .x7 0, ldh .x3 sF,
-    .sub .x .x15 .x7 .x3]
-
-theorem x4_fin1 (p : ExP) (xb : List Byte) (s : State) (h : X4 p xb s) :
-    WP isa (.block [ldh .x12 sW, ldh .x8 (sArr aY), ldh .x5 Crt.sLink]) s fun t =>
-      (t.gpr .x0 = p.g ∧ t.gpr .x8 = off p.g (slot ((p.k + 7) / 8) aY) ∧ t.gpr .x5 = p.B) ∧
-        ∃ xb, WP isa (.block finBlk2) t (X5 p xb) := by
-  have hI := h.1.choose_spec.1
-  have hc := hI.2.1
-  have hw : WP isa (.block ([ldh .x12 sW, ldh .x8 (sArr aY), ldh .x5 Crt.sLink] ++ finBlk2)) s (X5 p xb) :=
-    WP.mono (x4_x5 p xb s h) fun _ h => h.1
-  rw [WP.block_append_iff] at hw
-  exact WP.mono (wp_and (finBlk1_ok hc.x0 (hc.hdr.harr aY (by decide)) hc.link hI.hlG) hw)
-    fun t ⟨h₁, h₂⟩ => ⟨h₁, xb, h₂⟩
-
 /-- The main part, for a valid p. -/
 theorem main_ct (W : Window) (M : Mont) (S : Selector) :
     RelCT isa (Two fun p s => Ex CE' p s ∧ isa.eval (.zero .x .x9) s = some false)
@@ -142,34 +127,15 @@ theorem main_ct (W : Window) (M : Mont) (S : Selector) :
       obtain ⟨hodd, -⟩ := valid_facts hI₁.2.2.2.2.2 hb.k1
       obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega) hodd hI₁.2.2.1 hI₂.2.2.1
       exact ⟨_, hI₁.r2pre, hI₂.r2pre⟩) h) fun _ _ h => h) (x1_x2 M)) ?_)
-  refine RelCT.seqs_append (by simp [pow]) (by simp [range]) (RelCT.seq (R := Two (Ex X3))
+  refine RelCT.seqs_append (by simp [pow]) (by simp) (RelCT.seq (R := Two (Ex X3))
     (ex_post (two_map ExP.pw (fun p s ⟨xb, h⟩ => x2_ps0 p xb s h)
       (pow_ct W M S (loadArr_ct (by decide) (by taint_decide) (by taint_decide))
         (expLoop_ct W M S (by taint_decide)) (by taint_decide) (by taint_decide) (by taint_decide)))
       (x2_x3 W M S)) ?_)
-  refine RelCT.seqs_append (by simp [range]) (by simp) (RelCT.seq (R := Two (Ex X4))
-    (ex_post (two_map ExP.ws (fun p s ⟨xb, ⟨mi, hM, _⟩, _⟩ => hM.inn.goodW1) (range_ct (by decide) (by decide)
-      (by taint_decide) (by taint_decide) (by taint_decide))) x3_x4) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex X5)) (RelCT.block_append (l₁ := [ldh .x12 sW,
-      ldh .x8 (sArr aY), ldh .x5 Crt.sLink]) (l₂ := finBlk2) (RelCT.seq
-    (two_piece (Ψ := fun (p : ExP) t => (t.gpr .x0 = p.g ∧ t.gpr .x8 = off p.g (slot ((p.k + 7) / 8) aY) ∧
-        t.gpr .x5 = p.B) ∧ ∃ xb, WP isa (.block finBlk2) t (X5 p xb)) [.x0]
-      (pins_x0B ExP.g fun _ _ ⟨_, ⟨_, hI, _⟩, _⟩ => hI.2.1.x0) (by taint_decide) fun p s ⟨xb, h⟩ => x4_fin1 p xb s h)
-    (two_piece [.x0, .x5, .x8] (pins_of (fun (p : ExP) r => if r = .x0 then p.g else if r = .x5 then p.B else
-        off p.g (slot ((p.k + 7) / 8) aY)) fun p s h r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact h.1.1
-      · exact h.1.2.2
-      · exact h.1.2.1) (by taint_decide) fun p s ⟨_, xb, h⟩ => WP.mono h fun _ h => ⟨xb, h⟩))) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex X6)) (ex_post (two_taint [.x1, .x8, .x9]
-    (pins_of (fun (p : ExP) r => if r = .x1 then p.op + BitVec.ofNat 64 p.k else if r = .x8 then
-        off p.g (slot ((p.k + 7) / 8) aY) else BitVec.ofNat 64 p.k) fun p s ⟨xb, h⟩ r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact h.2.2.1
-      · exact h.2.1
-      · exact h.2.2.2.1) (by taint_decide)) x5_x6) ?_)
+  refine RelCT.seqs_append (by simp [range]) (by simp) (RelCT.seq (R := Two (Ex X6))
+    (ex_post (two_map (fun p : ExP => ((p.D []).pub, p.op)) (fun p _ ⟨xb, ⟨mi, hM, hY⟩, hd, _⟩ =>
+      ⟨p.D xb, zv p xb, rfl, ⟨mi, hM.inn, hY⟩, List.mem_cons_self .., hd⟩)
+      (OutMask.outMask_ct.mono (fun _ _ h => h) fun _ _ _ => trivial)) x3_x6) ?_)
   rw [seqs_one]
   exact two_taint [.x0] (pins_x0B ExP.g fun _ _ ⟨_, h⟩ => h.2.1) (by taint_decide)
 

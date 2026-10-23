@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Verified
@@ -57,6 +58,18 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.AArch64.Domain.CheckPrivate.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ },
+  Spec.Ffdh.derivePublicApi.artifact target {
+    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
+        working space of `w = ⌈p_len / 8⌉` words with an inner one for p. x's range is a comparison \
+        by a subtraction's borrow over all the words, as in `vg_ffdh_check_private`, and the only \
+        branch on x is on its range; `g^x mod p` is computed by RSA's exponentiation with five-bit \
+        windows (the `vg_rsa_square_window5` helper and a constant-time table scan) over all `x_len` \
+        octets of x, compared with 1 and with p − 1 by a subtraction's borrow over all the words, and \
+        stored masked by the result, zeros for 3, without a branch. Powers of a checked generator \
+        remain in its q subgroup, so y needs only its range check."]
+    code := Impl.Ffdh.AArch64.Domain.DerivePublic.code Proof.Bignum.AArch64.WindowFive.called.code
+      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
+    verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ },
   Spec.Ffdh.generateKeyApi.artifact target {
     notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
         working space of `w = ⌈p_len / 8⌉` words with an inner one for p. The scalar's octets are cut \
