@@ -213,7 +213,7 @@ theorem mulN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 40
     (by rw [g₂ _ (by decide), k₁.1 _ (by decide), hbx, hs₂.rdi])
     (by rw [g₂ _ (by decide), bp₁, hcx, hs₂.rdi])
     (by rw [g₂ _ (by decide), si₁, hsi, hs.rdi, hs₂.rdi])
-  have w₃ := mulF_ok hs₂ (modOkN hZ v₂) rfl (o := o) (a := a) (b := b)
+  have w₃ := mulF_ok hs₂ (modOkN hZ v₂) rfl (Or.inr rfl) (o := o) (a := a) (b := b)
     (by simp only [fnModN]; omega) (by simp only [fnModN]; omega) (by simp only [fnModN]; omega)
     (by simp only [fnModN, fnTmp]; omega) (by simp only [fnModN, fnTmp]; omega)
     (by simp only [fnModN, fnTmp]; omega) (by simp only [fnModN, fnMoN, fnTmp]; omega)

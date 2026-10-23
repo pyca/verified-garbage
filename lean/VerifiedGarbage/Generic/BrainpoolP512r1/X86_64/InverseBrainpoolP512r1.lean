@@ -29,7 +29,7 @@ def note (mod : String) : String :=
   batches of 59 (23 batches for eight words), each run on the low words of `f` and `g` packed into \
   64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its \
   working area at bytes 4504 to 5079, then multiplies by a constant (`2^(5 B) R³ mod " ++ mod ++
-  "`) to return to Montgomery form, by `mul` and word-by-word Montgomery reduction; nothing depends \
+  "`) to return to Montgomery form, by `mul` and column-wise Montgomery reduction; nothing depends \
   on the numbers but through masks and `cmov`."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP512r1.curve) : List Artifact :=

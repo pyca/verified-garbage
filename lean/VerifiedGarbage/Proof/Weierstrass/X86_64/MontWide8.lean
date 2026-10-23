@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Mont.X86_64.MulF
 import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -27,116 +28,22 @@ theorem mo_eq : mo = 3968 := rfl
 
 theorem modulus_lt : modulus order < 2 ^ (64 * 8) := by cases order <;> decide +kernel
 
-abbrev relocOperands (o a b : Nat) : Instr → Instr :=
-  Instr.mapMem (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
-
-/-! The relocated operands: an operand `[rdi + d]` within 4096 bytes past a
-marker is `[rdi + d']` at the same distance past its offset, and one below
-the markers is kept. -/
-
-theorem reloc_A {o a b e : Nat} (h : e < 4096) :
-    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
-      (sc (mA + e)) = sc (a + e) := by
-  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO]
-  simp (disch := omega_using [h]) only [decide_eq_true, ite_true,
-    show List.lookup Reg.rbx [(Reg.rbx, a), (Reg.r12, b), (Reg.rsi, o)] = some a from rfl, MemOp.mk.injEq,
-    true_and, Int.natCast_add]
-  omega_using []
-
-theorem reloc_B {o a b e : Nat} (h : e < 4096) :
-    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
-      (sc (mB + e)) = sc (b + e) := by
-  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO]
-  simp (disch := omega_using [h]) only [decide_eq_true, decide_eq_false, ite_true,
-    show List.lookup Reg.r12 [(Reg.rbx, a), (Reg.r12, b), (Reg.rsi, o)] = some b from rfl, MemOp.mk.injEq,
-    true_and, Int.natCast_add]
-  omega_using []
-
-theorem reloc_O {o a b e : Nat} (h : e < 4096) :
-    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
-      (sc (mO + e)) = sc (o + e) := by
-  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO]
-  simp (disch := omega_using [h]) only [decide_eq_true, decide_eq_false, ite_true,
-    show List.lookup Reg.rsi [(Reg.rbx, a), (Reg.r12, b), (Reg.rsi, o)] = some o from rfl, MemOp.mk.injEq,
-    true_and, Int.natCast_add]
-  omega_using []
-
-theorem reloc_low {o a b d : Nat} (h : d < mA) :
-    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
-      (sc d) = sc d := by
-  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO] at *
-  simp (disch := omega) only [decide_eq_false]
-  rfl
-
-theorem memSteps_low (o a b : Nat) : ∀ (k t d : Nat), t + 8 * k ≤ mA → d + 8 * k ≤ mA →
-    (memSteps k t d).map (relocOperands o a b) = memSteps k t d
-  | 0, _, _, _, _ => rfl
-  | k + 1, t, d, ht, hd => by
-    simp only [memSteps, memStep, mulStep, List.map_cons, Instr.mapMem, Src.mapMem,
-      List.cons_append, List.nil_append]
-    rw [reloc_low (by omega_using [ht]), reloc_low (by omega_using [hd]), memSteps_low o a b k (t + 8) (d + 8) (by omega_using [ht]) (by omega_using [hd])]
-
-theorem memSteps_B (o a b : Nat) : ∀ (k t e : Nat), t + 8 * k ≤ mA → e + 8 * k ≤ 4096 →
-    (memSteps k t (mB + e)).map (relocOperands o a b) = memSteps k t (b + e)
-  | 0, _, _, _, _ => rfl
-  | k + 1, t, e, ht, he => by
-    simp only [memSteps, memStep, mulStep, List.map_cons, Instr.mapMem, Src.mapMem,
-      List.cons_append, List.nil_append]
-    rw [reloc_low (by omega_using [ht]), reloc_B (by omega_using [he]), Nat.add_assoc,
-      memSteps_B o a b k (t + 8) (e + 8) (by omega_using [ht]) (by omega_using [he]), Nat.add_assoc]
-
-theorem moveDown_low (o a b : Nat) : ∀ (k t : Nat), t + 8 * k + 8 ≤ mA →
-    (moveDown k t).map (relocOperands o a b) = moveDown k t
-  | 0, _, _ => rfl
-  | k + 1, t, ht => by
-    simp only [moveDown, List.map_cons, Instr.mapMem, Src.mapMem,
-      List.cons_append, List.nil_append]
-    rw [reloc_low (by omega_using [ht]), reloc_low (by omega_using [ht]), moveDown_low o a b k (t + 8) (by omega_using [ht])]
-
-theorem chainW_O (o a b : Nat) (op op' : AluOp) : ∀ (k e t d : Nat), e + 8 * k ≤ 4096 → t + 8 * k ≤ mA →
-    d + 8 * k ≤ mA → (chainW op op' k (mO + e) t d).map (relocOperands o a b) = chainW op op' k (o + e) t d
-  | 0, _, _, _, _, _, _ => rfl
-  | k + 1, e, t, d, he, ht, hd => by
-    simp only [chainW, List.map_cons, Instr.mapMem, Src.mapMem,
-      List.cons_append, List.nil_append]
-    rw [reloc_low (by omega_using [ht]), reloc_low (by omega_using [hd]), reloc_O (by omega_using [he]), Nat.add_assoc,
-      chainW_O o a b op' op' k (e + 8) (t + 8) (d + 8) (by omega_using [he]) (by omega_using [ht]) (by omega_using [hd]), Nat.add_assoc]
-
-theorem selectsW_O (o a b : Nat) : ∀ (k x e : Nat), e + 8 * k ≤ 4096 → x + 8 * k ≤ mA →
-    (selectsW k x (mO + e)).map (relocOperands o a b) = selectsW k x (o + e)
-  | 0, _, _, _, _ => rfl
-  | k + 1, x, e, he, hx => by
-    simp only [selectsW, List.map_cons, Instr.mapMem, Src.mapMem,
-      List.cons_append, List.nil_append]
-    rw [reloc_O (by omega_using [he]), reloc_low (by omega_using [hx]), Nat.add_assoc,
-      selectsW_O o a b k (x + 8) (e + 8) (by omega_using [he]) (by omega_using [hx]), Nat.add_assoc]
-
-theorem round_reloc (o a b i : Nat) (hi : i < 8) :
-    (roundW (mod order) mA mB i).map (relocOperands o a b) = roundW (mod order) a b i := by
-  have hB := memSteps_B o a b 8 4032 0 (by decide) (by decide)
-  rw [Nat.add_zero, Nat.add_zero] at hB
-  simp only [roundW, memRow, shiftDown, carryUp, show (mod order).n = 8 from rfl,
-    show (mod order).tmp = 4032 from rfl, show (mod order).mo = 3968 from rfl, List.map_append, List.map_cons,
-    List.map_nil, Instr.mapMem, Src.mapMem, reloc_A (show 8 * i < 4096 by omega_using [hi]), hB, Nat.reduceSub,
-    memSteps_low o a b 8 4032 3968 (by decide) (by decide), moveDown_low o a b 7 4032 (by decide),
-    reloc_low (show 4032 + 8 * 7 < mA by decide), reloc_low (show 4032 < mA by decide)]
-
-theorem csub_reloc (o a b : Nat) :
-    (csubW (mod order) mO).map (relocOperands o a b) = csubW (mod order) o := by
-  kernel_rfl
-
-theorem mulW_reloc (o a b : Nat) :
-    (mulW (mod order) mO mA mB).map (relocOperands o a b) = mulW (mod order) o a b := by
+/-- Relocating the column multiplier changes only its operand addresses. -/
+theorem mulF_reloc (o a b : Nat) :
+    (mulF (mod order) mO mA mB).map
+      (Instr.mapMem (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘
+        relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])) =
+      mulF (mod order) o a b := by
   kernel_rfl
 
 theorem body_keeps :
-    (reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)] (mulW (mod order) mO mA mB)).all
+    (reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)] (mulF (mod order) mO mA mB)).all
       (keepsPtrs [.rbx, .r12, .rsi]) = true := by cases order <;> decide +kernel
 
 theorem store_scal : scalCode (.block (store order)) = true := by cases order <;> decide +kernel
 
-theorem mulWR_scal : scalCode (.block (reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)]
-    (mulW (mod order) mO mA mB))) = true := by cases order <;> decide +kernel
+theorem mulFR_scal : scalCode (.block (reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)]
+    (mulF (mod order) mO mA mB))) = true := by cases order <;> decide +kernel
 
 theorem mod_ok {Z : Nat} (hZ : 4096 ≤ Z) {mem : Mem} {base : Addr}
     (hv : wordsVal mem base mo 8 = modulus order) : ModOkW (mod order) Z (modulus order) mem base where
@@ -196,14 +103,14 @@ theorem body_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 40
     (by rw [g₂ _ (by decide), k₁.1 _ (by decide), hbx, hs₂.rdi])
     (by rw [g₂ _ (by decide), bp₁, hcx, hs₂.rdi])
     (by rw [g₂ _ (by decide), si₁, hsi, hs.rdi, hs₂.rdi])
-  have w₃ := mulW_ok hs₂ (mod_ok order hZ v₂) (o := o) (a := a) (b := b)
+  have w₃ := mulF_ok hs₂ (mod_ok order hZ v₂) rfl (Or.inl rfl) (o := o) (a := a) (b := b)
     (by simp only [mod]; omega_using [hZ, ho]) (by simp only [mod]; omega_using [hZ, ha]) (by simp only [mod]; omega_using [hZ, hb])
     (by simp only [mod, tmp]; omega_using [ho]) (by simp only [mod, tmp]; omega_using [ha])
     (by simp only [mod, tmp]; omega_using [hb]) (by simp only [mod, mo, tmp]; omega_using [ho])
     (by simp only [mod]; rw [far b hb]; exact hB)
-  rw [← mulW_reloc order, ← reloc_unptr] at w₃
+  rw [← mulF_reloc order, ← reloc_unptr] at w₃
   rw [WP.block_append_iff]
-  refine WP.mono (WP.vecKeep (mulWR_scal order) (wp_unptr (rs := [.rbx, .r12, .rsi]) (by simp) _ (body_keeps order) hp₂ w₃))
+  refine WP.mono (WP.vecKeep (mulFR_scal order) (wp_unptr (rs := [.rbx, .r12, .rsi]) (by simp) _ (body_keeps order) hp₂ w₃))
     fun s₃ ⟨⟨k₃, lt₃, e₃⟩, x₃, _⟩ => ?_
   simp only [show (mod order).n = 8 from rfl] at k₃ lt₃ e₃
   have hs₃ : Scr s₃ base Z := ⟨(k₃.gpr _ (by show Reg.rdi ∉ clob 8; decide)).trans hs₂.rdi, k₃.wr ▸ hs₂.wr, hnw⟩

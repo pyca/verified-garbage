@@ -251,7 +251,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
           exact sqrP_ok hs hM hred ho ha hoT haT hoM hB
         · exact mulP_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
     · split
-      · exact mulF_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
+      · exact mulF_ok hs hM rfl ‹_› ho ha hb hoT haT hbT hoM hB
       · exact mulW_ok hs hM ho ha hb hoT haT hbT hoM hB
 
 /-- `[o] = [a] + [b] mod m`. -/
