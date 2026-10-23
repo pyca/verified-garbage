@@ -141,17 +141,17 @@ theorem derive_correct {s : State} (h : derivePre s) :
   obtain ⟨hsp, hrd, hwr, dOP, dOX, dOS, dOA, dPS, dXS, dSA, fO, fP, fX, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (arg s 0).toNat ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (arg s 0).toNat ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   simp only [Generate.deriveKey, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (deriveEntry_ok h) fun u I => ?_)
-  have E₀ := Env.of_installed I (by omega)
+  have E₀ := Env.of_installed I (by omega_arith)
   have fok := deriveFields_ok s
-  refine WP.seq (genDispatch_ok Generate.deriveSized _ E₀.ws (by omega) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok Generate.deriveSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 4).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s 4).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := deriveIn h rfl rfl E₁
   -- The specification's components.
   have hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
@@ -159,7 +159,7 @@ theorem derive_correct {s : State} (h : derivePre s) :
   have hxl : (deriveX s).length = (arg s 2).toNat := by
     simp only [deriveX, Spec.Rsa.bytesAt, List.length_map, List.length_range]
   have PB := paramsBytes_at s.mem (State.addr (s.gpr .r2)) (pLen := (arg s 0).toNat) (qLen := (arg s 2).toNat)
-    (total := (s.gpr .r3).toNat) (by omega)
+    (total := (s.gpr .r3).toNat) (by omega_arith)
   have spec := deriveKeyBytes_iff hv hpl hxl
   simp only [deriveParams, deriveX] at spec
   rw [PB] at spec
@@ -170,26 +170,26 @@ theorem derive_correct {s : State} (h : derivePre s) :
     fun t₂ ⟨Z, M, _, R₂, O₂⟩ => ?_)
   have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega)
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith)
   have po : pointerValue (State.addr (arg s 3)) t₂ (.input .out) = s.gpr .r0 :=
     E₂.field (d := 96) (v := s.gpr .r0) (by simp)
   have ofit : (pointerValue (State.addr (arg s 3)) t₂ (.input .out)).toNat +
-      (3 * (arg s 0).toNat + 2 * (arg s 2).toNat) ≤ 2 ^ 32 := by rw [po]; omega
+      (3 * (arg s 0).toNat + 2 * (arg s 2).toNat) ≤ 2 ^ 32 := by rw [po]; omega_arith
   have owr : ∀ i < 3 * (arg s 0).toNat + 2 * (arg s 2).toNat,
       InRegions t₂.wr (State.addr (pointerValue (State.addr (arg s 3)) t₂ (.input .out)) + BitVec.ofNat 64 i) 1 :=
     fun i hi => by
       rw [po, E₂.wr, hwr]
-      exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have dOS' : Region.Disjoint ⟨State.addr (s.gpr .r0), 3 * (arg s 0).toNat + 2 * (arg s 2).toNat⟩
       ⟨State.addr (arg s 3), (arg s 4).toNat * 8⟩ := hr1 ▸ dOS
   refine WP.ite t₂.z (eval_eq _) (fun ht => ?_) (fun hf => ?_)
   · -- A rejected shape.
     have nv := of_decide_eq_true (Z ▸ ht)
-    refine WP.mono (deriveFailure_ok E₂.ws (by omega) (by omega) (by omega) ofit owr)
+    refine WP.mono (deriveFailure_ok E₂.ws (by omega_arith) (by omega_arith) (by omega_arith) ofit owr)
       fun t₃ ⟨Z₃, B₃, R₃, O₃⟩ => ?_
     rw [po] at B₃ O₃
     have none : deriveRes s = none := by rw [SR]; exact ite_eq_right fun h => nv h.1
-    refine finish_ok (E₂.ws.of_rest R₃ (by decide)) (by omega) (E₂.saved_outside O₃ dOS' (by omega))
+    refine finish_ok (E₂.ws.of_rest R₃ (by decide)) (by omega_arith) (E₂.saved_outside O₃ dOS' (by omega_arith))
       (R₃.sp.trans E₂.sp) fun u A r0 Mu => ⟨A, ?_, ?_⟩
     · rw [BitVec.setWidth_append_eq_right, r0, Z₃, none]; rfl
     · rw [Mu, hr1, B₃, none]; rfl
@@ -200,11 +200,11 @@ theorem derive_correct {s : State} (h : derivePre s) :
       rw [M]; unfold mask32; split
       · rfl
       · next hn => exact absurd valid hn
-    refine WP.seq (WP.mono (deriveCompute_ok ⟨E₂.ws, by omega, wp, wq, qp, q32⟩ Ip Iq Ig Ix hP hPo hQ hQo)
+    refine WP.seq (WP.mono (deriveCompute_ok ⟨E₂.ws, by omega_arith, wp, wq, qp, q32⟩ Ip Iq Ig Ix hP hPo hQ hQo)
       fun t₃ ⟨F₃, Y₃, Rn₃⟩ => ?_)
     have E₃ := E₂.keep fok Rn₃.rest (by decide) Rn₃.mem (fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith)
     rw [hm, BitVec.allOnes_and] at F₃
     have po₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .out) = s.gpr .r0 :=
       E₃.field (d := 96) (v := s.gpr .r0) (by simp)
@@ -215,24 +215,24 @@ theorem derive_correct {s : State} (h : derivePre s) :
     have K : KeySources t₃ (State.addr (arg s 3)) ((arg s 4).toNat * 8) (arg s 0).toNat (arg s 2).toNat
         (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (2 * (arg s 0).toNat + (arg s 2).toNat))
         (Spec.Rsa.bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat) := by
-      refine ⟨E₃.ws, by omega, by omega, q0, by omega, by simp [Spec.Rsa.bytesAt], by simp [Spec.Rsa.bytesAt], ?_, ?_,
+      refine ⟨E₃.ws, by omega_arith, by omega_arith, q0, by omega_arith, by simp [Spec.Rsa.bytesAt], by simp [Spec.Rsa.bytesAt], ?_, ?_,
         ?_, ?_, ?_, ?_, ?_⟩
       · rw [pp₃]
-        exact bytesIn_env E₃ (by rw [hrd, ← hr3]; simp) (by omega) (dPS.sub_left (Region.sub_prefix (by omega)))
+        exact bytesIn_env E₃ (by rw [hrd, ← hr3]; simp) (by omega_arith) (dPS.sub_left (Region.sub_prefix (by omega_arith)))
       · rw [px₃]
         exact bytesIn_env E₃ (by rw [hrd]; simp) fX dXS
-      · rw [po₃]; omega
+      · rw [po₃]; omega_arith
       · intro i hi
         rw [po₃, E₃.wr, hwr]
-        exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-      · rw [pp₃, po₃]; exact (hr1 ▸ dOP.symm).sub_left (Region.sub_prefix (by omega))
+        exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+      · rw [pp₃, po₃]; exact (hr1 ▸ dOP.symm).sub_left (Region.sub_prefix (by omega_arith))
       · rw [px₃, po₃]; exact hr1 ▸ dOX.symm
       · rw [po₃]; exact dOS'.symm
-    refine WP.mono (writeKey_ok K _ F₃ (by simp only [Impl.Dsa.Layout.t2]; omega))
+    refine WP.mono (writeKey_ok K _ F₃ (by simp only [Impl.Dsa.Layout.t2]; omega_arith))
       fun t₄ ⟨r0₄, B₄, O₄, R₄⟩ => ?_
     rw [po₃] at B₄ O₄
     rw [Y₃] at B₄
-    refine finish_ok (E₃.ws.of_rest R₄ (by decide)) (by omega) (E₃.saved_outside O₄ dOS' (by omega))
+    refine finish_ok (E₃.ws.of_rest R₄ (by decide)) (by omega_arith) (E₃.saved_outside O₄ dOS' (by omega_arith))
       (R₄.sp.trans E₃.sp) fun u A r0 Mu => ⟨A, ?_, ?_⟩
     · rw [status_toNat (r0.trans r0₄), SR]
       split_ifs with hc₁ hc₂ hc₂

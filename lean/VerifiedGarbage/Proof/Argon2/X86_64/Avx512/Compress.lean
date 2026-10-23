@@ -76,49 +76,49 @@ theorem finish_prefix (m : Nat) (hm : m ≤ 8) {s : State} {p out : Addr} (hs : 
         t.mem.readW (off out (8 * i)) 64 = (cv s.mem p)[i] ^^^ s.mem.readW (off p (8 * i)) 64) ∧
       Frame [⟨out, 1024⟩] s.mem t.mem ∧ VKeep s t := by
   induction m with
-  | zero => exact WP.block_nil ⟨fun i hi h => by simp only [fchunk] at h; omega, Frame.refl _ _, VKeep.refl s⟩
+  | zero => exact WP.block_nil ⟨fun i hi h => by simp only [fchunk] at h; omega_arith, Frame.refl _ _, VKeep.refl s⟩
   | succ m ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    refine (finishChunk_ok (out := out) (n := m / 4) (k := m % 4) (by omega) (by omega) (hs.of_vkeep hk)
+    refine (finishChunk_ok (out := out) (n := m / 4) (k := m % 4) (by omega_arith) (by omega_arith) (hs.of_vkeep hk)
       (by rw [hk.gpr]; exact ho) (by rw [hk.wr]; exact hw)).mono ?_
     rintro u ⟨v, w, hv, hw', hmem, hk'⟩
     have cvs : ∀ j (hj : j < 128), (cv t.mem p)[j] = (cv s.mem p)[j] := fun j hj => by
       rw [cv_get _ _ _ hj, cv_get _ _ _ hj,
-        scratch_unchanged hf hd (d := 1024 + cvOff j) (by have := cvOff_lt j hj; omega)]
+        scratch_unchanged hf hd (d := 1024 + cvOff j) (by have := cvOff_lt j hj; omega_arith)]
     have rs : ∀ d, d + 8 ≤ 4096 → t.mem.readW (off p d) 64 = s.mem.readW (off p d) 64 :=
       fun d hd' => scratch_unchanged hf hd hd'
     refine ⟨fun i hi hc => ?_, ?_, hk.trans hk'⟩
-    · rw [hmem, read_write512 _ out (by omega) (by omega) (by omega) (by omega),
-        read_write512 _ out (by omega) (by omega) (by omega) (by omega)]
+    · rw [hmem, read_write512 _ out (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+        read_write512 _ out (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
       by_cases e : fchunk i = m
       · simp only [fchunk] at e
         by_cases h2 : i / 16 % 2 = 1
-        · rw [ifp (by omega), show (8 * i - (256 * (m % 4) + 128 + 64 * (m / 4))) / 8 =
-            i - (32 * (m % 4) + 16 + 8 * (m / 4)) by omega, hw' _ (by omega)]
+        · rw [ifp (by omega_arith), show (8 * i - (256 * (m % 4) + 128 + 64 * (m / 4))) / 8 =
+            i - (32 * (m % 4) + 16 + 8 * (m / 4)) by omega_arith, hw' _ (by omega_arith)]
           rw [cv_idx _ _ (show 32 * (m % 4) + 16 + 8 * (m / 4) + (i - (32 * (m % 4) + 16 + 8 * (m / 4))) = i by
-            omega) _ hi, cvs i hi, show 8 * (32 * (m % 4) + 16 + 8 * (m / 4) +
-              (i - (32 * (m % 4) + 16 + 8 * (m / 4)))) = 8 * i by omega, rs _ (by omega)]
-        · rw [ifn (by omega), ifp (by omega), show (8 * i - (256 * (m % 4) + 64 * (m / 4))) / 8 =
-            i - (32 * (m % 4) + 8 * (m / 4)) by omega, hv _ (by omega)]
+            omega_arith) _ hi, cvs i hi, show 8 * (32 * (m % 4) + 16 + 8 * (m / 4) +
+              (i - (32 * (m % 4) + 16 + 8 * (m / 4)))) = 8 * i by omega_arith, rs _ (by omega_arith)]
+        · rw [ifn (by omega_arith), ifp (by omega_arith), show (8 * i - (256 * (m % 4) + 64 * (m / 4))) / 8 =
+            i - (32 * (m % 4) + 8 * (m / 4)) by omega_arith, hv _ (by omega_arith)]
           rw [cv_idx _ _ (show 32 * (m % 4) + 8 * (m / 4) + (i - (32 * (m % 4) + 8 * (m / 4))) = i by
-            omega) _ hi, cvs i hi, show 8 * (32 * (m % 4) + 8 * (m / 4) +
-              (i - (32 * (m % 4) + 8 * (m / 4)))) = 8 * i by omega, rs _ (by omega)]
+            omega_arith) _ hi, cvs i hi, show 8 * (32 * (m % 4) + 8 * (m / 4) +
+              (i - (32 * (m % 4) + 8 * (m / 4)))) = 8 * i by omega_arith, rs _ (by omega_arith)]
       · simp only [fchunk] at e hc
-        rw [ifn (by omega), ifn (by omega)]
-        exact ht i hi (by simp only [fchunk]; omega)
+        rw [ifn (by omega_arith), ifn (by omega_arith)]
+        exact ht i hi (by simp only [fchunk]; omega_arith)
     · rw [hmem]
-      exact (hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base out (by omega) (by omega))).writeW
-        (List.mem_singleton_self _) _ (Offset.contains_base out (by omega) (by omega))
+      exact (hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base out (by omega_arith) (by omega_arith))).writeW
+        (List.mem_singleton_self _) _ (Offset.contains_base out (by omega_arith) (by omega_arith))
 
 /-! ## The passes -/
 
 /-- P on row `i / 16` of `r`, word `i % 16`. -/
 def rowWord (r : Block) (i : Nat) (hi : i < 128) : Word :=
-  (permute (gather (rowIndex ⟨i / 16, by omega⟩) r))[i % 16]'(by omega)
+  (permute (gather (rowIndex ⟨i / 16, by omega_arith⟩) r))[i % 16]'(by omega_arith)
 
 theorem rowPass_list (ps : List Nat) (hps : ∀ pp ∈ ps, pp < 4) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (ps.foldr (fun pp rest => .seq (rows pp) rest) (.block [])) s fun t =>

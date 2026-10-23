@@ -81,19 +81,19 @@ theorem gather_word (m : Mem) (p : Addr) {e : Nat} (he : e<4) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [vword,BitVec.getLsbD_extractLsb']
-  rw [show 32*e+i=8*(4*e+i/8)+i%8 by omega]
+  rw [show 32*e+i=8*(4*e+i/8)+i%8 by omega_arith]
   have hb := congrArg (fun x : BitVec 8 => x.getLsbD (i%8))
-    (gather_byte m p (e := 4*e+i/8) (by omega))
-  simp only [vbyte,BitVec.getLsbD_extractLsb', show i%8<8 by omega,decide_true,Bool.true_and] at hb
+    (gather_byte m p (e := 4*e+i/8) (by omega_arith))
+  simp only [vbyte,BitVec.getLsbD_extractLsb', show i%8<8 by omega_arith,decide_true,Bool.true_and] at hb
   simp only [hi,decide_true,Bool.true_and]
   rw [hb]
-  simp only [show (4*e+i/8)%4=i/8 by omega,show (4*e+i/8)/4=e by omega,
+  simp only [show (4*e+i/8)%4=i/8 by omega_arith,show (4*e+i/8)/4=e by omega_arith,
     BitVec.getLsbD_setWidth]
   by_cases hl : i<24
-  · rw [ite_eq_left (by omega : i/8<3),getLsbD_read m 3 _ i hl,Offset.add_add]
+  · rw [ite_eq_left (by omega_arith : i/8<3),getLsbD_read m 3 _ i hl,Offset.add_add]
     simp only [hi,decide_true,Bool.true_and]
-  · rw [ite_eq_right (by omega : ¬i/8<3),
-      BitVec.getLsbD_of_ge (m.read (p+BitVec.ofNat 64 (3*e)) 3) i (by omega)]
+  · rw [ite_eq_right (by omega_arith : ¬i/8<3),
+      BitVec.getLsbD_of_ge (m.read (p+BitVec.ofNat 64 (3*e)) 3) i (by omega_arith)]
     simp [BitVec.getLsbD]
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
