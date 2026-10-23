@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Step
 import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Value
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 
 /-! A step of the two-row scan extends the invariant by a word. -/
 

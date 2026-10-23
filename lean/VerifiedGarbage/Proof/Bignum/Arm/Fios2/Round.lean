@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Code
 import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Finish
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 
 /-! The two-row round meets the two-row round contract. -/
 

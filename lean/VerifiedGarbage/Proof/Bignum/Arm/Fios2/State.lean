@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
+import VerifiedGarbage.Proof.Bignum.Arm.FiosState
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 /-! # The invariant of the two-row scan
 

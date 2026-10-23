@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Top
 import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Value
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 
 /-! The two-row scan: both rows' products and quotients, divided by `2⁶⁴`. -/
 

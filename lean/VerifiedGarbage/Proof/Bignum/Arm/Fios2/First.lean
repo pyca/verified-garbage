@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Cancel
 import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Value
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 
 /-! The first words of both rows: each quotient cancels the low word it is
 computed from, and the scan starts with nothing stored. -/
