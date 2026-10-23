@@ -34,6 +34,32 @@ theorem wp_mv {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg}
     WP isa (.block (Impl.AesCbc.PPC64LE.mov d n :: is)) s Q :=
   wp_or fun s' u => k s' (by simpa only [BitVec.or_self] using u)
 
+/-- `ldbrx`-style loads and stores (`lwbrx`, `stwbrx`, `stdbrx`). -/
+theorem wp_lwbrx {is : List Instr} {s : State} {Q : State → Prop} {t a b : Reg} {ea : Addr}
+    (hn : a ≠ .r0) (hea : s.gpr a + s.gpr b = ea) (hin : InRegions (s.rd ++ s.wr) ea 4)
+    (k : ∀ s', Upd s s' t ((rev32 (s.mem.readW ea 32)).setWidth 64) → WP isa (.block is) s' Q) :
+    WP isa (.block (.loadRev .w t a b :: is)) s Q := by
+  refine VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons
+    (s' := s.write t ((rev32 (s.mem.readW ea 32)).setWidth 64)) ?_ (k _ (Upd.write _ _ _))
+  rw [exec_loadRev_w hn (by rw [hea]; exact hin), hea]
+
+theorem wp_stwbrx {is : List Instr} {s : State} {Q : State → Prop} {t a b : Reg} {ea : Addr}
+    (hn : a ≠ .r0) (hea : s.gpr a + s.gpr b = ea) (hout : InRegions s.wr ea 4)
+    (k : ∀ s', Mupd s s' (s.mem.writeW ea (rev32 ((s.gpr t).setWidth 32))) → WP isa (.block is) s' Q) :
+    WP isa (.block (.storeRev .w t a b :: is)) s Q := by
+  refine VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons
+    (s' := { s with mem := s.mem.writeW ea (rev32 ((s.gpr t).setWidth 32)) }) ?_
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+  rw [exec_storeRev_w hn (by rw [hea]; exact hout), hea]
+
+theorem wp_stdbrx {is : List Instr} {s : State} {Q : State → Prop} {t a b : Reg} {ea : Addr}
+    (hn : a ≠ .r0) (hea : s.gpr a + s.gpr b = ea) (hout : InRegions s.wr ea 8)
+    (k : ∀ s', Mupd s s' (s.mem.writeW ea (rev64 (s.gpr t))) → WP isa (.block is) s' Q) :
+    WP isa (.block (.storeRev .d t a b :: is)) s Q := by
+  refine VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons
+    (s' := { s with mem := s.mem.writeW ea (rev64 (s.gpr t)) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+  rw [exec_storeRev_d hn (by rw [hea]; exact hout), hea]
+
 /-! ## XORing bytes -/
 
 /-- What the XOR loop needs: `n ≥ 1` bytes at `S` to XOR into those at `D`, apart. -/

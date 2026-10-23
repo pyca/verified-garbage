@@ -114,6 +114,12 @@ theorem Env.stIn {d n : Nat} (hd : d + n ≤ 80) : Covers [⟨St + BitVec.ofNat 
 theorem Env.cIn {d n : Nat} (hd : d + n ≤ 256) : Covers [⟨C + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   VG.Proof.Gather.PPC64LE.covers_off h.rC hd (by decide)
 
+theorem Env.wInR {d n : Nat} (hd : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+  h.wIn hd _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+
+theorem Env.stInR {d n : Nat} (hd : d + n ≤ 80) : InRegions s.wr (St + BitVec.ofNat 64 d) n :=
+  h.stIn hd _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+
 theorem Env.wRd {d n : Nat} (hd : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   VG.Covers.right (h.wIn hd)
 

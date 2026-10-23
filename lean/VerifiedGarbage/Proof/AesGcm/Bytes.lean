@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -76,5 +78,40 @@ theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat
 theorem writeBytes_frame' (m : Mem) {q : Addr} {xs : List Byte} {n : Nat} (hn : xs.length = n) :
     Frame [⟨q, n⟩] m (writeBytes m q xs) :=
   writeBytes_frame m q xs (by rw [hn]; exact Region.contains_self _ _)
+
+/-- A doubleword write is a write of its bytes, least significant first. -/
+theorem writeW64_eq (m : Mem) (a : Addr) (v : BitVec 64) : m.writeW a v = writeBytes m a (Proof.Cmac.le8 v) := by
+  funext x
+  simp only [Mem.writeW, Mem.write, writeBytes, Proof.Cmac.length_le8]
+  split
+  · rename_i h
+    rw [Proof.Cmac.getD_le8 _ h]
+    simp
+  · rfl
+
+theorem le8_zero : Proof.Cmac.le8 0 = Spec.Gcm.zeros 8 := by decide
+
+/-- Two zero doublewords are 16 zero bytes. -/
+theorem write_zeros16 (m : Mem) (p : Addr) :
+    (m.writeW p (0 : BitVec 64)).writeW (p + BitVec.ofNat 64 8) (0 : BitVec 64) =
+      writeBytes m p (Spec.Gcm.zeros 16) := by
+  rw [writeW64_eq, writeW64_eq, le8_zero,
+    show p + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (Spec.Gcm.zeros 8).length from rfl,
+    writeBytes_append _ _ _ _ (by decide)]
+  rfl
+
+/-- After 16 zero bytes at `p`, `o ≤ 16` bytes `xs` there: `xs` padded with zeros. -/
+theorem bytesAt_pad (m : Mem) (p : Addr) (xs : List Byte) (h : xs.length ≤ 16) :
+    bytesAt (writeBytes (writeBytes m p (Spec.Gcm.zeros 16)) p xs) p 16 =
+      xs ++ Spec.Gcm.zeros (16 - xs.length) := by
+  rw [bytesAt_writeBytes_prefix _ _ _ h (by decide)]
+  congr 1
+  have h16 := bytesAt_writeBytes_self m p (Spec.Gcm.zeros 16) (by decide)
+  rw [show (Spec.Gcm.zeros 16).length = xs.length + (16 - xs.length) by simp [Spec.Gcm.zeros]; omega,
+    bytesAt_add] at h16
+  have := congrArg (List.drop xs.length) h16
+  rw [List.drop_left' (length_bytesAt ..)] at this
+  rw [this]
+  rw [Spec.Gcm.zeros, Spec.Gcm.zeros, List.drop_replicate]
 
 end VG.Proof.AesGcm
