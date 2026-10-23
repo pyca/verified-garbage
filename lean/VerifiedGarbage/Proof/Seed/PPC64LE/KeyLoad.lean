@@ -1,16 +1,18 @@
 module
 public import VerifiedGarbage.Impl.Seed.PPC64LE.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Seed.Memory
 
 import VerifiedGarbage.Proof.Seed.PPC64LE.KeyRound
-import VerifiedGarbage.Proof.Seed.PPC64LE.Steps
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # Loading the key on PPC64LE

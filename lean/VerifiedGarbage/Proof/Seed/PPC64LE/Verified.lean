@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Seed.PPC64LE.Ecb
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Spec.Seed.Contract
+import VerifiedGarbage.Spec.Seed.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
@@ -27,6 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Spec.Seed
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # The ECB functions meet their contracts, with the scratch buffer as an argument
