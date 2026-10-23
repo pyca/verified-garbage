@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The RSA public-key operation on PPC64LE: the function

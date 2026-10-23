@@ -1,7 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCT
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubFn
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 

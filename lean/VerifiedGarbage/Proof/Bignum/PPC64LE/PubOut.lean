@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The RSA public-key operation on PPC64LE: the output
