@@ -42,11 +42,16 @@ def saved (i : Nat) : Reg :=
   [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r24, .r25, .r26, .r27, .r28, .r29, .r23].getD i
     .r14
 
-/-- The working space from the stack into `r11`, the registers saved there,
-and its address into `r23`. -/
-def save : List Instr :=
-  [.addSp .r11 96, .load .d .r11 .r11 0] ++
-    (List.range 16).flatMap (fun i => [.store .d (saved i) .r11 (128 + 8 * i)]) ++ [.addi .r23 .r11 0]
+/-- The working space's address, the first argument on the stack, into `r11`. -/
+def loadS : List Instr := [.addSp .r11 96, .load .d .r11 .r11 0]
+
+/-- The registers saved in the working space at `r11`, and its address into
+`r23`. -/
+def saveRegs : List Instr :=
+  (List.range 16).flatMap (fun i => [.store .d (saved i) .r11 (128 + 8 * i)]) ++ [.addi .r23 .r11 0]
+
+/-- The working space from the stack, the registers saved there. -/
+def save : List Instr := loadS ++ saveRegs
 
 /-- The registers back, through `r23`, which is restored last. -/
 def restore : List Instr :=
