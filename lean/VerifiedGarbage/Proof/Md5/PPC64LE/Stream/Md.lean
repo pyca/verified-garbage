@@ -71,7 +71,7 @@ theorem finalize_verified : Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.fina
   have h := MdStream.PPC64LE.Finalize.verifiedD (name := "vg_md5_compress") dims shape callee
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
       (fun _ _ _ _ hp => MdStream.PPC64LE.Finalize.agree₀D hp) (by taint_decide))
-    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+    (by decide +kernel) (by decide +kernel)
   Verified.of_implies h
     ⟨fun _ h => h, fun _ _ _ h m hr hc => by
       have := h Spec.Md5.H0 m hr trivial hc
