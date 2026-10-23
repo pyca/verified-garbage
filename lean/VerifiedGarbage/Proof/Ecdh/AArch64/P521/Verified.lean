@@ -3,6 +3,9 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Window.Multiply
+import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
@@ -43,6 +46,8 @@ so not even the peer's key (which the contract would let leak) affects timing.
 
 namespace VG.Proof.Ecdh.AArch64.P521
 
+attribute [local instance high] instPowNat
+
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdh.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P521
 
@@ -62,14 +67,19 @@ theorem post_of {s s' : State} (h : EPost p521 s s') : ecdhAArch64.post s s' := 
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1 + 2 * p521.C.len)) = ex s.mem (s.gpr .x1) (s.gpr .x2) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : ecdhAArch64.pre s) :
+theorem ecdh_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhAArch64.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
   have hn : CallsKeep exchangeP521 := by lit_decide
   have hu : KeepsUntouched exchangeP521 := by lit_decide
   have hv : exchangeP521.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p521_ok hI) hL (pre_of hs)
+  have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p521) := by lit_decide
+  have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p521) := by lit_decide
+  have hm := @Window.multiply_ok (p521_ok hI) hL hO
+  obtain ⟨t,s',he,hsv,_,hpost⟩ :=
+    exchangeWith_ok' (c := P521Window.c) (mq := P521Window.multiply) (p521_ok hI) hL hm
+      (by decide +kernel) hmc hmu (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP521 :=
@@ -82,9 +92,9 @@ theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP521 
       · exact h2
       · exact h3⟩) (by taint_decide)
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
     Verified AArch64.target exchangeP521
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst AArch64.abi) :=
-  Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
+  Verified.of_correct (ecdh_a64 hL hI hO) ecdh_ct implies
 
 end VG.Proof.Ecdh.AArch64.P521
