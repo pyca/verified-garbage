@@ -90,7 +90,7 @@ theorem ghash1_ok {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30)
   refine WP.seq (WP.mono hargs fun s₁ ⟨h3, h4, h5, h6, h7, hkeep, hk⟩ => ?_)
   have he₁ : Env V sp s₁ := he.keep (fun r hr => by
     simp only [frozen, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact hkeep _ (by decide) (by decide) (by decide) (by decide) (by decide))
     hk.sp hk.rd hk.wr
   refine WP.mono (ghCall_ok L hyo he₁ (P := P) (n := 1) h3 h4 h5 h6 h7 (by decide)

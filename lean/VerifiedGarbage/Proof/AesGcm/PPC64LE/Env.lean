@@ -90,7 +90,7 @@ structure Perm (c st w : Addr) (s : State) : Prop where
 /-- The registers the pieces keep: the other arguments of the functions
 (`r19`–`r23`, `r27`), the rounds (`r28`), and the context, the state and
 `W` (`r29`–`r31`). -/
-def frozen : List Reg := [.r19, .r20, .r21, .r22, .r23, .r27, .r28, .r29, .r30, .r31]
+def frozen : List Reg := [.r18, .r19, .r20, .r21, .r22, .r23, .r27, .r28, .r29, .r30, .r31]
 
 /-- The registers `frozen` hold their values `V`, the stack pointer is `sp`,
 and the state may access the context, the state and `W` (at `V r29`,
@@ -132,6 +132,14 @@ theorem Keeps.trans {s₁ s₂ s₃ : State} (h₁ : Keeps s₁ s₂) (h₂ : Ke
   ⟨h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp, h₂.lr.trans h₁.lr⟩
 
 theorem Keeps.refl (s : State) : Keeps s s := ⟨rfl, rfl, rfl, rfl, rfl⟩
+
+/-- What code that writes only memory it may keeps: the regions, the stack
+pointer and the link register. -/
+structure Keeps' (s s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  lr : s'.lr = s.lr
 
 namespace Lay
 
@@ -295,6 +303,21 @@ theorem bytesAt_writeBytes_self (m : Mem) (p : Addr) (xs : List Byte) (h : xs.le
 
 theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n := by
   simp [bytesAt]
+
+/-- The bytes at `p` after writing `xs` there: `xs`, then what was there. -/
+theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat} (hn : xs.length ≤ n)
+    (h : n < 2 ^ 64) :
+    bytesAt (writeBytes m p xs) p n = xs ++ bytesAt m (p + BitVec.ofNat 64 xs.length) (n - xs.length) := by
+  rw [show n = xs.length + (n - xs.length) by omega, bytesAt_add, bytesAt_writeBytes_self _ _ _ (by omega),
+    Nat.add_sub_cancel_left]
+  congr 1
+  simp only [bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hi := List.mem_range.mp hi
+  simp only [writeBytes, BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.toNat_add, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := xs.length) (by omega), Nat.mod_eq_of_lt (a := i) (by omega),
+    Nat.mod_eq_of_lt (by omega)]
+  simp [show ¬ (xs.length + i < xs.length) by omega]
 
 /-- A write of `xs` at `q`, within `R`, keeps everything outside `R`. -/
 theorem writeBytes_frame' (m : Mem) {q : Addr} {xs : List Byte} {n : Nat} (hn : xs.length = n) :

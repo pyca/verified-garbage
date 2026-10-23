@@ -36,8 +36,8 @@ the functions called preserve them (they are nonvolatile). The pieces below
 (`absorb`, `crypt`, …) take their arguments in `r24` (a pointer), `r25` (a
 length) and `r26` (an offset), which the callees also preserve, and `lens`
 the two 64-bit lengths in `r24` and `r26`. `r19`–`r23` and `r27` keep the
-other arguments a function needs after a call, and `j0` keeps the nonce's
-length in `r18`. `r0` and `r3`–`r12` are temporaries.
+other arguments a function needs after a call, and `j0` reads the nonce's
+length from `r18`, which the functions calling it set on entry. `r0` and `r3`–`r12` are temporaries.
 
 ## The pieces
 
@@ -259,7 +259,7 @@ def j012 : List Instr :=
 /-- `J₀` of any other nonce: GHASH of the nonce padded, then of the lengths
 block of no additional data and the nonce, from a zero block at the state. -/
 def j0hash : Prog isa :=
-  .seq (.block [.li .r0 0, .store .d .r0 .r30 0, .store .d .r0 .r30 8, mov .r18 .r25, .li .r26 0])
+  .seq (.block [.li .r0 0, .store .d .r0 .r30 0, .store .d .r0 .r30 8, .li .r26 0])
   (.seq (absorb 0)
   (.seq (.block [.li .r0 15, .logic .and .r26 .r18 .r0])
   (.seq (flush 0)
@@ -324,7 +324,7 @@ def init : Prog isa :=
 
 /-- `vg_aes_gcm_stream_init(ctx = r3, nonce = r4, nonce_len = r5, state = r6, scratch = r7)`. -/
 def streamInitPre : List Instr :=
-  save .r7 ++ ([mov .r30 .r6, mov .r29 .r3, mov .r24 .r4, mov .r25 .r5] : List Instr)
+  save .r7 ++ ([mov .r30 .r6, mov .r29 .r3, mov .r24 .r4, mov .r25 .r5, mov .r18 .r5] : List Instr)
 
 def streamInit : Prog isa :=
   .seq (.block streamInitPre) (.seq j0 (.block restore))
@@ -405,7 +405,7 @@ nonce_len = r6, aad = r7, aad_len = r8, data = r9, len = r10, tag = [sp + 96],
 `r22` and `r23`, the data in `r20` and `r19`, and the tag in `r21`. -/
 def oneEntry (w : Nat) : List Instr :=
   ([.addSp .r11 0, .load .d .r12 .r11 w] : List Instr) ++ save .r12 ++
-    ([.addi .r30 .r31 16, mov .r29 .r3, mov .r28 .r4, mov .r24 .r5, mov .r25 .r6, mov .r22 .r7,
+    ([.addi .r30 .r31 16, mov .r29 .r3, mov .r28 .r4, mov .r24 .r5, mov .r25 .r6, mov .r18 .r6, mov .r22 .r7,
       mov .r23 .r8, mov .r20 .r9, mov .r19 .r10, .load .d .r21 .r11 96] : List Instr)
 
 /-- `J₀`, then the additional data absorbed and padded. -/
