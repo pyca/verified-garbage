@@ -52,11 +52,11 @@ def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
   .loop (.block (body ++ ([.subi cnt cnt 1] : List Instr))) (.nonzero .d cnt)
 
 /-- `n`'s bytes into `r12`, `w = ⌈k / 8⌉` and `2 w` (`r11`), the arrays'
-bases (each `w + 2` words: `8 w + 16` bytes, in `r0`) and the header's `w`. -/
+bases (each `w + 2` words: `8 w + 16` bytes, in `r4`) and the header's `w`. -/
 def setup : List Instr :=
   [.addi .r12 .r5 0, .addi .r11 .r6 7, .lsr .d .r11 .r11 3, .store .d .r11 .r21 (8 * sW),
-    .lsl .r0 .r11 3, .addi .r0 .r0 16, .addi .r10 .r21 hdrBytes, .add .r5 .r10 .r0,
-    .add .r8 .r5 .r0, .add .r9 .r8 .r0, .lsl .r11 .r11 1]
+    .lsl .r4 .r11 3, .addi .r4 .r4 16, .addi .r10 .r21 hdrBytes, .add .r5 .r10 .r4,
+    .add .r8 .r5 .r4, .add .r9 .r8 .r4, .lsl .r11 .r11 1]
 
 /-- The `w` words (`2 w` digits) at `r14` := 0, through `r17`. -/
 def zeroWords : Prog isa :=
