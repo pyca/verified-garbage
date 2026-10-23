@@ -34,7 +34,7 @@ theorem selectAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
   have args := ha.of_keeps K (by decide) (by rw [M]; exact Outs.refl _ _ _)
   unfold Compact.select
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.seq (WP.block_append (WP.mono (lenTimes_ok (hw.of_keeps K) args base (by omega) 0)
+  refine WP.seq (WP.block_append (WP.mono (lenTimes_ok (hw.of_keeps K) args base (by omega_arith) 0)
     fun b ⟨len, Mb, Kb⟩ => ?_))
   refine wp_subS rfl fun d D _ => ?_
   have Kd : Keeps [.eax, .edx, .ebp] a d := (Kb.mono (by decide)).widen D.keeps
@@ -42,10 +42,10 @@ theorem selectAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
   have argsD := args.of_keeps Kd (by decide)
     (by rw [D.mem, Mb]; exact Outs.refl _ _ _)
   refine WP.block_append (WP.mono (operandPtr_ok ((hw.of_keeps K).of_keeps Kd) argsD base
-    (r := .esi) (t := .edx) (i := 2) (by decide) (by decide) (by decide) (by omega))
+    (r := .esi) (t := .edx) (i := 2) (by decide) (by decide) (by decide) (by omega_arith))
     fun e ⟨P, Me, Ke⟩ => ?_)
   have argsE := argsD.of_keeps Ke (by decide) (by rw [Me]; exact Outs.refl _ _ _)
-  refine WP.mono (lenTimes_ok (((hw.of_keeps K).of_keeps Kd).of_keeps Ke) argsE base (by omega) 0)
+  refine WP.mono (lenTimes_ok (((hw.of_keeps K).of_keeps Kd).of_keeps Ke) argsE base (by omega_arith) 0)
     fun f ⟨Lf, Mf, Kf⟩ => ?_
   have Kaf : Keeps [.eax, .edx, .ebp, .esi, .edi] a f :=
     ((Kd.mono (by decide)).widen Ke).widen Kf
@@ -55,8 +55,8 @@ theorem selectAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
   have bpB : PtrAt b W .ebp (S + Compact.accOff + 8 * N) := by
     rw [PtrAt, Kb.1 .ebp (by decide), K.1 .ebp (by decide)]; exact hebp
   have bpD : PtrAt d W .ebp (S + Compact.accOff + 4 * N) := by
-    rw [PtrAt, D.gpr, ptr_sub bpB _ (by rw [lenB]; omega), lenB]
-    congr 2 <;> omega
+    rw [PtrAt, D.gpr, ptr_sub bpB _ (by rw [lenB]; omega_arith), lenB]
+    congr 2 <;> omega_arith
   have bpF : PtrAt f W .ebp (S + Compact.accOff + 4 * N) := by
     rw [PtrAt, Kf.1 .ebp (by decide), Ke.1 .ebp (by decide)]; exact bpD
   have siF : PtrAt f W .esi o := by
@@ -67,7 +67,7 @@ theorem selectAll_ok {t : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
       then BitVec.allOnes 32 else 0 := by
     rw [Kaf.1 .ecx (by decide)]; exact mask
   refine WP.mono (selLoop_ok (hw.of_keeps ((K.mono (rs' := clob7) (by decide)).trans (Kaf.mono (by decide))))
-    _ hN (by omega) outFit (by omega) bpF siF diF maskF) ?_
+    _ hN (by omega_arith) outFit (by omega_arith) bpF siF diF maskF) ?_
   rintro u ⟨O, V, Ku⟩
   refine ⟨?_, ?_, ((K.mono (rs' := clob7) (by decide)).trans (Kaf.mono (by decide))).trans (Ku.mono (by decide))⟩
   · rw [Mft] at O; exact O

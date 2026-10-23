@@ -36,18 +36,18 @@ theorem loadA_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32}
   have offset : (a₃.gpr .eax).toNat = 4 * i := by
     rw [D.gpr, C.gpr, B.gpr, B.other .edi (by decide), K.1 .ebp (by decide), K.1 .edi (by decide)]
     simp only [BitVec.toNat_sub, hebp, hedi, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := W.toNat + (S + Compact.accOff + 4 * i)) (by omega),
-      Nat.mod_eq_of_lt (a := W.toNat + S) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := W.toNat + (S + Compact.accOff + 4 * i)) (by omega_arith),
+      Nat.mod_eq_of_lt (a := W.toNat + S) (by omega_arith)]
+    omega_arith
   have address : PtrAt a₄ W .eax (a + 4 * i) := by
     rw [PtrAt, E.gpr, BitVec.toNat_add, offset, D.other .ecx (by decide),
       C.other .ecx (by decide), B.other .ecx (by decide), ptr, operand, BitVec.toNat_ofNat]
-    omega
-  refine wp_movS (readSrc_ptr (hw.of_keeps K₄) address (d := 0) (by omega)) fun a₅ F _ => ?_
+    omega_arith
+  refine wp_movS (readSrc_ptr (hw.of_keeps K₄) address (d := 0) (by omega_arith)) fun a₅ F _ => ?_
   have K₅ : Keeps [.eax, .ecx, .edx] s a₅ := K₄.widen F.keeps
   have edi : PtrAt a₅ W .edi S := by rw [PtrAt, K₅.1 .edi (by decide)]; exact hedi
-  refine wp_storeS (ea_ptr (hw.of_keeps K₅) edi (d := Rt.multOff) (by omega))
-    (ws_write (hw.of_keeps K₅) (y := S + Rt.multOff) (n := 4) (by omega)) fun u G => WP.block_nil ?_
+  refine wp_storeS (ea_ptr (hw.of_keeps K₅) edi (d := Rt.multOff) (by omega_arith))
+    (ws_write (hw.of_keeps K₅) (y := S + Rt.multOff) (n := 4) (by omega_arith)) fun u G => WP.block_nil ?_
   refine ⟨?_, K₅.widen (G.keeps [])⟩
   rw [G.mem, F.gpr, F.mem, E.mem, D.mem, C.mem, B.mem, M, Nat.add_zero]
 
