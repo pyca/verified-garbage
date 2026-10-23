@@ -101,6 +101,9 @@ pub(crate) mod poly1305;
 pub(crate) mod rc4;
 
 #[rustfmt::skip]
+pub(crate) mod rsa_mont;
+
+#[rustfmt::skip]
 pub(crate) mod secp256k1_mont;
 
 #[rustfmt::skip]
