@@ -68,6 +68,10 @@ def mov (d n : Reg) : Instr := .logic .or d n n
 def tO : Nat := 96
 def scrO : Nat := 512
 def lrO : Nat := 240
+/-- The received tag, padded with zeros, in `verify`. -/
+def rO : Nat := 16
+/-- The first bytes of the computed tag, padded with zeros, in `verify`. -/
+def vO : Nat := 32
 
 /-- Our caller's registers, and where we save them. -/
 def saved : List (Reg × Nat) :=
@@ -218,6 +222,57 @@ def cryptFill : Prog isa :=
 def crypt : Prog isa :=
   .ite (.zero .d .r25) (.block []) (.seq cryptFill (.seq cryptWhole cryptTail))
 
+/-! ## The tag -/
+
+/-- The accumulator copied to `W + o`, and the arguments of `vg_aes_ctr32` on
+it with the counter block `J₀` at the state. -/
+def tagArgs (o : Nat) : List Instr :=
+  [.load .d .r3 .r30 16, .store .d .r3 .r31 o, .load .d .r3 .r30 24, .store .d .r3 .r31 (o + 8),
+   mov .r3 .r29, mov .r4 .r28, mov .r5 .r30, .addi .r6 .r31 o, .li .r7 1, .addi .r8 .r31 scrO]
+
+/-- The tag into `W + o`, after the lengths block of `r24` and `r26` bytes. -/
+def tag (o : Nat) : Prog isa :=
+  .seq (lens 16) (.seq (.block (tagArgs o)) ctrCall)
+
+/-- The buffered bytes padded and absorbed, and the tag into `W + o`, for
+`aad_len` (`r22`) bytes of additional data and `text_len` (`r23`) of text. -/
+def finTag (o : Nat) : Prog isa :=
+  .seq (.ite (.zero .d .r23) (.block [.li .r0 15, .logic .and .r26 .r22 .r0])
+      (.block [.li .r0 15, .logic .and .r26 .r23 .r0]))
+  (.seq (flush 16)
+  (.seq (.block [mov .r24 .r22, mov .r26 .r23])
+    (tag o)))
+
+/-! ## Comparing tags -/
+
+/-- `r25 = 1` if the tag length `r19` is between 4 and 16 bytes, else 0. -/
+def tagLenOk : Prog isa :=
+  .seq (.block [.li .r25 0, .lsr .d .r0 .r19 2])
+    (.ite (.zero .d .r0) (.block [])
+      (.seq (.block [.lsr .d .r0 .r19 4])
+        (.ite (.zero .d .r0) (.block [.li .r25 1])
+          (.seq (.block [.subi .r0 .r19 16])
+            (.ite (.zero .d .r0) (.block [.li .r25 1]) (.block []))))))
+
+/-- The `r19` bytes of the received tag (at `r20`), padded with zeros at `W + rO`. -/
+def recv : Prog isa :=
+  .seq (.block [.li .r0 0, .store .d .r0 .r31 rO, .store .d .r0 .r31 (rO + 8), mov .r3 .r20,
+    .addi .r4 .r31 rO, mov .r5 .r19]) copyLoop
+
+/-- `r3 = 1` if the padded tags at `W + vO` and `W + rO` are equal, else 0,
+without a branch. -/
+def cmpTail : List Instr :=
+  [.load .d .r3 .r31 vO, .load .d .r4 .r31 rO, .logic .xor .r3 .r3 .r4, .load .d .r4 .r31 (vO + 8),
+   .load .d .r5 .r31 (rO + 8), .logic .xor .r4 .r4 .r5, .logic .or .r3 .r3 .r4, .li .r4 0,
+   .sub .r4 .r4 .r3, .logic .or .r3 .r3 .r4, .lsr .d .r3 .r3 63, .li .r4 1, .sub .r3 .r4 .r3]
+
+/-- The first `r19` bytes of the tag at `W + o`, padded with zeros at
+`W + vO`, compared with the received one: `r3 = 1` if they are equal. -/
+def cmp (o : Nat) : Prog isa :=
+  .seq (.block [.li .r0 0, .store .d .r0 .r31 vO, .store .d .r0 .r31 (vO + 8), .addi .r3 .r31 o,
+    .addi .r4 .r31 vO, mov .r5 .r19])
+    (.seq copyLoop (.block cmpTail))
+
 /-! ## `J₀` -/
 
 /-- The accumulator copied to `W + o`, and the arguments of `vg_aes_ctr32` on
@@ -311,5 +366,35 @@ def streamEncrypt : Prog isa :=
 /-- `vg_aes_gcm_stream_decrypt`. -/
 def streamDecrypt : Prog isa :=
   .seq (.block cryptEntry) (.seq textAbsorb (.seq (.block textArgs) (.seq crypt (.block restore))))
+
+/-- The entry of `finish`: `(ctx = r3, rounds = r4, state = r5, aad_len = r6,
+text_len = r7, tag = r8, scratch = r9)`, kept in `r29`, `r28`, `r30`, `r22`,
+`r23` and `r20`. -/
+def finEntry : List Instr :=
+  save .r9 ++ ([mov .r30 .r5, mov .r29 .r3, mov .r28 .r4, mov .r22 .r6, mov .r23 .r7, mov .r20 .r8] :
+    List Instr)
+
+/-- The tag at `W` copied to `tag` (`r20`). -/
+def tagOut : List Instr :=
+  [.load .d .r3 .r31 0, .store .d .r3 .r20 0, .load .d .r3 .r31 8, .store .d .r3 .r20 8]
+
+/-- `vg_aes_gcm_stream_finish`. -/
+def streamFinish : Prog isa :=
+  .seq (.block finEntry) (.seq (finTag 0) (.seq (.block tagOut) (.block restore)))
+
+/-- The entry of `verify`: `(ctx = r3, rounds = r4, state = r5, aad_len = r6,
+text_len = r7, tag = r8, tag_len = r9, scratch = r10)`, kept in `r29`,
+`r28`, `r30`, `r22`, `r23`, `r20` and `r19`. -/
+def verEntry : List Instr :=
+  save .r10 ++ ([mov .r30 .r5, mov .r29 .r3, mov .r28 .r4, mov .r22 .r6, mov .r23 .r7, mov .r20 .r8,
+    mov .r19 .r9] : List Instr)
+
+/-- `vg_aes_gcm_stream_verify`. -/
+def streamVerify : Prog isa :=
+  .seq (.block verEntry)
+  (.seq tagLenOk
+  (.seq (.ite (.zero .d .r25) (.block [.li .r3 0])
+      (.seq recv (.seq (finTag 0) (cmp 0))))
+    (.block restore)))
 
 end VG.Impl.AesGcm.PPC64LE

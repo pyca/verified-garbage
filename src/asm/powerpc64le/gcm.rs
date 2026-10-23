@@ -1017,6 +1017,333 @@ blr",
     )
 }
 
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// This implementation calls `vg_aes_ctr32` for the block cipher and `vg_ghash` for GHASH.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r9, %r1, 32
+std %r18, 128(%r9)
+std %r19, 136(%r9)
+std %r20, 144(%r9)
+std %r21, 152(%r9)
+std %r22, 160(%r9)
+std %r23, 168(%r9)
+std %r24, 176(%r9)
+std %r25, 184(%r9)
+std %r26, 192(%r9)
+std %r27, 200(%r9)
+std %r28, 208(%r9)
+std %r29, 216(%r9)
+std %r30, 224(%r9)
+std %r31, 232(%r9)
+mflr %r0
+std %r0, 240(%r9)
+or %r31, %r9, %r9
+or %r30, %r5, %r5
+or %r29, %r3, %r3
+or %r28, %r4, %r4
+or %r22, %r6, %r6
+or %r23, %r7, %r7
+or %r20, %r8, %r8
+cmpldi %cr0, %r23, 0
+beq %cr0, 20f
+li %r0, 15
+and %r26, %r23, %r0
+b 21f
+20:
+li %r0, 15
+and %r26, %r22, %r0
+21:
+cmpldi %cr0, %r26, 0
+beq %cr0, 22f
+li %r0, 0
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+addi %r3, %r30, 32
+addi %r4, %r31, 96
+or %r5, %r26, %r26
+24:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 24b
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 23f
+22:
+23:
+or %r24, %r22, %r22
+or %r26, %r23, %r23
+rldicr %r3, %r24, 3, 60
+rldicr %r4, %r26, 3, 60
+addi %r5, %r31, 96
+li %r6, 0
+stdbrx %r3, %r5, %r6
+li %r6, 8
+stdbrx %r4, %r5, %r6
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+ld %r3, 16(%r30)
+std %r3, 0(%r31)
+ld %r3, 24(%r30)
+std %r3, 8(%r31)
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+or %r5, %r30, %r30
+addi %r6, %r31, 0
+li %r7, 1
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+ld %r3, 0(%r31)
+std %r3, 0(%r20)
+ld %r3, 8(%r31)
+std %r3, 8(%r20)
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// This implementation calls `vg_aes_ctr32` for the block cipher and `vg_ghash` for GHASH.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -2592(%r1)
+addi %r10, %r1, 32
+std %r18, 128(%r10)
+std %r19, 136(%r10)
+std %r20, 144(%r10)
+std %r21, 152(%r10)
+std %r22, 160(%r10)
+std %r23, 168(%r10)
+std %r24, 176(%r10)
+std %r25, 184(%r10)
+std %r26, 192(%r10)
+std %r27, 200(%r10)
+std %r28, 208(%r10)
+std %r29, 216(%r10)
+std %r30, 224(%r10)
+std %r31, 232(%r10)
+mflr %r0
+std %r0, 240(%r10)
+or %r31, %r10, %r10
+or %r30, %r5, %r5
+or %r29, %r3, %r3
+or %r28, %r4, %r4
+or %r22, %r6, %r6
+or %r23, %r7, %r7
+or %r20, %r8, %r8
+or %r19, %r9, %r9
+li %r25, 0
+rldicl %r0, %r19, 62, 2
+cmpldi %cr0, %r0, 0
+beq %cr0, 20f
+rldicl %r0, %r19, 60, 4
+cmpldi %cr0, %r0, 0
+beq %cr0, 22f
+addi %r0, %r19, -16
+cmpldi %cr0, %r0, 0
+beq %cr0, 24f
+b 25f
+24:
+li %r25, 1
+25:
+b 23f
+22:
+li %r25, 1
+23:
+b 21f
+20:
+21:
+cmpldi %cr0, %r25, 0
+beq %cr0, 26f
+li %r0, 0
+std %r0, 16(%r31)
+std %r0, 24(%r31)
+or %r3, %r20, %r20
+addi %r4, %r31, 16
+or %r5, %r19, %r19
+28:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 28b
+cmpldi %cr0, %r23, 0
+beq %cr0, 29f
+li %r0, 15
+and %r26, %r23, %r0
+b 210f
+29:
+li %r0, 15
+and %r26, %r22, %r0
+210:
+cmpldi %cr0, %r26, 0
+beq %cr0, 211f
+li %r0, 0
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+addi %r3, %r30, 32
+addi %r4, %r31, 96
+or %r5, %r26, %r26
+213:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 213b
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+b 212f
+211:
+212:
+or %r24, %r22, %r22
+or %r26, %r23, %r23
+rldicr %r3, %r24, 3, 60
+rldicr %r4, %r26, 3, 60
+addi %r5, %r31, 96
+li %r6, 0
+stdbrx %r3, %r5, %r6
+li %r6, 8
+stdbrx %r4, %r5, %r6
+addi %r3, %r29, 240
+addi %r4, %r30, 16
+addi %r5, %r31, 96
+li %r6, 1
+addi %r7, %r31, 512
+bl {vg_ghash}
+ld %r3, 16(%r30)
+std %r3, 0(%r31)
+ld %r3, 24(%r30)
+std %r3, 8(%r31)
+or %r3, %r29, %r29
+or %r4, %r28, %r28
+or %r5, %r30, %r30
+addi %r6, %r31, 0
+li %r7, 1
+addi %r8, %r31, 512
+bl {vg_aes_ctr32}
+li %r0, 0
+std %r0, 32(%r31)
+std %r0, 40(%r31)
+addi %r3, %r31, 0
+addi %r4, %r31, 32
+or %r5, %r19, %r19
+214:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r4)
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 214b
+ld %r3, 32(%r31)
+ld %r4, 16(%r31)
+xor %r3, %r3, %r4
+ld %r4, 40(%r31)
+ld %r5, 24(%r31)
+xor %r4, %r4, %r5
+or %r3, %r3, %r4
+li %r4, 0
+subf %r4, %r3, %r4
+or %r3, %r3, %r4
+rldicl %r3, %r3, 1, 63
+li %r4, 1
+subf %r3, %r3, %r4
+b 27f
+26:
+li %r3, 0
+27:
+or %r12, %r31, %r31
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r18, 128(%r12)
+ld %r19, 136(%r12)
+ld %r20, 144(%r12)
+ld %r21, 152(%r12)
+ld %r22, 160(%r12)
+ld %r23, 168(%r12)
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+ld %r31, 232(%r12)
+addi %r1, %r1, 2592
+blr",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
