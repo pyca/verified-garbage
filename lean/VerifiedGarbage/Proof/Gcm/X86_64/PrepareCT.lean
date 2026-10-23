@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Gcm.Prepared16
 public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare16
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
@@ -229,5 +229,34 @@ theorem verified_ofW (c : Prog isa)
       exact ⟨t, s', he, abiPreserved_of_exec hx he h.1, h.2⟩) hct (by
     sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
+
+
+theorem implies16 : prepare16X86_64.Implies (Spec.Gcm.prepare16Contract X86_64.abi) := by
+  sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
+    X86_64.abi, X86_64.argRegs] [satState] using satState
+
+/-- A run that writes nothing of the context but its bytes 256–511 (the 16
+powers) writes none of `ctx` from byte 512 on (`Artifact.written`), so a
+caller wipes only its first 512 bytes. -/
+theorem written16 {c : Prog isa}
+    (hok : ∀ s₀, InRegions s₀.wr (s₀.gpr .rdi) 1024 → (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 →
+      WP isa c s₀ fun s => Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 256⟩] s₀.mem s.mem)
+    (s : State) (t : List Leak) (s' : State) (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s)
+    (he : Exec isa c s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' := by
+  obtain ⟨_, hwr, hwrap, _⟩ := implies16.pre s hs
+  have hw : InRegions s.wr (s.gpr .rdi) 1024 := by
+    rw [hwr]; exact ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  obtain ⟨t', s'', he', hf⟩ := hok s hw hwrap
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  simp [Sig.writtenWithin, X86_64.abi, X86_64.argRegs, Abi.withConsts, Spec.Gcm.prepareSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  intro i h1 h2
+  have h2' : i < 1024 := by simpa [Elem.size] using h2
+  refine hf _ fun r hr hc => ?_
+  rw [List.mem_singleton] at hr
+  subst hr
+  exact Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := 256) (k := 256) (.inr (by omega)) (by omega)
+    (by omega) _ (Region.contains_self _ _) hc
 
 end VG.Proof.Gcm.X86_64.Prepare16

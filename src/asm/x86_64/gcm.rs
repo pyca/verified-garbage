@@ -2015,9 +2015,14 @@ ret
 /// The CPU features `vg_aes_gcm_prepare16_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "ssse3", "vpclmulqdq"]);
 
+/// The bytes of `ctx` that `vg_aes_gcm_prepare16_vpclmul` may write: it changes no byte of `ctx` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN: usize = 512;
+
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, a 16-power prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 7, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared16` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepare16Contract`: the first 256 bytes are kept and the context satisfies `PreparedPowers16Repr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// Uses VPCLMULQDQ: `H'` as the stitched loops compute it, then `H'²`–`H'¹⁶` two in each 256-bit register, each pair stored as it is computed; the powers each round multiplies by, in both lanes, are squares of the one before, of two carry-less products each rather than four. No calls and no stack.
+///
+/// It writes at most the first 512 bytes of `ctx` (`VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN`): no byte of `ctx` beyond them changes.
 ///
 /// # Safety
 ///
@@ -2188,9 +2193,14 @@ ret
 /// The CPU features `vg_aes_gcm_prepare16_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "pclmulqdq"]);
 
+/// The bytes of `ctx` that `vg_aes_gcm_prepare16_pclmul_avx` may write: it changes no byte of `ctx` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN: usize = 512;
+
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, a 16-power prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 7, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared16` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepare16Contract`: the first 256 bytes are kept and the context satisfies `PreparedPowers16Repr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// Uses PCLMULQDQ on 128-bit registers: `H'` as the eight-block loops compute it, then `H'²`–`H'¹⁶` in four rounds of independent products, each stored as it is computed: the even powers squares, of two carry-less products each rather than four, and the odd ones summed straight into their accumulators. No calls and no stack.
+///
+/// It writes at most the first 512 bytes of `ctx` (`VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN`): no byte of `ctx` beyond them changes.
 ///
 /// # Safety
 ///
