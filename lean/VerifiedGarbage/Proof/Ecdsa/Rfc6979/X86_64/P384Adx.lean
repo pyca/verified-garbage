@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
+
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import Mathlib.Data.Finset.Attr
