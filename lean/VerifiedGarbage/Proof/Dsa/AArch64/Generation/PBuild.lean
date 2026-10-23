@@ -59,7 +59,10 @@ theorem pBuild_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.strea
       (fun r hr => (hk.vcs r hr).trans (su.vec r hr)),
       hframe.mono (by simp [HashPlan.changed])⟩, hframe⟩
   intro r hr h30
-  rw [hk.gpr r (by cases r <;> simp_all [preserved])]
+  rw [hk.gpr r (by
+        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        all_goals first | decide | exact (h30 rfl).elim)]
   exact su.cs r hr h30
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -98,7 +98,9 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
   · intro r hr h30
     trans u.gpr r
     · apply k.gpr r
-      cases r <;> simp_all [preserved]
+      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      all_goals first | decide | exact (h30 rfl).elim
     · exact step.cs r hr h30
   · exact ⟨fun _ _ => rfl, fun k hk => (hwords (8 * k) (by unfold nW at hk; omega)).trans (Rv.fr k hk)⟩
 
