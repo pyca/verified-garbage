@@ -17,7 +17,7 @@ namespace VG.Proof.ChaCha20Poly1305.AArch64
 /-- The instance of `vg_chacha20_poly1305_seal` calling the backend `v`. -/
 def sealFn (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn where
   name := Spec.ChaCha20Poly1305.sealApi.name ++ v.callee.suffix
-  code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95
+  code := Impl.StackScratch.AArch64.withStackScratchWipedPairs 1280 .x7 48
     (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
   verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v
   depth := Proof.ChaCha20Poly1305.AArch64.Gather.seal_depth v
