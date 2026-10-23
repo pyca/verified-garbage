@@ -14,7 +14,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.GcdBatch
   VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv
 
 local macro "apart" : tactic => `(tactic|
-  (dsimp only [offset] at *; omega))
+  (dsimp only [offset] at *; omega_arith))
 
 /-- Both full-width values are updated before either source is overwritten. -/
 theorem update_ok {s : State} {base : Addr} {size n p : Nat} {u v q r f g : Int}

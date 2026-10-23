@@ -23,7 +23,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv VG.Impl.Weierstrass.X86.I
   linear (offset w 3+12+8*row) (offset w 3+16+8*row) (offset w 11) (offset w 6) (offset w 7) (offset w 12) n (n-1)++
     VG.Impl.Rsa.X86.InvBatch.reduce w n (offset w (13+row))
 
- local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
  theorem fourRows_ok {s : State} {base : Addr} {size w n p iv cap : Nat} {T : VG.Proof.Divstep.MSt}
     {st : VG.Proof.Divstep.W32.IState}
@@ -61,26 +61,26 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv VG.Impl.Weierstrass.X86.I
   have C₄ := ab_cover hn hw (by decide : 1<2) O₄
   have h₄ := h₃.keep hs₃ hn hw hz C₄
   have pf4 (j k : Nat) (jl : j≤1) (kb : k≤n+1) : val32 z.mem base (offset w j) k=val32 s₃.mem base (offset w j) k := by
-    rcases (show j=0 ∨ j=1 by omega) with rfl | rfl
+    rcases (show j=0 ∨ j=1 by omega_arith) with rfl | rfl
     all_goals
       refine Outs.val32 O₄ ?_ (by apart)
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> apart
   have pf3 (j k : Nat) (jl : j≤1) (kb : k≤n+1) : val32 s₃.mem base (offset w j) k=val32 s₂.mem base (offset w j) k := by
-    rcases (show j=0 ∨ j=1 by omega) with rfl | rfl
+    rcases (show j=0 ∨ j=1 by omega_arith) with rfl | rfl
     all_goals
       refine Outs.val32 O₃ ?_ (by apart)
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> apart
   refine ⟨?_,?_,?_,B₄,h₄,?_,?_⟩
-  · rw [pf4 0 (n+1) (by decide) (by omega),pf3 0 (n+1) (by decide) (by omega)]
+  · rw [pf4 0 (n+1) (by decide) (by omega_arith),pf3 0 (n+1) (by decide) (by omega_arith)]
     rw [Outs.val32 (d:=offset w 0) (k:=n+1) O₂ (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl <;> apart) (by apart)]
     exact F₁
-  · rw [pf4 1 (n+1) (by decide) (by omega),pf3 1 (n+1) (by decide) (by omega)]
+  · rw [pf4 1 (n+1) (by decide) (by omega_arith),pf3 1 (n+1) (by decide) (by omega_arith)]
     exact G₂
   · rw [Outs.val32 (d:=offset w 13) (k:=n) O₄ (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
