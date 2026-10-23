@@ -379,6 +379,47 @@ theorem consts_ok (s : State) :
   · simp only [hc, ht, hs, ite_false]
   · simp only [h5, h6, h7, ite_false]
 
+theorem constC_ok (s : State) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.constC) s fun s' =>
+      s'.v C = ofVDwords poly poly ∧ (∀ r, r ≠ C → s'.v r = s.v r) ∧
+      (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.AArch64.Pmull.constC, runBlock_cons, runStep_some, runBlock_nil,
+    exec_movz_x (show 16 * 3 < 64 by decide), exec_dup_d2, v_setV, gpr_setV, v_write, gpr_write_x,
+    ite_true, Option.some.injEq, exists_eq_left', mem_setV, rd_setV, wr_setV, mem_write, rd_write,
+    wr_write, and_true]
+  refine ⟨by decide, fun r hc => ?_, fun r h5 => ?_⟩
+  · simp only [hc, ite_false]
+  · simp only [h5, ite_false]
+
+theorem exec_ushr63 (d n : VReg) (s : State) :
+    exec (.vop (.shift .ushr .d2 d n 63)) s =
+      some (s.setV d (ofVDwords (vdword (s.v n) 0 >>> 63) (vdword (s.v n) 1 >>> 63))) := rfl
+
+theorem exec_shl1 (d n : VReg) (s : State) :
+    exec (.vop (.shift .shl .d2 d n 1)) s =
+      some (s.setV d (ofVDwords (vdword (s.v n) 0 <<< 1) (vdword (s.v n) 1 <<< 1))) := rfl
+
+/-- `twist`: the shifted doublewords, their top bits swapped, and the
+reduction constant times the low one's. -/
+theorem twist_ok (d : VReg) (s : State) (hc : s.v C = ofVDwords poly poly) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.twist d)) s fun s' =>
+      s'.v d = (ofVDwords (vdword (s.v A) 0 <<< 1) (vdword (s.v A) 1 <<< 1) ^^^
+        ext8 (ofVDwords (vdword (s.v A) 0 >>> 63) (vdword (s.v A) 1 >>> 63))
+          (ofVDwords (vdword (s.v A) 0 >>> 63) (vdword (s.v A) 1 >>> 63))) ^^^
+        polyMul (vdword (s.v A) 0 >>> 63) poly ∧ VOnly [LO, MID, HI, T, d] s s' := by
+  have hc0 : vdword (ofVDwords poly poly) 0 = poly := vdword_append_0 _ _
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.AArch64.Pmull.twist, runBlock_cons, runStep_some, runBlock_nil,
+    exec_ushr63, exec_shl1, exec_pmull0, exec_eor, exec_ext8, Option.some.injEq, exists_eq_left',
+    v_setV, ite_true, ite_false, reduceCtorEq, hc]
+  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV], by simp only [rd_setV],
+    by simp only [wr_setV], by simp only [sp_setV]⟩⟩
+  · simp only [hc0, show ∀ a b : BitVec 64, vdword (ofVDwords a b) 0 = a from
+      fun a b => vdword_append_0 _ _]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [v_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
 theorem exec_addImm {d n : Reg} {imm : Nat} (h : imm < 4096) (s : State) :
     exec (.addImm .x d n imm) s = some (s.write .x d (s.gpr n + BitVec.ofNat 64 imm)) := by
   simp only [exec, h, ite_true, State.read, Size.bits, BitVec.setWidth_eq]
