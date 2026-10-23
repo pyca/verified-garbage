@@ -49,7 +49,8 @@ pub struct Decaps {
 }
 
 /// Defines the tests of the parameter set `$n` (`"768"`), of the module
-/// `verified_garbage::$module` and its key types.
+/// `verified_garbage::$module` (`verified_garbage::mlkem768`,
+/// `verified_garbage::mlkem1024`) and its key types.
 macro_rules! mlkem_tests {
     ($n:literal, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident) => {
         use verified_garbage::hashes::sha3::Sha3_256;
