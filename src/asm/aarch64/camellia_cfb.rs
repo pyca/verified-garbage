@@ -1764,7 +1764,7 @@ pub(crate) unsafe extern "C" fn vg_camellia_cfb128_decrypt(schedule: *const [u8;
     core::arch::naked_asm!(
         r"sub sp, sp, #3344
 add x5, sp, #0
-lsr x13, x4, #2
+lsr x13, x4, #3
 cbz x13, 20f
 add x5, x5, #0
 str x19, [x5, #3248]

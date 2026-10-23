@@ -188,7 +188,7 @@ attribute [local irreducible] Spec.Camellia.cipher in
 theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
-  obtain ⟨s₁,e₁,_,g₁,m₁,rd₁,wr₁⟩ := Modes.AArch64.lsr_ok s₀ .x13 .x4 (sh:=2) (by decide)
+  obtain ⟨s₁,e₁,_,g₁,m₁,rd₁,wr₁⟩ := Modes.AArch64.lsr_ok s₀ .x13 .x4 (sh:=3) (by decide)
   have hp₁ : cfbDecAArch64.pre s₁ := by
     simpa only [cfbDecAArch64,fbPre,m₁,rd₁,wr₁,g₁ .x0 (by decide),g₁ .x1 (by decide),g₁ .x2 (by decide),g₁ .x3 (by decide),g₁ .x4 (by decide),g₁ .x5 (by decide)] using hp
   have transfer {s' : State}
