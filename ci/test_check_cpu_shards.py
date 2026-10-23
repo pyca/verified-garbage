@@ -18,8 +18,8 @@ WORKFLOW = CI.parent / ".github/workflows/ci.yml"
 
 RUNS = """\
 - | x25519 rsa cpu
-avx,avx2 | rsa_pkcs1 cpu
-avx,bmi1 | rsa_pss cpu
+avx,avx2 | cpu
+avx,bmi1 | aes_gcm cpu
 aes,vaes | aes_gcm cpu
 
 aes,vpclmulqdq | aes_gcm cpu
@@ -224,7 +224,7 @@ class StepTests(unittest.TestCase):
         # Every line's groups, not only this shard's, and the CPU's tests.
         self.assertEqual(self.tests_record["cpu"], "icx")
         self.assertEqual(self.tests_record["groups"],
-                         ["aes_gcm", "cpu", "rsa", "rsa_pkcs1", "rsa_pss", "x25519"])
+                         ["aes_gcm", "cpu", "rsa", "x25519"])
         self.assertEqual(self.tests_record["tests"], {"lib": LIB_TESTS, "tests": TESTS_TESTS})
         (host,) = recorded["icx"]
         self.assertIn(host, cpu_shards.HOSTS)
@@ -250,7 +250,7 @@ class StepTests(unittest.TestCase):
         lib = LIB_TESTS + ["rsa_keygen::tests::primes", "rsa_pss::sha256::tests::backend_features"]
         tests = TESTS_TESTS + ["wycheproof::rsa_pss::rsa_pss_every_hash"]
         for chip, full_group, reduced_group in [("icx", "rsa", "rsa_ifma"),
-                                                 ("dmr", "rsa_pss", "rsa_pss_hashes"),
+                                                 ("dmr", "rsa", "rsa_ifma"),
                                                  ("native", "rsa", "rsa")]:
             for host_ifma in (True, False):
                 with self.subTest(chip=chip, host_ifma=host_ifma):
