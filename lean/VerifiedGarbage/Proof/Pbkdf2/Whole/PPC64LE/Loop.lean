@@ -273,4 +273,195 @@ theorem copyLoop_ok {s : State} {n : Nat} {A B : Addr} {tO : Nat} (hn : 0 < n) (
     rw [e]; rw [e] at c'; exact c'
   · exact .inr ⟨by rw [hz, decide_eq_true hl'], _, by omega, j + 1, rfl, by omega, c'⟩
 
+/-- `lwbrx t, n, m`. -/
+theorem wp_lwbrx {is : List Instr} {s : State} {Q : State → Prop} {t n m : Reg} {a : Addr}
+    (ha : s.gpr n + s.gpr m = a) (hin : InRegions (s.rd ++ s.wr) a 4)
+    (k : ∀ s', Upd s s' t ((rev32 (s.mem.readW a 32)).setWidth 64) → WP isa (.block is) s' Q)
+    (hn : n ≠ .r0 := by decide) :
+    WP isa (.block (.loadRev .w t n m :: is)) s Q :=
+  VG.Proof.MdStream.PPC64LE.WP.cons (by rw [exec_loadRev_w hn (by rw [ha]; exact hin), ha]) (k _ (Upd.write _ _ _))
+
+section
+variable {hF : FnsOK F} {s₀ : State} (hp : Pre F hF.X s₀)
+include hp
+
+/-- The rest of a block: as much of `T` as the output needs, copied out, the
+pointers advanced, and `INT (k + 2)`. -/
+theorem tail_ok {k : Nat} (hk : k < nbk s₀ (F := F)) {s : State} (h : Inv hF s₀ k s)
+    (ht : bytesAt s.mem (sA s₀ F.tO) F.H.D = Tk hF s₀ (k + 1)) :
+    WP isa (.seq F.outLen (.seq F.outLoop (.block F.advance))) s (Inv hF s₀ (k + 1)) := by
+  have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach; have hD := hz.D
+  have hol := ol_lt hp
+  have hno := hp.no
+  obtain ⟨hdn, hkD⟩ := dn_lt hD.1 hk
+  generalize en : min (ol s₀ - k * F.H.D) F.H.D = n
+  have hn : 0 < n := by omega
+  have hkn : k * F.H.D + n ≤ ol s₀ := by omega
+  have hnD : n ≤ F.H.D := by omega
+  have hdn' : dn s₀ (F := F) (k + 1) = k * F.H.D + n := by show min _ _ = _; rw [Nat.succ_mul]; omega
+  have osub : Region.Sub ⟨out s₀ + BitVec.ofNat 64 (k * F.H.D), n⟩ (outR s₀) := Offset.sub_base _ hkn
+  refine WP.seq (WP.mono (outLen_ok hp hk h) fun s₁ ⟨i₁, m₁, c₁⟩ => ?_)
+  rw [en] at c₁
+  unfold Fns.outLoop
+  refine WP.seq (WP.seq (wp_li (by decide) fun s₂ u₂ => WP.block_nil ?_))
+  have i₂ : Inv hF s₀ k s₂ := i₁.keep hp u₂.rd u₂.wr u₂.sp (fun r hr => u₂.other r (by revert r; decide))
+    (rs := []) (by rw [u₂.mem]; exact Frame.refl _ _) (by simp)
+  have eA : s₂.gpr .r21 + BitVec.ofNat 64 F.tO = sA s₀ F.tO := by rw [i₂.kr.r21]
+  have eB : s₂.gpr .r23 = out s₀ + BitVec.ofNat 64 (k * F.H.D) := by rw [i₂.r23, hdn]
+  have tsub : Region.Sub ⟨sA s₀ F.tO, n⟩ (scR F s₀) := part_sub (by omega)
+  refine WP.mono (copyLoop_ok (s := s₂) (n := n) hn (by omega) (by omega) eA eB
+    (fun j hj => by rw [← VG.Proof.Hmac.Stream.PPC64LE.add_off]; exact in_sc' hp hb i₂.kr.wr (by omega))
+    (fun j hj => ⟨outR s₀, out_wr hp i₂.kr.wr, by
+      rw [← VG.Proof.Hmac.Stream.PPC64LE.add_off]; exact Offset.contains_base _ (by omega) (by omega)⟩)
+    ((hp.o_s.sub_left osub).sub_right tsub).symm
+    ⟨rfl, rfl, rfl, fun _ _ _ _ _ => rfl, by rw [u₂.gpr], by rw [u₂.other _ (by decide), c₁, Nat.sub_zero],
+      by rw [bytesAt, List.range_zero, List.map_nil, VG.WriteBytes.writeBytes_nil]⟩) fun s₃ c₃ => ?_
+  unfold Fns.advance
+  refine wp_add fun s₄ u₄ => wp_sub fun s₅ u₅ => wp_li (by omega) fun s₆ u₆ => ?_
+  refine wp_lwbrx (a := sA s₀ F.intO) (by
+      upd_simp [u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, c₃.other]
+      rw [i₂.kr.r21])
+    (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, c₃.rd, c₃.wr]; exact in_sc' hp hb i₂.kr.wr (by omega))
+    fun s₇ u₇ => wp_addi (by decide) fun s₈ u₈ => ?_
+  refine wp_stwbrx (a := sA s₀ F.intO) (by
+      upd_simp [u₈.gpr, u₈.other, u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other,
+        c₃.other]
+      rw [i₂.kr.r21])
+    (by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, c₃.wr]; exact in_sc hp hb i₂.kr.wr (by omega))
+    fun s₉ m₉ => WP.block_nil ?_
+  -- Memory.
+  have fr₃ : Frame [⟨out s₀ + BitVec.ofNat 64 (k * F.H.D), n⟩] s₂.mem s₃.mem := by
+    rw [c₃.mem]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by rw [bytesAt_length]; exact Region.contains_self _ _)
+  have m₈ : s₈.mem = s₃.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem]
+  have fr₉ : Frame [sR s₀ F.intO 4] s₃.mem s₉.mem := by
+    rw [m₉.mem, m₈]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have dI : (sR s₀ F.intO 4).Disjoint ⟨out s₀ + BitVec.ofNat 64 (k * F.H.D), n⟩ :=
+    ((hp.o_s.sub_left osub).sub_right (part_sub (by omega))).symm
+  have r₃ : s₃.mem.readW (sA s₀ F.intO) 32 = rev32 (BitVec.ofNat 32 (k + 1)) := by
+    rw [← i₂.intW]
+    exact fr₃.readW (r := sR s₀ F.intO 4) (Region.contains_self _ _)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dI) (by decide)
+  have e8 : s₈.gpr .r12 = (BitVec.ofNat 32 (k + 1)).setWidth 64 + 1 := by
+    rw [u₈.gpr, u₇.gpr, u₆.mem, u₅.mem, u₄.mem, r₃, show rev32 = byteRev32 from rfl, Whole.byteRev32_byteRev32]
+    rfl
+  have eW : (s₈.gpr .r12).setWidth 32 = BitVec.ofNat 32 (k + 1 + 1) := by
+    rw [e8, lo32_add, lo32_ext, show (1 : BitVec 64).setWidth 32 = BitVec.ofNat 32 1 from rfl,
+      ← BitVec.ofNat_add]
+  have hg : Gk hF s₀ (k + 1) = Gk hF s₀ k ++ Tk hF s₀ (k + 1) := Whole.G_succ _ _ _ _
+  have tl : (Tk hF s₀ (k + 1)).length = F.H.D := by rw [← ht, bytesAt_length]
+  have rs : ∀ r ∈ [(⟨out s₀ + BitVec.ofNat 64 (k * F.H.D), n⟩ : Region), sR s₀ F.intO 4],
+      Region.Disjoint ⟨scr s₀ + BitVec.ofNat 64 0, 48⟩ r ∧ ∃ r' ∈ wrs F hF.X s₀, Region.Sub r r' := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨(hp.o_s.sub_left osub).symm.sub_left (part_sub (o := 0) (n := 48) (by omega)), outR s₀, by simp, osub⟩
+    · exact ⟨part_disj hb (.inl (by omega)) (by omega) (by omega), scR F s₀, by simp, part_sub (by omega)⟩
+  have fr : Frame [(⟨out s₀ + BitVec.ofNat 64 (k * F.H.D), n⟩ : Region), sR s₀ F.intO 4] s₂.mem s₉.mem :=
+    (fr₃.mono (by simp)).trans (fr₉.mono (by simp))
+  have g9 : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r11 → r ≠ .r12 → r ≠ .r23 → r ≠ .r24 → s₉.gpr r = s₂.gpr r := by
+    intro r a b c d e f
+    rw [m₉.gpr, u₈.other r d, u₇.other r d, u₆.other r c, u₅.other r f, u₄.other r e, c₃.other r a b c d]
+  refine ⟨i₂.kr.keep (by rw [m₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, c₃.rd])
+      (by rw [m₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, c₃.wr])
+      (by rw [m₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, c₃.sp])
+      (fun r hr => g9 r (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
+        (by revert r; decide) (by revert r; decide)) fr (fun r hr => (rs r hr).1) (fun r hr => (rs r hr).2),
+    i₂.st.keep fr (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ((hp.o_s.sub_left osub).sub_right (part_sub (by omega))).symm
+      · exact part_disj hb (.inl (by omega)) (by omega) (by omega)), ?_, ?_, ?_, ?_, ?_⟩
+  · rw [m₉.gpr]
+    upd_simp [u₈.gpr, u₈.other, u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other,
+      c₃.other]
+    rw [c₃.r8, eB, hdn', BitVec.add_assoc, ← BitVec.ofNat_add]
+  · rw [m₉.gpr]
+    upd_simp [u₈.gpr, u₈.other, u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other,
+      c₃.other]
+    rw [c₃.r8, i₂.r24, hdn, hdn', VG.Proof.MdStream.PPC64LE.sub_ofNat (by omega), Nat.sub_sub]
+  · rw [m₉.mem, Mem.readW_writeW_self32, eW]
+  · rw [hg, List.length_append, i₂.glen, tl, Nat.succ_mul]
+  · have osub' : Region.Sub ⟨out s₀, k * F.H.D + n⟩ (outR s₀) := Region.sub_prefix hkn
+    rw [hdn', VG.Proof.Hmac.Generic.Common.bytes_keep fr₉ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (hp.o_s.sub_left osub').sub_right (part_sub (by omega))) (by omega), c₃.mem]
+    have bw := VG.Proof.Sha256.Stream.bytesAt_writeBytes s₂.mem (out s₀) (k * F.H.D)
+      (bytesAt s₂.mem (sA s₀ F.tO) n) (by rw [bytesAt_length]; omega)
+    rw [bytesAt_length] at bw
+    have ob := i₂.outB
+    rw [hdn] at ob
+    rw [bw, ob, VG.Proof.Hmac.Generic.Common.bytesAt_take _ _ hnD, u₂.mem, m₁, ht, hg, List.take_append,
+      i₂.glen, Nat.add_sub_cancel_left, List.take_of_length_le (l := Gk hF s₀ k) (i := k * F.H.D) (by rw [i₂.glen]),
+      List.take_of_length_le (l := Gk hF s₀ k) (i := k * F.H.D + n) (by rw [i₂.glen]; omega)]
+
+end
+
+/-! ## The loop -/
+
+section
+variable {hF : FnsOK F} {s₀ : State} (hp : Pre F hF.X s₀)
+include hp
+
+/-- A block of the output. -/
+theorem block_ok {k : Nat} (hk : k < nbk s₀ (F := F)) {s : State} (h : Inv hF s₀ k s) :
+    WP isa F.block s (Inv hF s₀ (k + 1)) := by
+  unfold Fns.block
+  refine WP.seq (WP.mono (b1_ok hp h) fun s₁ ⟨i₁, r₁, a3, a4, a5, a6, a7⟩ => ?_)
+  refine WP.seq (WP.mono (b2_ok hp i₁ r₁ a3 a4 a5 a6 a7) fun s₂ ⟨i₂, r₂⟩ => ?_)
+  refine WP.seq (WP.mono (b3_ok hp i₂) fun s₃ ⟨i₃, m₃, c3, c4, c5, c6, c7⟩ => ?_)
+  refine WP.seq (WP.mono (b4_ok hp i₃ (by rw [m₃]; exact r₂) c3 c4 c5 c6 c7) fun s₄ ⟨i₄, r₄⟩ => ?_)
+  refine WP.seq (WP.mono (b5_ok hp i₄) fun s₅ ⟨i₅, m₅, d3, d4, d5, d6, d7⟩ => ?_)
+  refine WP.seq (WP.mono (b6_ok hp i₅ (by rw [m₅]; exact r₄) d3 d4 d5 d6 d7) fun s₆ ⟨i₆, u₆⟩ => ?_)
+  refine WP.seq (WP.mono (b7_ok hp i₆) fun s₇ ⟨i₇, hu, ht, e3, e4, e5, e6, e7⟩ => ?_)
+  refine WP.seq (WP.mono (b8_ok hp i₇ (hu.trans u₆) (ht.trans u₆) e3 e4 e5 e6 e7) fun s₈ ⟨i₈, t₈⟩ => ?_)
+  exact tail_ok hp hk i₈ (by rw [t₈]; rfl)
+
+/-- The bytes of output left, while some are. -/
+theorem left_ne {k : Nat} (hk : k ≤ nbk s₀ (F := F)) :
+    (BitVec.ofNat 64 (ol s₀ - dn s₀ (F := F) k) != 0) = decide (k < nbk s₀ (F := F)) := by
+  have hD := (sizes hF).D
+  have hol := ol_lt hp
+  rw [bne, VG.Proof.MdStream.PPC64LE.ofNat_beq_zero (by omega)]
+  have e := Whole.lt_nb (D := F.H.D) (ol := ol s₀) hD.1 (k := k)
+  by_cases h : k < nbk s₀ (F := F)
+  · have h1 : k * F.H.D < ol s₀ := e.1 h
+    have h2 : dn s₀ (F := F) k = k * F.H.D := Nat.min_eq_left (Nat.le_of_lt h1)
+    rw [h2]; simp only [h, decide_true]
+    simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not]
+    omega
+  · have hk' : k = nbk s₀ (F := F) := by omega
+    have dn' : dn s₀ (F := F) k = ol s₀ := by rw [hk']; exact Whole.done_nb hD.1
+    rw [dn', Nat.sub_self]; simp [h]
+
+/-- The blocks of the output, from `Inv 0`: `Inv` after all of them. -/
+theorem loop_ok {s : State} (h : Inv hF s₀ 0 s) :
+    WP isa (.ite (.zero .d .r24) (.block []) (.loop F.block (.nonzero .d .r24))) s (Inv hF s₀ (nbk s₀ (F := F))) := by
+  have hD := (sizes hF).D
+  have hol := ol_lt hp
+  have e24 : s.gpr .r24 = BitVec.ofNat 64 (ol s₀) := by
+    rw [h.r24]; congr 1; show _ - min (0 * F.H.D) _ = _; simp
+  refine WP.ite (decide (ol s₀ = 0)) (by
+      show VG.PPC64LE.eval (.zero .d .r24) s = _
+      rw [VG.Proof.MdStream.PPC64LE.eval_zero, e24, VG.Proof.MdStream.PPC64LE.ofNat_beq_zero (by omega)])
+    (fun h0 => WP.block_nil ?_) fun h0 => ?_
+  · have : nbk s₀ (F := F) = 0 := (Whole.nb_zero hD.1).2 (of_decide_eq_true h0)
+    rw [this]; exact h
+  · have hn : 0 < nbk s₀ (F := F) := by
+      have : nbk s₀ (F := F) ≠ 0 := fun h' => of_decide_eq_false h0 ((Whole.nb_zero hD.1).1 h')
+      omega
+    refine WP.loop (M := isa) (fun m t => ∃ k, m = nbk s₀ (F := F) - k ∧ k < nbk s₀ (F := F) ∧ Inv hF s₀ k t) ?_
+      _ s ⟨0, rfl, hn, h⟩
+    rintro m t ⟨k, rfl, hk, i⟩
+    refine WP.mono (block_ok hp hk i) fun t' i' => ?_
+    have hz : isa.eval (.nonzero .d .r24) t' = some (decide (k + 1 < nbk s₀ (F := F))) := by
+      show VG.PPC64LE.eval (.nonzero .d .r24) t' = _
+      rw [VG.Proof.MdStream.PPC64LE.eval_nonzero, i'.r24, left_ne hp (by omega)]
+    by_cases hl : k + 1 < nbk s₀ (F := F)
+    · exact .inr ⟨by rw [hz, decide_eq_true hl], _, by omega, k + 1, rfl, hl, i'⟩
+    · refine .inl ⟨by rw [hz, decide_eq_false hl], ?_⟩
+      have e : k + 1 = nbk s₀ (F := F) := by omega
+      rw [← e]; exact i'
+
+end
+
 end VG.Proof.Pbkdf2.Whole.PPC64LE
